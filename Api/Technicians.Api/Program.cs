@@ -24,6 +24,7 @@ builder.Services.AddScoped<EquipmentDetailsRepository>();
 builder.Services.AddScoped<JobRepository>();
 builder.Services.AddScoped<SaveUpdateExpenseRepository>();
 builder.Services.AddScoped<UploadedInfoRepository>();
+builder.Services.AddScoped<UserRepository>();
 
 var app = builder.Build();
 

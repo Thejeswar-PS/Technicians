@@ -79,7 +79,8 @@ namespace Technicians.Api
                 });
             });
 
-            // NOTE: All business logic, DbContext, and custom services removed
+            // TODO: Register your repository services here, e.g.:
+            // services.AddScoped<UserRepository>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
