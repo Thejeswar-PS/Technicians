@@ -22,6 +22,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<EtechExpenseRepository>();
 builder.Services.AddScoped<EquipmentDetailsRepository>();
 builder.Services.AddScoped<JobRepository>();
+builder.Services.AddScoped<SaveUpdateExpenseRepository>();
+builder.Services.AddScoped<UploadedInfoRepository>();
 
 var app = builder.Build();
 
