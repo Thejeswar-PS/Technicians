@@ -16,21 +16,11 @@ namespace Technicians.Api.Controllers
         }
 
         [HttpPost("save-update")]
-        public async Task<IActionResult> SaveUpdateExpense([FromBody] SaveUpdateExpenseDto request)
+        public async Task<IActionResult> SaveUpdateExpense([FromBody] SaveUpdateExpenseDto req)
         {
-            if (request == null)
-                return BadRequest("Invalid request");
-
-            var result = await _expenseRepository.SaveUpdateExpenseAsync(request);
-
-            if (result > 0)
-            {
-                return Ok(new { message = "Expense saved/updated successfully" });
-            }
-            else
-            {
-                return StatusCode(500, "Failed to save/update expense");
-            }
+            await _expenseRepository.SaveOrUpdateExpenseAsync(req);
+            return Ok(new { success = true });
         }
+    
     }
 }

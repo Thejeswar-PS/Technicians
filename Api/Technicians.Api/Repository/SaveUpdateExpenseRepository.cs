@@ -14,45 +14,39 @@ namespace Technicians.Api.Repository
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        public async Task<int> SaveUpdateExpenseAsync(SaveUpdateExpenseDto expense)
+        public async Task SaveOrUpdateExpenseAsync(SaveUpdateExpenseDto req)
         {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
+            using SqlConnection con = new SqlConnection(_connectionString);
+            using SqlCommand cmd = new SqlCommand("SaveUpdateExpenses", con)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
 
-            var parameters = new DynamicParameters();
-            parameters.Add("@CallNbr", expense.CallNbr);
-            parameters.Add("@TechName", expense.TechName);
-            parameters.Add("@ExpType", expense.ExpType);
-            parameters.Add("@TravelType", expense.TravelType);
-            parameters.Add("@StrtDate", expense.StrtDate);
-            parameters.Add("@StrtTime", expense.StrtTime);
-            parameters.Add("@EndDate", expense.EndDate);
-            parameters.Add("@EndTime", expense.EndTime);
-            parameters.Add("@Mileage", expense.Mileage);
-            parameters.Add("@RentalCar", expense.RentalCar);
-            parameters.Add("@Notes", expense.Notes);
-            parameters.Add("@Purpose", expense.Purpose);
-            parameters.Add("@TechPaid", expense.TechPaid);
-            parameters.Add("@CompanyPaid", expense.CompanyPaid);
-            parameters.Add("@Changeby", expense.Changeby);
-            parameters.Add("@TableIndex", expense.TableIndex);
-            parameters.Add("@TravelBy", expense.TravelBy);
-            parameters.Add("@PayType", expense.PayType);
-            parameters.Add("@Edit", expense.Edit);
-            parameters.Add("@ImageExists", expense.ImageExists);
+            cmd.Parameters.AddWithValue("@CallNbr", req.CallNbr ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@TechName", req.TechName ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ExpType", req.ExpType);
+            cmd.Parameters.AddWithValue("@TravelType", req.TravelType);
+            cmd.Parameters.AddWithValue("@StrtDate", req.StrtDate);
+            cmd.Parameters.AddWithValue("@StrtTime", req.StrtTime);
+            cmd.Parameters.AddWithValue("@EndDate", req.EndDate);
+            cmd.Parameters.AddWithValue("@EndTime", req.EndTime);
+            cmd.Parameters.AddWithValue("@Mileage", req.Mileage);
+            cmd.Parameters.AddWithValue("@RentalCar", req.RentalCar);
+            cmd.Parameters.AddWithValue("@Notes", req.Notes ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Purpose", req.Purpose);
+            cmd.Parameters.AddWithValue("@TechPaid", req.TechPaid);
+            cmd.Parameters.AddWithValue("@CompanyPaid", req.CompanyPaid);
+            cmd.Parameters.AddWithValue("@Changeby", req.Changeby ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@TableIndex", req.TableIndex);
+            cmd.Parameters.AddWithValue("@TravelBy", req.TravelBy);
+            cmd.Parameters.AddWithValue("@PayType", req.PayType);
+            cmd.Parameters.AddWithValue("@Edit", req.Edit);
+            cmd.Parameters.AddWithValue("@ImageExists", req.ImageExists);
+            cmd.Parameters.Add("@ImageStream", SqlDbType.Image).Value = (object)req.ImageStream ?? DBNull.Value;
 
-            // ⚡ IMPORTANT FIX:
-            // Always pass at least 1 byte if ImageStream is null
-            var safeImageStream = expense.ImageStream ?? new byte[] { 0x0 };
-            parameters.Add("@ImageStream", safeImageStream, DbType.Binary, ParameterDirection.Input);
 
-            int rowsAffected = await connection.ExecuteAsync(
-                "SaveUpdateExpenses",
-                parameters,
-                commandType: CommandType.StoredProcedure
-            );
-
-            return rowsAffected;
+            await con.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
         }
     }
 }

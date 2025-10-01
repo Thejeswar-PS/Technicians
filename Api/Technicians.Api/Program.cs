@@ -25,6 +25,8 @@ builder.Services.AddScoped<JobRepository>();
 builder.Services.AddScoped<SaveUpdateExpenseRepository>();
 builder.Services.AddScoped<UploadedInfoRepository>();
 builder.Services.AddScoped<UserRepository>();
+builder.Services.AddScoped<PreJobSafetyInfoRepository>();
+builder.Services.AddScoped<PreJobSafetyListInfoRepository>();
 
 var app = builder.Build();
 
