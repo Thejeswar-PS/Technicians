@@ -1,0 +1,48 @@
+<div class="px-7 py-5">
+  <div class="fs-5 text-dark fw-bolder"></div>
+</div>
+
+<div class="separator border-gray-200"></div>
+
+<div class="px-7 py-5">
+
+  <form [formGroup]="quotefilterForm" novalidate="" class="form">
+
+  <div class="mb-10" *ngIf="showManagers">
+    <label class="form-label fw-bold text-darker mb-1 fs-5">Account Manager</label>
+    <div>
+      <select formControlName="AccountManager"
+      class="form-select form-select-solid fw-bold text-darker text-darker"
+        data-kt-select2="true"
+        data-placeholder="Select option"
+        data-allow-clear="true"
+        (change)="changeAccountManager()"
+      >
+      <option class="form-label fw-bold text-darker mb-1 fs-5" value="ALL">All</option>
+      <option class="form-label fw-bold text-darker mb-1 fs-5" *ngFor="let mgr of accountManagers" [value]="mgr.empName">
+        {{mgr.empName}}
+      </option>
+      </select>
+    </div>
+  </div>
+
+  <div class="mb-10" *ngIf="showDateRanges">
+    <label class="form-label fw-bold text-darker mb-1 fs-4">Date Range</label>
+    <div>
+      <select formControlName="DateRange"
+        class="form-select form-select-solid fw-bold text-darker text-darker"
+        data-kt-select2="true"
+        data-placeholder="Select option"
+        data-allow-clear="true"
+        (change)="changeDateRange()"
+      >
+        <option class="form-label fw-bold text-darker mb-1 fs-5" selected value="W">Current Week</option>
+        <option class="form-label fw-bold text-darker mb-1 fs-5" value="M">Current Month</option>
+        <option class="form-label fw-bold text-darker mb-1 fs-5" value="Q">Current Quarter</option>
+        <option class="form-label fw-bold text-darker mb-1 fs-5" value="CY">Current Year</option>
+        <option class="form-label fw-bold text-darker mb-1 fs-5" value="PY">Previous Year</option>
+      </select>
+    </div>
+  </div>
+</form>
+</div>

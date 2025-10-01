@@ -1,0 +1,37 @@
+<div>
+  <div class="modal-header">
+    <h4 class="modal-title text-dark fw-bold text-dark fs-1">Note</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="card">
+      <div class="row mb-12">
+        <label class="col-lg-4 col-form-label fw-bold text-dark fs-3"></label>
+        <div class="col-lg-12">
+          <div></div>
+            <span class="text-dark fw-bold text-dark fs-4">Job ID: {{jobId}} - Site ID: ContractNo :{{note.contractNbr}}</span>
+            <div></div>
+            <div style="color: red;" *ngIf="note.jobNotes === null">No notes found</div>
+            <div *ngIf="note.jobNotes !== null" [innerHTML]= note.jobNotes></div>
+        </div>
+        <div class="col-lg-12">
+          <span class=" text-dark fw-bold text-dark fs-4">Site ID Notes</span>
+          <div></div>
+          <div style="color: red;" *ngIf="note.siteNotes === null">No notes found</div>
+          <div *ngIf="note.jobNotes !== null" [innerHTML]=" note.siteNotes"></div>
+        </div>
+        <div class="col-lg-12">
+          <span class=" text-dark fw-bold text-dark fs-4">Contract Notes</span>
+          <div></div>
+          <div style="color: red;" *ngIf="note.contractNotes === null">No notes found</div>
+          <div *ngIf="note.contractNotes !== null" [innerHTML]= convertNewLines(note.contractNotes)></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+  </div>
+</div>
+

@@ -1,0 +1,307 @@
+<div class="table-container-width">
+  <div class="card" style="min-width: 90vw;">
+      <div class="card-body border-0 pt-5">
+        <div id="PlaceHolderMain_PnlFeedback">
+
+          <table style="width:80%;text-align:left;padding-left: 100px;border: solid 1px #2984c5;cellpadding:1px">
+             <tbody><tr>
+                 <td>
+                     <span id="PlaceHolderMain_lblCallNbr" class="LabelHeaderSmall" style="display:inline-block;color:#2984C5;width:100px;">Job No</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblDataCallNbr" class="LabelHeaderSmall" style="color:Black;font-weight:bold;">{{customerFeedback.callNbr}}</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblCustomerNumber" class="LabelHeaderSmall" style="color:#2984C5;">Site ID</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblDataCustomerNumber" class="LabelHeaderSmall" style="color:Black;font-weight:bold;">{{customerFeedback.custNmbr}}</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblCustomerName" class="LabelHeaderSmall" style="color:#2984C5;">Site Name</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblDataCustomerName" class="LabelHeaderSmall" style="display:inline-block;color:Black;font-weight:bold;width:250px;">{{customerFeedback.custName}}</span>
+                 </td>
+
+             </tr>
+             <tr>
+                 <td>
+                     <span id="PlaceHolderMain_lblContact" class="LabelHeaderSmall" style="display:inline-block;color:#2984C5;width:110px;">Site Contact</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblDataContact" class="LabelHeaderSmall" style="color:Black;font-weight:bold;">{{customerFeedback.siteContact}}</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblECustomerMail" class="LabelHeaderSmall" style="color:#2984C5;">Contact Email</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblDataCustomerMail" class="LabelHeaderSmall" style="color:Black;font-weight:bold;">{{customerFeedback.email}}</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblTech" class="LabelHeaderSmall" style="display:inline-block;color:#2984C5;width:100px;">Technician</span>
+                 </td>
+                 <td>
+                     <span id="PlaceHolderMain_lblDataTech" class="LabelHeaderSmall" style="color:Black;font-weight:bold;">{{customerFeedback.techName}}</span>
+                 </td>
+
+
+             </tr>
+         </tbody></table>
+        <table style="width:80%;padding-left:100px;" cellpadding="0" cellspacing="0">
+          <tbody><tr>
+              <td colspan="5" style="padding-top:5px;color:#0DB02E;font:28px Lato,Arial,Helvetica,san-serif;" class="LabelSummary">
+                 Customer Support Feedback Survey
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="padding-top:15px;" class="tdHeader1">
+                 1. Overall, how satisfied were you with the experience with your service from DC Group?
+              </td>
+          </tr>
+          <tr>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Extremely satisfied
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#0DB02E">
+                              <input id="PlaceHolderMain_ExtSatisfy" type="radio" disabled name="overallServiceInput" value="Extremely" [(ngModel)]="customerFeedback.overallService">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Very Satisfied
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="width:100%;background-color:#34D14E">
+                              <input id="PlaceHolderMain_VerySatisfy" type="radio" disabled name="overallServiceInput" value="Very" [(ngModel)]="customerFeedback.overallService">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Somewhat satisfied
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#D2FCD9">
+                              <input id="PlaceHolderMain_SomeSatisfy" type="radio" disabled name="overallServiceInput" value="Somewhat" [(ngModel)]="customerFeedback.overallService">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Not so satisfied
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#AAAFB4">
+                              <input id="PlaceHolderMain_NotSoSatisfy" type="radio" disabled name="overallServiceInput" value="NotSo" [(ngModel)]="customerFeedback.overallService" >
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Not at all satisfied
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#5F6972">
+                              <input id="PlaceHolderMain_NotatAllSatisfy" type="radio" disabled name="overallServiceInput" value="NotAtAll" [(ngModel)]="customerFeedback.overallService">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="padding-top:10px;" class="tdHeader1">
+                  2.How knowledgeable was the Account Manager who assisted you?
+              </td>
+          </tr>
+          <tr>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Extremely knowledgeable
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#0DB02E">
+                              <input id="PlaceHolderMain_ExtKnowledge" type="radio" disabled name="amKnowledgeInput" value="Extremely" [(ngModel)]="customerFeedback.amKnowledge">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Very knowledgeable
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="width:100%;background-color:#34D14E">
+                              <input id="PlaceHolderMain_VeryKnowledge" type="radio"  disabled name="amKnowledgeInput" value="Very" [(ngModel)]="customerFeedback.amKnowledge">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Somewhat knowledgeable
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#D2FCD9">
+                              <input id="PlaceHolderMain_SomeKnowledge" type="radio" disabled name="amKnowledgeInput" value="Somewhat" [(ngModel)]="customerFeedback.amKnowledge">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Not so knowledgeable
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#AAAFB4">
+                              <input id="PlaceHolderMain_NotSoKnowledge" type="radio" disabled name="amKnowledgeInput" value="NotSo" [(ngModel)]="customerFeedback.amKnowledge">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Not at all knowledgeable
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#5F6972">
+                              <input id="PlaceHolderMain_NotAtAllKnowledge" type="radio" disabled name="amKnowledgeInput" value="NotAtAll" [(ngModel)]="customerFeedback.amKnowledge">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="padding-top:15px;" class="tdHeader1">
+                  Comments:
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="" class="tdHeader1">
+                  <textarea name="ctl00$PlaceHolderMain$txtAMNotes" rows="3"  disabled cols="20" id="txtAMNotes" class="multitextbox" style="width:600px;">{{customerFeedback.amNotes}}</textarea>
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="padding-top:15px;" class="tdHeader1">
+                 3. Was the Field Service Engineer who provide your service prompt, professional, and efficient?
+              </td>
+          </tr>
+          <tr>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              Yes
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="background-color:#0DB02E">
+                              <input id="PlaceHolderMain_TechYes" type="radio" disabled name="techPromptnessInput" value="TechYes" [(ngModel)]="customerFeedback.techPromptness">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+              <td class="radioBox">
+                  <table style="width:100%">
+                      <tbody><tr>
+                          <td class="LabelHeaderSmall" style="vertical-align:middle">
+                              No
+                          </td>
+                      </tr>
+                      <tr>
+                          <td style="width:100%;background-color:#5F6972">
+                              <input id="PlaceHolderMain_TechNo" type="radio"  disabled name="techPromptnessInput" value="TechNo" [(ngModel)]="customerFeedback.techPromptness">
+                          </td>
+                      </tr>
+                  </tbody></table>
+              </td>
+
+          </tr>
+          <tr>
+              <td colspan="5" style="padding-top:5px;" class="tdHeader1">
+                  Comments:
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="" class="tdHeader1">
+                  <textarea name="ctl00$PlaceHolderMain$txtTechNotes" rows="3" disabled cols="20" id="PlaceHolderMain_txtTechNotes" class="multitextbox" style="width:600px;">{{customerFeedback.techNotes}}</textarea>
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="" class="tdHeader1">
+
+
+
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="padding-top:10px;" class="tdHeader1">
+                 4. In your own words, is there anything we could have done differently to improve your experience with DC Group?
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="" class="tdHeader1">
+                  <textarea name="ctl00$PlaceHolderMain$txtComments" rows="3"  disabled cols="20" id="PlaceHolderMain_txtComments" class="multitextbox" style="width:600px;">{{customerFeedback.comments}}</textarea>
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="padding-top:0px;" class="tdHeader1">
+                 Please enter your name , phone number and title:
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="text-align:left;padding-bottom:20px;">
+                  <input name="ctl00$PlaceHolderMain$txtModifiedBy" type="text"  disabled value="Jeff VanSteenburgh , Technology Manager" id="PlaceHolderMain_txtModifiedBy" class="textbox" style="width:600px;" [(ngModel)]="customerFeedback.lastModifiedBy">
+              </td>
+          </tr>
+          <tr>
+              <td colspan="5" style="text-align:left">
+
+              </td>
+          </tr>
+        </tbody></table>
+
+        </div>
+      </div>
+  </div>
+</div>
+
+
+

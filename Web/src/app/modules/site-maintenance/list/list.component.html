@@ -1,0 +1,152 @@
+<!-- begin::Header -->
+<div class="card" style="min-width: 90vw;">
+  <div class="card-body border-0 pt-5">
+
+    <form [formGroup]="quotefilterForm" novalidate="" class="form">
+      <table>
+        <tr>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+          </td>
+          <td>
+            <label class="min-w-100px fw-bold mb-1 fs-5">Type:</label>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <select id="quoteAccMgrs" formControlName="AccountManager" style="font-size:10pt;width:150px;padding:4px;"
+              class="me-5 text-dark fw-bold fs-5">
+              <option class = "fw-bold mb-1 fs-5" value="A" selected>All</option>
+              <option class = "fw-bold mb-1 fs-5" *ngFor="let mgr of accountManagers" [value]="mgr.text">
+                {{mgr.text}}
+              </option>
+            </select>
+          </td>
+          <td>
+            <select name="ctl00$PlaceHolderMain$ddlStatus" id="PlaceHolderMain_ddlStatus" formControlName="Type"
+              class="me-5 text-dark fw-bold fs-5" style="font-size:10pt;width:150px;padding: 4px;">
+              <option class = "fw-bold mb-1 fs-5" value="A">All</option>
+              <option class = "fw-bold mb-1 fs-5" *ngFor="let status of Type" [value]="status.statusCode">{{status.statusDesc}}</option>
+            </select>
+          </td>
+          <td>
+            <div class="input-group" >
+              <input type="text" class = "fw-bold mb-1 fs-5" placeholder="Search" id="SearchText" (keyup.enter)="search()">
+              <div class="input-group-append ">
+                <button class="btn btn-primary btn-sm" type="button" (click)="search()">
+                  <i class="fa fa-search"></i>
+                </button>
+              </div>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </form>
+    
+  </div>
+</div>
+
+
+
+
+
+<!-- table main -->
+<div class="card card-xxl-stretch">
+  <div class="card-header border-0 pt-5">
+    <div style="text-align: right;margin-left: auto;" class="card-toolbar" data-bs-toggle="tooltip" data-bs-placement="top"
+      data-bs-trigger="hover" title="Stop Reminders">
+      <button type="button" class="btn btn-primary" (click)="openChangeStatusModal()"
+        [disabled]="selectedQuotes.length <= 0">
+        Stop Reminders
+      </button>
+    </div>
+  </div>
+  <div class="card-body py-3">
+    <!-- begin::Table container -->
+    <div class="table-responsive">
+      <!-- begin::Table -->
+      <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" *ngIf="Type && Type.length > 0">
+        <!-- begin::Table head -->
+        <thead>
+
+          <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('custNmbr')"style="cursor: pointer;">Site Id <i class="fa" [ngClass]="sortIcon('custNmbr')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('custName')"style="cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custName')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('stopDaysCount')"style="cursor: pointer;">Days <i class="fa" [ngClass]="sortIcon('stopDaysCount')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('reminderType')"style="cursor: pointer;">Type <i class="fa" [ngClass]="sortIcon('reminderType')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('modifiedBy')"style="cursor: pointer;">Modified By <i class="fa" [ngClass]="sortIcon('modifiedBy')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('modifiedDate')"style="cursor: pointer;">Modified On <i class="fa" [ngClass]="sortIcon('modifiedDate')"></i></th>
+            <th class="min-w-100px">
+              Select
+              <input
+              class="form-check-input widget-9-check"
+              style="cursor: pointer; border:solid; border-color: lightblue;"
+              type="checkbox"
+              [checked]="selectedQuotes.length === quotesList.length"
+              (click)="selectAllRows($event)" />
+            </th>
+            <!-- <th class="min-w-200px text-end rounded-end"></th> -->
+          </tr>
+        </thead>
+        <!-- end::Table head -->
+        <!-- begin::Table body -->
+        <tbody class="text-dark mb-1 fs-5">
+
+          <tr *ngFor="let quotes of quotesList; let i = index;" [ngStyle]="{ 'background-color': isQuoteSelected(quotes) ? 'lightyellow' : 'inherit' }">
+            <td>
+              <span (click)="openQuoteDetailsModal(quotes.custNmbr)"
+                class="">
+                {{quotes.custNmbr}}
+              </span>
+            </td>
+            <td>
+
+              <span class=""> {{quotes.custName}}</span>
+            </td>
+            <td>
+
+              <span class=""> {{quotes.stopDaysCount}}</span>
+            </td>
+
+            <td class="">
+              {{quotes.reminderType}}
+            </td>
+            <td class="">
+              {{quotes.modifiedBy}}
+            </td>
+
+            <td class="">
+              {{quotes.modifiedDate | date:'medium'}}
+            </td>
+
+            <!-- <td>
+
+            </td> -->
+            <td>
+              <input
+              class="form-check-input widget-9-check"
+              style="border:solid; border-color: lightblue; cursor: pointer;"
+              type="checkbox"
+              [checked]="selectedQuotes.includes(quotes.custNmbr)"
+              (click)="rowSelect(quotes)"/>
+            </td>
+
+          </tr>
+
+
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+    </div>
+    <!-- end::Table container -->
+  </div>
+</div>
+
+
+<!-- <app-pagination *ngIf = "paginationObj" [pageNum] = "paginationObj.pageNumber" [pageSize] = "paginationObj.pageSize"
+  [totalRecords] ="paginationObj.totalRecordsCount"  (updatePagination) = "updatePagination($event)">
+
+  </app-pagination> -->
+
+<!-- begin::Body -->

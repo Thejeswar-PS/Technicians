@@ -1,0 +1,181 @@
+<!-- begin::Header -->
+<div class="table-container-width">
+
+  <div class="card">
+    <div class="card-body border-0 pt-5">
+
+      <form [formGroup]="jobFilterForm" novalidate="" class="form">
+        <table>
+          <tr>
+            <td>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+            </td>
+            <td>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Status:</label>
+            </td>
+            <td>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Year:</label>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                formControlName="ownerId"
+                style="font-size:10pt;width:150px;padding:4px;"
+              >
+                <option class = "fw-bold text-dark me-5" value="ALL" selected>All</option>
+                <option class = "fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.empName">
+                  {{mgr.empName}}
+                </option>
+              </select>
+            </td>
+            <td>
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                formControlName="status"
+                style="font-size:10pt;width:150px;padding: 4px;"
+              >
+              <option class = "fw-bold text-dark me-5" value="ALL">All</option>
+              <option class = "fw-bold text-dark me-5" value="ES">Sent</option>
+              <option class = "fw-bold text-dark me-5" value="VI">Viewed</option>
+              <option class = "fw-bold text-dark me-5" value="CL">Replied</option>
+              <option class = "fw-bold text-dark me-5" value="PosFeed">Positive Feedback</option>
+              <option class = "fw-bold text-dark me-5" value="NeuFeed">Neutral Feedback</option>
+              <option class = "fw-bold text-dark me-5" value="NegFeed">Negative Feedback</option>
+            </select>
+            </td>
+            <td>
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                style="font-size:10pt;width:150px;padding:4px;"
+                formControlName="year"
+               >
+               <option class = "fw-bold text-dark me-5" value="CY" selected>Current Year</option>
+               <option class = "fw-bold text-dark me-5" value="PY" selected>Previous Year</option>
+              </select>
+            </td>
+            <td>
+              <div class="input-group fw-bold text-dark fs-5">
+                <input type="text" class="form-control form-control-sm fw-bold text-dark fs-5" style="border-color: black;" placeholder="Search" formControlName="jobId">
+                <div class="input-group-append">
+                  <button class="btn btn-primary btn-sm btn-search" type="button" (click)="SearchJobs()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </form>
+      </div>
+  </div>
+    <div class="card card-xxl-stretch">
+    <div class="card-body py-3">
+      <div class="table-max-height">
+        <table class="table table-row-gray-300 align-middle gs-0 gy-4" style="text-align: center;">
+          <thead>
+            <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+              <th class="min-w-100px text-hover-primary" (click)="sortTable('callNbr')" style="font-size: medium !important; cursor: pointer; padding-left: 1rem;">Job No<i class="fa" [ngClass]="sortIcon('callNbr')"></i></th>
+              <th class="min-w-100px text-hover-primary" (click)="sortTable('custNmbr')" style="font-size: medium !important; cursor: pointer;">Site Id <i class="fa" [ngClass]="sortIcon('custNmbr')"></i></th>
+              <th class="min-w-150px text-hover-primary" (click)="sortTable('custName')" style="font-size: medium !important; cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custName')"></i></th>
+              <th class="min-w-120px text-hover-primary" (click)="sortTable('overallService')" style="font-size: medium !important; cursor: pointer;">Overall Service<i class="fa" [ngClass]="sortIcon('overallService')"></i></th>
+              <th class="min-w-120px text-hover-primary" (click)="sortTable('amKnowledge')" style="font-size: medium !important; cursor: pointer;">AM Knowledge<i class="fa" [ngClass]="sortIcon('amKnowledge')"></i></th>
+              <th class="min-w-150px text-hover-primary" (click)="sortTable('techPromptness')" style="font-size: medium !important; cursor: pointer;">Tech Promptness<i class="fa" [ngClass]="sortIcon('techPromptness')"></i></th>
+              <th class="min-w-120px text-hover-primary" (click)="sortTable('status')" style="font-size: medium !important; cursor: pointer;">Status <i class="fa" [ngClass]="sortIcon('status')"></i></th>
+              <th class="min-w-120px text-hover-primary" (click)="sortTable('svcDescr')" style="font-size: medium !important; cursor: pointer;">Service Type <i class="fa" [ngClass]="sortIcon('svcDescr')"></i></th>
+              <th class="min-w-150px text-hover-primary" (click)="sortTable('accMgr')" style="font-size: medium !important; cursor: pointer;">Manager<i class="fa" [ngClass]="sortIcon('accMgr')"></i></th>
+              <th class="min-w-150px text-hover-primary" (click)="sortTable('techName')" style="font-size: medium !important; cursor: pointer;">Tech No<i class="fa" [ngClass]="sortIcon('techName')"></i></th>
+              <th class="min-w-150px text-hover-primary" (click)="sortTable('emailSentOn')" style="font-size: medium !important; cursor: pointer;">Emailed On<i class="fa" [ngClass]="sortIcon('emailSentOn')"></i></th>
+              <th class="min-w-150px text-hover-primary" (click)="sortTable('lastModifiedOn')" style="font-size: medium !important; cursor: pointer;">Replied On<i class="fa" [ngClass]="sortIcon('lastModifiedOn')"></i></th>
+              <th class="min-w-150px text-hover-primary" (click)="sortTable('lastModifiedBy')" style="font-size: medium !important; cursor: pointer;padding-right: 1rem;">Modified By<i class="fa" [ngClass]="sortIcon('lastModifiedBy')"></i></th>
+            </tr>
+
+          </thead>
+          <tbody class="text-dark mb-1 fs-5" style="text-align: center; font-family: Roboto condensed;" *ngIf = "jobList && jobList.length > 0">
+            <ng-container *ngFor = "let quotes of jobList; let i = index;" >
+              <tr [ngClass]="i % 2 === 0 ? 'bg-row-opacity' : '' ">
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    <a href="{{baseUrl}}/#/admin/customer-feedback-survey?token={{quotes.tokenID}}">{{quotes.callNbr}}</a>
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.custNmbr}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.custName}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.overallService}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.amKnowledge}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.techPromptness}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.status}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.svcDescr}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.accMgr}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.techName}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.emailSentOn | date:'medium'}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.lastModifiedOn | date:'medium'}}
+                  </span>
+                </td>
+                <td>
+                  <span class="" style="font-size: medium !important; ">
+                    {{quotes.lastModifiedBy}}
+                  </span>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    </div>
+</div>
+

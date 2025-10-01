@@ -1,0 +1,389 @@
+<div>
+  <div class="card" style="min-width: 95vw">
+    <div class="card-body border-0 pt-5 d-flex flex-column gap-8">
+      <form
+        [formGroup]="batteryForm"
+        class="d-flex flex-column align-items-center"
+      >
+        <div class="row mb-6 w-full">
+          <div class="col p-0 me-6">
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <label
+                class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+                >Make</label
+              >
+              <input
+                formControlName="make"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+          <div class="col p-0 me-6">
+            <label
+              class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+              >Model</label
+            >
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <input
+                formControlName="model"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-6 w-full">
+          <div class="col p-0 me-6">
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <label
+                class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+                >Dcg Part No</label
+              >
+              <input
+                formControlName="dcgPartNo"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+          <div class="col p-0 me-6">
+            <label
+              class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+              >Amp Hour</label
+            >
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <input
+                formControlName="ampHour"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-6 w-full">
+          <div class="col p-0 me-6">
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <label
+                class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+                >Watts Per Cell</label
+              >
+              <input
+                formControlName="wattsPerCell"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+          <div class="col p-0 me-6">
+            <label
+              class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+              >Cost</label
+            >
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <input
+                formControlName="cost"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-6 w-full">
+          <div class="col p-0 me-6">
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <label
+                class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+                >Terminal</label
+              >
+              <input
+                formControlName="terminal"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+          <div class="col p-0 me-6">
+            <label
+              class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+              >Dimensions</label
+            >
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <input
+                formControlName="dimensions"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-6 w-full">
+          <div class="col p-0 me-6">
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <label
+                class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+                >Weight</label
+              >
+              <input
+                formControlName="weight"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+          <div class="col p-0 me-6">
+            <label
+              class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+              >Warranty</label
+            >
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <input
+                formControlName="warranty"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="row mb-6 w-full">
+          <div class="col p-0 me-6">
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <label
+                class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+                >Vendor</label
+              >
+              <input
+                formControlName="vendor"
+                type="text"
+                class="form-control form-control-sm fw-normal text-dark fs-5"
+                style="border-color: black; height: 35px"
+              />
+            </div>
+          </div>
+          <div class="col p-0 me-6">
+            <label
+              class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+              >Price Group</label
+            >
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select Pricegroup"
+                data-allow-clear="true"
+                formControlName="rowColor"
+                style="font-size: 10pt; width: 150px; padding: 4px"
+                #priceGroupSelect
+              >
+                <option
+                  class="fw-bold text-dark me-5"
+                  *ngFor="let p of priceGroups"
+                  [value]="p.rowColor"
+                >
+                  {{ p.priceGroup }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="row mb-12 w-full">
+          <div class="col p-0 me-12">
+            <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+              <label
+                class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0"
+                >Notes</label
+              >
+              <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+                <textarea
+                  #messageInput
+                  class="mb-3"
+                  rows="4"
+                  cols="10"
+                  data-kt-element="input"
+                  placeholder="Type notes"
+                  formControlName="notes"
+                  style="border-color: black; width: 100%"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      
+      <div class="controls">
+        <div class="d-flex justify-content-center container-fluid gap-2">
+          <div>
+            <button type="button" class="btn btn-primary" (click)="onSave()">
+              Save
+            </button>
+          </div>
+          <div>
+            <button type="button" class="btn btn-primary" (click)="goBack()">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- begin::Header -->
+      <div class="table-container-width" *ngIf="pricingProfiles && pricingProfiles.length > 0">
+        <div class="card" style="min-width: 96vw">
+          <div class="card-body border-0 pt-5">
+            <div class="table-container mt-8">
+              <div class="card-body p-0">
+                <!-- begin::Table container -->
+                <div class="table-max-height" style="height: 600px">
+                  <!-- begin::Table -->
+                  <table
+                    class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4"
+                    style="text-align: center"
+                  >
+                    <!-- begin::Table head -->
+                    <thead>
+                      <tr
+                        class="text-dark fw-bolder badge-light-primary"
+                        style="font-size: medium"
+                      >
+                        <th
+                          class="min-w-100px text-hover-primary"
+                          style="
+                            font-size: medium !important;
+                            cursor: pointer;
+                            padding-left: 1rem;
+                          "
+                        >
+                          Quantity Range <i class="fa fa-sort"></i>
+                        </th>
+                        <th
+                          class="min-w-100px text-hover-primary"
+                          style="font-size: medium !important; cursor: pointer"
+                        >
+                          Profit Guide<i class="fa fa-sort"></i>
+                        </th>
+                        <th
+                          class="min-w-100px text-hover-primary"
+                          style="font-size: medium !important; cursor: pointer"
+                        >
+                          Frieght Est<i class="fa fa-sort"></i>
+                        </th>
+                        <th
+                          class="min-w-115px text-hover-primary"
+                          style="font-size: medium !important; cursor: pointer"
+                        >
+                          Labor Hours<i class="fa fa-sort"></i>
+                        </th>
+                        <th
+                          class="min-w-100px text-hover-primary"
+                          style="font-size: medium !important; cursor: pointer"
+                        >
+                          Labor Ready<i class="fa fa-sort"></i>
+                        </th>
+                        <th
+                          class="min-w-100px text-hover-primary"
+                          style="font-size: medium !important; cursor: pointer"
+                        >
+                          Price Group<i class="fa fa-sort"></i>
+                        </th>
+                        <th
+                          class="min-w-150px text-hover-primary"
+                          style="font-size: medium !important; cursor: pointer"
+                        >
+                          Qty<i class="fa fa-sort"></i>
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody
+                      formArrayName="pricingProfiles"
+                      class="text-dark mb-1 fs-5"
+                      style="text-align: center; font-family: Roboto condensed"
+                      *ngIf="pricingProfiles && pricingProfiles.length > 0"
+                    >
+                      <tr *ngFor="let vendor of pricingProfiles.controls;let i = index"
+                        [formGroupName]="i" [ngClass]="i % 2 === 0 ? 'bg-row-opacity' : ''">
+                        <td class="ps-4">
+                          <input
+                            formControlName="quantity"
+                            type="text"
+                            class="form-control form-control-sm fw-normal text-dark fs-5"
+                            style="border-color: black; height: 35px"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            formControlName="profitGuide"
+                            type="text"
+                            class="form-control form-control-sm fw-normal text-dark fs-5"
+                            style="border-color: black; height: 35px"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            formControlName="frieghtEst"
+                            type="text"
+                            class="form-control form-control-sm fw-normal text-dark fs-5"
+                            style="border-color: black; height: 35px"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            formControlName="laborHours"
+                            type="text"
+                            class="form-control form-control-sm fw-normal text-dark fs-5"
+                            style="border-color: black; height: 35px"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            formControlName="laborReady"
+                            type="text"
+                            class="form-control form-control-sm fw-normal text-dark fs-5"
+                            style="border-color: black; height: 35px"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            formControlName="priceGroup"
+                            type="text"
+                            class="form-control form-control-sm fw-normal text-dark fs-5"
+                            style="border-color: black; height: 35px"
+                          />
+                        </td>
+                        <td>
+                          <input
+                            formControlName="qty"
+                            type="text"
+                            class="form-control form-control-sm fw-normal text-dark fs-5"
+                            style="border-color: black; height: 35px"
+                          />
+                        </td>
+                      </tr>
+                    </tbody>
+                    <!-- end::Table body -->
+                  </table>
+                  <!-- end::Table -->
+                </div>
+                <!-- end::Table container -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>

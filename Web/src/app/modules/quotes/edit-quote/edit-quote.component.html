@@ -1,0 +1,147 @@
+
+
+<div class="card mb-5 mb-xl-10">
+    <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse"
+        data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
+        <div class="card-title m-0" *ngIf = "12 > 10">
+            <h3  style="color: #CE2156;font-size: 18pt;text-decoration: underline;font-family: Century Gothic, sans-serif;">You are viewing the Quote No -- {{this.quoteId}}</h3>
+        </div>
+    </div>
+    <div id="kt_account_profile_details" class="collapse show" >
+        <form [formGroup] = "quoteForm" novalidate="" class="form" >
+            <div class="card-body border-top p-9">
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Customer Number:</label>
+                    <div class="col-lg-8">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "customerNumber"/>
+                        <!-- <span class="form-control form-control-lg form-control-solid">{{quoteDetail.custNmbr}}</span> -->
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Customer Name:	</label>
+                    <div class="col-lg-8  fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "customerName" />
+                        <!-- <span class="form-control form-control-lg form-control-solid">{{quoteDetail.custName}}</span> -->
+
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Quote Reason:	</label>
+                    <div class="col-lg-8 fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "quoteReason" />
+                        <!-- <span class="form-control form-control-lg form-control-solid">{{quoteDetail.problemCode}}</span> -->
+
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4"><span >Quote Amount:	</span></label>
+                    <div class="col-lg-8 fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "quoteAmount" />
+                        <!-- <span class="form-control form-control-lg form-control-solid">{{quoteDetail.quoteAmount}}</span> -->
+
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4"><span >Quote Date:	</span></label>
+                    <div class="col-lg-8 fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "quoteDate" />
+                        <!-- <span class="form-control form-control-lg form-control-solid">{{quoteDetail.quotedOn | date : 'shortDate'}}</span> -->
+
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4"><span >Quote Expiry Date:	</span></label>
+                    <div class="col-lg-8 fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "quoteExpiryDate" />
+                        <!-- <span class="form-control form-control-lg form-control-solid">{{quoteDetail.quotedOn | date : 'shortDate'}}</span> -->
+
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Contact Name:	</label>
+                    <div class="col-lg-8 fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "contactName" />
+                        <!-- <input type="text" [value]="quoteDetail.contactName" class="form-control form-control-lg form-control-solid"> -->
+
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Contact Email:	</label>
+                    <div class="col-lg-8 fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "contactEmail" />
+                        <!-- <input type="text" [value]="quoteDetail.contactEmail" class="form-control form-control-lg form-control-solid"> -->
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Quote Owner:	</label>
+                    <div class="col-lg-8 fv-row">
+                        <select formControlName="quoteOwner" class="form-select form-select-solid form-select-lg text-dark fw-bold text-dark fs-4" name="quoteOwner">
+                          <option class=" text-dark fw-bold text-dark fs-4" *ngFor="let mgr of accountManagers" [value]="mgr.text">
+                            {{mgr.text}}
+                          </option>
+
+                        </select>
+
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Quote Status:	</label>
+                    <div class="col-lg-8 fv-row">
+                        <select formControlName="quoteStatus" class="form-select form-select-solid form-select-lg text-dark fw-bold text-dark fs-4"  >
+                            <option class=" text-dark fw-bold text-dark fs-4" value="SE">Sent</option>
+                            <option class=" text-dark fw-bold text-dark fs-4" value="VI">Viewed</option>
+                            <option class=" text-dark fw-bold text-dark fs-4" value="ID">In Discussion</option>
+                            <option class=" text-dark fw-bold text-dark fs-4" value="AC">Accepted</option>
+                            <option class=" text-dark fw-bold text-dark fs-4" value="DE">Declined</option>
+                            <option class=" text-dark fw-bold text-dark fs-4" value="CN">Cancelled</option>
+
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Quote priority		</label>
+                    <div class="col-lg-8 fv-row">
+                        <select formControlName="quotePriority" class="form-select form-select-solid form-select-lg text-dark fw-bold text-dark fs-4"  name="quotePriority">
+                            <!-- [value]="quoteDetail.quotePriority.trim()" -->
+                            <option class=" text-dark fw-bold text-dark fs-4" value="Critical">Critical</option>
+                            <option class=" text-dark fw-bold text-dark fs-4" value="Normal">Normal</option>
+
+                        </select>
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Purchase Order Required		</label>
+                    <div class="col-lg-8 fv-row">
+                        <div class="d-flex align-items-center mt-3">
+                            <label class="form-check form-check-inline form-check-solid me-5">
+                                <input
+  type="checkbox"
+  class="form-check-input"
+  style="border: solid; border-color: lightblue;"
+  formControlName="purchaseReq"
+  #purchaseReqCheckbox
+  (change)="updatePurchaseReq(purchaseReqCheckbox.checked)"
+/>
+ <!-- <input name="Purchase" type="checkbox" [checked]="quoteDetail.QuotePO" class="form-check-input"> -->
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-6">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Notes	</label>
+                    <div class="col-lg-8 fv-row">
+                        <input type = "text" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" formControlName = "Notes" />
+                        <!-- <input type="text" class="form-control form-control-lg form-control-solid"
+                            placeholder="Company name" name="company" [value]="quoteDetail.notes" /> -->
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end py-6 px-9">
+                <button type="button" class="btn btn-primary" (click)="update()">
+                    Save
+                </button>
+                <button class="btn btn-light btn-active-light-primary me-2 text-dark fw-bold" (click)="cancel()"> Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

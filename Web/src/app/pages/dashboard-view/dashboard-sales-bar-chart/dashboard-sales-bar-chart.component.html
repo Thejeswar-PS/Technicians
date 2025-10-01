@@ -1,0 +1,41 @@
+<div class="card-header border-0 pt-5">
+  <!-- begin::Title-->
+  <h3 class="card-title align-items-start flex-column">
+    <span class="card-label fw-bolder fs-3 mb-1">Monthly Unscheduled Jobs Count </span>
+  </h3>
+  <!-- end::Title-->
+
+  <!-- begin::Toolbar-->
+  <div class="card-toolbar">
+    <!-- begin::Menu-->
+    <div class="fw-bolder fs-3" *ngIf="empLevel === 1">${{totalBalance | number : '1.2-2'}}</div>
+
+
+    <!-- end::Menu-->
+  </div>
+  <!-- end::Toolbar-->
+</div>
+<!-- end::Header-->
+
+<!-- begin::Body-->
+<div class="card-body">
+  <!-- begin::Chart-->
+  <div #chartRef id="kt_charts_widget_1_chart" [style.height]="'500px'">
+    <apx-chart
+      [series]="chartOptions.series"
+      [chart]="chartOptions.chart"
+      [xaxis]="chartOptions.xaxis"
+      [yaxis]="chartOptions.yaxis"
+      [dataLabels]="chartOptions.dataLabels"
+      [stroke]="chartOptions.stroke"
+      [legend]="chartOptions.legend"
+      [fill]="chartOptions.fill"
+      [states]="chartOptions.states"
+      [tooltip]="chartOptions.tooltip"
+      [colors]="chartOptions.colors"
+      [markers]="chartOptions.markers"
+      [plotOptions]="chartOptions.plotOptions"
+    ></apx-chart>
+  </div>
+  <!-- end::Chart-->
+</div>

@@ -1,0 +1,23 @@
+<div>
+    <div class="modal-header">
+      <h4 class="modal-title text-dark fw-bold text-dark fs-2"></h4>
+      <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+            <span aria-hidden="true">&times;</span>
+          </button>
+    </div>
+    <div class="modal-body">
+      <div class="card">
+        <div class="row mb-6">
+            <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4 w-100">Enter The Quantity</label>
+            <div class="input-group fw-bold text-dark col-lg-8  fv-row">
+              <input #input type="text" class="form-control form-control-sm fw-bold text-dark fs-5" style="border-color: black; height: 45px;" (keyup.enter)="OnCloseModal()">
+            </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" (click)="OnCloseModal()">Show Cost</button>
+    </div>
+  </div>
+  
+  

@@ -1,0 +1,73 @@
+<div>
+  <div class="modal-header">
+    <h4 class="modal-title text-dark fw-bold text-dark fs-1">Update Application to be sent</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="card">
+      <div class="row mb-6">
+        <!-- <label class="col-lg-4 col-form-label fw-bold fs-6">Site Ids[s] : </label>
+        <div class="col-lg-8">
+          <span>{{selectedQuoteIds}}</span>
+        </div> -->
+        <form [formGroup]="changeStatusForm" novalidate="" class="form">
+          <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+            <!-- begin::Table head -->
+            <tbody>
+
+              <tr class="fw-bolder bg-light fw-bold text-dark fs-3">
+                <td>Site Ids[s] :</td>
+                <td class="selected-box">
+                  <div class="selected-quote-ids">
+                    <div *ngFor="let selectedQuoteId of selectedQuoteIds" class="quote-id fw-bold text-dark fs-3">
+                      {{ selectedQuoteId }}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              
+              <tr>
+                <td class="fw-bold text-dark fs-3">Remind Type</td>
+                <td>
+                  <select id="remind-type" formControlName="RemindType" style="font-size:10pt;width:150px;padding:4px;"
+                    class="me-5 fw-bold text-dark fs-3">
+                  <option class="fw-bold text-dark fs-3" value="V" selected>Voice</option>
+                  <option class="fw-bold text-dark fs-3" value="E">Email</option>
+                  <option class="fw-bold text-dark fs-3" value="B">Email & Voice</option>
+                  <option class="fw-bold text-dark fs-3" value="N">None</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-bold text-dark fs-3">Stop days count</td>
+                <td>
+                  <select id="remind-type" formControlName="StopDaysCount" style="font-size:10pt;width:150px;padding:4px;"
+                    class="me-5 fw-bold text-dark fs-3">
+                  <option class="fw-bold text-dark fs-3" value=-1 selected>Select</option>
+                  <option class="fw-bold text-dark fs-3" value=10>10</option>
+                  <option class="fw-bold text-dark fs-3" value=20>20</option>
+                  <option class="fw-bold text-dark fs-3" value=30>30</option>
+                  <option class="fw-bold text-dark fs-3" value=40>40</option>
+                  <option class="fw-bold text-dark fs-3" value=50>50</option>
+                  <option class="fw-bold text-dark fs-3" value=365000>Permanent Stop</option>
+                  <option class="fw-bold text-dark fs-3" value=0>Permanent Allow</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      </div>
+
+    </div>
+  </div>
+  <div class="text-center">
+    <h4 class="align-items-center" id="error-msg" style="color: brown;"*ngIf="showErrorMsg">Please Select Days to Stop</h4>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" (click)="updateStatus()">Change Status</button>
+    <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')">Close</button>
+  </div>
+</div>

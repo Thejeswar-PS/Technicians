@@ -1,0 +1,50 @@
+
+<div class="card mb-5 mb-xl-10">
+  <div id="kt_account_profile_details" class="collapse show" >
+      <form [formGroup] = "jobForm" novalidate="" class="form" >
+          <div class="card-body border-top p-9">
+              <div class="row mb-6">
+                  <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4 ">Assign Tech:</label>
+                  <div class="input-group fw-bold text-dark col-lg-8  fv-row" style="max-width: 66%;">
+                    <select multiple
+                      class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                      data-kt-select2="true"
+                      data-placeholder="Select option"
+                      data-allow-clear="true"
+                      style="font-size:10pt;width:150px;padding:4px;"
+                      formControlName="techIds"
+                    >
+                      <option class = "fw-bold text-dark me-5" *ngFor="let data of technicians" [value]="data.empID">
+                        {{data.empName}}
+                      </option>
+                    </select>
+                  </div>
+              </div>
+              <div class="row mb-6">
+                  <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Select Date & Time:	</label>
+                  <div class="col-lg-8  fv-row">
+                    <input type="date" class="form-control form-control-sm fw-bold text-dark fs-5" style="border-color: black; height: 45px;" formControlName="startDate">
+                  </div>
+              </div>
+              <div class="row mb-6">
+                  <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Add Notes:	</label>
+                  <div class="col-lg-8 fv-row">
+                    <textarea rows="10" cols="10" class="w-100" formControlName="notes"></textarea>
+                  </div>
+              </div>
+          </div>
+          <div class="card-footer d-flex justify-content-end py-6 px-9">
+              <button type="button" class="btn btn-primary" (click)="update()">
+                  Update
+              </button>
+              <button class="btn btn-light btn-active-light-primary me-2 text-dark fw-bold" (click)="cancel()"> Cancel</button>
+          </div>
+      </form>
+  </div>
+</div>
+
+
+
+
+
+

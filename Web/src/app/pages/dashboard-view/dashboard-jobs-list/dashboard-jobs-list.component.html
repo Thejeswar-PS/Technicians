@@ -1,0 +1,174 @@
+<!-- begin::Header-->
+<div class="card-header align-items-center border-0 mt-4">
+  <h3 class="card-title align-items-start flex-column">
+    <span class="fw-bolder mb-2 text-dark"> Week's Job List</span>
+    <!-- <span class="text-muted fw-bold fs-7">890,344 Sales</span> -->
+  </h3>
+</div>
+<!-- end::Header-->
+<!-- begin::Body-->
+
+<div class="card-body py-3" style=" height: 500px; overflow: auto;">
+  <!-- begin::Table container -->
+  <div class="table-max-height">
+    <!-- begin::Table -->
+    <table class="table table-row-gray-300 align-middle gs-0 gy-1" style="border-collapse: collapse;">
+      <!-- begin::Table head -->
+      <thead>
+        <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+          <th class="min-w-100px text-hover-primary" style="cursor: pointer; padding-left: 10px;"> Call Number</th>
+          <th class="min-w-100px text-hover-primary" style="cursor: pointer;">Customer Name</th>
+          <th class="min-w-100px text-hover-primary" style="cursor: pointer;">Manager</th>
+          <th class="min-w-60px text-hover-primary" style="cursor: pointer;">Date</th>
+        </tr>
+      </thead>
+      <!-- end::Table head -->
+      <!-- begin::Table body -->
+      <tbody class="text-dark mb-1 fs-5" *ngIf = "data && data.length > 0; else noData">
+        <tr *ngFor = "let quotes of data; let i = index;" >
+          
+            <td>
+              <span class="" style=" padding-left: 10px;">
+                {{quotes.callNbr}}
+              </span>
+            </td>
+            <td>
+              <span class="">
+                {{quotes.custName}}
+              </span>
+            </td>
+            <td>
+              <span class="">
+                {{ quotes.accMgr.split(' - ')[0] }} -<br>
+                {{ quotes.accMgr.split(' - ')[1] }}
+              </span>
+            </td>
+            <td>
+              <span class="">
+                {{quotes.dateStatusChanged | date: 'medium'}}
+              </span>
+            </td>
+          
+          </tr>
+
+      </tbody>
+      <!-- end::Table body -->
+      <ng-template #noData>
+        <!-- Default message when there is no data -->
+        <tr>
+          <td colspan="4" style="text-align: center; font-size: 20px !important; padding-top: 100px;">No jobs available for this Week</td>
+        </tr>
+      </ng-template>
+    </table>
+    <!-- end::Table -->
+  </div>
+  <!-- end::Table container -->
+
+
+
+
+    <!-- end::Item-->
+    <!-- begin::Item-->
+    <!-- <div class="timeline-item">
+      begin::Label
+      <div class="timeline-label fw-bolder text-gray-800 fs-6">10:00</div>
+
+      <div class="timeline-badge">
+        <i class="fa fa-genderless text-success fs-1"></i>
+      </div>
+
+      <div class="timeline-content d-flex">
+        <span class="fw-bolder text-gray-800 ps-3">AEOL meeting</span>
+      </div>
+
+    </div>
+
+    <div class="timeline-item">
+
+      <div class="timeline-label fw-bolder text-gray-800 fs-6">14:37</div>
+
+      <div class="timeline-badge">
+        <i class="fa fa-genderless text-danger fs-1"></i>
+      </div>
+
+      <div class="timeline-content fw-bolder text-gray-800 ps-3">
+        Make deposit
+        <a href="#" class="text-primary">USD 700</a>. to ESL
+      </div>
+
+    </div>
+
+    <div class="timeline-item">
+
+      <div class="timeline-label fw-bolder text-gray-800 fs-6">16:50</div>
+
+      <div class="timeline-badge">
+        <i class="fa fa-genderless text-primary fs-1"></i>
+      </div>
+
+      <div class="timeline-content fw-mormal text-muted ps-3">
+        Indulging in poorly driving and keep structure keep great
+      </div>
+
+    </div>
+
+    <div class="timeline-item">
+
+      <div class="timeline-label fw-bolder text-gray-800 fs-6">21:03</div>
+
+      <div class="timeline-badge">
+        <i class="fa fa-genderless text-danger fs-1"></i>
+      </div>
+
+      <div class="timeline-content fw-bold text-gray-800 ps-3">
+        New order placed
+        <a href="#" class="text-primary">#XF-2356</a>.
+      </div>
+
+    </div>
+
+    <div class="timeline-item">
+
+      <div class="timeline-label fw-bolder text-gray-800 fs-6">16:50</div>
+
+      <div class="timeline-badge">
+        <i class="fa fa-genderless text-primary fs-1"></i>
+      </div>
+
+      <div class="timeline-content fw-mormal text-muted ps-3">
+        Indulging in poorly driving and keep structure keep great
+      </div>
+
+    </div>
+
+    <div class="timeline-item">
+
+      <div class="timeline-label fw-bolder text-gray-800 fs-6">21:03</div>
+
+      <div class="timeline-badge">
+        <i class="fa fa-genderless text-danger fs-1"></i>
+      </div>
+
+      <div class="timeline-content fw-bold text-gray-800 ps-3">
+        New order placed
+        <a href="#" class="text-primary">#XF-2356</a>.
+      </div>
+
+    </div>
+
+    <div class="timeline-item">
+
+      <div class="timeline-label fw-bolder text-gray-800 fs-6">10:30</div>
+
+      <div class="timeline-badge">
+        <i class="fa fa-genderless text-success fs-1"></i>
+      </div>
+      <div class="timeline-content fw-mormal text-muted ps-3">
+        Finance KPI Mobile app launch preparion meeting
+      </div>
+    </div> -->
+    <!-- end::Item-->
+  
+  <!-- end::Timeline-->
+</div>
+<!-- end: Card Body-->

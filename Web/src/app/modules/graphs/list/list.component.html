@@ -1,0 +1,225 @@
+<!-- begin::Header -->
+<div class="card" style="min-width: 90vw;">
+  <div class="card-body border-0 pt-5">
+
+    <form [formGroup]="quotefilterForm" novalidate="" class="form">
+      <div class="d-flex">
+      <table>
+        <tr>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <select id="quoteAccMgrs" formControlName="AccountManager" style="font-size:10pt;width:150px;padding:4px;"
+              class="me-5 text-dark fw-bold fs-5">
+              <option class = "fw-bold mb-1 fs-5" value="A" selected>All</option>
+              <option class = "fw-bold mb-1 fs-5" *ngFor="let mgr of accountManagers" [value]="mgr.text">
+                {{mgr.text}}
+              </option>
+            </select>
+          </td>
+          
+        </tr>
+      </table>
+      <table>
+        <tr>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Date:</label>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="input-group">
+              <!-- Date Picker -->
+              <input type="date" class="form-control text-dark fw-bold mb-1 fs-5" style="font-size:10pt;width:150px;padding:4px;"
+              placeholder="Select a date" id="datepicker" [value]="formattedDate" (keyup.enter)="search()">
+            
+              <button class="btn btn-primary" style="font-size:10pt;width:75px;padding:4px;" 
+              type="button" id="searchButton" (click)="search()">Search</button>
+              
+            </div>
+          </td>
+          
+        </tr>
+      </table>
+      </div>
+    </form>
+  </div>
+  
+  <h1 class="text-center" style="color: #1aabea;"> Daily Quotes Summary : {{formattedDate.slice(5,7)}}/{{formattedDate.slice(8,10)}}/{{formattedDate.slice(0,4)}} </h1>
+</div>
+
+
+
+
+
+<!-- table main -->
+<div class="card card-xxl-stretch">
+  <div class="d-flex">
+  <div class="card-body py-3 d-flex align-items-center justify-content-center">
+    <!-- begin::Table container -->
+      <!-- begin::Table -->
+      <table class="table  table-row-gray-300 align-middle gs-0 gy-4" *ngIf="Type && Type.length > 0"
+        style="border: 4px solid #40B4E5; padding: 10px; margin-left: 10px;">
+        <!-- begin::Table head -->
+        
+        <!-- end::Table head -->
+        <!-- begin::Table body -->
+        <tbody>
+
+          <tr *ngFor="let quotes of quotesList.quoteAmountSummaries; let i = index;">
+            
+            <td>
+              <span class="fw-bolder badge badge-light-primary mb-1 fs-3" style="margin-right: 40px;">{{quotes.quoteType}}</span>
+            </td>
+            <td>
+              <span class="fw-bold fs-3" style="margin-right: 40px;">{{quotes.quoteCount}}</span>
+            </td>
+            <td>
+              <span class=" fs-3" style="margin-right: 10px;">{{quotes.quoteAmount | currency: 'USD'}}</span>
+            </td>
+            
+            <!-- <td>
+
+            </td> -->
+            
+            
+
+          </tr>
+
+
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+      
+    
+    <!-- end::Table container -->
+  </div>
+  <div class="card-body py-3 d-flex align-items-center justify-content-center">
+    <!-- begin::Table container -->
+      <!-- begin::Table -->
+      <table class="table align-middle gs-0 gy-4" *ngIf="Type && Type.length > 0"
+        style="border: 4px solid #40B4E5; padding: 10px;margin-right: 10px;">
+        <!-- begin::Table head -->
+        
+        <!-- end::Table head -->
+        <!-- begin::Table body -->
+        <tbody>
+
+          <tr *ngFor="let quotes of quotesList.quoteTypeSummaries; let i = index;">
+            
+            <td>
+              <span class="fw-bolder badge badge-light-primary mb-1 fs-3" style="margin-right: 40px;">{{quotes.quoteType}}</span>
+            </td>
+            <td>
+              <span class="fs-3 fw-bold" style="margin-right: 40px;">{{quotes.quoteCount}}</span>
+            </td>
+            <td>
+              <span class="fs-3" style="margin-right: 40px;">{{quotes.quoteAmount | currency: 'USD'}}</span>
+            </td>
+            <td>
+              <span class="fs-3" style="margin-right: 10px;">{{quotes.quotePercent | percent:'1.2-2'}}</span>
+            </td>
+            
+            <!-- <td>
+
+            </td> -->
+            
+            
+
+          </tr>
+
+
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+      
+    
+    <!-- end::Table container -->
+  </div>
+  </div>
+  <h1 class="text-center" style="color: #1aabea;"> Account Manager Quotes Summary</h1>
+  <div class="card-body py-3 d-flex align-items-center justify-content-center">
+    <!-- begin::Table container -->
+      <!-- begin::Table -->
+      <table class="table  table-row-gray-300 align-middle gs-0 gy-4" *ngIf="Type && Type.length > 0"
+        style="border: 4px solid #40B4E5; padding: 10px; margin-left: 10px;">
+        <!-- begin::Table head -->
+        <thead>
+          <tr class="fw-bolder" style="color: white; background-color: #1aabea;">
+            <th class="min-w-70px fs-3" style="padding-left: 5px;">Account Manager</th>
+            <th class="min-w-70px fs-3">Sent Quotes</th>
+            <th class="min-w-70px fs-3">Amount</th>
+            <th class="min-w-70px fs-3">Viewed Quotes</th>
+            <th class="min-w-70px fs-3">Amount</th>
+            <th class="min-w-70px fs-3">Approved Quotes</th>
+            <th class="min-w-70px fs-3">Amount</th>
+            <th class="min-w-70px fs-3">Declined Quotes</th>
+            <th class="min-w-70px fs-3">Amount</th>
+          </tr>
+        </thead>
+        
+        <!-- end::Table head -->
+        <!-- begin::Table body -->
+        <tbody>
+
+          <tr *ngFor="let quotes of quotesList.quoteAMSummaries; let i = index;">
+            
+            <td>
+              <span class="fw-bolder badge badge-light-primary mb-1 fs-3" style="margin-right: 30px;">{{quotes.quoteOwner}}</span>
+            </td>
+            <td>
+              <span class=" fs-3"style="padding-left: 30px;">{{quotes.sentQ}}</span>
+            </td>
+            <td>
+              <span class=" fs-3">{{quotes.sentAmount | currency: 'USD'}}</span>
+            </td>
+            <td>
+              <span class=" fs-3"style="padding-left: 30px;">{{quotes.viewed}}</span>
+            </td>
+            <td>
+              <span class=" fs-3">{{quotes.viewedAmount | currency: 'USD'}}</span>
+            </td>
+            <td>
+              <span class=" fs-3" style="padding-left: 30px;">{{quotes.approved}}</span>
+            </td>
+            <td>
+              <span class=" fs-3">{{quotes.approvedAmount | currency: 'USD'}}</span>
+            </td>
+            <td>
+              <span class=" fs-3"style="padding-left: 30px;">{{quotes.declined}}</span>
+            </td>
+            <td>
+              <span class=" fs-3">{{quotes.declinedAmount | currency: 'USD'}}</span>
+            </td>
+            
+            <!-- <td>
+
+            </td> -->
+            
+            
+
+          </tr>
+
+
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+      
+    
+    <!-- end::Table container -->
+  </div>
+</div>
+
+
+<!-- <app-pagination *ngIf = "paginationObj" [pageNum] = "paginationObj.pageNumber" [pageSize] = "paginationObj.pageSize"
+  [totalRecords] ="paginationObj.totalRecordsCount"  (updatePagination) = "updatePagination($event)">
+
+  </app-pagination> -->
+
+<!-- begin::Body -->

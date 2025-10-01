@@ -1,0 +1,184 @@
+
+<div class="card" style="min-width: 90vw;">
+  <div class="card-body border-0 pt-5">
+
+    <form [formGroup]="jobFilterForm" novalidate="" class="form">
+      <table>
+        <tr>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+          </td>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Status:</label>
+          </td>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Job Type: </label>
+          </td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>
+            <select
+              class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+              data-kt-select2="true"
+              data-placeholder="Select option"
+              data-allow-clear="true"
+              formControlName="ownerID"
+              style="font-size:10pt;width:150px;padding:4px;"
+            >
+              <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
+              <option class = "fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.empName">
+                {{mgr.empName}}
+              </option>
+            </select>
+          </td>
+          <td>
+            <select
+              class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+              data-kt-select2="true"
+              data-placeholder="Select option"
+              data-allow-clear="true"
+              formControlName="status"
+              style="font-size:10pt;width:150px;padding: 4px;"
+            >
+            <option class = "fw-bold text-dark me-5" value="ALL">All</option>
+            <option class = "fw-bold text-dark me-5" value="RS">Ready to Send</option>
+            <option class = "fw-bold text-dark me-5" value="IP">In Progress</option>
+            <option class = "fw-bold text-dark me-5" value="SE">Sent Reports</option>
+            <option class = "fw-bold text-dark me-5" value="EM">Email Missing</option>
+            <option class = "fw-bold text-dark me-5" value="CN">Cancelled</option>
+          </select>
+          </td>
+          <td>
+            <div class="col-lg-12">
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                formControlName="jobType"
+                style="font-size:10pt;width:150px;padding: 4px;"
+                >
+
+                <option class = "fw-bold text-dark me-5" value="0">Active</option>
+                <option class = "fw-bold text-dark me-5" value="1">Archive</option>
+              </select>
+            </div>
+          </td>
+          <td><button type="button" class="btn btn-primary me-3" (click)="importAndUpdate()">Import and Update</button></td>
+          <td><button type="button" class="btn btn-primary me-3" [disabled]="selectedJobIds.length <= 0" (click)="removeAndArchive()">Remove and Archive</button></td>
+          <td><button type="button" class="btn btn-primary" [disabled]="selectedJobIds.length <= 0" (click)="readyToSend()">Ready To Send</button></td>
+        </tr>
+      </table>
+    </form>
+    </div>
+</div>
+  <div class="card card-xxl-stretch">
+
+  <div class="card-body py-3">
+    <div class="table-responsive" style="height: 740px; overflow-x: auto;">
+
+      <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-5" style="text-align: center;">
+
+        <thead>
+          <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium">
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('callNbr')" style="font-size: medium !important; cursor: pointer; padding-left: 1rem;">Job Number<i class="fa" [ngClass]="sortIcon('callNbr')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('custNmbr')" style="font-size: medium !important; cursor: pointer;">Site Id <i class="fa" [ngClass]="sortIcon('custNmbr')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('name')" style="font-size: medium !important; cursor: pointer;">Name <i class="fa" [ngClass]="sortIcon('name')"></i></th>
+            <th class="min-w-250px text-hover-primary" (click)="sortTable('email')" style="font-size: medium !important; cursor: pointer;">Email<i class="fa" [ngClass]="sortIcon('email')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('status')" style="font-size: medium !important; cursor: pointer;">Job Status<i class="fa" [ngClass]="sortIcon('status')"></i></th>
+            <th class="min-w-200px text-hover-primary" (click)="sortTable('owner')" style="font-size: medium !important; cursor: pointer;">Account Manager<i class="fa" [ngClass]="sortIcon('owner')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('svcDescr')" style="font-size: medium !important; cursor: pointer;">Service Type <i class="fa" [ngClass]="sortIcon('svcDescr')"></i></th>
+            <th class="min-w-100px text-hover-primary" (click)="sortTable('assetTag')" style="font-size: medium !important; cursor: pointer;">Asset Tag<i class="fa" [ngClass]="sortIcon('assetTag')"></i></th>
+            <th class="min-w-100px text-hover-primary" (click)="sortTable('serialNo')" style="font-size: medium !important; cursor: pointer;">Serial No<i class="fa" [ngClass]="sortIcon('serialNo')"></i></th>
+            <th class="min-w-80px text-hover-primary" (click)="sortTable('age')" style="font-size: medium !important; cursor: pointer;">Age<i class="fa" [ngClass]="sortIcon('age')"></i></th>
+            <th class="min-w-60px">
+              <input
+                class="form-check-input widget-9-check"
+                style="border:solid; border-color: lightblue; cursor: pointer;"
+                type="checkbox"
+                [checked]="selectedJobIds.length === jobList.length"
+                (click)="selectAllRows($event)"
+              />
+            </th>
+          </tr>
+
+        </thead>
+
+        <tbody class="text-dark mb-1 fs-5" style="text-align: center; font-family:Roboto condensed;" *ngIf = "jobList && jobList.length > 0">
+          <ng-container  *ngFor = "let quotes of jobList; let i = index;" >
+            <tr [ngStyle]="{ 'background-color': isQuoteSelected(quotes) ? 'lightyellow' : 'inherit' }">
+            <!--<tr [ngClass]="i % 2 === 0 ? 'bg-row-opacity' : '' ">-->
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.callNbr}}
+                </span>
+              </td>
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.custNmbr}}
+                </span>
+              </td>
+
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.name}}
+                </span>
+              </td>
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="" style="width: 200px;">
+                  <div *ngFor="let item of splitString(quotes.email)">
+                    <span class="" style="max-width: 400px;"> {{item}}</span>
+                  </div>
+                </span>
+              </td>
+              <td style="padding-left: 13px;" [style.backgroundColor]="getColorByStatus(quotes.status)"[style.color]="'white'"  style="font-size: medium !important;">
+                <span class="">
+                  {{quotes.status}}
+                </span>
+              </td>
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.owner}}
+                </span>
+              </td>
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.svcDescr}}
+                </span>
+              </td>
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.assetTag}}
+                </span>
+              </td>
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.serialNo}}
+                </span>
+              </td>
+              <td style="padding-left: 13px; font-size: medium !important;">
+                <span class="">
+                  {{quotes.age}}
+                </span>
+              </td>
+              <td style="padding-left: 13px;">
+                <input
+                class="form-check-input widget-9-check"
+                style="border:solid; border-color: lightblue; cursor: pointer;"
+                type="checkbox"
+                [checked]="selectedJobIds.includes(quotes.callNbr)"
+                [disabled]="getEmpLevel() !== 1 && (quotes.status === 'Email Missing' || quotes.status === 'In Progress' || !validateEmails(splitString(quotes.email)))"
+                (click)="rowSelect(quotes)"
+                />
+              </td>
+
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  </div>
+
+

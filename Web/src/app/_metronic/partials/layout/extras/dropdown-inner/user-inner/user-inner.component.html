@@ -1,0 +1,32 @@
+<ng-container *ngIf="user$ | async as _user">
+  <div class="menu-item px-3">
+    <div class="menu-content d-flex align-items-center px-3">
+      <!-- <div class="symbol symbol-50px me-5">
+        <img alt="Logo" [src]="_user.pic" />
+      </div> -->
+
+      <div class="d-flex flex-column">
+        <div class="fw-bolder d-flex align-items-center fs-4">
+          <!-- {{ _user.empName }} -->
+          <!-- <span class="badge badge-light-success fw-bolder fs-8 px-2 py-1 ms-2"
+            >Pro</span -->
+          <!-- > -->
+        </div>
+        <!-- <a class="fw-bold text-muted text-hover-primary fs-7 cursor-pointer">
+          {{ _user.email }}
+        </a> -->
+      </div>
+    </div>
+  </div>
+
+
+  <div class="menu-item px-5 my-1">
+    <a routerLink="auth/change-password" class="menu-link text-dark cursor-pointer fw-bold text-darker fs-4">
+      Change Password
+    </a>
+  </div>
+
+  <div class="menu-item px-5">
+    <a (click)="logout()" class="menu-link px-5 text-dark cursor-pointer fw-bold fs-4"> Sign Out </a>
+  </div>
+</ng-container>

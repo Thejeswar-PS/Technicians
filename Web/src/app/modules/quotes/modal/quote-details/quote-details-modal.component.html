@@ -1,0 +1,43 @@
+<div>
+  <div class="modal-header">
+    <h4 class="modal-title text-dark fw-bold text-dark fs-2">Activity log for Job ID: {{jobId}}</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+          <span aria-hidden="true">&times;</span>
+        </button>
+  </div>
+  <div class="modal-body">
+    <div class="card">
+        <!-- begin::Item -->
+        <div class="d-flex align-items-center bg-light-info rounded p-5 mb-7" *ngFor="let details of jobDetails">
+          <!-- begin::Icon -->
+          <!-- <span class="svg-icon svg-icon-warning me-5">
+            <span
+              [inlineSVG]="'./assets/media/icons/duotune/abstract/abs027.svg'"
+              class="svg-icon svg-icon-1"
+            ></span>
+          </span> -->
+          <!-- end::Icon -->
+          <!-- begin::Title -->
+          <div class="flex-grow-1 me-2">
+            <span>
+              <!-- <a href="#" class="fw-bolder text-gray-800 text-hover-primary text-dark fw-bold text-dark fs-3">
+                {{details.status}}
+              </a> -->
+              <span class= "text-dark fw-bold text-dark fs-4" style="text-align: right;"> {{details.changedBY}} - {{details.changedOn | date:'short'}}</span>
+            </span>
+            
+            <span class="fw-bold d-block fs-4" [innerHTML]="details.comments"></span>
+            <!-- <span class="fw-bold d-block text-dark fw-bold text-dark fs-4">{{details.message}}</span> -->
+          </div>
+          <!-- end::Title -->
+          <!-- begin::Lable -->
+          <!-- <span class="fw-bolder text-warning py-1">+28%</span> -->
+          <!-- end::Lable -->
+        </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')">Close</button>
+  </div>
+</div>
+

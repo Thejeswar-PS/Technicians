@@ -1,0 +1,52 @@
+<div class="modal-custom">
+  <div class="modal-header">
+    <h4 class="modal-title text-dark fw-bold text-dark fs-1">Update Reminders</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="card">
+      <div class="row mb-6">
+        <label class="col-lg-4 text-dark fs-3">Customer Site[s] : </label>
+        <div class="col-lg-8">
+            <span class=" text-dark fw-bold text-dark fs-3">{{selectedSites}}</span>
+        </div>
+    </div>
+      <div class="row mb-6">
+        <label class="col-lg-4 fw-bold text-dark fs-3">Days to Stop Reminders :</label>
+        <div class="col-lg-8">
+            <select class="form-select form-select-solid form-select-lg text-dark fw-bold text-dark fs-3" name="quoteOwner" [(ngModel)]="daysToStop">
+              <option class="text-dark fw-bold text-dark fs-3" value="" selected>Select</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="10">10</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="20">20</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="30">30</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="40">40</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="50">50</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="365000">Permanent Stop</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="0">Permanent Allow</option>
+          </select>
+        </div>
+    </div>
+    <div class="row mb-6">
+      <label class="col-lg-4 fw-bold text-dark fs-3">Reminder Type :</label>
+      <div class="col-lg-8">
+          <select class="form-select form-select-solid form-select-lg text-dark fw-bold text-dark fs-3" name="type" [(ngModel)]="type">
+            <option class="text-dark fw-bold text-dark fs-3" value="B">Both</option>
+            <option class="text-dark fw-bold text-dark fs-3" value="V">Voice Reminder</option>
+            <option class="text-dark fw-bold text-dark fs-3" value="E">Email Reminder</option>
+            <option class="text-dark fw-bold text-dark fs-3" value="N">None</option>
+        </select>
+      </div>
+  </div>
+    </div>
+  </div>
+  <div class="text-center">
+    <h4 class="align-items-center" id="error-msg" style="color: brown;"*ngIf="showErrorMsg">Please Select a Valid Days to Stop</h4>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" (click)="updateStatus()">Update</button>
+    <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')">Close</button>
+  </div>
+</div>
+

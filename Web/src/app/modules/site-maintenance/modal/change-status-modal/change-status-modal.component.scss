@@ -1,0 +1,9 @@
+.selected-quote-ids {
+    max-height: 100px; /* Set a maximum height for the scrollable div */
+    overflow-y: auto; /* Add a vertical scrollbar if content exceeds the height */
+    border: 1px solid #ccc; /* Add a border for better visibility */
+    padding: 5px; /* Add some padding for spacing */
+  }
+  .quote-id {
+    margin-bottom: 5px; /* Add spacing between quote IDs */
+  }

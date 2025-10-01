@@ -1,0 +1,160 @@
+<!-- begin::Header -->
+<div class="table-container-width">
+
+  <div class="card card-xxl-stretch">
+    <div class="card" style="min-width: 90vw;">
+      <div class="card-body border-0 pt-5">
+        <div *ngIf="showHeaderName" style="display: flex; justify-content: center; align-items: center;">
+          <div class="min-w-100px me-5 fw-bold mb-1 fs-1">{{ displayQueryType }}</div>
+        </div>
+        <form [formGroup]="jobFilterForm" novalidate="" class="form">
+          <table>
+            <tr>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-3">Account Manager</label>
+              <td>
+                <select
+                  class="form-select form-select-solid fw-bold text-dark fs-4 me-5"
+                  data-kt-select2="true"
+                  data-placeholder="Select option"
+                  data-allow-clear="true"
+                  formControlName="ownerId"
+                  style="font-size:10pt;width:150px;padding:4px;"
+                >
+                  <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
+                  <option class = "fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.empName.trim()">
+                    {{mgr.empName}}
+                  </option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-3">Date Range</label>
+              <td>
+                <select
+                  class="form-select form-select-solid fw-bold text-dark fs-4 me-5"
+                  data-kt-select2="true"
+                  data-placeholder="Select option"
+                  data-allow-clear="true"
+                  formControlName="yearType"
+                  style="font-size:10pt;width:150px;padding:4px;"
+                >
+                <option class="form-label fw-bold text-darker mb-1 fs-5" value="ALL">All</option>
+                <option class="form-label fw-bold text-darker mb-1 fs-5" selected value="W">Current Week</option>
+                <option class="form-label fw-bold text-darker mb-1 fs-5" value="M">Current Month</option>
+                <option class="form-label fw-bold text-darker mb-1 fs-5" value="Q">Current Quarter</option>
+                <option class="form-label fw-bold text-darker mb-1 fs-5" value="CY">Current Year</option>
+                <option class="form-label fw-bold text-darker mb-1 fs-5" value="PY">Previous Year</option>
+                </select>
+              </td>
+            </tr>
+          </table>
+        </form>
+        </div>
+    </div>
+  <div class="card-body py-3">
+    <!-- begin::Table container -->
+    <div class="table-responsive table-max-height" style="height: 740px; overflow-x: auto;">
+      <!-- begin::Table -->
+      <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" style="text-align: center;">
+        <!-- begin::Table head -->
+        <thead>
+          <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+            <th class="min-w-100px text-hover-primary ps-4" (click)="sortTable('jobID')" style="font-size: medium !important; cursor: pointer;">Job Id <i class="fa" [ngClass]="sortIcon('jobID')"></i></th>
+            <th class="min-w-80px text-hover-primary" (click)="sortTable('custNmbr')" style="font-size: medium !important; cursor: pointer;">Site Id <i class="fa" [ngClass]="sortIcon('custNmbr')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('custName')" style="font-size: medium !important; cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custName')"></i></th>
+            <th class="min-w-50px text-hover-primary" (click)="sortTable('city')" style="font-size: medium !important; cursor: pointer;">City<i class="fa" [ngClass]="sortIcon('city')"></i></th>
+            <th class="min-w-50px text-hover-primary" (click)="sortTable('state')" style="font-size: medium !important; cursor: pointer;">State<i class="fa" [ngClass]="sortIcon('state')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('status')" style="font-size: medium !important; cursor: pointer;">Status <i class="fa" [ngClass]="sortIcon('status')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('svcDescr')" style="font-size: medium !important; cursor: pointer;">Service Type <i class="fa" [ngClass]="sortIcon('svcDescr')"></i></th>
+            <th class="min-w-100px text-hover-primary" (click)="sortTable('accMgr')" style="font-size: medium !important; cursor: pointer;">AM<i class="fa" [ngClass]="sortIcon('accMgr')"></i></th>
+            <!--<th class="min-w-150px text-hover-primary" (click)="sortTable('startDt')" style="font-size: medium !important; cursor: pointer;">Start Date<i class="fa" [ngClass]="sortIcon('startDt')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('modifiedOn')" style="font-size: medium !important; cursor: pointer;">Modified On<i class="fa" [ngClass]="sortIcon('startDate')"></i></th>-->
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('responseDate')" style="font-size: medium !important; cursor: pointer;">{{ responseDateLabel }}<i class="fa" [ngClass]="sortIcon('responseDate')"></i></th>
+            <th class="min-w-150px text-hover-primary" (click)="sortTable('changeAge')" style="font-size: medium !important; cursor: pointer;">Age <i class="fa" [ngClass]="sortIcon('changeAge')"></i></th>
+          </tr>
+
+        </thead>
+        <!-- end::Table head -->
+        <!-- begin::Table body -->
+        <tbody class="text-dark mb-1 fs-5" style="text-align: center; font-family:Roboto condensed; font-size: medium !important;" *ngIf = "jobList && jobList.length > 0">
+
+          <tr [ngClass]="i % 2 === 0 ? 'bg-row-opacity' : '' " *ngFor = "let quotes of jobList; let i = index;">
+            <td class="ps-4" style="font-size: medium !important;">
+              {{quotes.jobID}}
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.custNmbr}}
+              </span>
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.custName}}
+              </span>
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.city}}
+              </span>
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.state}}
+              </span>
+            </td>
+            <td style="padding-left: 13px;" [style.backgroundColor]="getColorByStatus(quotes.status)"[style.color]="'white'"  style="font-size: medium !important;">
+              <span class="" style="font-size: medium !important;">
+                {{quotes.status}}
+              </span>
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.svcDescr}}
+              </span>
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.accMgr}}
+              </span>
+            </td>
+            <!--
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.startDt | date}}
+              </span>
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.modifiedOn | date}}
+              </span>
+            </td>
+            -->
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.responseDate | date}}
+              </span>
+            </td>
+            <td>
+              <span class="" style="font-size: medium !important;">
+                {{quotes.changeAge}}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+    </div>
+    <!-- end::Table container -->
+  </div>
+  </div>
+
+
+  <!-- <app-pagination *ngIf = "paginationObj" [pageNum] = "paginationObj.pageNumber" [pageSize] = "paginationObj.pageSize"
+  [totalRecords] ="paginationObj.totalRecordsCount"  (updatePagination) = "updatePagination($event)">
+
+  </app-pagination> -->
+
+  <!-- begin::Body -->
+</div>
+

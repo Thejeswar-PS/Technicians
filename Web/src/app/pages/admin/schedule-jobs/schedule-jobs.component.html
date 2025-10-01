@@ -1,0 +1,241 @@
+<div class="table-container-width">
+
+  <div class="card">
+    <div class="card-body border-0 pt-5">
+
+      <form [formGroup]="filterForm" novalidate="" class="form">
+        <table>
+          <tr>
+            <td>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+            </td>
+            <td>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Customers:</label>
+            </td>
+            <td>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Sites:</label>
+            </td>
+            <td></td>
+          </tr>
+          <tr class="form-fields-container">
+
+            <td>
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                formControlName="ownerId"
+                style="font-size:10pt;width:150px;padding: 4px;"
+              >
+              <option class = "fw-bold text-dark me-5" value="All">ALL</option>
+              <option class = "fw-bold text-dark me-5" *ngFor="let data of accountManagers" [value]="data.empID">{{data.empName}}</option>
+            </select>
+            </td>
+            <td>
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                style="font-size:10pt;width:150px;padding:4px;"
+                formControlName="customer"
+               >
+                <option class = "fw-bold text-dark me-5" *ngFor="let data of toBeScheduledCustomers" [value]="data">
+                  {{data}}
+                </option>
+              </select>
+            </td>
+            <td>
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                style="font-size:10pt;width:150px;padding:4px;"
+                formControlName="customerId"
+               >
+                <option class = "fw-bold text-dark me-5" *ngFor="let data of customerIds" [value]="data">
+                  {{data}}
+                </option>
+              </select>
+            </td>
+          </tr>
+        </table>
+      </form>
+      </div>
+
+      <!-- form -->
+      <div id="kt_account_profile_details" class="collapse show" >
+        <form [formGroup] = "jobForm" novalidate="" class="form" >
+            <div class="card-body border-top p-9">
+                <div class="row mb-6 d-flex justify-content-between">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4 ">Assign Tech:</label>
+                    <div class="fw-bold text-dark col-lg-8  fv-row">
+                      <select multiple
+                        class="form-select form-select-solid fw-bold text-dark fs-5 me-5 form-control"
+                        data-kt-select2="true"
+                        data-placeholder="Select option"
+                        data-allow-clear="true"
+                        formControlName="techIds"
+                        style="height: 200px;"
+                      >
+                        <option class = "fw-bold text-dark me-5" *ngFor="let data of technicians" [value]="data.empID">
+                          {{data.empName}}
+                        </option>
+                      </select>
+                      <span class="text-danger" *ngIf="(jobForm.get('techIds')?.invalid && jobForm.get('techIds')?.touched) ||
+                            (jobForm.get('techIds')?.untouched && isSubmitted)">This field is required
+                      </span>
+                    </div>
+                </div>
+                <div class="row mb-6 d-flex justify-content-between">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Select Date & Time:	</label>
+                    <div class="col-lg-8  fv-row">
+                      <input type="datetime-local" class="form-control-sm fw-bold text-dark fs-5 w-full" style="border-color: black; height: 45px;" formControlName="startDate">
+                      <span class="text-danger" *ngIf="(jobForm.get('startDate')?.invalid && jobForm.get('startDate')?.touched) ||
+                                   (jobForm.get('startDate')?.untouched && isSubmitted)"> This field is required
+                      </span>
+                    </div>
+                </div>
+                <div class="row mb-6 d-flex justify-content-between">
+                    <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Add Notes:	</label>
+                    <div class="col-lg-8 fv-row">
+                      <textarea rows="2" cols="10" class="w-100" formControlName="notes"></textarea>
+                      <span class="text-danger" *ngIf="(jobForm.get('notes')?.invalid && jobForm.get('notes')?.touched) ||
+                        (jobForm.get('notes')?.untouched && isSubmitted)">This field is required
+                    </span>
+                    </div>
+
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-end py-6 px-9">
+                <button type="button" class="btn btn-primary" [disabled]="selectedJobIds.length === 0"  (click)="updateJobs()">
+                  Update & Schedule Jobs
+                </button>
+                <!-- <button type="button" class="btn btn-primary" [disabled]="selectedJobIds.length <= 0 && selectedJobIds.length > 1" (click)="update()">
+                  Schedule Single Jobs
+                </button> -->
+            </div>
+        </form>
+    </div>
+
+    <!-- table -->
+    <div class="card card-xxl-stretch">
+      <div class="card-body py-3">
+        <!-- begin::Table container -->
+        <div class="table-max-height">
+          <!-- begin::Table -->
+          <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" style="text-align: center;">
+            <!-- begin::Table head -->
+            <thead>
+              <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+                <th class="min-w-100px text-hover-primary" (click)="sortTable('callNbr')" style="cursor: pointer; padding-left: 1rem;">Job No<i class="fa fa-sort" [ngClass]="sortIcon('callNbr')"></i></th>
+                <th class="min-w-150px text-hover-primary" (click)="sortTable('custNmbr')" style="cursor: pointer;">Site Id<i class="fa fa-sort" [ngClass]="sortIcon('custNmbr')"></i></th>
+                <th class="min-w-150px text-hover-primary" (click)="sortTable('custname')" style="cursor: pointer;">Customer Name<i class="fa fa-sort" [ngClass]="sortIcon('custname')"></i></th>
+                <th class="min-w-150px text-hover-primary" (click)="sortTable('techid')" style="cursor: pointer;">TechIds<i class="fa fa-sort" [ngClass]="sortIcon('techid')"></i></th>
+                <th class="min-w-100px text-hover-primary" (click)="sortTable('cntcprsn')" style="cursor: pointer;">Contact Name<i class="fa fa-sort" [ngClass]="sortIcon('cntcprsn')"></i></th>
+                <th class="min-w-100px text-hover-primary" (click)="sortTable('address')" style="cursor: pointer;">Address<i class="fa fa-sort" [ngClass]="sortIcon('address')"></i></th>
+                <th class="min-w-150px text-hover-primary" (click)="sortTable('startDt')" style="cursor: pointer;">Start Date<i class="fa fa-sort" [ngClass]="sortIcon('startDt')"></i></th>
+                <th class="min-w-200px text-hover-primary" (click)="sortTable('notes')" style="cursor: pointer;">Notes<i class="fa fa-sort" [ngClass]="sortIcon('notes')"></i></th>
+                <th class="min-w-25px" style="padding-right: 1rem;">Edit</th>
+                <th class="min-w-100px">
+                  <input
+                  class="form-check-input widget-9-check"
+                  style="border:solid; border-color: lightblue; cursor: pointer;"
+                  type="checkbox"
+                  [checked]="selectedJobIds.length === jobs.length && jobs.length !== 0"
+                  (click)="selectAllRows($event)"
+                />
+                </th>
+              </tr>
+
+            </thead>
+            <!-- end::Table head -->
+            <!-- begin::Table body -->
+            <tbody class="text-dark mb-1 fs-5" style="text-align: center; font-family: Roboto condensed;" *ngIf = "jobs && jobs.length > 0">
+              <ng-container *ngFor = "let job of jobs; let i = index;">
+                <tr [ngClass]="i % 2 === 0 ? 'bg-row-opacity' : '' "  [ngStyle]="{ 'background-color': isQuoteSelected(job) ? 'lightyellow' : 'inherit' }">
+                  <td>
+                    <span class="">
+                      {{job.callNbr}}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="">
+                      {{job.custNmbr}}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="">
+                      {{job.custname}}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="">
+                      {{job.techid}}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="">
+                      {{job.cntcprsn}}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="">
+                      {{job.address}}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="">
+                      {{job.startDt}}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="">
+                      {{job.notes}}
+                    </span>
+                  </td>
+                  <td>
+                    <i (click)="edit(job)"
+                      class="fas fa-edit"
+                    ></i>
+                  </td>
+                  <td>
+                    <input
+                    class="form-check-input widget-9-check"
+                    style="border:solid; border-color: lightblue; cursor: pointer; height: 1.4rem; width: 1.4rem"
+                    type="checkbox"
+                    [checked]="selectedJobIds.includes(job.callNbr.trim())"
+                    (click)="rowSelect(job)"
+                        />
+                  </td>
+
+                </tr>
+              </ng-container>
+
+            </tbody>
+            <tbody class="text-dark fs-2" style="text-align: center; font-family: Roboto condensed;" *ngIf = "jobs && jobs.length === 0">
+              <tr>
+                <td colspan="100%" style="text-align: center; font-family: 'Roboto Condensed', sans-serif; padding: 20px;">
+                  <div style="display: flex; justify-content: center; align-items: center; height: 100%; width: 100%;">
+                    <span class="text-dark fs-1">No jobs found</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <!-- end::Table body -->
+          </table>
+          <!-- end::Table -->
+        </div>
+        <!-- end::Table container -->
+      </div>
+      </div>
+  </div>
+</div>
+
+
+
+
+
+

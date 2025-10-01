@@ -1,0 +1,138 @@
+<!-- begin::Header -->
+<div class="card" style="min-width: 90vw;">
+  <div class="card-body border-0 pt-5">
+
+    <form [formGroup]="quotefilterForm" novalidate="" class="form fw-bolder">
+      <table>
+        <tr>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <select id="quoteAccMgrs" formControlName="AccountManager" style="font-size:10pt;width:150px;padding:4px;"
+              class="me-5 text-dark fw-bold fs-5">
+              <option class = "fw-bold mb-1 fs-5" value="A" selected>All</option>
+              <option class = "fw-bold mb-1 fs-5" *ngFor="let mgr of accountManagers" [value]="mgr.text">
+                {{mgr.text}}
+              </option>
+            </select>
+          </td>
+          
+        </tr>
+      </table>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+<!-- table main -->
+<div class="card card-xxl-stretch">
+  
+  <div class="card-body py-3">
+    <!-- begin::Table container -->
+    <div class="table-responsive">
+      <!-- begin::Table -->
+      <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" *ngIf="Type && Type.length > 0">
+        <!-- begin::Table head -->
+        <thead>
+
+          <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('quoteID')"style="cursor: pointer;">Quote Id <i class="fa" [ngClass]="sortIcon('quoteID')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('custnmbr')"style="cursor: pointer;">Site Id <i class="fa" [ngClass]="sortIcon('custnmbr')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('custname')"style="cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custname')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('quoteStatus')"style="cursor: pointer;">Status <i class="fa" [ngClass]="sortIcon('quoteStatus')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('quoteReason')"style="cursor: pointer;">Description <i class="fa" [ngClass]="sortIcon('quoteReason')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('quotePriority')"style="cursor: pointer;">Priority <i class="fa" [ngClass]="sortIcon('quotePriority')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('quotedOwner')"style="cursor: pointer;">Quote Owner <i class="fa" [ngClass]="sortIcon('quotedOwner')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('quoteAmount')"style="cursor: pointer;">Amount <i class="fa" [ngClass]="sortIcon('quoteAmount')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('quotedOn')"style="cursor: pointer;">Created On <i class="fa" [ngClass]="sortIcon('quotedOn')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('dateStatusChanged')"style="cursor: pointer;">Modified On <i class="fa" [ngClass]="sortIcon('dateStatusChanged')"></i></th>
+            <th class="min-w-70px text-hover-primary"(click)="sortTable('age')"style="cursor: pointer;">Age <i class="fa" [ngClass]="sortIcon('age')"></i></th>
+            <th class="min-w-70px">Edit</th>
+            
+          
+            <!-- <th class="min-w-200px text-end rounded-end"></th> -->
+          </tr>
+        </thead>
+        <!-- end::Table head -->
+        <!-- begin::Table body -->
+        <tbody class="text-dark mb-1 fs-5">
+
+          <tr *ngFor="let quotes of quotesList; let i = index;" [ngStyle]="{ 'background-color': isQuoteSelected(quotes) ? 'lightyellow' : 'inherit' }">
+            
+            <td>
+              <span class="">{{quotes.quoteID}}</span>
+            </td>
+            <td>
+              <span class="">{{quotes.custnmbr}}</span>
+            </td>
+            <td>
+              <span class="">{{quotes.custname}}</span>
+            </td>
+            <td class=""[style.backgroundColor]="getColorByStatus(quotes.quoteStatus)"[style.color]="'white'">
+              {{quotes.quoteStatus}}
+            </td>
+
+            <td class="">
+              {{quotes.quoteReason}}
+            </td>
+            <td class="">
+              {{quotes.quotePriority}}
+            </td>
+
+            <td class="">
+              {{quotes.quoteOwner}}
+            </td>
+
+            <td class="">
+              {{quotes.quoteAmount | currency}}
+            </td>
+
+            <td class="">
+              {{quotes.quotedOn | date:'medium'}}
+            </td>
+
+            <td class="">
+              {{quotes.dateStatusChanged | date:'medium'}}
+            </td>
+
+            <td class="">
+              {{quotes.age}}
+            </td>
+            <!-- <td>
+
+            </td> -->
+            <td>
+              <a [routerLink]="['', 'quotes','edit',quotes.quoteID] " class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1 ">
+              <span
+                [inlineSVG]="'./assets/media/icons/duotune/art/art005.svg'"
+                class="svg-icon svg-icon-3"
+              ></span>
+            </a>
+            </td>
+            
+
+          </tr>
+
+
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+    </div>
+    <!-- end::Table container -->
+  </div>
+</div>
+
+
+<!-- <app-pagination *ngIf = "paginationObj" [pageNum] = "paginationObj.pageNumber" [pageSize] = "paginationObj.pageSize"
+  [totalRecords] ="paginationObj.totalRecordsCount"  (updatePagination) = "updatePagination($event)">
+
+  </app-pagination> -->
+
+<!-- begin::Body -->

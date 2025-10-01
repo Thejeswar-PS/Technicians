@@ -1,0 +1,20 @@
+<div class="d-flex flex-stack flex-wrap pt-10">
+    <div class="fs-6 fw-bold text-gray-700">Showing {{((pageNum -1) * pageSize) + 1}} to {{(pageNum * pageSize) > totalRecords ? totalRecords : (pageNum * pageSize)}} of {{totalRecords}} entries</div>
+    <ul class="pagination">
+      <li class="page-item previous" *ngIf = "pageIndex > 0">
+        <a class="page-link cursor-pointer" (click)="goToIndex(-1)">
+           <i class="previous"></i> Prev
+        </a>
+      </li>
+
+      <li *ngFor = "let page of pageNumbers" class="page-item" [ngClass]="{'active' : page === currentPage}">
+        <a *ngIf="page <= pageCount" class="page-link cursor-pointer" (click) = "goToPage(page)"> {{page}} </a>
+      </li>
+      <li class="page-item next" *ngIf = "pageNum !== pageCount">
+        <a class="page-link cursor-pointer" (click)="goToIndex(1)">
+          Next <i class="next"></i>
+        </a>
+      </li>
+    </ul>
+  </div>
+

@@ -1,0 +1,77 @@
+
+
+<div class="card mb-5 mb-xl-10">
+  <div class="card-header border-0 cursor-pointer" role="button" data-bs-toggle="collapse"
+      data-bs-target="#kt_account_profile_details" aria-expanded="true" aria-controls="kt_account_profile_details">
+      <div class="card-title m-0 d-flex justify-content-between w-100"*ngIf = "12 > 10">
+          <h3  style="color: #CE2156;font-size: 18pt;text-decoration: underline;font-family: Century Gothic, sans-serif;">Add notes and update job status</h3>
+          <button type="button" class="close" aria-label="Close" (click)="activeModel.dismiss('Cross click')">
+            <span aria-hidden="true">&times;</span>
+          </button>
+      </div>
+  </div>
+  <div id="kt_account_profile_details" class="collapse show" >
+      <form [formGroup] = "jobForm" novalidate="" class="form" >
+          <div class="card-body border-top p-9">
+              <div class="row mb-6">
+                  <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4 ">Job Id:</label>
+                  <div class="input-group fw-bold text-dark col-lg-8  fv-row" style="max-width: 66%;">
+                    <input type="hidden" class="form-control form-control-sm fw-bold text-dark fs-5" style="border-color: black; height: 45px;" formControlName="jobID">
+                    <span (click)="openQuoteDetailsModal(job.callNbr)" class="text-hover-primary" style="font-size: medium !important; cursor: pointer;color: #2c4b5c">
+                      {{job.callNbr}}
+                    </span>
+                  </div>
+              </div>
+             
+              <div class="row mb-6">
+                  <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Status:	</label>
+                  <div class="col-lg-8 fv-row">
+                    <select
+                      class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                      data-kt-select2="true"
+                      data-placeholder="Select option"
+                      data-allow-clear="true"
+                      formControlName="status"
+                      style="font-size:10pt;height: 45px;padding: 4px;"
+                    >
+                      <option class = "fw-bold text-dark me-5" value="">Select Status</option>
+                      <option class = "fw-bold text-dark me-5" *ngFor="let status of jobStatus" [value]="status.statusCode">{{status.statusDesc}}</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row mb-6">
+                  <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Verify Contact:	</label>
+                  <div class="col-lg-8 fv-row">
+                    <select
+                      class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                      data-kt-select2="true"
+                      data-placeholder="Select option"
+                      data-allow-clear="true"
+                      formControlName="verifyContact"
+                      style="font-size:10pt;height: 45px;padding: 4px;"
+                    >
+                    <option class = "fw-bold text-dark me-5" value="PS">Please Select</option>
+                    <option class = "fw-bold text-dark me-5" value="CV">Contact Verified</option>
+                    <option class = "fw-bold text-dark me-5" value="CU">Contact Verified and Updated</option>
+
+                    </select>
+                    <p>Name: {{job.contactName}}</p>
+                    <p>Email: {{job.contactEmail}}</p>
+
+                  </div>
+                </div>
+                <div class="row d-flex flex-column">
+                  <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-4">Notes:	</label>
+                  <div class="col-lg-8  fv-row w-100" style="width: 100%;">
+                    <textarea rows="10" cols="10" class="w-100" formControlName="comments"></textarea>
+                  </div>
+              </div>
+
+          </div>
+          <div class="card-footer d-flex justify-content-end py-6 px-9">
+              <button class="btn btn-primary" style="margin-right: 5px;" (click)="update()">Update</button>
+              <button class="btn btn-primary" (click)="cancel()"> Cancel</button>
+          </div>
+      </form>
+  </div>
+</div>

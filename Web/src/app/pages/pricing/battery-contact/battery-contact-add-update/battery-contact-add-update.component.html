@@ -1,0 +1,82 @@
+<div>
+    <div class="modal-header">
+      <h4 class="modal-title text-dark text-dark fs-2" *ngIf="formType.update">Update Contact</h4>
+      <h4 class="modal-title text-dark text-dark fs-2" *ngIf="formType.new">Add Contact</h4>
+      <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+            <span aria-hidden="true">&times;</span>
+          </button>
+    </div>
+    <div class="modal-body">
+      <div class="card">
+        <form [formGroup]="contactUpdateForm">
+          <div class="row mb-6">
+              <div class="col p-0 me-4">
+                  <label class="col-lg-4 col-form-label  text-dark fw-normal fs-6 w-100 p-0">Vendor<span style="color: red;">*</span></label>
+
+                  <div class="input-group fw-bold text-dark col-lg-8  fv-row p-0">
+                    <input formControlName="vendor" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                  </div>
+                  <div *ngIf="isRequired('vendor')">
+                    <div *ngIf=" this.formControls['vendor'].errors?.required" style="color: red;">vendor is required.</div>
+                  </div>
+              </div>
+              <div class="col p-0">
+                  <label class="col-lg-4 col-form-label text-dark fw-normal fs-6 w-100 p-0">Contact Name<span style="color: red;">*</span></label>
+                  <div class="input-group text-dark col-lg-8  fv-row p-0">
+                    <input  formControlName="contactName" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                  </div>
+                  <div *ngIf="isRequired('contactName')">
+                    <div *ngIf=" this.formControls['contactName'].errors?.required" style="color: red;">contact name is required.</div>
+                  </div>
+              </div>
+          </div>
+          <div class="row mb-6">
+              <div class="col p-0 me-4">
+                  <label class="col-lg-4 col-form-label text-dark fw-normal fs-6 w-100 p-0">Email<span style="color: red;">*</span></label>
+                  <div class="input-group text-dark col-lg-8  fv-row p-0">
+                    <input formControlName="email" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                  </div>
+                  <div *ngIf="isRequired('email')">
+                    <div *ngIf=" this.formControls['email'].errors?.required" style="color: red;">email is required.</div>
+                  </div>
+              </div>
+              <div class="col p-0">
+                  <label class="col-lg-4 col-form-label text-dark fw-normal fs-6 w-100 p-0">Office Phone<span style="color: red;">*</span></label>
+                  <div class="input-group text-dark col-lg-8  fv-row p-0">
+                    <input formControlName="officePhone" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                  </div>
+                  <div *ngIf="isRequired('officePhone')">
+                    <div *ngIf=" this.formControls['officePhone'].errors?.required" style="color: red;">office phone is required.</div>
+                  </div>
+              </div>
+          </div>
+          <div class="row mb-6">
+             <div class="col p-0 me-4">
+                  <label class="col-lg-4 col-form-label text-dark fw-normal fs-6 w-100 p-0">Other Phone</label>
+                  <div class="input-group text-dark col-lg-8  fv-row p-0">
+                  <input #otherPhone formControlName="otherPhone" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                  </div>
+             </div>
+             <div class="col p-0">
+              <label class="col-lg-4 col-form-label text-dark fw-normal fs-6 w-100 p-0">Base Operation</label>
+              <div class="input-group text-dark col-lg-8  fv-row p-0">
+                <input #baseOperation formControlName="baseOperation" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+              </div>
+             </div>
+          </div>
+          <div class="row mb-6">
+              <label class="col-lg-4 col-form-label text-dark fw-normal fs-6 w-100 p-0">Notes</label>
+              <div class="input-group text-dark col-lg-8 fv-row p-0">
+                <textarea #notes formControlName="notes" type="text" class="form-control form-control-sm fw-normal text-dark fs-5 p-0" style="border-color: black;height: 80px; padding: .5rem !important;"></textarea>
+              </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-primary" (click)="onUpdate()" [disabled]="!contactUpdateForm.valid" *ngIf="formType.update">Update</button>
+      <button type="button" class="btn btn-primary" (click)="addNewContact()" [disabled]="!contactUpdateForm.valid" *ngIf="formType.new">Add</button>
+      <button type="button" class="btn btn-primary" (click)="OnCloseModal()">Cancel</button>
+    </div>
+  </div>

@@ -1,0 +1,54 @@
+<div class="card" style="min-width: 90vw;">
+  <div class="card-body border-0 pt-5">
+    <form [formGroup]="filterForm" novalidate="" class="form">
+      <table>
+        <tr>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-2">Date Range </label>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <div class="col-lg-12">
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-3 me-5"
+                data-kt-select2="true"
+                data-placeholder="Select option"
+                data-allow-clear="true"
+                formControlName="type"
+                style="font-size:10pt;width:150px;padding: 4px;"
+                >
+                <option class = "fw-bold text-dark me-5" value="LM">Last Month</option>
+                <option class = "fw-bold text-dark me-5" value="CM">Current Month</option>
+                <option class = "fw-bold text-dark me-5" value="LW">Last Week</option>
+                <option class = "fw-bold text-dark me-5" value="CW">Current Week</option>
+              </select>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </form>
+    </div>
+</div>
+  <div class="card card-xxl-stretch">
+    <app-team-grid [totalSum]="monthlyTeamData.additionalTeam" 
+    [gridTotal]="monthlyTeamData.gridTotal" 
+    [data]="monthlyTeamData.team1"></app-team-grid>
+    <app-team-grid [totalSum]="monthlyTeamData.additionalTeam" 
+    [gridTotal]="monthlyTeamData.gridTotal" [data]="monthlyTeamData.team2"></app-team-grid>
+    <app-team-grid [totalSum]="monthlyTeamData.additionalTeam" 
+    [gridTotal]="monthlyTeamData.gridTotal" [data]="monthlyTeamData.team3"></app-team-grid>
+    <app-team-grid [totalSum]="monthlyTeamData.additionalTeam" 
+    [gridTotal]="monthlyTeamData.gridTotal" [data]="monthlyTeamData.team4"></app-team-grid>
+
+    <div class="card-body py-3">
+      <div class="table-responsive">
+        <table class="table table-row-gray-300 align-middle gs-0 gy-4" >
+          <thead>
+            <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;"></tr>
+          </thead>
+         
+        </table>
+      </div>
+    </div>
+  </div>

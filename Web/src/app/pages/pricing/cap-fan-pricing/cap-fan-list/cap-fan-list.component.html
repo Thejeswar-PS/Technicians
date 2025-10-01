@@ -1,0 +1,154 @@
+<!-- begin::Header -->
+<div class="table-container-width">
+  <div class="card">
+      <div class="card-body border-0 pt-0">
+
+          <div class="form-container mt-8">
+              <!-- search form -->
+              <form [formGroup]="pricingFilterForm" novalidate="" class="form">
+                  <table>
+                      <tr>
+                          <td>
+                          <label class="min-w-100px me-5 fw-bold mb-1 fs-4 text-end">Make:</label>
+                          <input type="text" formControlName="make" class="input-control form-select-solid text-dark fw-bold fs-5" (keyup.enter)="filterCapFanList()">
+                          </td>
+
+                          <td>
+                          <label class="min-w-100px me-5 fw-bold mb-1 fs-4 text-end" style="padding-left: 60px;">Model:</label>
+                          <input type="text" class="input-control form-select-solid text-dark fw-bold fs-5" formControlName="model" (keyup.enter)="filterCapFanList()">
+                          </td>
+                          <td>
+                          <label class="min-w-100px me-5 fw-bold mb-1 fs-4 text-end">KVA:</label>
+                          <input type="text" class="input-control form-select-solid text-dark fw-bold fs-5" formControlName="kva" (keyup.enter)="filterCapFanList()">
+                          </td>
+                      </tr>
+                      <tr>
+                          <td>
+                              <label class="min-w-100px me-5 fw-bold mb-1 fs-4 text-end">Part Name:</label>
+                              <input type="text" class="input-control form-select-solid text-dark fw-bold fs-5" formControlName="partName" (keyup.enter)="filterCapFanList()">
+                          </td>
+                          <td>
+                              <label class="min-w-100px me-5 fw-bold mb-1 fs-4 text-end">CAP/FAN Part:</label>
+                              <input type="text" class="input-control form-select-solid text-dark fw-bold fs-5" formControlName="dcgPartNo" (keyup.enter)="filterCapFanList()">
+                          </td>
+                          <td>
+                              <label class="min-w-100px me-5 fw-bold mb-1 fs-4 text-end">OEM Part:</label>
+                              <input type="text" class="input-control form-select-solid text-dark fw-bold fs-5" formControlName="oemPartNo" (keyup.enter)="filterCapFanList()">
+                          </td>
+                      </tr>
+                  </table>
+              </form>
+              <!-- search button -->
+              <div class="card-header border-0 pt-5 p-0" style="justify-content: center;">
+                  <div style="text-align: right;"
+                  class="card-toolbar"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="top"
+                  data-bs-trigger="hover"
+                  title="Import Quotes"
+                  >
+                  <button type="button" class="btn btn-primary" (click)="filterCapFanList()">Search</button>
+                  <button *ngIf="currentUser.empLevel === 1" type="button" class="btn btn-primary" routerLink="/pricing/cap-fan-pricing-add-edit">Add New Part</button>
+                  </div>
+              </div>
+          </div>
+
+          <div class="table-container mt-8">
+              <div class="card-body p-0">
+                  <!-- begin::Table container -->
+                  <div class="table-max-height">
+                    <!-- begin::Table -->
+                    <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" style="text-align: center;">
+                      <!-- begin::Table head -->
+                      <thead>
+                        <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+                          <th class="min-w-150px text-hover-primary"  (click)="sortTable('make')" style="font-size: medium !important; cursor: pointer; padding-left: 50px;">Make <i class="fa fa-sort" [ngClass]="sortIcon('make')"></i></th>
+                          <th class="min-w-80px text-hover-primary" (click)="sortTable('modelName')" style="font-size: medium !important; cursor: pointer;">Model Name <i class="fa fa-sort" [ngClass]="sortIcon('modelName')"></i></th>
+                          <th class="min-w-115px text-hover-primary" (click)="sortTable('model')" style="font-size: medium !important; cursor: pointer;">DCG Model <i class="fa fa-sort" [ngClass]="sortIcon('Dmodel')"></i></th>
+                          <th class="min-w-150px text-hover-primary" (click)="sortTable('kva')" style="font-size: medium !important; cursor: pointer;">KVA <i class="fa fa-sort" [ngClass]="sortIcon('kva')"></i></th>
+                          <th class="min-w-150px text-hover-primary" (click)="sortTable('inOutVolt')" style="font-size: medium !important; cursor: pointer;">In/Out Volt<i class="fa fa-sort" [ngClass]="sortIcon('inOutVolt')"></i></th>
+                          <th class="min-w-150px text-hover-primary" (click)="sortTable('sngParallel')" style="font-size: medium !important; cursor: pointer;">S or P<i class="fa fa-sort" [ngClass]="sortIcon('sngParallel')"></i></th>
+                          <th class="min-w-105px text-hover-primary" (click)="sortTable('modifiedOn')" style="font-size: medium !important; cursor: pointer;">Modified On<i class="fa fa-sort" [ngClass]="sortIcon('modifiedOn')"></i></th>
+                          <th class="min-w-150px" style="font-size: medium !important; cursor: pointer;">Edit</th>
+                          <th *ngIf="currentUser.empLevel === 1" class="min-w-150px" style="font-size: medium !important; cursor: pointer;">Delete</th>
+
+                        </tr>
+
+                      </thead>
+                      <!-- end::Table head -->
+
+                      <!-- begin::Table body -->
+                      <tbody class="text-dark mb-1 fs-5" style="text-align: center; font-family: Roboto condensed;" *ngIf="capFanPricingList && capFanPricingList.length > 0">
+                        <ng-container *ngFor="let capfanprice of capFanPricingList; let i = index;">
+                          <tr style="background-color: {{capfanprice.rowColor}};">
+                            <td style="padding-left: 1rem;">
+                              <div style="float:left; display:flex;">
+                                <!-- Toggle the expanded state for each row -->
+                                <i (click)="openPricingDetailModel(capfanprice.rowIndex, i);"
+                                   [ngClass]="isOpenPricingDetailModel[i] ? 'fa fa-minus-square' : 'fa fa-plus-square'"
+                                   style="font-size: 19px; padding-right: 4px; cursor: pointer;">
+                                </i>
+                              </div>
+                                  <span class="" style="font-size: medium !important;">
+                                    {{capfanprice.make}}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span class="" style="font-size: medium !important;">
+                                    {{capfanprice.modelName}}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span class="" style="font-size: medium !important;">
+                                    {{capfanprice.model}}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span class="" style="font-size: medium !important;">
+                                    {{capfanprice.kva}}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span class="" style="font-size: medium !important;">
+                                    {{capfanprice.inOutVolt}}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span class="" style="font-size: medium !important;">
+                                    {{capfanprice.sngParallel}}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span class="" style="font-size: medium !important;">
+                                    {{capfanprice.modifiedOn | date:'short'}}
+                                  </span>
+                                </td>
+                                <td>
+                                  <i class="fas fa-edit" routerLink="/pricing/cap-fan-pricing-add-edit" [queryParams]="{rowIndex: capfanprice.rowIndex}"></i>
+                                </td>
+                                <td *ngIf="currentUser.empLevel === 1">
+                                  <i class="fas fa-trash" (click)="delete(capfanprice.rowIndex)"></i>
+                                </td>
+                            </tr>
+                            <ng-container *ngIf="isOpenPricingDetailModel[i]">
+                              <tr>
+                                <td colspan="100%">
+                                  <app-cap-fan-price [quantity]="capfanprice.quoteHours" [pricing]="capfanprice.pricing" [freight]="capfanprice.freight" [rowIndex]="capfanprice.rowIndex" [showTotals]=false [type]="'ReadOnly'"></app-cap-fan-price>
+                                </td>
+                              </tr>
+                            </ng-container>
+                            </ng-container>
+
+                      </tbody>
+                      <!-- end::Table body -->
+                    </table>
+                    <!-- end::Table -->
+                  </div>
+                  <!-- end::Table container -->
+                </div>
+          </div>
+
+      </div>
+    </div>
+
+</div>

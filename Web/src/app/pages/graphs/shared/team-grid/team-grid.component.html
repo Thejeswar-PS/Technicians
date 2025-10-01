@@ -1,0 +1,362 @@
+<div class="card-body py-3" *ngIf = "data && data.length > 0">
+  <div class="table-responsive">
+
+      <h3><label>{{data[0].teamName}}</label></h3>
+      <table class="table table-row-dashed table-row-gray-200 align-middle gs-0 gy-5" style="text-align: center;">
+        <thead>
+          <tr class="text-dark fw-bolder badge-light-primary">
+            <th class="min-w-90px " style="font-size: medium !important; width: 10px; padding-left: 0px;">Rank</th>
+            <th class="min-w-100px " style="font-size: medium !important;">Account Manager</th>
+            <th class="min-w-100px " style="font-size: medium !important;">Quotes Written </th>
+            <th class="min-w-150px " style="font-size: medium !important;">Scheduled</th>
+            <th class="min-w-100px " style="font-size: medium !important;">Emergency Jobs</th>
+            <th class="min-w-100px " style="font-size: medium !important;">Jobs Processed</th>
+            <th class="min-w-150px " style="font-size: medium !important;">Past Due</th>
+            <th class="min-w-100px " style="font-size: medium !important;">Jobs to Process</th>
+            <th class="min-w-150px " style="font-size: medium !important;">Jobs to Schedule</th>
+            <th class="min-w-100px " style="font-size: medium !important; padding-right: 10px;">Jobs to Upload</th>
+          </tr>
+        </thead>
+        <tbody class="text-dark mb-1 fs-5" style="text-align: center; font-family:Roboto condensed; font-size: medium !important;">
+          <ng-container  *ngFor = "let quotes of data; let i = index;" >
+            <ng-container *ngIf="quotes.offName !== 'Total:'">
+            <tr [ngClass]="i % 2 === 0 ? 'bg-row-opacity' : '' ">
+              <td>
+                <span class="" style="font-size: medium !important;">
+                  {{quotes.teamRank}}
+                </span>
+              </td>
+              <td>
+                <span class="" style="font-size: medium !important;">
+                  {{quotes.offName}}
+                </span>
+              </td>
+
+              <td >
+                <span class="" style="font-size: medium !important;">
+                  {{quotes.quotesWritten}}
+                </span>
+              </td>
+              <td >
+                <span class="" style="font-size: medium !important;">
+                  {{quotes.jobScheduled}}
+                </span>
+              </td>
+              <td  style="font-size: medium !important;">
+                <span class="">
+                  {{quotes.emergencyJobs}}
+                </span>
+              </td>
+              <td  style="font-size: medium !important;">
+                <span class="">
+                  {{quotes.jobsProcessed}}
+                </span>
+              </td>
+              <td  style="font-size: medium !important;">
+                <span class="">
+                  {{quotes.pastDueJobs}}
+                </span>
+              </td>
+              <td  style="font-size: medium !important;">
+                <span class="">
+                  {{quotes.jobsCompletedByTech}}
+                </span>
+              </td>
+              <td  style="font-size: medium !important;">
+                <span class="">
+                  {{quotes.jobsToSchedule}}
+                </span>
+              </td>
+              <td  style="font-size: medium !important;">
+                <span class="">
+                  {{quotes.jobsToBeUploaded}}
+                </span>
+              </td>
+            </tr>
+          </ng-container>
+        </ng-container>
+          <tr class="gridTotal">
+            <td class="min-w-150px ps-0"></td>
+            <td class="min-w-150px">
+              <span class="text-dark fw-bolder">
+                <h3 style="font-size: medium !important;">Total:</h3>
+              </span>
+            </td>
+            <td class="">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.quotesWritten}}
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobScheduled}}
+              </span>
+            </td>
+            <td class="">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.emergencyJobs}}
+              </span>
+            </td>
+            <td class="">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsProcessed}}
+              </span>
+            </td>
+            <td class="">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.pastDueJobs}}
+              </span>
+            </td>
+            <td class="">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsCompletedByTech}}
+              </span>
+            </td>
+            <td class="min-w-200px">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsToSchedule}}
+              </span>
+            </td>
+            <td class="">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsToBeUploaded}}
+              </span>
+            </td>
+          </tr>
+          <tr class="TotalDifference">
+            <td class="min-w-90px"></td>
+            <td class="min-w-200px ps-0">
+              <span class="text-dark fw-bolder">
+                <h3>Total SUM:</h3>
+              </span>
+            </td>
+            <td>
+              <span style="font-size: medium !important;">
+                {{gridTotal.quotesWritten}} 
+                <span style="color: red;" *ngIf="totalSum[0].quotesWritten > gridTotal.quotesWritten; else quotesWritten">
+                  (-{{totalSum[0].quotesWritten - gridTotal.quotesWritten}})<span style="font-size: 20px; color: red;">➘</span>
+                </span>
+                <ng-template #quotesWritten>
+                  <span style="color: green;" >
+                    (+{{gridTotal.quotesWritten - totalSum[0].quotesWritten}})<span style="font-size: 20px; color: green;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td class="min-w-90px">
+              <span style="width: 200px;" style="font-size: medium !important;">
+                {{gridTotal.jobScheduled}}
+                <span style="color: red" *ngIf="totalSum[0].jobScheduled > gridTotal.jobScheduled; else jobschelduled">
+                  (-{{totalSum[0].jobScheduled - gridTotal.jobScheduled}})<span style="font-size: 20px; color: red;">➘</span>
+                </span>
+                <ng-template #jobschelduled>
+                  <span style="color: green">
+                    (+{{gridTotal.jobScheduled - totalSum[0].jobScheduled}})<span style="font-size: 20px; color: green;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td class="" style="font-size: medium !important;">
+              <span class="">
+                {{gridTotal.emergencyJobs}}
+                <span style="color: red" *ngIf="totalSum[0].emergencyJobs > gridTotal.emergencyJobs; else emergencyJobs">
+                  (+{{totalSum[0].emergencyJobs - gridTotal.emergencyJobs}})<span style="font-size: 20px; color: red;">➚</span>
+                </span>
+                <ng-template #emergencyJobs>
+                  <span style="color: green">
+                    (-{{gridTotal.emergencyJobs - totalSum[0].emergencyJobs}})<span style="font-size: 20px; color: green;">➘</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td class="min-w-90px">
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsProcessed}}
+                <span style="color: red" *ngIf="totalSum[0].jobsProcessed > gridTotal.jobsProcessed; else jobsProcessed">
+                  (-{{totalSum[0].jobsProcessed - gridTotal.jobsProcessed}})<span style="font-size: 20px; color: red;">➘</span>
+                </span>
+                <ng-template #jobsProcessed>
+                  <span style="color: green">
+                    (+{{gridTotal.jobsProcessed - totalSum[0].jobsProcessed}})<span style="font-size: 20px; color: green;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.pastDueJobs}}
+                <span style="color: green" *ngIf="totalSum[0].pastDueJobs > gridTotal.pastDueJobs; else pastDueJobs">
+                  (-{{totalSum[0].pastDueJobs - gridTotal.pastDueJobs}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #pastDueJobs>
+                  <span style="color: red">
+                    (+{{gridTotal.pastDueJobs - totalSum[0].pastDueJobs}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsCompletedByTech}}
+                <span style="color: green" *ngIf="totalSum[0].jobsCompletedByTech > gridTotal.jobsCompletedByTech; else jobsCompletedByTech">
+                  (-{{totalSum[0].jobsCompletedByTech - gridTotal.jobsCompletedByTech}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #jobsCompletedByTech>
+                  <span style="color: red">
+                    (+{{gridTotal.jobsCompletedByTech - totalSum[0].jobsCompletedByTech}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsToSchedule}}
+                <span style="color: green" *ngIf="totalSum[0].jobsToSchedule > gridTotal.jobsToSchedule; else jobsToSchedule">
+                  (-{{totalSum[0].jobsToSchedule - gridTotal.jobsToSchedule}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #jobsToSchedule>
+                  <span style="color: red">
+                    (+{{gridTotal.jobsToSchedule - totalSum[0].jobsToSchedule}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: medium !important;">
+                {{gridTotal.jobsToBeUploaded}}
+                <span style="color: green" *ngIf="totalSum[0].jobsToBeUploaded > gridTotal.jobsToBeUploaded; else jobsToBeUploaded">
+                  (-{{totalSum[0].jobsToBeUploaded - gridTotal.jobsToBeUploaded}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #jobsToBeUploaded>
+                  <span style="color: red">
+                    (+{{gridTotal.jobsToBeUploaded - totalSum[0].jobsToBeUploaded}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr>
+      <!--<table class="table mb-0 table-row-dashed table-row-gray-200 align-middle gs-0 gy-4"  style="text-align: center;">
+        <tbody class="text-dark fs-5">
+          <tr class="TotalDifference">
+            <td class="min-w-90px"></td>
+            <td class="min-w-200px ps-0">
+              <span class="text-dark fw-bolder">
+                <h3>Total SUM:</h3>
+              </span>
+            </td>
+            <td>
+              <span style="font-size: large !important;">
+                {{gridTotal.quotesWritten}} 
+                <span style="color: red;" *ngIf="totalSum[0].quotesWritten > gridTotal.quotesWritten; else quotesWritten">
+                  (-{{totalSum[0].quotesWritten - gridTotal.quotesWritten}})<span style="font-size: 20px; color: red;">➘</span>
+                </span>
+                <ng-template #quotesWritten>
+                  <span style="color: green;" >
+                    (+{{gridTotal.quotesWritten - totalSum[0].quotesWritten}})<span style="font-size: 20px; color: green;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td>
+              <span style="font-size: large !important;">
+                {{gridTotal.jobScheduled}}
+                <span style="color: red" *ngIf="totalSum[0].jobScheduled > gridTotal.jobScheduled; else jobschelduled">
+                  (-{{totalSum[0].jobScheduled - gridTotal.jobScheduled}})<span style="font-size: 20px; color: red;">➘</span>
+                </span>
+                <ng-template #jobschelduled>
+                  <span style="color: green">
+                    (+{{gridTotal.jobScheduled - totalSum[0].jobScheduled}})<span style="font-size: 20px; color: green;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td class="min-w-150px" style="font-size: large !important;">
+              <span class="">
+                {{gridTotal.emergencyJobs}}
+                <span style="color: red" *ngIf="totalSum[0].emergencyJobs > gridTotal.emergencyJobs; else emergencyJobs">
+                  (+{{totalSum[0].emergencyJobs - gridTotal.emergencyJobs}})<span style="font-size: 20px; color: red;">➚</span>
+                </span>
+                <ng-template #emergencyJobs>
+                  <span style="color: green">
+                    (-{{gridTotal.emergencyJobs - totalSum[0].emergencyJobs}})<span style="font-size: 20px; color: green;">➘</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td class="min-w-90px">
+              <span class="" style="font-size: large !important;">
+                {{gridTotal.jobsProcessed}}
+                <span style="color: red" *ngIf="totalSum[0].jobsProcessed > gridTotal.jobsProcessed; else jobsProcessed">
+                  (-{{totalSum[0].jobsProcessed - gridTotal.jobsProcessed}})<span style="font-size: 20px; color: red;">➘</span>
+                </span>
+                <ng-template #jobsProcessed>
+                  <span style="color: green">
+                    (+{{gridTotal.jobsProcessed - totalSum[0].jobsProcessed}})<span style="font-size: 20px; color: green;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: large !important;">
+                {{gridTotal.pastDueJobs}}
+                <span style="color: green" *ngIf="totalSum[0].pastDueJobs > gridTotal.pastDueJobs; else pastDueJobs">
+                  (-{{totalSum[0].pastDueJobs - gridTotal.pastDueJobs}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #pastDueJobs>
+                  <span style="color: red">
+                    (+{{gridTotal.pastDueJobs - totalSum[0].pastDueJobs}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: large !important;">
+                {{gridTotal.jobsCompletedByTech}}
+                <span style="color: green" *ngIf="totalSum[0].jobsCompletedByTech > gridTotal.jobsCompletedByTech; else jobsCompletedByTech">
+                  (-{{totalSum[0].jobsCompletedByTech - gridTotal.jobsCompletedByTech}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #jobsCompletedByTech>
+                  <span style="color: red">
+                    (+{{gridTotal.jobsCompletedByTech - totalSum[0].jobsCompletedByTech}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: large !important;">
+                {{gridTotal.jobsToSchedule}}
+                <span style="color: green" *ngIf="totalSum[0].jobsToSchedule > gridTotal.jobsToSchedule; else jobsToSchedule">
+                  (-{{totalSum[0].jobsToSchedule - gridTotal.jobsToSchedule}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #jobsToSchedule>
+                  <span style="color: red">
+                    (+{{gridTotal.jobsToSchedule - totalSum[0].jobsToSchedule}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+            <td >
+              <span class="" style="font-size: large !important;">
+                {{gridTotal.jobsToBeUploaded}}
+                <span style="color: green" *ngIf="totalSum[0].jobsToBeUploaded > gridTotal.jobsToBeUploaded; else jobsToBeUploaded">
+                  (-{{totalSum[0].jobsToBeUploaded - gridTotal.jobsToBeUploaded}})<span style="font-size: 20px; color: green;">➘</span>
+                </span>
+                <ng-template #jobsToBeUploaded>
+                  <span style="color: red">
+                    (+{{gridTotal.jobsToBeUploaded - totalSum[0].jobsToBeUploaded}})<span style="font-size: 20px; color: red;">➚</span>
+                  </span>
+                </ng-template>
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>-->
+      <hr>
+
+
+  </div>
+</div>

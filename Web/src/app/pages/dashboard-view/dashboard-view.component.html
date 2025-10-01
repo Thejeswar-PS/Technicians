@@ -1,0 +1,122 @@
+
+<div class="menu-item me-lg-1">
+  <span class="menu-link py-1" ><span class="menu-title fs-1 fw-bolder text-dark" style="justify-content: center;">Canada Service Module</span></span>
+</div>
+
+<div class="row g-5 g-xl-8">
+  <div class="col-xl-4">
+    <div class="row">
+      <app-dashboard-sales
+      class="card card-xl-stretch mb-xl-8"
+      color="danger"
+      [data] = "dashboardData"
+      chartHeight="400px"
+    ></app-dashboard-sales>
+      <!-- TBD:Today's Job List -->
+    </div>
+    <div class="row">
+      <app-dashboard-top-performers
+        class="card card-xl-stretch mb-xl-8"
+        chartHeight="400px"
+      ></app-dashboard-top-performers>
+    </div>
+    <div class="row">
+      <!-- TBD:Top Performers Last Week -->
+      <app-dashboard-customer-satisfaction
+        class="card card-xl-stretch mb-xl-8"
+        chartHeight="450px"
+      ></app-dashboard-customer-satisfaction>
+    </div>
+  </div>
+
+  <div class="col-xl-3">
+    <app-dashboard-recent-activities
+        class="card card-xl-stretch mb-xl-8"
+        chartHeight="350px"
+      ></app-dashboard-recent-activities>
+  </div>
+
+  <div class="col-xl-5">
+    <div class="row">
+      <app-dashboard-jobs-list
+        class="card card-xl-stretch mb-xl-8"
+        chartHeight="650px"
+      ></app-dashboard-jobs-list>
+    </div>
+    <div class="row responsive">
+      <app-dashboard-weekly-quotoes
+        class="card card-xl-stretch mb-xl-8"
+        chartColor="info"
+        chartHeight="450px"
+      ></app-dashboard-weekly-quotoes>
+    </div>
+    <div class="row">
+      <app-dashboard-sales-bar-chart
+        class="card card-xl-stretch mb-xl-8"
+        chartHeight="500px"
+      ></app-dashboard-sales-bar-chart>
+      <!-- TBD:Customer Satisfaction Guage Chart -->
+    </div>
+  </div>
+  <!-- <div class="col-xl-4">
+    <div class="card card-xl-stretch mb-xl-8">
+
+
+      <app-mixed-widget10
+        class="card card-xl-stretch mb-xl-8"
+        chartColor="info"
+        chartHeight="150px"
+    ></app-mixed-widget10>
+
+     <app-dashboard-sales-bar-chart
+      class="card card-xl-stretch mb-xl-8"
+      chartHeight="250px"
+      >
+    </app-dashboard-sales-bar-chart>
+
+       <app-charts-widget1 class="card card-xl-stretch mb-xl-8">
+      </app-charts-widget1>
+    </div>
+  </div> -->
+</div>
+<!-- end::Row -->
+
+<!--begin::Row-->
+
+  <!--end::Col-->
+
+  <!--begin::Col-->
+
+<!--end::Row-->
+
+<!--begin::Row-->
+
+<!--end::Row-->
+
+<!-- begin::Row -->
+<!--<div class="row gy-5 gx-xl-8">-->
+  <!-- <div class="col-xxl-4">
+    <app-lists-widget3 class="card card-xxl-stretch mb-xl-3"></app-lists-widget3>
+  </div> -->
+  <!--
+  <div class="col-xl-6">
+    <app-dashboard-to-be-written-table class="card card-xxl-stretch mb-5 mb-xl-8"></app-dashboard-to-be-written-table>
+  </div>
+
+  <div class="col-xl-6">
+    <app-dashboard-to-be-sent-quotes-table class="card card-xxl-stretch mb-5 mb-xl-8"></app-dashboard-to-be-sent-quotes-table>
+  </div>
+</div>
+-->
+
+<!-- end::Row -->
+
+
+
+<!-- begin:: Modal example -->
+<!-- <app-modal #modal [modalConfig]="modalConfig">
+  Modal body html
+</app-modal>
+<button class="btn btn-primary" (click)="openModal()">Open modal</button> -->
+<!-- Note: Don't forget import ModalsModule (from _metronic/partials) into your module -->
+<!-- end:: Modal example -->

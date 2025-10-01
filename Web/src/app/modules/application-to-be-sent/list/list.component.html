@@ -1,0 +1,173 @@
+<!-- begin::Header -->
+<div class="card" style="min-width: 90vw;">
+  <div class="card-body border-0 pt-5">
+
+    <form [formGroup]="quotefilterForm" novalidate="" class="form fw-bolder">
+      <table>
+        <tr>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+          </td>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Status:</label>
+          </td>
+          <td>
+            <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Status Type: </label>
+          </td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>
+            <select id="quoteAccMgrs" formControlName="AccountManager" style="font-size:10pt;width:150px;padding:4px;"
+              class="me-5 text-dark fw-bold fs-5">
+              <option class = "fw-bold mb-1 fs-5" value="A" selected>All</option>
+              <option class = "fw-bold mb-1 fs-5" *ngFor="let mgr of accountManagers" [value]="mgr.text">
+                {{mgr.text}}
+              </option>
+            </select>
+          </td>
+          <td>
+            <select name="ctl00$PlaceHolderMain$ddlStatus" id="PlaceHolderMain_ddlStatus" formControlName="QuoteStatus"
+              class="me-5 text-dark fw-bold fs-5" style="font-size:10pt;width:150px;padding: 4px;">
+              <option class = "fw-bold mb-1 fs-5" value="A">All</option>
+              <option class = "fw-bold mb-1 fs-5" *ngFor="let status of quoteStatus" [value]="status.statusCode">{{status.statusDesc}}</option>
+            </select>
+          </td>
+          <td>
+            <div class="col-lg-12">
+              <select name="ctl00$PlaceHolderMain$ddlType" id="PlaceHolderMain_ddlType" formControlName="Statustype"
+                style="font-size:10pt;width:150px;padding: 4px;" class="me-5 text-dark fw-bold fs-5">
+                <option class = "fw-bold mb-1 fs-5" value="0">Active</option>
+                <option class = "fw-bold mb-1 fs-5" value="1">Archive</option>
+              </select>
+            </div>
+          </td>
+        </tr>
+      </table>
+    </form>
+  </div>
+</div>
+
+
+
+
+
+<!-- table main -->
+<div class="card card-xxl-stretch">
+  <div class="card-header border-0 pt-5">
+    <div style="text-align: right;margin-left: auto;" class="card-toolbar" data-bs-toggle="tooltip" data-bs-placement="top"
+      data-bs-trigger="hover" title="Ready To Be Sent">
+      <button type="button" class="btn btn-primary" (click)="openChangeStatusModal()"
+        [disabled]="selectedQuotes.length <= 0">
+        Ready To Be Sent
+      </button>
+    </div>
+  </div>
+  <div class="card-body py-3">
+    <!-- begin::Table container -->
+    <div class="table-responsive">
+      <!-- begin::Table -->
+      <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4">
+        <!-- begin::Table head -->
+        <thead>
+
+          <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('quoteID')"style="cursor: pointer;">Quote Id <i class="fa" [ngClass]="sortIcon('quoteID')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('custNmbr')"style="cursor: pointer;">Site Id <i class="fa" [ngClass]="sortIcon('custNmbr')"></i></th>
+            <th class="min-w-115px text-hover-primary"(click)="sortTable('name')"style="cursor: pointer;">Name <i class="fa" [ngClass]="sortIcon('name')"></i></th>
+            <th class="min-w-150px text-hover-primary"> Email </th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('quoteStatus')"style="cursor: pointer;">Status <i class="fa" [ngClass]="sortIcon('quoteStatus')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('owner')"style="cursor: pointer;">Quote Owner <i class="fa" [ngClass]="sortIcon('owner')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('problemCode')"style="cursor: pointer;"> Service Type <i class="fa" [ngClass]="sortIcon('problemCode')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('quotedOn')"style="cursor: pointer;">Quote On <i class="fa" [ngClass]="sortIcon('quotedOn')"></i></th>
+            <th class="min-w-150px text-hover-primary"(click)="sortTable('quoteAmount')"style="cursor: pointer;">Quote Amount <i class="fa" [ngClass]="sortIcon('quoteAmount')"></i></th>
+            <th class="min-w-100px text-hover-primary"(click)="sortTable('age')"style="cursor: pointer;">Age <i class="fa" [ngClass]="sortIcon('age')"></i></th>
+            <th class="min-w-100px">
+              Select
+              <input
+              class="form-check-input widget-9-check"
+              style="cursor: pointer; border:solid; border-color: lightblue;"
+              type="checkbox"
+              [checked]="selectedQuotes.length === quotesList.length"
+              (click)="selectAllRows($event)"
+              />
+            </th>
+
+            <!-- <th class="min-w-200px text-end rounded-end"></th> -->
+          </tr>
+        </thead>
+        <!-- end::Table head -->
+        <!-- begin::Table body -->
+        <tbody class="text-dark mb-1 fs-5" *ngIf="quotesList && quotesList.length > 0">
+
+          <tr *ngFor="let quotes of quotesList; let i = index;" [ngStyle]="{ 'background-color': isQuoteSelected(quotes) ? 'lightyellow' : 'inherit' }">
+            <td>
+              <span (click)="openQuoteDetailsModal(quotes.quoteID)"
+                class="">
+                {{quotes.quoteID}}
+              </span>
+            </td>
+            <td>
+
+              <span class=""> {{quotes.custNmbr}}</span>
+            </td>
+            <td>
+
+              <span class=""> {{quotes.name}}</span>
+            </td>
+            <td>
+              <div *ngFor="let item of splitString(quotes.email)">
+                <span class="" style="max-width: 400px;"> {{item}}</span>
+              </div>
+              
+            </td>
+            <td class="" [style.backgroundColor]="getColorByStatus(quotes.quoteStatus)"[style.color]="'white'">
+              {{quotes.quoteStatus}}
+            </td>
+            <td class="">
+              {{quotes.owner}}
+            </td>
+            <td class="">
+              {{quotes.problemCode}}
+            </td>
+
+            <td class="">
+              {{quotes.quotedOn | date : 'medium'}}
+            </td>
+            <td class="">
+              {{quotes.quoteAmount  }}
+            </td>
+            <td class="">
+              {{quotes.age}}
+            </td>
+            <!-- <td>
+
+            </td> -->
+            <td>
+              <input
+              class="form-check-input widget-9-check"
+              style="border:solid; border-color: lightblue; cursor: pointer;"
+              type="checkbox"
+              [checked]="selectedQuotes.includes(quotes.quoteID)"
+              (click)="rowSelect(quotes)"/>
+            </td>
+
+          </tr>
+
+
+        </tbody>
+        <!-- end::Table body -->
+      </table>
+      <!-- end::Table -->
+    </div>
+    <!-- end::Table container -->
+  </div>
+</div>
+
+
+<!-- <app-pagination *ngIf = "paginationObj" [pageNum] = "paginationObj.pageNumber" [pageSize] = "paginationObj.pageSize"
+  [totalRecords] ="paginationObj.totalRecordsCount"  (updatePagination) = "updatePagination($event)">
+
+  </app-pagination> -->
+
+<!-- begin::Body -->

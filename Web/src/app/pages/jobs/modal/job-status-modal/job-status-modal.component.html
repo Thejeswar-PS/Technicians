@@ -1,0 +1,44 @@
+<div>
+  <div class="modal-header">
+    <h4 class="modal-title text-dark fw-bold text-dark fs-1">Update Job Status</h4>
+    <button type="button" class="close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+        <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="card">
+      <div class="row mb-6">
+        <label class="col-lg-4 col-form-label fw-bold text-dark fs-3">Job[s] : </label>
+        <div class="col-lg-8">
+            <span class=" text-dark fw-bold text-dark fs-3">{{jobIds}}</span>
+        </div>
+    </div>
+      <div class="row mb-6">
+        <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-3">New Status :</label>
+        <div class="col-lg-8">
+            <select class="form-select form-select-solid form-select-lg text-dark fw-bold text-dark fs-3" name="quoteOwner" [(ngModel)]="selectedStatus">
+              <option class="text-dark fw-bold text-dark fs-3" value="" selected>Select</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="ID">In Discussion</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="CF">Confirmed</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="JS">Job Scheduled</option>
+              <option class="text-dark fw-bold text-dark fs-3" value="CN">Job Cancelled</option>
+          </select>
+        </div>
+    </div>
+    <div class="row mb-6">
+      <label class="col-lg-4 col-form-label text-dark fw-bold text-dark fs-3">Notes</label>
+      <div class="col-lg-8">
+        <input type = "textarea" rows="4" cols="50" class="form-control form-control-lg form-control-solid text-dark fw-bold text-dark fs-4" [(ngModel)]="notes" />
+      </div>
+  </div>
+    </div>
+  </div>
+  <div class="text-center">
+    <h4 class="align-items-center" id="error-msg" style="color: brown;"*ngIf="showErrorMsg">Please Select a Valid Status</h4>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" (click)="updateStatus()">Change Status</button>
+    <button type="button" class="btn btn-outline-dark" (click)="activeModal.close('Close click')">Close</button>
+  </div>
+</div>
+

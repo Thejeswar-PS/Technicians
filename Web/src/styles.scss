@@ -1,0 +1,130 @@
+/* You can add global styles to this file, and also import other style files */
+@import "./assets/sass/style.scss";
+// Replace above style with this css file to enable RTL styles
+@import './assets/sass/plugins.scss';
+// @import "./assets/css/style.rtl.css";
+@import "./assets/sass/style.angular.scss";
+
+// custom styling for popups
+.job-edit-modal-width{
+    .modal-dialog-centered{
+        max-width: 50%;
+        
+    }
+}
+.table th, table tr td label{
+    font-size: 13px !important;
+}
+.table{
+    thead tr th{
+        // display: flex;
+        // align-items: center;
+        // justify-content: center;
+    }
+    td{
+        font-size: 12px !important;
+    }
+}
+.w-full{
+    width: 100%;
+}
+
+.table-container-width{
+    max-width: 96vw;
+    
+    .table-max-height{
+        // height: 600px;
+        overflow: scroll;
+    }
+}
+
+table {
+    thead tr{
+        background: linear-gradient(to right, #65e169, #FF9800);
+        .text-hover-primary {
+            &:hover{
+                color: #fff !important;
+                .fa-sort{
+                    color: #fff !important;
+                }
+            }
+            .fa-sort{
+                color: #000 !important; 
+                font-size: 11px !important; 
+                margin-left: 3px;
+
+            }
+        }
+        .form-check-input{
+            height: 1.6rem !important;
+            width: 1.6rem !important;
+        }
+        
+
+    }
+    tbody tr{
+       td {
+        max-width: 200px !important;
+        .fa-edit{
+            color: darkorange;
+            font-size: 16px;
+
+        }
+        .fa-sticky-note{
+            color: darkorange;
+            font-size: 16px;
+        }
+        .fa-plus-square, .fa-minus-square{
+            color: #e37962 !important;
+        }
+        .form-check-input {
+            height: 1.4rem !important;
+            width: 1.4rem !important;
+        }
+       }
+    }
+}
+
+.bg-row-opacity{
+    background-color: white!important;
+}
+
+button{
+    background: linear-gradient(to right, #4a92d5, #3ec2cf);
+    &:hover{
+        background: linear-gradient(to right,#c1c8e4);
+    }
+}
+
+.btn-search{
+    height: 40px;
+    border-radius: 0;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    i{font-size: 1.5rem;}
+    &:hover{
+        background: linear-gradient(to right, #4a92d5, #3ec2cf);
+    }
+}
+
+// header styling
+.app-header{
+    //background-color: #159667 !important;
+    background: linear-gradient(to right, #5ab9ea, #c1c8e4, #8860d0); /* Gradient with multiple colors */
+    padding: 20px;
+    color: white; /* Text color */
+
+    .menu-link-hover:hover{
+        //background-color: rgba(28, 206, 141, 0.6)!important;
+        background-color: white!important;
+    }
+}
+
+.checked{
+    background-color: yellow;
+    opacity: 0.5;
+}
+
+
+
+

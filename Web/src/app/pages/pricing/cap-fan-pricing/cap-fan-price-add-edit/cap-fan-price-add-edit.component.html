@@ -1,0 +1,95 @@
+<div>
+    <div class="card" style="min-width: 95vw;">
+        <div class="card-body border-0 pt-5 d-flex flex-column">
+            <form [formGroup]="formCapFanPricingUpdate" class="d-flex flex-column align-items-center">
+                <div class="row mb-2 w-full">
+                    <div class="col p-0 me-4">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">Make</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                          <input formControlName="make" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="col p-0 me-4">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">Model Name</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                          <input formControlName="modelName" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="col p-0">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">DCG Model</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                          <input formControlName="model" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-2 w-full">
+                    <div class="col p-0 me-4">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">KVA</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                          <input formControlName="kva" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="col p-0 me-4">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">Freight</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                        <input formControlName="freight" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                    </div>
+                    <div class="col p-0">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">In/Out Voltage</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                        <input formControlName="inOutVolt" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-2 w-full">
+                   <div class="col p-0 me-4">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">Single or Parallel</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                        <input formControlName="sngParallel" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                   </div>
+                   <div class="col p-0 me-4">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">Quote Hours</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                        <input formControlName="quoteHours" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                   </div>
+                   <div class="col p-0">
+                        <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">Pricing</label>
+                        <div class="input-group fw-normal text-dark col-lg-8  fv-row p-0">
+                        <input formControlName="pricing" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        <input formControlName="rowIndex" type="hidden" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black; height: 35px;">
+                        </div>
+                   </div>
+                </div>
+                <div class="row mb-2 w-full">
+                    <label class="col-lg-4 col-form-label fw-bold text-dark fs-6 w-100 p-0">Notes</label>
+                    <div class="input-group fw-normal text-dark col-lg-8 fv-row p-0">
+                      <textarea #notes formControlName="notes" type="text" class="form-control form-control-sm fw-normal text-dark fs-5" style="border-color: black;height: 80px;"></textarea>
+                    </div>
+                </div>
+
+                <div class="controls mb-2">
+                    <div class="d-flex justify-content-center container-fluid gap-2">
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="onSave()">Save</button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="priceDetails.calculateTotal()">Calculate Totals</button>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-primary" (click)="print()">Print</button>
+                        </div>
+                    </div>
+                </div>
+                <div >
+                    <app-cap-fan-price #priceDetails [type]="type"></app-cap-fan-price>
+                  </div>
+            </form>
+            
+            <!-- Moved the controls and app-cap-fan-price to form element -->
+
+        </div>
+    </div>
+</div>

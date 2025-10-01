@@ -1,0 +1,25 @@
+.panel {
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.3s ease;
+    margin: 10px;
+    border-radius: 10px; /* Add rounded corners */
+}
+
+
+.sent-data.ng-leave {
+    opacity: 0; /* Fade out when leaving */
+    transform: translateY(-20px); /* Optional: Slide up when leaving */
+}
+
+.sent-data.ng-enter,
+.sent-data.ng-move {
+    opacity: 0; /* Start with opacity 0 when entering/moving */
+    transform: translateY(-20px); /* Optional: Start above when entering/moving */
+}
+
+.sent-data.ng-enter.ng-enter-active,
+.sent-data.ng-move.ng-move-active {
+    opacity: 1; /* Fade in when entering/moving */
+    transform: translateY(0); /* Optional: Slide down when entering/moving */
+}
+

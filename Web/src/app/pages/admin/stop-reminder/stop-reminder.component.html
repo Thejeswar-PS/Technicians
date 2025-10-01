@@ -1,0 +1,168 @@
+<!-- begin::Header -->
+<div class="table-container-width">
+  <div class="card" style="min-width: 90vw;">
+      <div class="card-body border-0 pt-5">
+          <form [formGroup]="FilterForm" novalidate="" class="form">
+          <table>
+            <tr>
+              <td>
+                <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+              </td>
+              <td>
+                <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Sites:</label>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <select
+                  class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                  data-kt-select2="true"
+                  data-placeholder="Select option"
+                  data-allow-clear="true"
+                  formControlName="manager"
+                  style="font-size:10pt;width:150px;padding:4px;"
+                >
+                  <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
+                  <option class = "fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.empName">
+                    {{mgr.empName}}
+                  </option>
+                </select>
+              </td>
+              <td>
+                <select
+                  class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                  data-kt-select2="true"
+                  data-placeholder="Select option"
+                  data-allow-clear="true"
+                  formControlName="type"
+                  style="font-size:10pt;width:150px;padding: 4px;"
+                >
+                <option class = "fw-bold text-dark me-5" *ngFor="let site of sites" [value]="site.value">{{site.site}}</option>
+              </select>
+              </td>
+              <td>
+                  <div class="input-group fw-bold text-dark fs-5 me-5">
+                    <input #input type="text" class="form-control form-control-sm fw-bold text-dark fs-5" style="border-color: black;" placeholder="Search">
+                    <div class="input-group-append">
+                      <button class="btn btn-primary btn-sm btn-search" type="button" (click)="SearchReminder(input.value)">
+                        <i class="fa fa-search"></i>
+                      </button>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="input-group fw-bold text-dark fs-5 me-5">
+                    <div class="input-group-append">
+                      <!-- fl['type'].value === 'PS' -->
+                      <button *ngIf="userData.empLevel > 0 && fl['type'].value === 'OS'" type="button" class="btn btn-primary me-3" style="padding: 10px 14px;margin-left: 12px;" (click)="StopReminder()" [disabled]="selectedSites.length <= 0">Stop Reminders</button>
+                      <button *ngIf="userData.empLevel > 0 && fl['type'].value !== 'OS'" type="button" class="btn btn-primary me-3" style="padding: 10px 14px;margin-left: 12px;" (click)="StopReminder()" [disabled]="selectedSites.length <= 0">Remove Stop Reminders</button>
+                    </div>
+                  </div>
+                </td>
+            </tr>
+          </table>
+          </form>
+      </div>
+      <div class="card card-xxl-stretch">
+        <div class="card-body py-3">
+          <!-- begin::Table container -->
+          <div class="table-max-height" style="height: 600px;">
+            <!-- begin::Table -->
+            <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" style="text-align: center;">
+              <!-- begin::Table head -->
+              <thead>
+                <tr class="text-dark fw-bolder badge-light-primary" style="font-size: medium;">
+                  <th class="min-w-150px text-hover-primary ps-4" (click)="sortTable('custNmbr')" style="font-size: medium !important; cursor: pointer;">Site Id <i class="fa fa-sort" [ngClass]="sortIcon('custNmbr')"></i></th>
+                  <th class="min-w-150px text-hover-primary" (click)="sortTable('custName')" style="font-size: medium !important; cursor: pointer;">Site Name <i class="fa fa-sort" [ngClass]="sortIcon('custName')"></i></th>
+                  <th class="min-w-80px text-hover-primary" (click)="sortTable('stopDaysCount')" style="font-size: medium !important; cursor: pointer;">Days<i class="fa fa-sort" [ngClass]="sortIcon('stopDaysCount')"></i></th>
+                  <th class="min-w-80px text-hover-primary" (click)="sortTable('reminderType')" style="font-size: medium !important; cursor: pointer;">Type<i class="fa fa-sort" [ngClass]="sortIcon('reminderType')"></i></th>
+                  <th class="min-w-100px text-hover-primary" (click)="sortTable('modifiedBy')" style="font-size: medium !important; cursor: pointer;">Modified By<i class="fa fa-sort" [ngClass]="sortIcon('modifiedBy')"></i></th>
+                  <th class="min-w-100px text-hover-primary" (click)="sortTable('modifiedDate')" style="font-size: medium !important; cursor: pointer;">Modified On<i class="fa fa-sort" [ngClass]="sortIcon('modifiedDate')"></i></th>
+                  <th class="min-w-30px text-hover-primary d-flex justify-content-center" (click)="sortTable('serviceType')" style="font-size: medium !important; cursor: pointer;">
+
+                            <input
+                            class="form-check-input widget-9-check btn-check-all"
+                            style="border:solid; border-color: rgb(0, 0, 0); cursor: pointer;"
+                            type="checkbox"
+                            [checked]="selectedSites.length === stopRemainderList.length"
+                            (click)="selectAllRows($event)"
+              />
+
+                  </th>
+                </tr>
+
+              </thead>
+              <!-- end::Table head -->
+              <!-- begin::Table body -->
+              <tbody class="text-dark mb-1 fs-5" style="text-align: center; font-family: Roboto condensed;" *ngIf = "stopRemainderList && stopRemainderList.length > 0">
+                  <!-- [ngStyle]="{ 'background-color': isQuoteSelected(quotes) ? 'lightyellow' : 'inherit' }" -->
+                <ng-container *ngFor = "let reminder of stopRemainderList; let i = index;" >
+
+                  <tr [class.checked]="check.value && i === selectedRowIndex" [ngStyle]="{ 'background-color': isQuoteSelected(reminder) ? 'lightyellow' : 'inherit' }">
+
+                    <td class="ps-4">
+                      <span class="" style="font-size: medium !important;">
+                        {{reminder.custNmbr}}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="" style="font-size: medium !important;">
+                        {{reminder.custName}}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="" style="font-size: medium !important;">
+                        {{reminder.stopDaysCount}}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="" style="font-size: medium !important;">
+                        {{reminder.reminderType}}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="" style="font-size: medium !important;">
+                        {{reminder.modifiedBy}}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="" style="font-size: medium !important;">
+                        {{reminder.modifiedDate | date: 'MMM d, y'}}
+                      </span>
+                    </td>
+                    <td class="d-flex justify-content-center">
+                      <input
+                      #check
+                      class="form-check-input widget-9-check"
+                      style="border:2px solid; border-color: rgba(0, 0, 0, 0.8); cursor: pointer;"
+                      type="checkbox"
+                      [checked]="(selectedSites.includes(reminder.custNmbr) || reminder.stopDaysCount > 0) && (selectedSites.length > 0)"
+                      (click)="rowSelect($event, reminder)"
+                      />
+                    </td>
+                    <!-- [checked]="selectedSites.includes(reminder.custNmbr)" -->
+
+                  </tr>
+                </ng-container>
+
+              </tbody>
+              <!-- end::Table body -->
+            </table>
+            <!-- end::Table -->
+          </div>
+          <!-- end::Table container -->
+        </div>
+        </div>
+        <!-- <app-pagination *ngIf = "paginationObj" [pageNum] = "paginationObj.pageNumber" [pageSize] = "paginationObj.pageSize"
+        [totalRecords] ="paginationObj.totalRecordsCount"  (updatePagination) = "updatePagination($event)">
+
+        </app-pagination> -->
+
+        <!-- begin::Body -->
+    </div>
+
+</div>
+
+
+
+

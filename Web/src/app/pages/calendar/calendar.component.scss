@@ -1,0 +1,28 @@
+::ng-deep {
+    .fc-event {
+        cursor: pointer;
+      }
+    .fc-event-title{
+        white-space: pre-line;
+        font-size: 15px;
+    }
+   .fc {
+    .fc-button-primary{
+        color: #fff !important;
+        background-color:  #159667 !important;
+        .fc-today-button{
+            opacity: .7 !important;
+        }
+        &:hover{
+            background-color: var(--kt-primary-active) !important;
+            color: #fff !important;
+        }
+    }
+    .fc-event-title-container{
+        background-color: #159667 !important;
+        &:hover{
+            background-color: var(--kt-primary-active) !important;
+        }
+    }
+    }
+}

@@ -1,0 +1,111 @@
+<div class="customer-feedback">
+    <div class="card" style="min-width: 90vw;">
+        <div class="card-body border-0 pt-5">
+                <div class="filters-wrapper">
+                <form [formGroup]="FilterForm" novalidate="" class="form d-flex justify-content-end">
+                <table>
+                  <tr>
+                    <td>
+                      <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Account Manager:</label>
+                    </td>
+                    <td>
+                      <label class="min-w-100px me-5 fw-bold mb-1 fs-5">Year:</label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <select
+                        class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                        data-kt-select2="true"
+                        data-placeholder="Select option"
+                        data-allow-clear="true"
+                        formControlName="manager"
+                        (change)="onSelectionChange()"
+                        style="font-size:10pt;width:150px;padding:4px;"
+                      >
+                        <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
+                        <option class = "fw-bold text-dark me-5" *ngFor="let mgr of managers" [value]="mgr.empName">
+                          {{mgr.empName}}
+                        </option>
+                      </select>
+                    </td>
+                    <td>
+                      <select
+                        class="form-select form-select-solid fw-bold text-dark fs-5 me-5"
+                        data-kt-select2="true"
+                        data-placeholder="Select option"
+                        data-allow-clear="true"
+                        formControlName="type"
+                        (change)="onSelectionChange()"
+                        style="font-size:10pt;width:150px;padding: 4px;"
+                      >
+                      <option class = "fw-bold text-dark me-5" *ngFor="let year of years" [value]="year.value">{{year.year}}</option>
+                    </select>
+                    </td>
+                  </tr>
+                </table>
+                </form>
+                <div class="panel-wrapper">
+                    <div class="panels d-flex">
+                        <div class="panel sent d-flex flex-column">
+                            <p>Sent</p>
+                            <p class="sent-data" [@dataChange]="stat.totalSent" style="font-size: 80pt; line-height: .7; text-decoration: underline;cursor: pointer;" (click)="goToDetails('ES')">{{stat.totalSent}}</p>
+                        </div>
+                        <div class="panel positivefeedback d-flex flex-column">
+                            <p>(+Ve) Feedback</p>
+                            <p class="positive-data" [@dataChange]="posFeed" style="font-size: 80pt; line-height: .7; text-decoration: underline;cursor: pointer;" (click)="goToDetails('PosFeed')">{{posFeed}}</p>
+                        </div>
+                        <div class="panel d-flex flex-column neutral">
+                            <p>Neutral</p>
+                            <p class="neutral-data" [@dataChange]="NeuFeed"style="font-size: 80pt; line-height: .7; text-decoration: underline;cursor: pointer;" (click)="goToDetails('NeuFeed')">{{NeuFeed}}</p>
+                        </div>
+                        <div class="panel d-flex flex-column negativefeedback">
+                            <p>(-Ve) Feedback</p>
+                            <p class="negative-data" [@dataChange]="NegFeed" style="font-size: 80pt; line-height: .7; text-decoration: underline;cursor: pointer;" (click)="goToDetails('NegFeed')">{{NegFeed}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="label-wrapper d-flex justify-content-center align-item-center">
+                    <div class="label d-flex justify-content-center align-item-center">
+                        <h1>Customer Satisfaction</h1>
+                    </div>
+                    <div class="label d-flex justify-content-center align-item-center">
+                        <h1>Customer Score</h1>
+                    </div>
+
+                </div>
+                <div class="chart-wrapper d-flex">
+                    <div class="chart-container piechart">
+                        <div id="chart">
+                            <apx-chart
+                            [series]="guageOptions.series"
+                            [chart]="guageOptions.chart"
+                            [plotOptions]="guageOptions.plotOptions"
+                            [labels]="guageOptions.labels"
+                            [legend]="guageOptions.legend"
+                            [colors]="guageOptions.colors"
+                            [responsive]="guageOptions.responsive"
+                            ></apx-chart>
+                          </div>
+                    </div>
+
+
+                    <div class="chart-container piechart">
+                      <div id="chart">
+                          <apx-chart
+                            [series]="chartOptions.series"
+                            [chart]="chartOptions.chart"
+                            [plotOptions]="chartOptions.plotOptions"
+                            [labels]="chartOptions.labels"
+                            [stroke]="chartOptions.stroke"
+                            [fill]="chartOptions.fill"
+                          ></apx-chart>
+                        </div>
+                  </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

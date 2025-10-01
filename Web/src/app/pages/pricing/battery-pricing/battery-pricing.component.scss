@@ -1,0 +1,22 @@
+.form-container{
+     table{
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+       
+        tr{
+            display: flex;
+            justify-content: space-between;
+        }
+         .input-control{
+            background-color: var(--kt-input-solid-bg);
+            box-shadow: none !important;
+            border: 1px solid var(--kt-form-select-border-color);
+            padding: 0.5rem;
+            border-radius: 5px;
+        }
+         .input-control:focus{
+            border: none;
+        }
+    }
+}

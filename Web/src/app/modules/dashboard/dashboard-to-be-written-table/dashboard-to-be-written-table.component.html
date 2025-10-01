@@ -1,0 +1,156 @@
+<!-- begin::Header -->
+
+<div class="card-header border-0 pt-5">
+  <h3 class="card-title align-items-start flex-column">
+<span class="card-label fw-bolder fs-3 mb-1">To Be Written</span>
+    <!-- <span class="text-muted mt-1 fw-bold fs-7">Over 500 members</span> -->
+  </h3>
+  <!-- <div
+    class="card-toolbar"
+    data-bs-toggle="tooltip"
+    data-bs-placement="top"
+    data-bs-trigger="hover"
+    title="Click to add a user"
+  >
+  <button
+      type="button"
+      class="btn btn-sm btn-icon btn-color-primary btn-active-light-primary"
+      data-kt-menu-trigger="click"
+      data-kt-menu-placement="bottom-end"
+      data-kt-menu-flip="top-end"
+    >
+      <span
+        [inlineSVG]="'./assets/media/icons/duotune/general/gen024.svg'"
+        class="svg-icon svg-icon-2"
+      ></span>
+    </button>
+    <app-filter-to-be-written></app-filter-to-be-written>
+  </div> -->
+</div>
+<!-- end::Header -->
+<!-- begin::Body -->
+<div class="card-body py-3">
+  <!-- begin::Table container -->
+  <div class="table-responsive">
+    <!-- begin::Table -->
+    <table
+      class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4"
+    >
+      <!-- begin::Table head -->
+      <thead>
+        <tr class="fw-bolder text-muted">
+          <th class="min-w-150px text-dark">Quote Id</th>
+          <th class="min-w-140px text-dark">Account Manager</th>
+          <!-- <th class="min-w-120px text-dark">Customer</th>
+          <th class="min-w-120px text-dark">Amount</th> -->
+          <th class="min-w-120px text-dark">Date of Quote</th>
+          <!-- <th class="min-w-120px text-dark">Date of Status Change</th>
+          <th class="min-w-120px text-dark">Reason</th>
+          <th class="min-w-120px text-dark">Priority</th>
+          <th class="min-w-120px text-dark">Contract Type</th>
+          <th class="min-w-120px text-dark">Age</th> -->
+
+          <!-- <th class="min-w-100px text-end">Actions</th> -->
+        </tr>
+      </thead>
+      <!-- end::Table head -->
+      <!-- begin::Table body -->
+      <tbody>
+        <tr *ngFor="let data of toBeWrittenQuotes">
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.quoteID}}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.quoteOwner}}
+                </span>
+              </div>
+            </div>
+          </td>
+          <!-- <td>
+            <span class="text-muted fw-bold text-muted d-block fs-7">
+              {{data.custname}}
+            </span>
+          </td>
+
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.quoteAmount}}
+                </span>
+              </div>
+            </div>
+          </td> -->
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.quotedOn | date: 'yyyy-MM-dd hh:mm a'}}
+                </span>
+              </div>
+            </div>
+          </td>
+          <!-- <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.dateStatusChanged}}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.quoteReason}}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.quotePriority}}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.contractType}}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="d-flex justify-content-start flex-column">
+                <span class="text-muted fw-bold text-muted d-block fs-7">
+                  {{data.age}}
+                </span>
+              </div>
+            </div>
+          </td> -->
+        </tr>
+
+      </tbody>
+      <!-- end::Table body -->
+    </table>
+    <!-- end::Table -->
+  </div>
+  <!-- end::Table container -->
+</div>
+<!-- begin::Body -->

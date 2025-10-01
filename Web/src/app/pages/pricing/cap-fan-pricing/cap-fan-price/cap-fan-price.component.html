@@ -1,0 +1,257 @@
+<!-- begin::Header -->
+<div class="table-container-width">
+  <div class="card">
+      <div class="card-body border-0" style="padding: 0;">
+
+          <div class="table-container">
+              <div class="card-body" style="padding: 0;">
+                  <!-- begin::Table container -->
+                  <div class="table-max-width">
+                    <div style="text-align: right;margin: 10px;" *ngIf="currentUser.empLevel === 1">
+                      <input *ngIf="type === 'Edit'" type="button" class="btn btn-info" style="padding:9px 16px 9px 16px" (click)="updateBulkChild()" value="Update All">
+                    </div>
+                    <!-- begin::Table -->
+                    <table class="table table-row-gray-300 align-middle gs-0" >
+                      <!-- begin::Table head -->
+                      <thead>
+                        <tr class="text-dark fw-bolder badge-light-primary">
+                          <th class="min-w-150px cursor-pointer text-hover-primary"  style="padding-left: 1rem;">Part Name</th>
+                          <th class="min-w-150px cursor-pointer text-hover-primary">OEM Part No</th>
+                          <th class="min-w-125px cursor-pointer text-hover-primary">DCG Part No</th>
+                          <th class="min-w-100px cursor-pointer text-hover-primary">Description</th>
+                          <th class="min-w-150px cursor-pointer text-hover-primary">Assembly Part No</th>
+                          <th class="min-w-80px cursor-pointer text-hover-primary">Build</th>
+                          <th class="min-w-80px cursor-pointer text-hover-primary">Order</th>
+                          <th class="min-w-125px cursor-pointer text-hover-primary">DCG Cost</th>
+                          <th class="min-w-125px cursor-pointer text-hover-primary">Sale Price</th>
+                          <th class="min-w-125px cursor-pointer text-hover-primary">Total Cost</th>
+                          <th class="min-w-125px cursor-pointer text-hover-primary">Total Sale</th>
+                          <th class="min-w-150px cursor-pointer text-hover-primary">Notes</th>
+                          <!-- <th class="min-w-100px cursor-pointer text-hover-primary" (click)="sortTable('notes')" >Update<i class="fa fa-sort" [ngClass]="sortIcon('notes')"></i></th> -->
+                          <th  *ngIf="type === 'Edit'&& currentUser.empLevel === 1" class="min-w-100px cursor-pointer text-hover-primary">Action</th>
+
+                        </tr>
+
+                      </thead>
+                      <!-- end::Table head -->
+
+                      <!-- begin::Table body -->
+                      <tbody class="text-dark mb-1 fs-5" *ngIf = "capFanPriceDetails && capFanPriceDetails.length > 0">
+                          <!-- [ngStyle]="{ 'background-color': isQuoteSelected(capfanprice) ? 'lightyellow' : 'inherit' }" -->
+                        <tr [ngClass]="i % 2 === 1 ? 'bg-row-opacity' : ''" *ngFor = "let capFanPricingDetail of capFanPriceDetails; let i = index;">
+
+                          <td class="ps-4">
+                            <input *ngIf="type === 'Edit'"  type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.partName" disabled="true">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.partName}}
+                            </span>
+                          </td>
+                          <td>
+                            <input *ngIf="type === 'Edit'"    type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.oemPartNo" disabled="true">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.oemPartNo}}
+                            </span>
+                          </td>
+                          <td>
+                            <input *ngIf="type === 'Edit'"    type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.dcgPartNo">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.dcgPartNo}}
+                            </span></td>
+                          <td>
+                            <input *ngIf="type === 'Edit'"    type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.description">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.description}}
+                            </span>
+                          </td>
+                          <td>
+                            <input *ngIf="type === 'Edit'"    type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.assyPartNo">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.description}}
+                            </span>
+                          </td>
+                          <td>
+                            <input *ngIf="type === 'Edit'"    type="number" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.qtyasBuilt">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.qtyasBuilt}}
+                            </span>
+                          </td>
+                          <td>
+                            <input  *ngIf="type === 'Edit'" (input)="onOrderQuantityChange(capFanPricingDetail)"  type="number" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.qtyToOrder">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.qtyToOrder}}
+                            </span>
+                          </td>
+                          <td>
+                            <div *ngIf="type === 'Edit'" class="input-group">
+                              <span class="form-control-sm fw-normal text-dark" 
+                              style="border-color: black;" >$</span>
+                              <input type="number" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.dcgCost">
+                            </div>
+
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              ${{capFanPricingDetail.dcgCost | number : '1.2-2'}}
+                            </span>
+                          </td>
+                          <td>
+                            <div *ngIf="type === 'Edit'" class="input-group">
+                              <span class="form-control-sm fw-normal text-dark" 
+                              style="border-color: black;" >$</span>
+                              <input type="number" class="form-control form-control-sm fw-normal text-dark" 
+                                     style="border-color: black;" 
+                                     [(ngModel)]="capFanPricingDetail.salePrice">
+                            </div>
+                          
+                            <span *ngIf="type === 'ReadOnly'">
+                              ${{ capFanPricingDetail.salePrice | number : '1.2-2' }}
+                            </span>
+                          </td>
+                          <td>
+                            <div *ngIf="type === 'Edit'" class="input-group">
+                              <span class="form-control-sm fw-normal text-dark" 
+                              style="border-color: black;" >$</span>
+                            <input type="number" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.totalCost">
+                            </div>
+                            
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              ${{capFanPricingDetail.totalCost | number : '1.2-2'}}
+                            </span>
+                          </td>
+                          <td>
+                            <div *ngIf="type === 'Edit'" class="input-group">
+                              <span class="form-control-sm fw-normal text-dark" 
+                              style="border-color: black;" >$</span>
+                            <input type="number" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.totalSale">
+                            </div>
+
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              ${{capFanPricingDetail.totalSale | number : '1.2-2'}}
+                            </span>
+                          </td>
+                          <td>
+                            <input *ngIf="type === 'Edit'"    type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="capFanPricingDetail.notes">
+                            <span class="" *ngIf="type === 'ReadOnly'">
+                              {{capFanPricingDetail.notes}}
+                            </span>
+                          </td>
+                          <!-- <td style="padding-right: 1rem;">
+                            <input  type="button" class="btn btn-info" style="padding:9px 16px 9px 16px" (click)="updateChild(capFanPricingDetail)" value="Update">
+                          </td> -->
+                          <td style="padding-right: 1rem;" *ngIf="type === 'Edit' && currentUser.empLevel === 1">
+                            <input  type="button" class="btn btn-danger" style="padding:9px 16px 9px 16px" (click)="deleteChild(capFanPricingDetail)" value="Delete">
+                          </td>
+                        </tr>
+
+                        <tr *ngIf="rowIndexViaParam !== undefined && type === 'Edit' && currentUser.empLevel === 1" style="background: rgba(26, 124, 124, 0.2);">
+                          <td>
+                            <div class="input-group fw-bold text-dark col-lg-8  fv-row p-0">
+                              <input  type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;margin-left: 12px;width: 179px;" [(ngModel)]="newCapFanPriceDetails.partName">
+                              <div *ngIf="addNewSubmitted && isUndefinedOrEmpty(newCapFanPriceDetails.partName)" style="color: red;font-weight: bold;margin-left: 12px;">Part name is required.</div>
+                            </div>
+                          </td>
+                          <td>
+                            <input  type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="newCapFanPriceDetails.oemPartNo">
+                            <div *ngIf="addNewSubmitted && isUndefinedOrEmpty(newCapFanPriceDetails.oemPartNo)" style="color: red;font-weight: bold;">OEM part no is required.</div>
+                          </td>
+                          <td>
+                            <input  type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="newCapFanPriceDetails.dcgPartNo">
+                            <div *ngIf="addNewSubmitted && isUndefinedOrEmpty(newCapFanPriceDetails.dcgPartNo)" style="color: red;font-weight: bold;">DCG part no is required.</div>
+                          </td>
+                          <td>
+                            <input  type="text" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;" [(ngModel)]="newCapFanPriceDetails.description">
+                          </td>
+                          <td>
+                            <input  type="number" class="form-control form-control-sm fw-normal " style="border-color: black; height: 35px;" [(ngModel)]="newCapFanPriceDetails.qtyasBuilt">
+                          </td>
+                          <td>
+                            <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;" [(ngModel)]="newCapFanPriceDetails.qtyToOrder">
+                          </td>
+                          <td>
+                            <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="newCapFanPriceDetails.dcgCost">
+                          </td>
+                          <td>
+                            <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="newCapFanPriceDetails.salePrice">
+                          </td>
+                          <td>
+                            <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="newCapFanPriceDetails.totalCost">
+                            <input  type="hidden" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="newCapFanPriceDetails.createdBy" value="currentUser.empName">
+                          </td>
+                          <td>
+                            <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="newCapFanPriceDetails.totalSale">
+                          </td>
+                          <td>
+                            <input  type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="newCapFanPriceDetails.notes">
+                          </td>
+                          <td>
+                            <input  type="button" class="btn btn-success" style="padding:9px 9px 9px 9px" (click)="addNewChild()" value="Add new">
+                          </td>
+                          <td>
+
+                          </td>
+                        </tr>
+
+                        <tr *ngIf="showTotals" class="" style=" background: rgba(26, 124, 124, 0.2);">
+                          <td colspan="6" style="text-align: right; font-weight: bold;">
+                            <span class="" style="font-size: large;">
+                              Total
+                            </span>
+                          </td>
+
+                          <td>
+                            <span style="font-size: large;">{{calculatedPriceDetailsViewOnly.dcgCost | currency:'USD':'symbol':'1.2-2' }}</span>
+                            <!-- <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="calculatedPriceDetailsViewOnly.dcgCost"> -->
+                          </td>
+                          <td>
+                            <span style="font-size: large;">{{calculatedPriceDetailsViewOnly.salePrice | currency:'USD':'symbol':'1.2-2' }}</span>
+                            <!-- <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="calculatedPriceDetailsViewOnly.salePrice"> -->
+                          </td>
+                          <td>
+                            <span style="font-size: large;">{{calculatedPriceDetailsViewOnly.totalCost | currency:'USD':'symbol':'1.2-2' }}</span>
+                            <!-- <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="calculatedPriceDetailsViewOnly.totalCost"> -->
+
+                          </td>
+                          <td>
+                            <span style="font-size: large;">{{calculatedPriceDetailsViewOnly.totalSale | currency:'USD':'symbol':'1.2-2' }}</span>
+                            <!-- <input  type="number" class="form-control form-control-sm fw-normal" style="border-color: black; height: 35px;color: red" [(ngModel)]="calculatedPriceDetailsViewOnly.totalSale"> -->
+                          </td>
+                          <td>
+                            <span style="font-size: large;">{{newCapFanPriceDetails.notes}}</span>
+                            <!-- <input  type="text" class="form-control form-control-sm fw-normal text-dark" style="border-color: black; height: 35px;" [(ngModel)]="newCapFanPriceDetails.notes"> -->
+                          </td>
+                          <td>
+
+                          </td>
+                          <td>
+
+                          </td>
+                        </tr>
+                        <tr *ngIf="quantity && pricing && freight" class="" style="text-align: left; font-weight: bold; color: #2984C5;">
+                          <td colspan="" >
+                            <span class="" style="font-size: large;">
+                              Quote Hrs: {{quantity}}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="" style="font-size: large;">
+                              {{pricing}}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="" style="font-size: large;">
+                              Freight: {{freight}}
+                            </span>
+                          </td>
+
+                        </tr>
+                      </tbody>
+                      <!-- end::Table body -->
+                    </table>
+                    <!-- end::Table -->
+                  </div>
+                  <!-- end::Table container -->
+                </div>
+          </div>
+
+      </div>
+    </div>
+
+</div>

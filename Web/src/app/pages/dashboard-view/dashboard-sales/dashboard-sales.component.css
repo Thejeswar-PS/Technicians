@@ -1,0 +1,42 @@
+.tobescheduled, .pastdue, .indiscussion, .tobecalled, .tobesent, .tobeescalated {
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.3s ease;
+    margin: 10px;
+    border-radius: 10px;
+}
+
+.tobescheduled {
+    background: linear-gradient(to right, #b4e0fc, #59bdfc);
+    color: white;
+}
+
+.pastdue {
+    background: linear-gradient(to right, #fff5d3, #ffe06e);
+    color: white;
+}
+
+.indiscussion {
+    background: linear-gradient(to right, #c6fec1, #8bfe81);
+    color: white;
+}
+
+.tobecalled {
+    background: linear-gradient(to right, #fdc9b1, #fd9a6c);
+    color: white;
+}
+
+.tobesent {
+    background: linear-gradient(to right, #e0c1fd, #c384ff);
+    color: white;
+}
+
+.tobeescalated {
+    background: linear-gradient(to right, #f99caa, #f94863);
+    color: white;
+}
+
+.col .fw-bold.fs-4,
+.col .fw-bolder.fs-1 {
+    font-size: 44px; /* Adjust the font size as needed */
+}
+

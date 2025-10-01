@@ -1,0 +1,103 @@
+<!-- begin::Header -->
+<div class="card">
+    <div class="card-body border-0" style="padding: 0;">
+
+        <div class="table-container">
+            <div class="card-body" style="padding: 0;">
+                <!-- begin::Table container -->
+                <div class="table-responsive">
+                  <!-- begin::Table -->
+                  <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" style="width: 90%;">
+                    <!-- begin::Table head -->
+                    <thead>
+                      <tr class="text-dark fw-bolder badge-light-primary">
+                        <th class="min-w-50px " style="padding-left: 1rem;" >Equip ID<i class="fa fa-sort" [ngClass]="sortIcon('make')"></i></th>
+                        <th class="min-w-50px" >Cell No<i class="fa fa-sort" [ngClass]="sortIcon('modelName')"></i></th>
+                        <th class="min-w-50px " >Equip No<i class="fa fa-sort" [ngClass]="sortIcon('KVA')"></i></th>
+                        <th class="min-w-50px " >Make<i class="fa fa-sort" [ngClass]="sortIcon('KVA')"></i></th>
+                        <th class="min-w-50px " >Equip Type<i class="fa fa-sort" [ngClass]="sortIcon('sAndP')"></i></th>
+                        <th class="min-w-50px " >Model<i class="fa fa-sort" [ngClass]="sortIcon('modifiedOn')"></i></th>
+                        <th class="min-w-100px " >Svc_Asset_Tag<i class="fa fa-sort" [ngClass]="sortIcon('editDelete')"></i></th>
+                        <th class="min-w-50px " >Serial ID<i class="fa fa-sort" [ngClass]="sortIcon('editDelete')"></i></th>
+                        <th class="min-w-50px " >Location<i class="fa fa-sort" [ngClass]="sortIcon('editDelete')"></i></th>
+                        <th class="min-w-50px " >Code Equip Status<i class="fa fa-sort" [ngClass]="sortIcon('editDelete')"></i></th>
+                        <th class="min-w-50px " >Rating<i class="fa fa-sort" [ngClass]="sortIcon('editDelete')"></i></th>
+                      </tr>
+            
+                    </thead>
+                    <!-- end::Table head -->
+
+                    <!-- begin::Table body -->
+                    <tbody class="text-dark mb-1 fs-5" *ngIf = "equipmentDetailsList && equipmentDetailsList.length > 0">
+                        <!-- [ngStyle]="{ 'background-color': isQuoteSelected(capfanprice) ? 'lightyellow' : 'inherit' }" -->
+                      <tr *ngFor = "let equipDetail of equipmentDetailsList; let i = index;">
+                    
+                        <td style="padding-left: 1rem;">
+                          <span class="">
+                            {{equipDetail.equipId}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.callnbr}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.equipNo}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.make}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.equipType}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.model}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.svc_Asset_tag}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.serialID}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.location}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.codeEquipmentStatus}}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="">
+                            {{equipDetail.rating}}
+                          </span>
+                        </td>
+                        
+                      </tr>
+
+                    </tbody>
+                    <!-- end::Table body -->
+                  </table>
+                  <!-- end::Table -->
+                </div>
+                <!-- end::Table container -->
+              </div>
+        </div>
+
+    </div>
+  </div>

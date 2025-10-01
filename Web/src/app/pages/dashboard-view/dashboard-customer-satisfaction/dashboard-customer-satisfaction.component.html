@@ -1,0 +1,20 @@
+<div class="card-header align-items-center border-0 mt-4">
+  <h3 class="card-title align-items-start flex-column">
+    <span class="fw-bolder mb-2 text-dark">Customer Satisfaction</span>
+    <!-- <span class="text-muted fw-bold fs-7">890,344 Sales</span> -->
+  </h3>
+  <div class="card-body pt-5"  [style.height]="'400px'">
+    <div class="chart-container piechart">
+      <div id="chart">
+        <apx-chart
+        [series]="chartOptions.series"
+        [chart]="chartOptions.chart"
+        [plotOptions]="chartOptions.plotOptions"
+        [labels]="chartOptions.labels"
+        [stroke]="chartOptions.stroke"
+        [fill]="chartOptions.fill"
+        ></apx-chart>
+      </div>
+    </div>
+  </div>     
+</div>
