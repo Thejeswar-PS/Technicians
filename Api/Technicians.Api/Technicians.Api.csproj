@@ -54,6 +54,7 @@
 
   <ItemGroup>
     <Folder Include="Controllers\obj\Debug\" />
+    <Folder Include="Models\obj\Debug\" />
   </ItemGroup>
 
 </Project>

@@ -12,9 +12,9 @@
         public string AccMgr { get; set; }
         public string Archive { get; set; }
         public string SvcDescr { get; set; }
-        public DateTime? StrDate { get; set; }
+        public DateTime? StrtDate { get; set; }
         public DateTime? StrtTime { get; set; }
         public DateTime? ReturnJob { get; set; }
-
     }
+
 }

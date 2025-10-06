@@ -535,16 +535,16 @@ public Load(initialLoad: boolean = false)
     return returnJob;
   }
 
-  getStatusIcon(status: string | null): { icon: string, tooltip: string } {
+  getStatusIcon(status: string | null): { icon: string, tooltip: string, color: string, symbol: string } {
     const safeStatus = status || '';
     switch (safeStatus) {
-      case 'A': return { icon: 'assets/media/icons/offline.gif', tooltip: 'Off-Line' };
-      case 'B': return { icon: 'assets/media/icons/major.gif', tooltip: 'On-Line(Major Deficiency)' };
-      case 'C': return { icon: 'assets/media/icons/minor.gif', tooltip: 'On-Line(Minor Deficiency)' };
-      case 'E': return { icon: 'assets/media/icons/critical.gif', tooltip: 'Critical Deficiency' };
-      case 'F': return { icon: 'assets/media/icons/major.gif', tooltip: 'Replacement Recommended' };
-      case 'G': return { icon: 'assets/media/icons/Proactive.png', tooltip: 'Proactive Replacement' };
-      default: return { icon: 'assets/media/icons/online.gif', tooltip: 'On-Line' };
+      case 'A': return { icon: '', tooltip: 'Off-Line', color: '#dc3545', symbol: '⚫' };
+      case 'B': return { icon: '', tooltip: 'On-Line(Major Deficiency)', color: '#fd7e14', symbol: '🔶' };
+      case 'C': return { icon: '', tooltip: 'On-Line(Minor Deficiency)', color: '#ffc107', symbol: '🔸' };
+      case 'E': return { icon: '', tooltip: 'Critical Deficiency', color: '#dc3545', symbol: '🔴' };
+      case 'F': return { icon: '', tooltip: 'Replacement Recommended', color: '#fd7e14', symbol: '⚠️' };
+      case 'G': return { icon: '', tooltip: 'Proactive Replacement', color: '#6610f2', symbol: '🔧' };
+      default: return { icon: '', tooltip: 'On-Line', color: '#198754', symbol: '🟢' };
     }
   }
 
@@ -706,6 +706,43 @@ public Load(initialLoad: boolean = false)
     }, (reason) => {
 
     });
+  }
+
+  // Check if upload date is valid (not the default '01-Jan-1900' date)
+  isValidUploadDate(dateValue: any): boolean {
+    if (!dateValue) {
+      return false;
+    }
+    
+    // Convert to string for comparison
+    const dateStr = dateValue.toString();
+    
+    // Check for various formats of the default date
+    const invalidDates = [
+      '01-Jan-1900',
+      '1900-01-01',
+      '1/1/1900',
+      '01/01/1900',
+      '1900-01-01T00:00:00',
+      '1900-01-01T00:00:00.000Z'
+    ];
+    
+    // Check if it's one of the invalid default dates
+    if (invalidDates.some(invalid => dateStr.includes(invalid))) {
+      return false;
+    }
+    
+    // Try to parse as date and check if it's the 1900 date
+    try {
+      const date = new Date(dateValue);
+      if (date.getFullYear() === 1900 && date.getMonth() === 0 && date.getDate() === 1) {
+        return false;
+      }
+    } catch (error) {
+      return false;
+    }
+    
+    return true;
   }
 
   // Status class for cyberpunk design

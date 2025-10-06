@@ -130,19 +130,19 @@
           <thead>
             <tr class="text-dark fw-bolder badge-light-primary  fs-6">
               <th class="min-w-20px"></th> <!-- Expand/collapse column -->
-              <th class="min-w-120px text-hover-primary fs-6" (click)="sortTable('jobID')" style="cursor: pointer;">Job ID <i class="fa" [ngClass]="sortIcon('jobID')"></i></th>
-              <th class="min-w-400px text-hover-primary fs-6" (click)="sortTable('custName')" style="cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custName')"></i></th>
-              <th class="min-w-200px text-hover-primary fs-6" (click)="sortTable('address')" style="cursor: pointer;">Address <i class="fa" [ngClass]="sortIcon('address')"></i></th>
-              <th class="min-w-350px text-hover-primary fs-6" (click)="sortTable('svcDescr')" style="cursor: pointer;">Service Type <i class="fa" [ngClass]="sortIcon('svcDescr')"></i></th>
-              <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('status')" style="cursor: pointer;">Status <i class="fa" [ngClass]="sortIcon('status')"></i></th>
-              <th class="min-w-200px text-hover-primary fs-6" (click)="sortTable('techName')" style="cursor: pointer;">Tech-Name <i class="fa" [ngClass]="sortIcon('techName')"></i></th>
-              <th class="min-w-200px text-hover-primary fs-6" *ngIf="isAccountManagerColumnVisible()" (click)="sortTable('accMgr')" style="cursor: pointer;">Account Manager <i class="fa" [ngClass]="sortIcon('accMgr')"></i></th>
+              <th class="min-w-50px text-hover-primary fs-6" (click)="sortTable('jobID')" style="cursor: pointer;">Job ID <i class="fa" [ngClass]="sortIcon('jobID')"></i></th>
+              <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('custName')" style="cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custName')"></i></th>
+              <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('address')" style="cursor: pointer;">Address <i class="fa" [ngClass]="sortIcon('address')"></i></th>
+              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('svcDescr')" style="cursor: pointer;">Service Type <i class="fa" [ngClass]="sortIcon('svcDescr')"></i></th>
+              <th class="min-w-80px text-hover-primary fs-6" (click)="sortTable('status')" style="cursor: pointer;">Status <i class="fa" [ngClass]="sortIcon('status')"></i></th>
+              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('techName')" style="cursor: pointer;">Tech-Name <i class="fa" [ngClass]="sortIcon('techName')"></i></th>
+              <th class="min-w-150px text-hover-primary fs-6" *ngIf="isAccountManagerColumnVisible()" (click)="sortTable('accMgr')" style="cursor: pointer;">Account Manager <i class="fa" [ngClass]="sortIcon('accMgr')"></i></th>
               <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('strDate')" style="cursor: pointer;">Scheduled <i class="fa" [ngClass]="sortIcon('strDate')"></i></th>
-              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('returnJob')" style="cursor: pointer;">Uploaded <i class="fa" [ngClass]="sortIcon('returnJob')"></i></th>
-              <th class="min-w-100px">$$</th>
-              <th class="min-w-100px">Parts</th>
-              <th class="min-w-100px">Info</th>
-              <th class="min-w-100px">Safety</th>
+              <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('returnJob')" style="cursor: pointer;">Uploaded <i class="fa" [ngClass]="sortIcon('returnJob')"></i></th>
+              <th class="min-w-50px">$$</th>
+              <th class="min-w-50px">Parts</th>
+              <th class="min-w-50px">Info</th>
+              <th class="min-w-50px">Safety</th>
             </tr>
           </thead>
           <!-- end::Table head -->
@@ -168,14 +168,16 @@
                 <td>{{job.address}}</td>
                 <td>{{job.svcDescr}}</td>
                 <td>
-                  <img [src]="getStatusIcon(job.status || '').icon" 
-                       [title]="getStatusIcon(job.status || '').tooltip" 
-                       border="0" alt="" />
+                  <span [style.color]="getStatusIcon(job.status || '').color"
+                        [title]="getStatusIcon(job.status || '').tooltip"
+                        style="font-size: 18px; cursor: help;">
+                    {{getStatusIcon(job.status || '').symbol}}
+                  </span>
                 </td>
                 <td>{{job.techName}}</td>
                 <td *ngIf="isAccountManagerColumnVisible()">{{job.accMgr}}</td>
                 <td>{{(job.strDate || job.strtDate) | date:'dd-MMM-yyyy'}}</td>
-                <td>{{job.returnJob && job.returnJob !== '01-Jan-1900' ? (job.returnJob | date:'dd-MMM-yyyy') : ''}}</td>
+                <td>{{isValidUploadDate(job.returnJob) ? (job.returnJob | date:'dd-MMM-yyyy') : ''}}</td>
                 <td>
                   <a href="javascript:void(0)" (click)="navigateToExpenses((job.callNbr || job.jobID || ''), job.techName, job.techId || job.techID || null)" 
                      style="font-size: 18px; font-weight: bold; color: #28a745; text-decoration: none;" 
@@ -184,18 +186,21 @@
                   </a>
                 </td>
                 <td>
-                  <a href="javascript:void(0)" (click)="navigateToParts((job.callNbr || job.jobID || ''), job.techName)">
-                    <img src="assets/media/icons/Cart_1_Icon.png" alt="Parts" />
+                  <a href="javascript:void(0)" (click)="navigateToParts((job.callNbr || job.jobID || ''), job.techName)"
+                     style="font-size: 18px; color: #007bff; text-decoration: none;" title="Parts">
+                    <i class="bi bi-cart3"></i>
                   </a>
                 </td>
                 <td>
-                  <a href="javascript:void(0)" (click)="navigateToJobInfo((job.callNbr || job.jobID || ''), job.techName)">
-                    <img src="assets/media/icons/Info_Icon.png" alt="Job Info" />
+                  <a href="javascript:void(0)" (click)="navigateToJobInfo((job.callNbr || job.jobID || ''), job.techName)"
+                     style="font-size: 18px; color: #17a2b8; text-decoration: none;" title="Job Info">
+                    <i class="bi bi-info-circle"></i>
                   </a>
                 </td>
                 <td>
-                  <a href="javascript:void(0)" (click)="navigateToSafety((job.callNbr || job.jobID || ''))">
-                    <img src="assets/media/icons/Safety_Icon.png" alt="Safety" />
+                  <a href="javascript:void(0)" (click)="navigateToSafety((job.callNbr || job.jobID || ''))"
+                     style="font-size: 18px; color: #dc3545; text-decoration: none;" title="Safety">
+                    <i class="bi bi-shield-check"></i>
                   </a>
                 </td>
               </tr>

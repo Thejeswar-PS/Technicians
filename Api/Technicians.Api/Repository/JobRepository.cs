@@ -33,7 +33,7 @@ namespace Technicians.Api.Repository
                 parameters.Add("@EmpID", empId);
                 parameters.Add("@MgrID", mgrId);
                 parameters.Add("@TechID", techId);
-                parameters.Add("@RBButton", rbButton);
+                parameters.Add("@rbButton", rbButton);
                 parameters.Add("@CurrentYear", currentYear);
                 parameters.Add("@Month", month);
 
