@@ -37,6 +37,26 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("GetExpenseDetail")]
+        public IActionResult GetExpenseDetail(
+            [FromQuery] string callNbr,
+            [FromQuery] int tableIdx)
+        {
+            try
+            {
+                var result = _repository.GetExpenseDetail(callNbr, tableIdx);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No expenses found for '{callNbr}' related to {tableIdx}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error while fetching expenses: {ex.Message}");
+            }
+        }
+
         [HttpGet("GetMobileReceipts")]
         public async Task<IActionResult> GetMobileReceipts(string callNbr, string techId)
         {

@@ -70,6 +70,20 @@ namespace Technicians.Api.Repository
             return receipts;
         }
 
+        public List<EtechExpenseDto> GetExpenseDetail(string callNbr, int tableIndex)
+        {
+            using (var con = new SqlConnection(_connectionString))
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@CallId", callNbr);
+                parameters.Add("@intIndex", tableIndex);
+
+                return con.Query<EtechExpenseDto>(
+                    "etechExpenseDetail",
+                    parameters,
+                    commandType: CommandType.StoredProcedure).ToList();
+            }
+        }
 
 
 

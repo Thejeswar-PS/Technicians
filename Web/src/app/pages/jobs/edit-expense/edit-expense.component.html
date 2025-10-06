@@ -1,0 +1,261 @@
+<!-- Edit Expense Page -->
+<div class="container-fluid">
+  <div class="expense-form-container">
+    
+    <!-- Header Section -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-12 text-center">
+            <h3 class="mb-0 text-primary">Job Number: {{ callNbr }}</h3>
+          </div>
+        </div>
+        
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <a href="javascript:void(0)" (click)="goBack()" class="btn btn-link p-0">
+              <span [inlineSVG]="'./assets/media/icons/duotune/arrows/arr063.svg'"
+                    class="svg-icon svg-icon-2 me-2"></span>
+              Back to Expenses
+            </a>
+          </div>
+          <div class="col-md-6 text-end">
+            <button 
+              type="button" 
+              class="btn btn-primary me-2" 
+              [disabled]="!canSave"
+              (click)="onSave()">
+              <i class="bi bi-floppy me-1"></i>
+              Save
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-danger" 
+              *ngIf="canDelete"
+              (click)="onDelete()">
+              <i class="bi bi-trash me-1"></i>
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+    
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+    
+    <div *ngIf="foodLimitMessage" class="alert alert-info">
+      {{ foodLimitMessage }}
+    </div>
+
+    <!-- Loading Indicator -->
+    <div *ngIf="isLoading" class="text-center my-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">{{ isEditMode ? 'Loading expense data...' : 'Saving expense...' }}</p>
+    </div>
+
+    <!-- Main Form -->
+    <div class="card" *ngIf="!isLoading">
+      <div class="card-header bg-primary text-white text-center">
+        <h5 class="mb-0">{{ isEditMode ? 'Modify / Delete Expense' : 'Add New Expense' }}</h5>
+      </div>
+      
+      <div class="card-body">
+        <form [formGroup]="expenseForm" (ngSubmit)="onSave()">
+          
+          <!-- Expense Type -->
+          <div class="row mb-3">
+            <label class="col-sm-3 col-form-label fw-bold">Expense Type:</label>
+            <div class="col-sm-9">
+              <select 
+                class="form-select" 
+                formControlName="expType"
+                [disabled]="isEditMode">
+                <option 
+                  *ngFor="let type of expenseTypes" 
+                  [value]="type.value">
+                  {{ type.text }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Travel By (for Travel Hours) -->
+          <div class="row mb-3" *ngIf="isFieldVisible('travelBy')">
+            <label class="col-sm-3 col-form-label fw-bold">Travel By:</label>
+            <div class="col-sm-9">
+              <select class="form-select" formControlName="travelBy">
+                <option 
+                  *ngFor="let option of travelByOptions" 
+                  [value]="option.value">
+                  {{ option.text }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Purpose (for Expenses) -->
+          <div class="row mb-3" *ngIf="isFieldVisible('purpose')">
+            <label class="col-sm-3 col-form-label fw-bold">Purpose:</label>
+            <div class="col-sm-9">
+              <select class="form-select" formControlName="purpose">
+                <option 
+                  *ngFor="let option of purposeOptions" 
+                  [value]="option.value">
+                  {{ option.text }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Expense Amount (for Expenses) -->
+          <div class="row mb-3" *ngIf="isFieldVisible('expenseAmount')">
+            <label class="col-sm-3 col-form-label fw-bold">Expenses Amount:</label>
+            <div class="col-sm-9">
+              <input 
+                type="number" 
+                class="form-control" 
+                formControlName="expenseAmount"
+                step="0.01"
+                min="0">
+            </div>
+          </div>
+
+          <!-- Pay Type (for Expenses) -->
+          <div class="row mb-3" *ngIf="isFieldVisible('payType')">
+            <label class="col-sm-3 col-form-label fw-bold">Paid Expenses Type:</label>
+            <div class="col-sm-9">
+              <select class="form-select" formControlName="payType">
+                <option 
+                  *ngFor="let option of payTypeOptions" 
+                  [value]="option.value">
+                  {{ option.text }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- File Upload (for Expenses) -->
+          <div class="row mb-3" *ngIf="isFieldVisible('fileUpload')">
+            <label class="col-sm-3 col-form-label fw-bold">Attachments:</label>
+            <div class="col-sm-9">
+              <input 
+                type="file" 
+                class="form-control" 
+                accept=".jpg,.jpeg,.png,.gif"
+                (change)="onFileSelected($event)">
+              <div class="form-text">
+                Accepted formats: .jpg, .jpeg, .png, .gif (Max size: 2MB)
+              </div>
+            </div>
+          </div>
+
+          <!-- Mileage (for Travel) -->
+          <div class="row mb-3" *ngIf="isFieldVisible('mileage')">
+            <label class="col-sm-3 col-form-label fw-bold">Mileage:</label>
+            <div class="col-sm-9">
+              <input 
+                type="number" 
+                class="form-control" 
+                formControlName="mileage"
+                min="0"
+                step="0.1">
+            </div>
+          </div>
+
+          <!-- Date and Time -->
+          <div class="row mb-3">
+            <label class="col-sm-3 col-form-label fw-bold">Enter Date and Time:</label>
+            <div class="col-sm-9">
+              <div class="row">
+                <div class="col-md-6">
+                  <label class="form-label small">Start Date & Time:</label>
+                  <input 
+                    type="datetime-local" 
+                    class="form-control" 
+                    formControlName="startDateTime"
+                    required>
+                </div>
+                <div class="col-md-6" *ngIf="isFieldVisible('endDateTime')">
+                  <label class="form-label small">End Date & Time:</label>
+                  <input 
+                    type="datetime-local" 
+                    class="form-control" 
+                    formControlName="endDateTime">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="row mb-3" *ngIf="isFieldVisible('notes')">
+            <label class="col-sm-3 col-form-label fw-bold">Notes:</label>
+            <div class="col-sm-9">
+              <select class="form-select" formControlName="notes">
+                <option 
+                  *ngFor="let option of notesOptions" 
+                  [value]="option.value">
+                  {{ option.text }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Other Reason (when Other is selected) -->
+          <div class="row mb-3" *ngIf="isFieldVisible('otherReason')">
+            <label class="col-sm-3 col-form-label fw-bold">Please Explain:</label>
+            <div class="col-sm-9">
+              <textarea 
+                class="form-control" 
+                rows="4" 
+                formControlName="otherReason"
+                placeholder="Enter detailed explanation...">
+              </textarea>
+              <div class="row mt-2">
+                <div class="col-12 text-end">
+                  <button 
+                    type="button" 
+                    class="btn btn-primary" 
+                    [disabled]="!canSave"
+                    (click)="onSave()">
+                    <i class="bi bi-floppy me-1"></i>
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+      
+      <!-- Form Actions (bottom) -->
+      <div class="card-footer text-center" *ngIf="!isFieldVisible('otherReason')">
+        <button 
+          type="button" 
+          class="btn btn-primary me-3" 
+          [disabled]="!canSave"
+          (click)="onSave()">
+          <i class="bi bi-floppy me-1"></i>
+          Save
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="goBack()">
+          <i class="bi bi-arrow-left me-1"></i>
+          Cancel
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

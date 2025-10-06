@@ -52,4 +52,8 @@
     <PackageReference Include="System.Management.Automation" Version="7.2.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\obj\Debug\" />
+  </ItemGroup>
+
 </Project>

@@ -4,24 +4,37 @@ import { JobListComponent } from './job-list/job-list.component';
 import { JobEditComponent } from './job-edit/job-edit.component';
 import { JobExpensesComponent } from './job-expenses/job-expenses.component';
 import { MobileReceiptsComponent } from './mobile-receipts/mobile-receipts.component';
+import { EditExpenseComponent } from './edit-expense/edit-expense.component';
 
 const routes: Routes = [
   {
-    path : '', component : JobListComponent,
-    children : [
-      {
-        path : 'job-list', component: JobListComponent
-      },
-      {
-        path : 'job-edit', component: JobEditComponent
-      }
-    ]
+    path: '',
+    redirectTo: 'job-list',
+    pathMatch: 'full'
   },
   {
-    path: 'expenses', component: JobExpensesComponent
+    path: 'job-list',
+    component: JobListComponent
   },
   {
-    path: 'mobile-receipts', component: MobileReceiptsComponent
+    path: 'job-edit',
+    component: JobEditComponent
+  },
+  {
+    path: 'expenses',
+    component: JobExpensesComponent
+  },
+  {
+    path: 'mobile-receipts',
+    component: MobileReceiptsComponent
+  },
+  {
+    path: 'edit-expense',
+    component: EditExpenseComponent
+  },
+  {
+    path: 'edit-expense/:expenseId',
+    component: EditExpenseComponent
   }
 ];
 

@@ -132,4 +132,38 @@ export class JobService {
     // Updated to match the actual API endpoint structure
     return this.http.get<MobileReceipt[]>(`${this.API}/EtechExpense/GetMobileReceipts?callNbr=${encodeURIComponent(callNbr)}&techID=${encodeURIComponent(techID)}`, { headers: this.headers });
   }
+
+  // Edit Expense API methods
+  getExpenseDetail(callNbr: string, tableIdx: number): Observable<any> {
+    // Based on legacy: da.GetExpenseDetail(CallNbr, TableIdx)
+    return this.http.get<any>(`${this.API}/EtechExpense/GetExpenseDetail?callNbr=${encodeURIComponent(callNbr)}&tableIdx=${tableIdx}`, { headers: this.headers });
+  }
+
+  getAllowedAmountForFoodExpenses(callNbr: string, techName: string): Observable<string> {
+    // Based on legacy: da.AllowedAmountForFoodExpenses(CallNbr, TechName)
+    return this.http.get<string>(`${this.API}/EtechExpense/GetAllowedAmountForFoodExpenses?callNbr=${encodeURIComponent(callNbr)}&techName=${encodeURIComponent(techName)}`, { headers: this.headers });
+  }
+
+  saveExpense(expenseData: any): Observable<any> {
+    // Based on legacy: da.SaveUpdateExpenses(Exp, ref ErrMsg)
+    return this.http.post<any>(`${this.API}/EtechExpense/SaveExpense`, expenseData, { headers: this.headers });
+  }
+
+  deleteExpense(callNbr: string, tableIdx: number): Observable<any> {
+    // Based on legacy delete operation
+    return this.http.delete<any>(`${this.API}/EtechExpense/DeleteExpense?callNbr=${encodeURIComponent(callNbr)}&tableIdx=${tableIdx}`, { headers: this.headers });
+  }
+
+  checkHoursSameDay(techName: string, startDate: Date, endDate: Date, tableIdx: number): Observable<any[]> {
+    // Based on legacy: da.CheckHoursSameDay(TechName, pdtNewStrt, pdtNewEnd, TableIdx)
+    const startDateStr = startDate.toISOString();
+    const endDateStr = endDate.toISOString();
+    return this.http.get<any[]>(`${this.API}/EtechExpense/CheckHoursSameDay?techName=${encodeURIComponent(techName)}&startDate=${encodeURIComponent(startDateStr)}&endDate=${encodeURIComponent(endDateStr)}&tableIdx=${tableIdx}`, { headers: this.headers });
+  }
+
+  canTechAddFoodExpenses(callNbr: string, techName: string, expAmount: number, currentAmount: number, type: string, date: Date): Observable<string> {
+    // Based on legacy: da.CanTechAddFoodExpenses(CallNbr, TechName, ExpAmount, CL, Type, dtNewStrt)
+    const dateStr = date.toISOString();
+    return this.http.get<string>(`${this.API}/EtechExpense/CanTechAddFoodExpenses?callNbr=${encodeURIComponent(callNbr)}&techName=${encodeURIComponent(techName)}&expAmount=${expAmount}&currentAmount=${currentAmount}&type=${encodeURIComponent(type)}&date=${encodeURIComponent(dateStr)}`, { headers: this.headers });
+  }
 }
