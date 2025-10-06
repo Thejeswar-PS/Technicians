@@ -1,0 +1,109 @@
+<!-- Mobile Receipts Page -->
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="card">
+    <div class="card-header">
+      <div class="row align-items-center">
+        <div class="col-12 text-center">
+          <h3 class="mb-0 text-primary">
+            Service Call No: {{ callNbr }} -- Tech Name: {{ techName }}
+          </h3>
+        </div>
+      </div>
+      <div class="row mt-2">
+        <div class="col-12">
+          <a href="javascript:void(0)" (click)="goBack()" class="btn btn-link p-0">
+            <img src="assets/media/icons/backnew.gif" alt="Back" class="me-2">
+            Back to Job Expenses
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" class="text-center mt-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading mobile receipts...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading" class="mt-3">
+    <!-- Title Section -->
+    <div class="card">
+      <div class="card-body text-center bg-light">
+        <h4 class="mb-0 fw-bold">Uploaded Receipts from Mobile Phone App</h4>
+      </div>
+    </div>
+
+    <!-- Receipts Grid -->
+    <div class="card mt-3">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped mb-0" style="font-family: Arial; font-size: 9pt;">
+            <tbody>
+              <tr *ngFor="let receipt of receipts; trackBy: trackByIndex" 
+                  class="align-middle"
+                  style="background-color: #F6F5F0;">
+                <!-- Description Column -->
+                <td class="p-3" style="width: 60%; vertical-align: middle;">
+                  <div class="fw-bold" style="font-size: 12pt;" 
+                       [innerHTML]="formatReceiptDescription(receipt)">
+                  </div>
+                </td>
+                
+                <!-- Image Column -->
+                <td class="text-center p-3" style="width: 40%; vertical-align: middle;">
+                  <div class="receipt-image-container">
+                    <img 
+                      [src]="getReceiptImageUrl(receipt)"
+                      [alt]="'Receipt for ' + receipt.codeDesc"
+                      class="receipt-thumbnail cursor-pointer border"
+                      (click)="onImageClick(receipt)"
+                      (error)="onImageError($event)"
+                      style="max-width: 200px; max-height: 150px; border: 1px solid #dedede;"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Data Message -->
+    <div *ngIf="receipts.length === 0 && !errorMessage" class="alert alert-info mt-3">
+      <i class="fa fa-info-circle me-2"></i>
+      No mobile receipts found for this job.
+    </div>
+  </div>
+
+  <!-- Zoomed Image Modal -->
+  <div 
+    *ngIf="showZoomedImage" 
+    class="zoomed-image-overlay"
+    (click)="closeZoomedImage()">
+    <div class="zoomed-image-container">
+      <img 
+        [src]="zoomedImageUrl"
+        alt="Zoomed Receipt"
+        class="zoomed-image"
+        (click)="$event.stopPropagation()"
+      />
+      <button 
+        type="button" 
+        class="btn btn-light btn-sm close-btn"
+        (click)="closeZoomedImage()">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+  </div>
+</div>

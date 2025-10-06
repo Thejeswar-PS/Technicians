@@ -36,5 +36,19 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, $"Error while fetching expenses: {ex.Message}");
             }
         }
+
+        [HttpGet("GetMobileReceipts")]
+        public async Task<IActionResult> GetMobileReceipts(string callNbr, string techId)
+        {
+            if (string.IsNullOrEmpty(callNbr) || string.IsNullOrEmpty(techId))
+                return BadRequest("CallNbr and TechID are required.");
+
+            var result = await _repository.GetMobileReceiptsAsync(callNbr, techId);
+
+            if (!result.Any())
+                return NotFound("No receipts found for the given CallNbr and TechID.");
+
+            return Ok(result);
+        }
     }
 }

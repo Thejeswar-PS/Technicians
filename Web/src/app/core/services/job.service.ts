@@ -9,6 +9,7 @@ import { DCGBatteryPricingDetail } from '../model/dcg-battery-pricing-details.mo
 import { GetServiceReportsDetails } from '../model/service-report-details-model';
 import { CalendarJobDetails } from '../model/calendar-job-details.model';
 import { GetNotes } from '../model/get-notes.model';
+import { MobileReceipt } from '../model/mobile-receipt.model';
 @Injectable({
   providedIn: 'root'
 })
@@ -124,5 +125,11 @@ export class JobService {
     const tableIdx = -1; // Get all expenses
     
     return this.http.get<any[]>(`${this.API}/EtechExpense/GetEtechExpenses?dt1=${encodeURIComponent(dt1)}&dt2=${encodeURIComponent(dt2)}&techName=${encodeURIComponent(techName)}&tableIdx=${tableIdx}`, { headers: this.headers });
+  }
+
+  getMobileReceipts(callNbr: string, techID: string): Observable<MobileReceipt[]> {
+    // Based on legacy: da.GetMobileReceipts(CallNbr, TechID, ref Result)
+    // Updated to match the actual API endpoint structure
+    return this.http.get<MobileReceipt[]>(`${this.API}/EtechExpense/GetMobileReceipts?callNbr=${encodeURIComponent(callNbr)}&techID=${encodeURIComponent(techID)}`, { headers: this.headers });
   }
 }
