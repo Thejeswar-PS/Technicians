@@ -1,0 +1,101 @@
+/* Job Expenses Component Styles */
+
+.table {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.table th {
+  background-color: #343a40 !important;
+  color: white !important;
+  font-weight: bold !important;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #dee2e6;
+}
+
+.table td {
+  text-align: left;
+  vertical-align: middle;
+  border: 1px solid #dee2e6;
+  padding: 8px;
+}
+
+.table tfoot td {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  border-top: 2px solid #343a40;
+}
+
+.table-danger {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
+.table-danger td {
+  background-color: #dc3545 !important;
+  color: white !important;
+}
+
+/* Button styling */
+.btn {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Filter form styling */
+.card-body.bg-light {
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Header styling */
+.card-header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #dee2e6;
+}
+
+/* Table responsive container */
+.table-responsive {
+  border: 1px solid #dee2e6;
+}
+
+/* Alert styling */
+.alert {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+/* Back link styling */
+.btn-link {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  color: #004499;
+  text-decoration: underline;
+}
+
+/* Form controls */
+.form-control {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.form-label {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #333;
+}
+
+/* Edit icon styling */
+.fa-edit {
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.fa-edit:hover {
+  color: #0056b3 !important;
+}
+
+/* Job number header */
+h3.text-primary {
+  color: #0066cc !important;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}

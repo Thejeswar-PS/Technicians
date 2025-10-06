@@ -8,25 +8,22 @@
         <table>
           <tr>
             <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">AM</label>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Tech</label>
             </td>
             <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Status</label>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Account Manager</label>
             </td>
             <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Year</label>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Archive</label>
+            </td>
+            <td>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Fiscal Year</label>
             </td>
             <td>
               <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Month</label>
             </td>
             <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Job</label>
-            </td>
-            <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Job Type</label>
-            </td>
-            <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Service Type</label>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Search Job</label>
             </td>
             <td></td>
           </tr>
@@ -34,42 +31,49 @@
             <td>
               <select
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
-                data-kt-select2="true"
-                data-placeholder="Select option"
-                data-allow-clear="true"
-                formControlName="ownerId"
-                style="width:100px;padding:4px;"
+                formControlName="techId"
+                style="width:150px;padding:4px;"
+                (change)="onFilterChanges()"
               >
-                <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
-                <option class = "fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.empName">
-                  {{mgr.empName}}
+                <option class="fw-bold text-dark me-5" value="All" selected>All</option>
+                <option class="fw-bold text-dark me-5" *ngFor="let tech of technicians" [value]="tech.TechID">
+                  {{tech.TechName}}
                 </option>
               </select>
             </td>
             <td>
               <select
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
-                data-kt-select2="true"
-                data-placeholder="Select option"
-                data-allow-clear="true"
-                formControlName="status"
-                style="width:100px;padding: 4px;"
+                formControlName="mgrId"
+                style="width:150px;padding:4px;"
+                (change)="onFilterChanges()"
+                [disabled]="userRole === 'Technician'"
               >
-              <option class = "fw-bold text-dark me-5" value="All">All</option>
-              <option class = "fw-bold text-dark me-5" *ngFor="let status of jobStatus" [value]="status.statusCode">{{status.statusDesc}}</option>
-            </select>
+                <option class="fw-bold text-dark me-5" value="All" selected>All</option>
+                <option class="fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.offid">
+                  {{mgr.offname}}
+                </option>
+              </select>
             </td>
             <td>
               <select
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
-                data-kt-select2="true"
-                data-placeholder="Select option"
-                data-allow-clear="true"
+                formControlName="rbButton"
                 style="width:100px;padding:4px;"
-                formControlName="year"
-               >
-               <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
-                <option class = "fw-bold text-dark me-5" *ngFor="let year of fiscalYears" [value]="year">
+                (change)="onFilterChanges()"
+              >
+                <option class="fw-bold text-dark me-5" value="0" selected>Active</option>
+                <option class="fw-bold text-dark me-5" value="1">Archive</option>
+              </select>
+            </td>
+            <td>
+              <select
+                class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
+                formControlName="currentYear"
+                style="width:100px;padding:4px;"
+                (change)="onFilterChanges()"
+              >
+                <option class="fw-bold text-dark me-5" *ngFor="let year of fiscalYears" [value]="year">
                   {{year}}
                 </option>
               </select>
@@ -77,97 +81,46 @@
             <td>
               <select
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
-                data-kt-select2="true"
-                data-placeholder="Select option"
-                data-allow-clear="true"
-                style="width:100px;padding: 4px;"
                 formControlName="month"
-               >
-               <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
-                <option class = "fw-bold text-dark me-5" *ngFor = "let month of months" [value]="month.value">{{month.Text}}</option>
+                style="width:150px;padding:4px;"
+                (change)="onFilterChanges()"
+              >
+                <option class="fw-bold text-dark me-5" *ngFor="let month of months" [value]="month.value">
+                  {{month.Text}}
+                </option>
               </select>
             </td>
             <td>
-              <div class="col-lg-12">
-                <select
-                  class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
-                  data-kt-select2="true"
-                  data-placeholder="Select option"
-                  data-allow-clear="true"
-                  formControlName="type"
-                  style="width:100px;padding: 4px;"
-                  >
-                  <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
-                  <option class = "fw-bold text-dark me-5" value="PD">Past Due</option>
-                </select>
-              </div>
-            </td>
-            <td>
-              <div class="col-lg-12">
-                <select
-                  class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
-                  data-kt-select2="true"
-                  data-placeholder="Select option"
-                  data-allow-clear="true"
-                  formControlName="jobType"
-                  style="width:100px;padding: 4px;"
-                  >
-                  <!-- <option class = "fw-bold text-dark me-5" value="ALL" selected>All</option> -->
-                  <option class = "fw-bold text-dark me-5" value="0">Active</option>
-                  <option class = "fw-bold text-dark me-5" value="1">Archive</option>
-                </select>
-              </div>
-            </td>
-            <td>
-              <div class="col-lg-12">
-                <select
-                  class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
-                  data-kt-select2="true"
-                  data-placeholder="Select option"
-                  data-allow-clear="true"
-                  formControlName="serviceType"
-                  style="width:100px;padding: 4px;"
-                  >
-                  <!-- <option class = "fw-bold text-dark me-5" value="ALL" selected>All</option> -->
-                  <option class = "fw-bold text-dark me-5" value="">All</option>
-                  <option class = "fw-bold text-dark me-5" value="MC">MC</option>
-                  <option class = "fw-bold text-dark me-5" value="T&M">T&M</option>
-                </select>
-              </div>
-            </td>
-            <td>
               <div class="input-group fw-bold text-dark fs-6">
-                <input type="text" class="form-control form-control-sm fw-bold text-dark fs-6" style="border-color: black;" placeholder="Search" formControlName="jobId" (keyup.enter)="SearchJobs()">
+                <input type="text" class="form-control form-control-sm fw-bold text-dark fs-6" 
+                       style="border-color: black;width:100px;" placeholder="Job Number" 
+                       formControlName="jobId" (keyup.enter)="SearchJobs()">
                 <div class="input-group-append">
-                  <button class="btn btn-primary me-3 btn-sm btn-search" type="button" (click)="SearchJobs()">
+                  <button class="btn btn-primary me-2 btn-sm btn-search" type="button" (click)="SearchJobs()">
                     <i class="fa fa-search"></i>
                   </button>
-                  <button type="button" class="btn btn-primary me-3 fs-6" (click)="openChangeStatusModal()" [disabled]="selectedJobIds.length <= 0">Change Status</button>
-                  <button type="button" class="btn btn-primary me-3 fs-6" (click)="importQuotes()">Import Jobs</button>
-                  <button type="button" class="btn btn-primary fs-6" (click)="exportToExcel()">Export to Excel</button>
-      
+                  <button class="btn btn-secondary btn-sm" type="button" (click)="clearSearch()" 
+                          *ngIf="jobFilterForm.value.jobId" title="Clear search">
+                    <i class="fa fa-times"></i>
+                  </button>
                 </div>
               </div>
+            </td>
+            <td>
+              <!-- Removed Change Status, Import Jobs, and Export to Excel buttons -->
             </td>
           </tr>
         </table>
       </form>
+      
+      <!-- Error message display -->
+      <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+        {{errorMessage}}
+      </div>
+      
       </div>
   </div>
     <div class="card card-xxl-stretch">
-      <!-- <div class="card-header border-0">
-        <div style="text-align: right;"
-          class="card-toolbar"
-          data-bs-toggle="tooltip"
-          data-bs-placement="top"
-          data-bs-trigger="hover"
-          title="Import Quotes"
-        >
-        <button type="button" class="btn btn-primary me-3 fs-6" (click)="openChangeStatusModal()" [disabled]="selectedJobIds.length <= 0">Change Status</button>
-        <button type="button" class="btn btn-primary me-3 fs-6" (click)="importQuotes()">Import Jobs</button>
-        <button type="button" class="btn btn-primary fs-6" (click)="exportToExcel()">Export to Excel</button>
-      </div>
-      </div> -->
     <div class="card-body py-3">
       <!-- begin::Table container -->
       <div class="table-max-height">
@@ -176,148 +129,115 @@
           <!-- begin::Table head -->
           <thead>
             <tr class="text-dark fw-bolder badge-light-primary  fs-6">
-              <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('jobID')" style="cursor: pointer; padding-left: 1rem;">Job Id <i class="fa" [ngClass]="sortIcon('jobID')"></i></th>
-              <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('custNmbr')" style="cursor: pointer;">Site Id <i class="fa" [ngClass]="sortIcon('custNmbr')"></i></th>
-              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('custName')" style="cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custName')"></i></th>
-              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('contactName')" style="cursor: pointer;">Contact Name <i class="fa" [ngClass]="sortIcon('contactName')"></i></th>
+              <th class="min-w-20px"></th> <!-- Expand/collapse column -->
+              <th class="min-w-120px text-hover-primary fs-6" (click)="sortTable('jobID')" style="cursor: pointer;">Job ID <i class="fa" [ngClass]="sortIcon('jobID')"></i></th>
+              <th class="min-w-400px text-hover-primary fs-6" (click)="sortTable('custName')" style="cursor: pointer;">Site Name <i class="fa" [ngClass]="sortIcon('custName')"></i></th>
+              <th class="min-w-200px text-hover-primary fs-6" (click)="sortTable('address')" style="cursor: pointer;">Address <i class="fa" [ngClass]="sortIcon('address')"></i></th>
+              <th class="min-w-350px text-hover-primary fs-6" (click)="sortTable('svcDescr')" style="cursor: pointer;">Service Type <i class="fa" [ngClass]="sortIcon('svcDescr')"></i></th>
               <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('status')" style="cursor: pointer;">Status <i class="fa" [ngClass]="sortIcon('status')"></i></th>
-              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('svcDescr')" style="cursor: pointer;">Job Type <i class="fa" [ngClass]="sortIcon('svcDescr')"></i></th>
-              <th class="min-w-125px text-hover-primary fs-6" (click)="sortTable('jobType')" style="cursor: pointer;">Service Type <i class="fa" [ngClass]="sortIcon('jobType')"></i></th>
-              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('address')" style="cursor: pointer;">Street Address<i class="fa" [ngClass]="sortIcon('address')"></i></th>
-              <th class="min-w-100px text-hover-primary fs-6" (click)="sortTable('city')" style="cursor: pointer;">City<i class="fa" [ngClass]="sortIcon('city')"></i></th>
-              <th class="min-w-70px text-hover-primary fs-6" (click)="sortTable('state')" style="cursor: pointer;">State<i class="fa" [ngClass]="sortIcon('state')"></i></th>
-              
-              
-              <th class="min-w-150px text-hover-primary fs-6" *ngIf="selectedOwnerId === 'All'" (click)="sortTable('accMgr')" style="cursor: pointer;">AM<i class="fa" [ngClass]="sortIcon('accMgr')"></i></th>
-              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('responseDate')" style="cursor: pointer;">Response Date<i class="fa" [ngClass]="sortIcon('responseDate')"></i></th>
-              
-              <th class="min-w-85px text-hover-primary fs-6" (click)="sortTable('originalAge')" style="cursor: pointer;">Age <i class="fa" [ngClass]="sortIcon('originalAge')"></i></th>
-              
-              <th class="min-w-50px" style="padding-right: 1rem;">Notes</th>
-              <th class="min-w-50px" style="padding-right: 1rem;">Edit</th>
-              <th class="min-w-50px">
-                <input
-                class="form-check-input widget-9-check"
-                style="border:solid; border-color: lightblue; cursor: pointer;"
-                type="checkbox"
-                [checked]="selectedJobIds.length === jobList.length"
-                (click)="selectAllRows($event)"
-              />
-              </th>
+              <th class="min-w-200px text-hover-primary fs-6" (click)="sortTable('techName')" style="cursor: pointer;">Tech-Name <i class="fa" [ngClass]="sortIcon('techName')"></i></th>
+              <th class="min-w-200px text-hover-primary fs-6" *ngIf="isAccountManagerColumnVisible()" (click)="sortTable('accMgr')" style="cursor: pointer;">Account Manager <i class="fa" [ngClass]="sortIcon('accMgr')"></i></th>
+              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('strDate')" style="cursor: pointer;">Scheduled <i class="fa" [ngClass]="sortIcon('strDate')"></i></th>
+              <th class="min-w-150px text-hover-primary fs-6" (click)="sortTable('returnJob')" style="cursor: pointer;">Uploaded <i class="fa" [ngClass]="sortIcon('returnJob')"></i></th>
+              <th class="min-w-100px">$$</th>
+              <th class="min-w-100px">Parts</th>
+              <th class="min-w-100px">Info</th>
+              <th class="min-w-100px">Safety</th>
             </tr>
-
           </thead>
           <!-- end::Table head -->
           <!-- begin::Table body -->
           <tbody class="text-dark mb-1 fs-6" style="text-align: center; font-family: Roboto condensed;" *ngIf="jobList && jobList.length > 0">
-            <ng-container *ngFor="let quotes of jobList; let i = index;">
-              <tr [ngStyle]="{ 'background-color': isQuoteSelected(quotes) ? 'lightyellow' : 'inherit' }">
-                <td style="padding-left: 1rem;">
-                  <div style="float:left; display:flex;">
-                    <!-- Toggle the expanded state for each job -->
-                    <i (click)="openEquipementDetailModel(quotes.jobID)"
-                       [ngClass]="isOpenEquipementDetailModel[quotes.jobID] ? 'fa fa-minus-square' : 'fa fa-plus-square'"
-                       style="font-size: 19px; padding-right: 4px;cursor: pointer;">
+            <ng-container *ngFor="let job of jobList; let i = index;">
+              <tr>
+                <td style="width: 20px; text-align: center; vertical-align: middle;">
+                  <a href="javascript:void(0)" (click)="openEquipementDetailModel((job.callNbr || job.jobID || ''))" 
+                     style="cursor: pointer; font-size: 16px; color: #007bff;">
+                    <i class="fa" 
+                       [ngClass]="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '')] ? 'fa-minus-square' : 'fa-plus-square'"
+                       [title]="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '')] ? 'Collapse Equipment' : 'Expand Equipment'">
                     </i>
-                    <span (click)="openQuoteDetailsModal(quotes.jobID)" class="text-hover-primary fs-6" style="cursor: pointer;">
-                      {{quotes.jobID}}
-                    </span>
-                  </div>
-
-
-
-
+                  </a>
                 </td>
                 <td>
-                  <span class="">
-                    {{quotes.custNmbr}}
-                  </span>
+                  <a href="javascript:void(0)" (click)="openQuoteDetailsModal(job.callNbr || job.jobID)" class="text-hover-primary fs-6" style="cursor: pointer; color: #428bca;">
+                    {{job.callNbr || job.jobID}}
+                  </a>
+                </td>
+                <td>{{job.custName}}</td>
+                <td>{{job.address}}</td>
+                <td>{{job.svcDescr}}</td>
+                <td>
+                  <img [src]="getStatusIcon(job.status || '').icon" 
+                       [title]="getStatusIcon(job.status || '').tooltip" 
+                       border="0" alt="" />
+                </td>
+                <td>{{job.techName}}</td>
+                <td *ngIf="isAccountManagerColumnVisible()">{{job.accMgr}}</td>
+                <td>{{(job.strDate || job.strtDate) | date:'dd-MMM-yyyy'}}</td>
+                <td>{{job.returnJob && job.returnJob !== '01-Jan-1900' ? (job.returnJob | date:'dd-MMM-yyyy') : ''}}</td>
+                <td>
+                  <a href="javascript:void(0)" (click)="navigateToExpenses((job.callNbr || job.jobID || ''), job.techName, job.techId || job.techID || null)" 
+                     style="font-size: 18px; font-weight: bold; color: #28a745; text-decoration: none;" 
+                     title="Expenses">
+                    $
+                  </a>
                 </td>
                 <td>
-                  <span class="">
-                    {{quotes.custName}}
-                  </span>
+                  <a href="javascript:void(0)" (click)="navigateToParts((job.callNbr || job.jobID || ''), job.techName)">
+                    <img src="assets/media/icons/Cart_1_Icon.png" alt="Parts" />
+                  </a>
                 </td>
                 <td>
-                  <span class="">
-                    {{quotes.contactName}}
-                  </span>
-                </td>
-                <td class="" [style.backgroundColor]="getColorByStatus(quotes.status)"[style.color]="'white'">
-                  <span>
-                    {{quotes.status}}
-                  </span>
+                  <a href="javascript:void(0)" (click)="navigateToJobInfo((job.callNbr || job.jobID || ''), job.techName)">
+                    <img src="assets/media/icons/Info_Icon.png" alt="Job Info" />
+                  </a>
                 </td>
                 <td>
-                  <span class="">
-                    {{quotes.svcDescr}}
-                  </span>
-                </td>
-                <td>
-                  <span class="">
-                    {{quotes.jobType}}
-                  </span>
-                </td>
-                <td>
-                  <span class="">
-                    {{ quotes.address.split(',')[0].trim() }}
-                  </span>
-                </td>
-                <td>
-                  <span class="">
-                    {{quotes.city}}
-                  </span>
-                </td><td>
-                  <span class="">
-                    {{quotes.state}}
-                  </span>
-                </td>
-                <td *ngIf="selectedOwnerId === 'All'">
-                  <span class="">
-                    {{quotes.accMgr}}
-                  </span>
-                </td>
-                <td>
-                  <span class="">
-                    {{quotes.responseDate | date}}
-                  </span>
-                </td>
-                
-                <td>
-                  <span class="">
-                    {{quotes.originalAge}}
-                  </span>
-                </td>
-                
-                <td>
-                  <i (click)="getNotes(quotes.jobID, quotes.custNmbr)"
-                    class="fas fa-sticky-note"
-                  ></i>
-                </td>
-                <td>
-                  <i (click)="edit(quotes.rowIndex)"
-                    class="fas fa-edit"
-                  ></i>
-                </td>
-                <td>
-                  <input
-                  class="form-check-input widget-9-check"
-                  style="border:solid; border-color: lightblue; cursor: pointer; height: 1.4rem; width: 1.4rem"
-                  type="checkbox"
-                  [checked]="selectedJobIds.includes(quotes.jobID)"
-                  (click)="rowSelect(quotes)"
-                      />
+                  <a href="javascript:void(0)" (click)="navigateToSafety((job.callNbr || job.jobID || ''))">
+                    <img src="assets/media/icons/Safety_Icon.png" alt="Safety" />
+                  </a>
                 </td>
               </tr>
-              <ng-container *ngIf="isOpenEquipementDetailModel[quotes.jobID]">
+              
+              <!-- Equipment Details Row (expandable) -->
+              <ng-container *ngIf="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '')]">
                 <tr>
-                  <td colspan="100%">
-                    <app-equipment-details [jobId]="quotes.jobID"></app-equipment-details>
+                  <td style="width: 10px;"></td>
+                  <td colspan="100%" style="border: 0px; padding: 8px;">
+                    <div style="overflow: auto; border: 0px; position: relative; max-width: 80%;">
+                      <table class="table table-bordered table-sm" style="font-size: 10px; margin: 0;">
+                        <thead style="background-color: #9370DB; color: white;">
+                          <tr>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 60px;">Equip ID</th>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 100px;">Equip No</th>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 80px;">Make</th>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 100px;">Model</th>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 100px;">Serial No</th>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 60px;">KVA/Batt</th>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 150px;">Location</th>
+                            <th class="text-center py-1" style="font-size: 10px; min-width: 70px;">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let equipment of getEquipmentForJob((job.callNbr || job.jobID || ''))" 
+                              style="height: 22px; background-color: #FFFACD; font-size: 10px;">
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.equipId}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.equipNo?.trim()}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.vendorId?.trim()}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.version?.trim()}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.serialID?.trim()}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.rating}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.location?.trim()}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.codeEquipmentStatus}}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </td>
                 </tr>
               </ng-container>
             </ng-container>
-
           </tbody>
           <!-- end::Table body -->
         </table>
@@ -326,11 +246,6 @@
       <!-- end::Table container -->
     </div>
     </div>
-
-
-    <app-pagination *ngIf="jobList.length> 0" [pageNum] = "paginationObj.pageNumber" [pageSize] = "paginationObj.pageSize"
-    [totalRecords] ="paginationObj.totalRecordsCount"  (updatePagination) = "updatePagination($event)">
-    </app-pagination>
 </div>
 
   <!-- begin::Body -->

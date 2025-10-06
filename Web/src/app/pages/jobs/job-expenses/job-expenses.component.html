@@ -1,0 +1,145 @@
+<!-- Job Expenses Page -->
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="card">
+    <div class="card-header">
+      <div class="row align-items-center">
+        <div class="col-12 text-center">
+          <h3 class="mb-0 text-primary" *ngIf="callNbr">
+            Job Number: {{ callNbr }}
+          </h3>
+          <h3 class="mb-0 text-primary" *ngIf="!callNbr && techName">
+            Expenses for: {{ techName }}
+          </h3>
+        </div>
+      </div>
+      <div class="row mt-2">
+        <div class="col-12">
+          <a href="javascript:void(0)" (click)="goBack()" class="btn btn-link p-0">
+            <i class="fa fa-arrow-left"></i> Back to Job List
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="card-body bg-light">
+      <form [formGroup]="dateFilterForm" (ngSubmit)="filterExpensesByDate()" class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Start Date</label>
+          <input type="date" class="form-control" formControlName="startDate">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">End Date</label>
+          <input type="date" class="form-control" formControlName="endDate">
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary">Get Expenses</button>
+        </div>
+        <div class="col-md-4 text-end">
+          <button type="button" class="btn btn-success me-2" (click)="addNewExpense()">
+            Add New Expense
+          </button>
+          <button type="button" class="btn btn-info" (click)="viewMobileReceipts()">
+            Mobile Receipts
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Expenses Table -->
+  <div class="card mt-3">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-sm mb-0" style="font-size: 12pt; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+          <thead class="table-dark">
+            <tr>
+              <th style="color: white; font-weight: bold; width: 120px;">Exp Type</th>
+              <th style="color: white; font-weight: bold; width: 100px;">Description</th>
+              <th style="color: white; font-weight: bold; width: 80px;">Start Dt</th>
+              <th style="color: white; font-weight: bold; width: 80px;">Time</th>
+              <th style="color: white; font-weight: bold; width: 80px;">End Dt</th>
+              <th style="color: white; font-weight: bold; width: 80px;">Time</th>
+              <th style="color: white; font-weight: bold; width: 100px;">Tech Paid</th>
+              <th style="color: white; font-weight: bold; width: 100px;">DCG Paid</th>
+              <th style="color: white; font-weight: bold; width: 70px;">Mileage</th>
+              <th style="color: white; font-weight: bold; width: 100px;">Hours</th>
+              <th style="color: white; font-weight: bold; width: 100px;">Travel By</th>
+              <th style="color: white; font-weight: bold; width: 100px;">Modified On</th>
+              <th style="color: white; font-weight: bold; width: 180px;">Modified By</th>
+              <th style="color: white; font-weight: bold; width: 90px;">Job Number</th>
+              <th style="color: white; font-weight: bold; width: 30px;">Edit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let expense of filteredExpenses; trackBy: trackByTableIndex" 
+                [ngClass]="getRowClass(expense.expType)">
+              <td>{{ expense.expType }}</td>
+              <td>{{ expense.description }}</td>
+              <td>{{ expense.strtDate | date:'MM/dd/yyyy' }}</td>
+              <td>{{ expense.strtTime | date:'shortTime' }}</td>
+              <td>{{ expense.endDate | date:'MM/dd/yyyy' }}</td>
+              <td>{{ expense.endTime | date:'shortTime' }}</td>
+              <td>
+                {{ getCurrencyValue(expense.techPaid) | currency:'USD':'symbol':'1.2-2' }}
+                <span *ngIf="shouldHideField(expense.expType, 'techPaid')" class="text-muted"></span>
+              </td>
+              <td>
+                {{ getCurrencyValue(expense.companyPaid) | currency:'USD':'symbol':'1.2-2' }}
+                <span *ngIf="shouldHideField(expense.expType, 'companyPaid')" class="text-muted"></span>
+              </td>
+              <td>
+                {{ getNumericValue(expense.mileage) | number:'1.1-1' }}
+                <span *ngIf="shouldHideField(expense.expType, 'mileage')" class="text-muted"></span>
+              </td>
+              <td>
+                <span *ngIf="!shouldHideField(expense.expType, 'hours')">
+                  {{ formatExpenseHours(getNumericValue(expense.hours)) }}
+                </span>
+              </td>
+              <td>{{ expense.travelBy }}</td>
+              <td>{{ expense.changeLast | date:'MM/dd/yyyy' }}</td>
+              <td>{{ expense.changeBy }}</td>
+              <td>{{ expense.callNbr }}</td>
+              <td class="text-center">
+                <a href="javascript:void(0)" (click)="editExpense(expense)" class="text-primary">
+                  <i class="fa fa-edit" title="Edit Expense"></i>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+          <tfoot class="table-secondary">
+            <tr style="font-weight: bold;">
+              <td>Total</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td>{{ techPaidTotal | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td>{{ companyPaidTotal | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td>{{ mileageTotal | number:'1.1-1' }}</td>
+              <td>{{ formatHours(hoursTotal) }}</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Data Message -->
+  <div *ngIf="filteredExpenses.length === 0 && !errorMessage" class="alert alert-info mt-3">
+    No expenses found for the selected criteria.
+  </div>
+</div>

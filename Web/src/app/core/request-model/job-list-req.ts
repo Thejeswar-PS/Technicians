@@ -1,9 +1,9 @@
 export class JobListRequest {
-  ownerId?: string | null;
-  status?: string | null;
-  year?: string | null;
-  month?: string | null;
-  type?: string | null;
-  // type?: string | null;
-  jobType?: number = 0;
+  empId?: string | null;
+  mgrId?: string | null;
+  techId?: string | null;
+  rbButton?: number | null;
+  currentYear?: number | null;
+  month?: number | null;
+  jobId?: string | null;
 }

@@ -35,6 +35,10 @@ export class JobService {
   getEquipmentDetails(jobId: string): Observable<EquipmentDetails[]>{
     return this.http.get<EquipmentDetails[]>(`${this.API}/Jobs/GetEquipmentDetails?jobId=${jobId}`,{ headers : this.headers })
   }
+  
+  getEquipmentDetailsByCallNbr(callNbr: string): Observable<EquipmentDetails[]>{
+    return this.http.get<EquipmentDetails[]>(`${this.API}/EquipmentDetail/GetEquipmentDetails?callNbr=${callNbr}`,{ headers : this.headers })
+  }
   getServiceDetails(req : any) : Observable<Job[]>
   {
     let params = new HttpParams({ fromObject: req })
@@ -81,5 +85,44 @@ export class JobService {
   importJobs(accMngr: any) : Observable<any>
   {
     return this.http.get<any[]>(`${this.API}/jobs/ImportJobs?accManager=${accMngr}`,{ headers : this.headers });
+  }
+  
+  // Legacy API methods to match WebForms functionality
+  getJobs(req: any): Observable<Job[]> {
+    let params = new HttpParams({ fromObject: req });
+    return this.http.get<Job[]>(`${this.API}/Jobs/GetJobs?${params}`, { headers: this.headers });
+  }
+  
+  searchJob(req: any): Observable<Job[]> {
+    let params = new HttpParams({ fromObject: req });
+    return this.http.get<Job[]>(`${this.API}/Jobs/SearchJob?${params}`, { headers: this.headers });
+  }
+  
+  // New method for searched job (equivalent to GetJobInfo in legacy)
+  getSearchedJob(jobId: string, techId: string, empId: string): Observable<Job[]> {
+    return this.http.get<Job[]>(`${this.API}/Jobs/GetSearchedJob?jobId=${jobId}&techId=${techId}&empId=${empId}`, { headers: this.headers });
+  }
+  
+  getTechnicians(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.API}/Jobs/GetTechnicians`, { headers: this.headers });
+  }
+
+  // Expense-related methods
+  getExpenseInfo(callNbr: string, techName: string): Observable<any[]> {
+    // Use the correct API endpoint with date range parameters
+    // For single job expenses, we'll use a broad date range to get all expenses for the tech
+    const dt1 = '01/01/2020'; // Start from a past date
+    const dt2 = new Date().toLocaleDateString('en-US'); // Current date
+    const tableIdx = -1; // Get all expenses
+    
+    return this.http.get<any[]>(`${this.API}/EtechExpense/GetEtechExpenses?dt1=${encodeURIComponent(dt1)}&dt2=${encodeURIComponent(dt2)}&techName=${encodeURIComponent(techName)}&tableIdx=${tableIdx}`, { headers: this.headers });
+  }
+
+  getExpenseInfoByDateRange(techName: string, startDate: Date, endDate: Date): Observable<any[]> {
+    const dt1 = startDate.toLocaleDateString('en-US');
+    const dt2 = endDate.toLocaleDateString('en-US');
+    const tableIdx = -1; // Get all expenses
+    
+    return this.http.get<any[]>(`${this.API}/EtechExpense/GetEtechExpenses?dt1=${encodeURIComponent(dt1)}&dt2=${encodeURIComponent(dt2)}&techName=${encodeURIComponent(techName)}&tableIdx=${tableIdx}`, { headers: this.headers });
   }
 }

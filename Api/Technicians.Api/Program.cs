@@ -18,6 +18,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngularDevClient",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:4200") // Angular dev server
+                   .AllowAnyHeader()
+                   .AllowAnyMethod(); // includes GET, POST, PUT, DELETE, OPTIONS
+        });
+});
+
 // --- Register your repository ---
 builder.Services.AddScoped<EtechExpenseRepository>();
 builder.Services.AddScoped<EquipmentDetailsRepository>();
@@ -27,6 +38,7 @@ builder.Services.AddScoped<UploadedInfoRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<PreJobSafetyInfoRepository>();
 builder.Services.AddScoped<PreJobSafetyListInfoRepository>();
+builder.Services.AddScoped<CommonRepository>();
 
 var app = builder.Build();
 
@@ -37,6 +49,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseRouting();
+
+// Apply CORS policy (must be between UseRouting and UseAuthorization)
+app.UseCors("AllowAngularDevClient");
 app.UseHttpsRedirection();
 
 app.UseAuthorization();

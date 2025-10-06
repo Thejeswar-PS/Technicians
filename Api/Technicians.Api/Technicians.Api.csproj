@@ -10,7 +10,8 @@
 	<InvariantGlobalization>false</InvariantGlobalization>
 	<EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
 	<RootNamespace>Technicians.Api</RootNamespace>
-	<AssemblyName>Technicians.Api</AssemblyName> 
+	<AssemblyName>Technicians.Api</AssemblyName>
+	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>  
   </PropertyGroup>
 
   <ItemGroup>

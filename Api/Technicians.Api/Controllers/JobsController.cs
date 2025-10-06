@@ -41,5 +41,30 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, $"An error occurred while processing your request: {ex.Message}");
             }
         }
+
+        [HttpGet("GetSearchedJob")]
+        public IActionResult GetSearchedJobs(
+            [FromQuery] string jobId,
+            [FromQuery] string techId,
+            [FromQuery] string empId)
+        {
+            try
+            {
+                // Adjusted method call to match the correct overload
+                var jobs = _jobRepository.GetSearchedJob(jobId, techId, empId, out string errorMessage);
+
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    return BadRequest(errorMessage);
+                }
+
+                return Ok(jobs);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (not implemented here for brevity)
+                return StatusCode(500, $"An error occurred while processing your request: {ex.Message}");
+            }
+        }
     }
 }

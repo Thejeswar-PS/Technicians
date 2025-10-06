@@ -44,5 +44,23 @@ namespace Technicians.Api.Repository
             return jobs;
         }
 
+        public List<JobDto> GetSearchedJob(string jobId, string techId, string empId, out string errorMessage)
+        {
+            var jobs = new List<JobDto>();
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@JobID", jobId);
+                parameters.Add("@TechID", techId);
+                parameters.Add("@EmpID", empId);
+
+                jobs = con.Query<JobDto>("ETechShowSearchedJob", parameters, commandType: CommandType.StoredProcedure).ToList();
+            }
+
+            errorMessage = null;
+            return jobs;
+        }
+
     }
 }

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { JobListComponent } from './job-list/job-list.component';
 import { JobEditComponent } from './job-edit/job-edit.component';
+import { JobExpensesComponent } from './job-expenses/job-expenses.component';
 
 const routes: Routes = [
   {
@@ -14,6 +15,9 @@ const routes: Routes = [
         path : 'job-edit', component: JobEditComponent
       }
     ]
+  },
+  {
+    path: 'expenses', component: JobExpensesComponent
   }
 ];
 

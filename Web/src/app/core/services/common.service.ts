@@ -28,5 +28,15 @@ export class CommonService {
     return this.http.get(`${this.API}/Common/GetStates`,{ headers : this.headers });
   }
 
+  // New methods for the required filter loading flow
+  getEmployeeStatusForJobList(windowsID: string)
+  {
+    return this.http.get(`${this.API}/Common/GetEmployeeStatusForJobList?userID=${windowsID}`,{ headers : this.headers });
+  }
+  
+  getTechNamesByEmpID(empID: string, status: string)
+  {
+    return this.http.get(`${this.API}/Common/GetTechNamesByEmpID?empID=${empID}&empType=${status}`,{ headers : this.headers });
+  }
 
 }

@@ -1,0 +1,612 @@
+/* Cyberpunk Futuristic Job List Component Styles */
+
+// Import Cyberpunk Fonts
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+// Cyberpunk Color Variables
+:root {
+  --cyber-primary: #00ffff;        // Electric cyan
+  --cyber-secondary: #ff00ff;      // Electric magenta
+  --cyber-accent: #00ff41;         // Matrix green
+  --cyber-warning: #ff6600;        // Neon orange
+  --cyber-danger: #ff0040;         // Electric red
+  --cyber-dark: #0a0a0f;          // Deep space black
+  --cyber-glass: rgba(10, 10, 15, 0.8);
+  --cyber-glow: 0 0 20px;
+  --cyber-border: 1px solid var(--cyber-primary);
+  --cyber-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+}
+
+// Main Container Styling
+.cyber-container {
+  background: linear-gradient(135deg, 
+    var(--cyber-dark) 0%, 
+    rgba(20, 20, 40, 0.95) 50%, 
+    var(--cyber-dark) 100%);
+  min-height: 100vh;
+  padding: 20px;
+  font-family: 'Rajdhani', monospace;
+  position: relative;
+  overflow-x: auto;
+
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(255, 0, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, rgba(0, 255, 65, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+}
+
+// Mission Control Panel
+.cyber-mission-control {
+  background: var(--cyber-glass);
+  backdrop-filter: blur(20px);
+  border: var(--cyber-border);
+  border-radius: 15px;
+  margin-bottom: 30px;
+  padding: 25px;
+  position: relative;
+  box-shadow: var(--cyber-shadow);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(45deg, 
+      var(--cyber-primary), 
+      var(--cyber-secondary), 
+      var(--cyber-accent), 
+      var(--cyber-primary));
+    border-radius: 15px;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite alternate;
+  }
+
+  .cyber-panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--cyber-primary);
+    text-shadow: var(--cyber-glow) var(--cyber-primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+
+    &::before {
+      content: '◉';
+      color: var(--cyber-accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+  }
+}
+
+// Filter Grid
+.cyber-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.cyber-field {
+  position: relative;
+
+  label {
+    display: block;
+    color: var(--cyber-accent);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+}
+
+.cyber-select {
+  width: 100%;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid var(--cyber-primary);
+  border-radius: 8px;
+  color: var(--cyber-primary);
+  padding: 12px 15px;
+  font-family: 'Rajdhani', monospace;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--cyber-accent);
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+    background: rgba(0, 255, 65, 0.1);
+  }
+
+  option {
+    background: var(--cyber-dark);
+    color: var(--cyber-primary);
+    border: none;
+  }
+}
+
+// Search Wrapper
+.cyber-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .cyber-input {
+    flex: 1;
+    background: rgba(0, 255, 255, 0.1);
+    border: 1px solid var(--cyber-primary);
+    border-radius: 8px 0 0 8px;
+    color: var(--cyber-primary);
+    padding: 12px 15px;
+    font-family: 'Rajdhani', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+
+    &::placeholder {
+      color: rgba(0, 255, 255, 0.6);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--cyber-accent);
+      box-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
+      background: rgba(0, 255, 65, 0.1);
+    }
+  }
+
+  .cyber-btn {
+    background: linear-gradient(45deg, var(--cyber-primary), var(--cyber-accent));
+    border: none;
+    border-radius: 0 8px 8px 0;
+    color: var(--cyber-dark);
+    padding: 12px 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      transition: left 0.5s ease;
+    }
+
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
+
+      &::before {
+        left: 100%;
+      }
+    }
+
+    &.cyber-btn-clear {
+      background: linear-gradient(45deg, var(--cyber-danger), var(--cyber-warning));
+      border-radius: 8px;
+      margin-left: 5px;
+    }
+  }
+}
+
+// Data Table Card
+.cyber-table-card {
+  background: var(--cyber-glass);
+  backdrop-filter: blur(20px);
+  border: var(--cyber-border);
+  border-radius: 15px;
+  padding: 25px;
+  position: relative;
+  box-shadow: var(--cyber-shadow);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(45deg, 
+      var(--cyber-primary), 
+      var(--cyber-secondary), 
+      var(--cyber-accent), 
+      var(--cyber-primary));
+    border-radius: 15px;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite alternate;
+  }
+}
+
+.cyber-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+
+  h3 {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--cyber-accent);
+    text-shadow: var(--cyber-glow) var(--cyber-accent);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    &::before {
+      content: '▦';
+      color: var(--cyber-primary);
+      animation: pulse 2s ease-in-out infinite;
+    }
+  }
+}
+
+// Table Styling
+.cyber-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: transparent;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+
+  .cyber-th {
+    background: linear-gradient(135deg, 
+      rgba(0, 255, 255, 0.2), 
+      rgba(0, 255, 65, 0.2));
+    color: var(--cyber-primary);
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 15px 12px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 10px var(--cyber-primary);
+
+    &:hover {
+      background: linear-gradient(135deg, 
+        rgba(0, 255, 255, 0.3), 
+        rgba(0, 255, 65, 0.3));
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
+    }
+
+    i {
+      margin-left: 8px;
+      color: var(--cyber-accent);
+    }
+  }
+
+  .cyber-td {
+    background: rgba(10, 10, 15, 0.6);
+    color: var(--cyber-primary);
+    font-family: 'Rajdhani', monospace;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 12px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    vertical-align: middle;
+
+    &:hover {
+      background: rgba(0, 255, 255, 0.1);
+      box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+  }
+
+  tbody tr {
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(0, 255, 255, 0.05);
+      transform: scale(1.01);
+      box-shadow: 0 5px 20px rgba(0, 255, 255, 0.2);
+    }
+  }
+}
+
+// Status Icons and Links
+.cyber-link {
+  color: var(--cyber-accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  position: relative;
+
+  &:hover {
+    color: var(--cyber-primary);
+    text-shadow: 0 0 10px var(--cyber-primary);
+    transform: scale(1.05);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--cyber-primary);
+    transition: width 0.3s ease;
+  }
+
+  &:hover::after {
+    width: 100%;
+  }
+}
+
+// Action Buttons
+.cyber-action-btn {
+  background: linear-gradient(45deg, var(--cyber-primary), var(--cyber-secondary));
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cyber-dark);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transition: all 0.5s ease;
+    transform: translate(-50%, -50%);
+  }
+
+  &:hover {
+    transform: scale(1.1) rotate(10deg);
+    box-shadow: 0 0 25px var(--cyber-primary);
+
+    &::before {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  &.cyber-expand {
+    background: linear-gradient(45deg, var(--cyber-accent), var(--cyber-primary));
+  }
+
+  &.cyber-expense {
+    background: linear-gradient(45deg, var(--cyber-warning), var(--cyber-danger));
+  }
+
+  img {
+    width: 20px;
+    height: 20px;
+    filter: invert(1);
+  }
+}
+
+// Equipment Expansion Row
+.cyber-equipment-row {
+  .cyber-equipment-table {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+    box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.3);
+
+    .equipment-header {
+      background: linear-gradient(90deg, var(--cyber-secondary), var(--cyber-primary));
+      color: var(--cyber-dark);
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+
+      th {
+        padding: 10px 8px;
+        text-align: center;
+        border: none;
+      }
+    }
+
+    .equipment-data {
+      background: rgba(255, 250, 205, 0.1);
+      color: var(--cyber-primary);
+      font-family: 'Rajdhani', monospace;
+      font-size: 12px;
+
+      td {
+        padding: 8px;
+        text-align: center;
+        border: 1px solid rgba(0, 255, 255, 0.2);
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba(0, 255, 255, 0.1);
+          color: var(--cyber-accent);
+        }
+      }
+    }
+  }
+}
+
+// Status Styling Classes
+.status-cyber {
+  &.status-pending {
+    color: var(--cyber-warning);
+    text-shadow: 0 0 10px var(--cyber-warning);
+  }
+
+  &.status-active {
+    color: var(--cyber-accent);
+    text-shadow: 0 0 10px var(--cyber-accent);
+  }
+
+  &.status-completed {
+    color: var(--cyber-primary);
+    text-shadow: 0 0 10px var(--cyber-primary);
+  }
+
+  &.status-cancelled {
+    color: var(--cyber-danger);
+    text-shadow: 0 0 10px var(--cyber-danger);
+  }
+}
+
+// Error Message Styling
+.cyber-error {
+  background: rgba(255, 0, 64, 0.2);
+  border: 1px solid var(--cyber-danger);
+  border-radius: 10px;
+  color: var(--cyber-danger);
+  padding: 15px 20px;
+  margin: 20px 0;
+  font-family: 'Rajdhani', monospace;
+  font-weight: 600;
+  text-shadow: 0 0 10px var(--cyber-danger);
+  animation: errorPulse 2s ease-in-out infinite;
+}
+
+// Animations
+@keyframes borderGlow {
+  0% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes errorPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 64, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(255, 0, 64, 0.6); }
+}
+
+@keyframes scanLine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100vw); }
+}
+
+// Scanning Effect
+.cyber-scanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100vh;
+  background: linear-gradient(to bottom, 
+    transparent 0%, 
+    var(--cyber-primary) 50%, 
+    transparent 100%);
+  animation: scanLine 8s linear infinite;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+// Responsive Design
+@media (max-width: 1200px) {
+  .cyber-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .cyber-panel-title {
+    font-size: 20px;
+  }
+
+  .cyber-th {
+    font-size: 12px;
+    padding: 12px 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cyber-container {
+    padding: 10px;
+  }
+
+  .cyber-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .cyber-mission-control,
+  .cyber-table-card {
+    padding: 15px;
+  }
+
+  .cyber-panel-title {
+    font-size: 18px;
+  }
+
+  .cyber-th {
+    font-size: 11px;
+    padding: 10px 6px;
+  }
+
+  .cyber-td {
+    font-size: 12px;
+    padding: 8px 6px;
+  }
+
+  .cyber-table {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cyber-panel-title {
+    font-size: 16px;
+  }
+
+  .cyber-th,
+  .cyber-td {
+    font-size: 10px;
+    padding: 6px 4px;
+  }
+
+  .cyber-action-btn {
+    width: 35px;
+    height: 35px;
+    font-size: 14px;
+  }
+}
