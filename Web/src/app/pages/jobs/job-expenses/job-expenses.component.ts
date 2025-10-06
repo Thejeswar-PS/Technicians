@@ -208,15 +208,38 @@ export class JobExpensesComponent implements OnInit {
   }
 
   editExpense(expense: JobExpense): void {
+    console.log('=== EDIT EXPENSE DEBUG START ===');
     console.log('Editing expense:', expense);
-    this.router.navigate(['/jobs/edit-expense'], {
-      queryParams: {
-        CallNbr: expense.callNbr,
-        TableIdx: expense.tableIndex,
-        TechName: this.techName,
-        TechID: this.techID
-      }
-    });
+    console.log('Current callNbr:', this.callNbr);
+    console.log('Current techName:', this.techName);
+    console.log('Current techID:', this.techID);
+    console.log('Expense tableIndex:', expense.tableIndex);
+    console.log('Expense callNbr:', expense.callNbr);
+    
+    try {
+      console.log('About to navigate to /jobs/edit-expense with queryParams...');
+      const navigationPromise = this.router.navigate(['/jobs/edit-expense'], {
+        queryParams: {
+          CallNbr: expense.callNbr,
+          TableIdx: expense.tableIndex,
+          TechName: this.techName,
+          TechID: this.techID
+        }
+      });
+      
+      console.log('Navigation promise created:', navigationPromise);
+      
+      navigationPromise.then((success) => {
+        console.log('Navigation completed successfully:', success);
+      }).catch((error) => {
+        console.error('Navigation failed with error:', error);
+      });
+      
+      console.log('Navigation initiated, continuing...');
+    } catch (error) {
+      console.error('Error in editExpense method:', error);
+    }
+    console.log('=== EDIT EXPENSE DEBUG END ===');
   }
 
   viewMobileReceipts(): void {

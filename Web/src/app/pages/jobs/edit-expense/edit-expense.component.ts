@@ -143,7 +143,12 @@ export class EditExpenseComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    console.log('=== EDIT EXPENSE COMPONENT INIT START ===');
+    console.log('Router URL:', this.router.url);
+    console.log('Route snapshot:', this.route.snapshot);
+    
     this.route.queryParams.subscribe(params => {
+      console.log('Raw queryParams received:', params);
       this.callNbr = params['CallNbr'] || '';
       this.techName = params['TechName'] || '';
       this.techID = params['TechID'] || '';
@@ -152,7 +157,7 @@ export class EditExpenseComponent implements OnInit {
       
       this.isEditMode = this.tableIdx > 0;
       
-      console.log('Edit Expense - Received params:', {
+      console.log('Edit Expense - Parsed params:', {
         callNbr: this.callNbr,
         techName: this.techName,
         techID: this.techID,
@@ -161,15 +166,19 @@ export class EditExpenseComponent implements OnInit {
       });
       
       if (this.isEditMode) {
+        console.log('Loading expense data for edit mode...');
         this.loadExpenseData();
       } else {
+        console.log('Setting up for new expense...');
         // Set default values for new expense
         this.onExpenseTypeChange();
       }
     });
     
     // Subscribe to form changes for dynamic behavior
+    console.log('Setting up form subscriptions...');
     this.setupFormSubscriptions();
+    console.log('=== EDIT EXPENSE COMPONENT INIT END ===');
   }
 
   private createForm(): FormGroup {
@@ -210,15 +219,42 @@ export class EditExpenseComponent implements OnInit {
   }
 
   loadExpenseData(): void {
+    console.log('=== LOAD EXPENSE DATA START ===');
+    console.log('Loading data for CallNbr:', this.callNbr, 'TableIdx:', this.tableIdx);
     this.isLoading = true;
+    
     this.jobService.getExpenseDetail(this.callNbr, this.tableIdx).subscribe({
       next: (data: any) => {
-        if (data) {
+        console.log('Expense data loaded successfully:', data);
+        console.log('Data type:', typeof data);
+        console.log('Is array:', Array.isArray(data));
+        if (Array.isArray(data) && data.length > 0) {
+          console.log('First item in array:', data[0]);
+          console.log('Date fields in first item:', {
+            strtDate: data[0].strtDate,
+            endDate: data[0].endDate,
+            strtTime: data[0].strtTime,
+            endTime: data[0].endTime
+          });
+          this.populateForm(data[0]); // Use first item if array
+        } else if (data && !Array.isArray(data)) {
+          console.log('Single object data:', data);
+          console.log('Date fields:', {
+            strtDate: data.strtDate,
+            endDate: data.endDate,
+            strtTime: data.strtTime,
+            endTime: data.endTime
+          });
           this.populateForm(data);
+        } else {
+          console.warn('No expense data found');
+          this.errorMessage = 'No expense data found';
         }
         this.isLoading = false;
+        console.log('=== LOAD EXPENSE DATA SUCCESS ===');
       },
       error: (error: any) => {
+        console.error('=== LOAD EXPENSE DATA ERROR ===');
         console.error('Error loading expense data:', error);
         this.errorMessage = 'Error loading expense data: ' + (error.error?.message || error.message);
         this.isLoading = false;
@@ -227,14 +263,32 @@ export class EditExpenseComponent implements OnInit {
   }
 
   private populateForm(data: any): void {
-    // Parse start and end date/time
-    const startDate = new Date(data.strtDate);
-    const startTime = data.strtTime;
-    const endDate = new Date(data.endDate);
-    const endTime = data.endTime;
+    console.log('=== POPULATE FORM START ===');
+    console.log('Raw data received:', data);
     
-    const startDateTime = this.formatDateTime(startDate, startTime);
-    const endDateTime = this.formatDateTime(endDate, endTime);
+    // Parse start and end date/time with validation
+    let startDateTime = '';
+    let endDateTime = '';
+    
+    try {
+      const startDate = this.parseDate(data.strtDate);
+      const startTime = data.strtTime;
+      startDateTime = this.formatDateTime(startDate, startTime);
+      console.log('Start date parsed successfully:', startDateTime);
+    } catch (error) {
+      console.error('Error parsing start date:', data.strtDate, error);
+      startDateTime = this.getDefaultDateTime();
+    }
+    
+    try {
+      const endDate = this.parseDate(data.endDate);
+      const endTime = data.endTime;
+      endDateTime = this.formatDateTime(endDate, endTime);
+      console.log('End date parsed successfully:', endDateTime);
+    } catch (error) {
+      console.error('Error parsing end date:', data.endDate, error);
+      endDateTime = this.getDefaultDateTime();
+    }
     
     // Parse notes field
     let notes = 'PS';
@@ -270,9 +324,63 @@ export class EditExpenseComponent implements OnInit {
   }
 
   private formatDateTime(date: Date, time: string): string {
+    // Validate date first
+    if (!date || isNaN(date.getTime())) {
+      console.error('Invalid date provided to formatDateTime:', date);
+      throw new Error('Invalid date');
+    }
+    
     const dateStr = date.toISOString().split('T')[0];
     const timeStr = time ? time : '00:00:00';
     return `${dateStr}T${timeStr}`;
+  }
+
+  private parseDate(dateString: any): Date {
+    console.log('Parsing date string:', dateString, 'Type:', typeof dateString);
+    
+    if (!dateString) {
+      throw new Error('Date string is null or undefined');
+    }
+    
+    // Handle different date formats
+    let date: Date;
+    
+    if (typeof dateString === 'string') {
+      // Try parsing as-is first
+      date = new Date(dateString);
+      
+      // If invalid, try parsing common formats
+      if (isNaN(date.getTime())) {
+        // Try MM/DD/YYYY format
+        const mmddyyyy = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (mmddyyyy) {
+          date = new Date(parseInt(mmddyyyy[3]), parseInt(mmddyyyy[1]) - 1, parseInt(mmddyyyy[2]));
+        }
+        
+        // Try YYYY-MM-DD format
+        if (isNaN(date.getTime())) {
+          const yyyymmdd = dateString.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          if (yyyymmdd) {
+            date = new Date(parseInt(yyyymmdd[1]), parseInt(yyyymmdd[2]) - 1, parseInt(yyyymmdd[3]));
+          }
+        }
+      }
+    } else {
+      // Try treating as Date object or timestamp
+      date = new Date(dateString);
+    }
+    
+    if (isNaN(date.getTime())) {
+      throw new Error(`Unable to parse date: ${dateString}`);
+    }
+    
+    return date;
+  }
+
+  private getDefaultDateTime(): string {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    return `${dateStr}T00:00:00`;
   }
 
   onExpenseTypeChange(): void {

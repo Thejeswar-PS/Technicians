@@ -145,7 +145,7 @@ export class JobService {
   }
 
   saveExpense(expenseData: any): Observable<any> {
-    // Based on legacy: da.SaveUpdateExpenses(Exp, ref ErrMsg)
+    // Based on legacy save expense operation
     return this.http.post<any>(`${this.API}/EtechExpense/SaveExpense`, expenseData, { headers: this.headers });
   }
 
