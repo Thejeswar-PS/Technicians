@@ -39,6 +39,15 @@ builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<PreJobSafetyInfoRepository>();
 builder.Services.AddScoped<PreJobSafetyListInfoRepository>();
 builder.Services.AddScoped<CommonRepository>();
+builder.Services.AddScoped<CheckDuplicateHoursRepository>();
+builder.Services.AddScoped<UploadJobToGPRepository>();
+builder.Services.AddScoped<CheckExpUploadElgibilityRepository>();
+builder.Services.AddScoped<EtechUploadExpensesRepository>();
+builder.Services.AddScoped<SaveUpdatePartsReqRepository>();
+builder.Services.AddScoped<SaveUpdatePartsTechRepository>();
+//builder.Services.AddScoped<PartsReqDataRepository>();
+//builder.Services.AddScoped<PartsShipRepository>();
+builder.Services.AddScoped<DeficiencyNotesRepository>();
 
 var app = builder.Build();
 
