@@ -34,24 +34,15 @@ builder.Services.AddScoped<EtechExpenseRepository>();
 builder.Services.AddScoped<EquipmentDetailsRepository>();
 builder.Services.AddScoped<JobRepository>();
 builder.Services.AddScoped<SaveUpdateExpenseRepository>();
-builder.Services.AddScoped<UploadedInfoRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<PreJobSafetyInfoRepository>();
 builder.Services.AddScoped<PreJobSafetyListInfoRepository>();
 builder.Services.AddScoped<CommonRepository>();
-builder.Services.AddScoped<CheckDuplicateHoursRepository>();
-builder.Services.AddScoped<UploadJobToGPRepository>();
-builder.Services.AddScoped<CheckExpUploadElgibilityRepository>();
-builder.Services.AddScoped<EtechUploadExpensesRepository>();
 builder.Services.AddScoped<SaveUpdatePartsReqRepository>();
 builder.Services.AddScoped<SaveUpdatePartsTechRepository>();
 //builder.Services.AddScoped<PartsReqDataRepository>();
 //builder.Services.AddScoped<PartsShipRepository>();
-builder.Services.AddScoped<DeficiencyNotesRepository>();
-builder.Services.AddScoped<EmployeeStatusForJobListRepository>();
-builder.Services.AddScoped<etechNotesRepository>();
-builder.Services.AddScoped<ReconciliationEmailNotesRepository>();
-builder.Services.AddScoped<CheckSaveAsDraftEquipRepository>();
+
 
 var app = builder.Build();
 
