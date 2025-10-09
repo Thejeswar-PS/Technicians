@@ -48,6 +48,10 @@ builder.Services.AddScoped<SaveUpdatePartsTechRepository>();
 //builder.Services.AddScoped<PartsReqDataRepository>();
 //builder.Services.AddScoped<PartsShipRepository>();
 builder.Services.AddScoped<DeficiencyNotesRepository>();
+builder.Services.AddScoped<EmployeeStatusForJobListRepository>();
+builder.Services.AddScoped<etechNotesRepository>();
+builder.Services.AddScoped<ReconciliationEmailNotesRepository>();
+builder.Services.AddScoped<CheckSaveAsDraftEquipRepository>();
 
 var app = builder.Build();
 
