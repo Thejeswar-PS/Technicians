@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Management.Automation;
 using System.Threading.Tasks;
 using Technicians.Api.Models;
 using Technicians.Api.Repository;
@@ -90,13 +91,75 @@ namespace Technicians.Api.Controllers
         }
 
         //7. Save or update Shipping Info
-        [HttpPost("ShippingInfo")]
+        [HttpPost("UpdateShippingInfo")]
         public async Task<IActionResult> SaveOrUpdateShippingInfo([FromBody] ShippingInfoDto request)
         {
-            if (request == null) return BadRequest();
+            if (request == null) return BadRequest(new { message = "Request body is required." });
 
-            await _repository.SaveOrUpdateShippingInfoAsync(request);
-            return Ok(new { message = "Shipping info saved/updated successfully." });
+            int rows = await _repository.SaveOrUpdateShippingInfoAsync(request);
+
+            if (rows == 0)
+            {
+                // 404 makes it clear the update did not match any row
+                return NotFound(new { message = "No matching Service_Call_ID found (0 rows updated).", rowsAffected = rows });
+            }
+
+            return Ok(new { message = "Shipping info saved/updated successfully.", rowsAffected = rows });
+        }
+
+        //8. Mark Parts as Received
+
+        [HttpPost("UpdateTechpartsReceived")]
+        public async Task<IActionResult> MarkPartsAsReceived([FromBody] TechPartsReceivedDto request)
+        {
+            if (request == null || request.ScidIncList == null || !request.ScidIncList.Any())
+            {
+                return BadRequest("Invalid request payload.");
+            }
+
+            await _repository.UpdatePartsReceivedAsync(request);
+            return Ok(new { message = "Parts marked as received successfully." });
+        }
+
+        //9. Upload Job to GP_WOW
+
+        [HttpPost("UploadJobToGP_WOW")]
+        public async Task<IActionResult> UploadJobToGP([FromBody] UploadJobToGP_WowDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.CallNumber) || string.IsNullOrWhiteSpace(request.UserName))
+                return BadRequest("CallNumber and UserName are required.");
+
+            try
+            {
+                int errorCode = await _repository.UploadJobToGPAsync(request);
+
+                if (errorCode == 0)
+                    return Ok(new { message = "Job uploaded successfully." });
+                else
+                    return StatusCode(500, new { message = "Job upload failed.", errorCode });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An unexpected error occurred.", detail = ex.Message });
+            }
+        }
+
+        //10. Save or Update Parts Equip Info
+        [HttpPost("SavePartsEquipInfo")]
+        public async Task<IActionResult> SavePartsEquipInfo([FromBody] SavePartsEquipInfoDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.ServiceCallId))
+                return BadRequest("ServiceCallId is required.");
+
+            try
+            {
+                await _repository.SaveOrUpdatePartsEquipInfoAsync(request);
+                return Ok(new { message = "Parts equipment info saved or updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error while saving equipment info.", detail = ex.Message });
+            }
         }
     }
 }

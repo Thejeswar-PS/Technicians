@@ -157,23 +157,106 @@ namespace Technicians.Api.Repository
         }
 
         //7. Save or Update Shipping Info
-        public async Task SaveOrUpdateShippingInfoAsync(ShippingInfoDto request)
+        public async Task<int> SaveOrUpdateShippingInfoAsync(ShippingInfoDto request)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            using var command = new SqlCommand("SaveUpdateShippingInfo", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            command.Parameters.AddWithValue("@Service_Call_ID", (object)request.Service_Call_ID ?? DBNull.Value);
+            command.Parameters.AddWithValue("@TechID", (object)request.TechID ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Technician", (object)request.Technician ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ContactName", (object)request.ContactName ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ContactPh", (object)request.ContactPh ?? DBNull.Value);
+            command.Parameters.AddWithValue("@VerifyPh", request.VerifyPh ? 1 : 0);
+            command.Parameters.AddWithValue("@ReqNotes", (object)request.ReqNotes ?? DBNull.Value);
+            command.Parameters.AddWithValue("@ShipNotes", (object)request.ShipNotes ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Status", (object)request.Status ?? DBNull.Value);
+            command.Parameters.AddWithValue("@Source", request.Source);
+            command.Parameters.AddWithValue("@Maint_Auth_ID", (object)request.Maint_Auth_ID ?? DBNull.Value);
+
+            // OUTPUT parameter
+            var outParam = new SqlParameter("@RowsAffected", SqlDbType.Int)
+            {
+                Direction = ParameterDirection.Output
+            };
+            command.Parameters.Add(outParam);
+
+            await connection.OpenAsync();
+            await command.ExecuteNonQueryAsync();
+
+            return outParam.Value != DBNull.Value ? Convert.ToInt32(outParam.Value) : 0;
+        }
+
+        //8. Update Parts Received
+        public async Task UpdatePartsReceivedAsync(TechPartsReceivedDto request)
         {
             using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand("SaveUpdateShippingInfo", connection))
+            {
+                await connection.OpenAsync();
+
+                var command = new SqlCommand("dbo.UpdateTechPartsRecieved", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                command.Parameters.AddWithValue("@Service_Call_ID", request.ServiceCallId);
+                command.Parameters.AddWithValue("@SCID_Inc", string.Join(",", request.ScidIncList));
+                command.Parameters.AddWithValue("@Maint_Auth_ID", request.MaintAuthId);
+
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        //9. Upload Job to GP_WOW
+        public async Task<int> UploadJobToGPAsync(UploadJobToGP_WowDto request)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand("dbo.UploadJobToGP_Wow", connection))
             {
                 command.CommandType = CommandType.StoredProcedure;
-                command.Parameters.AddWithValue("@Service_Call_ID", request.Service_Call_ID);
-                command.Parameters.AddWithValue("@TechID", request.TechID ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@Technician", request.Technician ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@ContactName", request.ContactName ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@ContactPh", request.ContactPh ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@VerifyPh", request.VerifyPh);
-                command.Parameters.AddWithValue("@ReqNotes", request.ReqNotes ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@ShipNotes", request.ShipNotes ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@Status", request.Status ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@Source", request.Source);
-                command.Parameters.AddWithValue("@Maint_Auth_ID", request.Maint_Auth_ID ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@CallNbr", request.CallNumber);
+                command.Parameters.AddWithValue("@strUser", request.UserName);
+
+                await connection.OpenAsync();
+
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result); // the SP returns @myERROR
+            }
+        }
+
+        //10. Save or Update Parts Equip Info
+        public async Task SaveOrUpdatePartsEquipInfoAsync(SavePartsEquipInfoDto request)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand("dbo.SaveUpdatePartsEquipInfo", connection))
+            {
+                command.CommandType = CommandType.StoredProcedure;
+
+                command.Parameters.AddWithValue("@Service_Call_ID", request.ServiceCallId);
+                command.Parameters.AddWithValue("@TechID", request.TechId);
+                command.Parameters.AddWithValue("@Technician", request.Technician);
+
+                command.Parameters.AddWithValue("@EquipNo", request.EquipNo);
+                command.Parameters.AddWithValue("@Make", request.Make);
+                command.Parameters.AddWithValue("@Model", request.Model);
+                command.Parameters.AddWithValue("@KVA", request.KVA);
+                command.Parameters.AddWithValue("@IPVoltage", request.IPVoltage);
+                command.Parameters.AddWithValue("@OPVoltage", request.OPVoltage);
+                command.Parameters.AddWithValue("@AddInfo", request.AddInfo);
+
+                command.Parameters.AddWithValue("@EquipNo1", request.EquipNo1);
+                command.Parameters.AddWithValue("@Make1", request.Make1);
+                command.Parameters.AddWithValue("@Model1", request.Model1);
+                command.Parameters.AddWithValue("@KVA1", request.KVA1);
+                command.Parameters.AddWithValue("@IPVoltage1", request.IPVoltage1);
+                command.Parameters.AddWithValue("@OPVoltage1", request.OPVoltage1);
+                command.Parameters.AddWithValue("@AddInfo1", request.AddInfo1);
+
+                command.Parameters.AddWithValue("@EmgNotes", request.EmgNotes);
+                command.Parameters.AddWithValue("@Maint_Auth_ID", request.MaintAuthId);
 
                 await connection.OpenAsync();
                 await command.ExecuteNonQueryAsync();
