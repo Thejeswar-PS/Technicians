@@ -42,6 +42,7 @@ builder.Services.AddScoped<SaveUpdatePartsTechRepository>();
 //builder.Services.AddScoped<PartsShipRepository>();
 builder.Services.AddScoped<PartsDataRepository>();
 builder.Services.AddScoped<PartsShippingDataRepository>();
+builder.Services.AddScoped<etechJobInfoRepository>();
 
 
 
