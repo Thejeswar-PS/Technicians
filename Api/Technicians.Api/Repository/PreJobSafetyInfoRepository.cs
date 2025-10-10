@@ -65,6 +65,29 @@ namespace Technicians.Api.Repository
             await cmd.ExecuteNonQueryAsync();
             return true;
         }
+
+        public async Task<List<PreJobSafetyInfoDto>> GetPreJobSafetyListInfoAsync(string callNbr)
+        {
+            var result = new List<PreJobSafetyInfoDto>();
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("GetPreJobSafetyListInfo", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
+
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                var dto = new PreJobSafetyInfoDto
+                {
+                    CallNbr = reader["CallNbr"]?.ToString(),
+                };
+                result.Add(dto);
+            }
+            return result;
+        }
     }
 }
             

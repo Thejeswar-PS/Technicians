@@ -28,5 +28,20 @@ namespace Technicians.Api.Controllers
             else
                 return StatusCode(500, "An error occurred.");
         }
+
+
+        [HttpPost("GetPreJobSafetyListInfo")]
+        public async Task<IActionResult> GetPreJobSafetyListInfoPost([FromBody] PreJobSafetyListInfoDTO request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.CallNbr))
+                return BadRequest("CallNbr is required.");
+
+            var infoList = await _JobSafetyrepository.GetPreJobSafetyListInfoAsync(request.CallNbr);
+
+            if (infoList == null || !infoList.Any())
+                return NotFound("No records found.");
+
+            return Ok(infoList);
+        }
     }
 }
