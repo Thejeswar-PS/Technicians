@@ -1,6 +1,6 @@
 ﻿namespace Technicians.Api.Models
 {
-    public class PartsReqDataDto
+    public class PartsShipDto
     {
         public string Service_Call_ID { get; set; }
         public int SCID_Inc { get; set; }
