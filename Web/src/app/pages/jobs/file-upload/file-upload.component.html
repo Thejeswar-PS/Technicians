@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Files</title>
+    <style>
+        .hide { 
+            position: absolute; 
+            visibility: hidden; 
+        }
+        .show { 
+            position: absolute; 
+            visibility: visible; 
+        }
+        .progress-container {
+            background-color: Navy;
+            color: white;
+            padding: 10px;
+            border: 2px solid #ccc;
+            text-align: center;
+            font-family: 'Trebuchet MS';
+            font-weight: bold;
+        }
+        .upload-container {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .file-input-container {
+            margin-bottom: 10px;
+        }
+        .file-input {
+            width: 100%;
+            padding: 5px;
+        }
+        .header-row {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            padding: 8px;
+        }
+        .table-container {
+            width: 80%;
+            margin: 20px 0;
+        }
+        .upload-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #ccc;
+        }
+        .upload-table td {
+            padding: 8px;
+            border: 1px solid #ccc;
+        }
+        .button-container {
+            text-align: right;
+            margin-top: 10px;
+        }
+        .btn {
+            padding: 5px 15px;
+            margin: 0 2px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            border: 1px solid #007bff;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: 1px solid #6c757d;
+        }
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .message-success {
+            color: green;
+            font-weight: bold;
+            font-size: 9pt;
+        }
+        .message-error {
+            color: red;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+        .message-note {
+            color: darkgoldenrod;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+        .files-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .files-grid th {
+            background-color: #f0f0f0;
+            padding: 8px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        .files-grid td {
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            font-size: small;
+        }
+        .files-grid tr:nth-child(even) {
+            background-color: #E6E5E5;
+        }
+        .file-link {
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 2s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="upload-container">
+        <!-- Header Messages -->
+        <table width="100%">
+            <tr>
+                <td align="left">
+                    <div class="message-success" [innerHTML]="successMessage" *ngIf="successMessage"></div>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <div class="message-error" [innerHTML]="errorMessage" *ngIf="errorMessage"></div>
+                </td>
+            </tr>
+            <tr>
+                <td align="left">
+                    <div class="message-note">
+                        Note: Make sure that File Name does not contain any spaces. It should be all one word.
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Upload Form -->
+        <div class="table-container">
+            <table class="upload-table">
+                <tr class="header-row">
+                    <td colspan="2">Add Attachments</td>
+                </tr>
+                <tr *ngFor="let file of selectedFiles; let i = index">
+                    <td>
+                        <input 
+                            type="file" 
+                            class="file-input" 
+                            (change)="onFileSelected($event, i)"
+                            accept=".jpg,.gif,.doc,.bmp,.xls,.png,.txt,.xlsx,.docx,.pdf,.jpeg">
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="button-container">
+                        <button 
+                            type="button" 
+                            class="btn btn-secondary" 
+                            (click)="closeWindow()">
+                            Close
+                        </button>
+                        <button 
+                            type="button" 
+                            class="btn btn-primary" 
+                            [disabled]="uploading"
+                            (click)="uploadFiles()">
+                            <span *ngIf="uploading" class="spinner"></span>
+                            {{ uploading ? 'Uploading...' : 'Upload' }}
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Progress Bar (shown during upload) -->
+        <div class="progress-container" [class.show]="uploading" [class.hide]="!uploading">
+            <div>Please wait</div>
+            <input 
+                type="text" 
+                readonly 
+                [value]="uploading ? 'Uploading files...' : 'Please Wait.........'"
+                style="color: navy; background-color: white; width: 200px;">
+        </div>
+
+        <!-- Uploaded Files Section -->
+        <table width="100%">
+            <tr>
+                <td>
+                    <div class="message-success" style="font-size: 8pt;">
+                        Uploaded Attachments for Job: {{callNbr}}
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <!-- Loading indicator -->
+                    <div *ngIf="loading" style="text-align: center; padding: 20px;">
+                        <span class="spinner"></span> Loading files...
+                    </div>
+
+                    <!-- Files Grid -->
+                    <table class="files-grid" *ngIf="!loading">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">No</th>
+                                <th style="width: 250px;">File Name</th>
+                                <th style="width: 150px;">Creation Time</th>
+                                <th>Full Name</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let file of uploadedFiles; let i = index">
+                                <td>{{i + 1}}</td>
+                                <td>
+                                    <span 
+                                        class="file-link" 
+                                        (click)="openFile(file)"
+                                        [title]="'Click here to open ' + file.name">
+                                        {{file.name}}
+                                    </span>
+                                </td>
+                                <td>{{file.creationTime | date:'dd-MMM-yyyy'}}</td>
+                                <td>{{file.fullName}}</td>
+                            </tr>
+                            <tr *ngIf="uploadedFiles.length === 0 && !loading">
+                                <td colspan="4" style="text-align: center; padding: 20px; color: #666;">
+                                    No files uploaded yet.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

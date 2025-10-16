@@ -18,53 +18,63 @@ namespace Technicians.Api.Repository
             _connectionString = configuration.GetConnectionString("DefaultConnection");
         }
 
-        public async Task<bool> SaveOrUpdatePreJobSafetyInfoAsync(PreJobSafetyInfoDto dto)
+        public async Task<bool> SaveOrUpdatePreJobSafetyInfoAsync(PreJobSafetyInfoDto pjs, String empId)
         {
-            using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("SaveUpdatePreJobSafetyInfo", conn)
+            try
             {
-                CommandType = CommandType.StoredProcedure
-            };
-            cmd.Parameters.AddWithValue("@CallNbr", dto.CallNbr ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@RespReviewed", dto.RespReviewed ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@WPRequired", dto.WPRequired ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@SlipTripFail", dto.SlipTripFail ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@NoiseHazard", dto.NoiseHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@EyeInjury", dto.EyeInjury ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@DustMistFume", dto.DustMistFume ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@TempHazard", dto.TempHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@FireHazard", dto.FireHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@FireExtHazard", dto.FireExtHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ElectricHazard", dto.ElectricHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@WorkingOverhead", dto.WorkingOverhead ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@TrafficHazard", dto.TrafficHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@DCGIsolated", dto.DCGIsolated ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@BarricadeReqd", dto.BarricadeReqd ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@LockoutReqd", dto.LockoutReqd ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@LockProcReqd", dto.LockProcReqd ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ChemicalHazard", dto.ChemicalHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ChemIdentified", dto.ChemIdentified ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@MSDSReviewed", dto.MSDSReviewed ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@HealthHazard", dto.HealthHazard ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@SafetyShower", dto.SafetyShower ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@HazardousWaste", dto.HazardousWaste ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@SpaceRequired", dto.SpaceRequired ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@SpaceProcReqd", dto.SpaceProcReqd ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@CustJobProcedure", dto.CustJobProcedure ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@SafetyProcRevewed", dto.SafetyProcRevewed ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@SpecialEquipReqd", dto.SpecialEquipReqd ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ToolsInspected", dto.ToolsInspected ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ApprLockouts", dto.ApprLockouts ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ProtEquipReqd", dto.ProtEquipReqd ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@OtherContractors", dto.OtherContractors ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@AnyOtherHazards", dto.AnyOtherHazards ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@Comments", dto.Comments ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@LastModifiedBy", dto.LastModifiedBy ?? (object)DBNull.Value);
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("SaveUpdatePreJobSafetyInfo", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
 
-            await conn.OpenAsync();
-            await cmd.ExecuteNonQueryAsync();
-            return true;
+                cmd.Parameters.AddWithValue("@CallNbr", pjs.CallNbr ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@RespReviewed", pjs.RespReviewed ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@WPRequired", pjs.WPRequired ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SlipTripFail", pjs.SlipTripFail ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@NoiseHazard", pjs.NoiseHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@EyeInjury", pjs.EyeInjury ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DustMistFume", pjs.DustMistFume ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@TempHazard", pjs.TempHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@FireHazard", pjs.FireHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@FireExtHazard", pjs.FireExtHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ElectricHazard", pjs.ElectricHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@WorkingOverhead", pjs.WorkingOverhead ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@TrafficHazard", pjs.TrafficHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCGIsolated", pjs.DCGIsolated ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BarricadeReqd", pjs.BarricadeReqd ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@LockoutReqd", pjs.LockoutReqd ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@LockProcReqd", pjs.LockProcReqd ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ChemicalHazard", pjs.ChemicalHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ChemIdentified", pjs.ChemIdentified ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@MSDSReviewed", pjs.MSDSReviewed ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@HealthHazard", pjs.HealthHazard ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SafetyShower", pjs.SafetyShower ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@HazardousWaste", pjs.HazardousWaste ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SpaceRequired", pjs.SpaceRequired ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SpaceProcReqd", pjs.SpaceProcReqd ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@CustJobProcedure", pjs.CustJobProcedure ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SafetyProcRevewed", pjs.SafetyProcRevewed ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SpecialEquipReqd", pjs.SpecialEquipReqd ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ToolsInspected", pjs.ToolsInspected ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ApprLockouts", pjs.ApprLockouts ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ProtEquipReqd", pjs.ProtEquipReqd ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OtherContractors", pjs.OtherContractors ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@AnyOtherHazards", pjs.AnyOtherHazards ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Comments", pjs.Comments ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@LastModifiedBy", empId); // or replace with current user if available
+
+                await conn.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // optional: log exception
+                return false;
+            }
         }
+
     }
 }
             

@@ -15,18 +15,19 @@ namespace Technicians.Api.Controllers
             _JobSafetyrepository = JobSafetyrepository;
         }
 
-        [HttpPost]
-        public async Task<IActionResult> SaveOrUpdatePreJobSafety([FromBody] PreJobSafetyInfoDto dto)
+        [HttpPost("SaveUpdatePreJobSafety")]
+        public async Task<IActionResult> SaveUpdatePreJobSafety([FromBody] PreJobSafetyInfoDto safetyData, [FromQuery] String empId)
         {
-            if (dto == null || string.IsNullOrWhiteSpace(dto.CallNbr))
-                return BadRequest("CallNbr is required.");
+            if (safetyData == null || string.IsNullOrWhiteSpace(safetyData.CallNbr))
+                return BadRequest(new { success = false, message = "CallNbr is required." });
 
-            bool success = await _JobSafetyrepository.SaveOrUpdatePreJobSafetyInfoAsync(dto);
+            var result = await _JobSafetyrepository.SaveOrUpdatePreJobSafetyInfoAsync(safetyData, empId);
 
-            if (success)
-                return Ok("Saved/Updated successfully.");
+            if (result)
+                return Ok(new { success = true, message = "Saved/Updated successfully." });
             else
-                return StatusCode(500, "An error occurred.");
+                return StatusCode(500, new { success = false, message = "An error occurred while saving data." });
         }
+
     }
 }

@@ -5,6 +5,11 @@ import { JobEditComponent } from './job-edit/job-edit.component';
 import { JobExpensesComponent } from './job-expenses/job-expenses.component';
 import { MobileReceiptsComponent } from './mobile-receipts/mobile-receipts.component';
 import { EditExpenseComponent } from './edit-expense/edit-expense.component';
+import { EquipmentDetailsComponent } from './equipment-details/equipment-details.component';
+import { FileUploadComponent } from './file-upload/file-upload.component';
+import { UpsReadingsComponent } from '../ups-readings/ups-readings.component';
+import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
+import { JobSafetyComponent } from './job-safety/job-safety.component';
 
 const routes: Routes = [
   {
@@ -35,6 +40,26 @@ const routes: Routes = [
   {
     path: 'edit-expense/:expenseId',
     component: EditExpenseComponent
+  },
+  {
+    path: 'equipment-details',
+    component: EquipmentDetailsComponent
+  },
+  {
+    path: 'file-upload',
+    component: FileUploadComponent
+  },
+  {
+    path: 'ups-readings',
+    component: UpsReadingsComponent
+  },
+  {
+    path: 'job-notes-info',
+    component: JobNotesInfoComponent
+  },
+  {
+    path: 'job-safety',
+    component: JobSafetyComponent
   }
 ];
 

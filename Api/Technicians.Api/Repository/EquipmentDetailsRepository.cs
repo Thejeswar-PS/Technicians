@@ -38,19 +38,27 @@ namespace Technicians.Api.Repository
         // 2. GetUploadedInfo
         public async Task<List<UploadedInfoDto>> GetUploadedInfoAsync(string callNbr, string techId)
         {
-            using var connection = new SqlConnection(_connectionString);
-            var parameters = new DynamicParameters();
-            parameters.Add("@CallNbr", callNbr);
-            parameters.Add("@TechID", techId);
+            try
+            {
+                await using var connection = new SqlConnection(_connectionString);
+                var parameters = new DynamicParameters();
+                parameters.Add("@CallNbr", callNbr);
+                parameters.Add("@TechID", techId);
 
-            var result = await connection.QueryAsync<UploadedInfoDto>(
-                "GetUploadedInfo",
-                parameters,
-                commandType: CommandType.StoredProcedure
-            );
+                var result = await connection.QueryAsync<UploadedInfoDto>(
+                    "GetUploadedInfo",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
 
-            return result.ToList();
+                return result.ToList();
+            }
+            catch (Exception)
+            {
+                return new List<UploadedInfoDto>(); // return empty list on error
+            }
         }
+
 
         // 3. GetEmployeeStatusForJobList
         public async Task<EmployeeStatusForJobListDto> GetEmployeeStatusForJobListAsync(string adUserId)
@@ -76,83 +84,31 @@ namespace Technicians.Api.Repository
             return null;
         }
 
-        // 4. UploadJobToGP
-        public async Task<int> UploadJobToGPAsync(string callNbr, string strUser, string loggedInUser)
-        {
-            using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("UploadJobToGP", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-            cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@strUser", strUser ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@LoggedInUser", loggedInUser ?? (object)DBNull.Value);
-
-            await conn.OpenAsync();
-            var result = await cmd.ExecuteScalarAsync(); // Or ExecuteNonQueryAsync if no return value
-            return result != null ? Convert.ToInt32(result) : 0;
-        }
 
         // 5. UploadExpenses
         public async Task<int> UploadExpensesAsync(EtechUploadExpensesDto request)
         {
-            using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("EtechUploadExpenses", conn)
+            await using var conn = new SqlConnection(_connectionString);
+            await using var cmd = new SqlCommand("EtechUploadExpenses", conn)
             {
                 CommandType = CommandType.StoredProcedure
             };
-            cmd.Parameters.AddWithValue("@CallNbr", request.CallNumber);
-            cmd.Parameters.AddWithValue("@strUser", request.User);
+
+            cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
+            cmd.Parameters.AddWithValue("@strUser", request.TechName); // aligns with legacy getUID()
 
             await conn.OpenAsync();
             var result = await cmd.ExecuteNonQueryAsync();
             return result;
         }
 
-        // 6. CheckExpUploadElgibility
-        public async Task<string> CheckExpUploadElgibilityAsync(string callNbr)
-        {
-            using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("CheckExpUploadElgibility", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-            cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
 
-            await conn.OpenAsync();
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                return reader["Result"]?.ToString() ?? "No result found.";
-            }
-            return "No result found.";
-        }
-
-        // 7. CheckDuplicateHours
-        public async Task<string> CheckDuplicateHoursAsync(string callNbr, string techName)
-        {
-            using var conn = new SqlConnection(_connectionString);
-            using var cmd = new SqlCommand("CheckDuplicateHours", conn)
-            {
-                CommandType = CommandType.StoredProcedure
-            };
-            cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@TechName", techName ?? (object)DBNull.Value);
-
-            await conn.OpenAsync();
-            using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
-            {
-                return reader[0]?.ToString() ?? "None";
-            }
-            return "None";
-        }
 
         // 8. GetEtechNotes
-        public async Task<IEnumerable<etechNotesDto>> GetEtechNotesAsync(string callId, string techName)
+        public async Task<IEnumerable<etechNotesDto>> GetEtechNotesAsync(string callNbr, string techName)
         {
             using var connection = new SqlConnection(_connectionString);
-            var parameters = new { CallId = callId, TechName = techName };
+            var parameters = new { CallId = callNbr, TechName = techName };
             var result = await connection.QueryAsync<etechNotesDto>(
                 "dbo.etechNotes", parameters, commandType: CommandType.StoredProcedure);
             return result;
@@ -189,12 +145,320 @@ namespace Technicians.Api.Repository
             using var connection = new SqlConnection(_connectionString);
             var parameters = new DynamicParameters();
             parameters.Add("@CallNbr", callNbr, DbType.String, ParameterDirection.Input);
+
             var result = await connection.ExecuteScalarAsync<string>(
                 "[dbo].[CheckSaveAsDraftEquip]",
                 parameters,
                 commandType: CommandType.StoredProcedure);
+
             return result;
         }
+
+
+        public async Task<int> IsPreJobSafetyDone(string callNbr)
+        {
+            const string query = "SELECT dbo.IsPreJobSafetyDone(@CallNbr)";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        public async Task<int> CheckCapsPartsInfoAsync(string callNbr, int equipId)
+        {
+            const string query = "SELECT dbo.aaCapPartsExist(@CallNbr, @EquipID)";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+                cmd.Parameters.AddWithValue("@EquipID", equipId);
+
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        public async Task<int> ReadingsExistAsync(string callNbr, int equipId, string equipType)
+        {
+            const string query = "SELECT dbo.aaReadingsExist(@CallNbr, @EquipID, @EquipType)";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+                cmd.Parameters.AddWithValue("@EquipID", equipId);
+                cmd.Parameters.AddWithValue("@EquipType", equipType);
+
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        public async Task<int> IsPartsReturnedByTechAsync(string callNbr)
+        {
+            const string query = "SELECT dbo.PartsReturnInfobyTech(@CallNbr)";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        public async Task<string> CheckDuplicateHoursAsync(string callNbr, string techName)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand("CheckDuplicateHours", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+                cmd.Parameters.AddWithValue("@TechName", techName);
+
+                var result = await cmd.ExecuteScalarAsync();
+                return result?.ToString() ?? "None";
+            }
+            catch (Exception)
+            {
+                return "None";
+            }
+        }
+
+        public async Task<string> UploadJobToGPAsync(string callNbr, string techId, string loggedInUser)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand("UploadJobToGP", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+                cmd.Parameters.AddWithValue("@strUser", techId);
+                cmd.Parameters.AddWithValue("@LoggedInUser", loggedInUser);
+
+                await cmd.ExecuteNonQueryAsync();
+
+                return "Job uploaded successfully.";
+            }
+            catch (Exception ex)
+            {
+                return $"Error uploading job: {ex.Message}";
+            }
+        }
+
+        //Upload Repo methods
+        public async Task<string> ValidateExpenseUploadAsync(string callNbr)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("CheckExpUploadElgibility", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+
+                await conn.OpenAsync();
+                var result = await cmd.ExecuteScalarAsync();
+                return result?.ToString() ?? "No result returned.";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
+
+
+        // UPS SPs
+        public async Task<List<ManufacturerDto>> GetManufacturerNamesAsync()
+        {
+            const string query = "SELECT DISTINCT RTRIM(ManufID) AS ManufID, RTRIM(ManufName) AS ManufName FROM [Manufacturer] ORDER BY MANUFNAME";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                var result = new List<ManufacturerDto>();
+                while (await reader.ReadAsync())
+                {
+                    result.Add(new ManufacturerDto
+                    {
+                        ManufID = reader["ManufID"].ToString(),
+                        ManufName = reader["ManufName"].ToString()
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return new List<ManufacturerDto>(); // return empty list on error
+            }
+        }
+
+        public async Task<aaETechUPS?> GetUPSReadingsAsync(string callNbr, int equipId, string upsId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CallNbr", callNbr);
+            parameters.Add("@EquipId", equipId);
+            parameters.Add("@UPSId", upsId);
+
+            // Map query to DTO
+            var result = await connection.QueryFirstOrDefaultAsync<aaETechUPS>(
+                "GetaaETechUPS",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result;
+        }
+
+        public async Task<EditEquipInfoDto> EditEquipInfoAsync(string callNbr, int equipId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CallNbr", callNbr);
+            parameters.Add("@EquipId", equipId);
+            parameters.Add("@EquipNo", "");
+
+            await connection.OpenAsync();
+
+            using var multi = await connection.QueryMultipleAsync(
+                "EditEquipmentDetails",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            var equipInfo = (await multi.ReadAsync<EditEquipInfoDto>()).FirstOrDefault();
+            var batteryInfo = (await multi.ReadAsync<EditEquipInfoDto>()).FirstOrDefault();
+
+            if (equipInfo != null && batteryInfo != null)
+            {
+                // Merge battery info into equipInfo
+                equipInfo.BatteryHousing = batteryInfo.BatteryHousing;
+                equipInfo.BatteryType = batteryInfo.BatteryType;
+                equipInfo.FloatVoltV = batteryInfo.FloatVoltV;
+                equipInfo.FloatVoltS = batteryInfo.FloatVoltS;
+                equipInfo.DCCapsYear = batteryInfo.DCCapsYear;
+                equipInfo.ACInputCapsYear = batteryInfo.ACInputCapsYear;
+                equipInfo.DCCommCapsYear = batteryInfo.DCCommCapsYear;
+                equipInfo.ACOutputCapsYear = batteryInfo.ACOutputCapsYear;
+            }
+
+            return equipInfo;
+        }
+
+        public async Task<EquipReconciliationInfoDto> GetEquipReconciliationInfoAsync(string callNbr, int equipId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("GetEquipReconciliationInfo", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+            cmd.Parameters.AddWithValue("@EquipID", equipId);
+
+            await conn.OpenAsync();
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new EquipReconciliationInfoDto
+                {
+                    CallNbr = callNbr,
+                    EquipID = equipId,
+                    Make = reader["Make"].ToString(),
+                    MakeCorrect = reader["MakeCorrect"].ToString(),
+                    ActMake = reader["ActMake"].ToString(),
+
+                    Model = reader["Model"].ToString(),
+                    ModelCorrect = reader["ModelCorrect"].ToString(),
+                    ActModel = reader["ActModel"].ToString(),
+
+                    SerialNo = reader["SerialNo"].ToString(),
+                    SerialNoCorrect = reader["SerialNoCorrect"].ToString(),
+                    ActSerialNo = reader["ActSerialNo"].ToString(),
+
+                    KVA = reader["KVA"].ToString(),
+                    KVACorrect = reader["KVACorrect"].ToString(),
+                    ActKVA = reader["ActKVA"].ToString(),
+
+                    ASCStringsNo = Convert.ToInt32(reader["ASCStringsNo"]),
+                    ASCStringsCorrect = reader["ASCStringsCorrect"].ToString(),
+                    ActASCStringNo = Convert.ToInt32(reader["ActASCStringNo"]),
+
+                    BattPerString = Convert.ToInt32(reader["BattPerString"]),
+                    BattPerStringCorrect = reader["BattPerStringCorrect"].ToString(),
+                    ActBattPerString = Convert.ToInt32(reader["ActBattPerString"]),
+
+                    TotalEquips = Convert.ToInt32(reader["TotalEquips"]),
+                    TotalEquipsCorrect = reader["TotalEquipsCorrect"].ToString(),
+                    ActTotalEquips = Convert.ToInt32(reader["ActTotalEquips"]),
+
+                    NewEquipment = reader["NewEquipment"].ToString(),
+                    EquipmentNotes = reader["EquipmentNotes"].ToString(),
+                    Verified = Convert.ToBoolean(reader["Verified"])
+                };
+            }
+
+            return null;
+        }
+
+
+
     }
 }
 

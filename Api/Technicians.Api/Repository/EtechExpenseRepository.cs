@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
 using Technicians.Api.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Technicians.Api.Repository
 {
@@ -82,6 +83,30 @@ namespace Technicians.Api.Repository
                     "etechExpenseDetail",
                     parameters,
                     commandType: CommandType.StoredProcedure).ToList();
+            }
+        }
+
+        public async Task<string> EnableExpenses(string callNbr)
+        {
+            const string query = @"Update EtechJobUpload set Uploaded='N',Type='Expense1' where CallNbr='"" + CallNbr + ""' and Type='Expense'";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+
+                int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+                //return rowsAffected > 0 ? "Enabled Expenses Successfully": "No matching record found.";
+                return "Enabled Expenses Successfully";
+            }
+            catch (Exception ex)
+            {
+                // Log exception here if needed
+                return $"Error: {ex.Message}";
             }
         }
 

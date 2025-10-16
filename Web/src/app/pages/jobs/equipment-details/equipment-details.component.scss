@@ -1,0 +1,49 @@
+// File Upload Modal Styles
+.modal {
+  z-index: 1050;
+  
+  &.show {
+    opacity: 1;
+  }
+  
+  .modal-dialog {
+    margin: 1.75rem auto;
+    max-width: 90%;
+    
+    &.modal-xl {
+      max-width: 1140px;
+    }
+  }
+  
+  .modal-content {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  }
+  
+  .modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    
+    .modal-title {
+      font-weight: 600;
+      color: #495057;
+    }
+    
+    .btn-close {
+      margin: 0;
+    }
+  }
+  
+  .modal-body {
+    padding: 2rem;
+  }
+}
+
+.modal-backdrop {
+  z-index: 1040;
+  background-color: rgba(0, 0, 0, 0.5);
+  
+  &.show {
+    opacity: 0.5;
+  }
+}

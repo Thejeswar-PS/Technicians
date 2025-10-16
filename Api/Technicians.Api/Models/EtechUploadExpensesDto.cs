@@ -2,7 +2,7 @@
 {
     public class EtechUploadExpensesDto
     {
-        public string CallNumber { get; set; }
-        public string User { get; set; }
+        public string CallNbr { get; set; } = string.Empty;
+        public string TechName { get; set; } = string.Empty; // or TechId if more appropriate
     }
 }

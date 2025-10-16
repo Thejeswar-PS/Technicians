@@ -36,6 +36,6 @@
         public string OtherContractors { get; set; }
         public string AnyOtherHazards { get; set; }
         public string Comments { get; set; }
-        public string LastModifiedBy { get; set; }
     }
+
 }

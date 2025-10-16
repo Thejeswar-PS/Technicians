@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
+using Technicians.Api.Models;
 using Technicians.Api.Repository;
 
 namespace Technicians.Api.Controllers
@@ -70,5 +72,26 @@ namespace Technicians.Api.Controllers
 
             return Ok(result);
         }
+
+        [HttpPost("EnableExpenses")]
+        public async Task<IActionResult> EnableExpenses([FromBody] JsonElement body)
+        {
+            if (!body.TryGetProperty("callNbr", out var callNbrElement))
+                return BadRequest("Missing 'callNbr' in request body.");
+
+            string callNbr = callNbrElement.GetString();
+
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("CallNbr cannot be empty.");
+
+            var result = await _repository.EnableExpenses(callNbr);
+
+            if (result.StartsWith("Error"))
+                return StatusCode(500, new { Message = result });
+
+            return Ok(new { Message = result });
+        }
+
+
     }
 }

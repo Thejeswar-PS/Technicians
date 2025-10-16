@@ -212,18 +212,19 @@ export class JobListComponent implements OnInit {
   }
 
   // Update openEquipementDetailModel to use consistent property name
-  openEquipementDetailModel(jobId: string){
-    console.log('Toggling equipment details for jobId:', jobId);
-    this.selectedJobId = jobId;
-    this.isOpenEquipementDetailModel[jobId] = !this.isOpenEquipementDetailModel[jobId];
-    console.log('Equipment details expanded:', this.isOpenEquipementDetailModel[jobId]);
+  openEquipementDetailModel(callNbr: string, techName: string){
+    const uniqueKey = `${callNbr}_${techName}`; // Create unique key using callNbr and techName
+    console.log('Toggling equipment details for:', uniqueKey);
+    this.selectedJobId = callNbr;
+    this.isOpenEquipementDetailModel[uniqueKey] = !this.isOpenEquipementDetailModel[uniqueKey];
+    console.log('Equipment details expanded:', this.isOpenEquipementDetailModel[uniqueKey]);
     
     // Load equipment data when expanding for the first time
-    if (this.isOpenEquipementDetailModel[jobId] && !this.equipmentCache[jobId]) {
-      console.log('Loading equipment data for:', jobId);
-      this._jobService.getEquipmentDetailsByCallNbr(jobId).subscribe(data => {
+    if (this.isOpenEquipementDetailModel[uniqueKey] && !this.equipmentCache[uniqueKey]) {
+      console.log('Loading equipment data for:', callNbr);
+      this._jobService.getEquipmentDetailsByCallNbr(callNbr).subscribe(data => {
         console.log('Equipment data loaded:', data);
-        this.equipmentCache[jobId] = data;
+        this.equipmentCache[uniqueKey] = data;
       });
     }
   }
@@ -538,13 +539,13 @@ public Load(initialLoad: boolean = false)
   getStatusIcon(status: string | null): { icon: string, tooltip: string, color: string, symbol: string } {
     const safeStatus = status || '';
     switch (safeStatus) {
-      case 'A': return { icon: '', tooltip: 'Off-Line', color: '#dc3545', symbol: '⚫' };
-      case 'B': return { icon: '', tooltip: 'On-Line(Major Deficiency)', color: '#fd7e14', symbol: '🔶' };
-      case 'C': return { icon: '', tooltip: 'On-Line(Minor Deficiency)', color: '#ffc107', symbol: '🔸' };
-      case 'E': return { icon: '', tooltip: 'Critical Deficiency', color: '#dc3545', symbol: '🔴' };
-      case 'F': return { icon: '', tooltip: 'Replacement Recommended', color: '#fd7e14', symbol: '⚠️' };
-      case 'G': return { icon: '', tooltip: 'Proactive Replacement', color: '#6610f2', symbol: '🔧' };
-      default: return { icon: '', tooltip: 'On-Line', color: '#198754', symbol: '🟢' };
+      case 'A': return { icon: '', tooltip: 'Off-Line', color: '#dc3545', symbol: '🔴' }; // Red
+      case 'B': return { icon: '', tooltip: 'On-Line(Major Deficiency)', color: '#fd7e14', symbol: '🟠' }; // Orange
+      case 'C': return { icon: '', tooltip: 'On-Line(Minor Deficiency)', color: '#ffc107', symbol: '🟡' }; // Yellow
+      case 'E': return { icon: '', tooltip: 'Critical Deficiency', color: '#dc3545', symbol: '🔴' }; // Red
+      case 'F': return { icon: '', tooltip: 'Replacement Recommended', color: '#fd7e14', symbol: '🟠' }; // Orange
+      case 'G': return { icon: '', tooltip: 'Proactive Replacement', color: '#6610f2', symbol: '🟣' }; // Purple
+      default: return { icon: '', tooltip: 'On-Line', color: '#198754', symbol: '🟢' }; // Green
     }
   }
 
@@ -554,17 +555,12 @@ public Load(initialLoad: boolean = false)
   }
 
   // Equipment management for expanded rows
-  equipmentCache: { [jobId: string]: any[] } = {};
+  equipmentCache: { [key: string]: any[] } = {}; // Changed to use unique key instead of just jobId
   
-  getEquipmentForJob(jobId: string): any[] {
-    if (!this.equipmentCache[jobId]) {
-      // Load equipment data when expanded for first time
-      this._jobService.getEquipmentDetailsByCallNbr(jobId).subscribe(data => {
-        this.equipmentCache[jobId] = data;
-      });
-      return [];
-    }
-    return this.equipmentCache[jobId];
+  getEquipmentForJob(callNbr: string, techName: string): any[] {
+    const uniqueKey = `${callNbr}_${techName}`;
+    // Simply return cached data (already loaded in openEquipementDetailModel)
+    return this.equipmentCache[uniqueKey] || [];
   }
 
   // Navigation methods for action icons
@@ -594,16 +590,21 @@ public Load(initialLoad: boolean = false)
   }
 
   navigateToJobInfo(callNbr: string, techName: string | null): void {
-    // Navigate to job info page
+    // Navigate to job notes info page
     const safeTechName = techName || '';
-    const url = `/job-info?CallNbr=${callNbr}&TechName=${safeTechName}`;
-    this.router.navigate([url]);
+    this.router.navigate(['/jobs/job-notes-info'], {
+      queryParams: {
+        CallNbr: callNbr,
+        TechName: safeTechName
+      }
+    });
   }
 
   navigateToSafety(callNbr: string): void {
-    // Navigate to safety page
-    const url = `/safety?CallNbr=${callNbr}`;
-    this.router.navigate([url]);
+    // Navigate to job safety page with CallNbr parameter
+    // Equivalent to: "DTechJobSafety.aspx?CallNbr=" + CallNbr
+    console.log('Navigating to safety page for:', callNbr);
+    this.router.navigate(['/jobs/job-safety'], { queryParams: { CallNbr: callNbr } });
   }
 
   openQuoteDetailsModal(jobId: any) {
@@ -760,6 +761,34 @@ public Load(initialLoad: boolean = false)
       default:
         return 'status-cyber status-active';
     }
+  }
+
+  // Navigate to equipment details page
+  navigateToEquipmentDetails(callNbr: string, techName: string, techId: string): void {
+    console.log('Navigating to equipment details for:', { callNbr, techName, techId });
+    
+    const safeTechName = (techName || '').trim();
+    const safeTechId = (techId || '').trim();
+    const safeCallNbr = (callNbr || '').trim();
+    
+    if (!safeCallNbr) {
+      console.error('Cannot navigate to equipment details: Invalid call number');
+      return;
+    }
+    
+    // Get current filter values to pass along
+    const currentFilters = this.jobFilterForm.value;
+    
+    // Route to equipment details page with query parameters matching legacy DTechEquipDetails.aspx
+    this.router.navigate(['/jobs/equipment-details'], {
+      queryParams: {
+        CallNbr: safeCallNbr,
+        TechName: safeTechName,
+        Tech: safeTechId,
+        Archive: currentFilters.rbButton || '0',
+        Year: currentFilters.currentYear || new Date().getFullYear().toString()
+      }
+    });
   }
 }
 

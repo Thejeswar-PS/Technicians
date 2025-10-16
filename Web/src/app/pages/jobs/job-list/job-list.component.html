@@ -50,7 +50,7 @@
                 [disabled]="userRole === 'Technician'"
               >
                 <option class="fw-bold text-dark me-5" value="All" selected>All</option>
-                <option class="fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.offid">
+                <option class="fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.offname?.toUpperCase()">
                   {{mgr.offname}}
                 </option>
               </select>
@@ -151,16 +151,17 @@
             <ng-container *ngFor="let job of jobList; let i = index;">
               <tr>
                 <td style="width: 20px; text-align: center; vertical-align: middle;">
-                  <a href="javascript:void(0)" (click)="openEquipementDetailModel((job.callNbr || job.jobID || ''))" 
+                  <a href="javascript:void(0)" (click)="openEquipementDetailModel((job.callNbr || job.jobID || ''), (job.techName || ''))" 
                      style="cursor: pointer; font-size: 16px; color: #007bff;">
                     <i class="fa" 
-                       [ngClass]="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '')] ? 'fa-minus-square' : 'fa-plus-square'"
-                       [title]="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '')] ? 'Collapse Equipment' : 'Expand Equipment'">
+                       [ngClass]="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '') + '_' + (job.techName || '')] ? 'fa-minus-square' : 'fa-plus-square'"
+                       [title]="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '') + '_' + (job.techName || '')] ? 'Collapse Equipment' : 'Expand Equipment'">
                     </i>
                   </a>
                 </td>
                 <td>
-                  <a href="javascript:void(0)" (click)="openQuoteDetailsModal(job.callNbr || job.jobID)" class="text-hover-primary fs-6" style="cursor: pointer; color: #428bca;">
+                  <a href="javascript:void(0)" (click)="navigateToEquipmentDetails(job.callNbr || job.jobID || '', job.techName || '', job.techId || job.techID || '')" 
+                     class="text-hover-primary fs-6" style="cursor: pointer; color: #428bca;">
                     {{job.callNbr || job.jobID}}
                   </a>
                 </td>
@@ -194,19 +195,20 @@
                 <td>
                   <a href="javascript:void(0)" (click)="navigateToJobInfo((job.callNbr || job.jobID || ''), job.techName)"
                      style="font-size: 18px; color: #17a2b8; text-decoration: none;" title="Job Info">
-                    <i class="bi bi-info-circle"></i>
+                    <i class="bi bi-info-circle" style="font-size: 18px; font-weight: bold; color: #28a745; text-decoration: none;"></i>
                   </a>
                 </td>
                 <td>
                   <a href="javascript:void(0)" (click)="navigateToSafety((job.callNbr || job.jobID || ''))"
-                     style="font-size: 18px; color: #dc3545; text-decoration: none;" title="Safety">
-                    <i class="bi bi-shield-check"></i>
+                     style="font-size: 18px; font-weight: bold; color: #28a745; text-decoration: none;" 
+                     title="Safety">
+                    <i class="bi bi-shield-check" style="font-size: 18px; font-weight: bold; color: #28a745; text-decoration: none;"></i>
                   </a>
                 </td>
               </tr>
               
               <!-- Equipment Details Row (expandable) -->
-              <ng-container *ngIf="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '')]">
+              <ng-container *ngIf="isOpenEquipementDetailModel[(job.callNbr || job.jobID || '') + '_' + (job.techName || '')]">
                 <tr>
                   <td style="width: 10px;"></td>
                   <td colspan="100%" style="border: 0px; padding: 8px;">
@@ -225,7 +227,7 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <tr *ngFor="let equipment of getEquipmentForJob((job.callNbr || job.jobID || ''))" 
+                          <tr *ngFor="let equipment of getEquipmentForJob((job.callNbr || job.jobID || ''), (job.techName || ''))" 
                               style="height: 22px; background-color: #FFFACD; font-size: 10px;">
                             <td class="text-center py-1" style="color: #0066CC;">{{equipment.equipId}}</td>
                             <td class="text-center py-1" style="color: #0066CC;">{{equipment.equipNo?.trim()}}</td>

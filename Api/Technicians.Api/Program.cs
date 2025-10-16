@@ -40,6 +40,7 @@ builder.Services.AddScoped<PreJobSafetyListInfoRepository>();
 builder.Services.AddScoped<CommonRepository>();
 builder.Services.AddScoped<SaveUpdatePartsReqRepository>();
 builder.Services.AddScoped<SaveUpdatePartsTechRepository>();
+builder.Services.AddScoped<JobInfoRepository>();
 //builder.Services.AddScoped<PartsReqDataRepository>();
 //builder.Services.AddScoped<PartsShipRepository>();
 

@@ -1,0 +1,273 @@
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { EquipmentDetail, UploadInfo, UploadResponse } from '../model/equipment-details.model';
+import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus } from '../model/ups-readings.model';
+import { environment } from 'src/environments/environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class EquipmentService {
+  private apiUrl = environment.apiUrl || 'https://localhost:7115/api';
+
+  constructor(private http: HttpClient) {}
+
+  /**
+   * Get equipment information for a job
+   * Equivalent to da.GetEquipInfo(CallNbr) in legacy code
+   */
+  getEquipmentInfo(callNbr: string): Observable<EquipmentDetail[]> {
+    return this.http.get<EquipmentDetail[]>(`${this.apiUrl}/EquipmentDetails/GetEquipmentDetails?callNbr=${callNbr}`);
+  }
+
+  /**
+   * Get upload information for a job
+   * Equivalent to da.GetUploadedInfo(CallNbr, TechID) in legacy code
+   */
+  getUploadInfo(callNbr: string, techId: string): Observable<UploadInfo[]> {
+  const params = new HttpParams()
+    .set('callNbr', callNbr)
+    .set('techId', techId);
+
+  return this.http.get<UploadInfo[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params });
+}
+
+  /**
+   * Get button states for upload functionality
+   * Equivalent to ProtectUploadingJobandExpenses() in legacy code
+   */
+  getButtonStates(callNbr: string, techId: string): Observable<{
+    uploadJobEnabled: boolean;
+    uploadExpenseVisible: boolean;
+    uploadExpenseEnabled: boolean;
+    enableExpenseVisible: boolean;
+  }> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('techId', techId);
+    
+    return this.http.get<{
+      uploadJobEnabled: boolean;
+      uploadExpenseVisible: boolean;
+      uploadExpenseEnabled: boolean;
+      enableExpenseVisible: boolean;
+    }>(`${this.apiUrl}/equipment/button-states`, { params });
+  }
+
+  /**
+   * Get manufacturer names for dropdown
+   * Equivalent to da.GetManufNames(ref ddlmanufacturer) in legacy code
+   */
+  getManufacturerNames(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/GetManufacturerNames`);
+  }
+
+  /**
+   * Get UPS readings data
+   * Equivalent to da.GetaaETechUPS(AEU, ref ErrMsg) in legacy code
+   */
+  getUPSReadings(callNbr: string, equipId: number, upsId: string): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString())
+      .set('upsId', upsId);
+    
+    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/GetUPSReadings`, { params });
+  }
+
+  /**
+   * Save or update UPS readings data
+   * Equivalent to da.SaveUpdateaaETechUPS(AEU, ref ErrMsg) in legacy code
+   */
+  saveUpdateUPSReadings(upsData: any): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/UPSReadings/SaveUpdateUPSReadings`, upsData);
+  }
+
+  /**
+   * Get equipment reconciliation info
+   * Equivalent to dl.GetEquipReconciliationInfo(ARI, ref ErrMsg) in legacy code
+   */
+  getEquipReconciliationInfo(callNbr: string, equipId: number): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString());
+
+    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/GetEquipReconciliationInfo`, { params });
+  }
+
+  /**
+   * Save equipment reconciliation info
+   * Equivalent to dl.SaveUpdateEquipReconciliationInfo(ARI, ref ErrMsg) in legacy code
+   */
+  saveEquipReconciliationInfo(reconciliationData: any): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/UPSReadings/SaveEquipReconciliationInfo`, reconciliationData);
+  }
+
+  /**
+   * Update equipment status
+   * Equivalent to da.UpdateEquipStatus(UES) in legacy code
+   */
+  updateEquipStatus(statusData: any): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/UPSReadings/UpdateEquipStatus`, statusData);
+  }
+
+  /**
+   * Get job summary report for equipment status calculation
+   * Equivalent to da.JobSummaryReport(CallNbr, EquipID, "UPS", "Y") in legacy code
+   */
+  getJobSummaryReport(callNbr: string, equipId: number, equipType: string): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString())
+      .set('equipType', equipType)
+      .set('flag', 'Y');
+    
+    return this.http.get<any>(`${this.apiUrl}/UPSReadings/GetJobSummaryReport`, { params });
+  }
+
+  /**
+   * Get status description for equipment
+   * Equivalent to da.GetStatusDescription("UPS") in legacy code
+   */
+  getStatusDescription(equipType: string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/UPSReadings/GetStatusDescription?equipType=${equipType}`);
+  }
+
+  /**
+   * Edit equipment info for UPS readings
+   * Equivalent to da.EditEquipInfo(CallNbr, EquipID) in legacy code
+   */
+  editEquipInfo(callNbr: string, equipId: number): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString());
+    
+    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/EditEquipInfo`, { params });
+  }
+
+  /**
+   * Upload job to GP
+   * Equivalent to da.UploadJobToGP(CallNbr, TechID, ref ErrMsg) in legacy code
+   */
+  uploadJob(callNbr: string, techId: string, techName: string): Observable<UploadResponse> {
+    const body = {
+      callNbr,
+      techId,
+      techName
+    };
+    
+    return this.http.post<UploadResponse>(`${this.apiUrl}/EquipmentDetails/upload-job`, body);
+  }
+
+  /**
+   * Upload expenses to GP
+   * Equivalent to da.UploadExpensesToGP(CallNbr, da.getUID(), ref ErrMsg) in legacy code
+   */
+  uploadExpenses(callNbr: string, techName: string): Observable<UploadResponse> {
+    const body = {
+      callNbr,
+      techName
+    };
+    
+    return this.http.post<UploadResponse>(`${this.apiUrl}/EquipmentDetails/upload-expenses`, body);
+  }
+
+  /**
+   * Enable expenses upload
+   * Equivalent to da.EnableUpload(CallNbr, ref result) in legacy code
+   */
+  enableExpenses(callNbr: string): Observable<UploadResponse> {
+    const body = { callNbr };
+    
+    return this.http.post<UploadResponse>(`${this.apiUrl}/EtechExpense/EnableExpenses`, body);
+  }
+
+  /**
+   * Validate pre-job safety completion
+   * Equivalent to da.IsPreJobSafetyDone(CallNbr.Trim()) in legacy code
+   */
+  validatePreJobSafety(callNbr: string): Observable<{ isCompleted: boolean; message?: string }> {
+    return this.http.get<{ isCompleted: boolean; message?: string }>(`${this.apiUrl}/PreJobSafetyListInfo/IsPreJobSafetyDone?callNbr=${callNbr}`);
+  }
+
+  /**
+   * Check if parts are returned by tech
+   * Equivalent to da.IsPartsReturnedbyTech(CallNbr.Trim()) in legacy code
+   * API returns: { isReturned: boolean, message: string }
+   */
+  validatePartsReturned(callNbr: string): Observable<{ isReturned: boolean; message: string }> {
+    return this.http.get<{ isReturned: boolean; message: string }>(`${this.apiUrl}/EquipmentDetails/ValidatePartsReturned/?callNbr=${callNbr}`);
+  }
+
+  /**
+   * Check for duplicate hours/expenses
+   * Equivalent to da.CheckDuplicateHours(CallNbr, TechName) in legacy code
+   * API returns: { hasDuplicates: boolean, message: string }
+   */
+  checkDuplicateHours(callNbr: string, techName: string): Observable<{ hasDuplicates: boolean; message: string }> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('techName', techName);
+
+    return this.http.get<{ hasDuplicates: boolean; message: string }>(`${this.apiUrl}/EquipmentDetails/CheckDuplicateHours`, { params });
+  }
+
+  /**
+   * Validate expense upload requirements
+   * Equivalent to da.ValidateExpenseUpload(CallNbr) in legacy code
+   * Returns: string - "Success" means valid, other values are error messages
+   */
+  validateExpenseUpload(callNbr: string): Observable<string> {
+    return this.http.get(`${this.apiUrl}/EquipmentDetails/ValidateExpenseUpload/?callNbr=${callNbr}`, { responseType: 'text' });
+  }
+
+  /**
+   * Get PM visual notes
+   * Equivalent to da.GetPMVisualNotes(CallNbr, TechName) in legacy code
+   * API returns: IEnumerable<etechNotesDto>
+   */
+  getPMVisualNotes(callNbr: string, techName: string): Observable<any[]> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('techName', techName);
+    
+    return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/GetPMVisualNotes`, { params });
+  }
+
+  /**
+   * Check readings existence for equipment
+   * Equivalent to da.ReadingsExist(CallNbr.Trim(), equipID, equipType) in legacy code
+   * API returns: { exists: boolean }
+   */
+  checkReadingsExist(callNbr: string, equipId: number, equipType: string): Observable<{ exists: boolean }> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString())
+      .set('equipType', equipType);
+    
+    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/EquipmentDetails/CheckReadingsExist`, { params });
+  }
+
+  /**
+   * Check caps parts info for UPS equipment
+   * Equivalent to da.CheckCapsPartsInfo(CallNbr.Trim(), equipID) in legacy code
+   * API returns: { hasInfo: boolean }
+   */
+  checkCapsPartsInfo(callNbr: string, equipId: number): Observable<{ hasInfo: boolean }> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString());
+    
+    return this.http.get<{ hasInfo: boolean }>(`${this.apiUrl}/EquipmentDetails/CheckCapsPartsInfo`, { params });
+  }
+
+  /**
+   * Check save as draft status
+   * Equivalent to da.CheckSaveAsDraft(CallNbr, SaveAsDraft) in legacy code
+   * API returns: string directly (message)
+   */
+  checkSaveAsDraft(callNbr: string): Observable<string> {
+    return this.http.get(`${this.apiUrl}/EquipmentDetails/CheckSaveAsDraft/?callNbr=${callNbr}`, { responseType: 'text' });
+  }
+}

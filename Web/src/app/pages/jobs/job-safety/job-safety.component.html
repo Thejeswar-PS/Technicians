@@ -1,0 +1,513 @@
+<!-- Pre-Job Safety Checklist Page -->
+<div class="container-fluid" style="max-width: 1400px;">
+  <!-- Loading spinner -->
+  <div *ngIf="loading" class="d-flex justify-content-center align-items-center" style="min-height: 300px;">
+    <div class="spinner-border" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!loading">
+    <!-- Header section -->
+    <div class="border-bottom pb-2 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="onGoBack()"
+          [disabled]="saving">
+          <i class="bi bi-arrow-left" style="color: white;"></i>
+        </button>
+
+        <h4 class="text-primary fw-bold mb-0">
+          {{ pageTitle }}
+        </h4>
+
+        <div class="text-center">
+          <p class="text-danger fw-bold mb-0" *ngIf="errorMessage">{{ errorMessage }}</p>
+          <p class="text-danger fw-bold mb-0" *ngIf="successMessage && successMessage.includes('No Information Found')">{{ successMessage }}</p>
+          <p class="text-success fw-bold mb-0" *ngIf="successMessage">{{ successMessage }}</p>
+        </div>
+
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="onSave()"
+          [disabled]="saving || safetyForm.invalid">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-2"></span>
+          {{ saving ? 'Saving...' : 'Save Info' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- PPE Requirements Banner -->
+    <div class="alert alert-warning mb-3" style="background-color: goldenrod; color: black;">
+      <p class="mb-2"><strong>PPE required for all job:</strong> Safety goggles, Arc flash rated polo shirt and pants, Arc flash rated suit, High voltage gloves, High voltage leather gloves and Steel toe shoes.</p>
+      <p class="mb-0"><strong>Additional Safety items required as per job requirement:</strong> Hard hat, Face shield, Battery acid PPE, Balaclava, or any special safety requirement by site.</p>
+    </div>
+
+    <!-- Instructions -->
+    <div class="alert alert-info mb-3" style="font-size: 10pt;">
+      Instructions: Discuss specific site hazards or plant safety requirements with your site contract. Complete a walk-thru of the job 
+      site at the beginning of each day or shift. Use this form as a guide to identify existing or potential hazards at the job site.
+      Select yes or no, as appropriate, and complete the blanks as required. Once complete, review hazards identified with your project
+      team (if applicable) and customer representative. Sign the form and keep it with your project paperwork.
+    </div>
+
+    <!-- Form Section -->
+    <form [formGroup]="safetyForm">
+      <!-- Section Header -->
+      <div class="text-center bg-primary text-white py-2 mb-3">
+        <strong>Please add the comments below section.</strong>
+      </div>
+
+      <!-- Safety Questions Table -->
+      <table class="table table-bordered safety-table">
+        <tbody>
+          <!-- Question 1 -->
+          <tr>
+            <td class="question-cell">
+              1. Safety responsibilities reviewed and understood by DC Group and other personnel?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="respReviewed">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 2 -->
+          <tr>
+            <td class="question-cell">
+              2. Is a Work Permit required by the customer?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="wpRequired">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 3 -->
+          <tr>
+            <td class="question-cell">
+              3. Slip/Trip/Fall hazard present?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="slipTripFail">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 4 -->
+          <tr>
+            <td class="question-cell">
+              4. Excessive noise hazard present?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="noiseHazard">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 5 -->
+          <tr>
+            <td class="question-cell">
+              5. Eye injury hazard present?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="eyeInjury">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 6 -->
+          <tr>
+            <td class="question-cell">
+              6. Dust/Mist/Fume/Vapor hazard present?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="dustMistFume">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 7 -->
+          <tr>
+            <td class="question-cell">
+              7. Temperature Stress hazard present?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="tempHazard">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 8 -->
+          <tr>
+            <td class="question-cell">
+              8. Fire hazard present? (Locate fire exit route)
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="fireHazard">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 9 -->
+          <tr>
+            <td class="question-cell">
+              9. Fire extinguisher location identified?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="fireExtHazard">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 10 -->
+          <tr>
+            <td class="question-cell">
+              10. Electrical shock hazard present?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="electricHazard">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 11 -->
+          <tr>
+            <td class="question-cell">
+              11. Others working overhead?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="workingOverhead">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 12 -->
+          <tr>
+            <td class="question-cell">
+              12. Traffic or moving vehicle hazard?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="trafficHazard">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 13 -->
+          <tr>
+            <td class="question-cell">
+              13. Can the DCG work area be isolated/separated?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="dcgIsolated">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 14 -->
+          <tr>
+            <td class="question-cell">
+              14. Barricade or warning signs required?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="barricadeReqd">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 15 -->
+          <tr>
+            <td class="question-cell">
+              15. Lock-Out/Tag-Out required?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="lockoutReqd">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Lockout Conditional Section -->
+      <div *ngIf="showLockoutSection" class="conditional-section lockout-section mb-3">
+        <table class="table table-bordered" style="border-color: red;">
+          <tbody>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">
+                Will customer's procedure be used?
+              </td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="lockProcReqd">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Continue Main Questions -->
+      <table class="table table-bordered safety-table">
+        <tbody>
+          <!-- Question 16 -->
+          <tr>
+            <td class="question-cell">
+              16. Chemical hazard present?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="chemicalHazard">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Chemical Hazard Conditional Section -->
+      <div *ngIf="showChemicalSection" class="conditional-section chemical-section mb-3">
+        <table class="table table-bordered" style="border-color: red;">
+          <tbody>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Chemical Identified?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="chemIdentified">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">MSDS Reviewed? Location?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="msdsReviewed">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Health Hazard?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="healthHazard">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Safety Shower/Eye wash available?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="safetyShower">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Hazardous wastes generated?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="hazardousWaste">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Continue Main Questions -->
+      <table class="table table-bordered safety-table">
+        <tbody>
+          <!-- Question 17 -->
+          <tr>
+            <td class="question-cell">
+              17. Confined Space entry required?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="spaceRequired">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Confined Space Conditional Section -->
+      <div *ngIf="showConfinedSpaceSection" class="conditional-section space-section mb-3">
+        <table class="table table-bordered" style="border-color: red;">
+          <tbody>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">
+                Will customer's procedure be used?
+              </td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="spaceProcReqd">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Continue Main Questions -->
+      <table class="table table-bordered safety-table">
+        <tbody>
+          <!-- Question 18 -->
+          <tr>
+            <td class="question-cell">
+              18. Does customer require a job procedure?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="custJobProcedure">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Customer Procedure Conditional Section -->
+      <div *ngIf="showCustomerProcSection" class="conditional-section customer-section mb-3">
+        <table class="table table-bordered" style="border-color: red;">
+          <tbody>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Safety procedures reviewed?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="safetyProcRevewed">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Is special equipment required? (Ex:Back brace)</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="specialEquipReqd">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Have tools been inspected?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="toolsInspected">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td style="width: 15%;"></td>
+              <td class="question-cell text-danger">Are appropriate lockouts in place?</td>
+              <td class="dropdown-cell">
+                <select class="form-select form-select-sm" formControlName="apprLockouts">
+                  <option value="A">N/A</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Final Questions -->
+      <table class="table table-bordered safety-table">
+        <tbody>
+          <!-- Question 19 -->
+          <tr>
+            <td class="question-cell">
+              19. Is personal protective equipment required?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="protEquipReqd">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 20 -->
+          <tr>
+            <td class="question-cell">
+              20. Are other contractors in the area?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="otherContractors">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+
+          <!-- Question 21 -->
+          <tr>
+            <td class="question-cell">
+              21. Any other hazards not identified above?
+            </td>
+            <td class="dropdown-cell">
+              <select class="form-select form-select-sm" formControlName="anyOtherHazards">
+                <option *ngFor="let opt of dropdownOptions" [value]="opt.value">{{ opt.label }}</option>
+              </select>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Additional Comments Section -->
+      <div class="mt-4">
+        <div class="text-center bg-primary text-white py-2 mb-2">
+          <strong>Additional Comments</strong>
+        </div>
+        <textarea 
+          class="form-control" 
+          formControlName="comments" 
+          rows="3"
+          placeholder="Enter any additional comments or observations...">
+        </textarea>
+      </div>
+    </form>
+  </div>
+</div>

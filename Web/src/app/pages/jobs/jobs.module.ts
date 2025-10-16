@@ -12,6 +12,10 @@ import { SharedModule } from 'src/app/components/shared/shared.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
 import { EquipmentDetailsComponent } from './equipment-details/equipment-details.component';
 import { NotesViewComponent } from './modal/notes-view/notes-view.component';
+import { FileUploadComponent } from './file-upload/file-upload.component';
+import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
+import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
+import { JobSafetyComponent } from './job-safety/job-safety.component';
 
 
 
@@ -24,7 +28,10 @@ import { NotesViewComponent } from './modal/notes-view/notes-view.component';
     EditExpenseComponent,
     JobStatusModalComponent,
     EquipmentDetailsComponent,
-    NotesViewComponent
+    NotesViewComponent,
+    FileUploadComponent,
+    JobNotesInfoComponent,
+    JobSafetyComponent
   ],
   imports: [
     CommonModule,
@@ -32,7 +39,8 @@ import { NotesViewComponent } from './modal/notes-view/notes-view.component';
     FormsModule,
     SharedModule,
     InlineSVGModule.forRoot(),
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    UpsReadingsModule
   ]
 })
 export class JobsModule { }

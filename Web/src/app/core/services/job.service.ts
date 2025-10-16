@@ -38,7 +38,7 @@ export class JobService {
   }
   
   getEquipmentDetailsByCallNbr(callNbr: string): Observable<EquipmentDetails[]>{
-    return this.http.get<EquipmentDetails[]>(`${this.API}/EquipmentDetail/GetEquipmentDetails?callNbr=${callNbr}`,{ headers : this.headers })
+    return this.http.get<EquipmentDetails[]>(`${this.API}/EquipmentDetails/GetEquipmentDetails?callNbr=${callNbr}`,{ headers : this.headers })
   }
   getServiceDetails(req : any) : Observable<Job[]>
   {

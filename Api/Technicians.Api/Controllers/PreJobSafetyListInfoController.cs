@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Management.Automation;
 using Technicians.Api.Models;
 using Technicians.Api.Repository;
 
@@ -15,18 +16,33 @@ namespace Technicians.Api.Controllers
             _JobSafetyrepository = JobSafetyrepository;
         }
 
-        [HttpPost("GetPreJobSafetyListInfo")]
-        public async Task<IActionResult> GetPreJobSafetyListInfoPost([FromBody] PreJobSafetyListInfoDTO request)
+        [HttpGet("GetPreJobSafetyInfo")]
+        public async Task<IActionResult> GetPreJobSafetyInfo([FromQuery] string callNbr)
         {
-            if (request == null || string.IsNullOrWhiteSpace(request.CallNbr))
+            if (string.IsNullOrWhiteSpace(callNbr))
                 return BadRequest("CallNbr is required.");
 
-            var infoList = await _JobSafetyrepository.GetPreJobSafetyListInfoAsync(request.CallNbr);
+            var info = await _JobSafetyrepository.GetPreJobSafetyInfoAsync(callNbr);
 
-            if (infoList == null || !infoList.Any())
-                return NotFound("No records found.");
+            
 
-            return Ok(infoList);
+            return Ok(info);
         }
+
+
+        [HttpGet("IsPreJobSafetyDone")]
+        public async Task<IActionResult> IsPreJobSafetyDone([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("CallNbr is required.");
+
+            var result = await _JobSafetyrepository.IsPreJobSafetyDone(callNbr);
+
+            // Convert int result (1/0) to bool
+            bool isDone = result == 1;
+
+            return Ok(isDone);
+        }
+
     }
 }

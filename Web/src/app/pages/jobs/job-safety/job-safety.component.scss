@@ -1,0 +1,73 @@
+// Job Safety Component Styles
+
+.safety-table {
+  border-collapse: collapse;
+  width: 100%;
+  
+  td {
+    border: 1px solid black;
+    padding: 8px;
+  }
+  
+  .question-cell {
+    text-align: left;
+    font-family: Calibri, sans-serif;
+    font-size: 11pt;
+    color: #428bca;
+    width: 85%;
+  }
+  
+  .dropdown-cell {
+    text-align: right;
+    width: 15%;
+    vertical-align: middle;
+  }
+}
+
+.conditional-section {
+  margin-left: 0;
+  
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    
+    td {
+      border: 1px solid red;
+      padding: 8px;
+      color: red;
+    }
+  }
+  
+  .question-cell {
+    text-align: left;
+    font-family: Calibri, sans-serif;
+    font-size: 11pt;
+  }
+  
+  .dropdown-cell {
+    text-align: right;
+    width: 15%;
+    vertical-align: middle;
+  }
+}
+
+.border-bottom {
+  border-bottom: 1px solid #428bca !important;
+}
+
+// Form select styling
+.form-select-sm {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+}
+
+// Alert styling
+.alert-warning {
+  font-family: Calibri, sans-serif;
+  font-size: 11pt;
+}
+
+.alert-info {
+  font-family: Calibri, sans-serif;
+  font-size: 9pt;
+}
