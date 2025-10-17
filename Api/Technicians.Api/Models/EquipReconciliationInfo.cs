@@ -6,7 +6,6 @@
         public int EquipID { get; set; }
         public string NewEquipment { get; set; }
         public string EquipmentNotes { get; set; }
-        public string ModifiedBy { get; set; } // optional; can be auto-filled by backend
     }
 
 }

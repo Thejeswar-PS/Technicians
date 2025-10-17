@@ -95,7 +95,16 @@ export class JobNotesInfoService {
    * Equivalent to da.UpdateJobInformation(JIF, ref ErrMsg) in legacy code
    */
   updateJobInformation(jobInfo: UpdateJobRequest): Observable<{ success: boolean; message?: string }> {
-    return this.http.post<{ success: boolean; message?: string }>(`${this.apiUrl}/JobInfo/UpdateJobInformation`, jobInfo);
+    // Backend expects the data wrapped in a "jobInfo" property
+    // Also ensure chkNotes is a proper boolean
+    const request = {
+      jobInfo: {
+        ...jobInfo,
+        chkNotes: Boolean(jobInfo.chkNotes) // Ensure it's a proper boolean
+      }
+    };
+    
+    return this.http.post<{ success: boolean; message?: string }>(`${this.apiUrl}/JobInfo/UpdateJobInformation`, request);
   }
 
   /**
@@ -116,8 +125,9 @@ export class JobNotesInfoService {
   /**
    * Get generated equipment info for deficiency notes
    * Equivalent to GetEquipInfo() method in legacy code
+   * This should return the fully formatted HTML string with all deficiency notes and corrective actions
    */
   getEquipInfoForDeficiencyNotes(callNbr: string): Observable<string> {
-    return this.http.get(`${this.apiUrl}/JobInfo/GetEquipInfoForDeficiencyNotes?callNbr=${callNbr}`, { responseType: 'text' });
+    return this.http.get(`${this.apiUrl}/JobInfo/GetEquipInfo?callNbr=${callNbr}`, { responseType: 'text' });
   }
 }

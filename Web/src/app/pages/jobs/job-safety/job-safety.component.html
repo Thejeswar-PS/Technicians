@@ -27,7 +27,7 @@
         <div class="text-center">
           <p class="text-danger fw-bold mb-0" *ngIf="errorMessage">{{ errorMessage }}</p>
           <p class="text-danger fw-bold mb-0" *ngIf="successMessage && successMessage.includes('No Information Found')">{{ successMessage }}</p>
-          <p class="text-success fw-bold mb-0" *ngIf="successMessage">{{ successMessage }}</p>
+          <p class="text-success fw-bold mb-0" *ngIf="successMessage && !successMessage.includes('No Information Found')">{{ successMessage }}</p>
         </div>
 
         <button 

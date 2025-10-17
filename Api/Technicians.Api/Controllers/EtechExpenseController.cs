@@ -67,8 +67,8 @@ namespace Technicians.Api.Controllers
 
             var result = await _repository.GetMobileReceiptsAsync(callNbr, techId);
 
-            if (!result.Any())
-                return NotFound("No receipts found for the given CallNbr and TechID.");
+            //if (!result.Any())
+            //    return NotFound("No receipts found for the given CallNbr and TechID.");
 
             return Ok(result);
         }
@@ -91,6 +91,30 @@ namespace Technicians.Api.Controllers
 
             return Ok(new { Message = result });
         }
+
+        [HttpGet("CanTechAddFoodExpenses")]
+        public async Task<IActionResult> CanTechAddFoodExpenses(
+        [FromQuery] string callNbr,
+        [FromQuery] string techName,
+        [FromQuery] decimal expAmount,
+        [FromQuery] decimal currentAmount,
+        [FromQuery] string type,
+        [FromQuery] DateTime date)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(techName))
+                return BadRequest("CallNbr and TechName are required.");
+
+            try
+            {
+                var result = await _repository.HowMuchCanTechAddFoodExpensesAsync(callNbr, techName, expAmount, currentAmount, type, date);
+                return Ok(result.ToString());
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error calculating food expense: {ex.Message}");
+            }
+        }
+
 
 
     }

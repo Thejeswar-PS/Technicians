@@ -37,7 +37,7 @@ namespace Technicians.Api.Repository
             cmd.Parameters.AddWithValue("@TechPaid", req.TechPaid);
             cmd.Parameters.AddWithValue("@CompanyPaid", req.CompanyPaid);
             cmd.Parameters.AddWithValue("@Changeby", req.Changeby ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@TableIndex", req.TableIndex);
+            cmd.Parameters.AddWithValue("@TableIdx", req.TableIndex);
             cmd.Parameters.AddWithValue("@TravelBy", req.TravelBy);
             cmd.Parameters.AddWithValue("@PayType", req.PayType);
             cmd.Parameters.AddWithValue("@Edit", req.Edit);

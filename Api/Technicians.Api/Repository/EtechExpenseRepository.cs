@@ -110,6 +110,32 @@ namespace Technicians.Api.Repository
             }
         }
 
+        public async Task<decimal> HowMuchCanTechAddFoodExpensesAsync(
+            string callNbr,
+            string techName,
+            decimal expAmount,
+            decimal currentAmount,
+            string type,
+            DateTime date)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var query = "SELECT dbo.HowMuchCanTechAddFoodExpenses(@CallNbr, @TechName, @ExpAmount, @CurrentAmount, @Type, @Date)";
+            using var cmd = new SqlCommand(query, conn);
+
+            cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@TechName", techName ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@ExpAmount", expAmount);
+            cmd.Parameters.AddWithValue("@CurrentAmount", currentAmount);
+            cmd.Parameters.AddWithValue("@Type", type ?? (object)DBNull.Value);
+            cmd.Parameters.AddWithValue("@Date", date);
+
+            var result = await cmd.ExecuteScalarAsync();
+            return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0;
+        }
+
+
 
 
 

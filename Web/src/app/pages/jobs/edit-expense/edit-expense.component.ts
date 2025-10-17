@@ -165,6 +165,13 @@ export class EditExpenseComponent implements OnInit {
         isEditMode: this.isEditMode
       });
       
+      // Disable expense type field in edit mode
+      if (this.isEditMode) {
+        this.expenseForm.get('expType')?.disable();
+      } else {
+        this.expenseForm.get('expType')?.enable();
+      }
+      
       if (this.isEditMode) {
         console.log('Loading expense data for edit mode...');
         this.loadExpenseData();
@@ -265,6 +272,12 @@ export class EditExpenseComponent implements OnInit {
   private populateForm(data: any): void {
     console.log('=== POPULATE FORM START ===');
     console.log('Raw data received:', data);
+    console.log('Date fields:', {
+      strtDate: data.strtDate,
+      strtTime: data.strtTime,
+      endDate: data.endDate,
+      endTime: data.endTime
+    });
     
     // Parse start and end date/time with validation
     let startDateTime = '';
@@ -272,41 +285,54 @@ export class EditExpenseComponent implements OnInit {
     
     try {
       const startDate = this.parseDate(data.strtDate);
-      const startTime = data.strtTime;
+      const startTime = data.strtTime || '00:00:00';
       startDateTime = this.formatDateTime(startDate, startTime);
       console.log('Start date parsed successfully:', startDateTime);
     } catch (error) {
       console.error('Error parsing start date:', data.strtDate, error);
       startDateTime = this.getDefaultDateTime();
+      console.log('Using default start datetime:', startDateTime);
     }
     
     try {
       const endDate = this.parseDate(data.endDate);
-      const endTime = data.endTime;
+      const endTime = data.endTime || '00:00:00';
       endDateTime = this.formatDateTime(endDate, endTime);
       console.log('End date parsed successfully:', endDateTime);
     } catch (error) {
       console.error('Error parsing end date:', data.endDate, error);
       endDateTime = this.getDefaultDateTime();
+      console.log('Using default end datetime:', endDateTime);
     }
     
-    // Parse notes field
+    // Parse notes field (backend might send as 'description' or 'notes')
+    const notesData = data.description || data.notes || '';
     let notes = 'PS';
     let otherReason = '';
-    if (data.notes) {
+    
+    console.log('Notes/Description data:', notesData);
+    
+    if (notesData) {
       if (data.expType === '22' && data.purpose === '30') {
-        otherReason = data.notes;
-      } else {
-        const noteParts = data.notes.split(':');
+        // For expenses with "Other" purpose, entire notes is the reason
+        otherReason = notesData;
+      } else if (notesData.includes(':')) {
+        // If notes contains colon, split it (e.g., "Other:some reason")
+        const noteParts = notesData.split(':');
         notes = noteParts[0] || 'PS';
         otherReason = noteParts.length > 1 ? noteParts[1] : '';
+      } else {
+        // Otherwise, use as-is for notes
+        notes = notesData || 'PS';
       }
     }
+    
+    console.log('Parsed notes:', notes, 'otherReason:', otherReason);
     
     // Calculate expense amount
     const expenseAmount = (data.techPaid || 0) + (data.companyPaid || 0);
     
-    this.expenseForm.patchValue({
+    const formData = {
       expType: data.expType,
       travelBy: data.travelBy || '2',
       purpose: data.purpose || '',
@@ -317,10 +343,18 @@ export class EditExpenseComponent implements OnInit {
       endDateTime: endDateTime,
       notes: notes,
       otherReason: otherReason
-    });
+    };
+    
+    console.log('Patching form with data:', formData);
+    this.expenseForm.patchValue(formData);
+    
+    console.log('Form values after patch:', this.expenseForm.value);
+    console.log('startDateTime control value:', this.expenseForm.get('startDateTime')?.value);
+    console.log('endDateTime control value:', this.expenseForm.get('endDateTime')?.value);
     
     // Update visibility after form is populated
     this.onExpenseTypeChange();
+    console.log('=== POPULATE FORM END ===');
   }
 
   private formatDateTime(date: Date, time: string): string {
@@ -331,8 +365,29 @@ export class EditExpenseComponent implements OnInit {
     }
     
     const dateStr = date.toISOString().split('T')[0];
-    const timeStr = time ? time : '00:00:00';
-    return `${dateStr}T${timeStr}`;
+    
+    // Extract HH:mm from time string
+    // Backend sends time as full datetime like '1900-01-01T12:54:37'
+    let timeStr = '00:00';
+    if (time) {
+      // If time contains 'T', extract the time part after T
+      if (time.includes('T')) {
+        const timePart = time.split('T')[1]; // Get '12:54:37'
+        const timeParts = timePart.split(':');
+        if (timeParts.length >= 2) {
+          timeStr = `${timeParts[0]}:${timeParts[1]}`;
+        }
+      } else {
+        // Otherwise just split by colon
+        const timeParts = time.split(':');
+        if (timeParts.length >= 2) {
+          timeStr = `${timeParts[0]}:${timeParts[1]}`;
+        }
+      }
+    }
+    const result = `${dateStr}T${timeStr}`;
+    console.log('Formatted datetime:', result, 'from date:', date, 'time:', time);
+    return result;
   }
 
   private parseDate(dateString: any): Date {
@@ -346,22 +401,37 @@ export class EditExpenseComponent implements OnInit {
     let date: Date;
     
     if (typeof dateString === 'string') {
+      // Remove any time component if present (we handle time separately)
+      let datePart = dateString.split('T')[0];
+      
       // Try parsing as-is first
-      date = new Date(dateString);
+      date = new Date(datePart);
       
       // If invalid, try parsing common formats
       if (isNaN(date.getTime())) {
         // Try MM/DD/YYYY format
-        const mmddyyyy = dateString.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        const mmddyyyy = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (mmddyyyy) {
           date = new Date(parseInt(mmddyyyy[3]), parseInt(mmddyyyy[1]) - 1, parseInt(mmddyyyy[2]));
+          console.log('Parsed MM/DD/YYYY format:', date);
         }
         
         // Try YYYY-MM-DD format
         if (isNaN(date.getTime())) {
-          const yyyymmdd = dateString.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+          const yyyymmdd = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
           if (yyyymmdd) {
             date = new Date(parseInt(yyyymmdd[1]), parseInt(yyyymmdd[2]) - 1, parseInt(yyyymmdd[3]));
+            console.log('Parsed YYYY-MM-DD format:', date);
+          }
+        }
+        
+        // Try DD/MM/YYYY format
+        if (isNaN(date.getTime())) {
+          const ddmmyyyy = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+          if (ddmmyyyy) {
+            // Assume DD/MM/YYYY
+            date = new Date(parseInt(ddmmyyyy[3]), parseInt(ddmmyyyy[2]) - 1, parseInt(ddmmyyyy[1]));
+            console.log('Parsed DD/MM/YYYY format:', date);
           }
         }
       }
@@ -371,16 +441,20 @@ export class EditExpenseComponent implements OnInit {
     }
     
     if (isNaN(date.getTime())) {
+      console.error(`Unable to parse date: ${dateString}`);
       throw new Error(`Unable to parse date: ${dateString}`);
     }
     
+    console.log('Successfully parsed date:', date);
     return date;
   }
 
   private getDefaultDateTime(): string {
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
-    return `${dateStr}T00:00:00`;
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${dateStr}T${hours}:${minutes}`;
   }
 
   onExpenseTypeChange(): void {
@@ -519,7 +593,7 @@ export class EditExpenseComponent implements OnInit {
     }
   }
 
-  onSave(): void {
+  async onSave(): Promise<void> {
     if (!this.validateForm()) {
       return;
     }
@@ -527,26 +601,107 @@ export class EditExpenseComponent implements OnInit {
     this.isLoading = true;
     this.errorMessage = '';
     this.successMessage = '';
+    this.foodLimitMessage = '';
     
-    const formData = this.prepareFormData();
+    const formValue = this.expenseForm.value;
+    const startDate = new Date(formValue.startDateTime);
+    const endDate = formValue.expType !== '22' ? new Date(formValue.endDateTime) : startDate;
     
-    this.jobService.saveExpense(formData).subscribe({
-      next: (response: any) => {
-        this.successMessage = 'Update Successful.';
-        this.isLoading = false;
+    try {
+      // CRITICAL VALIDATION: Check for overlapping hours (from legacy btnSave_Click)
+      if (formValue.expType !== '22') {
+        const existingExpenses = await this.jobService.checkHoursSameDay(
+          this.techName, 
+          startDate, 
+          endDate, 
+          this.tableIdx
+        ).toPromise();
         
-        // If it's a new expense, we might want to stay on the form
-        // If it's an edit, we could redirect back to expenses list
-        if (!this.isEditMode) {
-          this.toastr.success('Expense saved successfully!');
+        if (existingExpenses && existingExpenses.length > 0) {
+          // Check for time conflicts with existing expenses
+          for (const exp of existingExpenses) {
+            const expType = exp.expType;
+            const expJobNo = exp.callNbr;
+            const expStartDate = new Date(exp.strtDate + ' ' + exp.strtTime);
+            const expEndDate = new Date(exp.endDate + ' ' + exp.endTime);
+            
+            // Skip if this is an expense (type 22)
+            if (expType === 'Expenses') {
+              continue;
+            }
+            
+            // Check for time overlap
+            let hasConflict = false;
+            
+            // Case 1: New expense starts and ends before existing expense
+            if (startDate < expStartDate && endDate <= expStartDate) {
+              hasConflict = false;
+            }
+            // Case 2: New expense starts after existing expense ends
+            else if (startDate >= expEndDate) {
+              hasConflict = false;
+            }
+            // Case 3: New expense is completely within existing expense time
+            else if (startDate >= expStartDate && endDate < expEndDate) {
+              hasConflict = true;
+            }
+            // Any other case is a conflict
+            else {
+              hasConflict = true;
+            }
+            
+            if (hasConflict) {
+              this.errorMessage = `Selected hours have already submitted for ${expType} -- <a href="/jobs/job-list?CallNbr=${expJobNo}">Job No : ${expJobNo}</a>`;
+              this.isLoading = false;
+              return;
+            }
+          }
         }
-      },
-      error: (error: any) => {
-        console.error('Error saving expense:', error);
-        this.errorMessage = 'Error saving expense: ' + (error.error?.message || error.message);
-        this.isLoading = false;
       }
-    });
+      
+      // CRITICAL VALIDATION: Check food expense limits (from legacy btnSave_Click)
+      if (formValue.purpose === '26') { // Food
+        const currentAmount = parseFloat(formValue.expenseAmount) || 0;
+        const type = this.isEditMode ? 'E' : 'A';
+        const expAmount = this.isEditMode ? 0 : currentAmount;
+        
+        const resultMsg = await this.jobService.canTechAddFoodExpenses(
+          this.callNbr,
+          this.techName,
+          expAmount,
+          currentAmount,
+          type,
+          startDate
+        ).toPromise();
+        
+        if (resultMsg && resultMsg.length > 0) {
+          this.errorMessage = 'Error: ' + resultMsg;
+          this.isLoading = false;
+          return;
+        }
+      }
+      
+      // All validations passed, proceed with save
+      const formData = this.prepareFormData();
+      
+      this.jobService.saveExpense(formData).subscribe({
+        next: (response: any) => {
+          this.successMessage = 'Update Successful.';
+          this.isLoading = false;
+          this.toastr.success('Expense saved successfully!');
+        },
+        error: (error: any) => {
+          console.error('Error saving expense:', error);
+          this.errorMessage = 'Error saving expense: ' + (error.error?.message || error.message);
+          this.isLoading = false;
+        }
+      });
+      
+    } catch (error: any) {
+      console.error('Error in save validation:', error);
+      this.errorMessage = 'Error: ' + (error.message || 'Unknown error occurred');
+      this.isLoading = false;
+    }
   }
 
   onDelete(): void {
@@ -648,26 +803,122 @@ export class EditExpenseComponent implements OnInit {
     return true;
   }
 
-  private prepareFormData(): ExpenseFormData {
-    const formValue = this.expenseForm.value;
+  private prepareFormData(): any {
+    const formValue = this.expenseForm.getRawValue(); // Use getRawValue() to include disabled fields
+    const expType = formValue.expType;
+    const startDate = new Date(formValue.startDateTime);
+    const endDate = formValue.endDateTime ? new Date(formValue.endDateTime) : startDate;
     
-    return {
+    // Base data structure matching legacy SaveData() method
+    const expenseData: any = {
       callNbr: this.callNbr,
       techName: this.techName,
       techID: this.techID,
       tableIdx: this.tableIdx,
-      expType: formValue.expType,
-      travelBy: formValue.travelBy || '',
-      purpose: formValue.purpose || '',
-      payType: formValue.payType || '1',
-      mileage: formValue.mileage || 0,
-      expenseAmount: formValue.expenseAmount || 0,
-      startDateTime: formValue.startDateTime,
-      endDateTime: formValue.endDateTime || formValue.startDateTime,
-      notes: formValue.notes || '',
-      otherReason: formValue.otherReason || '',
-      hasFile: false // File upload to be implemented
+      expType: expType,
+      strtDate: startDate.toISOString().split('T')[0], // Short date format
+      strtTime: startDate.toTimeString().split(' ')[0], // Time format
+      edit: 'A', // 'A' for Add/Edit operation
+      imageExists: 0,
+      imgStream: null
     };
+    
+    // Set fields based on expense type (matching legacy logic)
+    if (expType !== '21') {
+      // Not travel - clear travel-related fields
+      expenseData.mileage = '';
+      expenseData.travelBy = '';
+      expenseData.travelType = '0';
+    } else {
+      // Travel expense - set travel fields
+      expenseData.mileage = formValue.mileage?.toString() || '0';
+      expenseData.travelBy = formValue.travelBy || '';
+      expenseData.travelType = formValue.travelBy || '';
+      expenseData.rentalCar = formValue.travelBy === '1';
+      expenseData.purpose = '';
+    }
+    
+    if (expType === '22') {
+      // Expenses type
+      expenseData.endDate = expenseData.strtDate;
+      expenseData.endTime = expenseData.strtTime;
+      expenseData.purpose = formValue.purpose || '';
+      
+      // Notes handling
+      if (formValue.purpose === '30') { // Other
+        expenseData.notes = formValue.otherReason || '';
+      } else {
+        expenseData.notes = '';
+      }
+      
+      // Payment type handling
+      if (formValue.payType === '3') { // Tech Paid
+        expenseData.techPaid = parseFloat(formValue.expenseAmount) || 0;
+        expenseData.companyPaid = 0;
+      } else { // Company Paid
+        expenseData.companyPaid = parseFloat(formValue.expenseAmount) || 0;
+        expenseData.techPaid = 0;
+      }
+      
+      expenseData.payType = formValue.payType || '1';
+    } else {
+      // Hours-based expenses (Assignment, Travel, Hotel, Time Off)
+      expenseData.endDate = endDate.toISOString().split('T')[0];
+      expenseData.endTime = endDate.toTimeString().split(' ')[0];
+      expenseData.purpose = '';
+      expenseData.companyPaid = 0;
+      expenseData.techPaid = 0;
+      
+      // Auto-set notes based on expense type (matching legacy logic)
+      if (expType === '20') { // Assignment Hours
+        expenseData.notes = 'At Site';
+      } else if (expType === '23') { // Hotel Stay
+        expenseData.notes = 'At Hotel';
+      } else if (expType === '21') { // Travel Hours
+        if (['1', '4', '5'].includes(formValue.travelBy)) {
+          // Rental Car, Taxi, Flight
+          expenseData.notes = 'OtherT';
+        } else {
+          // Personal Car, Company Car - use notes dropdown value
+          if (formValue.notes === 'PS' || !formValue.notes) {
+            expenseData.notes = '';
+          } else if (formValue.notes === 'Other') {
+            expenseData.notes = 'Other:' + (formValue.otherReason || '');
+          } else {
+            // Use the display text from the dropdown
+            const selectedOption = this.notesOptions.find(opt => opt.value === formValue.notes);
+            if (selectedOption) {
+              expenseData.notes = selectedOption.text;
+            } else {
+              expenseData.notes = formValue.notes;
+            }
+          }
+        }
+      } else if (expType === '68') { // Time Off Hours
+        // Handle notes for time off
+        if (formValue.notes === 'PS' || !formValue.notes) {
+          expenseData.notes = '';
+        } else if (formValue.notes === 'Other') {
+          expenseData.notes = 'Other:' + (formValue.otherReason || '');
+        } else {
+          const selectedOption = this.notesOptions.find(opt => opt.value === formValue.notes);
+          if (selectedOption) {
+            expenseData.notes = selectedOption.text;
+          } else {
+            expenseData.notes = formValue.notes;
+          }
+        }
+      } else {
+        expenseData.notes = formValue.notes || '';
+      }
+    }
+    
+    // Set description field (same as notes for backend compatibility)
+    expenseData.description = expenseData.notes;
+    
+    console.log('Prepared expense data:', expenseData);
+    
+    return expenseData;
   }
 
   goBack(): void {

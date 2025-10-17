@@ -145,8 +145,8 @@ namespace Technicians.Api.Repository
                 command.Parameters.AddWithValue("@Pmvisualnotes", dto.PmVisualNotes ?? (object)DBNull.Value);
                 // command.Parameters.AddWithValue("@SvcDescr", dto.SvcDescr ?? (object)DBNull.Value); // if needed
                 command.Parameters.AddWithValue("@QtePriority", dto.QtePriority ?? (object)DBNull.Value);
-                command.Parameters.AddWithValue("@chkNotes", dto.ChkNotes);
-                command.Parameters.AddWithValue("@LastModifiedBy", dto.LastModifiedBy ?? (object)DBNull.Value);
+                //command.Parameters.AddWithValue("@chkNotes", dto.ChkNotes);
+                //command.Parameters.AddWithValue("@LastModifiedBy", dto.LastModifiedBy ?? (object)DBNull.Value);
 
                 await connection.OpenAsync();
                 var rows = await command.ExecuteNonQueryAsync();

@@ -146,7 +146,7 @@ export class JobService {
 
   saveExpense(expenseData: any): Observable<any> {
     // Based on legacy save expense operation
-    return this.http.post<any>(`${this.API}/EtechExpense/SaveExpense`, expenseData, { headers: this.headers });
+    return this.http.post<any>(`${this.API}/SaveUpdateExpense/SaveExpense`, expenseData, { headers: this.headers });
   }
 
   deleteExpense(callNbr: string, tableIdx: number): Observable<any> {
@@ -158,7 +158,7 @@ export class JobService {
     // Based on legacy: da.CheckHoursSameDay(TechName, pdtNewStrt, pdtNewEnd, TableIdx)
     const startDateStr = startDate.toISOString();
     const endDateStr = endDate.toISOString();
-    return this.http.get<any[]>(`${this.API}/EtechExpense/CheckHoursSameDay?techName=${encodeURIComponent(techName)}&startDate=${encodeURIComponent(startDateStr)}&endDate=${encodeURIComponent(endDateStr)}&tableIdx=${tableIdx}`, { headers: this.headers });
+    return this.http.get<any[]>(`${this.API}/EtechExpense/GetEtechExpenses?techName=${encodeURIComponent(techName)}&dt1=${encodeURIComponent(startDateStr)}&dt2=${encodeURIComponent(endDateStr)}&tableIdx=${tableIdx}`, { headers: this.headers });
   }
 
   canTechAddFoodExpenses(callNbr: string, techName: string, expAmount: number, currentAmount: number, type: string, date: Date): Observable<string> {

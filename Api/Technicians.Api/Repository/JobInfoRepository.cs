@@ -185,13 +185,13 @@ namespace Technicians.Api.Repository
                 using var conn = new SqlConnection(_connectionString);
                 using var cmd = new SqlCommand("UpdateJobInformation", conn)
                 {
-                    CommandType = CommandType.StoredProcedure
+                    CommandType = System.Data.CommandType.StoredProcedure
                 };
 
                 cmd.Parameters.AddWithValue("@CallNbr", jobInfo.CallNbr ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@TechName", jobInfo.TechName ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Pmvisualnotes", jobInfo.Pmvisualnotes ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@SvcDescr", jobInfo.SvcDescr ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@techname", jobInfo.TechName ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@QtePriority", jobInfo.QtePriority ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@chkNotes", jobInfo.ChkNotes);
                 cmd.Parameters.AddWithValue("@LastModifiedBy", jobInfo.LastModifiedBy ?? "System");
@@ -233,7 +233,31 @@ namespace Technicians.Api.Repository
             }
         }
 
+        public async Task<DataTable?> GetEquipInfoAsync(string callNbr)
+        {
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("GetEquipmentDetails", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
 
+                await conn.OpenAsync();
+
+                var dt = new DataTable();
+                using var reader = await cmd.ExecuteReaderAsync();
+                dt.Load(reader);
+
+                return dt;
+            }
+            catch (Exception)
+            {
+                // optional: log the error
+                return null;
+            }
+        }
 
     }
 }
