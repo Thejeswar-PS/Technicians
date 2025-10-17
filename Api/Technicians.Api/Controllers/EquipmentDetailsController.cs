@@ -48,14 +48,7 @@ namespace Technicians.Api.Controllers
                 _logger.LogError(ex, "Error while fetching equipment details for CallNbr = {CallNbr}", callNbr);
                 return StatusCode(500, "An error occurred while fetching equipment details.");
             }
-        }
-
-
-        // 3. CheckExpUploadElgibility (GET)
-        
-
-        // 4. CheckSaveAsDraftEquip (POST)
-        
+        }    
 
         // 5. InsertDeficiencyNote (POST)
         [HttpPost("insert-deficiency-note")]
@@ -339,6 +332,74 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+
+        // New endpoint for GetEquipBoardInfo SP
+        [HttpGet("GetEquipBoardInfo")]
+        public async Task<IActionResult> GetEquipBoardInfo([FromQuery] string equipNo, [FromQuery] int equipId)
+        {
+            if (string.IsNullOrWhiteSpace(equipNo))
+                return BadRequest("Parameter 'equipNo' is required.");
+
+            try
+            {
+
+                var result = await _repository.GetEquipBoardInfoAsync(equipNo, equipId);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No equip board info found for EquipNo: {equipNo}, EquipId: {equipId}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while fetching equip board info for EquipNo = {EquipNo}, EquipId = {EquipId}", equipNo, equipId);
+                return StatusCode(500, "An error occurred while fetching equip board info.");
+            }
+        }
+
+        // New: Insert or update equipment (POST)
+        [HttpPost("spEquipmentInsertUpdate")]
+        public async Task<IActionResult> InsertOrUpdateEquipment([FromBody] EquipmentInsertUpdateDto request)
+        {
+            if (request == null) return BadRequest("Request body is required.");
+
+            if (string.IsNullOrWhiteSpace(request.CallNbr) || string.IsNullOrWhiteSpace(request.EquipNo))
+                return BadRequest("CallNbr and EquipNo are required.");
+
+            try
+            {
+                var rows = await _repository.InsertOrUpdateEquipmentAsync(request);
+
+                if (rows > 0)
+                    return Ok(new { success = true, rowsAffected = rows });
+
+                return StatusCode(500, new { success = false, message = "No rows affected." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while inserting/updating equipment for CallNbr = {CallNbr}, EquipId = {EquipId}", request.CallNbr, request.EquipId);
+                return StatusCode(500, "An error occurred while inserting/updating equipment.");
+            }
+        }
+
+
+        // DELETE: api/EquipmentDetails/delete
+        [HttpDelete("delete")]
+        public async Task<IActionResult> DeleteEquipment([FromBody] DeleteEquipmentDto request)
+        {
+            if (request == null)
+                return BadRequest("Request body is required.");
+
+            if (string.IsNullOrWhiteSpace(request.CallNbr) || string.IsNullOrWhiteSpace(request.EquipNo))
+                return BadRequest("CallNbr and EquipNo are required.");
+
+            var rows = await _repository.DeleteEquipmentAsync(request.CallNbr, request.EquipNo, request.EquipId);
+
+            if (rows > 0)
+                return Ok(new { success = true, message = "Equipment deleted.", rowsAffected = rows });
+
+            return NotFound(new { success = false, message = "No equipment deleted." });
+        }
 
 
     }

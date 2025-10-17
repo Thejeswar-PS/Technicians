@@ -84,6 +84,23 @@ namespace Technicians.Api.Repository
             return null;
         }
 
+        // New: Insert or update equipment using spEquipmentInsertUpdate
+        public async Task<int> InsertOrUpdateEquipmentAsync(EquipmentInsertUpdateDto dto)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                var parameters = new DynamicParameters(dto);
+                await conn.OpenAsync();
+                var rows = await conn.ExecuteAsync("spEquipmentInsertUpdate", parameters, commandType: CommandType.StoredProcedure);
+                return rows;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
 
         // 5. UploadExpenses
         public async Task<int> UploadExpensesAsync(EtechUploadExpensesDto request)
@@ -457,8 +474,60 @@ namespace Technicians.Api.Repository
             return null;
         }
 
+        // New: call stored procedure GetEquipBoardInfo and map to EquipBoardInfoDto
+        public async Task<IEnumerable<EquipBoardInfoDto>> GetEquipBoardInfoAsync(string equipNo, int equipId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@EquipNo", equipNo);
+                parameters.Add("@EquipId", equipId);
 
 
-    }
-}
+
+                var result = await connection.QueryAsync<EquipBoardInfoDto>(
+                   "GetEquipBoardInfo",
+                    parameters,
+                    commandType: CommandType.StoredProcedure 
+                );
+                
+
+
+                return result.ToList();
+            }
+            catch (Exception)
+            {
+                return new List<EquipBoardInfoDto>(); // return empty list on error
+            }
+
+        }
+
+        // DeleteEquipment implementation
+        public async Task<int> DeleteEquipmentAsync(string callNbr, string equipNo, int equipId)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("DeleteEquipment", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+                cmd.Parameters.AddWithValue("@EquipNo", equipNo);
+                cmd.Parameters.AddWithValue("@EquipId", equipId);
+
+                await conn.OpenAsync();
+                var rows = await cmd.ExecuteNonQueryAsync();
+                return rows;
+            }
+            catch (Exception)
+            {
+                return 0; // indicate failure
+            }
+        }
+     }
+ }
 

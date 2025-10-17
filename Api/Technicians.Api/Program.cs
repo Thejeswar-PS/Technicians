@@ -44,7 +44,6 @@ builder.Services.AddScoped<JobInfoRepository>();
 //builder.Services.AddScoped<PartsShipRepository>();
 builder.Services.AddScoped<PartsDataRepository>();
 builder.Services.AddScoped<PartsShippingDataRepository>();
-builder.Services.AddScoped<etechJobInfoRepository>();
 
 
 
