@@ -342,7 +342,6 @@ namespace Technicians.Api.Controllers
 
             try
             {
-
                 var result = await _repository.GetEquipBoardInfoAsync(equipNo, equipId);
 
                 if (result == null || !result.Any())
@@ -393,14 +392,19 @@ namespace Technicians.Api.Controllers
             if (string.IsNullOrWhiteSpace(request.CallNbr) || string.IsNullOrWhiteSpace(request.EquipNo))
                 return BadRequest("CallNbr and EquipNo are required.");
 
-            var rows = await _repository.DeleteEquipmentAsync(request.CallNbr, request.EquipNo, request.EquipId);
+            try
+            {
+                var rows = await _repository.DeleteEquipmentAsync(request.CallNbr, request.EquipNo, request.EquipId);
+                if (rows > 0)
+                    return Ok(new { success = true, message = "Equipment deleted.", rowsAffected = rows });
+                return NotFound(new { success = false, message = "No equipment deleted." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while deleting equipment for CallNbr = {CallNbr}, EquipId = {EquipId}", request.CallNbr, request.EquipId);
+                return StatusCode(500, "An error occurred while deleting equipment.");
+            }
 
-            if (rows > 0)
-                return Ok(new { success = true, message = "Equipment deleted.", rowsAffected = rows });
 
-            return NotFound(new { success = false, message = "No equipment deleted." });
         }
-
-
-    }
 }

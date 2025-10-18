@@ -84,22 +84,6 @@ namespace Technicians.Api.Repository
             return null;
         }
 
-        // New: Insert or update equipment using spEquipmentInsertUpdate
-        public async Task<int> InsertOrUpdateEquipmentAsync(EquipmentInsertUpdateDto dto)
-        {
-            try
-            {
-                await using var conn = new SqlConnection(_connectionString);
-                var parameters = new DynamicParameters(dto);
-                await conn.OpenAsync();
-                var rows = await conn.ExecuteAsync("spEquipmentInsertUpdate", parameters, commandType: CommandType.StoredProcedure);
-                return rows;
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
-        }
 
 
         // 5. UploadExpenses
@@ -492,8 +476,6 @@ namespace Technicians.Api.Repository
                     parameters,
                     commandType: CommandType.StoredProcedure 
                 );
-                
-
 
                 return result.ToList();
             }
@@ -502,6 +484,23 @@ namespace Technicians.Api.Repository
                 return new List<EquipBoardInfoDto>(); // return empty list on error
             }
 
+        }
+
+        // New: Insert or update equipment using spEquipmentInsertUpdate
+        public async Task<int> InsertOrUpdateEquipmentAsync(EquipmentInsertUpdateDto dto)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                var parameters = new DynamicParameters(dto);
+                await conn.OpenAsync();
+                var rows = await conn.ExecuteAsync("spEquipmentInsertUpdate", parameters, commandType: CommandType.StoredProcedure);
+                return rows;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
         }
 
         // DeleteEquipment implementation
