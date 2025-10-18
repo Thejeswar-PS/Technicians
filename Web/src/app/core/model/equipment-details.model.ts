@@ -48,7 +48,7 @@ export interface ValidationResult {
   redirectUrl?: string;
 }
 
-export interface EquipmentInsertUpdateDto {
+export interface EquipmentInsertUpdate {
   callNbr: string;
   equipId: number;
   equipNo: string;
@@ -100,7 +100,7 @@ export interface EquipmentInsertUpdateDto {
   comments: string;
 }
 
-export interface EquipBoardInfoDto {
+export interface EquipBoardInfo {
   equipNo: string;
   equipId: number;
   rowId: number;
@@ -112,7 +112,7 @@ export interface EquipBoardInfoDto {
   lastModifiedBy: string;
 }
 
-export interface DeleteEquipmentDto {
+export interface DeleteEquipment {
   callNbr: string;
   equipNo: string;
   equipId: number;
