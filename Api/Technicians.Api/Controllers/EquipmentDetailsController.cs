@@ -48,7 +48,7 @@ namespace Technicians.Api.Controllers
                 _logger.LogError(ex, "Error while fetching equipment details for CallNbr = {CallNbr}", callNbr);
                 return StatusCode(500, "An error occurred while fetching equipment details.");
             }
-        }    
+        }
 
         // 5. InsertDeficiencyNote (POST)
         [HttpPost("insert-deficiency-note")]
@@ -407,4 +407,5 @@ namespace Technicians.Api.Controllers
 
 
         }
+    }
 }
