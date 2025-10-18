@@ -1,0 +1,162 @@
+:host {
+  display: block;
+  background-color: #f9fafc;
+  min-height: 100vh;
+  padding: 1rem 1.5rem;
+}
+
+/* ---------- COLORS ---------- */
+$blue-main: #003366;
+$blue-light: #1f5ca8;
+$blue-border: #cfe2ff;
+$bg-light: #f5f9ff;
+
+/* ---------- FORM + LAYOUT ---------- */
+form {
+  background: white;
+  border: 1px solid $blue-border;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+}
+
+label.form-label,
+label {
+  font-weight: 600;
+  color: $blue-main;
+  font-size: 0.9rem;
+}
+
+input.form-control,
+select.form-select,
+textarea.form-control {
+  border-radius: 4px;
+  border: 1px solid #d0d7e2;
+  font-size: 0.9rem;
+  padding: 0.35rem 0.5rem;
+  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+
+  &:focus {
+    border-color: $blue-light;
+    box-shadow: 0 0 0 2px rgba(31, 92, 168, 0.2);
+  }
+}
+
+/* ---------- BUTTONS ---------- */
+.btn-primary,
+.btn-success {
+  background-color: $blue-light;
+  border-color: $blue-light;
+  color: #fff;
+  font-weight: 600;
+  &:hover {
+    background-color: darken($blue-light, 7%);
+  }
+}
+
+.btn-outline-primary {
+  color: $blue-light;
+  border-color: $blue-light;
+  &:hover {
+    background-color: rgba(31, 92, 168, 0.1);
+  }
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+}
+
+/* ---------- TABLE STYLES ---------- */
+table {
+  font-size: 0.85rem;
+  border: 1px solid #dee2e6;
+
+  thead {
+    background-color: $blue-main;
+    color: #fff;
+    text-align: center;
+  }
+
+  tbody tr:nth-child(even) {
+    background-color: #f8f9fc;
+  }
+
+  td input {
+    background-color: #fff;
+  }
+
+  th,
+  td {
+    vertical-align: middle;
+  }
+}
+
+/* ---------- HEADERS ---------- */
+h4,
+h6 {
+  color: $blue-main;
+  font-weight: 700;
+}
+
+h6.text-primary {
+  border-bottom: 2px solid $blue-border;
+  padding-bottom: 4px;
+}
+
+/* ---------- PANELS ---------- */
+.border {
+  border-color: $blue-border !important;
+  background-color: $bg-light !important;
+}
+
+/* ---------- SPACING ---------- */
+.mb-2 {
+  margin-bottom: 0.75rem !important;
+}
+.mt-3 {
+  margin-top: 1rem !important;
+}
+
+/* ---------- SCROLL ---------- */
+.container-fluid {
+  overflow-y: auto;
+  max-height: calc(100vh - 100px);
+}
+
+/* ---------- EQUIPMENT BOARD TABLE ---------- */
+.table-sm {
+  font-size: 11px !important;
+  
+  th, td {
+    padding: 2px 4px !important;
+    vertical-align: middle;
+  }
+  
+  .form-control-sm {
+    font-size: 10px !important;
+    padding: 2px 4px !important;
+    height: auto !important;
+    min-height: 20px;
+  }
+  
+  thead.table-dark th {
+    background-color: #343a40 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 11px !important;
+    text-align: center;
+    border: 1px solid #495057;
+  }
+  
+  td {
+    border: 1px solid #dee2e6;
+  }
+
+  // ID column styling
+  .fw-bold {
+    font-weight: 600 !important;
+    color: #495057;
+  }
+}

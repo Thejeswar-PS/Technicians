@@ -103,6 +103,13 @@ const Routing: Routes = [
     data: { layout: 'light-sidebar' },
   },
   {
+    path: 'equipment',
+    canActivate: [AuthGuard],
+    loadChildren: () =>
+      import('./jobs/jobs.module').then((m) => m.JobsModule),
+    data: { layout: 'light-sidebar' },
+  },
+  {
     path : 'job-edit',
     canActivate: [AuthGuard],
     component: JobEditComponent

@@ -281,7 +281,7 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   navigateToEditEquipment(equipment: EquipmentDetail): void {
-    this.router.navigate(['/equipment/edit'], {
+    this.router.navigate(['/equipment/edit-equipment'], {
       queryParams: {
         CallNbr: this.params.callNbr,
         EquipNo: equipment.equipNo,

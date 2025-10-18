@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { EquipmentDetail, UploadInfo, UploadResponse } from '../model/equipment-details.model';
+import { Observable, timeout } from 'rxjs';
+import { EquipmentDetail, UploadInfo, UploadResponse, EquipmentInsertUpdateDto, EquipBoardInfoDto, DeleteEquipmentDto } from '../model/equipment-details.model';
 import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus } from '../model/ups-readings.model';
 import { environment } from 'src/environments/environment';
 
@@ -270,4 +270,36 @@ export class EquipmentService {
   checkSaveAsDraft(callNbr: string): Observable<string> {
     return this.http.get(`${this.apiUrl}/EquipmentDetails/CheckSaveAsDraft/?callNbr=${callNbr}`, { responseType: 'text' });
   }
+  // /**
+  //  * Get a specific equipment record for editing
+  //  */
+  // getEquipmentById(callNbr: string, equipId: number): Observable<EquipmentInsertUpdateDto> {
+  //   const params = new HttpParams()
+  //     .set('callNbr', callNbr)
+  //     .set('equipId', equipId.toString());
+    
+  //   return this.http.get<EquipmentInsertUpdateDto>(`${this.apiUrl}/Equipment/GetEquipmentById`, { params });
+  // }
+/** Get equipment board / assy details table */
+  getEquipBoardInfo(callNbr: string, equipNo: string): Observable<any[]> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipNo', equipNo.trim()); // Trim spaces to avoid URL encoding issues
+    
+    return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/GetEquipBoardInfo`, { params })
+      .pipe(
+        timeout(5000) // Reduced to 5 second timeout for faster failure
+      );
+  }
+
+  /** Save or update equipment information (full payload) */
+  saveEquipment(payload: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/EquipmentDetails/spEquipmentInsertUpdate`, payload);
+  }
+
+  /** Delete a specific equipment board row (optional future use) */
+  deleteBoardRow(rowId: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/EquipmentDetails/delete/${rowId}`);
+  }
+
 }

@@ -1,0 +1,242 @@
+<div class="container-fluid mt-3" *ngIf="!loading; else loadingTpl">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <button class="btn btn-outline-secondary btn-sm" (click)="goBack()">
+      ← Back to Page
+    </button>
+    <h4 class="fw-bold text-primary">Edit Equipment Details</h4>
+    <button class="btn btn-success" (click)="onSave()">
+      Save Equipment
+    </button>
+  </div>
+
+  <!-- Two-column layout -->
+  <div class="row">
+    <!-- LEFT COLUMN -->
+    <div class="col-md-6">
+      <form [formGroup]="editForm" class="p-2 border rounded bg-light">
+
+        <!-- JOB & EQUIPMENT -->
+        <div class="mb-2">
+          <label class="form-label fw-bold">Job Number</label>
+          <input class="form-control" [value]="callNbr" readonly />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Equipment No</label>
+          <input class="form-control" formControlName="equipmentNo" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Serial No</label>
+          <input class="form-control" formControlName="serialNo" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Location</label>
+          <input class="form-control" formControlName="location" />
+        </div>
+
+        <div class="mb-2 d-flex gap-2">
+          <div>
+            <label class="form-label fw-bold">DateCode Month</label>
+            <input class="form-control" formControlName="dateCodeMonth" />
+          </div>
+          <div>
+            <label class="form-label fw-bold">DateCode Year</label>
+            <input class="form-control" formControlName="dateCodeYear" />
+          </div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Status</label>
+          <select class="form-select" formControlName="status">
+            <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Equipment Type</label>
+          <select class="form-select" formControlName="equipmentType">
+            <option *ngFor="let t of equipTypeOptions" [value]="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Float Voltage Selection</label>
+          <select class="form-select" formControlName="floatVoltageSelection">
+            <option *ngFor="let v of floatVoltageOptions" [value]="v">{{ v }}</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold"># of Battery Packs</label>
+          <input class="form-control" formControlName="batteryPacks" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Batteries per String</label>
+          <input class="form-control" formControlName="batteriesPerString" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Reading Type</label>
+          <select class="form-select" formControlName="readingType">
+            <option *ngFor="let r of readingTypeOptions" [value]="r">{{ r }}</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">UPS KVA</label>
+          <input class="form-control" formControlName="upsKva" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Vendor ID</label>
+          <input class="form-control" formControlName="vendorId" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Version</label>
+          <input class="form-control" formControlName="version" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Tag</label>
+          <input class="form-control" formControlName="tag" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Contract</label>
+          <input class="form-control" formControlName="contract" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label fw-bold">Task Description</label>
+          <textarea rows="2" class="form-control" formControlName="taskDescription"></textarea>
+        </div>
+      </form>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="col-md-6">
+      <div class="p-2 border rounded bg-light">
+        <h6 class="text-primary fw-bold mb-3">Capacitor / Parts Information</h6>
+
+        <!-- DC Caps -->
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-5">
+            <label>DC Caps Part #</label>
+            <input class="form-control" formControlName="dccapsPartNo" />
+          </div>
+          <div class="col-2"><label>Qty</label><input class="form-control" formControlName="dccapsQty" /></div>
+          <div class="col-2"><label>Month</label><input class="form-control" formControlName="dccapsMonth" /></div>
+          <div class="col-2"><label>Year</label><input class="form-control" formControlName="dccapsYear" /></div>
+        </div>
+
+        <!-- AC I/P Caps -->
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-5">
+            <label>AC I/P Caps Part #</label>
+            <input class="form-control" formControlName="acipcapsPartNo" />
+          </div>
+          <div class="col-2"><label>Qty</label><input class="form-control" formControlName="acipcapsQty" /></div>
+          <div class="col-2"><label>Month</label><input class="form-control" formControlName="acipcapsMonth" /></div>
+          <div class="col-2"><label>Year</label><input class="form-control" formControlName="acipcapsYear" /></div>
+        </div>
+
+        <!-- Repeat for all caps (O/P WYE, Delta, Fans, Blowers, Misc) -->
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-5">
+            <label>AC O/P WYE Caps Part #</label>
+            <input class="form-control" formControlName="acopyWyePartNo" />
+          </div>
+          <div class="col-2"><label>Qty</label><input class="form-control" formControlName="acopyWyeQty" /></div>
+          <div class="col-2"><label>Month</label><input class="form-control" formControlName="acopyWyeMonth" /></div>
+          <div class="col-2"><label>Year</label><input class="form-control" formControlName="acopyWyeYear" /></div>
+        </div>
+
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-5">
+            <label>AC O/P Delta Caps Part #</label>
+            <input class="form-control" formControlName="acopDeltaPartNo" />
+          </div>
+          <div class="col-2"><label>Qty</label><input class="form-control" formControlName="acopDeltaQty" /></div>
+          <div class="col-2"><label>Month</label><input class="form-control" formControlName="acopDeltaMonth" /></div>
+          <div class="col-2"><label>Year</label><input class="form-control" formControlName="acopDeltaYear" /></div>
+        </div>
+
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-5">
+            <label>Fans Part #</label>
+            <input class="form-control" formControlName="fansPartNo" />
+          </div>
+          <div class="col-2"><label>Qty</label><input class="form-control" formControlName="fansQty" /></div>
+          <div class="col-2"><label>Month</label><input class="form-control" formControlName="fansMonth" /></div>
+          <div class="col-2"><label>Year</label><input class="form-control" formControlName="fansYear" /></div>
+        </div>
+
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-5">
+            <label>Blowers Part #</label>
+            <input class="form-control" formControlName="blowersPartNo" />
+          </div>
+          <div class="col-2"><label>Qty</label><input class="form-control" formControlName="blowersQty" /></div>
+          <div class="col-2"><label>Month</label><input class="form-control" formControlName="blowersMonth" /></div>
+          <div class="col-2"><label>Year</label><input class="form-control" formControlName="blowersYear" /></div>
+        </div>
+
+        <div class="row g-2 align-items-end mb-2">
+          <div class="col-5">
+            <label>Misc Part #</label>
+            <input class="form-control" formControlName="miscPartNo" />
+          </div>
+          <div class="col-2"><label>Qty</label><input class="form-control" formControlName="miscQty" /></div>
+          <div class="col-2"><label>Month</label><input class="form-control" formControlName="miscMonth" /></div>
+          <div class="col-2"><label>Year</label><input class="form-control" formControlName="miscYear" /></div>
+        </div>
+
+        <!-- Comments -->
+        <div class="mb-2">
+          <label class="fw-bold">Comments</label>
+          <textarea rows="3" class="form-control" formControlName="capsComments"></textarea>
+        </div>
+      </div>
+
+      <!-- BOARD / ASSY TABLE -->
+      <div class="mt-3 border rounded p-2 bg-light">
+        <div class="mb-2">
+          <h6 class="text-primary fw-bold m-0">Equipment Board / Assy Details</h6>
+        </div>
+
+        <table class="table table-bordered table-sm align-middle" style="font-size: 11px;">
+          <thead class="table-dark">
+            <tr>
+              <th style="width: 30px; font-size: 11px; background-color: #343a40; color: white;">ID</th>
+              <th style="font-size: 11px; background-color: #343a40; color: white;">Part No</th>
+              <th style="width: 50px; font-size: 11px; background-color: #343a40; color: white;">Qty</th>
+              <th style="font-size: 11px; background-color: #343a40; color: white;">Description</th>
+              <th style="font-size: 11px; background-color: #343a40; color: white;">Comments</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let board of boardData; let i = index" class="rows">
+              <td class="fw-bold text-center"><span>{{ board.id }}</span></td>
+              <td><input type="text" [(ngModel)]="board.partNo" class="form-control form-control-sm" /></td>
+              <td><input type="number" [(ngModel)]="board.qty" class="form-control form-control-sm text-end" /></td>
+              <td><input type="text" [(ngModel)]="board.description" class="form-control form-control-sm" /></td>
+              <td><input type="text" [(ngModel)]="board.comments" class="form-control form-control-sm" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingTpl>
+  <div class="text-center mt-5">
+    <div class="spinner-border text-primary"></div>
+    <p class="mt-2 text-muted">Loading equipment details...</p>
+  </div>
+</ng-template>

@@ -7,6 +7,7 @@ import { MobileReceiptsComponent } from './mobile-receipts/mobile-receipts.compo
 import { EditExpenseComponent } from './edit-expense/edit-expense.component';
 import { EquipmentDetailsComponent } from './equipment-details/equipment-details.component';
 import { FileUploadComponent } from './file-upload/file-upload.component';
+import { EditEquipmentComponent } from './edit-equipment/edit-equipment.component';
 import { UpsReadingsComponent } from '../ups-readings/ups-readings.component';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
@@ -48,6 +49,10 @@ const routes: Routes = [
   {
     path: 'file-upload',
     component: FileUploadComponent
+  },
+  {
+    path: 'edit-equipment',
+    component: EditEquipmentComponent
   },
   {
     path: 'ups-readings',
