@@ -1,0 +1,760 @@
+<div class="card">
+  <!-- Header -->
+  <div class="card-header border-0 pt-5">
+    <div class="d-flex align-items-center">
+      <button type="button" class="btn btn-sm btn-light-primary me-3" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Back
+      </button>
+      <h3 class="card-title align-items-start flex-column">
+        <span class="card-label fw-bold fs-3 mb-1">Job Parts Management</span>
+        <span class="text-muted mt-1 fw-semibold fs-7" *ngIf="jobPartsInfo">
+          Job #{{ jobPartsInfo.callNbr }} - {{ jobPartsInfo.techName }}
+        </span>
+      </h3>
+    </div>
+  </div>
+
+  <!-- Card Body -->
+  <div class="card-body py-3">
+    <!-- Loading Spinner -->
+    <div *ngIf="isLoading" class="text-center py-10">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!isLoading">
+        <!-- Global Messages -->
+        <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center mb-5" role="alert">
+          <i class="bi bi-exclamation-triangle-fill fs-2 me-3"></i>
+          <div>{{ errorMessage }}</div>
+        </div>
+        <div *ngIf="successMessage" class="alert alert-success d-flex align-items-center mb-5" role="alert">
+          <i class="bi bi-check-circle-fill fs-2 me-3"></i>
+          <div>{{ successMessage }}</div>
+        </div>
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs nav-line-tabs mb-5 fs-6">
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeTab === 'techInfo'" (click)="activeTab = 'techInfo'">
+            Tech Info
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeTab === 'siteInfo'" (click)="activeTab = 'siteInfo'">
+            Site/Shipping Info
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="activeTab === 'equipInfo'" (click)="activeTab = 'equipInfo'">
+            Equipment Info
+          </a>
+        </li>
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Tech Info Tab -->
+        <div class="tab-pane fade" [class.show]="activeTab === 'techInfo'" [class.active]="activeTab === 'techInfo'">
+          <form [formGroup]="techInfoForm" class="legacy-panel">
+            <div class="row g-3 align-items-center mb-4">
+              <div class="col-sm-3 col-lg-2">
+                <label class="form-label fw-bold mb-0">Technician</label>
+              </div>
+              <div class="col-sm-9 col-lg-4">
+                <input type="text" class="form-control" formControlName="technician" readonly>
+              </div>
+              <div class="col-sm-3 col-lg-2 mt-3 mt-sm-0">
+                <label class="form-label fw-bold mb-0">Tech ID</label>
+              </div>
+              <div class="col-sm-9 col-lg-4">
+                <input type="text" class="form-control" formControlName="techID" maxlength="50">
+              </div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-sm-3 col-lg-2">
+                <label class="form-label fw-bold mb-0">Notes</label>
+              </div>
+              <div class="col-sm-9 col-lg-10">
+                <textarea class="form-control" formControlName="notes" rows="6" maxlength="5000"></textarea>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button type="button" class="btn btn-primary" (click)="onUpdateTechInfo()">
+                <i class="bi bi-save"></i> Update Info
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Site/Shipping Info Tab -->
+        <div class="tab-pane fade" [class.show]="activeTab === 'siteInfo'" [class.active]="activeTab === 'siteInfo'">
+          <form [formGroup]="siteInfoForm" class="legacy-panel">
+            <div class="row">
+              <div class="col-lg-6">
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Address ID</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext fw-semibold">{{ jobPartsInfo?.siteID || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Name</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext fw-semibold">{{ jobPartsInfo?.siteName || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Attention</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="contactName" maxlength="100">
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Contact Ph</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="contactPh" maxlength="20">
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Verify Ph</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" formControlName="verifyPh" id="verifyPhCheckbox">
+                      <label class="form-check-label" for="verifyPhCheckbox">Confirm contact details</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Address</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <ng-container *ngIf="jobPartsInfo?.address; else noAddress">
+                      <a [href]="getSiteAddressUrl()" target="_blank" rel="noopener" class="text-primary text-decoration-underline">
+                        {{ jobPartsInfo?.address }}
+                      </a>
+                    </ng-container>
+                    <ng-template #noAddress>
+                      <span class="form-control-plaintext">—</span>
+                    </ng-template>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Requested By</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.requestedBy || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Scheduled On</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.scheduled || '—' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-6">
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Status</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <select class="form-select" formControlName="shippingStatus">
+                      <option *ngFor="let option of shippingStatusOptions" [value]="option.value">{{ option.text }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Assigned To</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.assignedTo || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Processed By</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.processedBy || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Submitted On</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.submitted || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">First Submitted</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.firstSubmitted || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Last Updated</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.lastUpdate || '—' }}</span>
+                  </div>
+                </div>
+
+                <div class="row mb-4">
+                  <div class="col-12">
+                    <label class="form-label fw-bold">Shipping Notes</label>
+                    <textarea class="form-control" formControlName="shippingNotes" rows="5" maxlength="5000"></textarea>
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                  <button type="button" class="btn btn-primary" (click)="onUpdateSiteInfo()">
+                    <i class="bi bi-save"></i> Update Info
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Equipment Info Tab -->
+        <div class="tab-pane fade" [class.show]="activeTab === 'equipInfo'" [class.active]="activeTab === 'equipInfo'">
+          <form [formGroup]="equipInfoForm" class="legacy-panel">
+            <div class="row">
+              <div class="col-lg-6 mb-5 mb-lg-0">
+                <h5 class="fw-bold mb-3">Equipment 1</h5>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Equip No</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="equipNo" maxlength="50">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Make</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="make" maxlength="50">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Model</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="model" maxlength="50">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">KVA</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="number" class="form-control" formControlName="kva">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">I/O Voltages</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <div class="input-group">
+                      <input type="number" class="form-control" formControlName="inputVolt">
+                      <span class="input-group-text">/</span>
+                      <input type="number" class="form-control" formControlName="outputVolt">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-lg-6">
+                <h5 class="fw-bold mb-3">Equipment 2</h5>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Equip No</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="equipNo1" maxlength="50">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Make</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="make1" maxlength="50">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Model</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="model1" maxlength="50">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">KVA</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="number" class="form-control" formControlName="kva1">
+                  </div>
+                </div>
+                <div class="row g-3 align-items-center mb-3">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">I/O Voltages</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <div class="input-group">
+                      <input type="number" class="form-control" formControlName="inputVolt1">
+                      <span class="input-group-text">/</span>
+                      <input type="number" class="form-control" formControlName="outputVolt1">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-4">
+              <div class="col-lg-6 mb-3 mb-lg-0">
+                <label class="form-label fw-bold">Notes</label>
+                <textarea class="form-control" formControlName="addInfo" rows="4" maxlength="1000"></textarea>
+              </div>
+              <div class="col-lg-6">
+                <label class="form-label fw-bold">Notes</label>
+                <textarea class="form-control" formControlName="addInfo1" rows="4" maxlength="1000"></textarea>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end">
+              <button type="button" class="btn btn-primary" (click)="onUpdateEquipInfo()">
+                <i class="bi bi-save"></i> Update Equip Info
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Parts Request Section -->
+      <div class="separator my-10"></div>
+      <section class="mb-10" id="parts-request-info">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <h4 class="fw-bold mb-0">Parts Request Info</h4>
+          <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddPartRequest()">
+            <i class="bi bi-plus-circle"></i>
+            <span class="ms-2">Add Part</span>
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle legacy-table">
+            <thead class="bg-light">
+              <tr class="fw-bold text-muted text-uppercase">
+                <th scope="col">Manuf Part No.</th>
+                <th scope="col">DCG Part No.</th>
+                <th scope="col" class="text-center">Qty</th>
+                <th scope="col">Description</th>
+                <th scope="col">Destination</th>
+                <th scope="col">Req Date</th>
+                <th scope="col">Method</th>
+                <th scope="col" class="text-center">Urgent?</th>
+                <th scope="col" class="text-center">B O?</th>
+                <th scope="col" class="text-center">Edit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let part of partsRequests">
+                <td class="text-nowrap">
+                  {{ part.partNum || '—' }}
+                  <span class="visually-hidden">{{ part.location }}</span>
+                </td>
+                <td class="text-nowrap">{{ part.dcPartNum || '—' }}</td>
+                <td class="text-center">{{ part.qty === null || part.qty === undefined ? '—' : part.qty }}</td>
+                <td>{{ part.description || '—' }}</td>
+                <td>{{ part.destination || '—' }}</td>
+                <td>{{ part.requiredDate | date:'dd-MMM-yyyy' }}</td>
+                <td>{{ part.shippingMethod || '—' }}</td>
+                <td class="text-center">{{ part.urgent ? 'Yes' : 'No' }}</td>
+                <td class="text-center">{{ part.backOrder ? 'Yes' : 'No' }}</td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 1, part.scidInc)" title="Edit Part">
+                    <i class="bi bi-pencil-square fs-5"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="partsRequests.length === 0">
+                <td colspan="10" class="text-center text-muted py-5">No parts requests found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Shipping Info Section -->
+      <div class="separator my-10"></div>
+      <section class="mb-10" id="shipping-info">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <h4 class="fw-bold mb-0">Shipping Info</h4>
+          <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddShipment()">
+            <i class="bi bi-plus-circle"></i>
+            <span class="ms-2">Add Shipment</span>
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle legacy-table">
+            <thead class="bg-light">
+              <tr class="fw-bold text-muted text-uppercase">
+                <th scope="col">Manuf Part No.</th>
+                <th scope="col">DCG Part No.</th>
+                <th scope="col" class="text-center">Qty</th>
+                <th scope="col">Description</th>
+                <th scope="col">Tracking #</th>
+                <th scope="col">Ship Date</th>
+                <th scope="col">ETA</th>
+                <th scope="col" class="text-center">Edit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let ship of shippingParts">
+                <td class="text-nowrap">
+                  {{ ship.partNum || '—' }}
+                  <span class="visually-hidden">{{ ship.shippingCompany }}</span>
+                  <span class="visually-hidden">{{ ship.shippedFrom }}</span>
+                </td>
+                <td class="text-nowrap">{{ ship.dcPartNum || '—' }}</td>
+                <td class="text-center">{{ ship.qty === null || ship.qty === undefined ? '—' : ship.qty }}</td>
+                <td>
+                  {{ ship.description || '—' }}
+                  <span class="visually-hidden">{{ ship.backOrder }}</span>
+                </td>
+                <td class="text-nowrap">
+                  {{ ship.trackingNum || '—' }}
+                  <span class="visually-hidden">{{ ship.shipmentType }}</span>
+                  <span class="visually-hidden">{{ ship.shippingCost }}</span>
+                  <span class="visually-hidden">{{ ship.courierCost }}</span>
+                </td>
+                <td>{{ ship.shipDate ? (ship.shipDate | date:'dd-MMM-yyyy') : '—' }}</td>
+                <td>{{ ship.eta ? (ship.eta | date:'dd-MMM-yyyy') : '—' }}</td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 2, ship.scidInc)" title="Edit Shipment">
+                    <i class="bi bi-pencil-square fs-5"></i>
+                  </button>
+                </td>
+                <ng-container>
+                  <span class="visually-hidden">{{ ship.createDate }}</span>
+                  <span class="visually-hidden">{{ ship.lastModified }}</span>
+                  <span class="visually-hidden">{{ ship.maintAuthID }}</span>
+                </ng-container>
+              </tr>
+              <tr *ngIf="shippingParts.length === 0">
+                <td colspan="8" class="text-center text-muted py-5">No shipping parts found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Tech Parts Section -->
+      <div class="separator my-10"></div>
+      <section class="mb-10" id="tech-parts-info">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+          <h4 class="fw-bold mb-0">Tech Parts Info</h4>
+          <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddTechPart()">
+            <i class="bi bi-plus-circle"></i>
+            <span class="ms-2">Purchased Locally Or Trunk Stock</span>
+          </button>
+        </div>
+
+        <div *ngIf="receivedMessage" class="text-danger fw-semibold text-end mb-3">
+          {{ receivedMessage }}
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle legacy-table">
+            <thead class="bg-light">
+              <tr class="fw-bold text-muted text-uppercase">
+                <th scope="col">Manuf Part No.</th>
+                <th scope="col">DCG Part No.</th>
+                <th scope="col" class="text-center">Qty</th>
+                <th scope="col">Description</th>
+                <th scope="col" class="text-center">Installed</th>
+                <th scope="col" class="text-center">Unused</th>
+                <th scope="col" class="text-center">Faulty</th>
+                <th scope="col">Unused Parts</th>
+                <th scope="col">Faulty Parts</th>
+                <th scope="col" class="text-center">Received?</th>
+                <th scope="col" class="text-center">Edit</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let tech of techParts">
+                <td class="text-nowrap">
+                  {{ tech.partNum || '—' }}
+                  <span class="visually-hidden">{{ tech.createDate }}</span>
+                </td>
+                <td class="text-nowrap">{{ tech.dcPartNum || '—' }}</td>
+                <td class="text-center">{{ tech.totalQty === null || tech.totalQty === undefined ? '—' : tech.totalQty }}</td>
+                <td>{{ tech.description || '—' }}</td>
+                <td class="text-center">{{ tech.installedParts === null || tech.installedParts === undefined ? '—' : tech.installedParts }}</td>
+                <td class="text-center">{{ tech.unusedParts === null || tech.unusedParts === undefined ? '—' : tech.unusedParts }}</td>
+                <td class="text-center">{{ tech.faultyParts === null || tech.faultyParts === undefined ? '—' : tech.faultyParts }}</td>
+                <td>{{ tech.unusedDesc || '—' }}</td>
+                <td>{{ tech.faultyDesc || '—' }}</td>
+                <td class="text-center">
+                  <div class="form-check justify-content-center d-flex">
+                    <input class="form-check-input" type="checkbox"
+                           [checked]="tech.isReceived"
+                           (change)="onReceivedCheckChange(tech, $event)"
+                           [disabled]="!isTechnician">
+                  </div>
+                </td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 3, tech.scidInc)" title="Edit Tech Part">
+                    <i class="bi bi-pencil-square fs-5"></i>
+                  </button>
+                </td>
+                <ng-container>
+                  <span class="visually-hidden">{{ tech.lastModified }}</span>
+                  <span class="visually-hidden">{{ tech.maintAuthID }}</span>
+                  <span class="visually-hidden">{{ tech.scidInc }}</span>
+                </ng-container>
+              </tr>
+              <tr *ngIf="techParts.length === 0">
+                <td colspan="11" class="text-center text-muted py-5">No tech parts found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-3 d-flex justify-content-end" *ngIf="techParts.length > 0 && showProcessButton && isTechnician">
+          <button type="button" class="btn btn-primary" (click)="onProcessReceivedParts()">
+            <i class="bi bi-check-circle"></i> Update
+          </button>
+        </div>
+      </section>
+
+      <!-- Tech Return Panel -->
+      <div *ngIf="showTechReturnPanel" class="separator my-10"></div>
+      <div *ngIf="showTechReturnPanel" class="mb-10">
+        <div class="card card-custom bg-light-info">
+          <div class="card-header">
+            <h4 class="card-title fw-bold">Tech Return Information</h4>
+          </div>
+          <div class="card-body">
+            <div *ngIf="techReturnMessage" class="alert alert-danger d-flex align-items-center mb-5" role="alert">
+              <i class="bi bi-exclamation-triangle-fill fs-2 me-3"></i>
+              <div>{{ techReturnMessage }}</div>
+            </div>
+            <form [formGroup]="techReturnForm">
+              <div class="row mb-5">
+                <div class="col-md-12">
+                  <div class="alert alert-info d-flex align-items-center">
+                    <i class="bi bi-info-circle fs-2 me-3"></i>
+                    <div>
+                      <strong>Unused Parts to Send Back:</strong> {{ unusedSent }}<br>
+                      <strong>Faulty Parts to Send Back:</strong> {{ faultySent }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-5">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Unused Parts Sent</label>
+                  <input type="number" class="form-control" formControlName="unusedSent" min="0">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Faulty Parts Sent</label>
+                  <input type="number" class="form-control" formControlName="faultySent" min="0">
+                </div>
+              </div>
+
+              <div class="row mb-5">
+                <div class="col-md-12">
+                  <label class="form-label fw-bold">Return Status</label>
+                  <select class="form-select" formControlName="returnStatus">
+                    <option *ngFor="let option of techReturnStatusOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                  <div class="form-text text-muted">
+                    Note: You can only set status to "Returned" if all parts have been received by warehouse.
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-5">
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Processed By</label>
+                  <div class="form-control-plaintext">{{ techReturnInfo?.maintAuthId || '—' }}</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-bold">Last Updated</label>
+                  <div class="form-control-plaintext">
+                    {{ techReturnInfo?.lastModified ? (techReturnInfo?.lastModified | date:'medium') : '—' }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-5">
+                <div class="col-md-12">
+                  <label class="form-label fw-bold">Return Notes</label>
+                  <textarea class="form-control" formControlName="returnNotes" rows="3" maxlength="2000"></textarea>
+                </div>
+              </div>
+
+              <div class="d-flex justify-content-end flex-wrap gap-3">
+                <button type="button" class="btn btn-primary" (click)="onUpdateTechReturn()">
+                  <i class="bi bi-save"></i> Update Return Info
+                </button>
+                <button type="button" class="btn btn-warning" (click)="onReUploadJob()">
+                  <i class="bi bi-cloud-upload"></i> Re-Upload Job
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tech Notes Section -->
+      <div class="separator my-10"></div>
+      <div class="mb-10">
+        <h4 class="fw-bold mb-5">Additional Tech Notes</h4>
+        <form [formGroup]="techNotesForm">
+          <div class="row mb-5">
+            <div class="col-md-12">
+              <textarea class="form-control" formControlName="emgNotes" rows="4" 
+                        placeholder="Add any additional notes here..." maxlength="5000"></textarea>
+            </div>
+          </div>
+          <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-primary" (click)="onUpdateTechNotes()">
+              <i class="bi bi-save"></i> Save Notes
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- File Upload Section -->
+      <div class="separator my-10"></div>
+      <div class="mb-10">
+        <h4 class="fw-bold mb-5">File Attachments</h4>
+        
+        <div class="card card-custom mb-5">
+          <div class="card-body">
+            <div class="row align-items-end">
+              <div class="col-md-8">
+                <label class="form-label fw-bold">Upload File</label>
+                <input type="file" class="form-control" #fileInput 
+                       (change)="onFileSelected($event)"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
+                <div class="form-text text-muted">
+                  Maximum file size: 5MB. Allowed types: PDF, Word, Excel, Images. 
+                  <span class="text-danger">No spaces allowed in filename.</span>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <button type="button" class="btn btn-success w-100" 
+                        (click)="onUploadFile()" 
+                        [disabled]="!selectedFile || isUploading">
+                  <span *ngIf="!isUploading">
+                    <i class="bi bi-upload"></i> Upload File
+                  </span>
+                  <span *ngIf="isUploading">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Uploading...
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Uploaded Files List -->
+        <div class="card card-custom">
+          <div class="card-header">
+            <h5 class="card-title">Uploaded Files</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-row-bordered align-middle">
+                <thead>
+                  <tr class="fw-bold text-muted">
+                    <th>File Name</th>
+                    <th>Upload Date</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let file of fileAttachments">
+                    <td>
+                      <i class="bi bi-file-earmark fs-3 me-2"></i>
+                      {{ file.fullName || file.name }}
+                    </td>
+                    <td>{{ file.creationTime | date:'medium' }}</td>
+                    <td class="text-end">
+                      <a [href]="file.url" target="_blank" class="btn btn-sm btn-light-primary me-2">
+                        <i class="bi bi-download"></i> Download
+                      </a>
+                    </td>
+                  </tr>
+                  <tr *ngIf="fileAttachments.length === 0">
+                    <td colspan="3" class="text-center text-muted py-5">No files uploaded yet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="separator my-10"></div>
+      <div class="d-flex justify-content-between">
+        <button type="button" class="btn btn-light" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i> Back to Job List
+        </button>
+        <button type="button" class="btn btn-warning" (click)="onReUploadToGP()" *ngIf="!isTechnician">
+          <i class="bi bi-arrow-repeat"></i> Re-Upload to GP
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

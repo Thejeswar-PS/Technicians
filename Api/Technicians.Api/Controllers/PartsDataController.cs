@@ -22,18 +22,77 @@ namespace Technicians.Api.Controllers
             _repository = repository;
         }
 
-        [HttpGet("{callNbr}")]
-        public async Task<ActionResult<List<PartsDataDto>>> GetPartsData(string callNbr)
+        //1. Get PartsInfo
+        [HttpGet("GetJobPartsInfo")]
+        public async Task<IActionResult> GetJobPartsInfo([FromQuery] string callNbr)
         {
-            var result = await _repository.GetPartsDataAsync(callNbr);
+            var result = await _repository.GetJobPartsInfoAsync(callNbr);
             if (result == null || result.Count == 0)
                 return NotFound();
+
             return Ok(result);
         }
 
-        //2. Get Parts Equip Info by Call Number
-        [HttpGet("{callNbr}/equipinfo")]
-        public async Task<IActionResult> Get(string callNbr)
+        //2. Get Parts Req Data by Call Number and SCID_Inc
+        [HttpGet("GetPartsRequests")]
+        public async Task<IActionResult> GetPartsRequests(
+            [FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("CallNbr is required.");
+
+            try
+            {
+                var result = await _repository.GetPartsRequestsAsync(callNbr, 0);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No parts requests found for CallNbr: {callNbr}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error retrieving parts requests: {ex.Message}");
+            }
+        }
+
+        //3. Get shipping parts data
+        [HttpGet("GetShippingParts")]
+        public async Task<IActionResult> GetShippingParts([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("callNbr is required.");
+
+            try
+            {
+                var result = await _repository.GetShippingPartsAsync(callNbr, 0);
+                if (result == null || !result.Any())
+                    return NotFound($"No shipping parts found for CallNbr: {callNbr}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error fetching shipping parts: {ex.Message}" });
+            }
+        }
+
+
+        //4.Get Tech Parts  Data by Call Number and SCID_Inc
+        [HttpGet("GetTechParts")]
+        public async Task<IActionResult> GetTechPartsData([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrEmpty(callNbr))
+                return BadRequest("callNbr is required");
+
+            var result = await _repository.GetTechPartsDataAsync(callNbr, 0);
+            return Ok(result);
+        }
+
+
+        //5. Get Parts Equip Info by Call Number
+        [HttpGet("GetPartsEquipInfo")]
+        public async Task<IActionResult> Get([FromQuery] string callNbr)
         {
             var result = await _repository.GetPartsEquipInfoAsync(callNbr);
             if (result == null)
@@ -42,9 +101,9 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
-        //3. Get Tech Return Parts by Call Number
-        [HttpGet("{callNbr}/techreturnparts")]
-        public async Task<ActionResult<TechReturnPartsDto>> GetTechReturnParts(string callNbr)
+        //6. Get Tech Return Parts by Call Number
+        [HttpGet("GetTechReturnInfo")]
+        public async Task<ActionResult<TechReturnPartsDto>> GetTechReturnParts([FromQuery] string callNbr)
         {
             var result = await _repository.GetTechReturnPartsAsync(callNbr);
             if (result == null)
@@ -54,29 +113,48 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
-        //4. Get Parts Req Data by Call Number and SCID_Inc
-
-        [HttpGet("GetPartsReqData")]
-        public async Task<IActionResult> Get([FromQuery] string callNbr, [FromQuery] int scidInc = 0)
+        //7. Save or update Shipping Info
+        [HttpPost("UpdateJobPartsInfo")]
+        public async Task<IActionResult> UpdateJobPartsInfo([FromBody] ShippingInfoDto request, [FromQuery] string empId)
         {
-            if (string.IsNullOrWhiteSpace(callNbr))
-                return BadRequest("callNbr is required.");
+            if (request == null)
+                return BadRequest("Invalid request payload.");
 
-            var result = await _repository.GetPartsReqData(callNbr, scidInc);
-            return Ok(result);
+            try
+            {
+                var rows = await _repository.UpdateJobPartsInfoAsync(request, empId);
+
+                return Ok(new { message = "Job parts info updated successfully.", rowsAffected = rows });
+
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while updating job parts info.", error = ex.Message });
+            }
         }
 
-        //5.Get Tech Parts  Data by Call Number and SCID_Inc
-
-        [HttpGet("GetTechPartsData")]
-        public async Task<IActionResult> GetTechPartsData([FromQuery] string callNbr, [FromQuery] int scidInc = 0)
+        //8. Save or Update Parts Equip Info
+        [HttpPost("UpdatePartsEquipInfo")]
+        public async Task<IActionResult> UpdatePartsEquipInfo([FromBody] SavePartsEquipInfoDto request, [FromQuery] string empId)
         {
-            if (string.IsNullOrEmpty(callNbr))
-                return BadRequest("callNbr is required");
+            if (request == null || string.IsNullOrWhiteSpace(request.CallNbr))
+                return BadRequest(new { message = "CallNbr is required." });
 
-            var result = await _repository.GetTechPartsDataAsync(callNbr, scidInc);
-            return Ok(result);
+            try
+            {
+                await _repository.SaveOrUpdatePartsEquipInfoAsync(request, empId);
+                return Ok(new { message = "Parts equipment info updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error updating parts equipment info.", error = ex.Message });
+            }
         }
+
+
+
+
+
 
         //6. Save or Update Tech Returned Parts
 
@@ -90,22 +168,7 @@ namespace Technicians.Api.Controllers
             return Ok(new { message = "Success" });
         }
 
-        //7. Save or update Shipping Info
-        [HttpPost("UpdateShippingInfo")]
-        public async Task<IActionResult> SaveOrUpdateShippingInfo([FromBody] ShippingInfoDto request)
-        {
-            if (request == null) return BadRequest(new { message = "Request body is required." });
-
-            int rows = await _repository.SaveOrUpdateShippingInfoAsync(request);
-
-            if (rows == 0)
-            {
-                // 404 makes it clear the update did not match any row
-                return NotFound(new { message = "No matching Service_Call_ID found (0 rows updated).", rowsAffected = rows });
-            }
-
-            return Ok(new { message = "Shipping info saved/updated successfully.", rowsAffected = rows });
-        }
+        
 
         //8. Mark Parts as Received
 
@@ -144,22 +207,6 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        //10. Save or Update Parts Equip Info
-        [HttpPost("SavePartsEquipInfo")]
-        public async Task<IActionResult> SavePartsEquipInfo([FromBody] SavePartsEquipInfoDto request)
-        {
-            if (string.IsNullOrWhiteSpace(request.ServiceCallId))
-                return BadRequest("ServiceCallId is required.");
-
-            try
-            {
-                await _repository.SaveOrUpdatePartsEquipInfoAsync(request);
-                return Ok(new { message = "Parts equipment info saved or updated successfully." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error while saving equipment info.", detail = ex.Message });
-            }
-        }
+        
     }
 }

@@ -10,7 +10,7 @@ import { FileUploadService, UploadedFile } from '../../../core/services/file-upl
 })
 export class FileUploadComponent implements OnInit {
   @Input() jobId?: string;
-  @Output() onClose = new EventEmitter<void>();
+  @Output() closed = new EventEmitter<void>();
   
   callNbr = '';
   selectedFiles: (File | null)[] = [null, null, null, null, null]; // 5 file slots like legacy
@@ -177,7 +177,7 @@ export class FileUploadComponent implements OnInit {
     // Emit close event for modal usage, or close popup for standalone usage
     if (this.jobId) {
       // Modal mode - emit event to parent
-      this.onClose.emit();
+      this.closed.emit();
     } else {
       // Standalone popup mode - refresh parent window and close popup (matching legacy behavior)
       if (window.opener) {

@@ -16,6 +16,8 @@ import { FileUploadComponent } from './file-upload/file-upload.component';
 import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
+import { JobPartsComponent } from './job-parts/job-parts.component';
+import { EditPartsComponent } from './edit-parts/edit-parts.component';
 
 
 
@@ -31,7 +33,9 @@ import { JobSafetyComponent } from './job-safety/job-safety.component';
     NotesViewComponent,
     FileUploadComponent,
     JobNotesInfoComponent,
-    JobSafetyComponent
+    JobSafetyComponent,
+    JobPartsComponent,
+    EditPartsComponent
   ],
   imports: [
     CommonModule,

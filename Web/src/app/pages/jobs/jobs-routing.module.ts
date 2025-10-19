@@ -10,6 +10,8 @@ import { FileUploadComponent } from './file-upload/file-upload.component';
 import { UpsReadingsComponent } from '../ups-readings/ups-readings.component';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
+import { JobPartsComponent } from './job-parts/job-parts.component';
+import { EditPartsComponent } from './edit-parts/edit-parts.component';
 
 const routes: Routes = [
   {
@@ -60,6 +62,14 @@ const routes: Routes = [
   {
     path: 'job-safety',
     component: JobSafetyComponent
+  },
+  {
+    path: 'parts',
+    component: JobPartsComponent
+  },
+  {
+    path: 'edit-parts',
+    component: EditPartsComponent
   }
 ];
 
