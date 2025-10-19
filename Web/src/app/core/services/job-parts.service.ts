@@ -204,8 +204,8 @@ export class JobPartsService {
    * Update tech parts received status
    * Legacy: btnProcess_Click() → da.UpdateTechPartsRecieved
    */
-  updateTechPartsReceived(callNbr: string, scidIncs: string): Observable<any> {
-    return this.http.post<any>(`${this.API}/JobParts/UpdateTechPartsReceived`, 
+  updateTechPartsReceived(callNbr: string, scidIncs: string, empId: string): Observable<any> {
+    return this.http.post<any>(`${this.API}/PartsData/UpdateTechPartsReceived?empId=${encodeURIComponent(empId)}`, 
       { callNbr, scidIncs }, 
       { headers: this.headers }
     );

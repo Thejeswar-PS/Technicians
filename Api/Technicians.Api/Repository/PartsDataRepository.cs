@@ -241,6 +241,31 @@ namespace Technicians.Api.Repository
             await command.ExecuteNonQueryAsync();
         }
 
+        //9. Update Parts Received
+        public async Task<bool> UpdateTechPartsReceivedAsync(string callNbr, string scidIncs, string empId)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                using (var command = new SqlCommand("dbo.UpdateTechPartsRecieved", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@Service_Call_ID", callNbr);
+                    command.Parameters.AddWithValue("@SCID_Inc", scidIncs);
+                    command.Parameters.AddWithValue("@Maint_Auth_ID", empId);
+
+                    await connection.OpenAsync();
+                    await command.ExecuteNonQueryAsync();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                // optionally log ex
+                return false;
+            }
+        }
+
 
 
 
@@ -271,25 +296,8 @@ namespace Technicians.Api.Repository
         
 
 
-        //8. Update Parts Received
-        public async Task UpdatePartsReceivedAsync(TechPartsReceivedDto request)
-        {
-            using (var connection = new SqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
+        
 
-                var command = new SqlCommand("dbo.UpdateTechPartsRecieved", connection)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                command.Parameters.AddWithValue("@Service_Call_ID", request.ServiceCallId);
-                command.Parameters.AddWithValue("@SCID_Inc", string.Join(",", request.ScidIncList));
-                command.Parameters.AddWithValue("@Maint_Auth_ID", request.MaintAuthId);
-
-                await command.ExecuteNonQueryAsync();
-            }
-        }
 
         //9. Upload Job to GP_WOW
         public async Task<int> UploadJobToGPAsync(UploadJobToGP_WowDto request)

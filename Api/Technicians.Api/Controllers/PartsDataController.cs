@@ -151,6 +151,19 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        //9. Mark Parts as Received
+        [HttpPost("UpdateTechPartsReceived")]
+        public async Task<IActionResult> MarkPartsAsReceived([FromBody] TechPartsReceivedDto request, [FromQuery] string empId)
+        {
+            if (string.IsNullOrEmpty(request.CallNbr))
+                return BadRequest("Invalid request payload.");
+
+            bool success = await _repository.UpdateTechPartsReceivedAsync(request.CallNbr, request.scidIncs, empId);
+            return Ok(success);
+        }
+
+
+
 
 
 
@@ -168,21 +181,10 @@ namespace Technicians.Api.Controllers
             return Ok(new { message = "Success" });
         }
 
+
+
         
 
-        //8. Mark Parts as Received
-
-        [HttpPost("UpdateTechpartsReceived")]
-        public async Task<IActionResult> MarkPartsAsReceived([FromBody] TechPartsReceivedDto request)
-        {
-            if (request == null || request.ScidIncList == null || !request.ScidIncList.Any())
-            {
-                return BadRequest("Invalid request payload.");
-            }
-
-            await _repository.UpdatePartsReceivedAsync(request);
-            return Ok(new { message = "Parts marked as received successfully." });
-        }
 
         //9. Upload Job to GP_WOW
 

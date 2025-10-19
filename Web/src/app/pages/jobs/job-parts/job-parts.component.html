@@ -34,6 +34,42 @@
           <i class="bi bi-check-circle-fill fs-2 me-3"></i>
           <div>{{ successMessage }}</div>
         </div>
+
+        <!-- File Upload Section -->
+        <div class="separator my-10"></div>
+        <div class="mb-10">
+          <h4 class="fw-bold mb-5">File Attachments</h4>
+
+          <div class="card card-custom mb-5">
+            <div class="card-body">
+              <div class="row align-items-end">
+                <div class="col-md-8">
+                  <label class="form-label fw-bold">Upload File</label>
+                  <input type="file" class="form-control" #fileInput 
+                         (change)="onFileSelected($event)"
+                         accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
+                  <div class="form-text text-muted">
+                    Maximum file size: 5MB. Allowed types: PDF, Word, Excel, Images. 
+                    <span class="text-danger">No spaces allowed in filename.</span>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <button type="button" class="btn btn-success w-100" 
+                          (click)="onUploadFile()" 
+                          [disabled]="!selectedFile || isUploading">
+                    <span *ngIf="!isUploading">
+                      <i class="bi bi-upload"></i> Upload File
+                    </span>
+                    <span *ngIf="isUploading">
+                      <span class="spinner-border spinner-border-sm me-2"></span>
+                      Uploading...
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       <!-- Tabs Navigation -->
       <ul class="nav nav-tabs nav-line-tabs mb-5 fs-6">
         <li class="nav-item">
@@ -373,6 +409,43 @@
         </div>
       </div>
 
+      <!-- Uploaded Files List -->
+      <div class="separator my-10" *ngIf="fileAttachments?.length"></div>
+      <div class="mb-10" *ngIf="fileAttachments?.length">
+        <div class="card card-custom">
+          <div class="card-header">
+            <h5 class="card-title">Uploaded Files</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-row-bordered align-middle">
+                <thead>
+                  <tr class="fw-bold text-muted">
+                    <th>File Name</th>
+                    <th>Upload Date</th>
+                    <th class="text-end">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let file of fileAttachments">
+                    <td>
+                      <i class="bi bi-file-earmark fs-3 me-2"></i>
+                      {{ file.fullName || file.name }}
+                    </td>
+                    <td>{{ file.creationTime | date:'medium' }}</td>
+                    <td class="text-end">
+                      <a [href]="file.url" target="_blank" class="btn btn-sm btn-light-primary me-2">
+                        <i class="bi bi-download"></i> Download
+                      </a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Parts Request Section -->
       <div class="separator my-10"></div>
       <section class="mb-10" id="parts-request-info">
@@ -504,6 +577,10 @@
           </button>
         </div>
 
+        <div *ngIf="techPartsSuccessMessage" class="text-success fw-semibold text-end mb-3">
+          {{ techPartsSuccessMessage }}
+        </div>
+
         <div *ngIf="receivedMessage" class="text-danger fw-semibold text-end mb-3">
           {{ receivedMessage }}
         </div>
@@ -544,7 +621,7 @@
                     <input class="form-check-input" type="checkbox"
                            [checked]="tech.isReceived"
                            (change)="onReceivedCheckChange(tech, $event)"
-                           [disabled]="!isTechnician">
+            [disabled]="!isTechnician || originallyReceivedParts.has(tech.scidInc)">
                   </div>
                 </td>
                 <td class="text-center">
@@ -670,79 +747,6 @@
             </button>
           </div>
         </form>
-      </div>
-
-      <!-- File Upload Section -->
-      <div class="separator my-10"></div>
-      <div class="mb-10">
-        <h4 class="fw-bold mb-5">File Attachments</h4>
-        
-        <div class="card card-custom mb-5">
-          <div class="card-body">
-            <div class="row align-items-end">
-              <div class="col-md-8">
-                <label class="form-label fw-bold">Upload File</label>
-                <input type="file" class="form-control" #fileInput 
-                       (change)="onFileSelected($event)"
-                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
-                <div class="form-text text-muted">
-                  Maximum file size: 5MB. Allowed types: PDF, Word, Excel, Images. 
-                  <span class="text-danger">No spaces allowed in filename.</span>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <button type="button" class="btn btn-success w-100" 
-                        (click)="onUploadFile()" 
-                        [disabled]="!selectedFile || isUploading">
-                  <span *ngIf="!isUploading">
-                    <i class="bi bi-upload"></i> Upload File
-                  </span>
-                  <span *ngIf="isUploading">
-                    <span class="spinner-border spinner-border-sm me-2"></span>
-                    Uploading...
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Uploaded Files List -->
-        <div class="card card-custom">
-          <div class="card-header">
-            <h5 class="card-title">Uploaded Files</h5>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-row-bordered align-middle">
-                <thead>
-                  <tr class="fw-bold text-muted">
-                    <th>File Name</th>
-                    <th>Upload Date</th>
-                    <th class="text-end">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let file of fileAttachments">
-                    <td>
-                      <i class="bi bi-file-earmark fs-3 me-2"></i>
-                      {{ file.fullName || file.name }}
-                    </td>
-                    <td>{{ file.creationTime | date:'medium' }}</td>
-                    <td class="text-end">
-                      <a [href]="file.url" target="_blank" class="btn btn-sm btn-light-primary me-2">
-                        <i class="bi bi-download"></i> Download
-                      </a>
-                    </td>
-                  </tr>
-                  <tr *ngIf="fileAttachments.length === 0">
-                    <td colspan="3" class="text-center text-muted py-5">No files uploaded yet</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
       </div>
 
       <!-- Action Buttons -->

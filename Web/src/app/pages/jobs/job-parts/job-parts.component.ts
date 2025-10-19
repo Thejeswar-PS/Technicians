@@ -65,6 +65,8 @@ export class JobPartsComponent implements OnInit {
   successMessage: string = '';
   techReturnMessage: string = '';
   receivedMessage: string = '';
+  originallyReceivedParts: Set<number> = new Set<number>();
+  techPartsSuccessMessage: string = '';
   
   // Permissions
   canEditTechInfo: boolean = true;
@@ -217,6 +219,11 @@ export class JobPartsComponent implements OnInit {
     this.jobPartsService.getTechParts(this.callNbr).subscribe({
       next: (data) => {
         this.techParts = data;
+        this.originallyReceivedParts = new Set(
+          this.techParts
+            .filter(part => part.isReceived)
+            .map(part => part.scidInc)
+        );
         this.calculateTechReturnValues();
       },
       error: (error) => {
@@ -330,7 +337,7 @@ export class JobPartsComponent implements OnInit {
     });
 
     // Check if process button should be shown
-    this.showProcessButton = this.techParts.some(part => !part.isReceived);
+  this.showProcessButton = this.techParts.some(part => !this.originallyReceivedParts.has(part.scidInc));
   }
 
   private loadCurrentUserEmpId(): void {
@@ -548,29 +555,26 @@ export class JobPartsComponent implements OnInit {
   }
 
   onProcessReceivedParts(): void {
-    const scidIncs: string[] = [];
-    
-    this.techParts.forEach(part => {
-      if (!part.isReceived) {
-        scidIncs.push(part.scidInc.toString());
-      }
-    });
+    this.receivedMessage = '';
+    this.techPartsSuccessMessage = '';
 
-    if (scidIncs.length === 0) {
-      this.toastr.info('No parts to process');
-      return;
-    }
+    const scidIncs = this.techParts
+      .filter(part => part.isReceived && !this.originallyReceivedParts.has(part.scidInc))
+      .map(part => part.scidInc.toString());
 
-    this.jobPartsService.updateTechPartsReceived(this.callNbr, scidIncs.join(',')).subscribe({
+
+    this.jobPartsService.updateTechPartsReceived(this.callNbr, scidIncs.join(','), this.currentEmpId).subscribe({
       next: () => {
         this.toastr.success('Parts received status updated successfully');
         this.receivedMessage = '';
-        this.successMessage = 'Parts received status updated successfully';
+        this.techPartsSuccessMessage = 'Parts received status updated successfully';
+        this.successMessage = '';
         this.errorMessage = '';
         this.loadAllData();
       },
       error: (error) => {
         this.receivedMessage = 'Error updating parts received status: ' + (error.error?.message || error.message);
+        this.techPartsSuccessMessage = '';
         this.successMessage = '';
       }
     });
@@ -857,6 +861,8 @@ export class JobPartsComponent implements OnInit {
   // Handle received checkbox change
   onReceivedCheckChange(part: TechPart, event: any): void {
     part.isReceived = event.target.checked;
+    this.receivedMessage = '';
+    this.techPartsSuccessMessage = '';
   }
 
   // File upload method
