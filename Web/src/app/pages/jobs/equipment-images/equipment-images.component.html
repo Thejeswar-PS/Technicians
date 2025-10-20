@@ -1,0 +1,229 @@
+<!-- Page Header -->
+<div class="text-center mb-4">
+  <h2 class="fw-bold fs-1 mb-3 text-primary">Equipment Images</h2>
+  <div class="bg-primary text-white p-3 rounded d-inline-block">
+    <h4 class="fw-semibold mb-0">Call: {{ callNbr }} | Equipment: {{ equipNo }} | ID: {{ equipId }}</h4>
+  </div>
+</div>
+
+<!-- Equipment Images Page -->
+<div class="container" style="max-width: 1800px;">
+  <div class="card">
+    <!-- Header -->
+    <div class="card-header border-0 pt-5">
+      <div class="d-flex align-items-center">
+        <button type="button" class="btn btn-primary" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </button>
+      </div>
+    </div>
+
+  <!-- Card Body -->
+  <div class="card-body py-3">
+    <!-- Loading Spinner -->
+    <div *ngIf="loading" class="text-center py-10">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center mb-5">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <span [innerHTML]="errorMessage"></span>
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success d-flex align-items-center mb-5">
+      <i class="bi bi-check-circle me-2"></i>
+      <span>{{ successMessage }}</span>
+    </div>
+
+    <!-- Upload Section -->
+    <div *ngIf="!loading" class="row justify-content-center mb-5">
+      <div class="col-lg-11 col-md-12">
+        <!-- Maximum Images Error Message -->
+        <div *ngIf="showMaxImageError" class="alert alert-danger d-flex align-items-center mb-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <span>Image count reached Maximum of two. Please delete Images and Re-Upload</span>
+        </div>
+        
+        <div class="card border">
+          <div class="card-header">
+            <h4 class="card-title">Upload New Image</h4>
+            <p class="text-secondary fw-semibold mb-0" *ngIf="images.length < 2">
+              You can upload up to {{ 2 - images.length }} more image{{ (2 - images.length) === 1 ? '' : 's' }}
+            </p>
+            <p class="text-warning mb-0" *ngIf="images.length >= 2">
+              Maximum of 2 images reached
+            </p>
+          </div>
+          <div class="card-body">
+            <!-- Description Selection -->
+            <div class="row mb-3">
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Description</label>
+              </div>
+              <div class="col-md-5">
+                <select class="form-select" [(ngModel)]="selectedDescription" required>
+                  <option *ngFor="let option of descriptionOptions" [value]="option.value">
+                    {{ option.text }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- File Selection -->
+            <div class="row mb-3">
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Select File</label>
+              </div>
+              <div class="col-md-5">
+                <input 
+                  type="file" 
+                  #fileInput
+                  class="form-control"
+                  accept=".jpg,.jpeg,.gif,.bmp,.png"
+                  (change)="onFileSelected($event)">
+                <div class="form-text">Supported formats: JPG, PNG, GIF, BMP (Max 5MB)</div>
+                
+                <!-- File Preview -->
+                <div *ngIf="selectedFile" class="mt-2 p-2 bg-light rounded">
+                  <small class="text-muted">
+                    Selected: {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Upload Button -->
+            <div class="row">
+              <div class="col-md-3"></div>
+              <div class="col-md-5">
+                <button 
+                  type="button" 
+                  class="btn btn-primary w-100"
+                  [disabled]="uploading || !selectedFile || selectedDescription === 'PS'"
+                  (click)="onUpload()">
+                  <span *ngIf="!uploading">
+                    <i class="bi bi-upload me-1"></i>
+                    Upload Image
+                  </span>
+                  <span *ngIf="uploading">
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    Uploading...
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Uploaded Images Section -->
+    <div *ngIf="!loading" class="mt-5">
+      <h4 class="fw-bold mb-4 text-center">Uploaded Images</h4>
+      
+      <!-- Empty State -->
+      <div *ngIf="images.length === 0" class="text-center py-10">
+        <div class="text-muted">
+          <i class="bi bi-camera fs-1 mb-3 d-block"></i>
+          <p>No images uploaded yet. Use the upload form above to add images.</p>
+        </div>
+      </div>
+
+      <!-- Images Grid -->
+      <div *ngIf="images.length > 0" class="row justify-content-center g-4">
+        <div *ngFor="let image of images" class="col-lg-12 col-md-12">
+          <div class="card">
+            <div class="row g-0">
+              <!-- Image Display -->
+              <div class="col-md-8">
+                <img 
+                  [src]="getImageUrl(image)" 
+                  [alt]="image.img_Title"
+                  class="img-fluid cursor-pointer rounded-start"
+                  style="height: 300px; width: 100%; object-fit: contain; background-color: #f8f9fa;"
+                  (click)="openImageModal(image)"
+                  onerror="this.src='assets/media/misc/image.png'">
+              </div>
+
+              <!-- Image Details and Actions -->
+              <div class="col-md-4">
+                <div class="card-body h-100 d-flex flex-column justify-content-between">
+                  <!-- Description -->
+                  <div class="mb-3">
+                    <span class="badge bg-info fs-5 fw-bold mb-3 custom-badge">{{ image.img_Title }}</span>
+                    
+                    <!-- Upload Date -->
+                    <div class="mb-2">
+                      <strong class="text-dark fs-6">Upload Date:</strong>
+                      <div class="text-dark-custom">
+                        <i class="bi bi-calendar me-1"></i>
+                        {{ image.created_On | date:'MMM dd, yyyy' }}
+                      </div>
+                      <div class="text-dark-custom">
+                        <i class="bi bi-clock me-1"></i>
+                        {{ image.created_On | date:'HH:mm' }}
+                      </div>
+                    </div>
+                    
+                    <!-- Technician -->
+                    <div class="mb-3">
+                      <strong class="text-dark fs-6">Technician:</strong>
+                      <div class="text-dark-custom">
+                        <i class="bi bi-person me-1"></i>
+                        {{ image.techName }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Delete Button -->
+                  <div class="mt-auto">
+                    <button 
+                      class="btn btn-danger w-100"
+                      (click)="onDeleteImage(image)"
+                      title="Delete Image">
+                      <i class="bi bi-trash me-1"></i>
+                      Delete Image
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal fade" 
+     *ngIf="modalImage" 
+     [style.display]="'block'"
+     style="background-color: rgba(0,0,0,0.5);"
+     (click)="closeModal()">
+  <div class="modal-dialog modal-lg modal-dialog-centered" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ modalImage.img_Title }}</h5>
+        <button type="button" class="btn-close" (click)="closeModal()"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img 
+          [src]="getImageUrl(modalImage)" 
+          [alt]="modalImage.img_Title"
+          class="img-fluid"
+          style="max-height: 70vh;">
+      </div>
+      <div class="modal-footer">
+        <small class="text-muted">
+          Uploaded on {{ modalImage.created_On | date:'MMM dd, yyyy - HH:mm' }} by {{ modalImage.techName }}
+        </small>
+        <button type="button" class="btn btn-secondary" (click)="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
