@@ -70,29 +70,16 @@ export class EquipmentImagesComponent implements OnInit {
 
   private async loadImages(): Promise<void> {
     if (!this.equipId) {
-      console.log('loadImages: No equipId provided');
       return;
     }
 
-    console.log('=== LOAD IMAGES DEBUG ===');
-    console.log('Loading images for equipId:', this.equipId);
-    
     this.loading = true;
     this.errorMessage = '';
 
     try {
       const images = await this.equipmentService.getEquipmentImages(this.equipId).toPromise();
-      console.log('Raw images response:', images);
-      console.log('Images array length:', images ? images.length : 0);
-      
       this.images = images || [];
-      console.log('Component images set to:', this.images);
-      console.log('=== LOAD IMAGES DEBUG END ===');
     } catch (error: any) {
-      console.error('Error loading images:', error);
-      console.error('Error status:', error.status);
-      console.error('Error response:', error.error);
-      
       // With the backend fix, this should only happen for real errors
       this.errorMessage = `Data Retrieval Failure. Error Details: ${error.message || error}`;
       this.toastr.error('Failed to load images');
@@ -174,36 +161,7 @@ export class EquipmentImagesComponent implements OnInit {
         imgFile: this.selectedFile
       };
 
-      console.log('=== UPLOAD DEBUG START ===');
-      console.log('Route params:', {
-        callNbr: this.callNbr,
-        equipNo: this.equipNo,
-        equipId: this.equipId,
-        techId: this.techId,
-        techName: this.techName
-      });
-      console.log('Upload data:', {
-        callNbr: uploadData.callNbr,
-        equipID: uploadData.equipID,
-        equipNo: uploadData.equipNo,
-        techName: uploadData.techName,
-        techID: uploadData.techID,
-        img_Title: uploadData.img_Title,
-        img_Type: uploadData.img_Type,
-        fileName: uploadData.imgFile.name,
-        fileSize: uploadData.imgFile.size,
-        fileType: uploadData.imgFile.type
-      });
-      console.log('=== UPLOAD DEBUG END ===');
-
       const result = await this.equipmentService.uploadEquipmentImage(uploadData).toPromise();
-      
-      console.log('=== BACKEND RESPONSE DEBUG ===');
-      console.log('Full result:', result);
-      console.log('result.success:', result?.success);
-      console.log('result.message:', result?.message);
-      console.log('result.rowsAffected:', result?.rowsAffected);
-      console.log('=== BACKEND RESPONSE DEBUG END ===');
       
       if (result?.success) {
         this.successMessage = 'Image uploaded successfully';
@@ -217,7 +175,6 @@ export class EquipmentImagesComponent implements OnInit {
         if (fileInput) fileInput.value = '';
         
         // Small delay to ensure database transaction commits, then reload
-        console.log('Upload successful, waiting 500ms before reload...');
         await new Promise(resolve => setTimeout(resolve, 500));
         await this.loadImages();
       } else {
@@ -225,13 +182,6 @@ export class EquipmentImagesComponent implements OnInit {
         this.toastr.error(this.errorMessage);
       }
     } catch (error: any) {
-      console.error('=== UPLOAD ERROR DEBUG ===');
-      console.error('Full error object:', error);
-      console.error('Error status:', error.status);
-      console.error('Error message:', error.message);
-      console.error('Error response:', error.error);
-      console.error('=== ERROR DEBUG END ===');
-      
       let errorMsg = 'Failed to upload image';
       if (error.error?.message) {
         errorMsg = error.error.message;
@@ -250,19 +200,8 @@ export class EquipmentImagesComponent implements OnInit {
     const confirmDelete = confirm(`Are you sure you want to delete this image ${image.img_ID}?`);
     if (!confirmDelete) return;
 
-    console.log('=== DELETE IMAGE DEBUG START ===');
-    console.log('Deleting image:', image);
-    console.log('Image ID:', image.img_ID);
-    console.log('=== DELETE IMAGE DEBUG START ===');
-
     try {
       const result = await this.equipmentService.deleteEquipmentImage(image.img_ID).toPromise();
-      
-      console.log('=== DELETE RESPONSE DEBUG ===');
-      console.log('Delete result:', result);
-      console.log('Result.success:', result?.success);
-      console.log('Result.message:', result?.message);
-      console.log('=== DELETE RESPONSE DEBUG END ===');
       
       if (result?.success) {
         this.toastr.success('Image deleted successfully');
@@ -273,15 +212,6 @@ export class EquipmentImagesComponent implements OnInit {
         this.toastr.error('Failed to delete image');
       }
     } catch (error: any) {
-      console.error('=== DELETE ERROR DEBUG ===');
-      console.error('Full error object:', error);
-      console.error('Error status:', error.status);
-      console.error('Error statusText:', error.statusText);
-      console.error('Error message:', error.message);
-      console.error('Error error:', error.error);
-      console.error('Error url:', error.url);
-      console.error('=== DELETE ERROR DEBUG END ===');
-      
       this.errorMessage = `Delete Failure. Error Details: ${error.message || error}`;
       this.toastr.error('Failed to delete image');
     }
