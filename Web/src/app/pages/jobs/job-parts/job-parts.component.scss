@@ -162,18 +162,21 @@ textarea.form-control {
   }
 
   &.btn-primary {
-    background-color: #009ef7;
-    border-color: #009ef7;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
 
     &:hover {
-      background-color: #0095e8;
-      border-color: #0095e8;
+      background-color: #0b5ed7;
+      border-color: #0a58ca;
+      color: #fff;
     }
 
     &:disabled {
-      background-color: #009ef7;
-      border-color: #009ef7;
-      opacity: 0.6;
+      background-color: #6ea8fe;
+      border-color: #6ea8fe;
+      color: #fff;
+      opacity: 0.85;
     }
   }
 
@@ -206,17 +209,6 @@ textarea.form-control {
     &:hover {
       background-color: #ebedf3;
       border-color: #ebedf3;
-    }
-  }
-
-  &.btn-light-primary {
-    background-color: #f1faff;
-    border-color: #f1faff;
-    color: #009ef7;
-
-    &:hover {
-      background-color: #e1f0ff;
-      border-color: #e1f0ff;
     }
   }
 

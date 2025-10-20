@@ -2,7 +2,7 @@
   <!-- Header -->
   <div class="card-header border-0 pt-5">
     <div class="d-flex align-items-center">
-      <button *ngIf="!modalContext" type="button" class="btn btn-sm btn-light-primary me-3" (click)="goBack()">
+  <button *ngIf="!modalContext" type="button" class="btn btn-sm btn-primary me-3" (click)="goBack()">
         <i class="bi bi-arrow-left"></i> Back
       </button>
       <button *ngIf="modalContext" type="button" class="btn btn-sm btn-light-danger me-3" (click)="goBack()">
@@ -44,7 +44,7 @@
               <div class="input-group">
                 <input type="text" class="form-control" formControlName="dcPartNum" maxlength="50"
                        [class.is-invalid]="hasError('dcPartNum', 'required')" (blur)="onDCPartNumBlur()">
-                <button type="button" class="btn btn-light-primary" (click)="checkInventory()" 
+                <button type="button" class="btn btn-primary" (click)="checkInventory()" 
                         [disabled]="isCheckingInventory">
                   <span *ngIf="!isCheckingInventory">
                     <i class="bi bi-search"></i> Check Inventory

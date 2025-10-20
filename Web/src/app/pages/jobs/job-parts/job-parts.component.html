@@ -2,7 +2,7 @@
   <!-- Header -->
   <div class="card-header border-0 pt-5">
     <div class="d-flex align-items-center">
-      <button type="button" class="btn btn-sm btn-light-primary me-3" (click)="goBack()">
+  <button type="button" class="btn btn-sm btn-primary me-3" (click)="goBack()">
         <i class="bi bi-arrow-left"></i> Back
       </button>
       <h3 class="card-title align-items-center flex-column" style="text-align: center;">
@@ -433,7 +433,7 @@
                     </td>
                     <td>{{ file.creationTime | date:'medium' }}</td>
                     <td class="text-end">
-                      <a [href]="file.url" target="_blank" class="btn btn-sm btn-light-primary me-2">
+                      <a [href]="file.url" target="_blank" class="btn btn-sm btn-primary me-2">
                         <i class="bi bi-download"></i> Download
                       </a>
                     </td>

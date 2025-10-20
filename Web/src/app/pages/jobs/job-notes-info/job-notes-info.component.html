@@ -1,5 +1,5 @@
 <!-- Job Notes Information Page -->
-<div class="container-fluid">
+<div class="container-fluid job-notes-container">
   <!-- Loading spinner -->
   <div *ngIf="loading" class="d-flex justify-content-center align-items-center" style="min-height: 300px;">
     <div class="spinner-border" role="status">
@@ -9,42 +9,41 @@
 
   <!-- Main content -->
   <div *ngIf="!loading">
-    <!-- Header section -->
-    <div class="row mb-3">
-      <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
-          <!-- Error/Success Messages -->
-          <div class="flex-grow-1 text-center">
-            <div *ngIf="errorMessage" class="alert alert-danger mb-2">
-              {{ errorMessage }}
-            </div>
-            <div *ngIf="successMessage" class="alert alert-success mb-2">
-              {{ successMessage }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Title -->
-        <div class="text-center my-3">
-          <h4 class="fw-bold" [class.text-danger]="jobInfo?.svcDescr?.toLowerCase()?.includes('emergency')">
-            {{ jobTitle }}
-          </h4>
-        </div>
-
-        <!-- Navigation buttons -->
-        <div class="d-flex justify-content-between mb-3">
+    <div class="card shadow-sm">
+      <div class="card-header border-0 pt-5">
+        <div class="job-notes-header d-flex justify-content-center align-items-start flex-wrap gap-3 position-relative w-100">
           <button 
             type="button" 
-            class="btn btn-link p-0" 
+            class="btn btn-sm btn-primary job-notes-header__button" 
             (click)="onGoBack()"
             [disabled]="saving">
-            <img src="assets/media/icons/backblue.gif" alt="Back" style="border: none;">
+            <i class="bi bi-arrow-left"></i> Back
           </button>
+
+          <div class="job-notes-header__title flex-grow-1">
+            <h4 class="card-title fw-bold mb-1 text-center" [class.text-danger]="jobInfo?.svcDescr?.toLowerCase()?.includes('emergency')">
+              {{ jobTitle }}
+            </h4>
+            <div class="status-messages text-center">
+              <div *ngIf="errorMessage" class="alert alert-danger d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span>{{ errorMessage }}</span>
+              </div>
+              <div *ngIf="successMessage && successMessage.includes('No Information Found')" class="alert alert-warning d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-info-circle-fill me-2"></i>
+                <span>{{ successMessage }}</span>
+              </div>
+              <div *ngIf="successMessage && !successMessage.includes('No Information Found')" class="alert alert-success d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <span>{{ successMessage }}</span>
+              </div>
+            </div>
+          </div>
 
           <button 
             *ngIf="!isReadOnlyMode"
             type="button" 
-            class="btn btn-primary" 
+            class="btn btn-primary job-notes-header__action" 
             (click)="onSave()"
             [disabled]="saving">
             <span *ngIf="saving" class="spinner-border spinner-border-sm me-2"></span>
@@ -52,10 +51,10 @@
           </button>
         </div>
       </div>
-    </div>
 
-    <!-- Job Information Section -->
-    <div class="row mb-4" *ngIf="jobInfo">
+      <div class="card-body">
+        <!-- Job Information Section -->
+        <div class="row mb-4" *ngIf="jobInfo">
       <div class="col-12">
         <div class="table-responsive">
           <table class="table table-borderless job-info-table">
@@ -116,8 +115,8 @@
       </div>
     </div>
 
-    <!-- Notes Section -->
-    <div class="row mb-4">
+        <!-- Notes Section -->
+        <div class="row mb-4">
       <div class="col-12">
         <div class="row">
           <!-- AM Notes -->
@@ -131,8 +130,8 @@
       </div>
     </div>
 
-    <!-- Form section (only show if not in read-only mode) -->
-    <form [formGroup]="jobNotesForm" *ngIf="!isReadOnlyMode">
+        <!-- Form section (only show if not in read-only mode) -->
+        <form [formGroup]="jobNotesForm" *ngIf="!isReadOnlyMode">
       <!-- Tech Notes Section -->
       <div class="row mb-4" *ngIf="jobInfo">
         <div class="col-12">
@@ -296,7 +295,7 @@
               <div class="mb-2">
                 <button 
                   type="button" 
-                  class="btn btn-outline-primary me-3"
+                  class="btn btn-primary me-3"
                   (click)="onRefreshNotes()"
                   [disabled]="saving">
                   Update Notes
@@ -331,44 +330,46 @@
           </div>
         </div>
       </div>
-    </form>
+        </form>
 
-    <!-- Read-only display for CON status -->
-    <div *ngIf="isReadOnlyMode" class="alert alert-info">
-      <h5>Job Completed</h5>
-      <p>This job is in completed status. Information is displayed in read-only mode.</p>
-      
-      <!-- Display job info in read-only format -->
-      <div *ngIf="jobInfo" class="mt-3">
-        <div class="row mb-2" *ngIf="jobInfo.pmVisualNotes">
-          <div class="col-3"><strong>Tech Notes:</strong></div>
-          <div class="col-9" [innerHTML]="jobInfo.pmVisualNotes"></div>
-        </div>
-        
-        <div class="row mb-2">
-          <div class="col-3"><strong>Quote Priority:</strong></div>
-          <div class="col-9">
-            <span *ngFor="let option of quotePriorityOptions">
-              <span *ngIf="option.value === jobInfo.qtePriority">{{ option.label }}</span>
-            </span>
-          </div>
-        </div>
-        
-        <div class="row mb-2" *ngIf="reconciliationInfo">
-          <div class="col-3"><strong>Equipment Changes:</strong></div>
-          <div class="col-9">
-            <span *ngFor="let option of reconciliationOptions">
-              <span *ngIf="option.value === reconciliationInfo.newEquipment">{{ option.label }}</span>
-            </span>
-            <div *ngIf="reconciliationInfo.equipmentNotes" class="mt-1">
-              <small><strong>Details:</strong> {{ reconciliationInfo.equipmentNotes }}</small>
+        <!-- Read-only display for CON status -->
+        <div *ngIf="isReadOnlyMode" class="alert alert-info">
+          <h5>Job Completed</h5>
+          <p>This job is in completed status. Information is displayed in read-only mode.</p>
+          
+          <!-- Display job info in read-only format -->
+          <div *ngIf="jobInfo" class="mt-3">
+            <div class="row mb-2" *ngIf="jobInfo.pmVisualNotes">
+              <div class="col-3"><strong>Tech Notes:</strong></div>
+              <div class="col-9" [innerHTML]="jobInfo.pmVisualNotes"></div>
+            </div>
+            
+            <div class="row mb-2">
+              <div class="col-3"><strong>Quote Priority:</strong></div>
+              <div class="col-9">
+                <span *ngFor="let option of quotePriorityOptions">
+                  <span *ngIf="option.value === jobInfo.qtePriority">{{ option.label }}</span>
+                </span>
+              </div>
+            </div>
+            
+            <div class="row mb-2" *ngIf="reconciliationInfo">
+              <div class="col-3"><strong>Equipment Changes:</strong></div>
+              <div class="col-9">
+                <span *ngFor="let option of reconciliationOptions">
+                  <span *ngIf="option.value === reconciliationInfo.newEquipment">{{ option.label }}</span>
+                </span>
+                <div *ngIf="reconciliationInfo.equipmentNotes" class="mt-1">
+                  <small><strong>Details:</strong> {{ reconciliationInfo.equipmentNotes }}</small>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row mb-2">
+              <div class="col-3"><strong>Deficiency Notes Verified:</strong></div>
+              <div class="col-9">{{ jobInfo.defCheck ? 'Yes' : 'No' }}</div>
             </div>
           </div>
-        </div>
-        
-        <div class="row mb-2">
-          <div class="col-3"><strong>Deficiency Notes Verified:</strong></div>
-          <div class="col-9">{{ jobInfo.defCheck ? 'Yes' : 'No' }}</div>
         </div>
       </div>
     </div>
