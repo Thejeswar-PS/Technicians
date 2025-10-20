@@ -5,10 +5,9 @@
       <button type="button" class="btn btn-sm btn-light-primary me-3" (click)="goBack()">
         <i class="bi bi-arrow-left"></i> Back
       </button>
-      <h3 class="card-title align-items-start flex-column">
-        <span class="card-label fw-bold fs-3 mb-1">Job Parts Management</span>
-        <span class="text-muted mt-1 fw-semibold fs-7" *ngIf="jobPartsInfo">
-          Job #{{ jobPartsInfo.callNbr }} - {{ jobPartsInfo.techName }}
+      <h3 class="card-title align-items-center flex-column" style="text-align: center;">
+        <span class="mt-1 fw-bold fs-1" *ngIf="jobPartsInfo">
+          Service Call Id :{{ jobPartsInfo.callNbr }}
         </span>
       </h3>
     </div>
@@ -461,7 +460,7 @@
           <table class="table table-bordered align-middle legacy-table">
             <thead class="bg-light">
               <tr class="fw-bold text-muted text-uppercase">
-                <th scope="col">Manuf Part No.</th>
+                <th scope="col" class="manuf-part-col">Manuf Part No.</th>
                 <th scope="col">DCG Part No.</th>
                 <th scope="col" class="text-center">Qty</th>
                 <th scope="col">Description</th>
@@ -475,7 +474,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let part of partsRequests">
-                <td class="text-nowrap">
+                <td class="text-nowrap manuf-part-col">
                   {{ part.partNum || '—' }}
                   <span class="visually-hidden">{{ part.location }}</span>
                 </td>
@@ -516,7 +515,7 @@
           <table class="table table-bordered align-middle legacy-table">
             <thead class="bg-light">
               <tr class="fw-bold text-muted text-uppercase">
-                <th scope="col">Manuf Part No.</th>
+                <th scope="col" class="manuf-part-col">Manuf Part No.</th>
                 <th scope="col">DCG Part No.</th>
                 <th scope="col" class="text-center">Qty</th>
                 <th scope="col">Description</th>
@@ -528,7 +527,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let ship of shippingParts">
-                <td class="text-nowrap">
+                <td class="text-nowrap manuf-part-col">
                   {{ ship.partNum || '—' }}
                   <span class="visually-hidden">{{ ship.shippingCompany }}</span>
                   <span class="visually-hidden">{{ ship.shippedFrom }}</span>
@@ -589,7 +588,7 @@
           <table class="table table-bordered align-middle legacy-table">
             <thead class="bg-light">
               <tr class="fw-bold text-muted text-uppercase">
-                <th scope="col">Manuf Part No.</th>
+                <th scope="col" class="manuf-part-col">Manuf Part No.</th>
                 <th scope="col">DCG Part No.</th>
                 <th scope="col" class="text-center">Qty</th>
                 <th scope="col">Description</th>
@@ -604,7 +603,7 @@
             </thead>
             <tbody>
               <tr *ngFor="let tech of techParts">
-                <td class="text-nowrap">
+                <td class="text-nowrap manuf-part-col">
                   {{ tech.partNum || '—' }}
                   <span class="visually-hidden">{{ tech.createDate }}</span>
                 </td>

@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, Optional } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { JobPartsService } from 'src/app/core/services/job-parts.service';
 import { PartsRequest, ShippingPart, TechPart } from 'src/app/core/model/job-parts.model';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-edit-parts',
@@ -12,15 +13,50 @@ import { PartsRequest, ShippingPart, TechPart } from 'src/app/core/model/job-par
 })
 export class EditPartsComponent implements OnInit {
   editForm!: FormGroup;
-  displayMode: number = 1; // 1=Parts Request, 2=Shipping Parts, 3=Tech Parts
-  mode: 'add' | 'edit' = 'add';
-  scidInc?: number;
-  callNbr: string = '';
+  @Input() displayMode: number = 1; // 1=Parts Request, 2=Shipping Parts, 3=Tech Parts
+  @Input() mode: 'add' | 'edit' = 'add';
+  @Input() scidInc?: number;
+  @Input() callNbr: string = '';
+  @Input() modalContext: boolean = false;
+  @Input() source: string = '';
+  @Input() empId: string = '';
+  @Input() techName: string = '';
   isLoading: boolean = false;
   isSaving: boolean = false;
   isCheckingInventory: boolean = false;
   inventoryCheckResult: { exists: boolean; description: string } | null = null;
   showAddAnother: boolean = false;
+  lastModifiedBy: string = '';
+  lastModifiedOn: string = '';
+  private faultyEditedByUser: boolean = false;
+  private lastInventoryLookup: string | null = null;
+
+  readonly shippingMethodOptions: string[] = [
+    'Ground',
+    '3 Day',
+    '2nd Day',
+    'Next Day',
+    'Next Day Early AM',
+    'Saturday',
+    'Same Day'
+  ];
+
+  readonly partSourceOptions: { value: string; label: string }[] = [
+    { value: '76', label: 'Customer Furnished' },
+    { value: '75', label: 'DC Group Sent to Site' },
+    { value: '133', label: 'DC Group sent to Technician' },
+    { value: '134', label: 'Purchased locally' },
+    { value: '132', label: 'Trunk Stock' },
+    { value: '77', label: 'Unknown' }
+  ];
+
+  readonly partsInfoOptions: string[] = ['None', 'Trunk Stock', 'Disposed', 'Sent back to DCG'];
+  readonly faultyInfoOptions: string[] = ['None', 'Disposed', 'Sent back to DCG'];
+  readonly receivedStatusOptions: { value: 'Yes' | 'No' | 'NA'; label: string }[] = [
+    { value: 'Yes', label: 'Yes' },
+    { value: 'No', label: 'No' },
+    { value: 'NA', label: 'N/A' }
+  ];
 
   // Display mode titles
   get pageTitle(): string {
@@ -38,16 +74,31 @@ export class EditPartsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private jobPartsService: JobPartsService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    @Optional() public activeModal?: NgbActiveModal
   ) {}
 
   ngOnInit(): void {
-    // Get query parameters
+    this.initializeEmpId();
+
+    if (this.modalContext) {
+      this.techName = (this.techName || '').trim();
+      this.initializeForm();
+      if (this.mode === 'edit' && this.scidInc) {
+        this.loadPartData();
+      }
+      return;
+    }
+
+    // Fallback for routed usage
     this.route.queryParams.subscribe(params => {
       this.callNbr = params['CallNbr'] || '';
       this.displayMode = parseInt(params['Display']) || 1;
       this.mode = params['Mode'] === 'edit' ? 'edit' : 'add';
       this.scidInc = params['ScidInc'] ? parseInt(params['ScidInc']) : undefined;
+    this.source = params['Source'] || '';
+  this.techName = params['TechName'] || '';
+      this.initializeEmpId();
 
       this.initializeForm();
 
@@ -58,6 +109,10 @@ export class EditPartsComponent implements OnInit {
   }
 
   initializeForm(): void {
+    this.lastModifiedBy = '';
+    this.lastModifiedOn = '';
+    this.faultyEditedByUser = false;
+
     switch (this.displayMode) {
       case 1:
         this.initPartsRequestForm();
@@ -76,13 +131,13 @@ export class EditPartsComponent implements OnInit {
       scidInc: [null],
       serviceCallID: [this.callNbr, Validators.required],
       partNum: ['', [Validators.required, Validators.maxLength(50)]],
-      dcPartNum: ['', Validators.maxLength(50)],
-      qty: [1, [Validators.required, Validators.min(1)]],
+      dcPartNum: ['', [Validators.required, Validators.maxLength(50)]],
+      qty: [1, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
       description: ['', Validators.maxLength(200)],
       location: ['', Validators.maxLength(100)],
-      destination: ['', Validators.maxLength(100)],
-      requiredDate: [''],
-      shippingMethod: ['', Validators.maxLength(50)],
+      destination: ['', [Validators.required, Validators.maxLength(100)]],
+      requiredDate: ['', Validators.required],
+      shippingMethod: ['Ground', Validators.maxLength(50)],
       urgent: [false],
       backOrder: [false],
       techName: ['', Validators.maxLength(100)]
@@ -95,16 +150,17 @@ export class EditPartsComponent implements OnInit {
       serviceCallID: [this.callNbr, Validators.required],
       partNum: ['', [Validators.required, Validators.maxLength(50)]],
       dcPartNum: ['', Validators.maxLength(50)],
-      qty: [1, [Validators.required, Validators.min(1)]],
+      qty: [1, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
       description: ['', Validators.maxLength(200)],
-      shippingCompany: ['', Validators.maxLength(100)],
+      destination: ['', [Validators.required, Validators.maxLength(250)]],
+      shippingCompany: ['', [Validators.required, Validators.maxLength(100)]],
       trackingNum: ['', Validators.maxLength(100)],
-      shipmentType: ['', Validators.maxLength(50)],
+  shipmentType: ['', Validators.maxLength(50)],
       shippingCost: [0, [Validators.min(0)]],
       courierCost: [0, [Validators.min(0)]],
-      shipDate: [''],
-      eta: [''],
-      shippedFrom: ['', Validators.maxLength(100)],
+      shipDate: ['', Validators.required],
+      eta: ['', Validators.required],
+      shippedFrom: ['', [Validators.required, Validators.maxLength(100)]],
       backOrder: [false]
     });
   }
@@ -115,15 +171,19 @@ export class EditPartsComponent implements OnInit {
       serviceCallID: [this.callNbr, Validators.required],
       partNum: ['', [Validators.required, Validators.maxLength(50)]],
       dcPartNum: ['', Validators.maxLength(50)],
-      totalQty: [1, [Validators.required, Validators.min(1)]],
+      totalQty: [1, [Validators.required, Validators.min(1), Validators.pattern(/^[0-9]+$/)]],
       description: ['', Validators.maxLength(200)],
-      installedParts: [0, [Validators.min(0)]],
-      unusedParts: [0, [Validators.min(0)]],
-      faultyParts: [0, [Validators.min(0)]],
-      unusedDesc: ['', Validators.maxLength(500)],
-      faultyDesc: ['', Validators.maxLength(500)],
+      partSource: ['75', Validators.required],
+      installedParts: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
+      unusedParts: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
+      faultyParts: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
+      unusedDesc: ['None', Validators.required],
+      faultyDesc: ['None', Validators.required],
+      receivedStatus: ['No', Validators.required],
       isReceived: [false],
-      brandNew: [false]
+      brandNew: [false],
+      partsLeft: [false],
+      trackingInfo: ['', Validators.maxLength(250)]
     });
 
     // Setup value change listeners for auto-calculations
@@ -133,34 +193,115 @@ export class EditPartsComponent implements OnInit {
   }
 
   setupTechPartsCalculations(): void {
-    // Auto-calculate Unused = Total - Installed
-    this.editForm.get('installedParts')?.valueChanges.subscribe(() => {
-      this.calculateUnusedParts();
+    const installedControl = this.editForm.get('installedParts');
+    const totalControl = this.editForm.get('totalQty');
+    const faultyControl = this.editForm.get('faultyParts');
+    const faultyDescControl = this.editForm.get('faultyDesc');
+    const unusedDescControl = this.editForm.get('unusedDesc');
+
+    installedControl?.valueChanges.subscribe(() => {
+      this.calculateTechPartQuantities();
     });
 
-    this.editForm.get('totalQty')?.valueChanges.subscribe(() => {
-      this.calculateUnusedParts();
+    totalControl?.valueChanges.subscribe(() => {
+      this.calculateTechPartQuantities();
     });
 
-    // Brand new checkbox disables faulty dropdown
+    faultyControl?.valueChanges.subscribe(() => {
+      if (!this.updatingFaultyProgrammatically) {
+        this.faultyEditedByUser = true;
+      }
+      this.syncPartsInfoDefaults();
+    });
+
+    this.editForm.get('unusedParts')?.valueChanges.subscribe(() => {
+      this.syncPartsInfoDefaults();
+    });
+
     this.editForm.get('brandNew')?.valueChanges.subscribe((brandNew) => {
       if (brandNew) {
-        this.editForm.get('faultyParts')?.setValue(0);
-        this.editForm.get('faultyParts')?.disable();
-        this.editForm.get('faultyDesc')?.setValue('');
-        this.editForm.get('faultyDesc')?.disable();
+        this.faultyEditedByUser = false;
+        this.updatingFaultyProgrammatically = true;
+        faultyControl?.setValue(0, { emitEvent: false });
+        faultyControl?.disable({ emitEvent: false });
+        faultyDescControl?.setValue('None', { emitEvent: false });
+        faultyDescControl?.disable({ emitEvent: false });
+        this.updatingFaultyProgrammatically = false;
       } else {
-        this.editForm.get('faultyParts')?.enable();
-        this.editForm.get('faultyDesc')?.enable();
+        faultyControl?.enable({ emitEvent: false });
+        faultyDescControl?.enable({ emitEvent: false });
       }
+      this.syncPartsInfoDefaults();
     });
+
+    this.editForm.get('receivedStatus')?.valueChanges.subscribe((status: 'Yes' | 'No' | 'NA') => {
+      const isReceived = status === 'Yes';
+      this.editForm.get('isReceived')?.setValue(isReceived, { emitEvent: false });
+    });
+
+    this.syncPartsInfoDefaults();
+    this.calculateTechPartQuantities();
   }
 
-  calculateUnusedParts(): void {
-    const total = this.editForm.get('totalQty')?.value || 0;
-    const installed = this.editForm.get('installedParts')?.value || 0;
+  private updatingFaultyProgrammatically: boolean = false;
+
+  private calculateTechPartQuantities(): void {
+    const total = Number(this.editForm.get('totalQty')?.value) || 0;
+    const installed = Number(this.editForm.get('installedParts')?.value) || 0;
     const unused = Math.max(0, total - installed);
     this.editForm.get('unusedParts')?.setValue(unused, { emitEvent: false });
+
+    if (!this.faultyEditedByUser && !this.editForm.get('brandNew')?.value) {
+      this.updatingFaultyProgrammatically = true;
+      this.editForm.get('faultyParts')?.setValue(Math.max(0, installed), { emitEvent: false });
+      this.updatingFaultyProgrammatically = false;
+    }
+
+    this.syncPartsInfoDefaults();
+  }
+
+  private syncPartsInfoDefaults(): void {
+    const faultyQty = Number(this.editForm.get('faultyParts')?.value) || 0;
+    const unusedQty = Number(this.editForm.get('unusedParts')?.value) || 0;
+
+    if (faultyQty === 0) {
+      this.editForm.get('faultyDesc')?.setValue('None', { emitEvent: false });
+    }
+
+    if (unusedQty === 0) {
+      this.editForm.get('unusedDesc')?.setValue('None', { emitEvent: false });
+    }
+  }
+  
+  private toDateTimeLocal(value: string | null | undefined): string {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return value;
+    }
+
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    const hours = `${date.getHours()}`.padStart(2, '0');
+    const minutes = `${date.getMinutes()}`.padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+  
+  private formatDisplayDate(value: string | null | undefined): string {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+    if (isNaN(date.getTime())) {
+      return value;
+    }
+
+    return date.toLocaleString();
   }
 
   loadPartData(): void {
@@ -186,7 +327,13 @@ export class EditPartsComponent implements OnInit {
       next: (parts) => {
         const part = parts.find(p => p.scidInc === this.scidInc);
         if (part) {
-          this.editForm.patchValue(part);
+          this.editForm.patchValue({
+            ...part,
+            requiredDate: this.toDateTimeLocal(part.requiredDate)
+          });
+          if (this.mode === 'edit') {
+            this.editForm.get('qty')?.disable({ emitEvent: false });
+          }
         }
         this.isLoading = false;
       },
@@ -203,7 +350,16 @@ export class EditPartsComponent implements OnInit {
       next: (parts) => {
         const part = parts.find(p => p.scidInc === this.scidInc);
         if (part) {
-          this.editForm.patchValue(part);
+          this.editForm.patchValue({
+            ...part,
+            shipDate: this.toDateTimeLocal(part.shipDate),
+            eta: this.toDateTimeLocal(part.eta)
+          });
+          if (this.mode === 'edit') {
+            this.editForm.get('qty')?.disable({ emitEvent: false });
+          }
+          this.lastModifiedBy = part.maintAuthID ?? '';
+          this.lastModifiedOn = this.formatDisplayDate(part.lastModified);
         }
         this.isLoading = false;
       },
@@ -220,11 +376,19 @@ export class EditPartsComponent implements OnInit {
       next: (parts) => {
         const part = parts.find(p => p.scidInc === this.scidInc);
         if (part) {
-          this.editForm.patchValue(part);
+          this.faultyEditedByUser = true;
+          this.editForm.patchValue({
+            ...part,
+            receivedStatus: part.isReceived ? 'Yes' : 'No'
+          });
+          this.faultyEditedByUser = false;
+          this.lastModifiedBy = part.maintAuthID ?? '';
+          this.lastModifiedOn = this.formatDisplayDate(part.lastModified);
           // Disable quantity field in edit mode
           if (this.mode === 'edit') {
             this.editForm.get('totalQty')?.disable();
           }
+          this.faultyEditedByUser = true;
         }
         this.isLoading = false;
       },
@@ -237,19 +401,22 @@ export class EditPartsComponent implements OnInit {
   }
 
   checkInventory(): void {
-    const partNum = this.editForm.get('partNum')?.value;
-    
-    if (!partNum || !partNum.trim()) {
-      this.toastr.warning('Please enter a part number');
+    const dcPartNum = this.editForm.get('dcPartNum')?.value;
+
+    if (!dcPartNum || !dcPartNum.trim()) {
+      this.toastr.warning('Please enter a DC Group part number');
+      this.inventoryCheckResult = null;
+      this.lastInventoryLookup = null;
       return;
     }
 
     this.isCheckingInventory = true;
     this.inventoryCheckResult = null;
 
-    this.jobPartsService.checkInventoryItem(partNum).subscribe({
+    this.jobPartsService.checkInventoryItem(dcPartNum).subscribe({
       next: (result) => {
         this.inventoryCheckResult = result;
+        this.lastInventoryLookup = dcPartNum;
         this.isCheckingInventory = false;
 
         if (result.exists) {
@@ -259,7 +426,7 @@ export class EditPartsComponent implements OnInit {
             this.editForm.get('description')?.setValue(result.description);
           }
         } else {
-          this.toastr.info('Part not found in inventory');
+          this.toastr.error('DC Group part number not found in inventory');
         }
       },
       error: (error) => {
@@ -270,20 +437,49 @@ export class EditPartsComponent implements OnInit {
     });
   }
 
+  onDCPartNumBlur(): void {
+    if (this.displayMode !== 1) {
+      return;
+    }
+
+    const dcPartNum = (this.editForm.get('dcPartNum')?.value || '').trim();
+    if (!dcPartNum) {
+      this.inventoryCheckResult = null;
+      this.lastInventoryLookup = null;
+      return;
+    }
+
+    if (this.lastInventoryLookup === dcPartNum) {
+      return;
+    }
+
+    this.checkInventory();
+  }
+
   onDelete(): void {
     if (!this.scidInc) {
       this.toastr.error('Cannot delete: No part ID found');
       return;
     }
 
+    if (!this.callNbr) {
+      this.toastr.error('Cannot delete: Missing call number context');
+      return;
+    }
+
     if (confirm('Are you sure you want to delete this part?')) {
-      this.jobPartsService.deletePart(this.displayMode, this.scidInc).subscribe({
+      this.jobPartsService.deletePart(this.callNbr, this.scidInc, this.displayMode, this.empId).subscribe({
         next: (response) => {
           if (response.success) {
-            this.toastr.success('Part deleted successfully');
-            this.router.navigate(['/jobs/parts'], {
-              queryParams: { CallNbr: this.callNbr }
-            });
+            const successMessage = response.message || 'Part deleted successfully';
+            this.toastr.success(successMessage);
+            if (this.modalContext && this.activeModal) {
+              this.activeModal.close({ refresh: true });
+            } else {
+              this.router.navigate(['/jobs/parts'], {
+                queryParams: this.buildNavigationQueryParams()
+              });
+            }
           } else {
             this.toastr.error(response.message || 'Failed to delete part');
           }
@@ -301,24 +497,15 @@ export class EditPartsComponent implements OnInit {
     this.mode = 'add';
     this.scidInc = undefined;
     this.inventoryCheckResult = null;
-    this.editForm.reset({
-      serviceCallID: this.callNbr,
-      qty: 1,
-      totalQty: 1,
-      installedParts: 0,
-      unusedParts: 0,
-      faultyParts: 0,
-      urgent: false,
-      backOrder: false,
-      isReceived: false,
-      brandNew: false,
-      shippingCost: 0,
-      courierCost: 0
-    });
-    
-    // Re-enable quantity field
+    this.lastModifiedBy = '';
+    this.lastModifiedOn = '';
+    this.faultyEditedByUser = false;
+
+    this.initializeForm();
+
+    // Ensure display-specific defaults remain enabled
     if (this.displayMode === 3) {
-      this.editForm.get('totalQty')?.enable();
+      this.editForm.get('totalQty')?.enable({ emitEvent: false });
     }
   }
 
@@ -356,25 +543,138 @@ export class EditPartsComponent implements OnInit {
   }
 
   savePartsRequest(data: PartsRequest): void {
-    // In real implementation, this would call the API
-    // For now, we'll show success and show "Add Another" button
-    this.toastr.success('Parts request saved successfully');
-    this.isSaving = false;
-    this.showAddAnother = true;
+    const payload = this.buildPartsRequestPayload(data);
+    const normalizedSource = (this.source || '').trim().toLowerCase();
+
+    if (!this.empId) {
+      this.isSaving = false;
+      this.toastr.error('Unable to save: missing employee ID context');
+      return;
+    }
+
+    const executeSave = () => {
+      this.jobPartsService.savePartsRequest(payload, this.empId).subscribe({
+        next: (response) => {
+          if (response?.success === false) {
+            this.isSaving = false;
+            this.toastr.error(response.message || 'Failed to save parts request');
+            return;
+          }
+          this.handleSaveSuccess('Parts request saved successfully');
+        },
+        error: (error) => {
+          this.isSaving = false;
+          this.toastr.error(error.error?.message || 'Failed to save parts request');
+        }
+      });
+    };
+
+    const handleDuplicateCheck = () => {
+      if (this.mode !== 'add' || normalizedSource === 'pen') {
+        executeSave();
+        return;
+      }
+
+      this.jobPartsService.checkPartRequestExists(this.callNbr, payload.dcPartNum).subscribe({
+        next: (result) => {
+          if (result?.exists) {
+            this.isSaving = false;
+            this.toastr.error('Error: Please make sure job status is equal to Initiated.');
+            return;
+          }
+          executeSave();
+        },
+        error: (error) => {
+          this.isSaving = false;
+          this.toastr.error(error.error?.message || 'Unable to verify existing part requests');
+        }
+      });
+    };
+
+    this.jobPartsService.checkInventoryItem(payload.dcPartNum).subscribe({
+      next: (result) => {
+        this.inventoryCheckResult = result;
+        this.lastInventoryLookup = payload.dcPartNum;
+
+        if (!result?.exists) {
+          this.isSaving = false;
+          this.toastr.error('DC Group part number does not exist in Inventory');
+          return;
+        }
+
+        if (!payload.description && result.description) {
+          const description = result.description.trim();
+          payload.description = description;
+          this.editForm.get('description')?.setValue(description, { emitEvent: false });
+        }
+
+        handleDuplicateCheck();
+      },
+      error: (error) => {
+        this.isSaving = false;
+        this.toastr.error(error.error?.message || 'Unable to verify inventory for this part');
+      }
+    });
+  }
+
+  private initializeEmpId(): void {
+    if (this.empId && this.empId.trim()) {
+      this.empId = this.empId.trim();
+      return;
+    }
+
+    try {
+      const userDataRaw = localStorage.getItem('userData');
+      if (!userDataRaw) {
+        this.empId = '';
+        return;
+      }
+
+      const userData = JSON.parse(userDataRaw);
+      const resolvedEmpId = ((userData?.empID ?? userData?.empId) || '').toString().trim();
+      this.empId = resolvedEmpId;
+    } catch (error) {
+      console.error('Error loading employee ID from storage:', error);
+      this.empId = '';
+    }
   }
 
   saveShippingPart(data: ShippingPart): void {
-    // In real implementation, this would call the API
-    this.toastr.success('Shipping part saved successfully');
-    this.isSaving = false;
-    this.showAddAnother = true;
+    const payload = this.buildShippingPartPayload(data);
+
+    this.jobPartsService.saveShippingPart(payload, this.empId).subscribe({
+      next: (response) => {
+        if (response?.success === false) {
+          this.isSaving = false;
+          this.toastr.error(response.message || 'Failed to save shipping part');
+          return;
+        }
+        this.handleSaveSuccess('Shipping part saved successfully');
+      },
+      error: (error) => {
+        this.isSaving = false;
+        this.toastr.error(error.error?.message || 'Failed to save shipping part');
+      }
+    });
   }
 
   saveTechPart(data: TechPart): void {
-    // In real implementation, this would call the API
-    this.toastr.success('Tech part saved successfully');
-    this.isSaving = false;
-    this.showAddAnother = true;
+    const payload = this.buildTechPartPayload(data);
+
+    this.jobPartsService.saveTechPart(payload, this.empId).subscribe({
+      next: (response) => {
+        if (response?.success === false) {
+          this.isSaving = false;
+          this.toastr.error(response.message || 'Failed to save tech part');
+          return;
+        }
+        this.handleSaveSuccess('Tech part saved successfully');
+      },
+      error: (error) => {
+        this.isSaving = false;
+        this.toastr.error(error.error?.message || 'Failed to save tech part');
+      }
+    });
   }
 
   validateForm(): boolean {
@@ -411,8 +711,29 @@ export class EditPartsComponent implements OnInit {
       this.toastr.error('Part Number is required');
       return false;
     }
+    if (!data.dcPartNum) {
+      this.toastr.error('DC Group Part Number is required');
+      return false;
+    }
     if (!data.qty || data.qty < 1) {
       this.toastr.error('Quantity must be at least 1');
+      return false;
+    }
+    if (!/^[0-9]+$/.test(String(data.qty))) {
+      this.toastr.error('Quantity must be a whole number');
+      return false;
+    }
+    if (!data.requiredDate) {
+      this.toastr.error('Required Date is required');
+      return false;
+    }
+    if (!data.destination) {
+      this.toastr.error('Destination is required');
+      return false;
+    }
+    const requiredDate = new Date(data.requiredDate);
+    if (isNaN(requiredDate.getTime())) {
+      this.toastr.error('Required Date is invalid');
       return false;
     }
     return true;
@@ -427,12 +748,46 @@ export class EditPartsComponent implements OnInit {
       this.toastr.error('Quantity must be at least 1');
       return false;
     }
+    if (!/^[0-9]+$/.test(String(data.qty))) {
+      this.toastr.error('Quantity must be a whole number');
+      return false;
+    }
+    if (!data.destination) {
+      this.toastr.error('Destination is required');
+      return false;
+    }
+    if (!data.shippedFrom) {
+      this.toastr.error('Shipped From is required');
+      return false;
+    }
+    if (!data.shippingCompany) {
+      this.toastr.error('Shipping Company is required');
+      return false;
+    }
     if (data.shippingCost && isNaN(data.shippingCost)) {
       this.toastr.error('Shipping cost must be a valid number');
       return false;
     }
     if (data.courierCost && isNaN(data.courierCost)) {
       this.toastr.error('Courier cost must be a valid number');
+      return false;
+    }
+    if (!data.shipDate) {
+      this.toastr.error('Ship Date is required');
+      return false;
+    }
+    if (!data.eta) {
+      this.toastr.error('ETA Date is required');
+      return false;
+    }
+    const shipDate = new Date(data.shipDate);
+    const etaDate = new Date(data.eta);
+    if (isNaN(shipDate.getTime()) || isNaN(etaDate.getTime())) {
+      this.toastr.error('Please enter valid Ship Date and ETA Date values');
+      return false;
+    }
+    if (etaDate < shipDate) {
+      this.toastr.error('ETA Date should be greater than or equal to Ship Date');
       return false;
     }
     return true;
@@ -445,6 +800,10 @@ export class EditPartsComponent implements OnInit {
     }
     if (!data.totalQty || data.totalQty < 1) {
       this.toastr.error('Total quantity must be at least 1');
+      return false;
+    }
+    if (!data.partSource) {
+      this.toastr.error('Source of Parts is required');
       return false;
     }
 
@@ -484,10 +843,25 @@ export class EditPartsComponent implements OnInit {
       return false;
     }
 
-    // Validation: If received is checked, must have tracking info or description
-    if (data.isReceived) {
-      if (!data.unusedDesc || !data.unusedDesc.trim()) {
-        this.toastr.error('Please provide a description for parts marked as received');
+    if (faulty > 0 && (!data.faultyDesc || data.faultyDesc === 'None')) {
+      this.toastr.error('Please select a Faulty Parts info value');
+      return false;
+    }
+
+    if (unused > 0 && (!data.unusedDesc || data.unusedDesc === 'None')) {
+      this.toastr.error('Please select an Unused Parts info value');
+      return false;
+    }
+
+    const requiresTracking = [data.faultyDesc, data.unusedDesc].includes('Sent back to DCG');
+    if (requiresTracking && !data.partsLeft && !data.trackingInfo) {
+      this.toastr.error('Please enter tracking info or indicate parts left at site');
+      return false;
+    }
+
+    if (data.receivedStatus === 'Yes') {
+      if (data.faultyDesc !== 'Sent back to DCG' && data.unusedDesc !== 'Sent back to DCG') {
+        this.toastr.error('Received parts must have info set to "Sent back to DCG"');
         return false;
       }
     }
@@ -496,11 +870,49 @@ export class EditPartsComponent implements OnInit {
   }
 
   goBack(): void {
+    if (this.modalContext && this.activeModal) {
+      this.activeModal.dismiss('cancel');
+      return;
+    }
+
     this.router.navigate(['/jobs/parts'], {
-      queryParams: {
-        CallNbr: this.callNbr
-      }
+      queryParams: this.buildNavigationQueryParams()
     });
+  }
+
+  private buildNavigationQueryParams(): any {
+    const queryParams: Record<string, string> = {};
+
+    if (this.callNbr) {
+      queryParams.CallNbr = this.callNbr;
+    }
+
+    if (this.techName) {
+      queryParams.TechName = this.techName;
+    }
+
+    if (this.source) {
+      queryParams.Source = this.source;
+    }
+
+    return queryParams;
+  }
+
+  private handleSaveSuccess(message: string): void {
+    this.toastr.success(message);
+    this.isSaving = false;
+
+    if (this.modalContext && this.activeModal) {
+      this.activeModal.close({ refresh: true });
+      return;
+    }
+
+    if (this.mode === 'add') {
+      const normalizedSource = (this.source || '').trim().toLowerCase();
+      this.showAddAnother = normalizedSource !== 'pen';
+    } else {
+      this.goBack();
+    }
   }
 
   // Helper method to check if a field has errors
@@ -523,34 +935,168 @@ export class EditPartsComponent implements OnInit {
     if (field.hasError('maxlength')) {
       return `${this.getFieldLabel(fieldName)} is too long`;
     }
+    if (field.hasError('pattern')) {
+      const numericFields = ['qty', 'totalQty', 'installedParts', 'unusedParts', 'faultyParts'];
+      if (numericFields.includes(fieldName)) {
+        return `${this.getFieldLabel(fieldName)} must be a whole number`;
+      }
+      return `${this.getFieldLabel(fieldName)} has an invalid format`;
+    }
     return '';
+  }
+
+  private toLegacyDateTime(value: string | Date | null | undefined): string {
+    if (!value) {
+      return '';
+    }
+
+    let date: Date | null = null;
+
+    if (value instanceof Date) {
+      date = value;
+    } else if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return '';
+      }
+
+      const parsed = new Date(trimmed);
+      if (!isNaN(parsed.getTime())) {
+        date = parsed;
+      } else {
+        const isoLike = trimmed.replace(' ', 'T');
+        const parsedIso = new Date(isoLike);
+        if (!isNaN(parsedIso.getTime())) {
+          date = parsedIso;
+        } else {
+          return trimmed;
+        }
+      }
+    }
+
+    if (!date || isNaN(date.getTime())) {
+      return '';
+    }
+
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    const hours = `${date.getHours()}`.padStart(2, '0');
+    const minutes = `${date.getMinutes()}`.padStart(2, '0');
+    const seconds = `${date.getSeconds()}`.padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  }
+
+  private normalizeString(value: any): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).trim();
+  }
+
+  private toNumber(value: any, defaultValue: number = 0): number {
+    if (value === null || value === undefined || value === '') {
+      return defaultValue;
+    }
+    const parsed = Number(value);
+    return isNaN(parsed) ? defaultValue : parsed;
+  }
+
+  private buildPartsRequestPayload(data: any): any {
+    return {
+      scidInc: data.scidInc ?? 0,
+      callNbr: this.callNbr,
+      serviceCallID: data.serviceCallID || this.callNbr,
+      partNum: this.normalizeString(data.partNum),
+      dcPartNum: this.normalizeString(data.dcPartNum),
+      qty: this.toNumber(data.qty, 0),
+      description: this.normalizeString(data.description),
+      location: this.normalizeString(data.location),
+      destination: this.normalizeString(data.destination),
+      requiredDate: this.toLegacyDateTime(data.requiredDate),
+      shippingMethod: this.normalizeString(data.shippingMethod || 'Ground'),
+      urgent: !!data.urgent,
+      backOrder: !!data.backOrder,
+      techName: this.normalizeString(data.techName)
+    };
+  }
+
+  private buildShippingPartPayload(data: any): any {
+    return {
+      scidInc: data.scidInc ?? 0,
+      callNbr: this.callNbr,
+      serviceCallID: data.serviceCallID || this.callNbr,
+      partNum: this.normalizeString(data.partNum),
+      dcPartNum: this.normalizeString(data.dcPartNum),
+      qty: this.toNumber(data.qty, 0),
+      description: this.normalizeString(data.description),
+      destination: this.normalizeString(data.destination),
+      shippingCompany: this.normalizeString(data.shippingCompany),
+      trackingNum: this.normalizeString(data.trackingNum),
+  shipmentType: this.normalizeString(data.shipmentType),
+      shippingCost: this.toNumber(data.shippingCost, 0),
+      courierCost: this.toNumber(data.courierCost, 0),
+      shipDate: this.toLegacyDateTime(data.shipDate),
+      eta: this.toLegacyDateTime(data.eta),
+      shippedFrom: this.normalizeString(data.shippedFrom),
+      backOrder: !!data.backOrder
+    };
+  }
+
+  private buildTechPartPayload(data: any): any {
+    const receivedStatus: 'Yes' | 'No' | 'NA' = data.receivedStatus || (data.isReceived ? 'Yes' : 'No');
+
+    return {
+      scidInc: data.scidInc ?? 0,
+      callNbr: this.callNbr,
+      serviceCallID: data.serviceCallID || this.callNbr,
+      partNum: this.normalizeString(data.partNum),
+      dcPartNum: this.normalizeString(data.dcPartNum),
+      totalQty: this.toNumber(data.totalQty, 0),
+      description: this.normalizeString(data.description),
+      partSource: this.normalizeString(data.partSource || '75'),
+      installedParts: this.toNumber(data.installedParts, 0),
+      unusedParts: this.toNumber(data.unusedParts, 0),
+      faultyParts: this.toNumber(data.faultyParts, 0),
+      unusedDesc: this.normalizeString(data.unusedDesc || 'None'),
+      faultyDesc: this.normalizeString(data.faultyDesc || 'None'),
+      isReceived: receivedStatus === 'Yes',
+      receivedStatus,
+      brandNew: !!data.brandNew,
+      partsLeft: !!data.partsLeft,
+      trackingInfo: this.normalizeString(data.trackingInfo)
+    };
   }
 
   getFieldLabel(fieldName: string): string {
     const labels: { [key: string]: string } = {
-      partNum: 'Part Number',
-      dcPartNum: 'DC Part Number',
+      partNum: 'Manuf Part Number',
+      dcPartNum: 'DCG Part No',
       qty: 'Quantity',
-      totalQty: 'Total Quantity',
+      totalQty: 'Quantity',
       description: 'Description',
       location: 'Location',
       destination: 'Destination',
       requiredDate: 'Required Date',
       shippingMethod: 'Shipping Method',
-      techName: 'Tech Name',
+      techName: 'Technician',
       shippingCompany: 'Shipping Company',
       trackingNum: 'Tracking Number',
-      shipmentType: 'Shipment Type',
+      shipmentType: 'Shipped Type',
       shippingCost: 'Shipping Cost',
       courierCost: 'Courier Cost',
       shipDate: 'Ship Date',
-      eta: 'ETA',
+      eta: 'ETA Date',
       shippedFrom: 'Shipped From',
-      installedParts: 'Installed Parts',
-      unusedParts: 'Unused Parts',
-      faultyParts: 'Faulty Parts',
-      unusedDesc: 'Unused Description',
-      faultyDesc: 'Faulty Description'
+      installedParts: 'Installed Qty',
+      unusedParts: 'Unused Qty',
+      faultyParts: 'Defective Qty',
+      unusedDesc: 'Unused Parts Info',
+      faultyDesc: 'Defective Info',
+      partSource: 'Source of Parts',
+      receivedStatus: 'Received This Part?',
+      trackingInfo: 'Tracking Info'
     };
     return labels[fieldName] || fieldName;
   }

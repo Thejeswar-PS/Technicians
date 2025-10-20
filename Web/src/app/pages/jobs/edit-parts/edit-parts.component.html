@@ -2,8 +2,11 @@
   <!-- Header -->
   <div class="card-header border-0 pt-5">
     <div class="d-flex align-items-center">
-      <button type="button" class="btn btn-sm btn-light-primary me-3" (click)="goBack()">
+      <button *ngIf="!modalContext" type="button" class="btn btn-sm btn-light-primary me-3" (click)="goBack()">
         <i class="bi bi-arrow-left"></i> Back
+      </button>
+      <button *ngIf="modalContext" type="button" class="btn btn-sm btn-light-danger me-3" (click)="goBack()">
+        <i class="bi bi-x"></i> Close
       </button>
       <h3 class="card-title align-items-start flex-column">
         <span class="card-label fw-bold fs-3 mb-1">{{ pageTitle }}</span>
@@ -29,36 +32,40 @@
         <div *ngIf="displayMode === 1">
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold required">Part Number</label>
+              <label class="form-label fw-bold required">Manuf Part Number</label>
+              <input type="text" class="form-control" formControlName="partNum" 
+                     [class.is-invalid]="hasError('partNum', 'required')" maxlength="50">
+              <div class="invalid-feedback" *ngIf="hasError('partNum', 'required')">
+                {{ getErrorMessage('partNum') }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">DCG Part No</label>
               <div class="input-group">
-                <input type="text" class="form-control" formControlName="partNum" 
-                       [class.is-invalid]="hasError('partNum', 'required')" maxlength="50">
+                <input type="text" class="form-control" formControlName="dcPartNum" maxlength="50"
+                       [class.is-invalid]="hasError('dcPartNum', 'required')" (blur)="onDCPartNumBlur()">
                 <button type="button" class="btn btn-light-primary" (click)="checkInventory()" 
                         [disabled]="isCheckingInventory">
                   <span *ngIf="!isCheckingInventory">
-                    <i class="bi bi-search"></i> Check in Inventory
+                    <i class="bi bi-search"></i> Check Inventory
                   </span>
                   <span *ngIf="isCheckingInventory">
                     <span class="spinner-border spinner-border-sm me-2"></span> Checking...
                   </span>
                 </button>
               </div>
-              <div class="invalid-feedback d-block" *ngIf="hasError('partNum', 'required')">
-                {{ getErrorMessage('partNum') }}
+              <div class="invalid-feedback" *ngIf="hasError('dcPartNum', 'required')">
+                {{ getErrorMessage('dcPartNum') }}
               </div>
               <!-- Inventory Check Result -->
               <div *ngIf="inventoryCheckResult" class="mt-2">
                 <span *ngIf="inventoryCheckResult.exists" class="badge bg-success">
-                  <i class="bi bi-check-circle"></i> Found in inventory
+                  <i class="bi bi-check-circle"></i> Item exists in inventory
                 </span>
                 <span *ngIf="!inventoryCheckResult.exists" class="badge bg-danger">
-                  <i class="bi bi-x-circle"></i> Not found in inventory
+                  <i class="bi bi-x-circle"></i> Item not found in inventory
                 </span>
               </div>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">DC Part Number</label>
-              <input type="text" class="form-control" formControlName="dcPartNum" maxlength="50">
             </div>
           </div>
 
@@ -66,19 +73,45 @@
             <div class="col-md-6">
               <label class="form-label fw-bold required">Quantity</label>
               <input type="number" class="form-control" formControlName="qty" min="1"
-                     [class.is-invalid]="hasError('qty', 'required') || hasError('qty', 'min')">
+                     [class.is-invalid]="hasError('qty', 'required') || hasError('qty', 'min') || hasError('qty', 'pattern')">
               <div class="invalid-feedback">
                 {{ getErrorMessage('qty') }}
               </div>
             </div>
+          </div>
+
+          <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold">Tech Name</label>
-              <input type="text" class="form-control" formControlName="techName" maxlength="100">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" formControlName="backOrder" id="backOrderCheckbox1">
+                <label class="form-check-label fw-bold" for="backOrderCheckbox1">
+                  Back Order?
+                </label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" formControlName="urgent" id="urgentCheckbox">
+                <label class="form-check-label fw-bold" for="urgentCheckbox">
+                  Urgent?
+                </label>
+              </div>
             </div>
           </div>
 
           <div class="row mb-5">
-            <div class="col-md-12">
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Required Date</label>
+              <input type="datetime-local" class="form-control" formControlName="requiredDate"
+                     [class.is-invalid]="hasError('requiredDate', 'required')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('requiredDate') }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row mb-5">
+            <div class="col-12">
               <label class="form-label fw-bold">Description</label>
               <textarea class="form-control" formControlName="description" rows="3" maxlength="200"></textarea>
             </div>
@@ -86,42 +119,25 @@
 
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold">Location</label>
-              <input type="text" class="form-control" formControlName="location" maxlength="100">
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Destination</label>
-              <input type="text" class="form-control" formControlName="destination" maxlength="100">
-            </div>
-          </div>
-
-          <div class="row mb-5">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Required Date</label>
-              <input type="datetime-local" class="form-control" formControlName="requiredDate">
+              <label class="form-label fw-bold required">Destination</label>
+              <input type="text" class="form-control" formControlName="destination" maxlength="100"
+                     [class.is-invalid]="hasError('destination', 'required')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('destination') }}
+              </div>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">Shipping Method</label>
-              <input type="text" class="form-control" formControlName="shippingMethod" maxlength="50">
+              <select class="form-select" formControlName="shippingMethod">
+                <option *ngFor="let method of shippingMethodOptions" [ngValue]="method">{{ method }}</option>
+              </select>
             </div>
           </div>
 
           <div class="row mb-5">
             <div class="col-md-6">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" formControlName="urgent" id="urgentCheckbox">
-                <label class="form-check-label fw-bold" for="urgentCheckbox">
-                  Urgent Request
-                </label>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" formControlName="backOrder" id="backOrderCheckbox1">
-                <label class="form-check-label fw-bold" for="backOrderCheckbox1">
-                  Back Order
-                </label>
-              </div>
+              <label class="form-label fw-bold">Technician</label>
+              <input type="text" class="form-control" formControlName="techName" maxlength="100">
             </div>
           </div>
         </div>
@@ -147,21 +163,33 @@
             <div class="col-md-6">
               <label class="form-label fw-bold required">Quantity</label>
               <input type="number" class="form-control" formControlName="qty" min="1"
-                     [class.is-invalid]="hasError('qty', 'required') || hasError('qty', 'min')">
+                     [class.is-invalid]="hasError('qty', 'required') || hasError('qty', 'min') || hasError('qty', 'pattern')">
               <div class="invalid-feedback">
                 {{ getErrorMessage('qty') }}
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Shipping Company</label>
-              <input type="text" class="form-control" formControlName="shippingCompany" maxlength="100">
+              <label class="form-label fw-bold required">Shipping Company</label>
+              <input type="text" class="form-control" formControlName="shippingCompany" maxlength="100"
+                     [class.is-invalid]="hasError('shippingCompany', 'required')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('shippingCompany') }}
+              </div>
             </div>
           </div>
 
           <div class="row mb-5">
-            <div class="col-md-12">
+            <div class="col-md-6">
               <label class="form-label fw-bold">Description</label>
               <textarea class="form-control" formControlName="description" rows="3" maxlength="200"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Destination</label>
+              <input type="text" class="form-control" formControlName="destination" maxlength="250"
+                     [class.is-invalid]="hasError('destination', 'required')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('destination') }}
+              </div>
             </div>
           </div>
 
@@ -171,14 +199,8 @@
               <input type="text" class="form-control" formControlName="trackingNum" maxlength="100">
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Shipment Type</label>
-              <select class="form-select" formControlName="shipmentType">
-                <option value="">Select Type</option>
-                <option value="Standard">Standard</option>
-                <option value="Express">Express</option>
-                <option value="Overnight">Overnight</option>
-                <option value="International">International</option>
-              </select>
+              <label class="form-label fw-bold">Shipped Type</label>
+              <input type="text" class="form-control" formControlName="shipmentType" maxlength="50">
             </div>
           </div>
 
@@ -195,19 +217,31 @@
 
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold">Ship Date</label>
-              <input type="datetime-local" class="form-control" formControlName="shipDate">
+              <label class="form-label fw-bold required">Ship Date</label>
+              <input type="datetime-local" class="form-control" formControlName="shipDate"
+                     [class.is-invalid]="hasError('shipDate', 'required')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('shipDate') }}
+              </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Estimated Arrival</label>
-              <input type="datetime-local" class="form-control" formControlName="eta">
+              <label class="form-label fw-bold required">ETA Date</label>
+              <input type="datetime-local" class="form-control" formControlName="eta"
+                     [class.is-invalid]="hasError('eta', 'required')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('eta') }}
+              </div>
             </div>
           </div>
 
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold">Shipped From</label>
-              <input type="text" class="form-control" formControlName="shippedFrom" maxlength="100">
+              <label class="form-label fw-bold required">Shipped From</label>
+              <input type="text" class="form-control" formControlName="shippedFrom" maxlength="100"
+                     [class.is-invalid]="hasError('shippedFrom', 'required')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('shippedFrom') }}
+              </div>
             </div>
             <div class="col-md-6">
               <div class="form-check mt-8">
@@ -225,81 +259,130 @@
           <div class="row mb-5">
             <div class="col-md-6">
               <label class="form-label fw-bold required">Part Number</label>
-              <input type="text" class="form-control" formControlName="partNum" 
+              <input type="text" class="form-control" formControlName="partNum"
                      [class.is-invalid]="hasError('partNum', 'required')" maxlength="50">
               <div class="invalid-feedback">
                 {{ getErrorMessage('partNum') }}
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">DC Part Number</label>
-              <input type="text" class="form-control" formControlName="dcPartNum" maxlength="50">
-            </div>
-          </div>
-
-          <div class="row mb-5">
-            <div class="col-md-12">
-              <label class="form-label fw-bold">Description</label>
-              <textarea class="form-control" formControlName="description" rows="3" maxlength="200"></textarea>
-            </div>
-          </div>
-
-          <div class="row mb-5">
-            <div class="col-md-4">
-              <label class="form-label fw-bold required">Total Quantity</label>
+              <label class="form-label fw-bold required">Quantity</label>
               <input type="number" class="form-control" formControlName="totalQty" min="1"
-                     [class.is-invalid]="hasError('totalQty', 'required') || hasError('totalQty', 'min')">
+                     [class.is-invalid]="hasError('totalQty', 'required') || hasError('totalQty', 'min') || hasError('totalQty', 'pattern')">
               <div class="invalid-feedback">
                 {{ getErrorMessage('totalQty') }}
               </div>
               <small class="text-muted" *ngIf="mode === 'edit'">Quantity cannot be edited</small>
             </div>
-            <div class="col-md-4">
-              <div class="form-check mt-8">
-                <input class="form-check-input" type="checkbox" formControlName="isReceived" id="isReceivedCheckbox">
-                <label class="form-check-label fw-bold" for="isReceivedCheckbox">
-                  Parts Received
+          </div>
+
+          <div class="row mb-5">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">DCG Part No</label>
+              <input type="text" class="form-control" formControlName="dcPartNum" maxlength="50">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Received This Part?</label>
+              <div class="d-flex flex-column gap-2">
+                <label class="form-check" *ngFor="let status of receivedStatusOptions">
+                  <input class="form-check-input" type="radio" [value]="status.value" formControlName="receivedStatus">
+                  <span class="form-check-label">{{ status.label }}</span>
                 </label>
               </div>
             </div>
+          </div>
+
+          <div class="row mb-5">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Description</label>
+              <textarea class="form-control" formControlName="description" rows="3" maxlength="200"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Source of Parts</label>
+              <select class="form-select" formControlName="partSource"
+                      [class.is-invalid]="hasError('partSource', 'required')">
+                <option *ngFor="let source of partSourceOptions" [ngValue]="source.value">{{ source.label }}</option>
+              </select>
+              <div class="invalid-feedback">
+                {{ getErrorMessage('partSource') }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row mb-5">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Installed Qty</label>
+              <input type="number" class="form-control" formControlName="installedParts" min="0"
+                     [class.is-invalid]="hasError('installedParts', 'required') || hasError('installedParts', 'pattern') || hasError('installedParts', 'min')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('installedParts') }}
+              </div>
+              <small class="text-muted">Auto-calculates Unused</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Unused Qty</label>
+              <input type="number" class="form-control" formControlName="unusedParts" min="0" readonly
+                     [class.is-invalid]="hasError('unusedParts', 'required') || hasError('unusedParts', 'pattern')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('unusedParts') }}
+              </div>
+              <small class="text-muted">Auto-calculated (Quantity - Installed)</small>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Defective Qty</label>
+              <input type="number" class="form-control" formControlName="faultyParts" min="0"
+                     [class.is-invalid]="hasError('faultyParts', 'required') || hasError('faultyParts', 'pattern')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('faultyParts') }}
+              </div>
+              <small class="text-muted">Disabled when New Part Installation is checked</small>
+            </div>
+          </div>
+
+          <div class="row mb-5">
             <div class="col-md-4">
               <div class="form-check mt-8">
                 <input class="form-check-input" type="checkbox" formControlName="brandNew" id="brandNewCheckbox">
                 <label class="form-check-label fw-bold" for="brandNewCheckbox">
-                  Brand New
+                  New Part Installation?
                 </label>
               </div>
             </div>
           </div>
 
-          <div class="separator my-5"></div>
-
           <div class="row mb-5">
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Installed Parts</label>
-              <input type="number" class="form-control" formControlName="installedParts" min="0">
-              <small class="text-muted">Auto-calculates Unused</small>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Defective Info</label>
+              <select class="form-select" formControlName="faultyDesc">
+                <option *ngFor="let option of faultyInfoOptions" [ngValue]="option">{{ option }}</option>
+              </select>
+              <div class="invalid-feedback" *ngIf="hasError('faultyDesc', 'required')">
+                {{ getErrorMessage('faultyDesc') }}
+              </div>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Unused Parts</label>
-              <input type="number" class="form-control" formControlName="unusedParts" min="0" readonly>
-              <small class="text-muted">Auto-calculated (Total - Installed)</small>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Faulty Parts</label>
-              <input type="number" class="form-control" formControlName="faultyParts" min="0">
-              <small class="text-muted">Disabled when Brand New is checked</small>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Unused Parts Info</label>
+              <select class="form-select" formControlName="unusedDesc">
+                <option *ngFor="let option of partsInfoOptions" [ngValue]="option">{{ option }}</option>
+              </select>
+              <div class="invalid-feedback" *ngIf="hasError('unusedDesc', 'required')">
+                {{ getErrorMessage('unusedDesc') }}
+              </div>
             </div>
           </div>
 
           <div class="row mb-5">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Unused Parts Description</label>
-              <textarea class="form-control" formControlName="unusedDesc" rows="3" maxlength="500"></textarea>
+            <div class="col-md-4">
+              <div class="form-check mt-8">
+                <input class="form-check-input" type="checkbox" formControlName="partsLeft" id="partsLeftCheckbox">
+                <label class="form-check-label fw-bold" for="partsLeftCheckbox">
+                  Parts Left at Site?
+                </label>
+              </div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Faulty Parts Description</label>
-              <textarea class="form-control" formControlName="faultyDesc" rows="3" maxlength="500"></textarea>
+            <div class="col-md-8">
+              <label class="form-label fw-bold">Tracking Info</label>
+              <input type="text" class="form-control" formControlName="trackingInfo" maxlength="250">
             </div>
           </div>
 
@@ -307,12 +390,17 @@
             <i class="bi bi-info-circle me-2"></i>
             <strong>Validation Rules:</strong>
             <ul class="mb-0 mt-2">
-              <li>Total Quantity = Installed + Unused</li>
-              <li>If not Brand New: Total = Faulty + Unused</li>
-              <li>Brand New checkbox disables Faulty Parts field</li>
-              <li>Unused is auto-calculated from Total - Installed</li>
+              <li>Quantity = Installed + Unused</li>
+              <li>If not New Part Installation: Quantity = Defective + Unused</li>
+              <li>New Part Installation disables Defective Qty field</li>
+              <li>Unused is auto-calculated from Quantity - Installed</li>
             </ul>
           </div>
+        </div>
+
+        <div *ngIf="lastModifiedBy || lastModifiedOn" class="alert alert-secondary d-flex justify-content-between align-items-center">
+          <span><strong>Last Modified By:</strong> {{ lastModifiedBy || 'Unknown' }}</span>
+          <span><strong>Last Modified On:</strong> {{ lastModifiedOn || 'Unknown' }}</span>
         </div>
 
         <!-- Form Actions -->
@@ -327,7 +415,7 @@
             </button>
           </div>
           <div>
-            <button *ngIf="showAddAnother" type="button" class="btn btn-success me-2" (click)="onAddAnother()">
+            <button *ngIf="showAddAnother && !modalContext" type="button" class="btn btn-success me-2" (click)="onAddAnother()">
               <i class="bi bi-plus-circle"></i> Add Another
             </button>
             <button type="submit" class="btn btn-primary" [disabled]="isSaving || editForm.invalid">

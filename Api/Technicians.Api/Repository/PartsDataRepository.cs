@@ -1,10 +1,12 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query.Internal;
 using Microsoft.Extensions.Configuration;
 using System.Data;
 using System.Globalization;
+using System.Management.Automation;
 using System.Xml.Linq;
 using Technicians.Api.Models;
 
@@ -14,11 +16,13 @@ namespace Technicians.Api.Repository
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly string _gpconnectionString;
 
         public PartsDataRepository(IConfiguration configuration)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
+            _gpconnectionString = _configuration.GetConnectionString("ETechGreatPlainsConnString");
         }
 
         //1. Get PartsInfo
@@ -266,6 +270,265 @@ namespace Technicians.Api.Repository
             }
         }
 
+        //10. IsUPSTaskedForJob
+        public async Task<bool> IsUPSTaskedForJobAsync(string callNbr)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                using (var command = new SqlCommand("SELECT dbo.IsUPSTaskedForJob(@CallNbr)", connection))
+                {
+                    command.Parameters.AddWithValue("@CallNbr", callNbr);
+
+                    await connection.OpenAsync();
+                    var result = await command.ExecuteScalarAsync();
+
+                    return Convert.ToInt32(result) == 1;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        //11. Check Inventory Item and return it's description
+        public async Task<InventoryItemCheckDto> CheckInventoryItemAsync(string itemNbr)
+        {
+            var dto = new InventoryItemCheckDto();
+
+            using (var connection = new SqlConnection(_gpconnectionString))
+            {
+                await connection.OpenAsync();
+
+                // --- Check if part exists ---
+                using (var existsCmd = new SqlCommand("SELECT dbo.aafnInvItemExist(@PartNbr)", connection))
+                {
+                    existsCmd.Parameters.AddWithValue("@PartNbr", itemNbr);
+                    var existsResult = await existsCmd.ExecuteScalarAsync();
+                    dto.Exists = Convert.ToInt32(existsResult) == 1;
+                }
+
+                // --- Get item description only if part exists ---
+                if (dto.Exists)
+                {
+                    using (var descCmd = new SqlCommand("SELECT dbo.aafnInvGetItemDesc(@PartNbr)", connection))
+                    {
+                        descCmd.Parameters.AddWithValue("@PartNbr", itemNbr);
+                        var descResult = await descCmd.ExecuteScalarAsync();
+                        dto.Description = descResult?.ToString() ?? "Not Found";
+                    }
+                }
+                else
+                {
+                    dto.Description = "Not Found";
+                }
+            }
+
+            return dto;
+        }
+
+        //12. Parts Req Exists or not
+        public async Task<bool> CheckPartRequestExistsAsync(string callNbr, string partNbr)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (var command = new SqlCommand("SELECT dbo.aaReqPartsExist(@CallNbr, @DCGPartNo)", connection))
+                {
+                    command.Parameters.AddWithValue("@CallNbr", callNbr);
+                    command.Parameters.AddWithValue("@DCGPartNo", partNbr);
+
+                    var result = await command.ExecuteScalarAsync();
+                    return Convert.ToInt32(result) == 1;
+                }
+            }
+        }
+
+        //13. Check if Equip Info in Parts Req
+        public async Task<string> GetEquipInfoInPartReqAsync(string callNbr)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (var command = new SqlCommand("SELECT dbo.IsEquipInfoInPartReq(@CallNbr)", connection))
+                {
+                    command.Parameters.AddWithValue("@CallNbr", callNbr);
+
+                    var result = await command.ExecuteScalarAsync();
+                    return result?.ToString() ?? string.Empty;
+                }
+            }
+        }
+
+        //14. Check if all parts rae received
+        public async Task<int> IsAllPartsReceivedByWHAsync(string callNbr)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                using (var command = new SqlCommand("SELECT dbo.ISAllPartsReceivedbyWH(@CallNbr)", connection))
+                {
+                    command.Parameters.AddWithValue("@CallNbr", callNbr);
+
+                    var result = await command.ExecuteScalarAsync();
+                    return result != null ? Convert.ToInt32(result) : 0;
+                }
+            }
+        }
+
+        //15. Save/Update Part
+        public async Task SaveOrUpdatePartsRequestAsync(PartsRequestDto request, String empId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            using (var command = new SqlCommand("dbo.SaveUpdatePartsReq", connection))
+            {
+                command.CommandType = CommandType.StoredProcedure;
+
+                command.Parameters.AddWithValue("@Service_Call_ID", request.ServiceCallID);
+                command.Parameters.AddWithValue("@SCID_Inc", request.ScidInc);
+                command.Parameters.AddWithValue("@Qty", request.Qty);
+                command.Parameters.AddWithValue("@Part_Num", request.PartNum);
+                command.Parameters.AddWithValue("@DC_Part_Num", request.DcPartNum);
+                command.Parameters.AddWithValue("@Description", request.Description);
+                command.Parameters.AddWithValue("@Destination", request.Destination);
+                command.Parameters.AddWithValue("@Required_Date", request.RequiredDate);
+                command.Parameters.AddWithValue("@Required_Time", request.RequiredDate); // same date, or adjust if separate
+                command.Parameters.AddWithValue("@BackOrder", request.BackOrder);
+                command.Parameters.AddWithValue("@Urgent", request.Urgent);
+                command.Parameters.AddWithValue("@Shipping_Method", request.ShippingMethod);
+                command.Parameters.AddWithValue("@Maint_Auth_ID", empId);
+                command.Parameters.AddWithValue("@TechName", request.TechName);
+                command.Parameters.AddWithValue("@Location", request.Location);
+
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+            }
+        }
+
+        //16. Save/Update Shipping
+        public bool SaveShippingPart(ShippingPartDto shipPart, string empId, out string errorMsg)
+        {
+            errorMsg = string.Empty;
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand cmd = new SqlCommand("SaveUpdatePartsShip", connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@Service_Call_ID", shipPart.ServiceCallID);
+                        cmd.Parameters.AddWithValue("@SCID_Inc", shipPart.ScidInc);
+                        cmd.Parameters.AddWithValue("@Part_Num", shipPart.PartNum);
+                        cmd.Parameters.AddWithValue("@DC_Part_Num", shipPart.DcPartNum);
+                        cmd.Parameters.AddWithValue("@Description", shipPart.Description);
+                        cmd.Parameters.AddWithValue("@Shipping_Company", shipPart.ShippingCompany);
+                        cmd.Parameters.AddWithValue("@Tracking_Num", shipPart.TrackingNum);
+                        cmd.Parameters.AddWithValue("@Courier", empId); // using empId as courier field
+                        cmd.Parameters.AddWithValue("@Destination", shipPart.Destination);
+                        cmd.Parameters.AddWithValue("@Ship_Date", shipPart.ShipDate);
+                        cmd.Parameters.AddWithValue("@Qty", shipPart.Qty);
+                        cmd.Parameters.AddWithValue("@Shipment_Type", shipPart.ShipmentType);
+                        cmd.Parameters.AddWithValue("@Shipping_Cost", shipPart.ShippingCost);
+                        cmd.Parameters.AddWithValue("@Courier_Cost", shipPart.CourierCost);
+                        cmd.Parameters.AddWithValue("@ETA", shipPart.Eta);
+                        cmd.Parameters.AddWithValue("@Shipped_from", shipPart.ShippedFrom);
+                        cmd.Parameters.AddWithValue("@Maint_Auth_ID", empId); // legacy: getUID()
+                        cmd.Parameters.AddWithValue("@BackOrder", shipPart.BackOrder);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMsg = ex.Message;
+                return false;
+            }
+        }
+
+        //17. Save/Update Tech Part
+        public bool SaveTechPart(TechPartsDto techPart, string empId, out string errorMsg)
+        {
+            errorMsg = string.Empty;
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand cmd = new SqlCommand("SaveUpdatePartsTech", connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@Service_Call_ID", techPart.ServiceCallID);
+                        cmd.Parameters.AddWithValue("@SCID_Inc", techPart.ScidInc);
+                        cmd.Parameters.AddWithValue("@Part_Num", techPart.PartNum);
+                        cmd.Parameters.AddWithValue("@DC_Part_Num", techPart.DcPartNum);
+                        cmd.Parameters.AddWithValue("@TotalQty", techPart.TotalQty);
+                        cmd.Parameters.AddWithValue("@Description", techPart.Description);
+                        cmd.Parameters.AddWithValue("@InstalledParts", techPart.InstalledParts);
+                        cmd.Parameters.AddWithValue("@UnusedParts", techPart.UnusedParts);
+                        cmd.Parameters.AddWithValue("@FaultyParts", techPart.FaultyParts);
+                        cmd.Parameters.AddWithValue("@Unused_Desc", techPart.UnusedDesc ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Faulty_Desc", techPart.FaultyDesc ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Manufacturer", DBNull.Value); // not provided in Angular model
+                        cmd.Parameters.AddWithValue("@ModelNo", DBNull.Value); // not provided
+                        cmd.Parameters.AddWithValue("@PartSource", techPart.PartSource ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Maint_Auth_ID", empId);
+                        cmd.Parameters.AddWithValue("@IsReceived", techPart.IsReceived);
+                        cmd.Parameters.AddWithValue("@IsBrandNew", techPart.BrandNew);
+                        cmd.Parameters.AddWithValue("@SaveSource", "API");
+                        cmd.Parameters.AddWithValue("@IsPartsLeft", techPart.PartsLeft);
+                        cmd.Parameters.AddWithValue("@TrackingInfo", techPart.TrackingInfo ?? string.Empty);
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMsg = ex.Message;
+                return false;
+            }
+        }
+
+        //18. Delete Part
+        public string DeletePart(DeletePartRequest request)
+        {
+            string errMsg = string.Empty;
+
+            using (SqlConnection con = new SqlConnection(_connectionString))
+            {
+                try
+                {
+                    con.Open();
+                    using (SqlCommand cmd = new SqlCommand("DeleteParts", con))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
+                        cmd.Parameters.AddWithValue("@SCID_Inc", request.ScidInc);
+                        cmd.Parameters.AddWithValue("@Source", request.Display);
+                        cmd.Parameters.AddWithValue("@ModifiedBy", request.EmpId ?? "System"); // fallback if null
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errMsg = ex.Message;
+                }
+            }
+
+            return errMsg;
+        }
 
 
 

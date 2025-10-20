@@ -75,9 +75,10 @@ export class JobPartsService {
         dcPartNum: d.dC_Part_Num,
         qty: d.qty,
         description: d.description?.trim(),
-        shippingCompany: d.shipping_Company,
+        destination: d.destination?.trim() ?? '',
+        shippingCompany: d.shipping_Company?.trim() ?? '',
         trackingNum: d.tracking_Num,
-        shipmentType: d.shipment_Type,
+        shipmentType: d.shipment_Type?.trim() ?? '',
         shippingCost: d.shipping_Cost,
         courierCost: d.courier_Cost,
         shipDate: d.ship_Date,
@@ -107,12 +108,16 @@ export class JobPartsService {
         dcPartNum: d.dC_PART_NUM,
         totalQty: d.totalQty,
         description: d.description?.trim(),
+        partSource: (d.parT_SOURCE ?? d.partSource ?? '').toString().trim() || '75',
         installedParts: d.installedParts,
         unusedParts: d.unusedparts,
         faultyParts: d.faultyparts,
         unusedDesc: d.unuseD_DESC,
         faultyDesc: d.faultY_DESC,
-        isReceived: d.isreceived === 'True',
+        isReceived: this.toBoolean(d.isreceived),
+        brandNew: this.toBoolean(d.brandNew ?? d.branD_NEW ?? d.isBrandNew),
+        partsLeft: this.toBoolean(d.partsLeft ?? d.isPartsLeft ?? d.parts_left),
+        trackingInfo: (d.trackingInfo ?? d.tracking_Info ?? d.trackinginfo ?? '').toString().trim(),
         createDate: d.creatE_DATE,
         lastModified: d.lastmodified,
         maintAuthID: d.lastModifiedBy
@@ -175,6 +180,30 @@ export class JobPartsService {
     );
 }
 
+  savePartsRequest(data: PartsRequest, empId: string): Observable<{ success: boolean; message?: string }> {
+  return this.http.post<{ success: boolean; message?: string }>(
+    `${this.API}/PartsData/SavePartsRequest?empId=${encodeURIComponent(empId)}`,
+    data,
+    { headers: this.headers }
+  );
+}
+
+  saveShippingPart(data: ShippingPart, empId: string): Observable<{ success: boolean; message?: string }> {
+  return this.http.post<{ success: boolean; message?: string }>(
+    `${this.API}/PartsData/SaveShippingPart?empId=${encodeURIComponent(empId)}`,
+    data,
+    { headers: this.headers }
+  );
+}
+
+  saveTechPart(data: TechPart, empId: string): Observable<{ success: boolean; message?: string }> {
+  return this.http.post<{ success: boolean; message?: string }>(
+    `${this.API}/PartsData/SaveTechPart?empId=${encodeURIComponent(empId)}`,
+    data,
+    { headers: this.headers }
+  );
+}
+
 
   /**
    * Update job parts info
@@ -216,7 +245,27 @@ export class JobPartsService {
    * Legacy: CmdNew_Click() → da.IsUPSTaskedForJob
    */
   isUPSTaskedForJob(callNbr: string): Observable<number> {
-    return this.http.get<number>(`${this.API}/JobParts/IsUPSTaskedForJob?callNbr=${encodeURIComponent(callNbr)}`);
+    return this.http.get<number>(`${this.API}/PartsData/IsUPSTaskedForJob?callNbr=${encodeURIComponent(callNbr)}`);
+  }
+
+  /**
+   * Check if part exists in inventory
+   * Legacy: DCPartNum_TextChanged(), CheckItemExists(), chkItem_Click() → da.IsPartExistsInInventory, da.GetInvItemDescription
+   */
+  checkInventoryItem(itemNbr: string): Observable<{ exists: boolean; description: string }> {
+    return this.http.get<{ exists: boolean; description: string }>(
+      `${this.API}/PartsData/CheckInventoryItem?itemNbr=${encodeURIComponent(itemNbr)}`
+    );
+  }
+
+  /**
+   * Check if part request already exists
+   * Legacy: CheckIfPartReqExist() → da.IsPartReqExist
+   */
+  checkPartRequestExists(callNbr: string, partNbr: string): Observable<{ exists: boolean }> {
+    return this.http.get<{ exists: boolean }>(
+      `${this.API}/PartsData/CheckPartRequestExists?callNbr=${encodeURIComponent(callNbr)}&partNbr=${encodeURIComponent(partNbr)}`
+    );
   }
 
   /**
@@ -224,7 +273,7 @@ export class JobPartsService {
    * Legacy: CmdNew_Click() → da.IsEquipInfoInPartReq
    */
   isEquipInfoInPartReq(callNbr: string): Observable<string> {
-    return this.http.get<string>(`${this.API}/JobParts/IsEquipInfoInPartReq?callNbr=${encodeURIComponent(callNbr)}`);
+    return this.http.get<string>(`${this.API}/PartsData/IsEquipInfoInPartReq?callNbr=${encodeURIComponent(callNbr)}`);
   }
 
   /**
@@ -273,33 +322,42 @@ export class JobPartsService {
     return `${this.API}/JobParts/GetFile?callNbr=${encodeURIComponent(callNbr)}&fileName=${encodeURIComponent(fileName)}`;
   }
 
-  /**
-   * Check if part exists in inventory
-   * Legacy: DCPartNum_TextChanged(), CheckItemExists(), chkItem_Click() → da.IsPartExistsInInventory, da.GetInvItemDescription
-   */
-  checkInventoryItem(itemNbr: string): Observable<{ exists: boolean; description: string }> {
-    return this.http.get<{ exists: boolean; description: string }>(
-      `${this.API}/JobParts/CheckInventoryItem?itemNbr=${encodeURIComponent(itemNbr)}`
-    );
-  }
 
-  /**
-   * Check if part request already exists
-   * Legacy: CheckIfPartReqExist() → da.IsPartReqExist
-   */
-  checkPartRequestExists(callNbr: string, partNbr: string): Observable<{ exists: boolean }> {
-    return this.http.get<{ exists: boolean }>(
-      `${this.API}/JobParts/CheckPartRequestExists?callNbr=${encodeURIComponent(callNbr)}&partNbr=${encodeURIComponent(partNbr)}`
-    );
-  }
+  
 
   /**
    * Delete a part
    * Legacy: btnDelete_Click() → da.DeleteParts
    */
-  deletePart(display: number, id: number): Observable<{ success: boolean; message: string }> {
-    return this.http.delete<{ success: boolean; message: string }>(
-      `${this.API}/JobParts/DeletePart?display=${display}&id=${id}`
+  deletePart(callNbr: string, scidInc: number, display: number, empId?: string): Observable<{ success: boolean; message?: string }> {
+    const payload: any = {
+      callNbr,
+      scidInc,
+      display
+    };
+
+    if (empId) {
+      payload.empId = empId;
+    }
+
+    return this.http.post<{ success: boolean; message?: string }>(
+      `${this.API}/PartsData/DeletePart`,
+      payload,
+      { headers: this.headers }
     );
+  }
+
+  private toBoolean(value: any): boolean {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      return ['true', '1', 'yes', 'y'].includes(normalized);
+    }
+    if (typeof value === 'number') {
+      return value === 1;
+    }
+    return !!value;
   }
 }

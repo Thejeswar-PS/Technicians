@@ -162,7 +162,164 @@ namespace Technicians.Api.Controllers
             return Ok(success);
         }
 
+        //10.IsUPSTasked
+        [HttpGet("IsUPSTaskedForJob")]
+        public async Task<IActionResult> IsUPSTaskedForJob([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("Call number cannot be empty.");
 
+            try
+            {
+                bool isTasked = await _repository.IsUPSTaskedForJobAsync(callNbr);
+                return Ok(isTasked);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception if you have logging
+                return StatusCode(500, "An error occurred while checking UPS task status.");
+            }
+        }
+
+        //11. Check Inventory Item and return it's description
+        [HttpGet("CheckInventoryItem")]
+        public async Task<IActionResult> CheckInventoryItem([FromQuery] string itemNbr)
+        {
+            if (string.IsNullOrWhiteSpace(itemNbr))
+                return BadRequest("Item number cannot be empty.");
+
+            try
+            {
+                var result = await _repository.CheckInventoryItemAsync(itemNbr);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log ex if needed
+                return StatusCode(500, new { message = "Error while checking inventory item.", detail = ex.Message });
+            }
+        }
+
+        //12. Parts Req Exists or not
+        [HttpGet("CheckPartRequestExists")]
+        public async Task<IActionResult> CheckPartRequestExists([FromQuery] string callNbr, [FromQuery] string partNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(partNbr))
+                return BadRequest("callNbr and partNbr are required.");
+
+            try
+            {
+                var result = await _repository.CheckPartRequestExistsAsync(callNbr, partNbr);
+                return Ok(new { exists = result });
+            }
+            catch (Exception ex)
+            {
+                // log exception if needed
+                return StatusCode(500, new { message = "Error checking part request existence.", detail = ex.Message });
+            }
+        }
+
+        //13. Check if Equip Info in Parts Req
+        [HttpGet("IsEquipInfoInPartReq")]
+        public async Task<IActionResult> IsEquipInfoInPartReq([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("callNbr is required.");
+
+            try
+            {
+                var result = await _repository.GetEquipInfoInPartReqAsync(callNbr);
+
+                // Return as a plain string (to match Angular expectation)
+                return Ok(result ?? string.Empty);
+            }
+            catch (Exception ex)
+            {
+                // You could log this if needed
+                return StatusCode(500, new { message = "Error fetching equipment info in part request.", detail = ex.Message });
+            }
+        }
+
+        //14. Check if all parts rae received
+        [HttpGet("IsAllPartsReceivedByWH")]
+        public async Task<IActionResult> IsAllPartsReceivedByWH([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("callNbr is required.");
+
+            try
+            {
+                int result = await _repository.IsAllPartsReceivedByWHAsync(callNbr);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error checking if all parts are received by WH.", detail = ex.Message });
+            }
+        }
+
+        //15. Save/Update Part
+        [HttpPost("SavePartsRequest")]
+        public async Task<IActionResult> SavePartsRequest([FromBody] PartsRequestDto request, [FromQuery] String empId)
+        {
+            if (request == null)
+                return BadRequest(new { success = false, message = "Request body is required." });
+
+            try
+            {
+                await _repository.SaveOrUpdatePartsRequestAsync(request, empId);
+                return Ok(new { success = true, message = "Parts request saved or updated successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error saving parts request: {ex.Message}" });
+            }
+        }
+
+        //16. Save/Update Shipping
+        [HttpPost("SaveShippingPart")]
+        public IActionResult SaveShippingPart([FromBody] ShippingPartDto shippingPart, [FromQuery] string empId)
+        {
+            if (shippingPart == null)
+                return BadRequest(new { success = false, message = "Invalid data." });
+
+            bool result = _repository.SaveShippingPart(shippingPart, empId, out string errorMsg);
+
+            if (!result)
+                return StatusCode(500, new { success = false, message = errorMsg });
+
+            return Ok(new { success = true, message = "Shipping part saved successfully." });
+        }
+
+        //17. Save/Update Tech Part
+        [HttpPost("SaveTechPart")]
+        public IActionResult SaveTechPart([FromBody] TechPartsDto techPart, [FromQuery] string empId)
+        {
+            if (techPart == null)
+                return BadRequest(new { success = false, message = "Invalid data." });
+
+            bool result = _repository.SaveTechPart(techPart, empId, out string errorMsg);
+
+            if (!result)
+                return StatusCode(500, new { success = false, message = errorMsg });
+
+            return Ok(new { success = true, message = "Tech part saved successfully." });
+        }
+
+        //18. Delete Part
+        [HttpPost("DeletePart")]
+        public IActionResult DeletePart([FromBody] DeletePartRequest request)
+        {
+            if (request == null || string.IsNullOrEmpty(request.CallNbr))
+                return BadRequest(new { success = false, message = "Invalid request data" });
+
+            var errMsg = _repository.DeletePart(request);
+
+            if (!string.IsNullOrEmpty(errMsg))
+                return StatusCode(500, new { success = false, message = errMsg });
+
+            return Ok(new { success = true, message = "Part deleted successfully" });
+        }
 
 
 

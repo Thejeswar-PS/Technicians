@@ -13,6 +13,8 @@ import {
   FileAttachment,
   mapJobPartsInfo
 } from 'src/app/core/model/job-parts.model';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { EditPartsComponent } from '../edit-parts/edit-parts.component';
 
 @Component({
   selector: 'app-job-parts',
@@ -102,7 +104,8 @@ export class JobPartsComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private jobPartsService: JobPartsService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private modalService: NgbModal
   ) {
     this.techInfoForm = this.createTechInfoForm();
     this.siteInfoForm = this.createSiteInfoForm();
@@ -643,18 +646,30 @@ export class JobPartsComponent implements OnInit {
     this.navigateToEditParts('edit', 3, scidInc);
   }
 
-  navigateToEditParts(mode: string, display: number, scidInc?: number): void {
-    const queryParams: any = {
-      CallNbr: this.callNbr,
-      Display: display,
-      Mode: mode
-    };
+  navigateToEditParts(mode: 'add' | 'edit', display: number, scidInc?: number): void {
+    const modalRef = this.modalService.open(EditPartsComponent, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: false
+    });
 
-    if (scidInc) {
-      queryParams.ScidInc = scidInc;
+    modalRef.componentInstance.modalContext = true;
+    modalRef.componentInstance.callNbr = this.callNbr;
+    modalRef.componentInstance.displayMode = display;
+    modalRef.componentInstance.mode = mode;
+  modalRef.componentInstance.source = this.source;
+  modalRef.componentInstance.empId = this.currentEmpId;
+  modalRef.componentInstance.techName = this.techName;
+    if (scidInc !== undefined) {
+      modalRef.componentInstance.scidInc = scidInc;
     }
 
-    this.router.navigate(['/jobs/edit-parts'], { queryParams });
+    modalRef.closed.subscribe((result: { refresh?: boolean }) => {
+      if (!result?.refresh) {
+        return;
+      }
+      this.loadAllData();
+    });
   }
 
   // File upload
@@ -916,10 +931,11 @@ export class JobPartsComponent implements OnInit {
   // Inline delete for parts, shipping, tech
   onDeletePart(display: number, scidInc: number): void {
     if (!confirm('Are you sure you want to delete this item?')) return;
-    this.jobPartsService.deletePart(display, scidInc).subscribe({
+    this.jobPartsService.deletePart(this.callNbr, scidInc, display, this.currentEmpId).subscribe({
       next: (res) => {
         if (res.success) {
-          this.toastr.success('Deleted successfully');
+          const successMessage = res.message || 'Deleted successfully';
+          this.toastr.success(successMessage);
           this.loadAllData();
         } else {
           this.toastr.error(res.message || 'Delete failed');

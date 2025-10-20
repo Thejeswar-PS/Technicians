@@ -169,6 +169,7 @@ export function mapJobPartsInfo(raw: JobPartsInfoResponse | null | undefined): J
 export interface PartsRequest {
   scidInc: number;
   serviceCallID: string;
+  callNbr?: string;
   partNum: string;
   dcPartNum: string;
   qty: number;
@@ -185,10 +186,12 @@ export interface PartsRequest {
 export interface ShippingPart {
   scidInc: number;
   serviceCallID: string;
+  callNbr?: string;
   partNum: string;
   dcPartNum: string;
   qty: number;
   description: string;
+  destination: string;
   shippingCompany: string;
   trackingNum: string;
   shipmentType: string;
@@ -206,16 +209,22 @@ export interface ShippingPart {
 export interface TechPart {
   scidInc: number;
   serviceCallID: string;
+  callNbr?: string;
   partNum: string;
   dcPartNum: string;
   totalQty: number;
   description: string;
+  partSource: string;
   installedParts: number;
   unusedParts: number;
   faultyParts: number;
   unusedDesc: string;
   faultyDesc: string;
   isReceived: boolean;
+  receivedStatus?: 'Yes' | 'No' | 'NA';
+  brandNew: boolean;
+  partsLeft: boolean;
+  trackingInfo: string;
   createDate: string;
   lastModified: string;
   maintAuthID: string;

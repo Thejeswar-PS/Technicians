@@ -119,6 +119,14 @@ textarea.form-control {
   }
 }
 
+.manuf-part-col {
+  max-width: 100px;
+  width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 // Badge Styles
 .badge {
   font-size: 0.8rem;
