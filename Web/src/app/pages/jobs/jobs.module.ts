@@ -14,6 +14,7 @@ import { EquipmentDetailsComponent } from './equipment-details/equipment-details
 import { NotesViewComponent } from './modal/notes-view/notes-view.component';
 import { FileUploadComponent } from './file-upload/file-upload.component';
 import { EditEquipmentComponent } from './edit-equipment/edit-equipment.component';
+import { EquipmentImagesComponent } from './equipment-images/equipment-images.component';
 import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
@@ -32,6 +33,7 @@ import { JobSafetyComponent } from './job-safety/job-safety.component';
     NotesViewComponent,
     FileUploadComponent,
     EditEquipmentComponent,
+    EquipmentImagesComponent,
     JobNotesInfoComponent,
     JobSafetyComponent
   ],
