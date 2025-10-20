@@ -375,16 +375,24 @@ namespace Technicians.Api.Controllers
 
             try
             {
+                // Log the incoming request for debugging
+                _logger.LogInformation($"Received equipment update request: CallNbr={request.CallNbr}, EquipId={request.EquipId}, EquipNo={request.EquipNo}");
+
                 var rows = await _repository.InsertOrUpdateEquipmentAsync(request);
 
                 if (rows > 0)
+                {
+                    _logger.LogInformation($"Successfully updated/inserted equipment. Rows affected: {rows}");
                     return Ok(new { success = true, rowsAffected = rows });
+                }
 
+                _logger.LogWarning($"No rows affected for CallNbr={request.CallNbr}, EquipId={request.EquipId}");
                 return StatusCode(500, new { success = false, message = "No rows affected." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, "An error occurred while inserting/updating equipment.");
+                _logger.LogError(ex, $"Error updating equipment: {ex.Message}");
+                return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
 

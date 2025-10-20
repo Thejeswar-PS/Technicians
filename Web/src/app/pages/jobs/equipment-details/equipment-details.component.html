@@ -82,9 +82,7 @@
     <!-- Action Buttons -->
     <div class="card">
       <div class="card-body">
-        <div
-          style="text-align: right; background-image: url(../Images/header.gif)"
-        >
+        <div style="text-align: right">
           <button
             *ngIf="uploadJobVisible"
             class="btn btn-primary me-2"
@@ -236,7 +234,7 @@
                   <a
                     href="javascript:void(0)"
                     (click)="navigateToFileUpload(equipment)"
-                    style="font-size: 18px; color: #007bff"
+                    style="font-size: 18px; color: #2563eb !important"
                     title="Files"
                   >
                     <i class="bi bi-file-earmark-text"></i>
@@ -248,7 +246,7 @@
                   <a
                     href="javascript:void(0)"
                     (click)="navigateToImageUpload(equipment)"
-                    style="font-size: 18px; color: #28a745"
+                    style="font-size: 18px; color: #7c3aed !important"
                     title="Images"
                   >
                     <i class="bi bi-image"></i>
@@ -259,19 +257,11 @@
                 <td>{{ getModeDisplay(equipment.saveStatus) }}</td>
 
                 <!-- Edit -->
-                <!-- <td>
-                  <a href="javascript:void(0)" 
-                     (click)="navigateToEditEquipment(equipment)"
-                     style="font-size: 18px; color: #fd7e14;" 
-                     title="Edit Equipment">
-                    <i class="bi bi-pencil"></i>
-                  </a>
-                </td> -->
                 <td>
                   <a
                     href="javascript:void(0)"
                     (click)="navigateToEditEquipment(equipment)"
-                    style="font-size: 18px; color: #fd7e14"
+                    style="font-size: 18px; color: #dc2626 !important"
                     title="Edit Equipment"
                   >
                     <i class="bi bi-pencil"></i>

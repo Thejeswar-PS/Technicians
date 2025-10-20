@@ -134,6 +134,11 @@ export class EquipmentDetailsComponent implements OnInit {
       }
     } catch (error: any) {
       console.error('Error setting up button states:', error);
+      // Temporary fallback: Enable all buttons when API is not available
+      this.uploadJobEnabled = true;
+      this.uploadExpenseVisible = true;
+      this.uploadExpenseEnabled = true;
+      this.enableExpenseVisible = true;
     }
   }
 
@@ -284,10 +289,11 @@ export class EquipmentDetailsComponent implements OnInit {
     this.router.navigate(['/equipment/edit-equipment'], {
       queryParams: {
         CallNbr: this.params.callNbr,
-        EquipNo: equipment.equipNo,
         EquipId: equipment.equipId.toString(),
+        EquipNo: equipment.equipNo,
         Tech: this.params.techId,
-        TechName: this.params.techName
+        TechName: this.params.techName,
+        Digest: '' // Add digest if available
       }
     });
   }

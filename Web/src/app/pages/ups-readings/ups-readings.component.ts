@@ -398,11 +398,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     this.equipmentService.editEquipInfo(this.callNbr, this.equipId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
+        next: (data: any) => {
           this.populateEquipmentForm(data);
           this.loading = false;
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading equipment info:', error);
           this.toastr.error('Error loading equipment information');
           this.loading = false;

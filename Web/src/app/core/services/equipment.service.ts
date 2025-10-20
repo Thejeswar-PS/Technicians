@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, timeout } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { EquipmentDetail, UploadInfo, UploadResponse, EquipmentInsertUpdate, EquipBoardInfo, DeleteEquipment, EquipmentImage, EquipmentImageUpload, DeleteEquipmentImage } from '../model/equipment-details.model';
+import { EquipmentDetail, UploadInfo, UploadResponse, EquipmentImage, EquipmentImageUpload, DeleteEquipmentImage } from '../model/equipment-details.model';
 import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus } from '../model/ups-readings.model';
+import { EditEquipmentInfo, EquipBoardDetail, UpdateEquipmentRequest, UpdateEquipmentResponse } from '../model/edit-equipment.model';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -20,6 +21,18 @@ export class EquipmentService {
    */
   getEquipmentInfo(callNbr: string): Observable<EquipmentDetail[]> {
     return this.http.get<EquipmentDetail[]>(`${this.apiUrl}/EquipmentDetails/GetEquipmentDetails?callNbr=${callNbr}`);
+  }
+
+  /**
+   * Edit equipment info for UPS readings
+   * Equivalent to da.EditEquipInfo(CallNbr, EquipID) in legacy code
+   */
+  editEquipInfo(callNbr: string, equipId: number): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString());
+    
+    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/EditEquipInfo`, { params });
   }
 
   /**
@@ -135,17 +148,7 @@ export class EquipmentService {
     return this.http.get<any[]>(`${this.apiUrl}/UPSReadings/GetStatusDescription?equipType=${equipType}`);
   }
 
-  /**
-   * Edit equipment info for UPS readings
-   * Equivalent to da.EditEquipInfo(CallNbr, EquipID) in legacy code
-   */
-  editEquipInfo(callNbr: string, equipId: number): Observable<any> {
-    const params = new HttpParams()
-      .set('callNbr', callNbr)
-      .set('equipId', equipId.toString());
-    
-    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/EditEquipInfo`, { params });
-  }
+
 
   /**
    * Upload job to GP
@@ -272,27 +275,7 @@ export class EquipmentService {
     return this.http.get(`${this.apiUrl}/EquipmentDetails/CheckSaveAsDraft/?callNbr=${callNbr}`, { responseType: 'text' });
   }
   
-/** Get equipment board / assy details table */
-  getEquipBoardInfo(callNbr: string, equipNo: string): Observable<EquipBoardInfo[]> {
-    const params = new HttpParams()
-      .set('callNbr', callNbr)
-      .set('equipNo', equipNo.trim());
-    
-    return this.http.get<EquipBoardInfo[]>(`${this.apiUrl}/EquipmentDetails/GetEquipBoardInfo`, { params })
-      .pipe(
-        timeout(5000) // Reduced to 5 second timeout for faster failure
-      );
-  }
 
-  /** Save or update equipment information (full payload) */
-  saveEquipment(payload: EquipmentInsertUpdate): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/EquipmentDetails/spEquipmentInsertUpdate`, payload);
-  }
-
-  /** Delete a specific equipment board row */
-  deleteBoardRow(rowId: number): Observable<{ success: boolean; message: string }> {
-    return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/EquipmentDetails/delete/${rowId}`);
-  }
 
   /**
    * Get equipment images for a specific equipment
@@ -375,6 +358,54 @@ export class EquipmentService {
     
     // Use query parameter approach (more reliable)
     return this.http.delete<{ success: boolean; message?: string; rowsAffected?: number }>(queryUrl);
+  }
+
+  // ========== EDIT EQUIPMENT METHODS ==========
+
+  /**
+   * Get equipment details for editing
+   * Matches your EditEquipInfo API endpoint
+   */
+  getEditEquipmentInfo(callNbr: string, equipId: number): Observable<EditEquipmentInfo> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString());
+    
+    return this.http.get<EditEquipmentInfo>(`${this.apiUrl}/EquipmentDetails/EditEquipInfo`, { params });
+  }
+
+  /**
+   * Get equipment board/assembly details
+   * Matches your GetEquipBoardInfo API endpoint
+   */
+  getEquipBoardInfo(equipNo: string, equipId: number): Observable<EquipBoardDetail[]> {
+    const params = new HttpParams()
+      .set('equipNo', equipNo)
+      .set('equipId', equipId.toString());
+    
+    return this.http.get<EquipBoardDetail[]>(`${this.apiUrl}/EquipmentDetails/GetEquipBoardInfo`, { params });
+  }
+
+  /**
+   * Save or update equipment information
+   * Matches your spEquipmentInsertUpdate API endpoint
+   */
+  saveUpdateEquipmentInfo(request: UpdateEquipmentRequest): Observable<{ success: boolean; rowsAffected?: number; message?: string }> {
+    return this.http.post<{ success: boolean; rowsAffected?: number; message?: string }>(`${this.apiUrl}/EquipmentDetails/spEquipmentInsertUpdate`, request);
+  }
+
+  /**
+   * Delete equipment
+   * Matches your delete API endpoint
+   */
+  deleteEquipment(callNbr: string, equipId: number, equipNo: string): Observable<{ success: boolean; message?: string; rowsAffected?: number }> {
+    const requestBody = {
+      callNbr: callNbr,
+      equipNo: equipNo,
+      equipId: equipId
+    };
+    
+    return this.http.delete<{ success: boolean; message?: string; rowsAffected?: number }>(`${this.apiUrl}/EquipmentDetails/delete`, { body: requestBody });
   }
 
 }

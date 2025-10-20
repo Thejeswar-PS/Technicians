@@ -1,19 +1,21 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using System.Data;
 using Technicians.Api.Models;
-
 
 namespace Technicians.Api.Repository
 {
     public class EquipmentDetailsRepository
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<EquipmentDetailsRepository> _logger;
         private readonly string _connectionString;
 
-        public EquipmentDetailsRepository(IConfiguration configuration)
+        public EquipmentDetailsRepository(IConfiguration configuration, ILogger<EquipmentDetailsRepository> logger)
         {
             _configuration = configuration;
+            _logger = logger;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
         }
 
@@ -487,24 +489,87 @@ namespace Technicians.Api.Repository
 
         }
 
-        // 18. InsertOrUpdateEquipment
+        // 18. InsertOrUpdateEquipment - Updated with proper logging
         public async Task<int> InsertOrUpdateEquipmentAsync(EquipmentInsertUpdateDto dto)
         {
             try
             {
                 await using var conn = new SqlConnection(_connectionString);
-                var parameters = new DynamicParameters(dto);
+
+                // Manual parameter mapping to ensure exact names
+                var parameters = new DynamicParameters();
+                parameters.Add("@CallNbr", dto.CallNbr);
+                parameters.Add("@EquipId", dto.EquipId);
+                parameters.Add("@EquipNo", dto.EquipNo);
+                parameters.Add("@VendorId", dto.VendorId);
+                parameters.Add("@EquipType", dto.EquipType);
+                parameters.Add("@Version", dto.Version);
+                parameters.Add("@SerialID", dto.SerialID);
+                parameters.Add("@SVC_Asset_Tag", dto.SVC_Asset_Tag);
+                parameters.Add("@Location", dto.Location);
+                parameters.Add("@ReadingType", dto.ReadingType);
+                parameters.Add("@Contract", dto.Contract);
+                parameters.Add("@TaskDesc", dto.TaskDesc);
+                parameters.Add("@BatPerStr", dto.BatPerStr);
+                parameters.Add("@EquipStatus", dto.EquipStatus);
+                parameters.Add("@MaintAuth", dto.MaintAuth);
+                parameters.Add("@KVA", dto.KVA);
+                parameters.Add("@EquipMonth", dto.EquipMonth);
+                parameters.Add("@EquipYear", dto.EquipYear);
+
+                // Capacitor parameters - EXACT names
+                parameters.Add("@DCFCapsPartNo", dto.DCFCapsPartNo);
+                parameters.Add("@ACFIPCapsPartNo", dto.ACFIPCapsPartNo);
+                parameters.Add("@DCFQty", dto.DCFQty);
+                parameters.Add("@ACFIPQty", dto.ACFIPQty);
+                parameters.Add("@DCFCapsMonthName", dto.DCFCapsMonthName);
+                parameters.Add("@ACFIPCapsMonthName", dto.ACFIPCapsMonthName);
+                parameters.Add("@DCFCapsYear", dto.DCFCapsYear);  // EXPLICIT mapping
+                parameters.Add("@ACFIPYear", dto.ACFIPYear);
+
+                parameters.Add("@DCCommCapsPartNo", dto.DCCommCapsPartNo);
+                parameters.Add("@ACFOPCapsPartNo", dto.ACFOPCapsPartNo);
+                parameters.Add("@DCCommQty", dto.DCCommQty);
+                parameters.Add("@ACFOPQty", dto.ACFOPQty);
+                parameters.Add("@DCCommCapsMonthName", dto.DCCommCapsMonthName);
+                parameters.Add("@ACFOPCapsMonthName", dto.ACFOPCapsMonthName);
+                parameters.Add("@DCCommCapsYear", dto.DCCommCapsYear);
+                parameters.Add("@ACFOPYear", dto.ACFOPYear);
+
+                parameters.Add("@BatteriesPerPack", dto.BatteriesPerPack);
+                parameters.Add("@VFSelection", dto.VFSelection);
+
+                parameters.Add("@FansPartNo", dto.FansPartNo);
+                parameters.Add("@FansQty", dto.FansQty);
+                parameters.Add("@FansMonth", dto.FansMonth);
+                parameters.Add("@FansYear", dto.FansYear);
+
+                parameters.Add("@BlowersPartNo", dto.BlowersPartNo);
+                parameters.Add("@BlowersQty", dto.BlowersQty);
+                parameters.Add("@BlowersMonth", dto.BlowersMonth);
+                parameters.Add("@BlowersYear", dto.BlowersYear);
+
+                parameters.Add("@MiscPartNo", dto.MiscPartNo);
+                parameters.Add("@MiscQty", dto.MiscQty);
+                parameters.Add("@MiscMonth", dto.MiscMonth);
+                parameters.Add("@MiscYear", dto.MiscYear);
+
+                parameters.Add("@Comments", dto.Comments);
+
+                _logger.LogInformation($"Executing spEquipmentInsertUpdate with {parameters.ParameterNames.Count()} parameters");
+
                 await conn.OpenAsync();
                 var rows = await conn.ExecuteAsync("spEquipmentInsertUpdate", parameters, commandType: CommandType.StoredProcedure);
+
+                _logger.LogInformation($"Stored procedure executed successfully. Rows affected: {rows}");
                 return rows;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return 0;
+                _logger.LogError(ex, $"Error in InsertOrUpdateEquipmentAsync: {ex.Message}");
+                throw;
             }
         }
-
-        // 19. DeleteEquipment
         public async Task<int> DeleteEquipmentAsync(string callNbr, string equipNo, int equipId)
         {
             try
@@ -667,4 +732,3 @@ namespace Technicians.Api.Repository
         }
     }
  }
-

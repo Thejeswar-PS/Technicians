@@ -48,75 +48,7 @@ export interface ValidationResult {
   redirectUrl?: string;
 }
 
-export interface EquipmentInsertUpdate {
-  callNbr: string;
-  equipId: number;
-  equipNo: string;
-  vendorId: string;
-  equipType: string;
-  version: string;
-  serialID: string;
-  svc_Asset_Tag: string;
-  location: string;
-  readingType: string;
-  contract: string;
-  taskDesc: string;
-  batPerStr: number;
-  equipStatus: string;
-  maintAuth: string;
-  kva: string;
-  equipMonth: string;
-  equipYear: number;
-  dcfCapsPartNo: string;
-  acfipCapsPartNo: string;
-  dcfQty: number;
-  acfipQty: number;
-  dcfCapsMonthName: string;
-  acfipCapsMonthName: string;
-  dcfCapsYear: number;
-  acfipYear: number;
-  dcCommCapsPartNo: string;
-  acfopCapsPartNo: string;
-  dcCommQty: number;
-  acfopQty: number;
-  dcCommCapsMonthName: string;
-  acfopCapsMonthName: string;
-  dcCommCapsYear: number;
-  acfopYear: number;
-  batteriesPerPack: number;
-  vfSelection: string;
-  fansPartNo: string;
-  fansQty: number;
-  fansMonth: string;
-  fansYear: number;
-  blowersPartNo: string;
-  blowersQty: number;
-  blowersMonth: string;
-  blowersYear: number;
-  miscPartNo: string;
-  miscQty: number;
-  miscMonth: string;
-  miscYear: number;
-  comments: string;
-}
 
-export interface EquipBoardInfo {
-  equipNo: string;
-  equipId: number;
-  rowId: number;
-  partNo: string;
-  description: string;
-  qty?: number;
-  comments: string;
-  lastModifiedOn?: Date;
-  lastModifiedBy: string;
-}
-
-export interface DeleteEquipment {
-  callNbr: string;
-  equipNo: string;
-  equipId: number;
-}
 
 export interface EquipmentImage {
   img_ID: number;
@@ -145,3 +77,4 @@ export interface EquipmentImageUpload {
 export interface DeleteEquipmentImage {
   imgId: number;
 }
+

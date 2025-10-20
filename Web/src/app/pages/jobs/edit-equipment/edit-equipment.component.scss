@@ -1,162 +1,282 @@
-:host {
-  display: block;
-  background-color: #f9fafc;
-  min-height: 100vh;
-  padding: 1rem 1.5rem;
-}
-
-/* ---------- COLORS ---------- */
-$blue-main: #003366;
-$blue-light: #1f5ca8;
-$blue-border: #cfe2ff;
-$bg-light: #f5f9ff;
-
-/* ---------- FORM + LAYOUT ---------- */
-form {
-  background: white;
-  border: 1px solid $blue-border;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
-}
-
-label.form-label,
-label {
-  font-weight: 600;
-  color: $blue-main;
-  font-size: 0.9rem;
-}
-
-input.form-control,
-select.form-select,
-textarea.form-control {
-  border-radius: 4px;
-  border: 1px solid #d0d7e2;
-  font-size: 0.9rem;
-  padding: 0.35rem 0.5rem;
-  transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-
-  &:focus {
-    border-color: $blue-light;
-    box-shadow: 0 0 0 2px rgba(31, 92, 168, 0.2);
-  }
-}
-
-/* ---------- BUTTONS ---------- */
-.btn-primary,
-.btn-success {
-  background-color: $blue-light;
-  border-color: $blue-light;
-  color: #fff;
-  font-weight: 600;
-  &:hover {
-    background-color: darken($blue-light, 7%);
-  }
-}
-
-.btn-outline-primary {
-  color: $blue-light;
-  border-color: $blue-light;
-  &:hover {
-    background-color: rgba(31, 92, 168, 0.1);
-  }
-}
-
-.btn-secondary {
-  background-color: #6c757d;
-  border-color: #6c757d;
-  color: #fff;
-}
-
-/* ---------- TABLE STYLES ---------- */
-table {
-  font-size: 0.85rem;
-  border: 1px solid #dee2e6;
-
-  thead {
-    background-color: $blue-main;
-    color: #fff;
-    text-align: center;
-  }
-
-  tbody tr:nth-child(even) {
-    background-color: #f8f9fc;
-  }
-
-  td input {
-    background-color: #fff;
-  }
-
-  th,
-  td {
-    vertical-align: middle;
-  }
-}
-
-/* ---------- HEADERS ---------- */
-h4,
-h6 {
-  color: $blue-main;
-  font-weight: 700;
-}
-
-h6.text-primary {
-  border-bottom: 2px solid $blue-border;
-  padding-bottom: 4px;
-}
-
-/* ---------- PANELS ---------- */
-.border {
-  border-color: $blue-border !important;
-  background-color: $bg-light !important;
-}
-
-/* ---------- SPACING ---------- */
-.mb-2 {
-  margin-bottom: 0.75rem !important;
-}
-.mt-3 {
-  margin-top: 1rem !important;
-}
-
-/* ---------- SCROLL ---------- */
 .container-fluid {
-  overflow-y: auto;
-  max-height: calc(100vh - 100px);
+  padding: 1rem;
 }
 
-/* ---------- EQUIPMENT BOARD TABLE ---------- */
-.table-sm {
-  font-size: 11px !important;
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid #dee2e6;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
   
-  th, td {
-    padding: 2px 4px !important;
-    vertical-align: middle;
+  .card-title {
+    color: #495057;
+    font-weight: 600;
   }
-  
-  .form-control-sm {
-    font-size: 10px !important;
-    padding: 2px 4px !important;
-    height: auto !important;
-    min-height: 20px;
-  }
-  
-  thead.table-dark th {
-    background-color: #343a40 !important;
-    color: white !important;
-    font-weight: 600 !important;
-    font-size: 11px !important;
-    text-align: center;
-    border: 1px solid #495057;
-  }
-  
-  td {
-    border: 1px solid #dee2e6;
+}
+
+// Form Styling
+.equipment-form {
+  .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+    
+    &.required::after {
+      content: ' *';
+      color: #dc3545;
+    }
   }
 
-  // ID column styling
-  .fw-bold {
-    font-weight: 600 !important;
-    color: #495057;
+  .form-control, .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    
+    &:focus {
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    &.is-invalid {
+      border-color: #dc3545;
+    }
   }
+  
+  .invalid-feedback {
+    font-size: 0.875rem;
+  }
+}
+
+// Battery Panel Styling
+.battery-panel {
+  background-color: #f8f9fa !important;
+  border: 1px solid #e9ecef !important;
+  
+  h6 {
+    color: #343a40 !important; // Darker color for better visibility
+    font-weight: 700; // Bolder font weight
+    font-size: 1.1rem; // Larger font size
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .form-label {
+    font-size: 0.875rem !important;
+    font-weight: 600 !important;
+    color: #212529 !important;
+  }
+}
+
+// Capacitor Panel Styling
+.capacitor-panel {
+  .cap-section {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #e9ecef;
+    
+    h6 {
+      color: #343a40 !important; // Darker color for better visibility
+      font-weight: 700; // Bolder font weight
+      font-size: 1.1rem; // Larger font size
+      margin-bottom: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .form-label.small {
+      font-size: 0.875rem !important; // Increased from 0.75rem
+      font-weight: 600;
+      color: #212529 !important; // Much darker for better visibility
+      margin-bottom: 0.25rem;
+    }
+    
+    .form-control-sm {
+      font-size: 0.875rem;
+      padding: 0.25rem 0.5rem;
+    }
+  }
+}
+
+// Board Panel Styling
+.board-panel {
+  .table {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+    
+    th {
+      background-color: #007bff;
+      color: white;
+      font-weight: 600;
+      border-color: #0056b3;
+      padding: 0.5rem 0.25rem;
+      font-size: 0.8rem;
+    }
+    
+    td {
+      padding: 0.25rem;
+      vertical-align: middle;
+      
+      .form-control {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+        
+        &.border-0 {
+          border: none !important;
+          background: transparent;
+          
+          &:focus {
+            background: #fff;
+            border: 1px solid #80bdff !important;
+            box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
+          }
+        }
+      }
+    }
+    
+    tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .container-fluid {
+    padding: 0.5rem;
+  }
+  
+  .card-header {
+    padding: 1rem;
+    
+    .d-flex {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: stretch !important;
+    }
+    
+    .btn {
+      width: 100%;
+    }
+  }
+  
+  .capacitor-panel {
+    .cap-section {
+      padding: 0.75rem;
+      
+      .row.g-2 {
+        --bs-gutter-x: 0.5rem;
+      }
+    }
+  }
+  
+  .board-panel {
+    .table-responsive {
+      font-size: 0.75rem;
+    }
+    
+    .table th, .table td {
+      padding: 0.25rem 0.125rem;
+    }
+  }
+  
+  .card-footer {
+    padding: 1rem;
+    
+    .d-flex {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .equipment-form {
+    .d-flex.gap-2 {
+      flex-direction: column;
+      gap: 0.5rem !important;
+    }
+  }
+  
+  .capacitor-panel .cap-section .row.g-2 {
+    .col-12, .col-3, .col-6 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+}
+
+// Loading and Alert Styling
+.spinner-border {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.alert {
+  border-radius: 0.25rem;
+  
+  i {
+    font-size: 1.1rem;
+  }
+}
+
+// Button Styling
+.btn {
+  border-radius: 0.25rem;
+  font-weight: 500;
+  
+  &:disabled {
+    opacity: 0.6;
+  }
+  
+  .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}
+
+// Utility Classes
+.text-primary {
+  color: #007bff !important;
+}
+
+.border-bottom {
+  border-bottom: 1px solid #dee2e6 !important;
+}
+
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+
+// Override Bootstrap's text-secondary for better visibility
+.text-secondary {
+  color: #495057 !important; // Darker than Bootstrap's default #6c757d
+  font-weight: 600 !important;
+  font-size: 1rem !important; // Larger font size for section headers
+}
+
+// Enhanced form label styling
+.form-label {
+  font-weight: 600 !important;
+  color: #212529 !important; // Very dark for maximum visibility
+  margin-bottom: 0.5rem !important;
+}
+
+// Special styling for capacitor section headers
+h6.text-secondary.mb-3 {
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  color: #343a40 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem !important;
 }
