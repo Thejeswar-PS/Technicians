@@ -117,31 +117,3 @@ export interface DeleteEquipment {
   equipNo: string;
   equipId: number;
 }
-
-export interface EquipmentImage {
-  img_ID: number;
-  callNbr: string;
-  equipID: number;
-  equipNo: string;
-  techName: string;
-  techID: string;
-  img_Title: string;
-  img_Type: string;
-  img_stream?: string; // Base64 encoded image data
-  created_On?: Date;
-}
-
-export interface EquipmentImageUpload {
-  callNbr: string;
-  equipID: number;
-  equipNo: string;
-  techName: string;
-  techID: string;
-  img_Title: string;
-  img_Type: string;
-  imgFile: File;
-}
-
-export interface DeleteEquipmentImage {
-  imgId: number;
-}

@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Technicians.Api.Models;
 using Technicians.Api.Repository;
-using Microsoft.AspNetCore.Http;
 
 namespace Technicians.Api.Controllers
 {
@@ -51,7 +50,7 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        // 2. InsertDeficiencyNote (POST)
+        // 5. InsertDeficiencyNote (POST)
         [HttpPost("insert-deficiency-note")]
         public async Task<IActionResult> InsertDeficiencyNote([FromBody] DeficiencyNoteRequestDto request)
         {
@@ -61,7 +60,7 @@ namespace Technicians.Api.Controllers
             return Ok("Deficiency note processed successfully.");
         }
 
-        // 3. GetEmployeeStatus (GET)
+        // 6. GetEmployeeStatus (GET)
         [HttpGet("status/{adUserId}")]
         public async Task<ActionResult<EmployeeStatusForJobListDto>> GetEmployeeStatus(string adUserId)
         {
@@ -72,7 +71,7 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
-        // 4. Upload Job SPs start from here
+        // Upload Job SPs start from here
         [HttpGet("GetPMVisualNotes")]
         public async Task<ActionResult<IEnumerable<etechNotesDto>>> GetEtechNotes([FromQuery] string callNbr, [FromQuery] string techName)
         {
@@ -82,7 +81,6 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
-        // 5. IsPreJobSafetyDone (GET)
         [HttpGet("IsPreJobSafetyDone")]
         public async Task<IActionResult> IsPreJobSafetyDone([FromQuery] string callNbr)
         {
@@ -97,7 +95,7 @@ namespace Technicians.Api.Controllers
             return Ok(new { isCompleted, message });
         }
 
-        // 6. CheckSaveAsDraftEquip (GET)
+
         [HttpGet("CheckSaveAsDraft")]
         public async Task<IActionResult> CheckSaveAsDraftEquip([FromQuery] string callNbr)
         {
@@ -109,7 +107,6 @@ namespace Technicians.Api.Controllers
             return Ok(message);
         }
 
-        // 7. CheckCapsPartsInfo (GET)
         [HttpGet("CheckCapsPartsInfo")]
         public async Task<IActionResult> CheckCapsPartsInfo([FromQuery] string callNbr, [FromQuery] int equipId)
         {
@@ -124,7 +121,6 @@ namespace Technicians.Api.Controllers
             return Ok(new { hasInfo });
         }
 
-        // 7a. CheckReadingsExist (GET)
         [HttpGet("CheckReadingsExist")]
         public async Task<IActionResult> CheckReadingsExist(
             [FromQuery] string callNbr,
@@ -141,7 +137,6 @@ namespace Technicians.Api.Controllers
             return Ok(new { exists });
         }
 
-        // 7b. ValidatePartsReturned (GET)
         [HttpGet("ValidatePartsReturned")]
         public async Task<IActionResult> ValidatePartsReturned([FromQuery] string callNbr)
         {
@@ -156,7 +151,6 @@ namespace Technicians.Api.Controllers
             return Ok(new { isReturned, message });
         }
 
-        // 7c. CheckDuplicateHours (GET)
         [HttpGet("CheckDuplicateHours")]
         public async Task<IActionResult> CheckDuplicateHours([FromQuery] string callNbr, [FromQuery] string techName)
         {
@@ -173,7 +167,6 @@ namespace Technicians.Api.Controllers
             return Ok(new { hasDuplicates, message });
         }
 
-        // 7d. UploadJob (POST)
         [HttpPost("upload-job")]
         public async Task<IActionResult> UploadJob([FromBody] JsonElement body)
         {
@@ -215,7 +208,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        // 8a. UploadExpenses (POST)
+
+
         [HttpPost("upload-expenses")]
         public async Task<IActionResult> UploadExpenses([FromBody] JsonElement body)
         {
@@ -274,7 +268,7 @@ namespace Technicians.Api.Controllers
             return Ok(result); // returns typed list to Angular
         }
 
-        // 11. UPS SPs
+        // UPS SPs
         [HttpGet("GetManufacturerNames")]
         public async Task<IActionResult> GetManufacturerNames()
         {
@@ -282,7 +276,6 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
-        // 11a. GetUPSModels
         [HttpGet("GetUPSReadings")]
         public async Task<IActionResult> GetUPSReadings([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string upsId)
         {
@@ -304,7 +297,6 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        // 11b. EditEquipInfo
         [HttpGet("EditEquipInfo")]
         public async Task<IActionResult> EditEquipInfo([FromQuery] string callNbr, [FromQuery] int equipId)
         {
@@ -326,7 +318,6 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        // 12. GetEquipReconciliationInfo SP
         [HttpGet("GetEquipReconciliationInfo")]
         public async Task<IActionResult> GetEquipReconciliationInfo([FromQuery] string callNbr, [FromQuery] int equipId)
         {
@@ -342,7 +333,7 @@ namespace Technicians.Api.Controllers
         }
 
 
-        // 13. GetEquipBoardInfo SP (Edit equipment page)
+        // New endpoint for GetEquipBoardInfo SP
         [HttpGet("GetEquipBoardInfo")]
         public async Task<IActionResult> GetEquipBoardInfo([FromQuery] string equipNo, [FromQuery] int equipId)
         {
@@ -360,11 +351,12 @@ namespace Technicians.Api.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while fetching equip board info for EquipNo = {EquipNo}, EquipId = {EquipId}", equipNo, equipId);
                 return StatusCode(500, "An error occurred while fetching equip board info.");
             }
         }
 
-        // 13a. spEquipmentInsertUpdate (POST)
+        // New: Insert or update equipment (POST)
         [HttpPost("spEquipmentInsertUpdate")]
         public async Task<IActionResult> InsertOrUpdateEquipment([FromBody] EquipmentInsertUpdateDto request)
         {
@@ -384,12 +376,13 @@ namespace Technicians.Api.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while inserting/updating equipment for CallNbr = {CallNbr}, EquipId = {EquipId}", request.CallNbr, request.EquipId);
                 return StatusCode(500, "An error occurred while inserting/updating equipment.");
             }
         }
 
 
-        //13b. DeleteEquipment (DELETE)
+        // DELETE: api/EquipmentDetails/delete
         [HttpDelete("delete")]
         public async Task<IActionResult> DeleteEquipment([FromBody] DeleteEquipmentDto request)
         {
@@ -408,146 +401,11 @@ namespace Technicians.Api.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Error while deleting equipment for CallNbr = {CallNbr}, EquipId = {EquipId}", request.CallNbr, request.EquipId);
                 return StatusCode(500, "An error occurred while deleting equipment.");
             }
 
 
         }
-        //14.InsertGetEquipmentImages (POST) Upload equipment image endpoint - accept DTO bound from multipart/form-data
-        [HttpPost("InsertGetEquipmentImages")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UploadEquipmentImage([FromForm] EquipmentImageUploadDto dto)
-        {
-            try
-            {
-                // Basic validation
-                if (dto == null)
-                    return BadRequest(new { success = false, message = "Request body is required." });
-
-                if (string.IsNullOrWhiteSpace(dto.CallNbr))
-                    return BadRequest(new { success = false, message = "CallNbr is required." });
-
-                if (dto.EquipID <= 0)
-                    return BadRequest(new { success = false, message = "Valid EquipID is required." });
-
-                if (string.IsNullOrWhiteSpace(dto.EquipNo))
-                    return BadRequest(new { success = false, message = "EquipNo is required." });
-
-                if (dto.ImgFile == null || dto.ImgFile.Length == 0)
-                    return BadRequest(new { success = false, message = "Image file is required." });
-
-                // Call repository directly with bound DTO
-                var rowsAffected = await _repository.InsertGetEquipmentImagesAsync(dto);
-
-                if (rowsAffected > 0)
-                {
-                    return Ok(new
-                    {
-                        success = true,
-                        message = "Image uploaded successfully.",
-                        rowsAffected = rowsAffected
-                    });
-                }
-
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "No rows affected - upload may have failed."
-                });
-            }
-            catch (ArgumentNullException)
-            {
-                return BadRequest(new { success = false, message = "Invalid input data." });
-            }
-            catch (SqlException sqlEx)
-            {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = $"Database error: {sqlEx.Message}"
-                });
-            }
-            catch
-            {
-                return StatusCode(500, new
-                {
-                    success = false,
-                    message = "An unexpected error occurred while uploading the image."
-                });
-            }
-        }
-
-        //14a. DeleteEquipmentImage (DELETE)
-        // New: Delete equipment image by id (route param)
-        [HttpDelete("DeleteEquipmentImage")]
-        public async Task<IActionResult> DeleteEquipmentImage([FromQuery] int imgId)
-        {
-            try
-            {
-                if (imgId <= 0)
-                    return BadRequest(new { success = false, message = "Valid Image ID is required." });
-
-                var rowsAffected = await _repository.DeleteEquipmentImageAsync(imgId);
-
-                if (rowsAffected > 0)
-                {
-                    return Ok(new
-                    {
-                        success = true,
-                        message = "Image deleted successfully.",
-                        rowsAffected = rowsAffected
-                    });
-                }
-
-                return NotFound(new { success = false, message = "No image found to delete." });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = "An error occurred while deleting the image." });
-            }
-        }
-
-        // 14b. Single API: GET /api/EquipmentDetails/GetEquipmentImages 
-        // Provide either an equipId query parameter to get list, or imgId route parameter to get single image.
-        [HttpGet("GetEquipmentImages")]
-        public async Task<IActionResult> GetEquipmentImages([FromQuery] int equipId)
-        {
-            try
-            {
-                // Making sure this repository method actually queries the right table
-                var images = await _repository.GetEquipmentImagesAsync(equipId, 0);
-
-                if (images == null || !images.Any())
-                {
-                    // Returns empty array in data property (not 404)
-                    return Ok(new { data = new List<object>() });
-                }
-
-                // Converts to frontend format with base64 encoding
-                var result = images.Select(img => new
-                {
-                    img_ID = img.Img_ID,
-                    equipID = img.EquipID,
-                    equipNo = img.EquipNo,
-                    callNbr = img.CallNbr,
-                    techID = img.TechID,
-                    techName = img.TechName,
-                    img_Title = img.Img_Title,
-                    img_Type = img.Img_Type,
-                    created_On = img.CreatedOn,
-                    // IMPORTANT: Convert byte array to base64 string
-                    img_stream = img.Img_stream != null ? Convert.ToBase64String(img.Img_stream) : null
-                }).ToList();
-
-                _logger.LogInformation("Returning {Count} formatted images", result.Count);
-                return Ok(new { data = result });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetEquipmentImages for EquipID={EquipID}", equipId);
-                return StatusCode(500, new { error = "Failed to retrieve images" });
-            }
-        }
-
     }
 }

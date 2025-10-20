@@ -18,7 +18,6 @@ namespace Technicians.Api.Repository
         }
 
 
-        // 1. GetEquipmentDetails
         public List<EquipmentDetailsDto> GetEquipmentDetails(string callNbr)
         {
             using (var con = new SqlConnection(_connectionString))
@@ -30,7 +29,10 @@ namespace Technicians.Api.Repository
                     "GetEquipmentDetails",
                     parameters,
                     commandType: CommandType.StoredProcedure).ToList();
+
+
             }
+
         }
 
         // 2. GetUploadedInfo
@@ -57,6 +59,7 @@ namespace Technicians.Api.Repository
             }
         }
 
+
         // 3. GetEmployeeStatusForJobList
         public async Task<EmployeeStatusForJobListDto> GetEmployeeStatusForJobListAsync(string adUserId)
         {
@@ -81,7 +84,9 @@ namespace Technicians.Api.Repository
             return null;
         }
 
-        // 4. UploadExpenses
+
+
+        // 5. UploadExpenses
         public async Task<int> UploadExpensesAsync(EtechUploadExpensesDto request)
         {
             await using var conn = new SqlConnection(_connectionString);
@@ -98,7 +103,9 @@ namespace Technicians.Api.Repository
             return result;
         }
 
-        // 5. GetEtechNotes
+
+
+        // 8. GetEtechNotes
         public async Task<IEnumerable<etechNotesDto>> GetEtechNotesAsync(string callNbr, string techName)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -108,7 +115,7 @@ namespace Technicians.Api.Repository
             return result;
         }
 
-        // 6. GetReconciliationEmailNotes
+        // 9. GetReconciliationEmailNotes
         public async Task<IEnumerable<ReconciliationEmailNoteDto>> GetReconciliationEmailNotesAsync(string callNbr)
         {
             var sql = "EXEC dbo.GetReconciliationEmailNotes @CallNbr";
@@ -116,7 +123,7 @@ namespace Technicians.Api.Repository
             return await connection.QueryAsync<ReconciliationEmailNoteDto>(sql, new { CallNbr = callNbr });
         }
 
-        // 7. InsertOrUpdateDeficiencyNote
+        // 10. InsertOrUpdateDeficiencyNote
         public async Task InsertOrUpdateDeficiencyNoteAsync(DeficiencyNoteRequestDto noteRequest)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -133,7 +140,7 @@ namespace Technicians.Api.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
-        // 8. CheckSaveAsDraftEquip
+        // 11. CheckSaveAsDraftEquip
         public async Task<string> CheckSaveAsDraftEquipAsync(string callNbr)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -148,7 +155,7 @@ namespace Technicians.Api.Repository
             return result;
         }
 
-        //9. IsPreJobSafetyDone
+
         public async Task<int> IsPreJobSafetyDone(string callNbr)
         {
             const string query = "SELECT dbo.IsPreJobSafetyDone(@CallNbr)";
@@ -170,7 +177,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-        //10. CheckCapsPartsInfo
         public async Task<int> CheckCapsPartsInfoAsync(string callNbr, int equipId)
         {
             const string query = "SELECT dbo.aaCapPartsExist(@CallNbr, @EquipID)";
@@ -193,7 +199,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-        //11. ReadingsExist
         public async Task<int> ReadingsExistAsync(string callNbr, int equipId, string equipType)
         {
             const string query = "SELECT dbo.aaReadingsExist(@CallNbr, @EquipID, @EquipType)";
@@ -217,7 +222,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-        //12. IsPartsReturnedByTech
         public async Task<int> IsPartsReturnedByTechAsync(string callNbr)
         {
             const string query = "SELECT dbo.PartsReturnInfobyTech(@CallNbr)";
@@ -239,7 +243,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-        //13. CheckDuplicateHours
         public async Task<string> CheckDuplicateHoursAsync(string callNbr, string techName)
         {
             try
@@ -264,7 +267,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-        //14. UploadJobToGP
         public async Task<string> UploadJobToGPAsync(string callNbr, string techId, string loggedInUser)
         {
             try
@@ -291,7 +293,7 @@ namespace Technicians.Api.Repository
             }
         }
 
-        //15. ValidateExpenseUpload
+        //Upload Repo methods
         public async Task<string> ValidateExpenseUploadAsync(string callNbr)
         {
             try
@@ -314,7 +316,7 @@ namespace Technicians.Api.Repository
         }
 
 
-        // 16. UPS SPs
+        // UPS SPs
         public async Task<List<ManufacturerDto>> GetManufacturerNamesAsync()
         {
             const string query = "SELECT DISTINCT RTRIM(ManufID) AS ManufID, RTRIM(ManufName) AS ManufName FROM [Manufacturer] ORDER BY MANUFNAME";
@@ -345,7 +347,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-        //16a. GetUPSReadings
         public async Task<aaETechUPS?> GetUPSReadingsAsync(string callNbr, int equipId, string upsId)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -365,7 +366,6 @@ namespace Technicians.Api.Repository
             return result;
         }
 
-        //16b. EditEquipInfo
         public async Task<EditEquipInfoDto> EditEquipInfoAsync(string callNbr, int equipId)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -402,7 +402,6 @@ namespace Technicians.Api.Repository
             return equipInfo;
         }
 
-        //16c. GetEquipReconciliationInfo
         public async Task<EquipReconciliationInfoDto> GetEquipReconciliationInfoAsync(string callNbr, int equipId)
         {
             using var conn = new SqlConnection(_connectionString);
@@ -459,7 +458,7 @@ namespace Technicians.Api.Repository
             return null;
         }
 
-        //17 GetEquipBoardInfo
+        // New: call stored procedure GetEquipBoardInfo and map to EquipBoardInfoDto
         public async Task<IEnumerable<EquipBoardInfoDto>> GetEquipBoardInfoAsync(string equipNo, int equipId)
         {
             try
@@ -487,7 +486,7 @@ namespace Technicians.Api.Repository
 
         }
 
-        // 18. InsertOrUpdateEquipment
+        // New: Insert or update equipment using spEquipmentInsertUpdate
         public async Task<int> InsertOrUpdateEquipmentAsync(EquipmentInsertUpdateDto dto)
         {
             try
@@ -504,7 +503,7 @@ namespace Technicians.Api.Repository
             }
         }
 
-        // 19. DeleteEquipment
+        // DeleteEquipment implementation
         public async Task<int> DeleteEquipmentAsync(string callNbr, string equipNo, int equipId)
         {
             try
@@ -528,143 +527,6 @@ namespace Technicians.Api.Repository
                 return 0; // indicate failure
             }
         }
-
-        // 20. InsertGetEquipmentImages
-        public async Task<int> InsertGetEquipmentImagesAsync(EquipmentImageUploadDto dto)
-        {
-            // Validate incoming dto
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-
-            try
-            {
-                await using var conn = new SqlConnection(_connectionString);
-
-                await using var cmd = new SqlCommand("InsertGetEquipmentImages", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                cmd.Parameters.AddWithValue("@CallNbr", dto.CallNbr ?? string.Empty);
-                cmd.Parameters.AddWithValue("@EquipID", dto.EquipID);
-                cmd.Parameters.AddWithValue("@EquipNo", dto.EquipNo ?? string.Empty);
-                cmd.Parameters.AddWithValue("@TechName", dto.TechName ?? string.Empty);
-                cmd.Parameters.AddWithValue("@TechID", dto.TechID ?? string.Empty);
-                cmd.Parameters.AddWithValue("@Img_Title", dto.Img_Title ?? string.Empty);
-
-                // Ensure Img_Type is set; prefer the uploaded file ContentType when available
-                var imgType = string.IsNullOrWhiteSpace(dto.Img_Type) ? dto.ImgFile?.ContentType ?? string.Empty : dto.Img_Type;
-                cmd.Parameters.AddWithValue("@Img_Type", imgType);
-
-                // If file provided, send as varbinary(max)
-                if (dto.ImgFile != null && dto.ImgFile.Length > 0)
-                {
-                    using var ms = new MemoryStream();
-                    await dto.ImgFile.CopyToAsync(ms);
-                    var bytes = ms.ToArray();
-
-                    // Use VarBinary (max) instead of deprecated Image type
-                    var imgParam = new SqlParameter("@Img_Stream", SqlDbType.VarBinary, -1)
-                    {
-                        Value = bytes
-                    };
-                    cmd.Parameters.Add(imgParam);
-                }
-                else
-                {
-                    cmd.Parameters.AddWithValue("@Img_Stream", DBNull.Value);
-                }
-
-                // Execute and assume success if no exception is thrown
-                await conn.OpenAsync();
-                await cmd.ExecuteNonQueryAsync();
-
-                // Since stored procedure does not use explicit RETURN statements in this environment,
-                // assume success and return 1 when execution completes without error.
-                return 1;
-            }
-            catch
-            {
-                // Do not swallow exception - let caller (controller) handle and log it for debugging
-                throw;
-            }
-        }
-
-        // 21. DeleteEquipmentImage - deletes from current DB or fallback archive DB based on existence
-        public async Task<int> DeleteEquipmentImageAsync(int imgId)
-        {
-            try
-            {
-                await using var conn = new SqlConnection(_connectionString);
-                await using var cmd = new SqlCommand("DeleteEquipmentImage", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                cmd.Parameters.AddWithValue("@Img_ID", imgId);
-
-                await conn.OpenAsync();
-
-                // Execute stored procedure
-                await cmd.ExecuteNonQueryAsync();
-
-                // Assume success if execution completed without exception
-                return 1;
-            }
-            catch (SqlException sqlEx)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        // 22. GetEquipmentImages wrapper for SP GetEquipmentImages
-        // If Img_ID is supplied and EquipID == 0, SP returns Img_stream (single column)
-        // If EquipID > 0, SP returns full rows from EquipmentImages table
-        public async Task<IEnumerable<EquipmentImageDto>> GetEquipmentImagesAsync(int equipId, int imgId)
-        {
-            try
-            {
-                await using var conn = new SqlConnection(_connectionString);
-                await using var cmd = new SqlCommand("GetEquipmentImages", conn) // Or your SP name
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                cmd.Parameters.AddWithValue("@EquipID", equipId);
-                cmd.Parameters.AddWithValue("@Img_ID", imgId);
-
-                await conn.OpenAsync();
-                var images = new List<EquipmentImageDto>();
-
-                using var reader = await cmd.ExecuteReaderAsync();
-                while (await reader.ReadAsync())
-                {
-                    var image = new EquipmentImageDto
-                    {
-                        Img_ID = reader.GetInt32("Img_ID"),
-                        EquipID = reader.GetInt32("EquipID"),
-                        EquipNo = reader.GetString("EquipNo"),
-                        CallNbr = reader.GetString("CallNbr"),
-                        TechID = reader.GetString("TechID"),
-                        TechName = reader.GetString("TechName"),
-                        Img_Title = reader.GetString("Img_Title"),
-                        Img_Type = reader.GetString("Img_Type"),
-                        CreatedOn = reader.GetDateTime("CreatedOn"),
-                        Img_stream = reader.IsDBNull("Img_Stream") ? null : (byte[])reader["Img_Stream"]
-                    };
-                    images.Add(image);
-                }
-
-                return images;
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-    }
+     }
  }
 
