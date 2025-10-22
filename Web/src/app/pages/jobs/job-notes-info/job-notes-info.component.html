@@ -1,374 +1,308 @@
 <!-- Job Notes Information Page -->
-<div class="container-fluid">
+<div class="container-fluid job-notes-container">
   <!-- Loading spinner -->
-  <div *ngIf="loading" class="d-flex justify-content-center align-items-center" style="min-height: 300px;">
-    <div class="spinner-border" role="status">
+  <div *ngIf="loading" class="d-flex justify-content-center align-items-center job-notes-loading">
+    <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
 
   <!-- Main content -->
   <div *ngIf="!loading">
-    <!-- Header section -->
-    <div class="row mb-3">
-      <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
-          <!-- Error/Success Messages -->
-          <div class="flex-grow-1 text-center">
-            <div *ngIf="errorMessage" class="alert alert-danger mb-2">
-              {{ errorMessage }}
-            </div>
-            <div *ngIf="successMessage" class="alert alert-success mb-2">
-              {{ successMessage }}
-            </div>
+    <div class="card shadow-sm">
+      <div class="card-header border-0 py-4">
+        <div class="job-notes-header d-flex align-items-center justify-content-between flex-wrap gap-3 w-100">
+          <div class="job-notes-header__group">
+            <button
+              type="button"
+              class="btn btn-sm btn-primary job-notes-header__back"
+              (click)="onGoBack()"
+              [disabled]="saving">
+              <i class="bi bi-arrow-left me-2"></i>
+              Back
+            </button>
           </div>
-        </div>
 
-        <!-- Title -->
-        <div class="text-center my-3">
-          <h4 class="fw-bold" [class.text-danger]="jobInfo?.svcDescr?.toLowerCase()?.includes('emergency')">
-            {{ jobTitle }}
-          </h4>
-        </div>
-
-        <!-- Navigation buttons -->
-        <div class="d-flex justify-content-between mb-3">
-          <button 
-            type="button" 
-            class="btn btn-link p-0" 
-            (click)="onGoBack()"
-            [disabled]="saving">
-            <img src="assets/media/icons/backblue.gif" alt="Back" style="border: none;">
-          </button>
-
-          <button 
-            *ngIf="!isReadOnlyMode"
-            type="button" 
-            class="btn btn-primary" 
-            (click)="onSave()"
-            [disabled]="saving">
-            <span *ngIf="saving" class="spinner-border spinner-border-sm me-2"></span>
-            {{ saving ? 'Saving...' : 'Save Info' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Job Information Section -->
-    <div class="row mb-4" *ngIf="jobInfo">
-      <div class="col-12">
-        <div class="table-responsive">
-          <table class="table table-borderless job-info-table">
-            <tbody>
-              <!-- Row 1 -->
-              <tr>
-                <td class="fw-bold text-end pe-3" style="width: 120px;">Site ID:</td>
-                <td style="width: 200px;">
-                  <a [href]="getSiteHistoryUrl()" class="text-primary text-decoration-underline">
-                    {{ jobInfo.custNmbr }}
-                  </a>
-                  <small class="text-muted d-block">(Click to View History)</small>
-                </td>
-                <td class="fw-bold text-end pe-3" style="width: 150px;">Customer Name:</td>
-                <td>{{ jobInfo.custName }}</td>
-              </tr>
-
-              <!-- Row 2 -->
-              <tr>
-                <td class="fw-bold text-end pe-3">Contract Type:</td>
-                <td>{{ jobInfo.contType }}</td>
-                <td class="fw-bold text-end pe-3">Address:</td>
-                <td>{{ jobInfo.addr1 }}</td>
-              </tr>
-
-              <!-- Row 3 -->
-              <tr>
-                <td class="fw-bold text-end pe-3">Account Manager:</td>
-                <td>{{ jobInfo.accMgr }}</td>
-                <td class="fw-bold text-end pe-3">Contact Name:</td>
-                <td>{{ jobInfo.contact }}</td>
-              </tr>
-
-              <!-- Row 4 -->
-              <tr>
-                <td class="fw-bold text-end pe-3">Service Call Date:</td>
-                <td>{{ jobInfo.strtDate | date:'shortDate' }} {{ jobInfo.strtTime | date:'shortTime' }}</td>
-                <td class="fw-bold text-end pe-3">Contact Phone:</td>
-                <td>{{ jobInfo.contactPhone }}</td>
-              </tr>
-
-              <!-- Row 5 -->
-              <tr>
-                <td class="fw-bold text-end pe-3">Job Description:</td>
-                <td>
-                  <input 
-                    type="text" 
-                    class="form-control-plaintext border-0 p-0" 
-                    [value]="jobInfo.svcDescr" 
-                    readonly>
-                </td>
-                <td class="fw-bold text-end pe-3">Techs on this Job:</td>
-                <td>{{ otherTechsDisplay }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Notes Section -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="row">
-          <!-- AM Notes -->
-          <div class="col-md-4">
-            <label class="fw-bold">AM Notes:</label>
+          <div class="job-notes-header__title flex-grow-1 text-center">
+            <h4 class="card-title fw-bold mb-1" [class.text-danger]="jobInfo?.svcDescr?.toLowerCase()?.includes('emergency')">
+              {{ jobTitle }}
+            </h4>
           </div>
-          <div class="col-md-8">
-            <label class="fw-bold">Service Call Notes:</label>
+
+          <div class="job-notes-header__group text-end">
+            <ng-container *ngIf="!isReadOnlyMode; else headerSpacer">
+              <button
+                type="button"
+                class="btn btn-primary job-notes-header__action"
+                (click)="onSave()"
+                [disabled]="saving">
+                <span *ngIf="saving" class="spinner-border spinner-border-sm me-2"></span>
+                {{ saving ? 'Saving...' : 'Save Info' }}
+              </button>
+            </ng-container>
+            <ng-template #headerSpacer>
+              <span class="job-notes-header__spacer"></span>
+            </ng-template>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Form section (only show if not in read-only mode) -->
-    <form [formGroup]="jobNotesForm" *ngIf="!isReadOnlyMode">
-      <!-- Tech Notes Section -->
-      <div class="row mb-4" *ngIf="jobInfo">
-        <div class="col-12">
-          <!-- Previous tech notes display -->
-          <div class="row mb-3" *ngIf="jobInfo.pmVisualNotes">
-            <div class="col-2 text-end">
-              <label class="fw-bold">Previous Notes:</label>
+      <div class="card-body pt-0 pt-md-4">
+        <div class="job-notes-messages" *ngIf="errorMessage || successMessage">
+          <div *ngIf="errorMessage" class="alert alert-danger d-inline-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+          <div *ngIf="successMessage && successMessage.includes('No Information Found')" class="alert alert-warning d-inline-flex align-items-center">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+          <div *ngIf="successMessage && !successMessage.includes('No Information Found')" class="alert alert-success d-inline-flex align-items-center">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+        </div>
+
+        <!-- Job Information Section -->
+        <section class="job-overview mb-8" *ngIf="jobInfo">
+          <div class="job-section-header">
+            <h4 class="fw-bold mb-0">Job Overview</h4>
+          </div>
+          <div class="job-overview__grid">
+            <div class="job-overview__item">
+              <span class="job-overview__label">Site ID</span>
+              <a [href]="getSiteHistoryUrl()" target="_blank" rel="noopener" class="job-overview__value link-primary">
+                {{ jobInfo.custNmbr || '—' }}
+              </a>
+              <small class="text-muted">Click to view history</small>
             </div>
-            <div class="col-10">
-              <div class="border p-2 bg-light small" [innerHTML]="jobInfo.pmVisualNotes"></div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Customer Name</span>
+              <span class="job-overview__value">{{ jobInfo.custName || '—' }}</span>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Contract Type</span>
+              <span class="job-overview__value">{{ jobInfo.contType || '—' }}</span>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Address</span>
+              <span class="job-overview__value">{{ jobInfo.addr1 || '—' }}</span>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Account Manager</span>
+              <span class="job-overview__value">{{ jobInfo.accMgr || '—' }}</span>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Contact Name</span>
+              <span class="job-overview__value">{{ jobInfo.contact || '—' }}</span>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Service Call Date</span>
+              <span class="job-overview__value">{{ jobInfo.strtDate | date:'MM/dd/yyyy' }} {{ jobInfo.strtTime | date:'shortTime' }}</span>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Contact Phone</span>
+              <span class="job-overview__value">{{ jobInfo.contactPhone || '—' }}</span>
+            </div>
+            <div class="job-overview__item job-overview__item--wide">
+              <span class="job-overview__label">Job Description</span>
+              <span class="job-overview__value job-overview__value--multiline">{{ jobInfo.svcDescr || '—' }}</span>
+            </div>
+            <div class="job-overview__item job-overview__item--wide">
+              <span class="job-overview__label">Technicians On This Job</span>
+              <span class="job-overview__value job-overview__value--multiline">{{ otherTechsDisplay }}</span>
+            </div>
+            <div class="job-overview__item job-overview__item--wide" style="min-width: 774px;">
+              <span class="job-overview__label">AM Notes</span>
+              <span class="job-overview__value job-overview__value--multiline">{{ jobInfo.recordNotes || '—' }}</span>
             </div>
           </div>
+        </section>
 
-          <!-- Spell checker info -->
-          <div class="row mb-3">
-            <div class="col-2"></div>
-            <div class="col-10">
-              <div class="alert alert-info py-2 px-3 d-flex align-items-center">
-                <i class="bi bi-info-circle me-2"></i>
-                <small>
-                  <strong>Spell Check:</strong> Right-click on underlined words in text areas for spelling suggestions.
-                  Browser spell check is enabled for all text fields.
-                </small>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tech Notes Input -->
-          <div class="row mb-3">
-            <div class="col-2 text-end">
-              <label class="fw-bold">Technician Notes:</label>
-            </div>
-            <div class="col-10">
-              <div formArrayName="techNotes">
-                <div 
-                  *ngFor="let techNoteGroup of techNotesFormArray.controls; let i = index" 
-                  [formGroupName]="i" 
-                  class="mb-4">
-                  
-                  <!-- Equipment info header -->
-                  <div class="equipment-header mb-2">
-                    <strong>
-                      <u>{{ techNoteGroup.get('equipNo')?.value }}</u>
-                    </strong>
-                    - Make: <strong>{{ techNoteGroup.get('vendorId')?.value }}</strong>
-                    - Model: <strong>{{ techNoteGroup.get('version')?.value }}</strong>
-                    - KVA/Batt: <strong>{{ techNoteGroup.get('rating')?.value }}</strong>
-                    - Serial No: <strong>{{ techNoteGroup.get('serialID')?.value }}</strong>
-                    - Location: <strong>{{ techNoteGroup.get('location')?.value }}</strong>
+        <!-- Form section (only show if not in read-only mode) -->
+        <form [formGroup]="jobNotesForm" *ngIf="!isReadOnlyMode" class="job-notes-form">
+          <section class="job-notes-section" *ngIf="jobInfo">
+            <div class="job-section-header">
+              <h4 class="fw-bold mb-1">Technician Notes</h4>
+              <div formArrayName="techNotes" class="tech-notes-list">
+              <div
+                *ngFor="let techNoteGroup of techNotesFormArray.controls; let i = index"
+                [formGroupName]="i"
+                class="tech-note-card">
+                <div class="tech-note-card__header">
+                  <div class="tech-note-card__details">
+                    <span class="fw-semibold">{{ techNoteGroup.get('equipNo')?.value || '—' }}</span>
+                    <span *ngIf="techNoteGroup.get('vendorId')?.value">&middot; Make: <strong>{{ techNoteGroup.get('vendorId')?.value }}</strong></span>
+                    <span *ngIf="techNoteGroup.get('version')?.value">&middot; Model: <strong>{{ techNoteGroup.get('version')?.value }}</strong></span>
+                    <span *ngIf="techNoteGroup.get('rating')?.value">&middot; KVA/Batt: <strong>{{ techNoteGroup.get('rating')?.value }}</strong></span>
+                    <span *ngIf="techNoteGroup.get('serialID')?.value">&middot; Serial: <strong>{{ techNoteGroup.get('serialID')?.value }}</strong></span>
+                    <span *ngIf="techNoteGroup.get('location')?.value">&middot; Location: <strong>{{ techNoteGroup.get('location')?.value }}</strong></span>
                   </div>
+                </div>
+                <div class="alert alert-info job-notes-tip d-flex align-items-center">
+              <i class="bi bi-info-circle me-2"></i>
+              <small>
+                <strong>Spell Check:</strong> Right-click on underlined words in text areas for spelling suggestions. Browser spell check is enabled for all text fields.
+              </small>
+            </div>
+                <textarea
+                  formControlName="noteText"
+                  class="form-control"
+                  rows="4"
+                  spellcheck="true"
+                  lang="en-US"
+                  [class.is-invalid]="techNoteGroup.get('noteText')?.invalid && techNoteGroup.get('noteText')?.touched"
+                  placeholder="Enter technician notes for this equipment..."></textarea>
 
-                  <!-- Tech note input -->
-                  <textarea 
-                    formControlName="noteText"
-                    class="form-control"
-                    rows="4"
-                    spellcheck="true"
-                    lang="en-US"
-                    [class.is-invalid]="techNoteGroup.get('noteText')?.invalid && techNoteGroup.get('noteText')?.touched"
-                    placeholder="Enter technician notes for this equipment...">
-                  </textarea>
-                  
-                  <div *ngIf="techNoteGroup.get('noteText')?.invalid && techNoteGroup.get('noteText')?.touched" 
-                       class="invalid-feedback">
-                    Notes are required for all equipment.
-                  </div>
+                <div *ngIf="techNoteGroup.get('noteText')?.invalid && techNoteGroup.get('noteText')?.touched"
+                     class="invalid-feedback d-block mt-2">
+                  Notes are required for all equipment.
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Quote Priority -->
-          <div class="row mb-3">
-            <div class="col-12">
-              <table class="table table-borderless">
-                <tbody>
-                  <tr>
-                    <td style="width: 220px;">
-                      <label class="fw-bold">Quote Priority</label>
-                    </td>
-                    <td>
-                      <div class="form-check-inline" *ngFor="let option of quotePriorityOptions">
-                        <input 
-                          class="form-check-input" 
-                          type="radio" 
-                          [id]="'quotePriority_' + option.value"
-                          formControlName="quotePriority" 
-                          [value]="option.value">
-                        <label class="form-check-label ms-1" [for]="'quotePriority_' + option.value">
-                          {{ option.label }}
-                        </label>
-                      </div>
-                      <div *ngIf="jobNotesForm.get('quotePriority')?.invalid && jobNotesForm.get('quotePriority')?.touched" 
-                           class="text-danger small mt-1">
-                        At least one Quote Priority must be selected
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- Equipment Reconciliation -->
-                  <tr>
-                    <td>
-                      <label class="fw-bold text-danger">
-                        Did you notice any new equipment or extra battery strings at the site?<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                        <strong>OR</strong><br/>
-                        are there fewer battery strings or has any equipment been removed?
-                      </label>
-                    </td>
-                    <td>
-                      <div class="form-check-inline" *ngFor="let option of reconciliationOptions">
-                        <input 
-                          class="form-check-input" 
-                          type="radio" 
-                          [id]="'reconciliation_' + option.value"
-                          formControlName="reconciliationNewEquip" 
-                          [value]="option.value">
-                        <label class="form-check-label ms-1" [for]="'reconciliation_' + option.value">
-                          {{ option.label }}
-                        </label>
-                      </div>
-                      <div *ngIf="jobNotesForm.get('reconciliationNewEquip')?.invalid && jobNotesForm.get('reconciliationNewEquip')?.touched" 
-                           class="text-danger small mt-1">
-                        At least one checkbox value must be selected
-                      </div>
-                    </td>
-                  </tr>
-
-                  <!-- Reconciliation Notes -->
-                  <tr *ngIf="showReconciliationNotes">
-                    <td>
-                      <label class="fw-bold">Please enter new equipment details:</label>
-                    </td>
-                    <td>
-                      <textarea 
-                        formControlName="reconciliationNotes"
-                        class="form-control"
-                        rows="5"
-                        spellcheck="true"
-                        lang="en-US"
-                        [class.is-invalid]="jobNotesForm.get('reconciliationNotes')?.invalid && jobNotesForm.get('reconciliationNotes')?.touched"
-                        placeholder="Enter details about new or removed equipment...">
-                      </textarea>
-                      <div *ngIf="jobNotesForm.get('reconciliationNotes')?.invalid && jobNotesForm.get('reconciliationNotes')?.touched" 
-                           class="invalid-feedback">
-                        Please enter the new equipment details
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
             </div>
-          </div>
 
-          <!-- Deficiency Notes Section -->
-          <div class="row mb-3">
-            <div class="col-2 text-end align-top">
-              <label class="fw-bold">E-Tech Generated Notes</label>
-            </div>
-            <div class="col-10">
-              <div class="mb-2">
-                <button 
-                  type="button" 
-                  class="btn btn-outline-primary me-3"
-                  (click)="onRefreshNotes()"
-                  [disabled]="saving">
-                  Update Notes
-                </button>
-                <span class="text-danger small fw-bold">
-                  Is the deficiencies and corrective action correct:
-                </span>
-                <div class="form-check form-check-inline ms-2">
-                  <input 
-                    class="form-check-input" 
-                    type="checkbox" 
-                    id="deficiencyNotesVerified"
-                    formControlName="deficiencyNotesVerified">
-                  <label class="form-check-label" for="deficiencyNotesVerified">
-                    Verified
-                  </label>
+            
+          </section>
+
+          <section class="job-notes-section">
+            
+
+            <div class="row g-4 align-items-start">
+              <div class="col-lg-6">
+                <br>
+                <label class="form-label fw-bold">Quote Priority</label>
+                <div class="job-notes-radio-group">
+                  <div class="form-check" *ngFor="let option of quotePriorityOptions">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      [id]="'quotePriority_' + option.value"
+                      formControlName="quotePriority"
+                      [value]="option.value">
+                    <label class="form-check-label" [for]="'quotePriority_' + option.value">
+                      {{ option.label }}
+                    </label>
+                  </div>
+                </div>
+                <div *ngIf="jobNotesForm.get('quotePriority')?.invalid && jobNotesForm.get('quotePriority')?.touched"
+                     class="invalid-feedback d-block mt-2">
+                  At least one Quote Priority must be selected.
                 </div>
               </div>
-              <div *ngIf="jobNotesForm.get('deficiencyNotesVerified')?.invalid && jobNotesForm.get('deficiencyNotesVerified')?.touched" 
-                   class="text-danger small mb-2">
-                Please check that you have verified the deficiency notes and corrective action
+
+              <div class="col-lg-6">
+                <label class="form-label fw-bold text-danger">Did you notice any new equipment or extra battery strings at the site? OR</label>
+                <label class="form-label fw-bold text-danger">Are there fewer battery strings or has any equipment been removed?</label>
+                <div class="job-notes-radio-group">
+                  <div class="form-check" *ngFor="let option of reconciliationOptions">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      [id]="'reconciliation_' + option.value"
+                      formControlName="reconciliationNewEquip"
+                      [value]="option.value">
+                    <label class="form-check-label" [for]="'reconciliation_' + option.value">
+                      {{ option.label }}
+                    </label>
+                  </div>
+                </div>
+                <div *ngIf="jobNotesForm.get('reconciliationNewEquip')?.invalid && jobNotesForm.get('reconciliationNewEquip')?.touched"
+                     class="invalid-feedback d-block mt-2">
+                  Please confirm if equipment changed on site.
+                </div>
+              </div>
+
+              <div class="col-12" *ngIf="showReconciliationNotes">
+                <label class="form-label fw-bold">Please enter new equipment details:</label>
+                <textarea
+                  formControlName="reconciliationNotes"
+                  class="form-control"
+                  rows="5"
+                  spellcheck="true"
+                  lang="en-US"
+                  [class.is-invalid]="jobNotesForm.get('reconciliationNotes')?.invalid && jobNotesForm.get('reconciliationNotes')?.touched"
+                  placeholder="Enter details about new or removed equipment..."></textarea>
+                <div *ngIf="jobNotesForm.get('reconciliationNotes')?.invalid && jobNotesForm.get('reconciliationNotes')?.touched"
+                     class="invalid-feedback d-block mt-2">
+                  Please enter the new equipment details.
+                </div>
               </div>
             </div>
+          </section>
+
+          <section class="job-notes-section">
+            <div class="job-section-header">
+              <h4 class="fw-bold mb-1">E-Tech Generated Notes</h4>
+            </div>
+
+            <div class="job-notes-verification">
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="onRefreshNotes()"
+                [disabled]="refreshing || saving">
+                <span *ngIf="refreshing" class="spinner-border spinner-border-sm me-2"></span>
+                {{ refreshing ? 'Updating...' : 'Update Notes' }}
+              </button>
+              <span class="text-danger small fw-bold">
+                Is the deficiencies and corrective action correct?
+              </span>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="deficiencyNotesVerified"
+                  formControlName="deficiencyNotesVerified">
+                <label class="form-check-label" for="deficiencyNotesVerified">Verified</label>
+              </div>
+            </div>
+
+            <div *ngIf="jobNotesForm.get('deficiencyNotesVerified')?.invalid && jobNotesForm.get('deficiencyNotesVerified')?.touched"
+                 class="invalid-feedback d-block mb-3">
+              Please confirm the deficiency notes and corrective action.
+            </div>
+
+            <div *ngIf="systemNotes" class="system-notes" [innerHTML]="systemNotesHtml || systemNotes"></div>
+          </section>
+        </form>
+
+        <!-- Read-only display for CON status -->
+        <div *ngIf="isReadOnlyMode" class="job-notes-readonly">
+          <div class="alert alert-info mb-4">
+            <h5 class="alert-heading mb-1">Job Completed</h5>
+            <p class="mb-0">This job is in completed status. Information is displayed in read-only mode.</p>
           </div>
 
-          <!-- System Generated Notes Display -->
-          <div class="row mb-3" *ngIf="systemNotes">
-            <div class="col-2"></div>
-            <div class="col-10">
-              <div class="border p-3 bg-light" [innerHTML]="systemNotes"></div>
+          <div *ngIf="jobInfo" class="job-overview__grid job-overview__grid--readonly">
+            <div class="job-overview__item job-overview__item--wide" *ngIf="jobInfo.pmVisualNotes">
+              <span class="job-overview__label">Tech Notes</span>
+              <div class="job-overview__value job-overview__value--multiline" [innerHTML]="jobInfo.pmVisualNotes"></div>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Quote Priority</span>
+              <span class="job-overview__value">
+                <ng-container *ngFor="let option of quotePriorityOptions">
+                  <ng-container *ngIf="option.value === jobInfo.qtePriority">{{ option.label }}</ng-container>
+                </ng-container>
+              </span>
+            </div>
+            <div class="job-overview__item job-overview__item--wide" *ngIf="reconciliationInfo">
+              <span class="job-overview__label">Equipment Changes</span>
+              <div class="job-overview__value job-overview__value--multiline">
+                <ng-container *ngFor="let option of reconciliationOptions">
+                  <ng-container *ngIf="option.value === reconciliationInfo.newEquipment">{{ option.label }}</ng-container>
+                </ng-container>
+                <div *ngIf="reconciliationInfo.equipmentNotes" class="mt-2">
+                  <small><strong>Details:</strong> {{ reconciliationInfo.equipmentNotes }}</small>
+                </div>
+              </div>
+            </div>
+            <div class="job-overview__item">
+              <span class="job-overview__label">Deficiency Notes Verified</span>
+              <span class="job-overview__value">{{ jobInfo.defCheck ? 'Yes' : 'No' }}</span>
             </div>
           </div>
-        </div>
-      </div>
-    </form>
-
-    <!-- Read-only display for CON status -->
-    <div *ngIf="isReadOnlyMode" class="alert alert-info">
-      <h5>Job Completed</h5>
-      <p>This job is in completed status. Information is displayed in read-only mode.</p>
-      
-      <!-- Display job info in read-only format -->
-      <div *ngIf="jobInfo" class="mt-3">
-        <div class="row mb-2" *ngIf="jobInfo.pmVisualNotes">
-          <div class="col-3"><strong>Tech Notes:</strong></div>
-          <div class="col-9" [innerHTML]="jobInfo.pmVisualNotes"></div>
-        </div>
-        
-        <div class="row mb-2">
-          <div class="col-3"><strong>Quote Priority:</strong></div>
-          <div class="col-9">
-            <span *ngFor="let option of quotePriorityOptions">
-              <span *ngIf="option.value === jobInfo.qtePriority">{{ option.label }}</span>
-            </span>
-          </div>
-        </div>
-        
-        <div class="row mb-2" *ngIf="reconciliationInfo">
-          <div class="col-3"><strong>Equipment Changes:</strong></div>
-          <div class="col-9">
-            <span *ngFor="let option of reconciliationOptions">
-              <span *ngIf="option.value === reconciliationInfo.newEquipment">{{ option.label }}</span>
-            </span>
-            <div *ngIf="reconciliationInfo.equipmentNotes" class="mt-1">
-              <small><strong>Details:</strong> {{ reconciliationInfo.equipmentNotes }}</small>
-            </div>
-          </div>
-        </div>
-        
-        <div class="row mb-2">
-          <div class="col-3"><strong>Deficiency Notes Verified:</strong></div>
-          <div class="col-9">{{ jobInfo.defCheck ? 'Yes' : 'No' }}</div>
         </div>
       </div>
     </div>

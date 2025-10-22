@@ -10,9 +10,13 @@ import { FileUploadService, UploadedFile, EquipmentFileResponseDto } from '../..
 })
 export class FileUploadComponent implements OnInit {
   @Input() jobId?: string;
+<<<<<<< HEAD
   @Input() equipmentId?: number;  // New input for equipment-specific uploads
   @Input() techId?: string;       // New input for tech ID (required for equipment uploads)
   @Output() onClose = new EventEmitter<void>();
+=======
+  @Output() closed = new EventEmitter<void>();
+>>>>>>> origin/main
   
   callNbr = '';
   selectedFiles: (File | null)[] = [null, null, null, null, null]; // 5 file slots like legacy
@@ -343,9 +347,17 @@ export class FileUploadComponent implements OnInit {
     );
   }
 
+<<<<<<< HEAD
   openEquipmentFile(file: EquipmentFileResponseDto): void {
     if (file.data && file.fileName && file.contentType) {
       this.fileUploadService.downloadEquipmentFile(file.data, file.fileName, file.contentType);
+=======
+  closeWindow(): void {
+    // Emit close event for modal usage, or close popup for standalone usage
+    if (this.jobId) {
+      // Modal mode - emit event to parent
+      this.closed.emit();
+>>>>>>> origin/main
     } else {
       this.toastr.error('File data is not available');
     }

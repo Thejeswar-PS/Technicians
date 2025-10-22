@@ -1,5 +1,40 @@
 /* Mobile Receipts Component Styles */
 
+.mobile-receipts-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+
+  &__title {
+    font-weight: 700;
+    font-size: 1.75rem;
+  }
+
+  &__back {
+    min-width: 220px;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    .bi {
+      font-size: 1rem;
+    }
+  }
+}
+
+.mobile-receipts-content {
+  max-width: 1100px;
+  margin-left: 0;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
 .receipt-image-container {
   display: flex;
   justify-content: center;
@@ -129,18 +164,19 @@
   }
 }
 
-/* Back Link Styling */
-.btn-link {
-  text-decoration: none;
-  color: #0066cc;
-  
-  &:hover {
-    color: #004499;
-    text-decoration: underline;
+@media (max-width: 576px) {
+  .mobile-receipts-header {
+    &__title {
+      font-size: 1.35rem;
+    }
+
+    &__back {
+      min-width: 100%;
+    }
   }
-  
-  img {
-    width: 16px;
-    height: 16px;
+
+  .mobile-receipts-content {
+    max-width: 100%;
+    margin-right: 0;
   }
 }

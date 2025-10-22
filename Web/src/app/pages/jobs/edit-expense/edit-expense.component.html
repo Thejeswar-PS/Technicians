@@ -42,9 +42,7 @@
     </div>
 
     <!-- Messages -->
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger" [innerHTML]="errorMessage"></div>
     
     <div *ngIf="successMessage" class="alert alert-success">
       {{ successMessage }}
@@ -77,8 +75,7 @@
             <div class="col-sm-9">
               <select 
                 class="form-select" 
-                formControlName="expType"
-                [disabled]="isEditMode">
+                formControlName="expType">
                 <option 
                   *ngFor="let type of expenseTypes" 
                   [value]="type.value">
@@ -249,7 +246,7 @@
         </button>
         <button 
           type="button" 
-          class="btn btn-secondary" 
+          class="btn btn-primary" 
           (click)="goBack()">
           <i class="bi bi-arrow-left me-1"></i>
           Cancel

@@ -2,8 +2,7 @@
 {
     public class TechPartsReceivedDto
     {
-        public string ServiceCallId { get; set; }
-        public List<int> ScidIncList { get; set; } 
-        public string MaintAuthId { get; set; }
+        public string CallNbr { get; set; }
+        public string scidIncs { get; set; }
     }
 }

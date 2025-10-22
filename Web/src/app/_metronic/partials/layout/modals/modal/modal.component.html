@@ -21,7 +21,7 @@
         [disabled]="modalConfig.disableDismissButton !== undefined && modalConfig.disableDismissButton()">
         {{ modalConfig.dismissButtonLabel }}
       </button>
-      <button type="button" class="btn btn-outline-primary" (click)="close()"
+  <button type="button" class="btn btn-primary" (click)="close()"
         *ngIf="modalConfig.hideCloseButton === undefined || !modalConfig.hideCloseButton()"
         [disabled]="modalConfig.disableCloseButton !== undefined && modalConfig.disableCloseButton()">
         {{ modalConfig.closeButtonLabel }}

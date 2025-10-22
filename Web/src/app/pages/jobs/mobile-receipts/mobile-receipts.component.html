@@ -2,21 +2,21 @@
 <div class="container-fluid">
   <!-- Header -->
   <div class="card">
-    <div class="card-header">
-      <div class="row align-items-center">
-        <div class="col-12 text-center">
-          <h3 class="mb-0 text-primary">
-            Service Call No: {{ callNbr }} -- Tech Name: {{ techName }}
-          </h3>
-        </div>
+    <div class="card-header border-0 py-4">
+      <div class="mobile-receipts-header">
+        <h3 class="mobile-receipts-header__title text-primary mb-0">
+          Service Call No: {{ callNbr }} -- Tech Name: {{ techName }}
+        </h3>
       </div>
-      <div class="row mt-2">
-        <div class="col-12">
-          <a href="javascript:void(0)" (click)="goBack()" class="btn btn-link p-0">
-            <img src="assets/media/icons/backnew.gif" alt="Back" class="me-2">
-            Back to Job Expenses
-          </a>
-        </div>
+      <div>
+        <button 
+          type="button"
+          class="btn btn-primary mobile-receipts-header__back"
+          (click)="goBack()"
+          [disabled]="loading">
+          <i class="bi bi-arrow-left me-2"></i>
+          Back to Job Expenses
+        </button>
       </div>
     </div>
   </div>
@@ -35,11 +35,11 @@
   </div>
 
   <!-- Main Content -->
-  <div *ngIf="!loading" class="mt-3">
+  <div *ngIf="!loading" class="mt-3 mobile-receipts-content">
     <!-- Title Section -->
     <div class="card">
       <div class="card-body text-center bg-light">
-        <h4 class="mb-0 fw-bold">Uploaded Receipts from Mobile Phone App</h4>
+        <h3 class="mb-0 fw-bolder">Uploaded Receipts from Mobile Phone App</h3>
       </div>
     </div>
 

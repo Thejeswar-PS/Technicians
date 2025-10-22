@@ -359,7 +359,7 @@ export class EquipmentDetailsComponent implements OnInit {
       console.log('Is Pre Job Safety Completed:', preJobSafetyResult?.isCompleted);
       if (!preJobSafetyResult) {
         this.errorMessage = 'Job Upload Failed : Pre Job Safety list must be completed before uploading job.<br/>' +
-                           `<a style="font-size:8pt;color:#7bb752;font-family:arial" href="../DTechJobSafety.aspx?CallNbr=${this.params.callNbr}">Go to Job Safety Page</a>`;
+                           `<a style="font-size:8pt;color:#7bb752;font-family:arial;cursor:pointer;" href="/#/jobs/job-safety?CallNbr=${this.params.callNbr}">Go to Job Safety Page</a>`;
         return;
       }
 
