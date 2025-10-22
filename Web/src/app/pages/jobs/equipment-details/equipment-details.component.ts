@@ -23,6 +23,7 @@ export class EquipmentDetailsComponent implements OnInit {
   // Data
   equipmentList: EquipmentDetail[] = [];
   uploadInfo: UploadInfo[] = [];
+  selectedEquipment: EquipmentDetail | null = null; // Track selected equipment for uploads
   
   // UI state
   loading = false;
@@ -40,6 +41,7 @@ export class EquipmentDetailsComponent implements OnInit {
   
     // File upload modal state
   showFileUploadModal = false;
+  isEquipmentFileUpload = false;  // Track if current upload is for equipment
   
   // Getter for template usage
   get jobId(): string {
@@ -134,11 +136,6 @@ export class EquipmentDetailsComponent implements OnInit {
       }
     } catch (error: any) {
       console.error('Error setting up button states:', error);
-      // Temporary fallback: Enable all buttons when API is not available
-      this.uploadJobEnabled = true;
-      this.uploadExpenseVisible = true;
-      this.uploadExpenseEnabled = true;
-      this.enableExpenseVisible = true;
     }
   }
 
@@ -250,27 +247,9 @@ export class EquipmentDetailsComponent implements OnInit {
     this.router.navigate([route], { queryParams: params });
   }
 
-  // Action methods
-  navigateToEquipmentSummary(equipment: EquipmentDetail): void {
-    this.router.navigate(['/equipment/summary'], {
-      queryParams: {
-        CallNbr: this.params.callNbr,
-        EquipNo: equipment.equipNo,
-        EquipID: equipment.equipId.toString(),
-        Type: equipment.equipType || '',
-        Tech: this.params.techId,
-        TechName: this.params.techName
-      }
-    });
-  }
-
   navigateToFileUpload(equipment: EquipmentDetail): void {
-    this.router.navigate(['/equipment/file-upload'], {
-      queryParams: {
-        EquipId: equipment.equipId.toString(),
-        TechID: this.params.techId
-      }
-    });
+    // Use modal instead of navigation for better UX
+    this.openEquipmentUploadFiles(equipment);
   }
 
   navigateToImageUpload(equipment: EquipmentDetail): void {
@@ -299,11 +278,34 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   openUploadFiles(): void {
+    // Make header upload work exactly like equipment upload
+    // Use the first equipment if available, or create a default one
+    if (this.equipmentList && this.equipmentList.length > 0) {
+      this.isEquipmentFileUpload = true;
+      this.selectedEquipment = this.equipmentList[0]; // Use first equipment
+    } else {
+      // If no equipment available, still set equipment mode with default values
+      this.isEquipmentFileUpload = true;
+      this.selectedEquipment = {
+        equipId: 1, // Default equipment ID
+        equipNo: 'DEFAULT',
+        equipType: 'JOB',
+        // ... other default properties
+      } as EquipmentDetail;
+    }
+    this.showFileUploadModal = true;
+  }
+
+  openEquipmentUploadFiles(equipment: EquipmentDetail): void {
+    this.isEquipmentFileUpload = true;
+    this.selectedEquipment = equipment;
     this.showFileUploadModal = true;
   }
 
   closeFileUploadModal(): void {
     this.showFileUploadModal = false;
+    this.isEquipmentFileUpload = false;
+    this.selectedEquipment = null;
     // Refresh upload info after closing modal (equivalent to legacy parent window refresh)
     this.loadUploadInfo();
   }

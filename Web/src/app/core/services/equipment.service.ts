@@ -390,8 +390,8 @@ export class EquipmentService {
    * Save or update equipment information
    * Matches your spEquipmentInsertUpdate API endpoint
    */
-  saveUpdateEquipmentInfo(request: UpdateEquipmentRequest): Observable<{ success: boolean; rowsAffected?: number; message?: string }> {
-    return this.http.post<{ success: boolean; rowsAffected?: number; message?: string }>(`${this.apiUrl}/EquipmentDetails/spEquipmentInsertUpdate`, request);
+  saveUpdateEquipmentInfo(request: UpdateEquipmentRequest): Observable<{ Message?: string; success?: boolean; rowsAffected?: number; message?: string }> {
+    return this.http.post<{ Message?: string; success?: boolean; rowsAffected?: number; message?: string }>(`${this.apiUrl}/EquipmentDetails/spEquipmentInsertUpdate`, request);
   }
 
   /**

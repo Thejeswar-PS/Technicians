@@ -48,6 +48,22 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   equipmentInfo: EditEquipmentInfo | null = null;
   boardDetails: EquipBoardDetail[] = [];
 
+  // Month options for capacitor date codes
+  monthOptions = [
+    { value: 'JAN', label: 'January' },
+    { value: 'FEB', label: 'February' },
+    { value: 'MAR', label: 'March' },
+    { value: 'APR', label: 'April' },
+    { value: 'MAY', label: 'May' },
+    { value: 'JUN', label: 'June' },
+    { value: 'JUL', label: 'July' },
+    { value: 'AUG', label: 'August' },
+    { value: 'SEP', label: 'September' },
+    { value: 'OCT', label: 'October' },
+    { value: 'NOV', label: 'November' },
+    { value: 'DEC', label: 'December' }
+  ];
+
   // UI state
   showBatteryPanel = false;
   showCapacitorPanel = false;
@@ -102,42 +118,42 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     });
 
     this.capacitorForm = this.fb.group({
-      dcfCapsPartNo: [''],
+      dcfCapsPartNo: ['', [Validators.maxLength(50)]],
       dcfQty: [null, [Validators.pattern(/^\d+$/)]],
       dcfMonth: [''],
       dcfYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       
-      acfipCapsPartNo: [''],
+      acfipCapsPartNo: ['', [Validators.maxLength(50)]],
       acfQty: [null, [Validators.pattern(/^\d+$/)]],
       acfMonth: [''],
       acfYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       
-      dcCommCapsPartNo: [''],
+      dcCommCapsPartNo: ['', [Validators.maxLength(50)]],
       commQty: [null, [Validators.pattern(/^\d+$/)]],
       commMonth: [''],
       commYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       
-      acfopCapsPartNo: [''],
+      acfopCapsPartNo: ['', [Validators.maxLength(50)]],
       acfopQty: [null, [Validators.pattern(/^\d+$/)]],
       acfopMonth: [''],
       acfopYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       
-      fansPartNo: [''],
+      fansPartNo: ['', [Validators.maxLength(100)]],
       fansQty: [null, [Validators.pattern(/^\d+$/)]],
       fansMonth: [''],
       fansYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       
-      blowersPartNo: [''],
+      blowersPartNo: ['', [Validators.maxLength(100)]],
       blowersQty: [null, [Validators.pattern(/^\d+$/)]],
       blowersMonth: [''],
       blowersYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       
-      miscPartNo: [''],
+      miscPartNo: ['', [Validators.maxLength(100)]],
       miscQty: [null, [Validators.pattern(/^\d+$/)]],
       miscMonth: [''],
       miscYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       
-      comments: ['']
+      comments: ['', [Validators.maxLength(1000)]]
     });
 
     this.boardDetailsForm = this.fb.group({
@@ -190,7 +206,8 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
           equipId: 0, // Force INSERT mode
           equipNo: this.equipNo,
           callNbr: this.callNbr,
-          equipType: 'UPS',
+          vendorId: '', // Required field - provide default
+          equipType: 'UPS', // Required field
           codeEquipmentStatus: 'Online'
         };
         this.boardDetails = [];
@@ -356,10 +373,40 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   }
 
   async onSave(): Promise<void> {
-    if (!this.validateForms()) {
-      this.toastr.error('Please correct the validation errors before saving.');
+    console.log('onSave() method called');
+    
+    // Mark all fields as touched to trigger validation display
+    this.markAllFieldsAsTouched();
+    
+    const validationResult = this.validateForms();
+    console.log('validateForms() result:', validationResult);
+    
+    if (!validationResult) {
+      console.log('Validation failed - stopping execution');
+      
+      // Check for specific maxlength errors to provide better messaging
+      const hasLengthErrors = this.capacitorForm.get('dcCommCapsPartNo')?.hasError('maxlength') ||
+                              this.capacitorForm.get('acfopCapsPartNo')?.hasError('maxlength') ||
+                              this.capacitorForm.get('dcfCapsPartNo')?.hasError('maxlength') ||
+                              this.capacitorForm.get('acfipCapsPartNo')?.hasError('maxlength') ||
+                              this.capacitorForm.get('fansPartNo')?.hasError('maxlength') ||
+                              this.capacitorForm.get('blowersPartNo')?.hasError('maxlength') ||
+                              this.capacitorForm.get('miscPartNo')?.hasError('maxlength') ||
+                              this.capacitorForm.get('comments')?.hasError('maxlength');
+      
+      if (hasLengthErrors) {
+        console.log('Length errors detected - showing toast message');
+        this.toastr.error('One or more fields exceed the maximum allowed length. Please check the highlighted fields.');
+      } else {
+        console.log('Other validation errors - showing generic toast message');
+        this.toastr.error('Please correct the validation errors before saving.');
+      }
+      
+      console.log('Returning early from onSave() - no API call will be made');
       return;
     }
+    
+    console.log('Validation passed - proceeding with save operation');
 
     this.saving = true;
     this.errorMessage = '';
@@ -368,15 +415,64 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     try {
       const request: UpdateEquipmentRequest = this.buildUpdateRequest();
       
+      // ABSOLUTE FINAL SAFETY CHECK - validate field lengths before API call
+      console.log('Final safety check - examining request object before API call');
+      const validationErrors: string[] = [];
+      
+      // Log all field lengths for debugging
+      console.log('Field lengths in request:', {
+        dcfCapsPartNo: request.dcfCapsPartNo?.length || 0,
+        acfipCapsPartNo: request.acfipCapsPartNo?.length || 0,
+        dcCommCapsPartNo: request.dcCommCapsPartNo?.length || 0,
+        acfopCapsPartNo: request.acfopCapsPartNo?.length || 0,
+        fansPartNo: request.fansPartNo?.length || 0,
+        blowersPartNo: request.blowersPartNo?.length || 0,
+        miscPartNo: request.miscPartNo?.length || 0,
+        comments: request.comments?.length || 0
+      });
+      
+      if (request.dcfCapsPartNo && request.dcfCapsPartNo.length > 50) {
+        validationErrors.push(`DC Caps Part Number (${request.dcfCapsPartNo.length} chars) exceeds 50 character limit`);
+      }
+      if (request.acfipCapsPartNo && request.acfipCapsPartNo.length > 50) {
+        validationErrors.push(`AC Input Caps Part Number (${request.acfipCapsPartNo.length} chars) exceeds 50 character limit`);
+      }
+      if (request.dcCommCapsPartNo && request.dcCommCapsPartNo.length > 50) {
+        validationErrors.push(`AC Output WYE Caps Part Number (${request.dcCommCapsPartNo.length} chars) exceeds 50 character limit`);
+      }
+      if (request.acfopCapsPartNo && request.acfopCapsPartNo.length > 50) {
+        validationErrors.push(`AC Output Delta Caps Part Number (${request.acfopCapsPartNo.length} chars) exceeds 50 character limit`);
+      }
+      if (request.fansPartNo && request.fansPartNo.length > 100) {
+        validationErrors.push(`Fans Part Number (${request.fansPartNo.length} chars) exceeds 100 character limit`);
+      }
+      if (request.blowersPartNo && request.blowersPartNo.length > 100) {
+        validationErrors.push(`Blowers Part Number (${request.blowersPartNo.length} chars) exceeds 100 character limit`);
+      }
+      if (request.miscPartNo && request.miscPartNo.length > 100) {
+        validationErrors.push(`Miscellaneous Part Number (${request.miscPartNo.length} chars) exceeds 100 character limit`);
+      }
+      if (request.comments && request.comments.length > 1000) {
+        validationErrors.push(`Comments (${request.comments.length} chars) exceeds 1000 character limit`);
+      }
+
+      if (validationErrors.length > 0) {
+        this.saving = false;
+        const errorMsg = 'FINAL SAFETY CHECK FAILED - Field length validation failed:\n' + validationErrors.join('\n');
+        this.toastr.error(errorMsg);
+        console.error('***CRITICAL*** Pre-API validation failed - BLOCKING API CALL:', validationErrors);
+        console.error('This should NEVER happen if form validation is working correctly');
+        return;
+      }
+      
+      console.log('***API CALL STARTING*** - All validations passed, making API request');
       const response = await this.equipmentService.saveUpdateEquipmentInfo(request).toPromise();
       
-      if (response?.success) {
-        this.successMessage = 'Equipment updated successfully!';
-        this.toastr.success(this.successMessage);
-      } else {
-        this.errorMessage = response?.message || 'Failed to update equipment';
-        this.toastr.error(this.errorMessage);
-      }
+      // API returns { Message: "Equipment inserted or updated successfully" } on success
+      // Since we get here, the request was successful (no exception thrown)
+      const successMsg = (response as any)?.Message || response?.message || 'Equipment updated successfully!';
+      this.successMessage = successMsg;
+      this.toastr.success(this.successMessage);
       
     } catch (error: any) {
       this.errorMessage = error.error?.message || error.message || 'Failed to save equipment';
@@ -430,11 +526,86 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
           isValid = false;
         }
       });
+
+      // Explicitly validate maxlength for part number fields
+      const partNumberFields = [
+        { name: 'dcfCapsPartNo', maxLength: 50 },
+        { name: 'acfipCapsPartNo', maxLength: 50 },
+        { name: 'dcCommCapsPartNo', maxLength: 50 },
+        { name: 'acfopCapsPartNo', maxLength: 50 },
+        { name: 'fansPartNo', maxLength: 100 },
+        { name: 'blowersPartNo', maxLength: 100 },
+        { name: 'miscPartNo', maxLength: 100 },
+        { name: 'comments', maxLength: 1000 }
+      ];
+
+      partNumberFields.forEach(field => {
+        const control = this.capacitorForm.get(field.name);
+        if (control?.value) {
+          // Clean the value by removing ALL whitespace before checking length
+          const cleanedValue = control.value.replace(/\s+/g, '');
+          
+          // Update the control with cleaned value
+          control.setValue(cleanedValue);
+          
+          if (cleanedValue.length > field.maxLength) {
+            control.setErrors({ 'maxlength': { requiredLength: field.maxLength, actualLength: cleanedValue.length } });
+            isValid = false;
+          }
+        }
+      });
     }
     
     const finalValid = isValid && this.basicInfoForm.valid && 
            (!this.showCapacitorPanel || this.capacitorForm.valid) &&
            (!this.showBoardPanel || this.boardDetailsForm.valid);
+    
+    // Additional safety check for field lengths with aggressive whitespace cleaning
+    if (this.showCapacitorPanel) {
+      const capacitorData = this.capacitorForm.value;
+      
+      // Clean all values by removing whitespace and check lengths
+      const cleanedData = {
+        dcCommCapsPartNo: capacitorData.dcCommCapsPartNo ? capacitorData.dcCommCapsPartNo.replace(/\s+/g, '') : '',
+        acfopCapsPartNo: capacitorData.acfopCapsPartNo ? capacitorData.acfopCapsPartNo.replace(/\s+/g, '') : '',
+        dcfCapsPartNo: capacitorData.dcfCapsPartNo ? capacitorData.dcfCapsPartNo.replace(/\s+/g, '') : '',
+        acfipCapsPartNo: capacitorData.acfipCapsPartNo ? capacitorData.acfipCapsPartNo.replace(/\s+/g, '') : '',
+        fansPartNo: capacitorData.fansPartNo ? capacitorData.fansPartNo.replace(/\s+/g, '') : '',
+        blowersPartNo: capacitorData.blowersPartNo ? capacitorData.blowersPartNo.replace(/\s+/g, '') : '',
+        miscPartNo: capacitorData.miscPartNo ? capacitorData.miscPartNo.replace(/\s+/g, '') : '',
+        comments: capacitorData.comments ? capacitorData.comments.replace(/\s+/g, '') : ''
+      };
+      
+      console.log('Cleaned field lengths:', {
+        dcCommCapsPartNo: cleanedData.dcCommCapsPartNo.length,
+        acfopCapsPartNo: cleanedData.acfopCapsPartNo.length,
+        dcfCapsPartNo: cleanedData.dcfCapsPartNo.length,
+        acfipCapsPartNo: cleanedData.acfipCapsPartNo.length,
+        fansPartNo: cleanedData.fansPartNo.length,
+        blowersPartNo: cleanedData.blowersPartNo.length,
+        miscPartNo: cleanedData.miscPartNo.length,
+        comments: cleanedData.comments.length
+      });
+      
+      if ((cleanedData.dcCommCapsPartNo && cleanedData.dcCommCapsPartNo.length > 50) ||
+          (cleanedData.acfopCapsPartNo && cleanedData.acfopCapsPartNo.length > 50) ||
+          (cleanedData.dcfCapsPartNo && cleanedData.dcfCapsPartNo.length > 50) ||
+          (cleanedData.acfipCapsPartNo && cleanedData.acfipCapsPartNo.length > 50) ||
+          (cleanedData.fansPartNo && cleanedData.fansPartNo.length > 100) ||
+          (cleanedData.blowersPartNo && cleanedData.blowersPartNo.length > 100) ||
+          (cleanedData.miscPartNo && cleanedData.miscPartNo.length > 100) ||
+          (cleanedData.comments && cleanedData.comments.length > 1000)) {
+        console.error('Final validation check failed - CLEANED field lengths exceed limits');
+        return false;
+      }
+      
+      // Update form controls with cleaned values
+      Object.keys(cleanedData).forEach(key => {
+        if (this.capacitorForm.get(key)) {
+          this.capacitorForm.get(key)?.setValue(cleanedData[key as keyof typeof cleanedData]);
+        }
+      });
+    }
     
     return finalValid;
   }
@@ -453,68 +624,75 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     const basicData = this.basicInfoForm.value;
     const capacitorData = this.showCapacitorPanel ? this.capacitorForm.value : {};
     
+    // Helper function to aggressively remove ALL whitespace
+    const trimString = (value: any): string => {
+      if (!value || typeof value !== 'string') return '';
+      // Remove ALL whitespace characters (spaces, tabs, newlines, etc.)
+      return value.replace(/\s+/g, '');
+    };
+    
       // Get the current user from auth service
       const currentUser = this.authService.currentUserValue?.userName || 'system';
       
       return {
-        // Exact parameter names matching stored procedure
-        CallNbr: this.callNbr,
-        EquipId: this.equipId,
-        EquipNo: basicData.equipNo || this.equipNo,
-        VendorId: basicData.vendorId || '',
-        EquipType: basicData.equipType || 'UPS',
-        Version: basicData.version || '',
-        SerialID: basicData.serialId || '',
-        SVC_Asset_Tag: basicData.tag || '',
-        Location: basicData.location || '',
-        ReadingType: basicData.readingType || '1',
-        Contract: basicData.contract || '',
-        TaskDesc: basicData.taskDescription || '',
-        BatPerStr: this.parseIntOrZero(basicData.batteriesPerString),
-        EquipStatus: basicData.status || 'Online',
-        MaintAuth: currentUser,
-        KVA: basicData.kva?.toString() || '0',
-        EquipMonth: basicData.dateCodeMonth || '',
-        EquipYear: this.parseIntOrZero(basicData.dateCodeYear),
+        // Updated to use camelCase property names matching our interface
+        callNbr: this.callNbr,
+        equipId: this.equipId,
+        equipNo: basicData.equipNo || this.equipNo,
+        vendorId: basicData.vendorId || '',
+        equipType: basicData.equipType || 'UPS',
+        version: basicData.version || '',
+        serialID: basicData.serialId || '',
+        svC_Asset_Tag: basicData.tag || '',
+        location: basicData.location || '',
+        readingType: basicData.readingType || '1',
+        contract: basicData.contract || '',
+        taskDescription: basicData.taskDescription || '',
+        batteriesPerString: this.parseIntOrZero(basicData.batteriesPerString),
+        codeEquipmentStatus: basicData.status || 'Online',
+        maint_Auth_ID: currentUser,
+        upskva: basicData.kva?.toString() || '0',
+        equipMonth: basicData.dateCodeMonth || '',
+        equipYear: this.parseIntOrZero(basicData.dateCodeYear),
         
-        // Capacitor info - integers must be 0, not null (C# DTO expects int, not int?)
-        DCFCapsPartNo: capacitorData.dcfCapsPartNo || '',
-        ACFIPCapsPartNo: capacitorData.acfipCapsPartNo || '',
-        DCFQty: this.parseIntOrZero(capacitorData.dcfQty),
-        ACFIPQty: this.parseIntOrZero(capacitorData.acfQty),
-        DCFCapsMonthName: capacitorData.dcfMonth || '',
-        ACFIPCapsMonthName: capacitorData.acfMonth || '',
-        DCFCapsYear: 0, // Match backend DTO property name (with F)
-        ACFIPYear: 0, // Force to 0 to test
+        // Capacitor info - using camelCase property names with trimmed values
+        dcfCapsPartNo: trimString(capacitorData.dcfCapsPartNo),
+        acfipCapsPartNo: trimString(capacitorData.acfipCapsPartNo),
+        dcfQty: this.parseIntOrZero(capacitorData.dcfQty),
+        acfipQty: this.parseIntOrZero(capacitorData.acfQty),
+        dcfCapsMonthName: capacitorData.dcfMonth || '',
+        acfipCapsMonthName: capacitorData.acfMonth || '',
+        dcfCapsYear: this.parseIntOrZero(capacitorData.dcfYear), // Updated to use form value
+        acfipYear: this.parseIntOrZero(capacitorData.acfYear), // Updated to use form value
         
-        DCCommCapsPartNo: capacitorData.dcCommCapsPartNo || '',
-        ACFOPCapsPartNo: capacitorData.acfopCapsPartNo || '',
-        DCCommQty: this.parseIntOrZero(capacitorData.commQty),
-        ACFOPQty: this.parseIntOrZero(capacitorData.acfopQty),
-        DCCommCapsMonthName: capacitorData.commMonth || '',
-        ACFOPCapsMonthName: capacitorData.acfopMonth || '',
-        DCCommCapsYear: 0, // Force to 0 to test
-        ACFOPYear: 0, // Force to 0 to test
+        dcCommCapsPartNo: trimString(capacitorData.dcCommCapsPartNo),
+        acfopCapsPartNo: trimString(capacitorData.acfopCapsPartNo),
+        dcCommQty: this.parseIntOrZero(capacitorData.commQty),
+        acfopQty: this.parseIntOrZero(capacitorData.acfopQty),
+        dcCommCapsMonthName: capacitorData.commMonth || '',
+        acfopCapsMonthName: capacitorData.acfopMonth || '',
+        dcCommCapsYear: this.parseIntOrZero(capacitorData.commYear), // Updated to use form value
+        acfopYear: this.parseIntOrZero(capacitorData.acfopYear), // Updated to use form value
         
-        BatteriesPerPack: this.parseIntOrZero(basicData.batteryPackCount),
-        VFSelection: basicData.floatVoltageSelection || 'PS',
+        batteriesPerPack: this.parseIntOrZero(basicData.batteryPackCount),
+        vfSelection: basicData.floatVoltageSelection || 'PS',
         
-        FansPartNo: capacitorData.fansPartNo || '',
-        FansQty: this.parseIntOrZero(capacitorData.fansQty),
-        FansMonth: capacitorData.fansMonth || '',
-        FansYear: this.parseIntOrZero(capacitorData.fansYear),
+        fansPartNo: trimString(capacitorData.fansPartNo),
+        fansQty: this.parseIntOrZero(capacitorData.fansQty),
+        fansMonth: capacitorData.fansMonth || '',
+        fansYear: this.parseIntOrZero(capacitorData.fansYear),
         
-        BlowersPartNo: capacitorData.blowersPartNo || '',
-        BlowersQty: this.parseIntOrZero(capacitorData.blowersQty),
-        BlowersMonth: capacitorData.blowersMonth || '',
-        BlowersYear: this.parseIntOrZero(capacitorData.blowersYear),
+        blowersPartNo: trimString(capacitorData.blowersPartNo),
+        blowersQty: this.parseIntOrZero(capacitorData.blowersQty),
+        blowersMonth: capacitorData.blowersMonth || '',
+        blowersYear: this.parseIntOrZero(capacitorData.blowersYear),
         
-        MiscPartNo: capacitorData.miscPartNo || '',
-        MiscQty: this.parseIntOrZero(capacitorData.miscQty),
-        MiscMonth: capacitorData.miscMonth || '',
-        MiscYear: this.parseIntOrZero(capacitorData.miscYear),
+        miscPartNo: trimString(capacitorData.miscPartNo),
+        miscQty: this.parseIntOrZero(capacitorData.miscQty),
+        miscMonth: capacitorData.miscMonth || '',
+        miscYear: this.parseIntOrZero(capacitorData.miscYear),
         
-        Comments: capacitorData.comments || ''
+        comments: trimString(capacitorData.comments)
     };
   }
 
@@ -612,5 +790,115 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     }
     const parsed = parseInt(value);
     return isNaN(parsed) ? 0 : parsed;
+  }
+
+  // Helper to truncate strings to specified length
+  private truncateString(value: string, maxLength: number): string {
+    if (!value) return '';
+    return value.length > maxLength ? value.substring(0, maxLength) : value;
+  }
+
+  // Method to handle input change and auto-truncate if necessary
+  onPartNumberInput(event: Event, fieldName: string, maxLength: number): void {
+    const input = event.target as HTMLInputElement;
+    
+    // AGGRESSIVE whitespace removal - remove ALL whitespace characters
+    let inputValue = input.value.replace(/\s+/g, ''); // Remove all whitespace (spaces, tabs, newlines)
+    
+    if (inputValue.length > maxLength) {
+      const truncatedValue = inputValue.substring(0, maxLength);
+      input.value = truncatedValue;
+      this.capacitorForm.get(fieldName)?.setValue(truncatedValue);
+      // Show a brief warning
+      this.toastr.warning(`${this.getFieldLabel(fieldName)} has been truncated to ${maxLength} characters.`, '', {
+        timeOut: 2000
+      });
+    } else {
+      // Update both the input and form control with cleaned value
+      input.value = inputValue;
+      this.capacitorForm.get(fieldName)?.setValue(inputValue);
+    }
+  }
+
+  // Method to aggressively remove whitespace when user leaves the field
+  onPartNumberBlur(event: Event, fieldName: string): void {
+    const input = event.target as HTMLInputElement;
+    // Remove ALL whitespace characters completely
+    const cleanedValue = input.value.replace(/\s+/g, '');
+    
+    // Update both the input field and form control with cleaned value
+    input.value = cleanedValue;
+    this.capacitorForm.get(fieldName)?.setValue(cleanedValue);
+    
+    console.log(`Field ${fieldName} cleaned: "${cleanedValue}" (length: ${cleanedValue.length})`);
+  }
+
+  // Method to handle focus - clear whitespace and position cursor at start
+  onPartNumberFocus(event: Event, fieldName: string): void {
+    const input = event.target as HTMLInputElement;
+    
+    // Aggressively remove ALL whitespace
+    const cleanedValue = input.value.replace(/\s+/g, '');
+    input.value = cleanedValue;
+    this.capacitorForm.get(fieldName)?.setValue(cleanedValue);
+    
+    // Set cursor to the beginning if field is empty
+    setTimeout(() => {
+      if (cleanedValue === '') {
+        input.setSelectionRange(0, 0);
+      }
+    }, 0);
+    
+    console.log(`Field ${fieldName} focused and cleaned: "${cleanedValue}" (length: ${cleanedValue.length})`);
+  }
+
+  // Helper method to check if a field has a specific error
+  hasError(fieldName: string, formGroup: FormGroup, errorType: string): boolean {
+    const field = formGroup.get(fieldName);
+    return !!(field && field.hasError(errorType) && (field.dirty || field.touched));
+  }
+
+  // Helper method to get error message for a field
+  getErrorMessage(fieldName: string, formGroup: FormGroup): string {
+    const field = formGroup.get(fieldName);
+    if (!field) return '';
+
+    if (field.hasError('required')) {
+      return `${this.getFieldLabel(fieldName)} is required`;
+    }
+    if (field.hasError('maxlength')) {
+      const maxLength = field.getError('maxlength').requiredLength;
+      return `${this.getFieldLabel(fieldName)} cannot exceed ${maxLength} characters`;
+    }
+    if (field.hasError('pattern')) {
+      return `${this.getFieldLabel(fieldName)} has an invalid format`;
+    }
+    return '';
+  }
+
+  // Helper method to get user-friendly field labels
+  private getFieldLabel(fieldName: string): string {
+    const labels: { [key: string]: string } = {
+      'dcfCapsPartNo': 'DC Caps Part Number',
+      'acfipCapsPartNo': 'AC Input Caps Part Number',
+      'dcCommCapsPartNo': 'AC Output WYE Caps Part Number',
+      'acfopCapsPartNo': 'AC Output Delta Caps Part Number',
+      'fansPartNo': 'Fans Part Number',
+      'blowersPartNo': 'Blowers Part Number',
+      'miscPartNo': 'Miscellaneous Part Number',
+      'comments': 'Comments'
+    };
+    return labels[fieldName] || fieldName;
+  }
+
+  // Mark all form fields as touched to trigger validation display
+  private markAllFieldsAsTouched(): void {
+    this.basicInfoForm.markAllAsTouched();
+    if (this.showCapacitorPanel) {
+      this.capacitorForm.markAllAsTouched();
+    }
+    if (this.showBoardPanel) {
+      this.boardDetailsForm.markAllAsTouched();
+    }
   }
 }

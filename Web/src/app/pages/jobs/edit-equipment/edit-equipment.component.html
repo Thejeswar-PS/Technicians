@@ -287,7 +287,14 @@
                 <div class="row g-2">
                   <div class="col-12 col-md-6">
                     <label class="form-label small">DC Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="dcfCapsPartNo">
+                    <input type="text" class="form-control form-control-sm" formControlName="dcfCapsPartNo" maxlength="50"
+                           [class.is-invalid]="hasError('dcfCapsPartNo', capacitorForm, 'maxlength')"
+                           (input)="onPartNumberInput($event, 'dcfCapsPartNo', 50)"
+                           (focus)="onPartNumberFocus($event, 'dcfCapsPartNo')"
+                           (blur)="onPartNumberBlur($event, 'dcfCapsPartNo')">
+                    <div class="invalid-feedback" *ngIf="hasError('dcfCapsPartNo', capacitorForm, 'maxlength')">
+                      {{ getErrorMessage('dcfCapsPartNo', capacitorForm) }}
+                    </div>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Qty</label>
@@ -295,7 +302,12 @@
                   </div>
                   <div class="col-6 col-md-4">
                     <label class="form-label small">Month</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="dcfMonth">
+                    <select class="form-select form-control-sm" formControlName="dcfMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let month of monthOptions" [value]="month.value">
+                        {{ month.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Year</label>
@@ -310,7 +322,14 @@
                 <div class="row g-2">
                   <div class="col-12 col-md-6">
                     <label class="form-label small">AC I/P Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="acfipCapsPartNo">
+                    <input type="text" class="form-control form-control-sm" formControlName="acfipCapsPartNo" maxlength="50"
+                           [class.is-invalid]="hasError('acfipCapsPartNo', capacitorForm, 'maxlength')"
+                           (input)="onPartNumberInput($event, 'acfipCapsPartNo', 50)"
+                           (focus)="onPartNumberFocus($event, 'acfipCapsPartNo')"
+                           (blur)="onPartNumberBlur($event, 'acfipCapsPartNo')">
+                    <div class="invalid-feedback" *ngIf="hasError('acfipCapsPartNo', capacitorForm, 'maxlength')">
+                      {{ getErrorMessage('acfipCapsPartNo', capacitorForm) }}
+                    </div>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Qty</label>
@@ -318,7 +337,12 @@
                   </div>
                   <div class="col-6 col-md-4">
                     <label class="form-label small">Month</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="acfMonth">
+                    <select class="form-select form-control-sm" formControlName="acfMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let month of monthOptions" [value]="month.value">
+                        {{ month.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Year</label>
@@ -333,7 +357,14 @@
                 <div class="row g-2">
                   <div class="col-12 col-md-6">
                     <label class="form-label small">AC O/P WYE Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="dcCommCapsPartNo">
+                    <input type="text" class="form-control form-control-sm" formControlName="dcCommCapsPartNo" maxlength="50"
+                           [class.is-invalid]="hasError('dcCommCapsPartNo', capacitorForm, 'maxlength')"
+                           (input)="onPartNumberInput($event, 'dcCommCapsPartNo', 50)"
+                           (focus)="onPartNumberFocus($event, 'dcCommCapsPartNo')"
+                           (blur)="onPartNumberBlur($event, 'dcCommCapsPartNo')">
+                    <div class="invalid-feedback" *ngIf="hasError('dcCommCapsPartNo', capacitorForm, 'maxlength')">
+                      {{ getErrorMessage('dcCommCapsPartNo', capacitorForm) }}
+                    </div>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Qty</label>
@@ -341,7 +372,12 @@
                   </div>
                   <div class="col-6 col-md-4">
                     <label class="form-label small">Month</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="commMonth">
+                    <select class="form-select form-control-sm" formControlName="commMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let month of monthOptions" [value]="month.value">
+                        {{ month.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Year</label>
@@ -356,7 +392,14 @@
                 <div class="row g-2">
                   <div class="col-12 col-md-6">
                     <label class="form-label small">AC O/P Delta Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="acfopCapsPartNo">
+                    <input type="text" class="form-control form-control-sm" formControlName="acfopCapsPartNo" maxlength="50"
+                           [class.is-invalid]="hasError('acfopCapsPartNo', capacitorForm, 'maxlength')"
+                           (input)="onPartNumberInput($event, 'acfopCapsPartNo', 50)"
+                           (focus)="onPartNumberFocus($event, 'acfopCapsPartNo')"
+                           (blur)="onPartNumberBlur($event, 'acfopCapsPartNo')">
+                    <div class="invalid-feedback" *ngIf="hasError('acfopCapsPartNo', capacitorForm, 'maxlength')">
+                      {{ getErrorMessage('acfopCapsPartNo', capacitorForm) }}
+                    </div>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Qty</label>
@@ -364,7 +407,12 @@
                   </div>
                   <div class="col-6 col-md-4">
                     <label class="form-label small">Month</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="acfopMonth">
+                    <select class="form-select form-control-sm" formControlName="acfopMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let month of monthOptions" [value]="month.value">
+                        {{ month.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Year</label>
@@ -379,7 +427,13 @@
                 <div class="row g-2">
                   <div class="col-12 col-md-6">
                     <label class="form-label small">Fans Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="fansPartNo">
+                    <input type="text" class="form-control form-control-sm" formControlName="fansPartNo" maxlength="100"
+                           [class.is-invalid]="hasError('fansPartNo', capacitorForm, 'maxlength')"
+                           (focus)="onPartNumberFocus($event, 'fansPartNo')"
+                           (blur)="onPartNumberBlur($event, 'fansPartNo')">
+                    <div class="invalid-feedback" *ngIf="hasError('fansPartNo', capacitorForm, 'maxlength')">
+                      {{ getErrorMessage('fansPartNo', capacitorForm) }}
+                    </div>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Qty</label>
@@ -387,7 +441,12 @@
                   </div>
                   <div class="col-6 col-md-4">
                     <label class="form-label small">Month</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="fansMonth">
+                    <select class="form-select form-control-sm" formControlName="fansMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let month of monthOptions" [value]="month.value">
+                        {{ month.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Year</label>
@@ -402,7 +461,13 @@
                 <div class="row g-2">
                   <div class="col-12 col-md-6">
                     <label class="form-label small">Blowers Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="blowersPartNo">
+                    <input type="text" class="form-control form-control-sm" formControlName="blowersPartNo" maxlength="100"
+                           [class.is-invalid]="hasError('blowersPartNo', capacitorForm, 'maxlength')"
+                           (focus)="onPartNumberFocus($event, 'blowersPartNo')"
+                           (blur)="onPartNumberBlur($event, 'blowersPartNo')">
+                    <div class="invalid-feedback" *ngIf="hasError('blowersPartNo', capacitorForm, 'maxlength')">
+                      {{ getErrorMessage('blowersPartNo', capacitorForm) }}
+                    </div>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Qty</label>
@@ -410,7 +475,12 @@
                   </div>
                   <div class="col-6 col-md-4">
                     <label class="form-label small">Month</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="blowersMonth">
+                    <select class="form-select form-control-sm" formControlName="blowersMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let month of monthOptions" [value]="month.value">
+                        {{ month.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Year</label>
@@ -425,7 +495,13 @@
                 <div class="row g-2">
                   <div class="col-12 col-md-6">
                     <label class="form-label small">Miscellaneous Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="miscPartNo">
+                    <input type="text" class="form-control form-control-sm" formControlName="miscPartNo" maxlength="100"
+                           [class.is-invalid]="hasError('miscPartNo', capacitorForm, 'maxlength')"
+                           (focus)="onPartNumberFocus($event, 'miscPartNo')"
+                           (blur)="onPartNumberBlur($event, 'miscPartNo')">
+                    <div class="invalid-feedback" *ngIf="hasError('miscPartNo', capacitorForm, 'maxlength')">
+                      {{ getErrorMessage('miscPartNo', capacitorForm) }}
+                    </div>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Qty</label>
@@ -433,7 +509,12 @@
                   </div>
                   <div class="col-6 col-md-4">
                     <label class="form-label small">Month</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="miscMonth">
+                    <select class="form-select form-control-sm" formControlName="miscMonth">
+                      <option value="">Select Month</option>
+                      <option *ngFor="let month of monthOptions" [value]="month.value">
+                        {{ month.label }}
+                      </option>
+                    </select>
                   </div>
                   <div class="col-3">
                     <label class="form-label small">Year</label>
@@ -448,8 +529,15 @@
                 <textarea 
                   class="form-control form-control-sm" 
                   rows="4"
-                  formControlName="comments">
+                  formControlName="comments"
+                  maxlength="1000"
+                  [class.is-invalid]="hasError('comments', capacitorForm, 'maxlength')"
+                  (focus)="onPartNumberFocus($event, 'comments')"
+                  (blur)="onPartNumberBlur($event, 'comments')">
                 </textarea>
+                <div class="invalid-feedback" *ngIf="hasError('comments', capacitorForm, 'maxlength')">
+                  {{ getErrorMessage('comments', capacitorForm) }}
+                </div>
               </div>
             </form>
           </div>

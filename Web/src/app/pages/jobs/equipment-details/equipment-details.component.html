@@ -155,7 +155,6 @@
                 <th class="min-w-200px">Location</th>
                 <th class="min-w-150px">Status</th>
                 <th class="min-w-120px">Modified</th>
-                <th class="min-w-80px">Summary</th>
                 <th class="min-w-80px">Files</th>
                 <th class="min-w-80px">Images</th>
                 <th class="min-w-80px">Mode</th>
@@ -218,16 +217,7 @@
                 <!-- Modified Date -->
                 <td>{{ equipment.last_Modifed | date : "dd-MMM-yyyy" }}</td>
 
-                <!-- Summary -->
-                <td>
-                  <a
-                    href="javascript:void(0)"
-                    (click)="navigateToEquipmentSummary(equipment)"
-                    class="text-primary"
-                  >
-                    Click Here
-                  </a>
-                </td>
+                <!-- Summary column removed -->
 
                 <!-- Files -->
                 <td>
@@ -302,7 +292,8 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="fileUploadModalLabel">
-          <i class="bi bi-cloud-upload me-2"></i>Upload Files - Job {{ jobId }}
+          <i class="bi bi-cloud-upload me-2"></i>
+          {{ isEquipmentFileUpload ? 'Upload Files - Equipment ' + selectedEquipment?.equipId : 'Upload Files - Job ' + jobId }}
         </h5>
         <button
           type="button"
@@ -313,7 +304,11 @@
       </div>
       <div class="modal-body p-4">
         <!-- File Upload Component -->
-        <app-file-upload [jobId]="jobId" (onClose)="closeFileUploadModal()">
+        <app-file-upload 
+          [jobId]="isEquipmentFileUpload ? undefined : jobId"
+          [equipmentId]="isEquipmentFileUpload ? selectedEquipment?.equipId : undefined"
+          [techId]="isEquipmentFileUpload ? params.techId : undefined"
+          (onClose)="closeFileUploadModal()">
         </app-file-upload>
       </div>
     </div>

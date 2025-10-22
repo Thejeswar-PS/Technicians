@@ -1,22 +1,23 @@
 export interface EditEquipmentInfo {
-  // Basic Equipment Info - matching your legacy DisplayEquipment() method
-  callNbr?: string;
-  equipId: number;
-  equipNo: string;
+  // Basic Equipment Info - matching C# DTO exactly
+  callNbr: string; // Required in C# DTO
+  equipId: number; // Required in C# DTO
+  equipNo: string; // Required in C# DTO
   serialID?: string; // Maps to txtSvcSID
   location?: string; // Maps to txtLocation
-  vendorId?: string; // Maps to txtVendorID
+  vendorId: string; // Required in C# DTO
   version?: string; // Maps to txtVersion
   svC_Asset_Tag?: string; // Maps to txtTag - matches API response case
   contract?: string; // Maps to txtContract
   codeEquipmentStatus?: string; // Maps to ddlStatus
   taskDescription?: string; // Maps to txtDesc
-  upskva?: number; // Maps to txtKVA
+  upskva?: string; // Changed to string to match C# DTO with NumericToStringConverter
   readingType?: string; // Maps to ddlReadingType
-  batteriesPerString?: number; // Maps to txtBattNo
-  equipType?: string; // Maps to ddlEquipType
+  batteriesPerString?: number; // Maps to txtBattNo (BatPerStr in C# DTO)
+  equipType: string; // Required in C# DTO
   equipMonth?: string; // Maps to txtDateCodeMonth
   equipYear?: number; // Maps to txtDateCodeYear
+  maint_Auth_ID?: string; // Missing property from C# DTO
   
   // Capacitor Information - matching your legacy code
   dcfCapsPartNo?: string; // Maps to txtDCFCapsNo
@@ -77,61 +78,115 @@ export interface EquipBoardDetail {
 }
 
 export interface UpdateEquipmentRequest {
-  // Parameter names must match stored procedure exactly
-  CallNbr: string;
-  EquipId: number;
-  EquipNo: string;
-  VendorId?: string;
-  EquipType: string;
-  Version?: string;
-  SerialID?: string;
-  SVC_Asset_Tag?: string;
-  Location?: string;
-  ReadingType?: string;
-  Contract?: string;
-  TaskDesc?: string;
-  BatPerStr?: number;
-  EquipStatus: string;
-  MaintAuth?: string;
-  KVA?: string;
-  EquipMonth?: string;
-  EquipYear?: number;
-  DCFCapsPartNo?: string;
-  ACFIPCapsPartNo?: string;
-  DCFQty?: number;
-  ACFIPQty?: number;
-  DCFCapsMonthName?: string;
-  ACFIPCapsMonthName?: string;
-  DCFCapsYear?: number;  // Backend DTO uses DCFCapsYear (with F)
-  ACFIPYear?: number;
-  DCCommCapsPartNo?: string;
-  ACFOPCapsPartNo?: string;
-  DCCommQty?: number;
-  ACFOPQty?: number;
-  DCCommCapsMonthName?: string;
-  ACFOPCapsMonthName?: string;
-  DCCommCapsYear?: number;
-  ACFOPYear?: number;
-  BatteriesPerPack?: number;
-  VFSelection?: string;
-  FansPartNo?: string;
-  FansQty?: number;
-  FansMonth?: string;
-  FansYear?: number;
-  BlowersPartNo?: string;
-  BlowersQty?: number;
-  BlowersMonth?: string;
-  BlowersYear?: number;
-  MiscPartNo?: string;
-  MiscQty?: number;
-  MiscMonth?: string;
-  MiscYear?: number;
-  Comments?: string;
+  // Parameter names must match C# DTO exactly
+  callNbr: string; // Required
+  equipId: number; // Required
+  equipNo: string; // Required
+  vendorId: string; // Required
+  equipType: string; // Required
+  version?: string;
+  serialID?: string;
+  svC_Asset_Tag?: string;
+  location?: string;
+  readingType?: string;
+  contract?: string;
+  taskDescription?: string;
+  batteriesPerString?: number; // BatPerStr in C# DTO
+  codeEquipmentStatus?: string; // EquipStatus in C# DTO
+  maint_Auth_ID?: string; // MaintAuth in C# DTO
+  upskva?: string; // KVA in C# DTO - string type with converter
+  equipMonth?: string;
+  equipYear?: number;
+  dcfCapsPartNo?: string;
+  acfipCapsPartNo?: string;
+  dcfQty?: number;
+  acfipQty?: number;
+  dcfCapsMonthName?: string;
+  acfipCapsMonthName?: string;
+  dcfCapsYear?: number;
+  acfipYear?: number;
+  dcCommCapsPartNo?: string;
+  acfopCapsPartNo?: string;
+  dcCommQty?: number;
+  acfopQty?: number;
+  dcCommCapsMonthName?: string;
+  acfopCapsMonthName?: string;
+  dcCommCapsYear?: number;
+  acfopYear?: number;
+  batteriesPerPack?: number;
+  vfSelection?: string;
+  fansPartNo?: string;
+  fansQty?: number;
+  fansMonth?: string;
+  fansYear?: number;
+  blowersPartNo?: string;
+  blowersQty?: number;
+  blowersMonth?: string;
+  blowersYear?: number;
+  miscPartNo?: string;
+  miscQty?: number;
+  miscMonth?: string;
+  miscYear?: number;
+  comments?: string;
+}
+
+// Interface that exactly matches the C# DTO for API requests
+export interface EquipmentInsertUpdateDto {
+  callNbr: string; // Required - max length 11
+  equipId: number; // Required
+  equipNo: string; // Required - max length 21
+  vendorId: string; // Required - max length 50
+  equipType: string; // Required - max length 50
+  version?: string; // Optional - max length 50
+  serialID?: string; // Optional - max length 50
+  svC_Asset_Tag?: string; // Optional - max length 50
+  location?: string; // Optional - max length 128
+  readingType?: string; // Optional - max length 25
+  contract?: string; // Optional - max length 11
+  taskDescription?: string; // Optional - max length 128
+  batteriesPerString?: number; // Optional - maps to BatPerStr
+  codeEquipmentStatus?: string; // Optional - max length 35
+  maint_Auth_ID?: string; // Optional - max length 128
+  upskva?: string; // Optional - max length 10 - with NumericToStringConverter
+  equipMonth?: string; // Optional - max length 50
+  equipYear?: number; // Optional
+  dcfCapsPartNo?: string; // Optional - max length 50
+  acfipCapsPartNo?: string; // Optional - max length 50
+  dcfQty?: number; // Optional
+  acfipQty?: number; // Optional
+  dcfCapsMonthName?: string; // Optional - max length 50
+  acfipCapsMonthName?: string; // Optional - max length 50
+  dcfCapsYear?: number; // Optional
+  acfipYear?: number; // Optional
+  dcCommCapsPartNo?: string; // Optional - max length 50
+  acfopCapsPartNo?: string; // Optional - max length 50
+  dcCommQty?: number; // Optional
+  acfopQty?: number; // Optional
+  dcCommCapsMonthName?: string; // Optional - max length 50
+  acfopCapsMonthName?: string; // Optional - max length 50
+  dcCommCapsYear?: number; // Optional
+  acfopYear?: number; // Optional
+  batteriesPerPack?: number; // Optional
+  vfSelection?: string; // Optional - max length 2
+  fansPartNo?: string; // Optional - max length 100
+  fansQty?: number; // Optional
+  fansMonth?: string; // Optional - max length 50
+  fansYear?: number; // Optional
+  blowersPartNo?: string; // Optional - max length 100
+  blowersQty?: number; // Optional
+  blowersMonth?: string; // Optional - max length 50
+  blowersYear?: number; // Optional
+  miscPartNo?: string; // Optional - max length 100
+  miscQty?: number; // Optional
+  miscMonth?: string; // Optional - max length 50
+  miscYear?: number; // Optional
+  comments?: string; // Optional - max length 1000
 }
 
 export interface UpdateEquipmentResponse {
-  success: boolean;
-  message: string;
+  Message?: string; // Your API returns { Message: "Equipment inserted or updated successfully" }
+  success?: boolean; // Optional for backward compatibility
+  message?: string; // Alternative lowercase version
   equipId?: number;
   errorCode?: string;
 }
@@ -182,40 +237,41 @@ export interface EditEquipmentFormData {
   basicInfo: {
     callNbr: string;
     equipNo: string;
-    serialId: string;
+    serialID: string;
     location: string;
-    dateCodeMonth: string;
-    dateCodeYear: number | null;
-    status: string;
+    equipMonth: string;
+    equipYear: number | null;
+    codeEquipmentStatus: string;
     equipType: string;
-    floatVoltageSelection: string;
-    batteryPackCount: number | null;
+    vfSelection: string;
+    batteriesPerPack: number | null;
     batteriesPerString: number | null;
     readingType: string;
-    kva: number | null;
+    upskva: string | null; // Changed to string to match C# DTO
     vendorId: string;
     version: string;
-    tag: string;
+    svC_Asset_Tag: string;
     contract: string;
     taskDescription: string;
+    maint_Auth_ID: string; // Added missing property
   };
   
   capacitorInfo: {
     dcfCapsPartNo: string;
     dcfQty: number | null;
-    dcfMonth: string;
-    dcfYear: number | null;
+    dcfCapsMonthName: string;
+    dcfCapsYear: number | null;
     acfipCapsPartNo: string;
-    acfQty: number | null;
-    acfMonth: string;
-    acfYear: number | null;
+    acfipQty: number | null;
+    acfipCapsMonthName: string;
+    acfipYear: number | null;
     dcCommCapsPartNo: string;
-    commQty: number | null;
-    commMonth: string;
-    commYear: number | null;
+    dcCommQty: number | null;
+    dcCommCapsMonthName: string;
+    dcCommCapsYear: number | null;
     acfopCapsPartNo: string;
     acfopQty: number | null;
-    acfopMonth: string;
+    acfopCapsMonthName: string;
     acfopYear: number | null;
     fansPartNo: string;
     fansQty: number | null;

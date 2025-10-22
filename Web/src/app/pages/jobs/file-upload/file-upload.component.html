@@ -130,6 +130,7 @@
     <div class="upload-container">
         <!-- Header Messages -->
         <table width="100%">
+
             <tr>
                 <td align="left">
                     <div class="message-success" [innerHTML]="successMessage" *ngIf="successMessage"></div>
@@ -143,7 +144,9 @@
             <tr>
                 <td align="left">
                     <div class="message-note">
-                        Note: Make sure that File Name does not contain any spaces. It should be all one word.
+                        Note: Make sure that File Name does not contain any spaces. It should be all one word.<br>
+                        Supported file types: PDF, JPG, JPEG, DOC, DOCX, TXT, PPTX, XLS, RTF, PPT, XLSX, LOG<br>
+                        <small>Mode: {{ isEquipmentMode ? 'Equipment Files (ID: ' + equipmentId + ', Tech: ' + techId + ')' : 'Job Files (CallNbr: ' + callNbr + ')' }}</small>
                     </div>
                 </td>
             </tr>
@@ -160,8 +163,13 @@
                         <input 
                             type="file" 
                             class="file-input" 
+                            [id]="'fileInput' + i"
                             (change)="onFileSelected($event, i)"
-                            accept=".jpg,.gif,.doc,.bmp,.xls,.png,.txt,.xlsx,.docx,.pdf,.jpeg">
+                            [disabled]="uploading"
+                            accept=".pdf,.doc,.docx,.txt,.pptx,.xls,.rtf,.ppt,.xlsx,.log,.jpg,.jpeg">
+                        <small *ngIf="selectedFiles[i]" style="color: green; font-size: 8pt;">
+                            Selected: {{selectedFiles[i]?.name}}
+                        </small>
                     </td>
                 </tr>
                 <tr>
@@ -200,7 +208,7 @@
             <tr>
                 <td>
                     <div class="message-success" style="font-size: 8pt;">
-                        Uploaded Attachments for Job: {{callNbr}}
+                        Uploaded Attachments {{ isEquipmentMode ? 'for Equipment: ' + equipmentId : 'for Job: ' + callNbr }}
                     </div>
                 </td>
             </tr>
@@ -222,20 +230,20 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngFor="let file of uploadedFiles; let i = index">
+                            <tr *ngFor="let file of displayFiles; let i = index">
                                 <td>{{i + 1}}</td>
                                 <td>
                                     <span 
                                         class="file-link" 
-                                        (click)="openFile(file)"
-                                        [title]="'Click here to open ' + file.name">
-                                        {{file.name}}
+                                        (click)="openAnyFile(file)"
+                                        [title]="'Click here to open ' + getFileName(file)">
+                                        {{getFileName(file)}}
                                     </span>
                                 </td>
-                                <td>{{file.creationTime | date:'dd-MMM-yyyy'}}</td>
-                                <td>{{file.fullName}}</td>
+                                <td>{{getFileDate(file) | date:'dd-MMM-yyyy'}}</td>
+                                <td>{{getFileName(file)}}</td>
                             </tr>
-                            <tr *ngIf="uploadedFiles.length === 0 && !loading">
+                            <tr *ngIf="displayFiles.length === 0 && !loading">
                                 <td colspan="4" style="text-align: center; padding: 20px; color: #666;">
                                     No files uploaded yet.
                                 </td>
