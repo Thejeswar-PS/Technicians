@@ -48,7 +48,7 @@ select,
 }
 
 .card-header {
-  background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+  background: linear-gradient(135deg, #3291f6 0%, #2b71c1 100%);
   border-bottom: none;
   padding: 1.25rem 1.5rem;
   color: white;
@@ -143,8 +143,8 @@ select,
     font-weight: 500;
     
     &:focus {
-    border-color: #0056b3;
-    box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.25);
+    border-color: #3b76c7;
+    box-shadow: 0 0 0 0.25rem rgba(26, 54, 93, 0.25);
     background: #ffffff !important;
     background-image: none !important;
     outline: 0;
@@ -161,7 +161,7 @@ select,
     }
     
     &:hover:not(:focus) {
-      border-color: #0056b3;
+      border-color: #1a365d;
       background: #ffffff !important;
       background-image: none !important;
     }
@@ -286,7 +286,7 @@ select,
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     border-radius: 0.75rem;
     padding: 1.5rem;
-    border: 3px solid #0056b3;
+    border: 3px solid #346bb8;
     margin-bottom: 1.5rem;
     position: relative;
     overflow: hidden;
@@ -299,10 +299,10 @@ select,
       left: 0;
       right: 0;
       height: 4px;
-      background: linear-gradient(90deg, #0056b3, #003d82, #00264d);
+      background: linear-gradient(90deg, #1a365d, #2c52ba, #1e40af);
     }
     &:hover {
-      box-shadow: 0 0.5rem 1rem rgba(0, 86, 179, 0.15);
+      box-shadow: 0 0.5rem 1rem rgba(26, 54, 93, 0.15);
     }
     
     h6 {
@@ -314,7 +314,7 @@ select,
   letter-spacing: 0.5px;
   text-align: center;
   padding: 0.75rem;
-  background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+  background: linear-gradient(135deg, #5f8bca 0%, #3555ae 100%);
   border-radius: 0.5rem;
   border: none;
     }
@@ -329,13 +329,13 @@ select,
     }
     
     .form-control-sm {
-    font-size: 1.15rem;
+      font-size: 1.15rem;
       padding: 0.375rem 0.75rem;
       height: 2rem;
       max-width: 200px;
       background: #ffffff !important;
       background-image: none !important;
-      border: 3px solid #0056b3;
+      border: 3px solid #1a365d;
       border-radius: 0.375rem;
       color: #212529;
       font-weight: 500;
@@ -344,13 +344,13 @@ select,
       &:focus {
         background: #ffffff !important;
         background-image: none !important;
-        border-color: #003d82;
-        box-shadow: 0 0 0 0.25rem rgba(0, 86, 179, 0.25);
+        border-color: #1e3a8a;
+        box-shadow: 0 0 0 0.25rem rgba(26, 54, 93, 0.25);
         outline: 0;
       }
       
       &:hover:not(:focus) {
-        border-color: #003d82;
+        border-color: #1e3a8a;
         background: #ffffff !important;
         background-image: none !important;
       }
@@ -360,9 +360,7 @@ select,
       &::after {
         display: none !important;
       }
-    }
-
-    .form-select.form-control-sm {
+    }    .form-select.form-control-sm {
       background: #ffffff !important;
       background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23495057' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='m1 6 7 7 7-7'/%3e%3c/svg%3e") !important;
       background-repeat: no-repeat !important;
@@ -400,7 +398,7 @@ select,
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  border: 3px solid #0056b3;
+  border: 3px solid #1a365d;
   position: relative;
   overflow: hidden;
   
@@ -411,7 +409,7 @@ select,
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #0056b3, #003d82, #00264d);
+    background: linear-gradient(90deg, #1a365d, #1e3a8a, #1e40af);
   }
   
   .table {
@@ -422,7 +420,7 @@ select,
     box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.1);
     
     th {
-      background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+      background: linear-gradient(135deg, #1a365d 0%, #4a72e4  100%);
       color: white;
       font-weight: 700;
       border: none;
@@ -708,6 +706,8 @@ h6.text-secondary.mb-3 {
   .row {
     margin-bottom: 0;
     width: 100%;
+    display: flex;
+    justify-content: center;
   }
   
   .col-lg-6 {
@@ -716,13 +716,13 @@ h6.text-secondary.mb-3 {
     flex: 0 0 50%;
   }
   
-  // When only one column is visible, use full width
+  // When only one column is visible, center it and use more width
   .col-lg-6:only-child {
-  max-width: 900px;
-  flex: 0 0 98%;
-  margin: 0 auto;
-  float: none;
-  display: block;
+    max-width: 1000px;
+    flex: 0 0 85%;
+    margin: 0 auto;
+    float: none;
+    display: block;
   }
   
   // Ensure full width utilization for 2-column layout
@@ -730,6 +730,19 @@ h6.text-secondary.mb-3 {
     .col-lg-6 {
       max-width: 50%;
       flex: 0 0 50%;
+    }
+    
+    .col-lg-6:only-child {
+      max-width: 1000px;
+      flex: 0 0 85%;
+    }
+  }
+  
+  // Responsive adjustments for smaller screens
+  @media (max-width: 768px) {
+    .col-lg-6:only-child {
+      max-width: 100%;
+      flex: 0 0 95%;
     }
   }
 }
