@@ -152,6 +152,38 @@
             </tr>
         </table>
 
+        <!-- Upload History Grid -->
+        <div class="table-container" *ngIf="uploadInfo && uploadInfo.length > 0">
+            <table class="upload-table">
+                <tr class="header-row">
+                    <td style="width: 180px;">Last Uploaded By</td>
+                    <td style="width: 180px;">Uploaded On</td>
+                    <td style="width: 100px;">Type</td>
+                </tr>
+                <tr *ngFor="let info of uploadInfo" style="text-align: center;">
+                    <td>{{ info.uploadedBy }}</td>
+                    <td>{{ info.uploadJobDt | date:'dd-MMM-yyyy HH:mm' }}</td>
+                    <td>{{ info.type }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- No Upload History Message -->
+        <div class="table-container" *ngIf="uploadInfo && uploadInfo.length === 0">
+            <table class="upload-table">
+                <tr class="header-row">
+                    <td style="width: 180px;">Last Uploaded By</td>
+                    <td style="width: 180px;">Uploaded On</td>
+                    <td style="width: 100px;">Type</td>
+                </tr>
+                <tr style="text-align: center;">
+                    <td colspan="3" style="color: #666; padding: 20px;">
+                        There are no records available.
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <!-- Upload Form -->
         <div class="table-container">
             <table class="upload-table">

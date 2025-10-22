@@ -2,6 +2,8 @@ import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { FileUploadService, UploadedFile, EquipmentFileResponseDto } from '../../../core/services/file-upload.service';
+import { UploadInfo } from '../../../core/model/equipment-details.model';
+import { EquipmentService } from '../../../core/services/equipment.service';
 
 @Component({
   selector: 'app-file-upload',
@@ -10,18 +12,16 @@ import { FileUploadService, UploadedFile, EquipmentFileResponseDto } from '../..
 })
 export class FileUploadComponent implements OnInit {
   @Input() jobId?: string;
-<<<<<<< HEAD
   @Input() equipmentId?: number;  // New input for equipment-specific uploads
   @Input() techId?: string;       // New input for tech ID (required for equipment uploads)
+  @Input() callNbr?: string;      // New input for call number (required for upload info)
   @Output() onClose = new EventEmitter<void>();
-=======
   @Output() closed = new EventEmitter<void>();
->>>>>>> origin/main
   
-  callNbr = '';
   selectedFiles: (File | null)[] = [null, null, null, null, null]; // 5 file slots like legacy
   uploadedFiles: UploadedFile[] = [];
   equipmentFiles: EquipmentFileResponseDto[] = []; // Equipment-specific files
+  uploadInfo: UploadInfo[] = []; // Upload history information
   loading = false;
   uploading = false;
   errorMessage = '';
@@ -45,11 +45,14 @@ export class FileUploadComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private fileUploadService: FileUploadService,
+    private equipmentService: EquipmentService,
     private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
-    this.callNbr = this.jobId || this.route.snapshot.queryParamMap.get('CallNbr') || '';
+    // Use provided callNbr input or fallback to jobId or route param
+    const resolvedCallNbr = this.callNbr || this.jobId || this.route.snapshot.queryParamMap.get('CallNbr') || '';
+    this.callNbr = resolvedCallNbr;
     
     console.log('FileUpload component initialized:', {
       isEquipmentMode: this.isEquipmentMode,
@@ -59,13 +62,15 @@ export class FileUploadComponent implements OnInit {
     });
     
     // Always use equipment mode since both header and bottom uploads now use equipment functionality
-    if (this.equipmentId && this.techId) {
-      console.log('FileUpload component - Equipment mode:', this.equipmentId, 'Tech:', this.techId);
+    if (this.equipmentId && this.techId && this.callNbr) {
+      console.log('FileUpload component - Equipment mode:', this.equipmentId, 'Tech:', this.techId, 'CallNbr:', this.callNbr);
       this.loadEquipmentFiles();
+      this.loadUploadInfo(); // Load upload history
     } else {
-      console.warn('FileUpload component - No equipment info found, cannot load files');
+      console.warn('FileUpload component - Missing required info:', { equipmentId: this.equipmentId, techId: this.techId, callNbr: this.callNbr });
       this.uploadedFiles = [];
       this.equipmentFiles = [];
+      this.uploadInfo = [];
     }
   }
 
@@ -165,9 +170,13 @@ export class FileUploadComponent implements OnInit {
           if (this.equipmentId && this.techId) {
             console.log(`Using equipment upload: equipmentId=${this.equipmentId}, techId=${this.techId}`);
             result = await this.fileUploadService.uploadEquipmentFile(this.equipmentId, this.techId, file).toPromise();
-          } else {
+          } else if (this.callNbr) {
             console.log(`Using job upload: callNbr=${this.callNbr}`);
             result = await this.fileUploadService.uploadFile(this.callNbr, file).toPromise();
+          } else {
+            console.error('No callNbr available for file upload');
+            this.errorMessage += `File: ${file.name} failed - No call number available<br>`;
+            continue;
           }
           
           if (result?.success) {
@@ -224,12 +233,15 @@ export class FileUploadComponent implements OnInit {
         this.toastr.success(`${successCount} file(s) uploaded successfully`);
         this.clearFileInputs();
         
-        // Refresh the file list
+        // Refresh the file list and upload info
         if (this.isEquipmentMode) {
           this.loadEquipmentFiles();
         } else {
           this.loadExistingFiles();
         }
+        
+        // Refresh upload history
+        this.loadUploadInfo();
       }
 
       if (errorMessages.length > 0) {
@@ -336,7 +348,59 @@ export class FileUploadComponent implements OnInit {
     }
   }
 
+  private async loadUploadInfo(): Promise<void> {
+    if (!this.callNbr || !this.techId) {
+      console.warn('Cannot load upload info: callNbr or techId is empty');
+      this.uploadInfo = [];
+      return;
+    }
+
+    try {
+      console.log('Loading upload info for callNbr:', this.callNbr, 'techId:', this.techId);
+      const uploadInfo = await this.equipmentService.getUploadInfo(this.callNbr, this.techId).toPromise();
+      this.uploadInfo = uploadInfo || [];
+      console.log('Loaded upload info:', this.uploadInfo);
+    } catch (error: any) {
+      console.error('Error loading upload info:', error);
+      
+      // Log the error but don't fail silently
+      if (error.status === 404) {
+        console.warn('Upload info API endpoint not found');
+      } else {
+        console.warn('Failed to load upload information');
+      }
+      
+      this.uploadInfo = [];
+    }
+  }
+
+  // Public method to refresh upload info (can be called from parent component)
+  public refreshUploadInfo(callNbr?: string, techId?: string): void {
+    console.log('refreshUploadInfo called with:', { callNbr, techId, currentCallNbr: this.callNbr, currentTechId: this.techId });
+    
+    // Update values if provided
+    if (callNbr) this.callNbr = callNbr;
+    if (techId) this.techId = techId;
+    
+    this.loadUploadInfo();
+  }
+
+  // Public method to refresh all data
+  public refreshAllData(): void {
+    if (this.isEquipmentMode) {
+      this.loadEquipmentFiles();
+    } else {
+      this.loadExistingFiles();
+    }
+    this.loadUploadInfo();
+  }
+
   openFile(file: UploadedFile): void {
+    if (!this.callNbr) {
+      this.toastr.error('No call number available to open file');
+      return;
+    }
+    
     this.fileUploadService.getFileUrl(this.callNbr, file.name).subscribe(
       (url: string) => {
         window.open(url, '_blank');
@@ -347,19 +411,22 @@ export class FileUploadComponent implements OnInit {
     );
   }
 
-<<<<<<< HEAD
   openEquipmentFile(file: EquipmentFileResponseDto): void {
     if (file.data && file.fileName && file.contentType) {
       this.fileUploadService.downloadEquipmentFile(file.data, file.fileName, file.contentType);
-=======
-  closeWindow(): void {
-    // Emit close event for modal usage, or close popup for standalone usage
-    if (this.jobId) {
-      // Modal mode - emit event to parent
-      this.closed.emit();
->>>>>>> origin/main
     } else {
       this.toastr.error('File data is not available');
+    }
+  }
+
+  closeWindow(): void {
+    // Emit close event for modal usage, or close popup for standalone usage
+    this.onClose.emit();
+    this.closed.emit();
+    
+    if (!this.jobId) {
+      // Standalone popup mode - close window
+      window.close();
     }
   }
 
@@ -407,11 +474,6 @@ export class FileUploadComponent implements OnInit {
     
     this.serviceUnavailable = false; // Allow testing
     this.toastr.success('Service has been enabled. Try selecting and uploading a file.', 'Test Mode Enabled');
-  }
-
-  closeWindow(): void {
-    // Always emit close event to parent component (for modal usage)
-    this.onClose.emit();
   }
 
   private clearMessages(): void {

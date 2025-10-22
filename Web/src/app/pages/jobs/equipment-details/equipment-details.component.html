@@ -22,6 +22,15 @@
 
         <!-- Upload Information Grid -->
         <div style="text-align: center; margin: 20px 0">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Upload Information</h5>
+            <button 
+              type="button" 
+              class="btn btn-primary"
+              (click)="goBack()">
+              <i class="bi bi-arrow-right"></i> Back
+            </button>
+          </div>
           <table
             class="table table-bordered table-sm"
             style="width: 60%; margin: 0 auto"
@@ -38,9 +47,9 @@
             <tbody>
               <!-- Display upload records if available -->
               <tr *ngFor="let info of uploadInfo" class="text-center">
-                <td>{{ info.UploadedBy }}</td>
-                <td>{{ info.UploadJobDt | date : "dd-MMM-yyyy HH:mm" }}</td>
-                <td>{{ info.Type }}</td>
+                <td>{{ info.uploadedBy }}</td>
+                <td>{{ info.uploadJobDt | date : "dd-MMM-yyyy HH:mm" }}</td>
+                <td>{{ info.type }}</td>
               </tr>
 
               <!-- Display "no records" message if no upload info -->
@@ -63,9 +72,17 @@
       <div class="card-body">
         <div
           *ngIf="errorMessage"
-          class="alert alert-danger"
-          [innerHTML]="errorMessage"
-        ></div>
+          class="alert alert-danger">
+          {{ errorMessage }}
+          <br *ngIf="showJobNotesLink">
+          <a 
+            *ngIf="showJobNotesLink"
+            style="color:#00B27A; cursor: pointer;" 
+            (click)="navigateToJobNotes()">
+            Click here
+          </a>
+          <span *ngIf="showJobNotesLink"> to go to Job Notes Info Page</span>
+        </div>
         <div *ngIf="successMessage" class="alert alert-success">
           {{ successMessage }}
         </div>
@@ -114,16 +131,9 @@
 
           <button
             *ngIf="helpButtonVisible"
-<<<<<<< HEAD
-            class="btn btn-secondary me-2"
-            style="width: 48px; font-size: 10pt"
-            (click)="showHelp()"
-          >
-=======
             class="btn btn-primary me-2" 
             style="width: 48px; font-size: 10pt;"
             (click)="showHelp()">
->>>>>>> origin/main
             Help
           </button>
 
@@ -311,9 +321,11 @@
       <div class="modal-body p-4">
         <!-- File Upload Component -->
         <app-file-upload 
+          #fileUploadComponent
           [jobId]="isEquipmentFileUpload ? undefined : jobId"
           [equipmentId]="isEquipmentFileUpload ? selectedEquipment?.equipId : undefined"
           [techId]="isEquipmentFileUpload ? params.techId : undefined"
+          [callNbr]="params.callNbr"
           (onClose)="closeFileUploadModal()">
         </app-file-upload>
       </div>
