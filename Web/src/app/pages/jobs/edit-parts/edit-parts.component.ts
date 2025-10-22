@@ -157,11 +157,9 @@ export class EditPartsComponent implements OnInit {
       trackingNum: ['', Validators.maxLength(100)],
   shipmentType: ['', Validators.maxLength(50)],
       shippingCost: [0, [Validators.min(0)]],
-      courierCost: [0, [Validators.min(0)]],
       shipDate: ['', Validators.required],
       eta: ['', Validators.required],
-      shippedFrom: ['', [Validators.required, Validators.maxLength(100)]],
-      backOrder: [false]
+      shippedFrom: ['', [Validators.required, Validators.maxLength(100)]]
     });
   }
 
@@ -177,13 +175,15 @@ export class EditPartsComponent implements OnInit {
       installedParts: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
       unusedParts: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
       faultyParts: [0, [Validators.required, Validators.min(0), Validators.pattern(/^[0-9]+$/)]],
+      manufacturer: ['', Validators.maxLength(100)],
       unusedDesc: ['None', Validators.required],
       faultyDesc: ['None', Validators.required],
       receivedStatus: ['No', Validators.required],
       isReceived: [false],
       brandNew: [false],
       partsLeft: [false],
-      trackingInfo: ['', Validators.maxLength(250)]
+      trackingInfo: ['', Validators.maxLength(250)],
+      modelNo: ['', Validators.maxLength(150)]
     });
 
     // Setup value change listeners for auto-calculations
@@ -351,9 +351,20 @@ export class EditPartsComponent implements OnInit {
         const part = parts.find(p => p.scidInc === this.scidInc);
         if (part) {
           this.editForm.patchValue({
-            ...part,
+            scidInc: part.scidInc,
+            serviceCallID: part.serviceCallID,
+            partNum: part.partNum,
+            dcPartNum: part.dcPartNum,
+            qty: part.qty,
+            description: part.description,
+            destination: part.destination,
+            shippingCompany: part.shippingCompany,
+            trackingNum: part.trackingNum,
+            shipmentType: part.shipmentType,
+            shippingCost: part.shippingCost,
             shipDate: this.toDateTimeLocal(part.shipDate),
-            eta: this.toDateTimeLocal(part.eta)
+            eta: this.toDateTimeLocal(part.eta),
+            shippedFrom: part.shippedFrom
           });
           if (this.mode === 'edit') {
             this.editForm.get('qty')?.disable({ emitEvent: false });
@@ -378,9 +389,26 @@ export class EditPartsComponent implements OnInit {
         if (part) {
           this.faultyEditedByUser = true;
           this.editForm.patchValue({
-            ...part,
-            receivedStatus: part.isReceived ? 'Yes' : 'No'
-          });
+            scidInc: part.scidInc,
+            serviceCallID: part.serviceCallID,
+            partNum: part.partNum,
+            dcPartNum: part.dcPartNum,
+            totalQty: part.totalQty,
+            description: part.description,
+            partSource: part.partSource || '75',
+            installedParts: part.installedParts ?? 0,
+            unusedParts: part.unusedParts ?? 0,
+            faultyParts: part.faultyParts ?? 0,
+            manufacturer: part.manufacturer ?? '',
+            unusedDesc: part.unusedDesc || 'None',
+            faultyDesc: part.faultyDesc || 'None',
+            receivedStatus: part.isReceived ? 'Yes' : (part.receivedStatus || 'No'),
+            isReceived: part.isReceived,
+            brandNew: part.brandNew,
+            partsLeft: part.partsLeft,
+            trackingInfo: part.trackingInfo ?? '',
+            modelNo: part.modelNo ?? ''
+          }, { emitEvent: false });
           this.faultyEditedByUser = false;
           this.lastModifiedBy = part.maintAuthID ?? '';
           this.lastModifiedOn = this.formatDisplayDate(part.lastModified);
@@ -526,7 +554,7 @@ export class EditPartsComponent implements OnInit {
     }
 
     this.isSaving = true;
-    const formData = this.editForm.value;
+    const formData = this.editForm.getRawValue();
 
     // Call appropriate save method based on display mode
     switch (this.displayMode) {
@@ -553,6 +581,8 @@ export class EditPartsComponent implements OnInit {
     }
 
     const executeSave = () => {
+      const shippingRequired = normalizedSource !== 'pen';
+
       this.jobPartsService.savePartsRequest(payload, this.empId).subscribe({
         next: (response) => {
           if (response?.success === false) {
@@ -560,7 +590,33 @@ export class EditPartsComponent implements OnInit {
             this.toastr.error(response.message || 'Failed to save parts request');
             return;
           }
-          this.handleSaveSuccess('Parts request saved successfully');
+
+          const resolvedScidInc = this.resolveScidInc(response, payload.scidInc);
+          if (resolvedScidInc) {
+            payload.scidInc = resolvedScidInc;
+            this.scidInc = resolvedScidInc;
+          }
+
+          if (!shippingRequired) {
+            this.handleSaveSuccess('Parts request saved successfully');
+            return;
+          }
+
+          const autoShippingData = this.buildAutoShippingPayloadFromRequest(payload);
+          this.jobPartsService.saveShippingPart(autoShippingData, this.empId).subscribe({
+            next: (shippingResponse) => {
+              if (shippingResponse?.success === false) {
+                this.isSaving = false;
+                this.toastr.error(shippingResponse.message || 'Failed to save shipping part');
+                return;
+              }
+              this.handleSaveSuccess('Parts request saved successfully');
+            },
+            error: (error) => {
+              this.isSaving = false;
+              this.toastr.error(error.error?.message || 'Failed to save shipping part');
+            }
+          });
         },
         error: (error) => {
           this.isSaving = false;
@@ -642,6 +698,12 @@ export class EditPartsComponent implements OnInit {
   saveShippingPart(data: ShippingPart): void {
     const payload = this.buildShippingPartPayload(data);
 
+    if (!this.empId) {
+      this.isSaving = false;
+      this.toastr.error('Unable to save: missing employee ID context');
+      return;
+    }
+
     this.jobPartsService.saveShippingPart(payload, this.empId).subscribe({
       next: (response) => {
         if (response?.success === false) {
@@ -649,6 +711,18 @@ export class EditPartsComponent implements OnInit {
           this.toastr.error(response.message || 'Failed to save shipping part');
           return;
         }
+
+        const resolvedScidInc = this.resolveScidInc(response, payload.scidInc);
+        if (resolvedScidInc) {
+          payload.scidInc = resolvedScidInc;
+          this.scidInc = resolvedScidInc;
+        }
+
+        if (this.mode === 'edit') {
+          this.syncTechPartFromShipping(payload);
+          return;
+        }
+
         this.handleSaveSuccess('Shipping part saved successfully');
       },
       error: (error) => {
@@ -658,10 +732,40 @@ export class EditPartsComponent implements OnInit {
     });
   }
 
+  private syncTechPartFromShipping(shippingPayload: any): void {
+    this.jobPartsService.getTechParts(this.callNbr).subscribe({
+      next: (techParts) => {
+        const existingTechPart = techParts.find(part => Number(part.scidInc) === Number(shippingPayload.scidInc));
+        const techPayload = this.buildTechPartPayloadFromShipping(shippingPayload, existingTechPart);
+
+        this.jobPartsService.saveTechPart(techPayload, this.empId, "Ship").subscribe({
+          next: (techResponse) => {
+            if (techResponse?.success === false) {
+              this.isSaving = false;
+              this.toastr.error(techResponse.message || 'Failed to sync tech part');
+              return;
+            }
+            this.handleSaveSuccess('Shipping part saved successfully');
+          },
+          error: (error) => {
+            console.error('Error saving tech part from shipping update:', error);
+            this.isSaving = false;
+            this.toastr.error(error.error?.message || 'Failed to sync tech part');
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error loading tech part for shipping sync:', error);
+        this.isSaving = false;
+        this.toastr.error(error.error?.message || 'Failed to sync tech part');
+      }
+    });
+  }
+
   saveTechPart(data: TechPart): void {
     const payload = this.buildTechPartPayload(data);
 
-    this.jobPartsService.saveTechPart(payload, this.empId).subscribe({
+    this.jobPartsService.saveTechPart(payload, this.empId, "Tech").subscribe({
       next: (response) => {
         if (response?.success === false) {
           this.isSaving = false;
@@ -678,7 +782,7 @@ export class EditPartsComponent implements OnInit {
   }
 
   validateForm(): boolean {
-    const formValue = this.editForm.value;
+  const formValue = this.editForm.getRawValue();
 
     // Check for invalid characters (quotes, semicolons, commas)
     const invalidCharsRegex = /[';,]/;
@@ -766,10 +870,6 @@ export class EditPartsComponent implements OnInit {
     }
     if (data.shippingCost && isNaN(data.shippingCost)) {
       this.toastr.error('Shipping cost must be a valid number');
-      return false;
-    }
-    if (data.courierCost && isNaN(data.courierCost)) {
-      this.toastr.error('Courier cost must be a valid number');
       return false;
     }
     if (!data.shipDate) {
@@ -1044,6 +1144,113 @@ export class EditPartsComponent implements OnInit {
     };
   }
 
+  private resolveScidInc(response: any, fallback?: number): number {
+    const candidates = [
+      response?.scidInc,
+      response?.scid_Inc,
+      response?.sciD_Inc,
+      response?.sciDInc,
+      response?.data?.scidInc,
+      response?.result?.scidInc,
+      response?.payload?.scidInc
+    ];
+
+    for (const candidate of candidates) {
+      const parsed = Number(candidate);
+      if (!isNaN(parsed) && parsed > 0) {
+        return parsed;
+      }
+    }
+
+    const fallbackValue = Number(fallback);
+    if (!isNaN(fallbackValue) && fallbackValue > 0) {
+      return fallbackValue;
+    }
+
+    return 0;
+  }
+
+  private buildAutoShippingPayloadFromRequest(partsPayload: any): any {
+    const scidInc = Number(partsPayload.scidInc ?? this.scidInc ?? 0) || 0;
+
+    const autoShippingData = {
+      scidInc,
+      serviceCallID: partsPayload.serviceCallID || this.callNbr,
+      partNum: partsPayload.partNum,
+      dcPartNum: partsPayload.dcPartNum,
+      qty: partsPayload.qty,
+      description: partsPayload.description,
+      destination: partsPayload.destination,
+      shippingCompany: '',
+      trackingNum: '',
+      shipmentType: partsPayload.shippingMethod,
+      shippingCost: 0,
+      courierCost: 0,
+      shipDate: new Date(),
+      eta: partsPayload.requiredDate,
+      shippedFrom: '',
+      backOrder: !!partsPayload.backOrder
+    };
+
+    return this.buildShippingPartPayload(autoShippingData);
+  }
+
+  private buildTechPartPayloadFromShipping(shippingPayload: any, existingTechPart?: TechPart | null): any {
+    const resolvedScidInc = Number(shippingPayload.scidInc ?? existingTechPart?.scidInc ?? this.scidInc ?? 0) || 0;
+    const existingTotalQty = existingTechPart ? this.toNumber(existingTechPart.totalQty, 0) : 0;
+    const totalQtyFromShipping = this.toNumber(shippingPayload.qty, existingTotalQty);
+    const hasExisting = !!existingTechPart;
+
+    const normalizedPartSource = this.normalizeString(existingTechPart?.partSource ?? '75') || '75';
+    const installedParts = hasExisting ? this.toNumber(existingTechPart?.installedParts, 0) : 0;
+    const unusedParts = hasExisting
+      ? Math.max(this.toNumber(existingTechPart?.unusedParts, 0), 0)
+      : Math.max(totalQtyFromShipping, 0);
+    const faultyParts = hasExisting ? this.toNumber(existingTechPart?.faultyParts, 0) : 0;
+
+    const techFormLikeData = {
+      scidInc: resolvedScidInc,
+      serviceCallID: shippingPayload.serviceCallID || this.callNbr,
+      partNum: shippingPayload.partNum ?? existingTechPart?.partNum ?? '',
+      dcPartNum: shippingPayload.dcPartNum ?? existingTechPart?.dcPartNum ?? '',
+      totalQty: totalQtyFromShipping,
+      description: shippingPayload.description ?? existingTechPart?.description ?? '',
+      partSource: normalizedPartSource,
+      installedParts,
+      unusedParts,
+      faultyParts,
+      manufacturer: this.normalizeString(existingTechPart?.manufacturer ?? ''),
+      unusedDesc: this.normalizeString(existingTechPart?.unusedDesc ?? 'None') || 'None',
+      faultyDesc: this.normalizeString(existingTechPart?.faultyDesc ?? 'None') || 'None',
+      receivedStatus: this.resolveTechReceivedStatus(existingTechPart),
+      brandNew: !!existingTechPart?.brandNew,
+      partsLeft: !!existingTechPart?.partsLeft,
+      trackingInfo: this.normalizeString(existingTechPart?.trackingInfo ?? ''),
+      modelNo: this.normalizeString(existingTechPart?.modelNo ?? '')
+    };
+
+    return this.buildTechPartPayload(techFormLikeData);
+  }
+
+  private resolveTechReceivedStatus(existingTechPart?: TechPart | null): 'Yes' | 'No' | 'NA' {
+    if (!existingTechPart) {
+      return 'No';
+    }
+
+    const status = (existingTechPart.receivedStatus || '').toString().trim().toUpperCase();
+
+    switch (status) {
+      case 'YES':
+        return 'Yes';
+      case 'NO':
+        return 'No';
+      case 'NA':
+        return 'NA';
+      default:
+        return existingTechPart.isReceived ? 'Yes' : 'No';
+    }
+  }
+
   private buildTechPartPayload(data: any): any {
     const receivedStatus: 'Yes' | 'No' | 'NA' = data.receivedStatus || (data.isReceived ? 'Yes' : 'No');
 
@@ -1061,11 +1268,13 @@ export class EditPartsComponent implements OnInit {
       faultyParts: this.toNumber(data.faultyParts, 0),
       unusedDesc: this.normalizeString(data.unusedDesc || 'None'),
       faultyDesc: this.normalizeString(data.faultyDesc || 'None'),
+      manufacturer: this.normalizeString(data.manufacturer),
       isReceived: receivedStatus === 'Yes',
       receivedStatus,
       brandNew: !!data.brandNew,
       partsLeft: !!data.partsLeft,
-      trackingInfo: this.normalizeString(data.trackingInfo)
+      trackingInfo: this.normalizeString(data.trackingInfo),
+      modelNo: this.normalizeString(data.modelNo)
     };
   }
 
@@ -1096,7 +1305,9 @@ export class EditPartsComponent implements OnInit {
       faultyDesc: 'Defective Info',
       partSource: 'Source of Parts',
       receivedStatus: 'Received This Part?',
-      trackingInfo: 'Tracking Info'
+      trackingInfo: 'Tracking Info',
+      manufacturer: 'Manufacturer',
+      modelNo: 'Model No'
     };
     return labels[fieldName] || fieldName;
   }

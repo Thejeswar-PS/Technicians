@@ -114,6 +114,8 @@ export class JobPartsService {
         faultyParts: d.faultyparts,
         unusedDesc: d.unuseD_DESC,
         faultyDesc: d.faultY_DESC,
+  manufacturer: (d.manufacturer ?? d.manufactureR ?? d.MANUFACTURER ?? '').toString().trim(),
+  modelNo: (d.modelNo ?? d.modeL_NO ?? d.MODELNO ?? '').toString().trim(),
         isReceived: this.toBoolean(d.isreceived),
         brandNew: this.toBoolean(d.brandNew ?? d.branD_NEW ?? d.isBrandNew),
         partsLeft: this.toBoolean(d.partsLeft ?? d.isPartsLeft ?? d.parts_left),
@@ -196,9 +198,9 @@ export class JobPartsService {
   );
 }
 
-  saveTechPart(data: TechPart, empId: string): Observable<{ success: boolean; message?: string }> {
+  saveTechPart(data: TechPart, empId: string, source: string): Observable<{ success: boolean; message?: string }> {
   return this.http.post<{ success: boolean; message?: string }>(
-    `${this.API}/PartsData/SaveTechPart?empId=${encodeURIComponent(empId)}`,
+    `${this.API}/PartsData/SaveTechPart?empId=${encodeURIComponent(empId)}&source=${encodeURIComponent(source)}`,
     data,
     { headers: this.headers }
   );

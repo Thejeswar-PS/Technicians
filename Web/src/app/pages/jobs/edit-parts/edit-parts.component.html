@@ -209,10 +209,6 @@
               <label class="form-label fw-bold">Shipping Cost</label>
               <input type="number" class="form-control" formControlName="shippingCost" min="0" step="0.01">
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Courier Cost</label>
-              <input type="number" class="form-control" formControlName="courierCost" min="0" step="0.01">
-            </div>
           </div>
 
           <div class="row mb-5">
@@ -243,14 +239,6 @@
                 {{ getErrorMessage('shippedFrom') }}
               </div>
             </div>
-            <div class="col-md-6">
-              <div class="form-check mt-8">
-                <input class="form-check-input" type="checkbox" formControlName="backOrder" id="backOrderCheckbox2">
-                <label class="form-check-label fw-bold" for="backOrderCheckbox2">
-                  Back Order
-                </label>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -258,7 +246,7 @@
         <div *ngIf="displayMode === 3">
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold required">Part Number</label>
+              <label class="form-label fw-bold required">Part Number:</label>
               <input type="text" class="form-control" formControlName="partNum"
                      [class.is-invalid]="hasError('partNum', 'required')" maxlength="50">
               <div class="invalid-feedback">
@@ -266,7 +254,7 @@
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold required">Quantity</label>
+              <label class="form-label fw-bold required">Quantity:</label>
               <input type="number" class="form-control" formControlName="totalQty" min="1"
                      [class.is-invalid]="hasError('totalQty', 'required') || hasError('totalQty', 'min') || hasError('totalQty', 'pattern')">
               <div class="invalid-feedback">
@@ -278,7 +266,7 @@
 
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold">DCG Part No</label>
+              <label class="form-label fw-bold">DCG Part No:</label>
               <input type="text" class="form-control" formControlName="dcPartNum" maxlength="50">
             </div>
             <div class="col-md-6">
@@ -294,11 +282,11 @@
 
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold">Description</label>
+              <label class="form-label fw-bold">Description:</label>
               <textarea class="form-control" formControlName="description" rows="3" maxlength="200"></textarea>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold required">Source of Parts</label>
+              <label class="form-label fw-bold required">Source of Parts:</label>
               <select class="form-select" formControlName="partSource"
                       [class.is-invalid]="hasError('partSource', 'required')">
                 <option *ngFor="let source of partSourceOptions" [ngValue]="source.value">{{ source.label }}</option>
@@ -309,9 +297,9 @@
             </div>
           </div>
 
-          <div class="row mb-5">
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Installed Qty</label>
+          <div class="row mb-5 g-4">
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Installed Qty:</label>
               <input type="number" class="form-control" formControlName="installedParts" min="0"
                      [class.is-invalid]="hasError('installedParts', 'required') || hasError('installedParts', 'pattern') || hasError('installedParts', 'min')">
               <div class="invalid-feedback">
@@ -319,8 +307,8 @@
               </div>
               <small class="text-muted">Auto-calculates Unused</small>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Unused Qty</label>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Unused Qty:</label>
               <input type="number" class="form-control" formControlName="unusedParts" min="0" readonly
                      [class.is-invalid]="hasError('unusedParts', 'required') || hasError('unusedParts', 'pattern')">
               <div class="invalid-feedback">
@@ -328,8 +316,8 @@
               </div>
               <small class="text-muted">Auto-calculated (Quantity - Installed)</small>
             </div>
-            <div class="col-md-4">
-              <label class="form-label fw-bold">Defective Qty</label>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Defective Qty:</label>
               <input type="number" class="form-control" formControlName="faultyParts" min="0"
                      [class.is-invalid]="hasError('faultyParts', 'required') || hasError('faultyParts', 'pattern')">
               <div class="invalid-feedback">
@@ -337,22 +325,38 @@
               </div>
               <small class="text-muted">Disabled when New Part Installation is checked</small>
             </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Manufacturer:</label>
+              <input type="text" class="form-control" formControlName="manufacturer" maxlength="100"
+                     [class.is-invalid]="hasError('manufacturer', 'maxlength')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('manufacturer') }}
+              </div>
+            </div>
           </div>
 
-          <div class="row mb-5">
-            <div class="col-md-4">
-              <div class="form-check mt-8">
+          <div class="row mb-5 g-4">
+            <div class="col-md-3 d-flex align-items-center">
+              <div class="form-check mt-3">
                 <input class="form-check-input" type="checkbox" formControlName="brandNew" id="brandNewCheckbox">
                 <label class="form-check-label fw-bold" for="brandNewCheckbox">
                   New Part Installation?
                 </label>
               </div>
             </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Model No:</label>
+              <input type="text" class="form-control" formControlName="modelNo" maxlength="150"
+                     [class.is-invalid]="hasError('modelNo', 'maxlength')">
+              <div class="invalid-feedback">
+                {{ getErrorMessage('modelNo') }}
+              </div>
+            </div>
           </div>
 
           <div class="row mb-5">
             <div class="col-md-6">
-              <label class="form-label fw-bold">Defective Info</label>
+              <label class="form-label fw-bold">Defective Info:</label>
               <select class="form-select" formControlName="faultyDesc">
                 <option *ngFor="let option of faultyInfoOptions" [ngValue]="option">{{ option }}</option>
               </select>
@@ -361,7 +365,7 @@
               </div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">Unused Parts Info</label>
+              <label class="form-label fw-bold">Unused Parts Info:</label>
               <select class="form-select" formControlName="unusedDesc">
                 <option *ngFor="let option of partsInfoOptions" [ngValue]="option">{{ option }}</option>
               </select>
@@ -373,15 +377,15 @@
 
           <div class="row mb-5">
             <div class="col-md-4">
-              <div class="form-check mt-8">
+              <div class="form-check mt-3">
                 <input class="form-check-input" type="checkbox" formControlName="partsLeft" id="partsLeftCheckbox">
                 <label class="form-check-label fw-bold" for="partsLeftCheckbox">
-                  Parts Left at Site?
+                  Parts Left at Site?:
                 </label>
               </div>
             </div>
             <div class="col-md-8">
-              <label class="form-label fw-bold">Tracking Info</label>
+              <label class="form-label fw-bold">Tracking Info:</label>
               <input type="text" class="form-control" formControlName="trackingInfo" maxlength="250">
             </div>
           </div>

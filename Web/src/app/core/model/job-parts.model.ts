@@ -220,6 +220,8 @@ export interface TechPart {
   faultyParts: number;
   unusedDesc: string;
   faultyDesc: string;
+  manufacturer: string;
+  modelNo: string;
   isReceived: boolean;
   receivedStatus?: 'Yes' | 'No' | 'NA';
   brandNew: boolean;

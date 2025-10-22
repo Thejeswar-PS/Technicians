@@ -128,6 +128,6 @@ export class JobNotesInfoService {
    * This should return the fully formatted HTML string with all deficiency notes and corrective actions
    */
   getEquipInfoForDeficiencyNotes(callNbr: string): Observable<string> {
-    return this.http.get(`${this.apiUrl}/JobInfo/GetEquipInfo?callNbr=${callNbr}`, { responseType: 'text' });
+    return this.http.get(`${this.apiUrl}/EquipmentDetails/GetEquipmentDetails?callNbr=${callNbr}`, { responseType: 'text' });
   }
 }

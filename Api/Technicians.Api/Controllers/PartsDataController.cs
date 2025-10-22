@@ -293,12 +293,12 @@ namespace Technicians.Api.Controllers
 
         //17. Save/Update Tech Part
         [HttpPost("SaveTechPart")]
-        public IActionResult SaveTechPart([FromBody] TechPartsDto techPart, [FromQuery] string empId)
+        public IActionResult SaveTechPart([FromBody] TechPartsDto techPart, [FromQuery] string empId, [FromQuery] string source)
         {
             if (techPart == null)
                 return BadRequest(new { success = false, message = "Invalid data." });
 
-            bool result = _repository.SaveTechPart(techPart, empId, out string errorMsg);
+            bool result = _repository.SaveTechPart(techPart, empId, source, out string errorMsg);
 
             if (!result)
                 return StatusCode(500, new { success = false, message = errorMsg });

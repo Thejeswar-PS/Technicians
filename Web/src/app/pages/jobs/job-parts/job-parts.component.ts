@@ -373,7 +373,7 @@ export class JobPartsComponent implements OnInit {
     } else if (this.source === 'ReturnReport') {
       this.router.navigate(['/part-return-status']);
     } else {
-      this.router.navigate(['/jobs/list'], {
+      this.router.navigate(['/jobs'], {
         queryParams: { CallNbr: this.callNbr }
       });
     }

@@ -16,7 +16,6 @@
         public bool Urgent { get; set; }
         public bool BackOrder { get; set; }
         public string TechName { get; set; }
-        public string MaintAuthId { get; set; } // usually set from context or session user
     }
 
 }

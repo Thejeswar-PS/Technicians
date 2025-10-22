@@ -454,7 +454,7 @@ namespace Technicians.Api.Repository
         }
 
         //17. Save/Update Tech Part
-        public bool SaveTechPart(TechPartsDto techPart, string empId, out string errorMsg)
+        public bool SaveTechPart(TechPartsDto techPart, string empId, string source, out string errorMsg)
         {
             errorMsg = string.Empty;
 
@@ -463,11 +463,11 @@ namespace Technicians.Api.Repository
                 using (var connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
-                    using (SqlCommand cmd = new SqlCommand("SaveUpdatePartsTech", connection))
+                    using (var cmd = new SqlCommand("SaveUpdatePartsTech", connection))
                     {
                         cmd.CommandType = CommandType.StoredProcedure;
 
-                        cmd.Parameters.AddWithValue("@Service_Call_ID", techPart.ServiceCallID);
+                        cmd.Parameters.AddWithValue("@Service_Call_ID", techPart.ServiceCallID?.Trim());
                         cmd.Parameters.AddWithValue("@SCID_Inc", techPart.ScidInc);
                         cmd.Parameters.AddWithValue("@Part_Num", techPart.PartNum);
                         cmd.Parameters.AddWithValue("@DC_Part_Num", techPart.DcPartNum);
@@ -476,15 +476,16 @@ namespace Technicians.Api.Repository
                         cmd.Parameters.AddWithValue("@InstalledParts", techPart.InstalledParts);
                         cmd.Parameters.AddWithValue("@UnusedParts", techPart.UnusedParts);
                         cmd.Parameters.AddWithValue("@FaultyParts", techPart.FaultyParts);
-                        cmd.Parameters.AddWithValue("@Unused_Desc", techPart.UnusedDesc ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Faulty_Desc", techPart.FaultyDesc ?? (object)DBNull.Value);
-                        cmd.Parameters.AddWithValue("@Manufacturer", DBNull.Value); // not provided in Angular model
-                        cmd.Parameters.AddWithValue("@ModelNo", DBNull.Value); // not provided
-                        cmd.Parameters.AddWithValue("@PartSource", techPart.PartSource ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Unused_Desc", techPart.UnusedDesc ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@Faulty_Desc", techPart.FaultyDesc ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@Manufacturer", techPart.Manufacturer ?? string.Empty);
+                        cmd.Parameters.AddWithValue("@ModelNo", techPart.ModelNo ?? string.Empty);
+                        cmd.Parameters.Add("@PartSource", SqlDbType.Int).Value =
+                            int.TryParse(techPart.PartSource.ToString(), out var ps) ? ps : 0;
                         cmd.Parameters.AddWithValue("@Maint_Auth_ID", empId);
                         cmd.Parameters.AddWithValue("@IsReceived", techPart.IsReceived);
                         cmd.Parameters.AddWithValue("@IsBrandNew", techPart.BrandNew);
-                        cmd.Parameters.AddWithValue("@SaveSource", "API");
+                        cmd.Parameters.AddWithValue("@SaveSource", source);
                         cmd.Parameters.AddWithValue("@IsPartsLeft", techPart.PartsLeft);
                         cmd.Parameters.AddWithValue("@TrackingInfo", techPart.TrackingInfo ?? string.Empty);
 
@@ -499,6 +500,7 @@ namespace Technicians.Api.Repository
                 return false;
             }
         }
+
 
         //18. Delete Part
         public string DeletePart(DeletePartRequest request)

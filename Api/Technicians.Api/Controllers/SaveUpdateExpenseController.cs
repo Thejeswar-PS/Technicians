@@ -18,6 +18,9 @@ namespace Technicians.Api.Controllers
         [HttpPost("SaveExpense")]
         public async Task<IActionResult> SaveExpense([FromBody] SaveUpdateExpenseDto req)
         {
+            if (req == null)
+                return BadRequest(new { success = false, message = "Invalid request data." });
+
             try
             {
                 await _expenseRepository.SaveOrUpdateExpenseAsync(req);

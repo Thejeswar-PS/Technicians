@@ -28,9 +28,6 @@ namespace Technicians.Api.Controllers
             {
                 var result = _repository.GetEtechExpenses(dt1, dt2, techName, tableIdx);
 
-                if (result == null || !result.Any())
-                    return NotFound($"No expenses found for tech '{techName}' between {dt1} and {dt2}");
-
                 return Ok(result);
             }
             catch (Exception ex)

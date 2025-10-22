@@ -42,9 +42,7 @@
     </div>
 
     <!-- Messages -->
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger" [innerHTML]="errorMessage"></div>
     
     <div *ngIf="successMessage" class="alert alert-success">
       {{ successMessage }}
