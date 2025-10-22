@@ -782,15 +782,42 @@ export class EditExpenseComponent implements OnInit {
     }
     
     this.isLoading = true;
+    this.errorMessage = '';
     
-    this.jobService.deleteExpense(this.callNbr, this.tableIdx).subscribe({
+    // Build delete payload matching legacy cmdDelete_Click behavior
+    // Legacy sends empty/default values with Edit = "D"
+    const deletePayload = {
+      callNbr: this.callNbr.trim(),
+      tableIdx: this.tableIdx,
+      techName: '',
+      expType: '',
+      travelType: '',
+      strtDate: '',
+      strtTime: '',
+      endDate: '',
+      endTime: '',
+      mileage: '',
+      rentalCar: true,
+      notes: '',
+      purpose: '',
+      travelBy: '',
+      payType: '',
+      edit: 'D',
+      companyPaid: 0.00,
+      techPaid: 0.00,
+      imageExists: 0,
+      img_Stream: new Uint8Array(0),
+      changeby: this.empId?.trim() || ''
+    };
+    
+    this.jobService.saveExpense(deletePayload).subscribe({
       next: (response: any) => {
         this.toastr.success('Expense deleted successfully!');
         this.goBack();
       },
       error: (error: any) => {
         console.error('Error deleting expense:', error);
-        this.errorMessage = 'Error deleting expense: ' + (error.error?.message || error.message);
+        this.errorMessage = error.error?.message || error.message || 'Error deleting expense';
         this.isLoading = false;
       }
     });
