@@ -1,8 +1,10 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;
 using Technicians.Api.Models;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Technicians.Api.Repository
 {
@@ -367,7 +369,7 @@ namespace Technicians.Api.Repository
             return result;
         }
 
-        //16b. EditEquipInfo
+        //16b. EditEquipInfo - Hybrid approach using both stored procedures
         public async Task<EditEquipInfoDto> EditEquipInfoAsync(string callNbr, int equipId)
         {
             using var connection = new SqlConnection(_connectionString);
@@ -375,33 +377,59 @@ namespace Technicians.Api.Repository
             var parameters = new DynamicParameters();
             parameters.Add("@CallNbr", callNbr);
             parameters.Add("@EquipId", equipId);
-            parameters.Add("@EquipNo", "");
+            parameters.Add("@EquipNo", ""); // Required parameter for _New SP
 
             await connection.OpenAsync();
 
-            using var multi = await connection.QueryMultipleAsync(
-                "EditEquipmentDetails",
-                parameters,
-                commandType: CommandType.StoredProcedure
-            );
-
-            var equipInfo = (await multi.ReadAsync<EditEquipInfoDto>()).FirstOrDefault();
-            var batteryInfo = (await multi.ReadAsync<EditEquipInfoDto>()).FirstOrDefault();
-
-            if (equipInfo != null && batteryInfo != null)
+            try
             {
-                // Merge battery info into equipInfo
-                equipInfo.BatteryHousing = batteryInfo.BatteryHousing;
-                equipInfo.BatteryType = batteryInfo.BatteryType;
-                equipInfo.FloatVoltV = batteryInfo.FloatVoltV;
-                equipInfo.FloatVoltS = batteryInfo.FloatVoltS;
-                equipInfo.DCCapsYear = batteryInfo.DCCapsYear;
-                equipInfo.ACInputCapsYear = batteryInfo.ACInputCapsYear;
-                equipInfo.DCCommCapsYear = batteryInfo.DCCommCapsYear;
-                equipInfo.ACOutputCapsYear = batteryInfo.ACOutputCapsYear;
-            }
+                // First try the new stored procedure (which handles both modified and legacy data)
+                var result = await connection.QueryFirstOrDefaultAsync<EditEquipInfoDto>(
+                    "EditEquipmentDetails_New",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
 
-            return equipInfo;
+                // If no result from new SP, fallback to original SP for legacy data compatibility
+                if (result == null)
+                {
+                    _logger.LogInformation($"No data from EditEquipmentDetails_New for CallNbr={callNbr}, EquipId={equipId}. Trying legacy SP...");
+                    
+                    // Use QueryMultiple for the original SP that returns 2 result sets
+                    using var multi = await connection.QueryMultipleAsync(
+                        "EditEquipmentDetails",
+                        parameters,
+                        commandType: CommandType.StoredProcedure
+                    );
+
+                    var equipInfo = (await multi.ReadAsync<EditEquipInfoDto>()).FirstOrDefault();
+                    var batteryInfo = (await multi.ReadAsync<dynamic>()).FirstOrDefault(); // Use dynamic to access legacy field names
+
+                    if (equipInfo != null && batteryInfo != null)
+                    {
+                        // Merge battery info into equipInfo (legacy approach)
+                        equipInfo.BatteryHousing = batteryInfo.BatteryHousing;
+                        equipInfo.BatteryType = batteryInfo.BatteryType;
+                        equipInfo.FloatVoltV = batteryInfo.FloatVoltV;
+                        equipInfo.FloatVoltS = batteryInfo.FloatVoltS;
+                        
+                        // Map legacy field names to new DTO structure using dynamic object
+                        equipInfo.DCFCapsYear = batteryInfo.DCCapsYear;
+                        equipInfo.ACFIPYear = batteryInfo.ACInputCapsYear;
+                        equipInfo.DCCommCapsYear = batteryInfo.DCCommCapsYear;
+                        equipInfo.ACFOPYear = batteryInfo.ACOutputCapsYear;
+                    }
+                    
+                    result = equipInfo;
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error in EditEquipInfoAsync for CallNbr={callNbr}, EquipId={equipId}");
+                throw;
+            }
         }
 
         //16c. GetEquipReconciliationInfo
@@ -489,87 +517,88 @@ namespace Technicians.Api.Repository
 
         }
 
-        // 18. InsertOrUpdateEquipment - Updated with proper logging
-        public async Task<int> InsertOrUpdateEquipmentAsync(EquipmentInsertUpdateDto dto)
+        // 18. InsertOrUpdateEquipment - Completely rewritten based on SP logic
+
+        public async Task InsertOrUpdateEquipmentAsync(EquipmentInsertUpdateDto equipment)
         {
             try
             {
-                await using var conn = new SqlConnection(_connectionString);
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
 
-                // Manual parameter mapping to ensure exact names
-                var parameters = new DynamicParameters();
-                parameters.Add("@CallNbr", dto.CallNbr);
-                parameters.Add("@EquipId", dto.EquipId);
-                parameters.Add("@EquipNo", dto.EquipNo);
-                parameters.Add("@VendorId", dto.VendorId);
-                parameters.Add("@EquipType", dto.EquipType);
-                parameters.Add("@Version", dto.Version);
-                parameters.Add("@SerialID", dto.SerialID);
-                parameters.Add("@SVC_Asset_Tag", dto.SVC_Asset_Tag);
-                parameters.Add("@Location", dto.Location);
-                parameters.Add("@ReadingType", dto.ReadingType);
-                parameters.Add("@Contract", dto.Contract);
-                parameters.Add("@TaskDesc", dto.TaskDesc);
-                parameters.Add("@BatPerStr", dto.BatPerStr);
-                parameters.Add("@EquipStatus", dto.EquipStatus);
-                parameters.Add("@MaintAuth", dto.MaintAuth);
-                parameters.Add("@KVA", dto.KVA);
-                parameters.Add("@EquipMonth", dto.EquipMonth);
-                parameters.Add("@EquipYear", dto.EquipYear);
+                    using (var command = new SqlCommand("dbo.spEquipmentInsertUpdate", connection))
+                    {
+                        command.CommandType = System.Data.CommandType.StoredProcedure;
 
-                // Capacitor parameters - EXACT names
-                parameters.Add("@DCFCapsPartNo", dto.DCFCapsPartNo);
-                parameters.Add("@ACFIPCapsPartNo", dto.ACFIPCapsPartNo);
-                parameters.Add("@DCFQty", dto.DCFQty);
-                parameters.Add("@ACFIPQty", dto.ACFIPQty);
-                parameters.Add("@DCFCapsMonthName", dto.DCFCapsMonthName);
-                parameters.Add("@ACFIPCapsMonthName", dto.ACFIPCapsMonthName);
-                parameters.Add("@DCFCapsYear", dto.DCFCapsYear);  // EXPLICIT mapping
-                parameters.Add("@ACFIPYear", dto.ACFIPYear);
+                        // Add parameters
+                        command.Parameters.AddWithValue("@CallNbr", equipment.CallNbr);
+                        command.Parameters.AddWithValue("@EquipId", equipment.EquipId);
+                        command.Parameters.AddWithValue("@EquipNo", equipment.EquipNo);
+                        command.Parameters.AddWithValue("@VendorId", equipment.VendorId);
+                        command.Parameters.AddWithValue("@EquipType", equipment.EquipType);
+                        command.Parameters.AddWithValue("@Version", equipment.Version ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@SerialID", equipment.SerialID ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@SVC_Asset_Tag", equipment.SVC_Asset_Tag ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Location", equipment.Location ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@ReadingType", equipment.ReadingType ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@Contract", equipment.Contract ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@TaskDesc", equipment.TaskDesc ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@BatPerStr", equipment.BatPerStr);
+                        command.Parameters.AddWithValue("@EquipStatus", equipment.EquipStatus ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@MaintAuth", equipment.MaintAuth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@KVA", equipment.KVA ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@EquipMonth", equipment.EquipMonth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@EquipYear", equipment.EquipYear);
+                        command.Parameters.AddWithValue("@DCFCapsPartNo", equipment.DCFCapsPartNo ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@ACFIPCapsPartNo", equipment.ACFIPCapsPartNo ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@DCFQty", equipment.DCFQty);
+                        command.Parameters.AddWithValue("@ACFIPQty", equipment.ACFIPQty);
+                        command.Parameters.AddWithValue("@DCFCapsMonthName", equipment.DCFCapsMonthName ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@ACFIPCapsMonthName", equipment.ACFIPCapsMonthName ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@DCFCapsYear", equipment.DCFCapsYear);
+                        command.Parameters.AddWithValue("@ACFIPYear", equipment.ACFIPYear);
+                        command.Parameters.AddWithValue("@DCCommCapsPartNo", equipment.DCCommCapsPartNo ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@ACFOPCapsPartNo", equipment.ACFOPCapsPartNo ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@DCCommQty", equipment.DCCommQty);
+                        command.Parameters.AddWithValue("@ACFOPQty", equipment.ACFOPQty);
+                        command.Parameters.AddWithValue("@DCCommCapsMonthName", equipment.DCCommCapsMonthName ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@ACFOPCapsMonthName", equipment.ACFOPCapsMonthName ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@DCCommCapsYear", equipment.DCCommCapsYear);
+                        command.Parameters.AddWithValue("@ACFOPYear", equipment.ACFOPYear);
+                        command.Parameters.AddWithValue("@BatteriesPerPack", equipment.BatteriesPerPack);
+                        command.Parameters.AddWithValue("@VFSelection", equipment.VFSelection ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@FansPartNo", equipment.FansPartNo ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@FansQty", equipment.FansQty);
+                        command.Parameters.AddWithValue("@FansMonth", equipment.FansMonth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@FansYear", equipment.FansYear);
+                        command.Parameters.AddWithValue("@BlowersPartNo", equipment.BlowersPartNo ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@BlowersQty", equipment.BlowersQty);
+                        command.Parameters.AddWithValue("@BlowersMonth", equipment.BlowersMonth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@BlowersYear", equipment.BlowersYear);
+                        command.Parameters.AddWithValue("@MiscPartNo", equipment.MiscPartNo ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@MiscQty", equipment.MiscQty);
+                        command.Parameters.AddWithValue("@MiscMonth", equipment.MiscMonth ?? (object)DBNull.Value);
+                        command.Parameters.AddWithValue("@MiscYear", equipment.MiscYear);
+                        command.Parameters.AddWithValue("@Comments", equipment.Comments ?? (object)DBNull.Value);
 
-                parameters.Add("@DCCommCapsPartNo", dto.DCCommCapsPartNo);
-                parameters.Add("@ACFOPCapsPartNo", dto.ACFOPCapsPartNo);
-                parameters.Add("@DCCommQty", dto.DCCommQty);
-                parameters.Add("@ACFOPQty", dto.ACFOPQty);
-                parameters.Add("@DCCommCapsMonthName", dto.DCCommCapsMonthName);
-                parameters.Add("@ACFOPCapsMonthName", dto.ACFOPCapsMonthName);
-                parameters.Add("@DCCommCapsYear", dto.DCCommCapsYear);
-                parameters.Add("@ACFOPYear", dto.ACFOPYear);
-
-                parameters.Add("@BatteriesPerPack", dto.BatteriesPerPack);
-                parameters.Add("@VFSelection", dto.VFSelection);
-
-                parameters.Add("@FansPartNo", dto.FansPartNo);
-                parameters.Add("@FansQty", dto.FansQty);
-                parameters.Add("@FansMonth", dto.FansMonth);
-                parameters.Add("@FansYear", dto.FansYear);
-
-                parameters.Add("@BlowersPartNo", dto.BlowersPartNo);
-                parameters.Add("@BlowersQty", dto.BlowersQty);
-                parameters.Add("@BlowersMonth", dto.BlowersMonth);
-                parameters.Add("@BlowersYear", dto.BlowersYear);
-
-                parameters.Add("@MiscPartNo", dto.MiscPartNo);
-                parameters.Add("@MiscQty", dto.MiscQty);
-                parameters.Add("@MiscMonth", dto.MiscMonth);
-                parameters.Add("@MiscYear", dto.MiscYear);
-
-                parameters.Add("@Comments", dto.Comments);
-
-                _logger.LogInformation($"Executing spEquipmentInsertUpdate with {parameters.ParameterNames.Count()} parameters");
-
-                await conn.OpenAsync();
-                var rows = await conn.ExecuteAsync("spEquipmentInsertUpdate", parameters, commandType: CommandType.StoredProcedure);
-
-                _logger.LogInformation($"Stored procedure executed successfully. Rows affected: {rows}");
-                return rows;
+                        await command.ExecuteNonQueryAsync();
+                        _logger.LogInformation("Successfully executed spEquipmentInsertUpdate for EquipId: {EquipId}", equipment.EquipId);
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "Database error while executing spEquipmentInsertUpdate for EquipId: {EquipId}", equipment.EquipId);
+                throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error in InsertOrUpdateEquipmentAsync: {ex.Message}");
+                _logger.LogError(ex, "Unexpected error while executing spEquipmentInsertUpdate for EquipId: {EquipId}", equipment.EquipId);
                 throw;
             }
         }
+
         public async Task<int> DeleteEquipmentAsync(string callNbr, string equipNo, int equipId)
         {
             try
@@ -729,6 +758,105 @@ namespace Technicians.Api.Repository
             {
                 throw;
             }
+        }
+
+        // 23. InsertEquipmentFiles - calls your stored procedure
+        public async Task<(bool Success, string Message)> InsertEquipmentFileAsync(EquipmentFileDto fileDto)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                using var command = new SqlCommand("InsertEquipmentFiles", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                // Add parameters matching your SP exactly
+                command.Parameters.AddWithValue("@EquipID", fileDto.EquipID);
+                command.Parameters.AddWithValue("@TechID", fileDto.TechID ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Img_Title", fileDto.Img_Title ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@Img_Type", fileDto.Img_Type ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@CreatedBy", fileDto.CreatedBy ?? (object)DBNull.Value);
+
+                // Handle file data as Image type (matching your SP)
+                if (fileDto.ImgFile != null && fileDto.ImgFile.Length > 0)
+                {
+                    using var memoryStream = new MemoryStream();
+                    await fileDto.ImgFile.CopyToAsync(memoryStream);
+                    var fileBytes = memoryStream.ToArray();
+
+                    var imgStreamParam = new SqlParameter("@Img_Stream", SqlDbType.Image)
+                    {
+                        Value = fileBytes
+                    };
+                    command.Parameters.Add(imgStreamParam);
+                }
+                else
+                {
+                    command.Parameters.AddWithValue("@Img_Stream", DBNull.Value);
+                }
+
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+
+                _logger.LogInformation("Successfully inserted equipment file for EquipID: {EquipID}", fileDto.EquipID);
+                return (true, "Equipment file inserted successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error inserting equipment file for EquipID: {EquipID}", fileDto.EquipID);
+                return (false, $"Error inserting equipment file: {ex.Message}");
+            }
+        }
+
+        // 24. GetEquipmentFiles - calls your stored procedure
+        public async Task<List<EquipmentFileResponseDto>> GetEquipmentFilesAsync(int equipId)
+        {
+            var files = new List<EquipmentFileResponseDto>();
+
+            try
+            {
+                _logger.LogInformation("Searching for files with EquipID: {EquipID}", equipId);
+
+                using var connection = new SqlConnection(_connectionString);
+                using var command = new SqlCommand("GetEquipmentFiles", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                command.Parameters.AddWithValue("@EquipID", equipId);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                int recordCount = 0;
+                while (await reader.ReadAsync())
+                {
+                    recordCount++;
+
+                    files.Add(new EquipmentFileResponseDto
+                    {
+                        // Based on your SP results, the table doesn't have a FileID column
+                        // Use a generated ID or remove this field from DTO
+                        //FileID = recordCount, // Temporary solution - or remove if not needed
+                        EquipID = reader.GetInt32("EquipID"),
+                        TechID = reader.IsDBNull("TechID") ? null : reader.GetString("TechID"),
+                        FileName = reader.IsDBNull("FileName") ? null : reader.GetString("FileName"),
+                        ContentType = reader.IsDBNull("ContentType") ? null : reader.GetString("ContentType"),
+                        CreatedBy = reader.IsDBNull("CreatedBy") ? null : reader.GetString("CreatedBy"),
+                        CreatedOn = reader.GetDateTime("CreatedOn"),
+                        Data = reader.IsDBNull("Data") ? null : (byte[])reader["Data"]
+                    });
+                }
+
+                _logger.LogInformation("Found {Count} records for EquipID: {EquipID}", recordCount, equipId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving equipment files for EquipID: {EquipID}", equipId);
+            }
+
+            return files;   
         }
     }
  }

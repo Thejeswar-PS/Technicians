@@ -364,41 +364,140 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        // 13a. spEquipmentInsertUpdate (POST)
+        // 13a. spEquipmentInsertUpdate (POST) - Enhanced validation with detailed field length checking
         [HttpPost("spEquipmentInsertUpdate")]
         public async Task<IActionResult> InsertOrUpdateEquipment([FromBody] EquipmentInsertUpdateDto request)
         {
-            if (request == null) return BadRequest("Request body is required.");
+            // Log the raw JSON input for debugging
+            string rawJson = "";
+            if (HttpContext.Request.Body.CanSeek)
+            {
+                HttpContext.Request.Body.Position = 0;
+                using (var reader = new StreamReader(HttpContext.Request.Body, System.Text.Encoding.UTF8, true, 1024, true))
+                {
+                    rawJson = await reader.ReadToEndAsync();
+                }
+                HttpContext.Request.Body.Position = 0; // Reset stream position
+            }
+            _logger.LogInformation("Received raw JSON: {RawJson}", rawJson);
+            _logger.LogInformation("Deserialized EquipmentDto: {EquipmentDto}", JsonSerializer.Serialize(request));
 
-            if (string.IsNullOrWhiteSpace(request.CallNbr) || string.IsNullOrWhiteSpace(request.EquipNo))
-                return BadRequest("CallNbr and EquipNo are required.");
+            // Custom field length validation with detailed error messages
+            var fieldLengthErrors = new List<string>();
+            
+            if (!string.IsNullOrEmpty(request.CallNbr) && request.CallNbr.Length > 11)
+                fieldLengthErrors.Add($"CallNbr exceeds 11 characters (current: {request.CallNbr.Length})");
+            
+            if (!string.IsNullOrEmpty(request.EquipNo) && request.EquipNo.Length > 21)
+                fieldLengthErrors.Add($"EquipNo exceeds 21 characters (current: {request.EquipNo.Length})");
+            
+            if (!string.IsNullOrEmpty(request.VendorId) && request.VendorId.Length > 50)
+                fieldLengthErrors.Add($"VendorId exceeds 50 characters (current: {request.VendorId.Length})");
+            
+            if (!string.IsNullOrEmpty(request.EquipType) && request.EquipType.Length > 50)
+                fieldLengthErrors.Add($"EquipType exceeds 50 characters (current: {request.EquipType.Length})");
+            
+            if (!string.IsNullOrEmpty(request.Version) && request.Version.Length > 50)
+                fieldLengthErrors.Add($"Version exceeds 50 characters (current: {request.Version.Length})");
+            
+            if (!string.IsNullOrEmpty(request.SerialID) && request.SerialID.Length > 50)
+                fieldLengthErrors.Add($"SerialID exceeds 50 characters (current: {request.SerialID.Length})");
+            
+            if (!string.IsNullOrEmpty(request.SVC_Asset_Tag) && request.SVC_Asset_Tag.Length > 50)
+                fieldLengthErrors.Add($"SVC_Asset_Tag exceeds 50 characters (current: {request.SVC_Asset_Tag.Length})");
+            
+            if (!string.IsNullOrEmpty(request.Location) && request.Location.Length > 128)
+                fieldLengthErrors.Add($"Location exceeds 128 characters (current: {request.Location.Length})");
+            
+            if (!string.IsNullOrEmpty(request.ReadingType) && request.ReadingType.Length > 25)
+                fieldLengthErrors.Add($"ReadingType exceeds 25 characters (current: {request.ReadingType.Length})");
+            
+            if (!string.IsNullOrEmpty(request.Contract) && request.Contract.Length > 11)
+                fieldLengthErrors.Add($"Contract exceeds 11 characters (current: {request.Contract.Length})");
+            
+            if (!string.IsNullOrEmpty(request.TaskDesc) && request.TaskDesc.Length > 128)
+                fieldLengthErrors.Add($"TaskDescription exceeds 128 characters (current: {request.TaskDesc.Length})");
+            
+            if (!string.IsNullOrEmpty(request.EquipStatus) && request.EquipStatus.Length > 35)
+                fieldLengthErrors.Add($"EquipStatus exceeds 35 characters (current: {request.EquipStatus.Length})");
+            
+            if (!string.IsNullOrEmpty(request.MaintAuth) && request.MaintAuth.Length > 128)
+                fieldLengthErrors.Add($"MaintAuth exceeds 128 characters (current: {request.MaintAuth.Length})");
+            
+            if (!string.IsNullOrEmpty(request.KVA) && request.KVA.Length > 10)
+                fieldLengthErrors.Add($"KVA exceeds 10 characters (current: {request.KVA.Length})");
+            
+            if (!string.IsNullOrEmpty(request.VFSelection) && request.VFSelection.Length > 2)
+                fieldLengthErrors.Add($"VFSelection exceeds 2 characters (current: {request.VFSelection.Length})");
+            
+            if (!string.IsNullOrEmpty(request.Comments) && request.Comments.Length > 1000)
+                fieldLengthErrors.Add($"Comments exceeds 1000 characters (current: {request.Comments.Length})");
+
+            // Check part number fields
+            if (!string.IsNullOrEmpty(request.DCFCapsPartNo) && request.DCFCapsPartNo.Length > 50)
+                fieldLengthErrors.Add($"DCFCapsPartNo exceeds 50 characters (current: {request.DCFCapsPartNo.Length})");
+            
+            if (!string.IsNullOrEmpty(request.ACFIPCapsPartNo) && request.ACFIPCapsPartNo.Length > 50)
+                fieldLengthErrors.Add($"ACFIPCapsPartNo exceeds 50 characters (current: {request.ACFIPCapsPartNo.Length})");
+
+            if (!string.IsNullOrEmpty(request.FansPartNo) && request.FansPartNo.Length > 100)
+                fieldLengthErrors.Add($"FansPartNo exceeds 100 characters (current: {request.FansPartNo.Length})");
+            
+            if (!string.IsNullOrEmpty(request.BlowersPartNo) && request.BlowersPartNo.Length > 100)
+                fieldLengthErrors.Add($"BlowersPartNo exceeds 100 characters (current: {request.BlowersPartNo.Length})");
+            
+            if (!string.IsNullOrEmpty(request.MiscPartNo) && request.MiscPartNo.Length > 100)
+                fieldLengthErrors.Add($"MiscPartNo exceeds 100 characters (current: {request.MiscPartNo.Length})");
+
+            if (!string.IsNullOrEmpty(request.DCCommCapsPartNo) && request.DCCommCapsPartNo.Length > 50)
+                fieldLengthErrors.Add($"DCCommCapsPartNo exceeds 50 characters (current: {request.DCCommCapsPartNo.Length})");
+
+            if (!string.IsNullOrEmpty(request.ACFOPCapsPartNo) && request.ACFOPCapsPartNo.Length > 50)
+                fieldLengthErrors.Add($"ACFOPCapsPartNo exceeds 50 characters (current: {request.ACFOPCapsPartNo.Length})");
+
+            // If there are field length errors, return them with detailed information
+            if (fieldLengthErrors.Any())
+            {
+                _logger.LogWarning("Field length validation failed for EquipId: {EquipId}. Errors: {FieldLengthErrors}",
+                    request?.EquipId ?? 0, string.Join("; ", fieldLengthErrors));
+                
+                return BadRequest(new 
+                { 
+                    Message = "Field length validation failed", 
+                    Errors = fieldLengthErrors,
+                    Details = "One or more fields exceed their maximum allowed length"
+                });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Invalid model state for EquipmentDto with EquipId: {EquipId}. Errors: {ModelStateErrors}",
+                    request?.EquipId ?? 0, JsonSerializer.Serialize(ModelState));
+                return BadRequest(ModelState);
+            }
 
             try
             {
-                // Log the incoming request for debugging
-                _logger.LogInformation($"Received equipment update request: CallNbr={request.CallNbr}, EquipId={request.EquipId}, EquipNo={request.EquipNo}");
+                // Normalize empty strings to null for consistency with stored procedure
+                request.TaskDesc = string.IsNullOrWhiteSpace(request.TaskDesc) ? null : request.TaskDesc;
+                request.EquipStatus = string.IsNullOrWhiteSpace(request.EquipStatus) ? null : request.EquipStatus;
+                request.MaintAuth = string.IsNullOrWhiteSpace(request.MaintAuth) ? null : request.MaintAuth;
+                request.KVA = string.IsNullOrWhiteSpace(request.KVA) ? null : request.KVA;
 
-                var rows = await _repository.InsertOrUpdateEquipmentAsync(request);
-
-                if (rows > 0)
-                {
-                    _logger.LogInformation($"Successfully updated/inserted equipment. Rows affected: {rows}");
-                    return Ok(new { success = true, rowsAffected = rows });
-                }
-
-                _logger.LogWarning($"No rows affected for CallNbr={request.CallNbr}, EquipId={request.EquipId}");
-                return StatusCode(500, new { success = false, message = "No rows affected." });
+                await _repository.InsertOrUpdateEquipmentAsync(request);
+                _logger.LogInformation("Equipment inserted or updated successfully for EquipId: {EquipId}", request.EquipId);
+                return Ok(new { Message = "Equipment inserted or updated successfully" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error updating equipment: {ex.Message}");
-                return StatusCode(500, new { success = false, message = ex.Message });
+                _logger.LogError(ex, "Error processing equipment for EquipId: {EquipId}", request?.EquipId ?? 0);
+                return StatusCode(500, new { Message = "An error occurred while processing the request", Error = ex.Message });
             }
         }
 
 
-        //13b. DeleteEquipment (DELETE)
-        [HttpDelete("delete")]
+            //13b. DeleteEquipment (DELETE)
+            [HttpDelete("delete")]
         public async Task<IActionResult> DeleteEquipment([FromBody] DeleteEquipmentDto request)
         {
             if (request == null)
@@ -557,5 +656,95 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        // Insert Equipment File
+        [HttpPost("InsertEquipmentFile")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> InsertEquipmentFile([FromForm] EquipmentFileDto fileDto)
+        {
+            try
+            {
+                // Validate required fields
+                if (fileDto.EquipID <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Valid EquipID is required." });
+                }
+
+                if (fileDto.ImgFile == null || fileDto.ImgFile.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "File is required." });
+                }
+
+                // Set file type if not provided
+                if (string.IsNullOrEmpty(fileDto.Img_Type))
+                {
+                    fileDto.Img_Type = fileDto.ImgFile.ContentType;
+                }
+
+                // Set file title if not provided
+                if (string.IsNullOrEmpty(fileDto.Img_Title))
+                {
+                    fileDto.Img_Title = fileDto.ImgFile.FileName;
+                }
+
+                var result = await _repository.InsertEquipmentFileAsync(fileDto);
+
+                if (result.Success)
+                {
+                    return Ok(new { success = true, message = result.Message });
+                }
+                else
+                {
+                    return StatusCode(500, new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in InsertEquipmentFile endpoint");
+                return StatusCode(500, new { success = false, message = "An unexpected error occurred." });
+            }
+        }
+
+        // 15. GetEquipmentFiles (GET)
+        [HttpGet("GetEquipmentFiles")]
+        public async Task<IActionResult> GetEquipmentFiles([FromQuery] int equipId)
+        {
+            try
+            {
+                if (equipId <= 0)
+                {
+                    return BadRequest(new { message = "Valid EquipID is required." });
+                }
+
+                var files = await _repository.GetEquipmentFilesAsync(equipId);
+
+                if (files == null || !files.Any())
+                {
+                    // Return empty array in data property (consistent with GetEquipmentImages pattern)
+                    return Ok(new { data = new List<object>() });
+                }
+
+                // Convert to frontend format with base64 encoding for files
+                var result = files.Select(f => new
+                {
+                    // Remove fileID since table doesn't have it
+                    equipID = f.EquipID,
+                    techID = f.TechID,
+                    fileName = f.FileName,
+                    contentType = f.ContentType,
+                    createdBy = f.CreatedBy,
+                    createdOn = f.CreatedOn,
+                    // Convert byte array to base64 string for JSON response
+                    data = f.Data != null ? Convert.ToBase64String(f.Data) : null
+                }).ToList();
+
+                _logger.LogInformation("Returning {Count} equipment files for EquipID: {EquipID}", result.Count, equipId);
+                return Ok(new { data = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetEquipmentFiles endpoint for EquipID: {EquipID}", equipId);
+                return StatusCode(500, new { error = "Failed to retrieve equipment files" });
+            }
+        }
     }
 }

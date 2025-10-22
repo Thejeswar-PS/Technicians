@@ -1,121 +1,215 @@
-﻿namespace Technicians.Api.Models
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Technicians.Api.Models
 {
     public class EquipmentInsertUpdateDto
     {
+        [Required]
+        [StringLength(11)]
+        [JsonPropertyName("callNbr")]
         public string CallNbr { get; set; }
+
+        [Required]
+        [JsonPropertyName("equipId")]
         public int EquipId { get; set; }
+
+        [Required]
+        [StringLength(21)]
+        [JsonPropertyName("equipNo")]
         public string EquipNo { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        [JsonPropertyName("vendorId")]
         public string VendorId { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        [JsonPropertyName("equipType")]
         public string EquipType { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("version")]
         public string Version { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("serialID")]
         public string SerialID { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("svC_Asset_tag")]
         public string SVC_Asset_Tag { get; set; }
+
+        [StringLength(128)]
+        [JsonPropertyName("location")]
         public string Location { get; set; }
+
+        [StringLength(25)]
+        [JsonPropertyName("readingType")]
         public string ReadingType { get; set; }
+
+        [StringLength(11)]
+        [JsonPropertyName("contract")]
         public string Contract { get; set; }
+
+        [StringLength(128)]
+        [JsonPropertyName("taskDescription")]
         public string TaskDesc { get; set; }
+
+        [JsonPropertyName("batteriesPerString")]
         public int BatPerStr { get; set; }
+
+        [StringLength(35)]
+        [JsonPropertyName("codeEquipmentStatus")]
         public string EquipStatus { get; set; }
+
+        [StringLength(128)]
+        [JsonPropertyName("maint_Auth_ID")]
         public string MaintAuth { get; set; }
+
+        [StringLength(10)]
+        [JsonPropertyName("upskva")]
+        [JsonConverter(typeof(NumericToStringConverter))]
         public string KVA { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("equipMonth")]
         public string EquipMonth { get; set; }
+
+        [JsonPropertyName("equipYear")]
         public int EquipYear { get; set; }
 
-        // THESE NEED TO MATCH STORED PROCEDURE EXACTLY:
-        public string DCFCapsPartNo { get; set; }      // @DCFCapsPartNo ✓
-        public string ACFIPCapsPartNo { get; set; }    // @ACFIPCapsPartNo ✓
-        public int DCFQty { get; set; }                // @DCFQty ✓
-        public int ACFIPQty { get; set; }              // @ACFIPQty ✓
-        public string DCFCapsMonthName { get; set; }   // @DCFCapsMonthName ✓
-        public string ACFIPCapsMonthName { get; set; } // @ACFIPCapsMonthName ✓
-        public int DCFCapsYear { get; set; }           // @DCFCapsYear ✓ (NOT DCCapsYear!)
-        public int ACFIPYear { get; set; }             // @ACFIPYear ✓
+        [StringLength(50)]
+        [JsonPropertyName("dcfCapsPartNo")]
+        public string DCFCapsPartNo { get; set; }
 
-        public string DCCommCapsPartNo { get; set; }   // @DCCommCapsPartNo ✓
-        public string ACFOPCapsPartNo { get; set; }    // @ACFOPCapsPartNo ✓
-        public int DCCommQty { get; set; }             // @DCCommQty ✓
-        public int ACFOPQty { get; set; }              // @ACFOPQty ✓
-        public string DCCommCapsMonthName { get; set; } // @DCCommCapsMonthName ✓
-        public string ACFOPCapsMonthName { get; set; }  // @ACFOPCapsMonthName ✓
-        public int DCCommCapsYear { get; set; }        // @DCCommCapsYear ✓
-        public int ACFOPYear { get; set; }             // @ACFOPYear ✓
+        [StringLength(50)]
+        [JsonPropertyName("acfipCapsPartNo")]
+        public string ACFIPCapsPartNo { get; set; }
 
-        public int BatteriesPerPack { get; set; }      // @BatteriesPerPack ✓
-        public string VFSelection { get; set; }        // @VFSelection ✓
+        [JsonPropertyName("dcfQty")]
+        public int DCFQty { get; set; }
 
-        public string FansPartNo { get; set; }         // @FansPartNo ✓
-        public int FansQty { get; set; }               // @FansQty ✓
-        public string FansMonth { get; set; }          // @FansMonth ✓
-        public int FansYear { get; set; }              // @FansYear ✓
+        [JsonPropertyName("acfipQty")]
+        public int ACFIPQty { get; set; }
 
-        public string BlowersPartNo { get; set; }      // @BlowersPartNo ✓
-        public int BlowersQty { get; set; }            // @BlowersQty ✓
-        public string BlowersMonth { get; set; }       // @BlowersMonth ✓
-        public int BlowersYear { get; set; }           // @BlowersYear ✓
+        [StringLength(50)]
+        [JsonPropertyName("dcfCapsMonthName")]
+        public string DCFCapsMonthName { get; set; }
 
-        public string MiscPartNo { get; set; }         // @MiscPartNo ✓
-        public int MiscQty { get; set; }               // @MiscQty ✓
-        public string MiscMonth { get; set; }          // @MiscMonth ✓
-        public int MiscYear { get; set; }              // @MiscYear ✓
+        [StringLength(50)]
+        [JsonPropertyName("acfipCapsMonthName")]
+        public string ACFIPCapsMonthName { get; set; }
 
-        public string Comments { get; set; }           // @Comments ✓
+        [JsonPropertyName("dcfCapsYear")]
+        public int DCFCapsYear { get; set; }
+
+        [JsonPropertyName("acfipYear")]
+        public int ACFIPYear { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("dcCommCapsPartNo")]
+        public string DCCommCapsPartNo { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("acfopCapsPartNo")]
+        public string ACFOPCapsPartNo { get; set; }
+
+        [JsonPropertyName("dcCommQty")]
+        public int DCCommQty { get; set; }
+
+        [JsonPropertyName("acfopQty")]
+        public int ACFOPQty { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("dcCommCapsMonthName")]
+        public string DCCommCapsMonthName { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("acfopCapsMonthName")]
+        public string ACFOPCapsMonthName { get; set; }
+
+        [JsonPropertyName("dcCommCapsYear")]
+        public int DCCommCapsYear { get; set; }
+
+        [JsonPropertyName("acfopYear")]
+        public int ACFOPYear { get; set; }
+
+        [JsonPropertyName("batteriesPerPack")]
+        public int BatteriesPerPack { get; set; }
+
+        [StringLength(2)]
+        [JsonPropertyName("vfSelection")]
+        public string VFSelection { get; set; }
+
+        [StringLength(100)]
+        [JsonPropertyName("fansPartNo")]
+        public string FansPartNo { get; set; }
+
+        [JsonPropertyName("fansQty")]
+        public int FansQty { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("fansMonth")]
+        public string FansMonth { get; set; }
+
+        [JsonPropertyName("fansYear")]
+        public int FansYear { get; set; }
+
+        [StringLength(100)]
+        [JsonPropertyName("blowersPartNo")]
+        public string BlowersPartNo { get; set; }
+
+        [JsonPropertyName("blowersQty")]
+        public int BlowersQty { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("blowersMonth")]
+        public string BlowersMonth { get; set; }
+
+        [JsonPropertyName("blowersYear")]
+        public int BlowersYear { get; set; }
+
+        [StringLength(100)]
+        [JsonPropertyName("miscPartNo")]
+        public string MiscPartNo { get; set; }
+
+        [JsonPropertyName("miscQty")]
+        public int MiscQty { get; set; }
+
+        [StringLength(50)]
+        [JsonPropertyName("miscMonth")]
+        public string MiscMonth { get; set; }
+
+        [JsonPropertyName("miscYear")]
+        public int MiscYear { get; set; }
+
+        [StringLength(1000)]
+        [JsonPropertyName("comments")]
+        public string Comments { get; set; }
+
+        public class NumericToStringConverter : JsonConverter<string>
+        {
+            public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                if (reader.TokenType == JsonTokenType.String)
+                {
+                    return reader.GetString();
+                }
+                if (reader.TokenType == JsonTokenType.Number)
+                {
+                    return reader.GetDouble().ToString();
+                }
+                throw new JsonException();
+            }
+
+            public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+            {
+                writer.WriteStringValue(value);
+            }
+        }
     }
 }
-
-
-
-//namespace Technicians.Api.Models
-//{
-//    public class EquipmentInsertUpdateDto
-//    {
-//        public string CallNbr { get; set; }
-//        public int EquipId { get; set; }
-//        public string EquipNo { get; set; }
-//        public string VendorId { get; set; }
-//        public string EquipType { get; set; }
-//        public string Version { get; set; }
-//        public string SerialID { get; set; }
-//        public string SVC_Asset_Tag { get; set; }
-//        public string Location { get; set; }
-//        public string ReadingType { get; set; }
-//        public string Contract { get; set; }
-//        public string TaskDesc { get; set; }
-//        public int BatPerStr { get; set; }
-//        public string EquipStatus { get; set; }
-//        public string MaintAuth { get; set; }
-//        public string KVA { get; set; }
-//        public string EquipMonth { get; set; }
-//        public int EquipYear { get; set; }
-//        public string DCFCapsPartNo { get; set; }
-//        public string ACFIPCapsPartNo { get; set; }
-//        public int DCFQty { get; set; }
-//        public int ACFIPQty { get; set; }
-//        public string DCFCapsMonthName { get; set; }
-//        public string ACFIPCapsMonthName { get; set; }
-//        public int DCFCapsYear { get; set; }
-//        public int ACFIPYear { get; set; }
-//        public string DCCommCapsPartNo { get; set; }
-//        public string ACFOPCapsPartNo { get; set; }
-//        public int DCCommQty { get; set; }
-//        public int ACFOPQty { get; set; }
-//        public string DCCommCapsMonthName { get; set; }
-//        public string ACFOPCapsMonthName { get; set; }
-//        public int DCCommCapsYear { get; set; }
-//        public int ACFOPYear { get; set; }
-//        public int BatteriesPerPack { get; set; }
-//        public string VFSelection { get; set; }
-//        public string FansPartNo { get; set; }
-//        public int FansQty { get; set; }
-//        public string FansMonth { get; set; }
-//        public int FansYear { get; set; }
-//        public string BlowersPartNo { get; set; }
-//        public int BlowersQty { get; set; }
-//        public string BlowersMonth { get; set; }
-//        public int BlowersYear { get; set; }
-//        public string MiscPartNo { get; set; }
-//        public int MiscQty { get; set; }
-//        public string MiscMonth { get; set; }
-//        public int MiscYear { get; set; }
-//        public string Comments { get; set; }
-//    }
-//}
