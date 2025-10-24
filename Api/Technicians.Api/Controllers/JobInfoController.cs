@@ -57,11 +57,11 @@ namespace Technicians.Api.Controllers
         [HttpPost("SaveUpdateJobReconciliationInfo")]
         public async Task<IActionResult> SaveUpdateJobReconciliationInfo([FromBody] EquipReconciliationInfo info)
         {
-            if (string.IsNullOrWhiteSpace(info?.CallNbr) || info.EquipID <= 0)
+            if (info == null)
                 return BadRequest(new { success = false, message = "CallNbr and valid EquipID are required." });
 
             // Optionally, get current user ID from claims or auth context
-            var modifiedBy = info.ModifiedBy ?? "System";
+            var modifiedBy = "System";
 
             var result = await _repository.SaveUpdateJobReconciliationInfoAsync(info, modifiedBy);
 
@@ -84,11 +84,17 @@ namespace Technicians.Api.Controllers
         [HttpPost("UpdateJobInformation")]
         public async Task<IActionResult> UpdateJobInformation([FromBody] UpdateJobRequest jobInfo)
         {
-            if (jobInfo == null || string.IsNullOrWhiteSpace(jobInfo.CallNbr) || string.IsNullOrWhiteSpace(jobInfo.TechName))
+            if (jobInfo == null)
+            {
                 return BadRequest(new { success = false, message = "CallNbr and TechName are required." });
+            }
 
-            var result = await _repository.UpdateJobInformationAsync(jobInfo);
-            return Ok(new { success = result.Success, message = result.Message });
+            var (success, message) = await _repository.UpdateJobInformationAsync(jobInfo);
+
+            if (success)
+                return Ok(new { success = true, message });
+            else
+                return StatusCode(500, new { success = false, message });
         }
 
         [HttpPost("InsertDeficiencyNotes")]
@@ -106,5 +112,21 @@ namespace Technicians.Api.Controllers
             return Ok(new { success = result.Success, message = result.Message });
         }
 
+        [HttpGet("GetEquipInfoForDeficiencyNotes")]
+        public async Task<IActionResult> GetEquipInfoForDeficiencyNotes([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("CallNbr is required.");
+
+            var result = await _repository.GetEquipInfoAsync(callNbr);
+
+            if (result == null)
+                return NotFound("No equipment information found for this CallNbr.");
+
+            // Convert dataset to JSON string to match Angular's `responseType: 'text'`
+            string jsonResult = System.Text.Json.JsonSerializer.Serialize(result);
+
+            return Ok(jsonResult);
+        }
     }
 }

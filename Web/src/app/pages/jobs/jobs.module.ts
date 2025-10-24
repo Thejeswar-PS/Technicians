@@ -18,6 +18,8 @@ import { EquipmentImagesComponent } from './equipment-images/equipment-images.co
 import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
+import { JobPartsComponent } from './job-parts/job-parts.component';
+import { EditPartsComponent } from './edit-parts/edit-parts.component';
 
 
 
@@ -35,7 +37,9 @@ import { JobSafetyComponent } from './job-safety/job-safety.component';
     FileUploadComponent,
     EquipmentImagesComponent,
     JobNotesInfoComponent,
-    JobSafetyComponent
+    JobSafetyComponent,
+    JobPartsComponent,
+    EditPartsComponent
   ],
   imports: [
     CommonModule,

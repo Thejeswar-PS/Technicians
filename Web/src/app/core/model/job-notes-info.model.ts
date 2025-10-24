@@ -34,6 +34,7 @@ export interface EquipReconciliationInfo {
 
 export interface EquipmentDetail {
   equipID: number;
+  equipId?: number;
   equipNo: string;
   vendorId: string;
   version: string;

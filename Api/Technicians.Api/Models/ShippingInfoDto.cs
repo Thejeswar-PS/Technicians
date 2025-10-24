@@ -2,16 +2,16 @@
 {
     public class ShippingInfoDto
     {
-        public string Service_Call_ID { get; set; }
+        public string CallNbr { get; set; }
         public string TechID { get; set; }
-        public string Technician { get; set; }
+        public string TechName { get; set; } // maps to Technician
         public string ContactName { get; set; }
         public string ContactPh { get; set; }
         public bool VerifyPh { get; set; }
-        public string ReqNotes { get; set; }
-        public string ShipNotes { get; set; }
-        public string Status { get; set; }
+        public string Notes { get; set; } // maps to ReqNotes
+        public string ShippingNotes { get; set; } // maps to ShipNotes
+        public string ShippingStatus { get; set; } // maps to Status
         public int Source { get; set; }
-        public string Maint_Auth_ID { get; set; }
     }
+
 }

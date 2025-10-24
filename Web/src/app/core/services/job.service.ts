@@ -146,7 +146,10 @@ export class JobService {
 
   saveExpense(expenseData: any): Observable<any> {
     // Based on legacy save expense operation
-    return this.http.post<any>(`${this.API}/EtechExpense/SaveExpense`, expenseData, { headers: this.headers });
+    if (!expenseData.imageStream || expenseData.imageStream.length === 0) {
+    expenseData.imageStream = null;  // ✅ Convert [] → null
+  }
+    return this.http.post<any>(`${this.API}/SaveUpdateExpense/SaveExpense`, expenseData, { headers: this.headers });
   }
 
   deleteExpense(callNbr: string, tableIdx: number): Observable<any> {
@@ -156,14 +159,31 @@ export class JobService {
 
   checkHoursSameDay(techName: string, startDate: Date, endDate: Date, tableIdx: number): Observable<any[]> {
     // Based on legacy: da.CheckHoursSameDay(TechName, pdtNewStrt, pdtNewEnd, TableIdx)
-    const startDateStr = startDate.toISOString();
-    const endDateStr = endDate.toISOString();
-    return this.http.get<any[]>(`${this.API}/EtechExpense/CheckHoursSameDay?techName=${encodeURIComponent(techName)}&startDate=${encodeURIComponent(startDateStr)}&endDate=${encodeURIComponent(endDateStr)}&tableIdx=${tableIdx}`, { headers: this.headers });
+    const startDateStr = this.formatDateParam(startDate);
+    const endDateStr = this.formatDateParam(endDate);
+    return this.http.get<any[]>(`${this.API}/EtechExpense/GetEtechExpenses?techName=${encodeURIComponent(techName)}&dt1=${encodeURIComponent(startDateStr)}&dt2=${encodeURIComponent(endDateStr)}&tableIdx=${tableIdx}`, { headers: this.headers });
   }
 
   canTechAddFoodExpenses(callNbr: string, techName: string, expAmount: number, currentAmount: number, type: string, date: Date): Observable<string> {
     // Based on legacy: da.CanTechAddFoodExpenses(CallNbr, TechName, ExpAmount, CL, Type, dtNewStrt)
-    const dateStr = date.toISOString();
+    const dateStr = this.formatDateTimeParam(date);
     return this.http.get<string>(`${this.API}/EtechExpense/CanTechAddFoodExpenses?callNbr=${encodeURIComponent(callNbr)}&techName=${encodeURIComponent(techName)}&expAmount=${expAmount}&currentAmount=${currentAmount}&type=${encodeURIComponent(type)}&date=${encodeURIComponent(dateStr)}`, { headers: this.headers });
+  }
+
+  private formatDateParam(date: Date): string {
+    const localDate = new Date(date);
+    const year = localDate.getFullYear();
+    const month = (localDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = localDate.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private formatDateTimeParam(date: Date): string {
+    const localDate = new Date(date);
+    const datePart = this.formatDateParam(localDate);
+    const hours = localDate.getHours().toString().padStart(2, '0');
+    const minutes = localDate.getMinutes().toString().padStart(2, '0');
+    const seconds = localDate.getSeconds().toString().padStart(2, '0');
+    return `${datePart}T${hours}:${minutes}:${seconds}`;
   }
 }

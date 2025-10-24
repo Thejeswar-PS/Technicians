@@ -1,101 +1,125 @@
 /* Job Expenses Component Styles */
 
-.table {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
-
-.table th {
-  background-color: #343a40 !important;
-  color: white !important;
-  font-weight: bold !important;
+.job-expenses-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
   text-align: center;
-  vertical-align: middle;
-  border: 1px solid #dee2e6;
+
+  &__title {
+    font-weight: 700;
+    font-size: 1.75rem;
+  }
+
+  &__back {
+    min-width: 220px;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    .bi {
+      font-size: 1rem;
+    }
+  }
 }
 
-.table td {
-  text-align: left;
-  vertical-align: middle;
-  border: 1px solid #dee2e6;
-  padding: 8px;
+.job-expenses-table__wrapper {
+  border-radius: 0 0 1rem 1rem;
 }
 
-.table tfoot td {
-  background-color: #f8f9fa;
-  font-weight: bold;
-  border-top: 2px solid #343a40;
+.job-expenses-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: 'Roboto Condensed', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  thead {
+    tr {
+      background: linear-gradient(to right, #65e169, #ff9800);
+
+      th {
+        color: #181c32;
+        letter-spacing: 0.5px;
+        padding: 0.95rem 0.75rem;
+        border-bottom: 2px solid #e4e6ef;
+        border-top: none;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      transition: background-color 0.15s ease;
+
+      &:hover {
+        background-color: #f9f9f9;
+      }
+
+      td {
+        padding: 0.85rem 0.75rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #eff2f5;
+      }
+    }
+  }
+
+  tfoot {
+    background-color: rgba(13, 110, 253, 0.05);
+
+    td {
+      padding: 0.85rem 0.75rem;
+      border-top: 1px solid #dfe4f2;
+    }
+  }
 }
 
-.table-danger {
-  background-color: #dc3545 !important;
-  color: white !important;
+.job-expenses-table .table-danger,
+.job-expenses-table .table-danger td {
+  background-color: rgba(220, 53, 69, 0.12) !important;
+  color: #b21f2d !important;
 }
 
-.table-danger td {
-  background-color: #dc3545 !important;
-  color: white !important;
+.job-expenses-table .table-warning,
+.job-expenses-table .table-warning td {
+  background-color: rgba(255, 193, 7, 0.12) !important;
+  color: #8a6700 !important;
 }
 
-/* Button styling */
-.btn {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+.job-expenses-table .table-success,
+.job-expenses-table .table-success td {
+  background-color: rgba(25, 135, 84, 0.12) !important;
+  color: #146c43 !important;
 }
 
-/* Filter form styling */
-.card-body.bg-light {
-  background-color: #f8f9fa !important;
-  border-bottom: 1px solid #dee2e6;
+.job-expenses-table .fa-edit {
+  font-size: 1rem;
+  transition: transform 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    color: #0b5ed7 !important;
+    transform: scale(1.1);
+  }
 }
 
-/* Header styling */
-.card-header {
-  background-color: #ffffff;
-  border-bottom: 1px solid #dee2e6;
+.job-expenses-table__wrapper::-webkit-scrollbar {
+  height: 8px;
 }
 
-/* Table responsive container */
-.table-responsive {
-  border: 1px solid #dee2e6;
+.job-expenses-table__wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(13, 110, 253, 0.4);
+  border-radius: 4px;
 }
 
-/* Alert styling */
-.alert {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
+@media (max-width: 576px) {
+  .job-expenses-header {
+    &__title {
+      font-size: 1.35rem;
+    }
 
-/* Back link styling */
-.btn-link {
-  color: #0066cc;
-  text-decoration: none;
-}
-
-.btn-link:hover {
-  color: #004499;
-  text-decoration: underline;
-}
-
-/* Form controls */
-.form-control {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-}
-
-.form-label {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  color: #333;
-}
-
-/* Edit icon styling */
-.fa-edit {
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.fa-edit:hover {
-  color: #0056b3 !important;
-}
-
-/* Job number header */
-h3.text-primary {
-  color: #0066cc !important;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    &__back {
+      min-width: 100%;
+    }
+  }
 }

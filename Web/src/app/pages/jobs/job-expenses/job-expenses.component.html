@@ -2,42 +2,46 @@
 <div class="container-fluid">
   <!-- Header -->
   <div class="card">
-    <div class="card-header">
-      <div class="row align-items-center">
-        <div class="col-12 text-center">
-          <h3 class="mb-0 text-primary" *ngIf="callNbr">
+    <div class="card-header border-0 py-4">
+      <div class="job-expenses-header">
+        <ng-container *ngIf="callNbr; else expensesFor">
+          <h3 class="job-expenses-header__title text-primary mb-0">
             Job Number: {{ callNbr }}
           </h3>
-          <h3 class="mb-0 text-primary" *ngIf="!callNbr && techName">
+        </ng-container>
+      </div>
+      <div>
+        <ng-template #expensesFor>
+          <h3 class="job-expenses-header__title text-primary mb-0" *ngIf="techName">
             Expenses for: {{ techName }}
           </h3>
-        </div>
-      </div>
-      <div class="row mt-2">
-        <div class="col-12">
-          <a href="javascript:void(0)" (click)="goBack()" class="btn btn-link p-0">
-            <i class="bi bi-arrow-left"></i> Back to Job List
-          </a>
-        </div>
+        </ng-template>
+        <button 
+          type="button"
+          class="btn btn-primary job-expenses-header__back"
+          (click)="goBack()">
+          <i class="bi bi-arrow-left me-2"></i>
+          Back to Job List
+        </button>
       </div>
     </div>
 
     <!-- Filter Controls -->
     <div class="card-body bg-light">
       <form [formGroup]="dateFilterForm" (ngSubmit)="filterExpensesByDate()" class="row g-3 align-items-end">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label fw-bold">Start Date</label>
           <input type="date" class="form-control" formControlName="startDate">
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label fw-bold">End Date</label>
           <input type="date" class="form-control" formControlName="endDate">
         </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-primary">Get Expenses</button>
+        <div class="col-md-3 col-lg-2 d-flex">
+          <button type="submit" class="btn btn-primary w-100">Get Expenses</button>
         </div>
-        <div class="col-md-4 text-end">
-          <button type="button" class="btn btn-success me-2" (click)="addNewExpense()">
+        <div class="col-md-5 col-lg-6 d-flex justify-content-md-end gap-2">
+          <button type="button" class="btn btn-success" (click)="addNewExpense()">
             Add New Expense
           </button>
           <button type="button" class="btn btn-info" (click)="viewMobileReceipts()">
@@ -56,57 +60,57 @@
   <!-- Expenses Table -->
   <div class="card mt-3">
     <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-bordered table-sm mb-0" style="font-size: 12pt; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-          <thead class="table-dark">
-            <tr>
-              <th style="color: white; font-weight: bold; width: 120px;">Exp Type</th>
-              <th style="color: white; font-weight: bold; width: 100px;">Description</th>
-              <th style="color: white; font-weight: bold; width: 80px;">Start Dt</th>
-              <th style="color: white; font-weight: bold; width: 80px;">Time</th>
-              <th style="color: white; font-weight: bold; width: 80px;">End Dt</th>
-              <th style="color: white; font-weight: bold; width: 80px;">Time</th>
-              <th style="color: white; font-weight: bold; width: 100px;">Tech Paid</th>
-              <th style="color: white; font-weight: bold; width: 100px;">DCG Paid</th>
-              <th style="color: white; font-weight: bold; width: 70px;">Mileage</th>
-              <th style="color: white; font-weight: bold; width: 100px;">Hours</th>
-              <th style="color: white; font-weight: bold; width: 100px;">Travel By</th>
-              <th style="color: white; font-weight: bold; width: 100px;">Modified On</th>
-              <th style="color: white; font-weight: bold; width: 180px;">Modified By</th>
-              <th style="color: white; font-weight: bold; width: 90px;">Job Number</th>
-              <th style="color: white; font-weight: bold; width: 30px;">Edit</th>
+      <div class="table-responsive job-expenses-table__wrapper">
+        <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4 job-expenses-table">
+          <thead>
+            <tr class="text-dark fw-bolder fs-6 text-uppercase">
+              <th class="text-center min-w-120px">Exp Type</th>
+              <th class="text-start min-w-200px">Description</th>
+              <th class="text-center min-w-110px">Start Dt</th>
+              <th class="text-center min-w-110px">Start Time</th>
+              <th class="text-center min-w-110px">End Dt</th>
+              <th class="text-center min-w-110px">End Time</th>
+              <th class="text-center min-w-130px">Tech Paid</th>
+              <th class="text-center min-w-130px">DCG Paid</th>
+              <th class="text-center min-w-110px">Mileage</th>
+              <th class="text-center min-w-120px">Hours</th>
+              <th class="text-center min-w-120px">Travel By</th>
+              <th class="text-center min-w-140px">Modified On</th>
+              <th class="text-center min-w-160px">Modified By</th>
+              <th *ngIf="showJobNumberColumn" class="text-center min-w-130px">Job Number</th>
+              <th class="text-center min-w-80px">Edit</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="text-dark fs-6" *ngIf="filteredExpenses && filteredExpenses.length > 0">
             <tr *ngFor="let expense of filteredExpenses; trackBy: trackByTableIndex" 
                 [ngClass]="getRowClass(expense.expType)">
-              <td>{{ expense.expType }}</td>
-              <td>{{ expense.description }}</td>
-              <td>{{ expense.strtDate | date:'MM/dd/yyyy' }}</td>
-              <td>{{ expense.strtTime | date:'shortTime' }}</td>
-              <td>{{ expense.endDate | date:'MM/dd/yyyy' }}</td>
-              <td>{{ expense.endTime | date:'shortTime' }}</td>
-              <td>
+              <td class="text-center fw-semibold">{{ expense.expType }}</td>
+              <td class="text-start">{{ expense.description }}</td>
+              <td class="text-center">{{ expense.strtDate | date:'MM/dd/yyyy' }}</td>
+              <td class="text-center">{{ expense.strtTime | date:'shortTime' }}</td>
+              <td class="text-center">{{ expense.endDate | date:'MM/dd/yyyy' }}</td>
+              <td class="text-center">{{ expense.endTime | date:'shortTime' }}</td>
+              <td class="text-end">
                 {{ getCurrencyValue(expense.techPaid) | currency:'USD':'symbol':'1.2-2' }}
                 <span *ngIf="shouldHideField(expense.expType, 'techPaid')" class="text-muted"></span>
               </td>
-              <td>
+              <td class="text-end">
                 {{ getCurrencyValue(expense.companyPaid) | currency:'USD':'symbol':'1.2-2' }}
                 <span *ngIf="shouldHideField(expense.expType, 'companyPaid')" class="text-muted"></span>
               </td>
-              <td>
+              <td class="text-end">
                 {{ getNumericValue(expense.mileage) | number:'1.1-1' }}
                 <span *ngIf="shouldHideField(expense.expType, 'mileage')" class="text-muted"></span>
               </td>
-              <td>
+              <td class="text-center">
                 <span *ngIf="!shouldHideField(expense.expType, 'hours')">
                   {{ formatExpenseHours(getNumericValue(expense.hours)) }}
                 </span>
               </td>
-              <td>{{ expense.travelBy }}</td>
-              <td>{{ expense.changeLast | date:'MM/dd/yyyy' }}</td>
-              <td>{{ expense.changeBy }}</td>
-              <td>{{ expense.callNbr }}</td>
+              <td class="text-center">{{ expense.travelBy }}</td>
+              <td class="text-center">{{ expense.changeLast | date:'MM/dd/yyyy' }}</td>
+              <td class="text-center">{{ expense.changeBy }}</td>
+              <td *ngIf="showJobNumberColumn" class="text-center">{{ expense.callNbr }}</td>
               <td class="text-center">
                 <a href="javascript:void(0)" (click)="editExpense(expense)" class="text-primary">
                   <i class="fa fa-edit" title="Edit Expense"></i>
@@ -114,18 +118,17 @@
               </td>
             </tr>
           </tbody>
-          <tfoot class="table-secondary">
-            <tr style="font-weight: bold;">
+          <tfoot class="bg-light">
+            <tr class="fw-bold text-dark">
               <td>Total</td>
+              <td *ngIf="showJobNumberColumn"></td>
               <td></td>
               <td></td>
               <td></td>
-              <td></td>
-              <td></td>
-              <td>{{ techPaidTotal | currency:'USD':'symbol':'1.2-2' }}</td>
-              <td>{{ companyPaidTotal | currency:'USD':'symbol':'1.2-2' }}</td>
-              <td>{{ mileageTotal | number:'1.1-1' }}</td>
-              <td>{{ formatHours(hoursTotal) }}</td>
+              <td class="text-end">{{ techPaidTotal | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td class="text-end">{{ companyPaidTotal | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td class="text-end">{{ mileageTotal | number:'1.1-1' }}</td>
+              <td class="text-center">{{ formatHours(hoursTotal) }}</td>
               <td></td>
               <td></td>
               <td></td>

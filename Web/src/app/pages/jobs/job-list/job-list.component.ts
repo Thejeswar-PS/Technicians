@@ -583,10 +583,16 @@ public Load(initialLoad: boolean = false)
   }
 
   navigateToParts(callNbr: string, techName: string | null): void {
-    // Navigate to parts page
+    // Navigate to job parts page with CallNbr and TechName parameters
+    // Equivalent to: "DTechJobParts.aspx?CallNbr=" + CallNbr + "&TechName=" + TechName
     const safeTechName = techName || '';
-    const url = `/parts?CallNbr=${callNbr}&TechName=${safeTechName}`;
-    this.router.navigate([url]);
+    console.log('Navigating to parts page for:', callNbr, safeTechName);
+    this.router.navigate(['/jobs/parts'], {
+      queryParams: {
+        CallNbr: callNbr,
+        TechName: safeTechName
+      }
+    });
   }
 
   navigateToJobInfo(callNbr: string, techName: string | null): void {

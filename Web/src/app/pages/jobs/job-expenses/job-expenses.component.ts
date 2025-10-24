@@ -45,6 +45,7 @@ export class JobExpensesComponent implements OnInit {
   companyPaidTotal: number = 0;
   mileageTotal: number = 0;
   hoursTotal: number = 0;
+  showJobNumberColumn = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -130,6 +131,7 @@ export class JobExpensesComponent implements OnInit {
     }
     
     console.log('Filtering expenses by date range:', startDate, 'to', endDate);
+    this.showJobNumberColumn = true;
     
     this.jobService.getExpenseInfoByDateRange(this.techName, start, end).subscribe({
       next: (data: JobExpense[]) => {
