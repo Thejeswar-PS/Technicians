@@ -11,7 +11,7 @@
   <div *ngIf="!loading">
     <div class="card shadow-sm">
       <div class="card-header border-0 py-4">
-        <div class="job-notes-header d-flex align-items-center justify-content-between flex-wrap gap-3 w-100">
+        <div class="job-notes-header">
           <div class="job-notes-header__group">
             <button
               type="button"
@@ -23,13 +23,13 @@
             </button>
           </div>
 
-          <div class="job-notes-header__title flex-grow-1 text-center">
+          <div class="job-notes-header__title">
             <h4 class="card-title fw-bold mb-1" [class.text-danger]="jobInfo?.svcDescr?.toLowerCase()?.includes('emergency')">
               {{ jobTitle }}
             </h4>
           </div>
 
-          <div class="job-notes-header__group text-end">
+          <div class="job-notes-header__group">
             <ng-container *ngIf="!isReadOnlyMode; else headerSpacer">
               <button
                 type="button"
@@ -65,10 +65,7 @@
 
         <!-- Job Information Section -->
         <section class="job-overview mb-8" *ngIf="jobInfo">
-          <div class="job-section-header">
-            <h4 class="fw-bold mb-0">Job Overview</h4>
-          </div>
-          <div class="job-overview__grid">
+          <div class="job-overview__grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem;">
             <div class="job-overview__item">
               <span class="job-overview__label">Site ID</span>
               <a [href]="getSiteHistoryUrl()" target="_blank" rel="noopener" class="job-overview__value link-primary">
@@ -104,15 +101,15 @@
               <span class="job-overview__label">Contact Phone</span>
               <span class="job-overview__value">{{ jobInfo.contactPhone || '—' }}</span>
             </div>
-            <div class="job-overview__item job-overview__item--wide">
+            <div class="job-overview__item">
               <span class="job-overview__label">Job Description</span>
               <span class="job-overview__value job-overview__value--multiline">{{ jobInfo.svcDescr || '—' }}</span>
             </div>
-            <div class="job-overview__item job-overview__item--wide">
+            <div class="job-overview__item">
               <span class="job-overview__label">Technicians On This Job</span>
               <span class="job-overview__value job-overview__value--multiline">{{ otherTechsDisplay }}</span>
             </div>
-            <div class="job-overview__item job-overview__item--wide" style="min-width: 774px;">
+            <div class="job-overview__item" style="grid-column: 1 / -1;">
               <span class="job-overview__label">AM Notes</span>
               <span class="job-overview__value job-overview__value--multiline">{{ jobInfo.recordNotes || '—' }}</span>
             </div>
@@ -175,12 +172,12 @@
                 <div class="job-notes-radio-group">
                   <div class="form-check" *ngFor="let option of quotePriorityOptions">
                     <input
-                      class="form-check-input"
+                      class="form-check-input fw-bold"
                       type="radio"
                       [id]="'quotePriority_' + option.value"
                       formControlName="quotePriority"
                       [value]="option.value">
-                    <label class="form-check-label" [for]="'quotePriority_' + option.value">
+                    <label class="form-check-label fw-bold" [for]="'quotePriority_' + option.value">
                       {{ option.label }}
                     </label>
                   </div>
@@ -202,7 +199,7 @@
                       [id]="'reconciliation_' + option.value"
                       formControlName="reconciliationNewEquip"
                       [value]="option.value">
-                    <label class="form-check-label" [for]="'reconciliation_' + option.value">
+                    <label class="form-check-label fw-bold" [for]="'reconciliation_' + option.value">
                       {{ option.label }}
                     </label>
                   </div>

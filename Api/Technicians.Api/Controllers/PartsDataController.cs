@@ -366,6 +366,134 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        
+
+
+
+        private readonly string baseDirectory = @"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo";
+        private readonly string[] allowedExtensions = new[] { ".jpg", ".gif", ".doc", ".bmp", ".xls", ".png", ".jpeg", ".pdf" };
+
+        /// <summary>
+        /// Get all file attachments for a given CallNbr
+        /// Legacy equivalent: Page_PreRender()
+        /// </summary>
+        [HttpGet("GetFileAttachments")]
+        public IActionResult GetFileAttachments([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("CallNbr is required.");
+
+            var dirPath = Path.Combine(baseDirectory, callNbr);
+
+            if (!Directory.Exists(dirPath))
+                return Ok(new List<object>()); // return empty list
+
+            try
+            {
+                var files = Directory.GetFiles(dirPath)
+                                     .Select(f => new
+                                     {
+                                         FileName = Path.GetFileName(f),
+                                         FileSizeKB = new FileInfo(f).Length / 1024,
+                                         UploadedOn = System.IO.File.GetCreationTime(f).ToString("yyyy-MM-dd HH:mm:ss")
+                                     })
+                                     .OrderBy(f => f.FileName)
+                                     .ToList();
+
+                return Ok(files);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error reading files: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Uploads a file for a given CallNbr
+        /// Legacy equivalent: btnUpload_Click() → SaveFile()
+        /// </summary>
+        [HttpPost("UploadFileAttachment")]
+        public async Task<IActionResult> UploadFileAttachment([FromForm] IFormFile file, [FromForm] string callNbr)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("File is empty or missing.");
+
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("CallNbr is required.");
+
+            var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+            if (!allowedExtensions.Contains(ext))
+                return BadRequest($"Invalid file type: {ext}. Allowed: {string.Join(", ", allowedExtensions)}");
+
+            var dirPath = Path.Combine(baseDirectory, callNbr);
+            Directory.CreateDirectory(dirPath);
+
+            var destPath = Path.Combine(dirPath, file.FileName);
+
+            if (System.IO.File.Exists(destPath))
+                return Conflict($"File '{file.FileName}' already exists.");
+
+            try
+            {
+                using (var stream = new FileStream(destPath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                return Ok(new
+                {
+                    message = "File uploaded successfully",
+                    fileName = file.FileName,
+                    fileSizeKB = (file.Length / 1024).ToString("N2")
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error uploading file: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Get/download a specific file
+        /// Legacy equivalent: getRootURL() (used to preview/download)
+        /// </summary>
+        [HttpGet("GetFile")]
+        public IActionResult GetFile([FromQuery] string callNbr, [FromQuery] string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(fileName))
+                return BadRequest("CallNbr and fileName are required.");
+
+            var filePath = Path.Combine(baseDirectory, callNbr, fileName);
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound("File not found.");
+
+            try
+            {
+                var contentType = GetContentType(filePath);
+                var fileBytes = System.IO.File.ReadAllBytes(filePath);
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error retrieving file: {ex.Message}");
+            }
+        }
+
+        private string GetContentType(string path)
+        {
+            var ext = Path.GetExtension(path).ToLowerInvariant();
+            return ext switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                ".pdf" => "application/pdf",
+                ".xls" or ".xlsx" => "application/vnd.ms-excel",
+                ".doc" or ".docx" => "application/msword",
+                _ => "application/octet-stream"
+            };
+        }
+
     }
 }

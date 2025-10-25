@@ -520,7 +520,7 @@ namespace Technicians.Api.Repository
                         cmd.Parameters.AddWithValue("@Source", request.Display);
                         cmd.Parameters.AddWithValue("@ModifiedBy", request.EmpId ?? "System"); // fallback if null
 
-                        cmd.ExecuteNonQuery();
+                        int result = cmd.ExecuteNonQuery();
                     }
                 }
                 catch (Exception ex)

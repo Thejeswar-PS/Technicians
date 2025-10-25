@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { JobService } from 'src/app/core/services/job.service';
 import { ToastrService } from 'ngx-toastr';
+import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { firstValueFrom } from 'rxjs';
 
 export interface ExpenseTypeOption {
@@ -50,12 +51,15 @@ export interface ExpenseFormData {
   styleUrls: ['./edit-expense.component.scss']
 })
 export class EditExpenseComponent implements OnInit {
+  // Input Parameters (for modal mode)
+  @Input() callNbr: string = '';
+  @Input() techName: string = '';
+  @Input() techID: string = '';
+  @Input() tableIdx: number = 0;
+  @Input() mode: 'add' | 'edit' = 'add';
+  
   // Route Parameters
-  callNbr: string = '';
-  techName: string = '';
-  techID: string = '';
   empId: string = '';
-  tableIdx: number = 0;
   digest: string = '';
   
   // Form and UI state
@@ -143,7 +147,8 @@ export class EditExpenseComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private jobService: JobService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    public activeModal: NgbActiveModal
   ) {
     this.expenseForm = this.createForm();
   }
@@ -151,29 +156,25 @@ export class EditExpenseComponent implements OnInit {
   ngOnInit(): void {
     this.loadUserContext();
     console.log('=== EDIT EXPENSE COMPONENT INIT START ===');
-    console.log('Router URL:', this.router.url);
-    console.log('Route snapshot:', this.route.snapshot);
     
-    this.route.queryParams.subscribe(params => {
-      console.log('Raw queryParams received:', params);
-      this.callNbr = params['CallNbr'] || '';
-      this.techName = params['TechName'] || '';
-      this.techID = params['TechID'] || '';
-      if (!this.empId && this.techID) {
-        this.empId = this.techID.trim();
-      }
-      this.tableIdx = parseInt(params['TableIdx']) || 0;
-      this.digest = params['Digest'] || '';
-      
-      this.isEditMode = this.tableIdx > 0;
-      
-      console.log('Edit Expense - Parsed params:', {
+    // Check if opened as modal (has Input parameters) or as route
+    const hasModalInputs = this.callNbr || this.techName || this.mode;
+    
+    if (hasModalInputs) {
+      // Modal mode - use Input parameters
+      console.log('Modal mode - Input params:', {
         callNbr: this.callNbr,
         techName: this.techName,
         techID: this.techID,
         tableIdx: this.tableIdx,
-        isEditMode: this.isEditMode
+        mode: this.mode
       });
+      
+      if (!this.empId && this.techID) {
+        this.empId = this.techID.trim();
+      }
+      
+      this.isEditMode = this.mode === 'edit' && this.tableIdx > 0;
       
       // Disable expense type field in edit mode
       if (this.isEditMode) {
@@ -187,10 +188,51 @@ export class EditExpenseComponent implements OnInit {
         this.loadExpenseData();
       } else {
         console.log('Setting up for new expense...');
-        // Set default values for new expense
         this.onExpenseTypeChange();
       }
-    });
+    } else {
+      // Route mode - use query params (for backward compatibility)
+      console.log('Router URL:', this.router.url);
+      console.log('Route snapshot:', this.route.snapshot);
+      
+      this.route.queryParams.subscribe(params => {
+        console.log('Raw queryParams received:', params);
+        this.callNbr = params['CallNbr'] || '';
+        this.techName = params['TechName'] || '';
+        this.techID = params['TechID'] || '';
+        if (!this.empId && this.techID) {
+          this.empId = this.techID.trim();
+        }
+        this.tableIdx = parseInt(params['TableIdx']) || 0;
+        this.digest = params['Digest'] || '';
+        
+        this.isEditMode = this.tableIdx > 0;
+        
+        console.log('Edit Expense - Parsed params:', {
+          callNbr: this.callNbr,
+          techName: this.techName,
+          techID: this.techID,
+          tableIdx: this.tableIdx,
+          isEditMode: this.isEditMode
+        });
+        
+        // Disable expense type field in edit mode
+        if (this.isEditMode) {
+          this.expenseForm.get('expType')?.disable();
+        } else {
+          this.expenseForm.get('expType')?.enable();
+        }
+        
+        if (this.isEditMode) {
+          console.log('Loading expense data for edit mode...');
+          this.loadExpenseData();
+        } else {
+          console.log('Setting up for new expense...');
+          // Set default values for new expense
+          this.onExpenseTypeChange();
+        }
+      });
+    }
     
     // Subscribe to form changes for dynamic behavior
     console.log('Setting up form subscriptions...');
@@ -299,6 +341,9 @@ export class EditExpenseComponent implements OnInit {
   private populateForm(data: any): void {
     console.log('=== POPULATE FORM START ===');
     console.log('Raw data received:', data);
+    console.log('All data keys:', Object.keys(data));
+    console.log('Description field:', data.description);
+    console.log('Notes field:', data.notes);
     console.log('Date fields:', {
       strtDate: data.strtDate,
       strtTime: data.strtTime,
@@ -332,29 +377,39 @@ export class EditExpenseComponent implements OnInit {
       console.log('Using default end datetime:', endDateTime);
     }
     
-    // Parse notes field (backend might send as 'description' or 'notes')
-    const notesData = data.description || data.notes || '';
+    // Parse notes field - try multiple possible field names
+    // Backend might send as 'description', 'notes', 'Description', or 'Notes'
+    const notesData = data.description || data.Description || data.notes || data.Notes || '';
     let notes = 'PS';
     let otherReason = '';
     
-    console.log('Notes/Description data:', notesData);
+    console.log('Notes/Description data from any field:', notesData);
+    console.log('ExpType:', data.expType, 'Purpose:', data.purpose);
     
     if (notesData) {
+      console.log('NotesData is truthy, processing...');
       if (data.expType === '22' && data.purpose === '30') {
         // For expenses with "Other" purpose, entire notes is the reason
+        console.log('Expense type 22 with purpose 30 - using notesData as otherReason');
         otherReason = notesData;
+        notes = 'Other';
       } else if (notesData.includes(':')) {
         // If notes contains colon, split it (e.g., "Other:some reason")
+        console.log('NotesData contains colon, splitting...');
         const noteParts = notesData.split(':');
-        notes = noteParts[0] || 'PS';
-        otherReason = noteParts.length > 1 ? noteParts[1] : '';
+        notes = noteParts[0].trim() || 'PS';
+        otherReason = noteParts.length > 1 ? noteParts.slice(1).join(':').trim() : '';
+        console.log('Split result - notes:', notes, 'otherReason:', otherReason);
       } else {
         // Otherwise, use as-is for notes
+        console.log('Using notesData as-is for notes field');
         notes = notesData || 'PS';
       }
+    } else {
+      console.log('NotesData is empty or falsy, using default PS');
     }
     
-    console.log('Parsed notes:', notes, 'otherReason:', otherReason);
+    console.log('Final parsed values - notes:', notes, 'otherReason:', otherReason);
     
     // Calculate expense amount
     const expenseAmount = (data.techPaid || 0) + (data.companyPaid || 0);
@@ -761,6 +816,11 @@ export class EditExpenseComponent implements OnInit {
           this.successMessage = 'Update Successful.';
           this.isLoading = false;
           this.toastr.success('Expense saved successfully!');
+          
+          // Close modal if opened as modal
+          if (this.activeModal) {
+            this.activeModal.close('saved');
+          }
         },
         error: (error: any) => {
           console.error('Error saving expense:', error);
@@ -813,7 +873,11 @@ export class EditExpenseComponent implements OnInit {
     this.jobService.saveExpense(deletePayload).subscribe({
       next: (response: any) => {
         this.toastr.success('Expense deleted successfully!');
-        this.goBack();
+        if (this.activeModal) {
+          this.activeModal.close('deleted');
+        } else {
+          this.goBack();
+        }
       },
       error: (error: any) => {
         console.error('Error deleting expense:', error);
@@ -1146,14 +1210,19 @@ export class EditExpenseComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/jobs/expenses'], {
-      queryParams: {
-        CallNbr: this.callNbr,
-        TechName: this.techName,
-        TechID: this.techID,
-        Digest: this.digest
-      }
-    });
+    // Close modal if opened as modal, otherwise navigate
+    if (this.activeModal) {
+      this.activeModal.dismiss('cancel');
+    } else {
+      this.router.navigate(['/jobs/expenses'], {
+        queryParams: {
+          CallNbr: this.callNbr,
+          TechName: this.techName,
+          TechID: this.techID,
+          Digest: this.digest
+        }
+      });
+    }
   }
 
   // Utility methods for template

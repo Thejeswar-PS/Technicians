@@ -178,14 +178,14 @@ namespace Technicians.Api.Repository
             return results;
         }
 
-        public async Task<(bool Success, string Message)> UpdateJobInformationAsync(UpdateJobRequest jobInfo)
+        public async Task<(bool Success, string Message)> UpdateJobInformationAsync(UpdateJobRequest jobInfo, String empId)
         {
             try
             {
                 using var conn = new SqlConnection(_connectionString);
                 using var cmd = new SqlCommand("UpdateJobInformation", conn)
                 {
-                    CommandType = System.Data.CommandType.StoredProcedure
+                    CommandType = CommandType.StoredProcedure
                 };
 
                 cmd.Parameters.AddWithValue("@CallNbr", jobInfo.CallNbr ?? (object)DBNull.Value);
@@ -194,7 +194,7 @@ namespace Technicians.Api.Repository
                 cmd.Parameters.AddWithValue("@techname", jobInfo.TechName ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@QtePriority", jobInfo.QtePriority ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@chkNotes", jobInfo.ChkNotes);
-                cmd.Parameters.AddWithValue("@LastModifiedBy", jobInfo.LastModifiedBy ?? "System");
+                cmd.Parameters.AddWithValue("@LastModifiedBy", empId);
 
                 await conn.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();

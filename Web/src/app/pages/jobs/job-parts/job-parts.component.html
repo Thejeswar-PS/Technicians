@@ -1,15 +1,20 @@
 <div class="card">
   <!-- Header -->
   <div class="card-header border-0 pt-5">
-    <div class="d-flex align-items-center">
-  <button type="button" class="btn btn-sm btn-primary me-3" (click)="goBack()">
-        <i class="bi bi-arrow-left"></i> Back
-      </button>
-      <h3 class="card-title align-items-center flex-column" style="text-align: center;">
-        <span class="mt-1 fw-bold fs-1" *ngIf="jobPartsInfo">
-          Service Call Id :{{ jobPartsInfo.callNbr }}
-        </span>
-      </h3>
+    <div class="job-header">
+      <div class="job-header__group">
+        <button type="button" class="btn btn-sm btn-primary job-header__back" (click)="goBack()">
+          <i class="bi bi-arrow-left me-2"></i> Back
+        </button>
+      </div>
+      <div class="job-header__title">
+        <h3 class="card-title fw-bold mb-0" *ngIf="jobPartsInfo">
+          Service Call Id: {{ jobPartsInfo.callNbr }}
+        </h3>
+      </div>
+      <div class="job-header__group">
+        <!-- Placeholder for symmetry -->
+      </div>
     </div>
   </div>
 
@@ -34,81 +39,53 @@
           <div>{{ successMessage }}</div>
         </div>
 
-        <!-- File Upload Section -->
-        <div class="my-10"></div>
-        <div class="mb-10">
-          <h4 class="fw-bold mb-5">File Attachments</h4>
+      <!-- Two Column Layout: Tabs (Left) + File Upload (Right) -->
+      <div class="row mb-10">
+        <!-- Left Column: Tabs Section -->
+        <div class="col-lg-8 col-xl-9 order-2 order-lg-1">
+          <!-- Tabs Navigation -->
+          <ul class="nav nav-tabs nav-line-tabs mb-5 fs-6">
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'techInfo'" (click)="activeTab = 'techInfo'">
+                Tech Info
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'siteInfo'" (click)="activeTab = 'siteInfo'">
+                Site/Shipping Info
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'equipInfo'" (click)="activeTab = 'equipInfo'">
+                Equipment Info
+              </a>
+            </li>
+          </ul>
 
-          <div class="card card-custom mb-5">
-            <div class="card-body">
-              <div class="row align-items-end">
-                <div class="col-md-8">
-                  <label class="form-label fw-bold">Upload File</label>
-                  <input type="file" class="form-control" #fileInput 
-                         (change)="onFileSelected($event)"
-                         accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
-                  <div class="form-text text-muted">
-                    Maximum file size: 5MB. Allowed types: PDF, Word, Excel, Images. 
-                    <span class="text-danger">No spaces allowed in filename.</span>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <button type="button" class="btn btn-success w-100" 
-                          (click)="onUploadFile()" 
-                          [disabled]="!selectedFile || isUploading">
-                    <span *ngIf="!isUploading">
-                      <i class="bi bi-upload"></i> Upload File
-                    </span>
-                    <span *ngIf="isUploading">
-                      <span class="spinner-border spinner-border-sm me-2"></span>
-                      Uploading...
-                    </span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      <!-- Tabs Navigation -->
-      <ul class="nav nav-tabs nav-line-tabs mb-5 fs-6">
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'techInfo'" (click)="activeTab = 'techInfo'">
-            Tech Info
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'siteInfo'" (click)="activeTab = 'siteInfo'">
-            Site/Shipping Info
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" [class.active]="activeTab === 'equipInfo'" (click)="activeTab = 'equipInfo'">
-            Equipment Info
-          </a>
-        </li>
-      </ul>
-
-      <!-- Tab Content -->
+          <!-- Tab Content -->
       <div class="tab-content">
         <!-- Tech Info Tab -->
         <div class="tab-pane fade" [class.show]="activeTab === 'techInfo'" [class.active]="activeTab === 'techInfo'">
           <form [formGroup]="techInfoForm" class="legacy-panel">
-            <div class="row g-3 align-items-center mb-4">
+            <div class="row g-2 align-items-center mb-1">
               <div class="col-sm-3 col-lg-2">
                 <label class="form-label fw-bold mb-0">Technician</label>
               </div>
-              <div class="col-sm-9 col-lg-4">
+              <div class="col-sm-9 col-lg-10">
                 <input type="text" class="form-control" formControlName="technician" readonly>
-              </div>
-              <div class="col-sm-3 col-lg-2 mt-3 mt-sm-0">
-                <label class="form-label fw-bold mb-0">Tech ID</label>
-              </div>
-              <div class="col-sm-9 col-lg-4">
-                <input type="text" class="form-control" formControlName="techID" maxlength="50">
               </div>
             </div>
 
-            <div class="row mb-4">
+            <div class="row g-2 align-items-center mb-1">
+              <div class="col-sm-3 col-lg-2">
+                <label class="form-label fw-bold mb-0">Tech ID</label>
+              </div>
+              <div class="col-sm-9 col-lg-10">
+                <input type="text" class="form-control" formControlName="techID" maxlength="50" readonly>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
               <div class="col-sm-3 col-lg-2">
                 <label class="form-label fw-bold mb-0">Notes</label>
               </div>
@@ -130,7 +107,7 @@
           <form [formGroup]="siteInfoForm" class="legacy-panel">
             <div class="row">
               <div class="col-lg-6">
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Address ID</label>
                   </div>
@@ -139,7 +116,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Name</label>
                   </div>
@@ -148,7 +125,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Attention</label>
                   </div>
@@ -157,7 +134,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Contact Ph</label>
                   </div>
@@ -166,7 +143,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Verify Ph</label>
                   </div>
@@ -178,7 +155,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Address</label>
                   </div>
@@ -194,7 +171,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Requested By</label>
                   </div>
@@ -203,7 +180,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Scheduled On</label>
                   </div>
@@ -214,7 +191,7 @@
               </div>
 
               <div class="col-lg-6">
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Status</label>
                   </div>
@@ -225,7 +202,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Assigned To</label>
                   </div>
@@ -234,7 +211,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Processed By</label>
                   </div>
@@ -243,7 +220,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Submitted On</label>
                   </div>
@@ -252,7 +229,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">First Submitted</label>
                   </div>
@@ -261,7 +238,7 @@
                   </div>
                 </div>
 
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Last Updated</label>
                   </div>
@@ -270,7 +247,7 @@
                   </div>
                 </div>
 
-                <div class="row mb-4">
+                <div class="row mb-3">
                   <div class="col-12">
                     <label class="form-label fw-bold">Shipping Notes</label>
                     <textarea class="form-control" formControlName="shippingNotes" rows="5" maxlength="5000"></textarea>
@@ -293,7 +270,7 @@
             <div class="row">
               <div class="col-lg-6 mb-5 mb-lg-0">
                 <h5 class="fw-bold mb-3">Equipment 1</h5>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Equip No</label>
                   </div>
@@ -301,7 +278,7 @@
                     <input type="text" class="form-control" formControlName="equipNo" maxlength="50">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Make</label>
                   </div>
@@ -309,7 +286,7 @@
                     <input type="text" class="form-control" formControlName="make" maxlength="50">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Model</label>
                   </div>
@@ -317,7 +294,7 @@
                     <input type="text" class="form-control" formControlName="model" maxlength="50">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">KVA</label>
                   </div>
@@ -325,7 +302,7 @@
                     <input type="number" class="form-control" formControlName="kva">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">I/O Voltages</label>
                   </div>
@@ -341,7 +318,7 @@
 
               <div class="col-lg-6">
                 <h5 class="fw-bold mb-3">Equipment 2</h5>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Equip No</label>
                   </div>
@@ -349,7 +326,7 @@
                     <input type="text" class="form-control" formControlName="equipNo1" maxlength="50">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Make</label>
                   </div>
@@ -357,7 +334,7 @@
                     <input type="text" class="form-control" formControlName="make1" maxlength="50">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Model</label>
                   </div>
@@ -365,7 +342,7 @@
                     <input type="text" class="form-control" formControlName="model1" maxlength="50">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">KVA</label>
                   </div>
@@ -373,7 +350,7 @@
                     <input type="number" class="form-control" formControlName="kva1">
                   </div>
                 </div>
-                <div class="row g-3 align-items-center mb-3">
+                <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">I/O Voltages</label>
                   </div>
@@ -388,7 +365,7 @@
               </div>
             </div>
 
-            <div class="row mb-4">
+            <div class="row mb-3">
               <div class="col-lg-6 mb-3 mb-lg-0">
                 <label class="form-label fw-bold">Notes</label>
                 <textarea class="form-control" formControlName="addInfo" rows="4" maxlength="1000"></textarea>
@@ -407,47 +384,68 @@
           </form>
         </div>
       </div>
+        </div><!-- End Left Column (Tabs) -->
 
-      <!-- Uploaded Files List -->
-      <div class="separator my-10" *ngIf="fileAttachments?.length"></div>
-      <div class="mb-10" *ngIf="fileAttachments?.length">
-        <div class="card card-custom">
-          <div class="card-header">
-            <h5 class="card-title">Uploaded Files</h5>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-row-bordered align-middle">
-                <thead>
-                  <tr class="fw-bold text-muted">
-                    <th>File Name</th>
-                    <th>Upload Date</th>
-                    <th class="text-end">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let file of fileAttachments">
-                    <td>
-                      <i class="bi bi-file-earmark fs-3 me-2"></i>
-                      {{ file.fullName || file.name }}
-                    </td>
-                    <td>{{ file.creationTime | date:'medium' }}</td>
-                    <td class="text-end">
-                      <a [href]="file.url" target="_blank" class="btn btn-sm btn-primary me-2">
-                        <i class="bi bi-download"></i> Download
-                      </a>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+        <!-- Right Column: File Upload Section -->
+        <div class="col-lg-4 col-xl-3 order-1 order-lg-2 mb-5 mb-lg-0">
+          <div class="card card-custom h-100">
+            <div class="card-header border-0 pt-5">
+              <h5 class="card-title fw-bold">File Attachments</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-4">
+                <label class="form-label fw-bold">Upload File</label>
+                <input type="file" class="form-control form-control-sm mb-2" #fileInput 
+                       (change)="onFileSelected($event)"
+                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
+                <div class="form-text text-muted small">
+                  Max: 5MB. 
+                  <span class="text-danger">No spaces in filename.</span>
+                </div>
+              </div>
+              <button type="button" class="btn btn-success btn-sm w-100" 
+                      (click)="onUploadFile()" 
+                      [disabled]="!selectedFile || isUploading">
+                <span *ngIf="!isUploading">
+                  <i class="bi bi-upload"></i> Upload
+                </span>
+                <span *ngIf="isUploading">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Uploading...
+                </span>
+              </button>
+
+              <!-- Uploaded Files List (Compact) -->
+              <div class="separator my-5" *ngIf="fileAttachments?.length"></div>
+              <div *ngIf="fileAttachments?.length">
+                <h6 class="fw-bold mb-3">Uploaded Files</h6>
+                <div class="d-flex flex-column gap-2">
+                  <div *ngFor="let file of fileAttachments" class="border rounded p-2">
+                    <div class="d-flex align-items-start gap-2">
+                      <i class="bi bi-file-earmark text-primary"></i>
+                      <div class="flex-grow-1 small">
+                        <div class="fw-bold text-truncate" [title]="file.fullName || file.name">
+                          {{ file.fullName || file.name }}
+                        </div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                          {{ file.creationTime | date:'short' }}
+                        </div>
+                      </div>
+                    </div>
+                    <a [href]="file.url" target="_blank" class="btn btn-sm btn-light-primary w-100 mt-2">
+                      <i class="bi bi-download"></i> Download
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </div><!-- End Right Column (File Upload) -->
+      </div><!-- End Two Column Layout -->
 
       <!-- Parts Request Section -->
-      <div class="separator my-10"></div>
-      <section class="mb-10" id="parts-request-info">
+      <div class="separator my-5"></div>
+      <section class="mb-5" id="parts-request-info">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
           <h4 class="fw-bold mb-0">Parts Request Info</h4>
           <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddPartRequest()">
@@ -501,8 +499,8 @@
       </section>
 
       <!-- Shipping Info Section -->
-      <div class="separator my-10"></div>
-      <section class="mb-10" id="shipping-info">
+      <div class="separator my-5"></div>
+      <section class="mb-5" id="shipping-info">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
           <h4 class="fw-bold mb-0">Shipping Info</h4>
           <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddShipment()">
@@ -566,8 +564,8 @@
       </section>
 
       <!-- Tech Parts Section -->
-      <div class="separator my-10"></div>
-      <section class="mb-10" id="tech-parts-info">
+      <div class="separator my-5"></div>
+      <section class="mb-5" id="tech-parts-info">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
           <h4 class="fw-bold mb-0">Tech Parts Info</h4>
           <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddTechPart()">
@@ -649,8 +647,8 @@
       </section>
 
       <!-- Tech Return Panel -->
-      <div *ngIf="showTechReturnPanel" class="separator my-10"></div>
-      <div *ngIf="showTechReturnPanel" class="mb-10">
+      <div *ngIf="showTechReturnPanel" class="separator my-5"></div>
+      <div *ngIf="showTechReturnPanel" class="mb-5">
         <div class="card card-custom bg-light-info">
           <div class="card-header">
             <h4 class="card-title fw-bold">Tech Return Information</h4>
@@ -730,8 +728,8 @@
       </div>
 
       <!-- Tech Notes Section -->
-      <div class="separator my-10"></div>
-      <div class="mb-10">
+      <div class="separator my-5"></div>
+      <div class="mb-5">
         <h4 class="fw-bold mb-5">Additional Tech Notes</h4>
         <form [formGroup]="techNotesForm">
           <div class="row mb-5">
@@ -749,7 +747,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="separator my-10"></div>
+      <div class="separator my-5"></div>
       <div class="d-flex justify-content-between">
         <button type="button" class="btn btn-sm btn-primary me-3" (click)="goBack()">
           <i class="bi bi-arrow-left"></i> Back to Job List

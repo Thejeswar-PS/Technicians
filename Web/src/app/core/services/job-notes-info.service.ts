@@ -94,17 +94,16 @@ export class JobNotesInfoService {
    * Update job information
    * Equivalent to da.UpdateJobInformation(JIF, ref ErrMsg) in legacy code
    */
-  updateJobInformation(jobInfo: UpdateJobRequest): Observable<{ success: boolean; message?: string }> {
+  updateJobInformation(jobInfo: UpdateJobRequest, empId: string): Observable<{ success: boolean; message?: string }> {
     // Backend expects the data wrapped in a "jobInfo" property
     // Also ensure chkNotes is a proper boolean
     const request = {
-      jobInfo: {
         ...jobInfo,
         chkNotes: Boolean(jobInfo.chkNotes) // Ensure it's a proper boolean
-      }
+      
     };
-    
-    return this.http.post<{ success: boolean; message?: string }>(`${this.apiUrl}/JobInfo/UpdateJobInformation`, request);
+
+    return this.http.post<{ success: boolean; message?: string }>(`${this.apiUrl}/JobInfo/UpdateJobInformation?empId=${empId}`, request);
   }
 
   /**

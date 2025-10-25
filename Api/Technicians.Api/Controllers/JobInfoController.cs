@@ -82,14 +82,14 @@ namespace Technicians.Api.Controllers
         }
 
         [HttpPost("UpdateJobInformation")]
-        public async Task<IActionResult> UpdateJobInformation([FromBody] UpdateJobRequest jobInfo)
+        public async Task<IActionResult> UpdateJobInformation([FromBody] UpdateJobRequest jobInfo, [FromQuery] String empId)
         {
             if (jobInfo == null)
             {
                 return BadRequest(new { success = false, message = "CallNbr and TechName are required." });
             }
 
-            var (success, message) = await _repository.UpdateJobInformationAsync(jobInfo);
+            var (success, message) = await _repository.UpdateJobInformationAsync(jobInfo, empId);
 
             if (success)
                 return Ok(new { success = true, message });

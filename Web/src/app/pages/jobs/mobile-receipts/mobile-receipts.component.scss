@@ -1,27 +1,39 @@
 /* Mobile Receipts Component Styles */
 
-.mobile-receipts-header {
-  display: flex;
-  flex-direction: column;
+// Shared Header Layout (Grid-based for perfect centering)
+.job-header {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
   align-items: center;
-  justify-content: center;
   gap: 1rem;
-  text-align: center;
 
-  &__title {
-    font-weight: 700;
-    font-size: 1.75rem;
+  &__group {
+    display: flex;
+    
+    &:first-child {
+      justify-content: flex-start;
+    }
+    
+    &:last-child {
+      justify-content: flex-end;
+    }
   }
 
-  &__back {
-    min-width: 220px;
-    font-size: 0.95rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  &__back,
+  &__action {
+    min-width: 120px;
+    font-weight: 600;
+  }
 
-    .bi {
-      font-size: 1rem;
+  &__title {
+    text-align: center;
+    justify-self: center;
+    
+    h3 {
+      font-size: 1.35rem;
+      color: #1b2559;
+      margin: 0;
     }
   }
 }

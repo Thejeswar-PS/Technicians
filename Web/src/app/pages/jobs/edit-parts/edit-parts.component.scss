@@ -4,6 +4,44 @@
   box-shadow: 0 0 20px 0 rgba(76, 87, 125, 0.02);
 }
 
+// Shared Header Layout (Grid-based for perfect centering)
+.job-header {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+  align-items: center;
+  gap: 1rem;
+
+  &__group {
+    display: flex;
+    
+    &:first-child {
+      justify-content: flex-start;
+    }
+    
+    &:last-child {
+      justify-content: flex-end;
+    }
+  }
+
+  &__back,
+  &__action {
+    min-width: 120px;
+    font-weight: 600;
+  }
+
+  &__title {
+    text-align: center;
+    justify-self: center;
+    
+    h3 {
+      font-size: 1.35rem;
+      color: #1b2559;
+      margin: 0;
+    }
+  }
+}
+
 // Form Styles
 .form-label {
   font-size: 0.925rem;
