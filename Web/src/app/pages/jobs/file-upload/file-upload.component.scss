@@ -1,6 +1,13 @@
 // File Upload Component Styles
 // Matches legacy ASP.NET WebForm styling
 
+// // Modal Header Styling
+// ::ng-deep .modal .modal-header {
+//   background: linear-gradient(to right, #6bdf67, #9bc844, #d2ae1f, #ff6600);
+//   border-bottom: 1px solid #afb6be;
+//   color: white;
+// }
+
 .upload-container {
   font-family: Arial, sans-serif;
   font-size: 8pt;
@@ -22,7 +29,7 @@
 }
 
 .message-note {
-  color: darkgoldenrod;
+  color: rgb(209, 167, 60);
   font-weight: bold;
   font-size: 8pt;
   margin-bottom: 10px;

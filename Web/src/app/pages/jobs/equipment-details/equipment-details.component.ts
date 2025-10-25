@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { EquipmentDetail, UploadInfo, EquipmentDetailsParams, UploadResponse, ValidationResult } from 'src/app/core/model/equipment-details.model';
 import { EquipmentService } from 'src/app/core/services/equipment.service';
+import { JobNotesInfoService } from 'src/app/core/services/job-notes-info.service';
 import { AuthService } from 'src/app/modules/auth';
+import { FileUploadComponent } from '../file-upload/file-upload.component';
 
 @Component({
   selector: 'app-equipment-details',
@@ -11,6 +13,8 @@ import { AuthService } from 'src/app/modules/auth';
   styleUrls: ['./equipment-details.component.scss']
 })
 export class EquipmentDetailsComponent implements OnInit {
+  @ViewChild('fileUploadComponent') fileUploadComponent?: FileUploadComponent;
+  
   // Page parameters
   params: EquipmentDetailsParams = {
     callNbr: '',
@@ -29,6 +33,10 @@ export class EquipmentDetailsComponent implements OnInit {
   loading = false;
   errorMessage = '';
   successMessage = '';
+  showJobNotesLink = false;
+  showJobSafetyLink = false;
+  uploadingExpenses = false;
+  expenseUploadProgress = 0;
   
   // Button states
   uploadJobEnabled = true;
@@ -56,8 +64,10 @@ export class EquipmentDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private equipmentService: EquipmentService,
+    private jobNotesInfoService: JobNotesInfoService,
     private authService: AuthService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -117,11 +127,44 @@ export class EquipmentDetailsComponent implements OnInit {
 
   private async loadUploadInfo(): Promise<void> {
     try {
+      console.log('Loading upload info for callNbr:', this.params.callNbr, 'techId:', this.params.techId);
       const uploadInfo = await this.equipmentService.getUploadInfo(this.params.callNbr, this.params.techId).toPromise();
       this.uploadInfo = uploadInfo || [];
+      console.log('Loaded upload info:', this.uploadInfo);
+      
+      // Trigger change detection to ensure UI updates
+      this.cdr.detectChanges();
+      
+      // If no upload info found, try again after a short delay (for timing issues)
+      if (this.uploadInfo.length === 0) {
+        console.log('No upload info found, retrying in 2 seconds...');
+        setTimeout(async () => {
+          try {
+            const retryUploadInfo = await this.equipmentService.getUploadInfo(this.params.callNbr, this.params.techId).toPromise();
+            this.uploadInfo = retryUploadInfo || [];
+            console.log('Retry upload info result:', this.uploadInfo);
+            
+            // Trigger change detection after retry
+            this.cdr.detectChanges();
+            
+            if (this.uploadInfo.length === 0) {
+              console.warn('Still no upload info found after retry. Check API endpoint and database.');
+            }
+          } catch (retryError: any) {
+            console.error('Error during upload info retry:', retryError);
+          }
+        }, 2000);
+      }
     } catch (error: any) {
       console.error('Error loading upload info:', error);
-      this.errorMessage = error.message || 'Failed to load upload information';
+      console.error('API URL being called:', `${this.equipmentService['apiUrl']}/EquipmentDetails/uploaded-info`);
+      console.error('Parameters:', { callNbr: this.params.callNbr, techId: this.params.techId });
+      if (error.status === 404) {
+        console.error('Upload info API endpoint not found (404)');
+      } else if (error.status === 500) {
+        console.error('Server error (500) when calling upload info API');
+      }
+      // Don't set error message for upload info failures, just log them
     }
   }
 
@@ -155,6 +198,23 @@ export class EquipmentDetailsComponent implements OnInit {
         queryParams: { CallNbr: this.params.callNbr }
       });
     }
+  }
+
+  navigateToJobNotes(): void {
+    this.router.navigate(['/jobs/job-notes-info'], {
+      queryParams: {
+        CallNbr: this.params.callNbr,
+        TechName: this.params.techName
+      }
+    });
+  }
+
+  navigateToJobSafety(): void {
+    this.router.navigate(['/jobs/job-safety'], {
+      queryParams: {
+        CallNbr: this.params.callNbr
+      }
+    });
   }
 
   // Equipment type navigation
@@ -337,13 +397,31 @@ export class EquipmentDetailsComponent implements OnInit {
       console.log('Getting PM Visual Notes...');
       try {
         const pmNotesResult = await this.equipmentService.getPMVisualNotes(this.params.callNbr, this.params.techName).toPromise();
+        console.log('PM Notes API response:', pmNotesResult);
         if (pmNotesResult && pmNotesResult.length > 0) {
           // Extract notes and jobType from first record (matching legacy while loop logic)
           notes = pmNotesResult[0]?.pmVisualNotes || '';
           jobType = pmNotesResult[0]?.SvcDescr || '';
+          console.log('Initial PM notes extracted:', notes);
+          console.log('Job type extracted:', jobType);
         } else {
           notes = '';
           jobType = '';
+          console.log('No PM notes found in response');
+        }
+        
+        // If PM notes are empty, also check for deficiency notes
+        if (notes.trim() === '') {
+          console.log('PM notes empty, checking for deficiency notes...');
+          try {
+            const deficiencyNotes = await this.jobNotesInfoService.getDeficiencyNotes(this.params.callNbr).toPromise();
+            if (deficiencyNotes && deficiencyNotes.trim() !== '') {
+              notes = deficiencyNotes.trim();
+              console.log('Initial deficiency notes found:', notes.substring(0, 50) + '...');
+            }
+          } catch (defEx: any) {
+            console.error('Error getting deficiency notes:', defEx);
+          }
         }
       } catch (ex: any) {
         console.error('Error in GetPMVisualNotes:', ex);
@@ -411,7 +489,7 @@ export class EquipmentDetailsComponent implements OnInit {
       const partsResult = await this.equipmentService.validatePartsReturned(this.params.callNbr).toPromise();
       if (!partsResult?.isReturned) {
         this.errorMessage = 'Job Upload Failed : Parts usage info must be updated by Technician or Account Manager<br/>' +
-                           `<a style="font-size:8pt;color:#7bb752;font-family:arial" href="../DTechJobParts.aspx?CallNbr=${this.params.callNbr}&TechName=${this.params.techName}">Go to Parts Page</a>`;
+                           `<a style="font-size:8pt;color:#7bb752;font-family:arial" href="/jobs/parts?CallNbr=${this.params.callNbr}&TechName=${encodeURIComponent(this.params.techName)}">Go to Parts Page</a>`;
         return;
       }
 
@@ -430,12 +508,36 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 6: Check if technician notes are provided
+      // Refresh notes right before validation to ensure we have the latest data
+      console.log('Re-checking technician notes before upload...');
+      try {
+        const latestNotesResult = await this.equipmentService.getPMVisualNotes(this.params.callNbr, this.params.techName).toPromise();
+        if (latestNotesResult && latestNotesResult.length > 0) {
+          notes = latestNotesResult[0]?.pmVisualNotes || '';
+          console.log('Latest PM notes retrieved:', notes);
+        }
+        
+        // Also check for deficiency notes if PM notes are empty
+        if (notes.trim() === '') {
+          console.log('PM notes empty, checking deficiency notes...');
+          const deficiencyNotes = await this.jobNotesInfoService.getDeficiencyNotes(this.params.callNbr).toPromise();
+          if (deficiencyNotes && deficiencyNotes.trim() !== '') {
+            notes = deficiencyNotes.trim();
+            console.log('Deficiency notes found:', notes.substring(0, 50) + '...');
+          }
+        }
+      } catch (ex: any) {
+        console.error('Error refreshing notes:', ex);
+      }
+      
       if (notes.trim() === '') {
-        const techNameEncoded = this.params.techName.replace(/\s/g, '%20');
-        this.errorMessage = 'You must enter Technician Notes in Job Info Page<br/>' +
-                           `<a style="color:#00B27A;" href="JobNotesInfo.aspx?CallNbr=${this.params.callNbr}&TechName=${techNameEncoded}">Click here</a> to go to Job Notes Info Page`;
+        console.log('No technician notes found, showing error message');
+        this.errorMessage = 'You must enter Technician Notes in Job Info Page';
+        this.showJobNotesLink = true;
         return;
       }
+      
+      console.log('Technician notes validation passed:', notes.substring(0, 50) + '...');
 
       // Step 7: Perform final upload to GP (equivalent to da.UploadJobToGP)
       console.log('Uploading job to GP...');
@@ -452,8 +554,24 @@ export class EquipmentDetailsComponent implements OnInit {
         // Success case
         this.successMessage = result.message || 'Job Uploaded Successfully.';
         this.toastr.success(this.successMessage);
-        this.loadUploadInfo(); // Equivalent to GetUploadedInfo()
+        console.log('Job upload successful, refreshing upload info...');
+        
+        // Add a longer delay to ensure database is updated before refreshing
+        setTimeout(async () => {
+          console.log('Attempting to refresh upload info after job upload...');
+          await this.loadUploadInfo(); // Equivalent to GetUploadedInfo()
+          console.log('Upload info refreshed, current uploadInfo:', this.uploadInfo);
+        }, 1500); // Increased delay to 1.5 seconds
+        
         this.uploadJobEnabled = false; // Equivalent to CmdUploadJob.Enabled = false
+        
+        // Refresh file upload component upload info if it exists
+        if (this.fileUploadComponent) {
+          setTimeout(() => {
+            console.log('Refreshing upload info after job upload');
+            this.loadUploadInfo();
+          }, 1500); // Match the delay
+        }
       } else {
         // Error case - handle specific GP error messages
         let errorMsg = result?.message || 'Failed to upload job';
@@ -518,8 +636,21 @@ export class EquipmentDetailsComponent implements OnInit {
           // Success case
           this.successMessage = result.message || 'Expenses Uploaded Successfully.';
           this.toastr.success(this.successMessage);
-          this.loadUploadInfo(); // Equivalent to GetUploadedInfo()
+          console.log('Expense upload successful, refreshing upload info...');
+          
+          // Add a small delay to ensure database is updated before refreshing
+          setTimeout(() => {
+            this.loadUploadInfo(); // Equivalent to GetUploadedInfo()
+          }, 500);
+          
           this.uploadExpenseEnabled = false; // Equivalent to CmdUploadExpense.Enabled = false
+          
+          // Refresh upload info after successful expense upload
+          if (this.fileUploadComponent) {
+            setTimeout(() => {
+              this.loadUploadInfo();
+            }, 500);
+          }
         } else {
           // Error case - show message if available
           this.errorMessage = result?.message || 'Failed to upload expenses';
@@ -596,5 +727,6 @@ export class EquipmentDetailsComponent implements OnInit {
   clearMessages(): void {
     this.errorMessage = '';
     this.successMessage = '';
+    this.showJobNotesLink = false;
   }
 }

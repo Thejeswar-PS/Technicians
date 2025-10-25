@@ -69,6 +69,31 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   showCapacitorPanel = false;
   showBoardPanel = false;
 
+  // Layout computation - UPS uses two-column, all others use single-column centered
+  get isUpsLayout(): boolean {
+    return this.showCapacitorPanel || this.showBoardPanel;
+  }
+
+  get layoutClass(): string {
+    return this.isUpsLayout ? 'ups-layout' : 'standard-layout';
+  }
+
+  // New methods for enhanced layout system
+  isUpsEquipment(): boolean {
+    const equipType = this.basicInfoForm?.get('equipType')?.value;
+    return equipType === 'UPS';
+  }
+
+  getLayoutModeClass(): string {
+    return this.isUpsEquipment() ? 'ups-mode' : 'standard-mode';
+  }
+
+  getEquipmentTypeLabel(): string {
+    const equipType = this.basicInfoForm?.get('equipType')?.value;
+    const option = this.equipmentTypeOptions.find(opt => opt.value === equipType);
+    return option ? option.label : '';
+  }
+
   // Dropdown options
   statusOptions = EQUIPMENT_STATUS_OPTIONS;
   equipmentTypeOptions = EQUIPMENT_TYPE_OPTIONS;
@@ -103,7 +128,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       location: [''],
       dateCodeMonth: [''],
       dateCodeYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
-      status: ['', Validators.required],
+      status: ['Online', Validators.required], // Default to 'Online' instead of empty
       equipType: ['SELECT', Validators.required],
       floatVoltageSelection: ['PS'],
       batteryPackCount: [null, [Validators.pattern(/^\d+$/)]],
@@ -231,6 +256,16 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   private populateFormData(): void {
     if (!this.equipmentInfo) return;
     
+    // Debug: Log the equipment info to check field values
+    console.log('Equipment Info received:', this.equipmentInfo);
+    
+    // Handle case sensitivity issues in API response
+    const tagValue = (this.equipmentInfo as any).svC_Asset_tag || (this.equipmentInfo as any).svC_Asset_Tag || '';
+    const statusValue = (this.equipmentInfo.codeEquipmentStatus || '').trim();
+    
+    console.log('Tag value from API:', tagValue);
+    console.log('Status value from API (trimmed):', statusValue);
+    
     // Populate basic info form - matching your legacy DisplayEquipment() method
     this.basicInfoForm.patchValue({
       callNbr: this.callNbr, // From route params (txtCallNbr)
@@ -239,7 +274,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       location: this.equipmentInfo.location || '', // txtLocation
       dateCodeMonth: this.equipmentInfo.equipMonth || '', // txtDateCodeMonth
       dateCodeYear: this.equipmentInfo.equipYear || null, // txtDateCodeYear
-      status: this.equipmentInfo.codeEquipmentStatus || '', // ddlStatus
+      status: statusValue || 'Online', // ddlStatus - trim spaces and default to Online if empty
       equipType: (this.equipmentInfo.equipType || '').trim() || 'SELECT', // ddlEquipType
       floatVoltageSelection: this.getFloatVoltageSelection(), // ddlFloatVoltS
       batteryPackCount: this.equipmentInfo.batteriesPerPack ?? 0, // txtPackNo - show 0 instead of null
@@ -248,12 +283,16 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       kva: this.equipmentInfo.upskva || null, // txtKVA
       vendorId: this.equipmentInfo.vendorId || '', // txtVendorID
       version: this.equipmentInfo.version || '', // txtVersion
-      tag: (this.equipmentInfo.svC_Asset_Tag || '').trim(), // txtTag - Fixed property name
+      tag: tagValue.trim(), // txtTag - Handle both case variations and trim
       contract: this.equipmentInfo.contract || '', // txtContract
       taskDescription: this.equipmentInfo.taskDescription || '' // txtDesc
     });
 
     // Debug: Log what was actually set in the form
+    console.log('Form values after patchValue:', {
+      status: this.basicInfoForm.get('status')?.value,
+      tag: this.basicInfoForm.get('tag')?.value
+    });
     
     // Trigger equipment type change to show/hide panels
     const equipType = (this.equipmentInfo.equipType || '').trim();
@@ -414,6 +453,14 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
 
     try {
       const request: UpdateEquipmentRequest = this.buildUpdateRequest();
+      
+      // Debug: Log the request object to see what we're sending to the API
+      console.log('Update request being sent to API:', {
+        SVC_Asset_Tag: request.SVC_Asset_Tag,
+        codeEquipmentStatus: request.codeEquipmentStatus,
+        tag: request.SVC_Asset_Tag, // For easier debugging
+        status: request.codeEquipmentStatus
+      });
       
       // ABSOLUTE FINAL SAFETY CHECK - validate field lengths before API call
       console.log('Final safety check - examining request object before API call');
@@ -643,7 +690,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
         equipType: basicData.equipType || 'UPS',
         version: basicData.version || '',
         serialID: basicData.serialId || '',
-        svC_Asset_Tag: basicData.tag || '',
+        SVC_Asset_Tag: basicData.tag || '', // Use exact casing expected by C# API: SVC_Asset_Tag
         location: basicData.location || '',
         readingType: basicData.readingType || '1',
         contract: basicData.contract || '',

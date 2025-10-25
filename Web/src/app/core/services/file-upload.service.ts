@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 
+// Uploaded File interface matching the frontend model
 export interface UploadedFile {
   name: string;
   creationTime: Date;
@@ -31,27 +32,6 @@ export interface EquipmentFileResponseDto {
   data: string; // Base64 encoded file data
 }
 
-/**
- * File Upload Service
- * 
- * Handles file upload operations for the application.
- * 
- * BACKEND REQUIREMENTS:
- * This service expects the following API endpoints to be implemented:
- * 
- * General file uploads:
- * - POST /api/FileUpload/UploadFile - Upload a file with callNbr and file data
- * - GET /api/FileUpload/GetFiles/{callNbr} - Get list of uploaded files for a job
- * - GET /api/FileUpload/GetFileUrl/{callNbr}/{fileName} - Get download URL for a file
- * 
- * Equipment-specific file uploads (matching legacy EqFileUpload):
- * - POST /api/Equipment/InsertEquipmentFile - Upload equipment file with equipmentId and techId
- * - GET /api/Equipment/GetEquipmentFiles?equipId={equipId} - Get equipment files
- * 
- * If these endpoints return 404, the frontend will gracefully handle the situation
- * by showing appropriate error messages and disabling upload functionality.
- */
-
 export interface UploadResponse {
   success: boolean;
   message: string;
@@ -64,9 +44,7 @@ export class FileUploadService {
   private apiUrl = environment.apiUrl || 'https://localhost:7115/api';
 
   constructor(private http: HttpClient) {
-    console.log('FileUploadService initialized with API URL:', this.apiUrl);
   }
-
   /**
    * Upload a file for a specific job - uses same endpoint as equipment uploads
    */
@@ -80,13 +58,13 @@ export class FileUploadService {
     formData.append('Img_Type', file.type || 'application/octet-stream');
     formData.append('CreatedBy', callNbr);
     
-    // Add file size if backend expects it
+    // Adding file size if backend expects it
     formData.append('FileSize', file.size.toString());
     
     // The file itself - same as equipment uploads
     formData.append('ImgFile', file, file.name);
     
-    // Use DIFFERENT endpoint for job uploads (header button)
+    // endpoint for job uploads (header button)
     const endpoint = `${this.apiUrl}/EquipmentDetails/InsertEquipmentFiles`;
     console.log('Uploading job file to header endpoint:', endpoint);
     console.log('Job file FormData contents (for header upload):', {
@@ -99,44 +77,40 @@ export class FileUploadService {
     });
     
     // Debug: Log FormData keys
-    console.log('Job upload FormData keys (should match equipment format):');
     formData.forEach((value, key) => {
       console.log(`${key}: ${value instanceof File ? `[File: ${value.name}, size: ${value.size}]` : value}`);
     });
     
     return this.http.post<UploadResponse>(endpoint, formData);
   }
-
   /**
    * Upload equipment file (matching legacy EqFileUpload functionality)
    */
-  uploadEquipmentFile(equipmentId: number, techId: string, file: File, createdBy?: string): Observable<UploadResponse> {
+  uploadEquipmentFile(equipmentId: number, techId: string, file: File, createdBy?: string, callNbr?: string, equipNo?: string, techName?: string): Observable<UploadResponse> {
     const formData = new FormData();
+    
+    // Add required fields for the backend InsertEquipmentFile endpoint (separate from images)
     formData.append('EquipID', equipmentId.toString());
     formData.append('TechID', techId);
     formData.append('Img_Title', file.name);
     formData.append('Img_Type', file.type || 'application/octet-stream');
     formData.append('CreatedBy', createdBy || techId);
     
-    // Add file size if backend expects it
-    formData.append('FileSize', file.size.toString());
-    
-    // The file itself - make sure this matches backend expectation
+    // The file itself - backend expects ImgFile
     formData.append('ImgFile', file, file.name);
     
+    // Use the file-specific backend endpoint (separate from equipment images)
     const endpoint = `${this.apiUrl}/EquipmentDetails/InsertEquipmentFile`;
-    console.log('Uploading equipment file to endpoint:', endpoint);
-    console.log('Equipment FormData contents:', {
+    console.log('Uploading equipment FILE (not image) to endpoint:', endpoint);
+    console.log('Equipment FILE FormData contents:', {
       EquipID: equipmentId,
       TechID: techId,
       Img_Title: file.name,
       Img_Type: file.type,
-      CreatedBy: createdBy || techId,
-      FileSize: file.size
+      CreatedBy: createdBy || techId
     });
     
     // Debug: Log FormData keys
-    console.log('Equipment FormData keys:');
     formData.forEach((value, key) => {
       console.log(`${key}: ${value instanceof File ? `[File: ${value.name}, size: ${value.size}]` : value}`);
     });
@@ -166,9 +140,36 @@ export class FileUploadService {
 
   /**
    * Get equipment files for a specific equipment ID
+   * Now using the same database table as equipment images for persistence
    */
   getEquipmentFiles(equipmentId: number): Observable<{ data: EquipmentFileResponseDto[] }> {
-    return this.http.get<{ data: EquipmentFileResponseDto[] }>(`${this.apiUrl}/EquipmentDetails/GetEquipmentFiles?equipId=${equipmentId}`);
+    // Use the file-specific backend endpoint (separate from equipment images)
+    const params = new HttpParams()
+      .set('equipId', equipmentId.toString());
+    
+    console.log('Fetching equipment FILES (not images) for equipmentId:', equipmentId);
+    
+    return this.http.get<{ data: any[] }>(`${this.apiUrl}/EquipmentDetails/GetEquipmentFiles`, { params })
+      .pipe(
+        map((response: any) => {
+          console.log('Raw equipment FILES API response:', response);
+          
+          // Transform the backend response to match frontend expectations
+          // Backend returns: equipID, techID, fileName, contentType, createdBy, createdOn, data
+          const transformedData = (response.data || []).map((item: any) => {
+            return {
+              equipID: item.equipID,
+              techID: item.techID,
+              fileName: item.fileName,
+              contentType: item.contentType,
+              createdBy: item.createdBy,
+              createdOn: new Date(item.createdOn),
+              data: item.data || ''
+            };
+          });
+          return { data: transformedData };
+        })
+      );
   }
 
   /**
@@ -257,9 +258,7 @@ export class FileUploadService {
     return lastIndex >= 0 ? fileName.substring(lastIndex + 1) : '';
   }
 
-  /**
-   * Test basic API connectivity
-   */
+  //Testing basic API connectivity
   testApiConnectivity(): Observable<any> {
     // Try a simple GET request to see if the API is reachable
     return this.http.get(`${this.apiUrl}/EquipmentDetails/GetEquipmentFiles?equipId=1`, {

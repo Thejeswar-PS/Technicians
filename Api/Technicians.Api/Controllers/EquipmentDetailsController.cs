@@ -663,44 +663,84 @@ namespace Technicians.Api.Controllers
         {
             try
             {
-                // Validate required fields
+                _logger.LogInformation("=== InsertEquipmentFile called ===");
+                _logger.LogInformation("EquipID: {EquipID}", fileDto?.EquipID);
+                _logger.LogInformation("TechID: {TechID}", fileDto?.TechID);
+                _logger.LogInformation("CreatedBy: {CreatedBy}", fileDto?.CreatedBy);
+                _logger.LogInformation("File Name: {FileName}", fileDto?.ImgFile?.FileName);
+                _logger.LogInformation("File Size: {FileSize}", fileDto?.ImgFile?.Length);
+
+                // Enhanced validation
+                if (fileDto == null)
+                {
+                    _logger.LogWarning("EquipmentFileDto is null");
+                    return BadRequest(new { success = false, message = "Request data is required." });
+                }
+
                 if (fileDto.EquipID <= 0)
                 {
+                    _logger.LogWarning("Invalid EquipID: {EquipID}", fileDto.EquipID);
                     return BadRequest(new { success = false, message = "Valid EquipID is required." });
                 }
 
                 if (fileDto.ImgFile == null || fileDto.ImgFile.Length == 0)
                 {
+                    _logger.LogWarning("No file provided or file is empty");
                     return BadRequest(new { success = false, message = "File is required." });
                 }
 
-                // Set file type if not provided
+                // Set required fields if missing
+                if (string.IsNullOrEmpty(fileDto.TechID))
+                {
+                    _logger.LogWarning("TechID is missing, setting default");
+                    fileDto.TechID = "SYSTEM"; // Set appropriate default or get from auth context
+                }
+
+                if (string.IsNullOrEmpty(fileDto.CreatedBy))
+                {
+                    _logger.LogWarning("CreatedBy is missing, setting default");
+                    fileDto.CreatedBy = "SYSTEM"; // Set appropriate default or get from auth context
+                }
+
+                // Set file metadata
                 if (string.IsNullOrEmpty(fileDto.Img_Type))
                 {
-                    fileDto.Img_Type = fileDto.ImgFile.ContentType;
+                    fileDto.Img_Type = fileDto.ImgFile.ContentType ?? "application/octet-stream";
                 }
 
-                // Set file title if not provided
                 if (string.IsNullOrEmpty(fileDto.Img_Title))
                 {
-                    fileDto.Img_Title = fileDto.ImgFile.FileName;
+                    fileDto.Img_Title = fileDto.ImgFile.FileName ?? "Untitled";
                 }
 
+                _logger.LogInformation("Calling repository InsertEquipmentFileAsync...");
                 var result = await _repository.InsertEquipmentFileAsync(fileDto);
+                _logger.LogInformation("Repository call completed. Success: {Success}, Message: {Message}", 
+                    result.Success, result.Message);
 
                 if (result.Success)
                 {
-                    return Ok(new { success = true, message = result.Message });
+                    // Verify the file was actually saved by trying to retrieve it
+                    _logger.LogInformation("Verifying file was saved by retrieving files for EquipID: {EquipID}", fileDto.EquipID);
+                    var savedFiles = await _repository.GetEquipmentFilesAsync(fileDto.EquipID);
+                    _logger.LogInformation("Found {FileCount} files after upload", savedFiles?.Count() ?? 0);
+
+                    return Ok(new { 
+                        success = true, 
+                        message = result.Message,
+                        fileCount = savedFiles?.Count() ?? 0 
+                    });
                 }
                 else
                 {
+                    _logger.LogError("Repository returned failure: {Message}", result.Message);
                     return StatusCode(500, new { success = false, message = result.Message });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in InsertEquipmentFile endpoint");
-                return StatusCode(500, new { success = false, message = "An unexpected error occurred." });
+                _logger.LogError(ex, "Unexpected error in InsertEquipmentFile endpoint");
+                return StatusCode(500, new { success = false, message = "An unexpected error occurred while uploading the file." });
             }
         }
 
@@ -710,34 +750,49 @@ namespace Technicians.Api.Controllers
         {
             try
             {
+                _logger.LogInformation("=== GetEquipmentFiles called ===");
+                _logger.LogInformation("EquipID: {EquipID}", equipId);
+
                 if (equipId <= 0)
                 {
+                    _logger.LogWarning("Invalid EquipID: {EquipID}", equipId);
                     return BadRequest(new { message = "Valid EquipID is required." });
                 }
 
+                _logger.LogInformation("Calling repository GetEquipmentFilesAsync...");
                 var files = await _repository.GetEquipmentFilesAsync(equipId);
+                _logger.LogInformation("Repository returned {FileCount} files", files?.Count() ?? 0);
+
+                if (files != null && files.Any())
+                {
+                    foreach (var file in files)
+                    {
+                        _logger.LogInformation("File: {FileName}, Size: {Size}, CreatedOn: {CreatedOn}", 
+                            file.FileName, file.Data?.Length ?? 0, file.CreatedOn);
+                    }
+                }
 
                 if (files == null || !files.Any())
                 {
-                    // Return empty array in data property (consistent with GetEquipmentImages pattern)
+                    _logger.LogInformation("No files found for EquipID: {EquipID}", equipId);
                     return Ok(new { data = new List<object>() });
                 }
 
-                // Convert to frontend format with base64 encoding for files
+                // Convert to frontend format
                 var result = files.Select(f => new
                 {
-                    // Remove fileID since table doesn't have it
                     equipID = f.EquipID,
                     techID = f.TechID,
                     fileName = f.FileName,
                     contentType = f.ContentType,
                     createdBy = f.CreatedBy,
                     createdOn = f.CreatedOn,
+                    dataSize = f.Data?.Length ?? 0,
                     // Convert byte array to base64 string for JSON response
                     data = f.Data != null ? Convert.ToBase64String(f.Data) : null
                 }).ToList();
 
-                _logger.LogInformation("Returning {Count} equipment files for EquipID: {EquipID}", result.Count, equipId);
+                _logger.LogInformation("Returning {Count} formatted files", result.Count);
                 return Ok(new { data = result });
             }
             catch (Exception ex)

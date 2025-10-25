@@ -44,7 +44,32 @@ export class EquipmentService {
     .set('callNbr', callNbr)
     .set('techId', techId);
 
-  return this.http.get<UploadInfo[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params });
+  return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params }).pipe(
+    map((data: any[]) => {
+      console.log('=== RAW API RESPONSE ===');
+      console.log('Full data array:', data);
+      
+      return (data || []).map((item, index) => {
+        console.log(`\n=== ITEM ${index} ===`);
+        console.log('All properties:', Object.keys(item));
+        console.log('Full item:', item);
+        
+        // Based on your debug output, the API returns:
+        // - uploadJobDt: "2025-10-24T19:02:31.03"
+        // - uploadedBy: "Ajay.Sharmal"  
+        // - type: "Job"
+        const rawDate = item.uploadJobDt || item.uploadedJobDt || item.UploadJobDt || '';
+        
+        console.log('Selected rawDate:', rawDate);
+        
+        return {
+          UploadedBy: item.uploadedBy || item.UploadedBy || '',
+          UploadJobDt: rawDate ? new Date(rawDate) : null,
+          Type: item.type || item.Type || ''
+        };
+      });
+    })
+  );
 }
 
   /**

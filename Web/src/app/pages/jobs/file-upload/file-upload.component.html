@@ -32,7 +32,14 @@
             padding: 5px;
         }
         .header-row {
-            background-color: #f0f0f0;
+            background-color: #f0e9e9 !important;
+            color: rgb(0, 0, 0) !important;
+            font-weight: bold;
+            padding: 8px;
+        }
+        .header-row td {
+            background-color: #838784 !important;
+            color: white !important;
             font-weight: bold;
             padding: 8px;
         }
@@ -83,9 +90,13 @@
             font-size: 8pt;
         }
         .message-note {
-            color: darkgoldenrod;
+            color: #2c3e50;
             font-weight: bold;
-            font-size: 8pt;
+            font-size: 9pt;
+            background-color: #e9e288;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
         }
         .files-grid {
             width: 100%;
@@ -93,11 +104,13 @@
             margin-top: 20px;
         }
         .files-grid th {
-            background-color: #f0f0f0;
+            background-color: #838784 !important;
+            color: white !important;
             padding: 8px;
             border: 1px solid #ccc;
             text-align: left;
         }
+        
         .files-grid td {
             padding: 5px 8px;
             border: 1px solid #ccc;
@@ -146,11 +159,13 @@
                     <div class="message-note">
                         Note: Make sure that File Name does not contain any spaces. It should be all one word.<br>
                         Supported file types: PDF, JPG, JPEG, DOC, DOCX, TXT, PPTX, XLS, RTF, PPT, XLSX, LOG<br>
-                        <small>Mode: {{ isEquipmentMode ? 'Equipment Files (ID: ' + equipmentId + ', Tech: ' + techId + ')' : 'Job Files (CallNbr: ' + callNbr + ')' }}</small>
+                        <strong>Only the latest 2 files will be displayed. Older files will be automatically deleted.</strong>
                     </div>
                 </td>
             </tr>
         </table>
+
+        <!-- Upload History Grid - REMOVED as requested -->
 
         <!-- Upload Form -->
         <div class="table-container">
@@ -158,17 +173,37 @@
                 <tr class="header-row">
                     <td colspan="2">Add Attachments</td>
                 </tr>
-                <tr *ngFor="let file of selectedFiles; let i = index">
+                <!-- First file input -->
+                <tr>
                     <td>
                         <input 
                             type="file" 
                             class="file-input" 
-                            [id]="'fileInput' + i"
-                            (change)="onFileSelected($event, i)"
+                            id="fileInput0"
+                            name="fileInput0"
+                            (change)="onFileSelected($event, 0)"
                             [disabled]="uploading"
                             accept=".pdf,.doc,.docx,.txt,.pptx,.xls,.rtf,.ppt,.xlsx,.log,.jpg,.jpeg">
-                        <small *ngIf="selectedFiles[i]" style="color: green; font-size: 8pt;">
-                            Selected: {{selectedFiles[i]?.name}}
+                        <small *ngIf="selectedFiles[0] && selectedFiles[0]?.name" style="color: green; font-size: 8pt;">
+                            Selected: {{selectedFiles[0]?.name}}
+                            <button type="button" (click)="clearFileSlot(0)" style="margin-left: 8px; font-size: 7pt; padding: 1px 4px;" title="Clear this file">×</button>
+                        </small>
+                    </td>
+                </tr>
+                <!-- Second file input -->
+                <tr>
+                    <td>
+                        <input 
+                            type="file" 
+                            class="file-input" 
+                            id="fileInput1"
+                            name="fileInput1"
+                            (change)="onFileSelected($event, 1)"
+                            [disabled]="uploading"
+                            accept=".pdf,.doc,.docx,.txt,.pptx,.xls,.rtf,.ppt,.xlsx,.log,.jpg,.jpeg">
+                        <small *ngIf="selectedFiles[1] && selectedFiles[1]?.name" style="color: green; font-size: 8pt;">
+                            Selected: {{selectedFiles[1]?.name}}
+                            <button type="button" (click)="clearFileSlot(1)" style="margin-left: 8px; font-size: 7pt; padding: 1px 4px;" title="Clear this file">×</button>
                         </small>
                     </td>
                 </tr>
@@ -226,7 +261,8 @@
                                 <th style="width: 50px;">No</th>
                                 <th style="width: 250px;">File Name</th>
                                 <th style="width: 150px;">Creation Time</th>
-                                <th>Full Name</th>
+                                <th style="width: 150px;">Created By</th>
+                                <th style="width: 100px;">Download</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -241,10 +277,19 @@
                                     </span>
                                 </td>
                                 <td>{{getFileDate(file) | date:'dd-MMM-yyyy'}}</td>
-                                <td>{{getFileName(file)}}</td>
+                                <td>{{getFileCreatedBy(file)}}</td>
+                                <td>
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-sm btn-primary"
+                                        (click)="downloadFile(file)"
+                                        [title]="'Download ' + getFileName(file)">
+                                        <i class="fa fa-download"></i>
+                                    </button>
+                                </td>
                             </tr>
                             <tr *ngIf="displayFiles.length === 0 && !loading">
-                                <td colspan="4" style="text-align: center; padding: 20px; color: #666;">
+                                <td colspan="5" style="text-align: center; padding: 20px; color: #666;">
                                     No files uploaded yet.
                                 </td>
                             </tr>
