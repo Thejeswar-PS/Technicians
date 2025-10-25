@@ -85,6 +85,7 @@ export interface UpdateJobRequest {
   techName: string;
   qtePriority: string;
   chkNotes: boolean;
+  changeby?: string;
 }
 
 export interface JobNotesParams {

@@ -3,26 +3,31 @@
   <!-- Header -->
   <div class="card">
     <div class="card-header border-0 py-4">
-      <div class="job-expenses-header">
-        <ng-container *ngIf="callNbr; else expensesFor">
-          <h3 class="job-expenses-header__title text-primary mb-0">
-            Job Number: {{ callNbr }}
-          </h3>
-        </ng-container>
-      </div>
-      <div>
-        <ng-template #expensesFor>
-          <h3 class="job-expenses-header__title text-primary mb-0" *ngIf="techName">
-            Expenses for: {{ techName }}
-          </h3>
-        </ng-template>
-        <button 
-          type="button"
-          class="btn btn-primary job-expenses-header__back"
-          (click)="goBack()">
-          <i class="bi bi-arrow-left me-2"></i>
-          Back to Job List
-        </button>
+      <div class="job-header">
+        <div class="job-header__group">
+          <button 
+            type="button"
+            class="btn btn-sm btn-primary job-header__back"
+            (click)="goBack()">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back
+          </button>
+        </div>
+        <div class="job-header__title">
+          <ng-container *ngIf="callNbr; else expensesFor">
+            <h3 class="text-primary mb-0 fw-bold">
+              Job Number: {{ callNbr }}
+            </h3>
+          </ng-container>
+          <ng-template #expensesFor>
+            <h3 class="text-primary mb-0 fw-bold" *ngIf="techName">
+              Expenses for: {{ techName }}
+            </h3>
+          </ng-template>
+        </div>
+        <div class="job-header__group">
+          <!-- Placeholder for symmetry -->
+        </div>
       </div>
     </div>
 

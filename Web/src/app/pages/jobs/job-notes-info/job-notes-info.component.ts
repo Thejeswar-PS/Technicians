@@ -33,6 +33,7 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
   callNbr: string = '';
   techName: string = '';
   status: string = '';
+  empId: string = '';
 
   // Forms
   jobNotesForm!: FormGroup;
@@ -75,6 +76,7 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.loadUserContext();
     this.getRouteParams();
     this.loadData();
   }
@@ -82,6 +84,23 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  private loadUserContext(): void {
+    try {
+      const stored = localStorage.getItem('userData');
+      if (!stored) {
+        return;
+      }
+
+      const parsed = JSON.parse(stored);
+      const possibleEmpId = (parsed?.empID ?? parsed?.empId ?? parsed?.EmpId ?? '').toString().trim();
+      if (possibleEmpId) {
+        this.empId = possibleEmpId;
+      }
+    } catch (error) {
+      console.warn('Unable to load user context for empId:', error);
+    }
   }
 
   private getRouteParams(): void {
@@ -671,14 +690,15 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
         pmVisualNotes: techNotesHtml,
         techName: this.techName,
         qtePriority: this.jobNotesForm.get('quotePriority')?.value,
-        chkNotes: this.jobNotesForm.get('deficiencyNotesVerified')?.value
+        chkNotes: this.jobNotesForm.get('deficiencyNotesVerified')?.value,
+        changeby: this.empId?.trim() || ''
       };
 
       const errors: string[] = [];
       let updateSuccess = false;
       let deficiencySuccess = true;
 
-      const updateResult = await this.jobNotesInfoService.updateJobInformation(updateRequest).toPromise();
+      const updateResult = await this.jobNotesInfoService.updateJobInformation(updateRequest, this.empId).toPromise();
       if (updateResult?.success) {
         updateSuccess = true;
       } else {

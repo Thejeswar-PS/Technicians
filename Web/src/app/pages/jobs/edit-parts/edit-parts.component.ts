@@ -581,7 +581,8 @@ export class EditPartsComponent implements OnInit {
     }
 
     const executeSave = () => {
-      const shippingRequired = normalizedSource !== 'pen';
+      // Auto-create shipping part only when adding (not editing) and Source != "Pen"
+      const shouldAutoCreateShipping = this.mode === 'add' && normalizedSource !== 'pen';
 
       this.jobPartsService.savePartsRequest(payload, this.empId).subscribe({
         next: (response) => {
@@ -597,7 +598,8 @@ export class EditPartsComponent implements OnInit {
             this.scidInc = resolvedScidInc;
           }
 
-          if (!shippingRequired) {
+          // Only auto-create shipping part for new parts requests (not edits)
+          if (!shouldAutoCreateShipping) {
             this.handleSaveSuccess('Parts request saved successfully');
             return;
           }

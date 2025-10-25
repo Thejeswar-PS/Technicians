@@ -3,20 +3,25 @@
   <!-- Header -->
   <div class="card">
     <div class="card-header border-0 py-4">
-      <div class="mobile-receipts-header">
-        <h3 class="mobile-receipts-header__title text-primary mb-0">
-          Service Call No: {{ callNbr }} -- Tech Name: {{ techName }}
-        </h3>
-      </div>
-      <div>
-        <button 
-          type="button"
-          class="btn btn-primary mobile-receipts-header__back"
-          (click)="goBack()"
-          [disabled]="loading">
-          <i class="bi bi-arrow-left me-2"></i>
-          Back to Job Expenses
-        </button>
+      <div class="job-header">
+        <div class="job-header__group">
+          <button 
+            type="button"
+            class="btn btn-sm btn-primary job-header__back"
+            (click)="goBack()"
+            [disabled]="loading">
+            <i class="bi bi-arrow-left me-2"></i>
+            Back
+          </button>
+        </div>
+        <div class="job-header__title">
+          <h3 class="text-primary mb-0 fw-bold">
+            Service Call No: {{ callNbr }} -- Tech Name: {{ techName }}
+          </h3>
+        </div>
+        <div class="job-header__group">
+          <!-- Placeholder for symmetry -->
+        </div>
       </div>
     </div>
   </div>

@@ -1,17 +1,22 @@
 <div class="card">
   <!-- Header -->
   <div class="card-header border-0 pt-5">
-    <div class="d-flex align-items-center">
-  <button *ngIf="!modalContext" type="button" class="btn btn-sm btn-primary me-3" (click)="goBack()">
-        <i class="bi bi-arrow-left"></i> Back
-      </button>
-      <button *ngIf="modalContext" type="button" class="btn btn-sm btn-light-danger me-3" (click)="goBack()">
-        <i class="bi bi-x"></i> Close
-      </button>
-      <h3 class="card-title align-items-start flex-column">
-        <span class="card-label fw-bold fs-3 mb-1">{{ pageTitle }}</span>
-        <span class="text-muted mt-1 fw-semibold fs-7">Job #{{ callNbr }}</span>
-      </h3>
+    <div class="job-header">
+      <div class="job-header__group">
+        <button *ngIf="!modalContext" type="button" class="btn btn-sm btn-primary job-header__back" (click)="goBack()">
+          <i class="bi bi-arrow-left me-2"></i> Back
+        </button>
+        <button *ngIf="modalContext" type="button" class="btn btn-sm btn-light-danger job-header__back" (click)="goBack()">
+          <i class="bi bi-x me-2"></i> Close
+        </button>
+      </div>
+      <div class="job-header__title">
+        <h3 class="card-title fw-bold mb-0">{{ pageTitle }}</h3>
+        <span class="text-muted fw-semibold" style="font-size: 0.875rem;">Job #{{ callNbr }}</span>
+      </div>
+      <div class="job-header__group">
+        <!-- Placeholder for symmetry -->
+      </div>
     </div>
   </div>
 

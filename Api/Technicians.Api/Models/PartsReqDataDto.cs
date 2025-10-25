@@ -16,6 +16,8 @@
         public string Shipping_Method { get; set; }
         public DateTime? Create_Date { get; set; }
         public DateTime? LastModified { get; set; }
+
+        public bool BackOrder { get; set; }
         public string Maint_Auth_ID { get; set; }
     }
 }

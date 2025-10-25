@@ -53,7 +53,7 @@ export class JobPartsService {
         requiredDate: d.required_Date,
         shippingMethod: d.shipping_Method,
         urgent: !!d.urgent,
-        backOrder: false,
+        backOrder: d.backOrder,
         techName: d.maint_Auth_ID?.trim()
       } as PartsRequest)))
     );
@@ -302,7 +302,7 @@ export class JobPartsService {
    * Legacy: Page_PreRender() (directory read)
    */
   getFileAttachments(callNbr: string): Observable<FileAttachment[]> {
-    return this.http.get<FileAttachment[]>(`${this.API}/JobParts/GetFileAttachments?callNbr=${encodeURIComponent(callNbr)}`);
+    return this.http.get<FileAttachment[]>(`${this.API}/PartsData/GetFileAttachments?callNbr=${encodeURIComponent(callNbr)}`);
   }
 
   /**
@@ -313,7 +313,7 @@ export class JobPartsService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('callNbr', callNbr);
-    return this.http.post<any>(`${this.API}/JobParts/UploadFileAttachment`, formData);
+    return this.http.post<any>(`${this.API}/PartsData/UploadFileAttachment`, formData);
   }
 
   /**
@@ -321,9 +321,8 @@ export class JobPartsService {
    * Legacy: getRootURL()
    */
   getFileUrl(callNbr: string, fileName: string): string {
-    return `${this.API}/JobParts/GetFile?callNbr=${encodeURIComponent(callNbr)}&fileName=${encodeURIComponent(fileName)}`;
+    return `${this.API}/PartsData/GetFile?callNbr=${encodeURIComponent(callNbr)}&fileName=${encodeURIComponent(fileName)}`;
   }
-
 
   
 
