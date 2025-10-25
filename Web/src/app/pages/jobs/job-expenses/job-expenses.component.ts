@@ -3,6 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { JobService } from 'src/app/core/services/job.service';
 import { ToastrService } from 'ngx-toastr';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { EditExpenseComponent } from '../edit-expense/edit-expense.component';
 
 export interface JobExpense {
   expType: string;
@@ -52,7 +54,8 @@ export class JobExpensesComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private jobService: JobService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private modalService: NgbModal
   ) {
     this.dateFilterForm = this.fb.group({
       startDate: [''],
@@ -199,49 +202,67 @@ export class JobExpensesComponent implements OnInit {
   }
 
   addNewExpense(): void {
-    console.log('Adding new expense for CallNbr:', this.callNbr);
-    this.router.navigate(['/jobs/edit-expense'], {
-      queryParams: {
-        CallNbr: this.callNbr,
-        TechName: this.techName,
-        TechID: this.techID
-      }
+    console.log('Opening modal to add new expense for CallNbr:', this.callNbr);
+    
+    const modalRef = this.modalService.open(EditExpenseComponent, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: false,
+      scrollable: true
     });
+    
+    // Pass data to modal
+    modalRef.componentInstance.callNbr = this.callNbr;
+    modalRef.componentInstance.techName = this.techName;
+    modalRef.componentInstance.techID = this.techID;
+    modalRef.componentInstance.mode = 'add';
+    modalRef.componentInstance.tableIdx = 0;
+    
+    // Handle modal result
+    modalRef.result.then(
+      (result) => {
+        console.log('Modal closed with result:', result);
+        if (result === 'saved') {
+          // Reload expenses after save
+          this.loadExpenses();
+        }
+      },
+      (reason) => {
+        console.log('Modal dismissed with reason:', reason);
+      }
+    );
   }
 
   editExpense(expense: JobExpense): void {
-    console.log('=== EDIT EXPENSE DEBUG START ===');
-    console.log('Editing expense:', expense);
-    console.log('Current callNbr:', this.callNbr);
-    console.log('Current techName:', this.techName);
-    console.log('Current techID:', this.techID);
-    console.log('Expense tableIndex:', expense.tableIndex);
-    console.log('Expense callNbr:', expense.callNbr);
+    console.log('Opening modal to edit expense:', expense);
     
-    try {
-      console.log('About to navigate to /jobs/edit-expense with queryParams...');
-      const navigationPromise = this.router.navigate(['/jobs/edit-expense'], {
-        queryParams: {
-          CallNbr: expense.callNbr,
-          TableIdx: expense.tableIndex,
-          TechName: this.techName,
-          TechID: this.techID
+    const modalRef = this.modalService.open(EditExpenseComponent, {
+      size: 'xl',
+      backdrop: 'static',
+      keyboard: false,
+      scrollable: true
+    });
+    
+    // Pass data to modal
+    modalRef.componentInstance.callNbr = expense.callNbr;
+    modalRef.componentInstance.techName = this.techName;
+    modalRef.componentInstance.techID = this.techID;
+    modalRef.componentInstance.mode = 'edit';
+    modalRef.componentInstance.tableIdx = expense.tableIndex;
+    
+    // Handle modal result
+    modalRef.result.then(
+      (result) => {
+        console.log('Modal closed with result:', result);
+        if (result === 'saved' || result === 'deleted') {
+          // Reload expenses after save or delete
+          this.loadExpenses();
         }
-      });
-      
-      console.log('Navigation promise created:', navigationPromise);
-      
-      navigationPromise.then((success) => {
-        console.log('Navigation completed successfully:', success);
-      }).catch((error) => {
-        console.error('Navigation failed with error:', error);
-      });
-      
-      console.log('Navigation initiated, continuing...');
-    } catch (error) {
-      console.error('Error in editExpense method:', error);
-    }
-    console.log('=== EDIT EXPENSE DEBUG END ===');
+      },
+      (reason) => {
+        console.log('Modal dismissed with reason:', reason);
+      }
+    );
   }
 
   viewMobileReceipts(): void {
