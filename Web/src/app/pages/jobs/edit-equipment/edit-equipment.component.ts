@@ -257,14 +257,10 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     if (!this.equipmentInfo) return;
     
     // Debug: Log the equipment info to check field values
-    console.log('Equipment Info received:', this.equipmentInfo);
     
     // Handle case sensitivity issues in API response
     const tagValue = (this.equipmentInfo as any).svC_Asset_tag || (this.equipmentInfo as any).svC_Asset_Tag || '';
     const statusValue = (this.equipmentInfo.codeEquipmentStatus || '').trim();
-    
-    console.log('Tag value from API:', tagValue);
-    console.log('Status value from API (trimmed):', statusValue);
     
     // Populate basic info form - matching your legacy DisplayEquipment() method
     this.basicInfoForm.patchValue({
@@ -289,10 +285,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     });
 
     // Debug: Log what was actually set in the form
-    console.log('Form values after patchValue:', {
-      status: this.basicInfoForm.get('status')?.value,
-      tag: this.basicInfoForm.get('tag')?.value
-    });
     
     // Trigger equipment type change to show/hide panels
     const equipType = (this.equipmentInfo.equipType || '').trim();
@@ -412,17 +404,13 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   }
 
   async onSave(): Promise<void> {
-    console.log('onSave() method called');
     
     // Mark all fields as touched to trigger validation display
     this.markAllFieldsAsTouched();
     
     const validationResult = this.validateForms();
-    console.log('validateForms() result:', validationResult);
     
     if (!validationResult) {
-      console.log('Validation failed - stopping execution');
-      
       // Check for specific maxlength errors to provide better messaging
       const hasLengthErrors = this.capacitorForm.get('dcCommCapsPartNo')?.hasError('maxlength') ||
                               this.capacitorForm.get('acfopCapsPartNo')?.hasError('maxlength') ||
@@ -434,18 +422,13 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
                               this.capacitorForm.get('comments')?.hasError('maxlength');
       
       if (hasLengthErrors) {
-        console.log('Length errors detected - showing toast message');
         this.toastr.error('One or more fields exceed the maximum allowed length. Please check the highlighted fields.');
       } else {
-        console.log('Other validation errors - showing generic toast message');
         this.toastr.error('Please correct the validation errors before saving.');
       }
       
-      console.log('Returning early from onSave() - no API call will be made');
       return;
     }
-    
-    console.log('Validation passed - proceeding with save operation');
 
     this.saving = true;
     this.errorMessage = '';
@@ -454,29 +437,8 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     try {
       const request: UpdateEquipmentRequest = this.buildUpdateRequest();
       
-      // Debug: Log the request object to see what we're sending to the API
-      console.log('Update request being sent to API:', {
-        SVC_Asset_Tag: request.SVC_Asset_Tag,
-        codeEquipmentStatus: request.codeEquipmentStatus,
-        tag: request.SVC_Asset_Tag, // For easier debugging
-        status: request.codeEquipmentStatus
-      });
-      
-      // ABSOLUTE FINAL SAFETY CHECK - validate field lengths before API call
-      console.log('Final safety check - examining request object before API call');
+      // Validate field lengths before API call
       const validationErrors: string[] = [];
-      
-      // Log all field lengths for debugging
-      console.log('Field lengths in request:', {
-        dcfCapsPartNo: request.dcfCapsPartNo?.length || 0,
-        acfipCapsPartNo: request.acfipCapsPartNo?.length || 0,
-        dcCommCapsPartNo: request.dcCommCapsPartNo?.length || 0,
-        acfopCapsPartNo: request.acfopCapsPartNo?.length || 0,
-        fansPartNo: request.fansPartNo?.length || 0,
-        blowersPartNo: request.blowersPartNo?.length || 0,
-        miscPartNo: request.miscPartNo?.length || 0,
-        comments: request.comments?.length || 0
-      });
       
       if (request.dcfCapsPartNo && request.dcfCapsPartNo.length > 50) {
         validationErrors.push(`DC Caps Part Number (${request.dcfCapsPartNo.length} chars) exceeds 50 character limit`);
@@ -505,14 +467,11 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
 
       if (validationErrors.length > 0) {
         this.saving = false;
-        const errorMsg = 'FINAL SAFETY CHECK FAILED - Field length validation failed:\n' + validationErrors.join('\n');
+        const errorMsg = 'Field length validation failed:\n' + validationErrors.join('\n');
         this.toastr.error(errorMsg);
-        console.error('***CRITICAL*** Pre-API validation failed - BLOCKING API CALL:', validationErrors);
-        console.error('This should NEVER happen if form validation is working correctly');
         return;
       }
       
-      console.log('***API CALL STARTING*** - All validations passed, making API request');
       const response = await this.equipmentService.saveUpdateEquipmentInfo(request).toPromise();
       
       // API returns { Message: "Equipment inserted or updated successfully" } on success
@@ -622,17 +581,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
         miscPartNo: capacitorData.miscPartNo ? capacitorData.miscPartNo.replace(/\s+/g, '') : '',
         comments: capacitorData.comments ? capacitorData.comments.replace(/\s+/g, '') : ''
       };
-      
-      console.log('Cleaned field lengths:', {
-        dcCommCapsPartNo: cleanedData.dcCommCapsPartNo.length,
-        acfopCapsPartNo: cleanedData.acfopCapsPartNo.length,
-        dcfCapsPartNo: cleanedData.dcfCapsPartNo.length,
-        acfipCapsPartNo: cleanedData.acfipCapsPartNo.length,
-        fansPartNo: cleanedData.fansPartNo.length,
-        blowersPartNo: cleanedData.blowersPartNo.length,
-        miscPartNo: cleanedData.miscPartNo.length,
-        comments: cleanedData.comments.length
-      });
       
       if ((cleanedData.dcCommCapsPartNo && cleanedData.dcCommCapsPartNo.length > 50) ||
           (cleanedData.acfopCapsPartNo && cleanedData.acfopCapsPartNo.length > 50) ||
@@ -876,8 +824,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     // Update both the input field and form control with cleaned value
     input.value = cleanedValue;
     this.capacitorForm.get(fieldName)?.setValue(cleanedValue);
-    
-    console.log(`Field ${fieldName} cleaned: "${cleanedValue}" (length: ${cleanedValue.length})`);
   }
 
   // Method to handle focus - clear whitespace and position cursor at start
@@ -895,8 +841,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
         input.setSelectionRange(0, 0);
       }
     }, 0);
-    
-    console.log(`Field ${fieldName} focused and cleaned: "${cleanedValue}" (length: ${cleanedValue.length})`);
   }
 
   // Helper method to check if a field has a specific error
