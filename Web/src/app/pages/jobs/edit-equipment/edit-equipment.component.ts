@@ -69,6 +69,31 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   showCapacitorPanel = false;
   showBoardPanel = false;
 
+  // Layout computation - UPS uses two-column, all others use single-column centered
+  get isUpsLayout(): boolean {
+    return this.showCapacitorPanel || this.showBoardPanel;
+  }
+
+  get layoutClass(): string {
+    return this.isUpsLayout ? 'ups-layout' : 'standard-layout';
+  }
+
+  // New methods for enhanced layout system
+  isUpsEquipment(): boolean {
+    const equipType = this.basicInfoForm?.get('equipType')?.value;
+    return equipType === 'UPS';
+  }
+
+  getLayoutModeClass(): string {
+    return this.isUpsEquipment() ? 'ups-mode' : 'standard-mode';
+  }
+
+  getEquipmentTypeLabel(): string {
+    const equipType = this.basicInfoForm?.get('equipType')?.value;
+    const option = this.equipmentTypeOptions.find(opt => opt.value === equipType);
+    return option ? option.label : '';
+  }
+
   // Dropdown options
   statusOptions = EQUIPMENT_STATUS_OPTIONS;
   equipmentTypeOptions = EQUIPMENT_TYPE_OPTIONS;
@@ -103,7 +128,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       location: [''],
       dateCodeMonth: [''],
       dateCodeYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
-      status: ['', Validators.required],
+      status: ['Online', Validators.required], // Default to 'Online' instead of empty
       equipType: ['SELECT', Validators.required],
       floatVoltageSelection: ['PS'],
       batteryPackCount: [null, [Validators.pattern(/^\d+$/)]],
@@ -231,6 +256,12 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   private populateFormData(): void {
     if (!this.equipmentInfo) return;
     
+    // Debug: Log the equipment info to check field values
+    
+    // Handle case sensitivity issues in API response
+    const tagValue = (this.equipmentInfo as any).svC_Asset_tag || (this.equipmentInfo as any).svC_Asset_Tag || '';
+    const statusValue = (this.equipmentInfo.codeEquipmentStatus || '').trim();
+    
     // Populate basic info form - matching your legacy DisplayEquipment() method
     this.basicInfoForm.patchValue({
       callNbr: this.callNbr, // From route params (txtCallNbr)
@@ -239,7 +270,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       location: this.equipmentInfo.location || '', // txtLocation
       dateCodeMonth: this.equipmentInfo.equipMonth || '', // txtDateCodeMonth
       dateCodeYear: this.equipmentInfo.equipYear || null, // txtDateCodeYear
-      status: this.equipmentInfo.codeEquipmentStatus || '', // ddlStatus
+      status: statusValue || 'Online', // ddlStatus - trim spaces and default to Online if empty
       equipType: (this.equipmentInfo.equipType || '').trim() || 'SELECT', // ddlEquipType
       floatVoltageSelection: this.getFloatVoltageSelection(), // ddlFloatVoltS
       batteryPackCount: this.equipmentInfo.batteriesPerPack ?? 0, // txtPackNo - show 0 instead of null
@@ -248,7 +279,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       kva: this.equipmentInfo.upskva || null, // txtKVA
       vendorId: this.equipmentInfo.vendorId || '', // txtVendorID
       version: this.equipmentInfo.version || '', // txtVersion
-      tag: (this.equipmentInfo.svC_Asset_Tag || '').trim(), // txtTag - Fixed property name
+      tag: tagValue.trim(), // txtTag - Handle both case variations and trim
       contract: this.equipmentInfo.contract || '', // txtContract
       taskDescription: this.equipmentInfo.taskDescription || '' // txtDesc
     });
@@ -373,17 +404,13 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   }
 
   async onSave(): Promise<void> {
-    console.log('onSave() method called');
     
     // Mark all fields as touched to trigger validation display
     this.markAllFieldsAsTouched();
     
     const validationResult = this.validateForms();
-    console.log('validateForms() result:', validationResult);
     
     if (!validationResult) {
-      console.log('Validation failed - stopping execution');
-      
       // Check for specific maxlength errors to provide better messaging
       const hasLengthErrors = this.capacitorForm.get('dcCommCapsPartNo')?.hasError('maxlength') ||
                               this.capacitorForm.get('acfopCapsPartNo')?.hasError('maxlength') ||
@@ -395,18 +422,13 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
                               this.capacitorForm.get('comments')?.hasError('maxlength');
       
       if (hasLengthErrors) {
-        console.log('Length errors detected - showing toast message');
         this.toastr.error('One or more fields exceed the maximum allowed length. Please check the highlighted fields.');
       } else {
-        console.log('Other validation errors - showing generic toast message');
         this.toastr.error('Please correct the validation errors before saving.');
       }
       
-      console.log('Returning early from onSave() - no API call will be made');
       return;
     }
-    
-    console.log('Validation passed - proceeding with save operation');
 
     this.saving = true;
     this.errorMessage = '';
@@ -415,21 +437,8 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     try {
       const request: UpdateEquipmentRequest = this.buildUpdateRequest();
       
-      // ABSOLUTE FINAL SAFETY CHECK - validate field lengths before API call
-      console.log('Final safety check - examining request object before API call');
+      // Validate field lengths before API call
       const validationErrors: string[] = [];
-      
-      // Log all field lengths for debugging
-      console.log('Field lengths in request:', {
-        dcfCapsPartNo: request.dcfCapsPartNo?.length || 0,
-        acfipCapsPartNo: request.acfipCapsPartNo?.length || 0,
-        dcCommCapsPartNo: request.dcCommCapsPartNo?.length || 0,
-        acfopCapsPartNo: request.acfopCapsPartNo?.length || 0,
-        fansPartNo: request.fansPartNo?.length || 0,
-        blowersPartNo: request.blowersPartNo?.length || 0,
-        miscPartNo: request.miscPartNo?.length || 0,
-        comments: request.comments?.length || 0
-      });
       
       if (request.dcfCapsPartNo && request.dcfCapsPartNo.length > 50) {
         validationErrors.push(`DC Caps Part Number (${request.dcfCapsPartNo.length} chars) exceeds 50 character limit`);
@@ -458,14 +467,11 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
 
       if (validationErrors.length > 0) {
         this.saving = false;
-        const errorMsg = 'FINAL SAFETY CHECK FAILED - Field length validation failed:\n' + validationErrors.join('\n');
+        const errorMsg = 'Field length validation failed:\n' + validationErrors.join('\n');
         this.toastr.error(errorMsg);
-        console.error('***CRITICAL*** Pre-API validation failed - BLOCKING API CALL:', validationErrors);
-        console.error('This should NEVER happen if form validation is working correctly');
         return;
       }
       
-      console.log('***API CALL STARTING*** - All validations passed, making API request');
       const response = await this.equipmentService.saveUpdateEquipmentInfo(request).toPromise();
       
       // API returns { Message: "Equipment inserted or updated successfully" } on success
@@ -576,17 +582,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
         comments: capacitorData.comments ? capacitorData.comments.replace(/\s+/g, '') : ''
       };
       
-      console.log('Cleaned field lengths:', {
-        dcCommCapsPartNo: cleanedData.dcCommCapsPartNo.length,
-        acfopCapsPartNo: cleanedData.acfopCapsPartNo.length,
-        dcfCapsPartNo: cleanedData.dcfCapsPartNo.length,
-        acfipCapsPartNo: cleanedData.acfipCapsPartNo.length,
-        fansPartNo: cleanedData.fansPartNo.length,
-        blowersPartNo: cleanedData.blowersPartNo.length,
-        miscPartNo: cleanedData.miscPartNo.length,
-        comments: cleanedData.comments.length
-      });
-      
       if ((cleanedData.dcCommCapsPartNo && cleanedData.dcCommCapsPartNo.length > 50) ||
           (cleanedData.acfopCapsPartNo && cleanedData.acfopCapsPartNo.length > 50) ||
           (cleanedData.dcfCapsPartNo && cleanedData.dcfCapsPartNo.length > 50) ||
@@ -643,7 +638,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
         equipType: basicData.equipType || 'UPS',
         version: basicData.version || '',
         serialID: basicData.serialId || '',
-        svC_Asset_Tag: basicData.tag || '',
+        SVC_Asset_Tag: basicData.tag || '', // Use exact casing expected by C# API: SVC_Asset_Tag
         location: basicData.location || '',
         readingType: basicData.readingType || '1',
         contract: basicData.contract || '',
@@ -829,8 +824,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     // Update both the input field and form control with cleaned value
     input.value = cleanedValue;
     this.capacitorForm.get(fieldName)?.setValue(cleanedValue);
-    
-    console.log(`Field ${fieldName} cleaned: "${cleanedValue}" (length: ${cleanedValue.length})`);
   }
 
   // Method to handle focus - clear whitespace and position cursor at start
@@ -848,8 +841,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
         input.setSelectionRange(0, 0);
       }
     }, 0);
-    
-    console.log(`Field ${fieldName} focused and cleaned: "${cleanedValue}" (length: ${cleanedValue.length})`);
   }
 
   // Helper method to check if a field has a specific error

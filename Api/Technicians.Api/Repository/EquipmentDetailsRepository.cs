@@ -393,8 +393,6 @@ namespace Technicians.Api.Repository
                 // If no result from new SP, fallback to original SP for legacy data compatibility
                 if (result == null)
                 {
-                    _logger.LogInformation($"No data from EditEquipmentDetails_New for CallNbr={callNbr}, EquipId={equipId}. Trying legacy SP...");
-                    
                     // Use QueryMultiple for the original SP that returns 2 result sets
                     using var multi = await connection.QueryMultipleAsync(
                         "EditEquipmentDetails",
@@ -583,7 +581,6 @@ namespace Technicians.Api.Repository
                         command.Parameters.AddWithValue("@Comments", equipment.Comments ?? (object)DBNull.Value);
 
                         await command.ExecuteNonQueryAsync();
-                        _logger.LogInformation("Successfully executed spEquipmentInsertUpdate for EquipId: {EquipId}", equipment.EquipId);
                     }
                 }
             }
@@ -619,7 +616,7 @@ namespace Technicians.Api.Repository
             }
             catch (Exception)
             {
-                return 0; // indicate failure
+                return 0; 
             }
         }
 
@@ -678,7 +675,6 @@ namespace Technicians.Api.Repository
             }
             catch
             {
-                // Do not swallow exception - let caller (controller) handle and log it for debugging
                 throw;
             }
         }
@@ -799,7 +795,6 @@ namespace Technicians.Api.Repository
                 await connection.OpenAsync();
                 await command.ExecuteNonQueryAsync();
 
-                _logger.LogInformation("Successfully inserted equipment file for EquipID: {EquipID}", fileDto.EquipID);
                 return (true, "Equipment file inserted successfully");
             }
             catch (Exception ex)
@@ -816,8 +811,6 @@ namespace Technicians.Api.Repository
 
             try
             {
-                _logger.LogInformation("Searching for files with EquipID: {EquipID}", equipId);
-
                 using var connection = new SqlConnection(_connectionString);
                 using var command = new SqlCommand("GetEquipmentFiles", connection)
                 {
@@ -836,7 +829,7 @@ namespace Technicians.Api.Repository
 
                     files.Add(new EquipmentFileResponseDto
                     {
-                        // Based on your SP results, the table doesn't have a FileID column
+                        // Based on SP results, the table doesn't have a FileID column
                         // Use a generated ID or remove this field from DTO
                         //FileID = recordCount, // Temporary solution - or remove if not needed
                         EquipID = reader.GetInt32("EquipID"),
@@ -848,8 +841,6 @@ namespace Technicians.Api.Repository
                         Data = reader.IsDBNull("Data") ? null : (byte[])reader["Data"]
                     });
                 }
-
-                _logger.LogInformation("Found {Count} records for EquipID: {EquipID}", recordCount, equipId);
             }
             catch (Exception ex)
             {

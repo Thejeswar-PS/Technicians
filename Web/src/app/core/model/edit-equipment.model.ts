@@ -7,7 +7,8 @@ export interface EditEquipmentInfo {
   location?: string; // Maps to txtLocation
   vendorId: string; // Required in C# DTO
   version?: string; // Maps to txtVersion
-  svC_Asset_Tag?: string; // Maps to txtTag - matches API response case
+  svC_Asset_Tag?: string; // Maps to txtTag - matches API response case (sometimes lowercase 'tag')
+  svC_Asset_tag?: string; // Alternative casing for API compatibility
   contract?: string; // Maps to txtContract
   codeEquipmentStatus?: string; // Maps to ddlStatus
   taskDescription?: string; // Maps to txtDesc
@@ -87,6 +88,8 @@ export interface UpdateEquipmentRequest {
   version?: string;
   serialID?: string;
   svC_Asset_Tag?: string;
+  svC_Asset_tag?: string; // Alternative casing for API compatibility
+  SVC_Asset_Tag?: string; // Exact casing expected by C# API
   location?: string;
   readingType?: string;
   contract?: string;

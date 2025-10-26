@@ -34,6 +34,9 @@ export class EquipmentDetailsComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   showJobNotesLink = false;
+  showJobSafetyLink = false;
+  uploadingExpenses = false;
+  expenseUploadProgress = 0;
   
   // Button states
   uploadJobEnabled = true;
@@ -202,6 +205,14 @@ export class EquipmentDetailsComponent implements OnInit {
       queryParams: {
         CallNbr: this.params.callNbr,
         TechName: this.params.techName
+      }
+    });
+  }
+
+  navigateToJobSafety(): void {
+    this.router.navigate(['/jobs/job-safety'], {
+      queryParams: {
+        CallNbr: this.params.callNbr
       }
     });
   }
@@ -557,8 +568,8 @@ export class EquipmentDetailsComponent implements OnInit {
         // Refresh file upload component upload info if it exists
         if (this.fileUploadComponent) {
           setTimeout(() => {
-            console.log('Calling fileUploadComponent.refreshUploadInfo with:', this.params.callNbr, this.params.techId);
-            this.fileUploadComponent?.refreshUploadInfo(this.params.callNbr, this.params.techId);
+            console.log('Refreshing upload info after job upload');
+            this.loadUploadInfo();
           }, 1500); // Match the delay
         }
       } else {
@@ -634,10 +645,10 @@ export class EquipmentDetailsComponent implements OnInit {
           
           this.uploadExpenseEnabled = false; // Equivalent to CmdUploadExpense.Enabled = false
           
-          // Refresh file upload component upload info if it exists
+          // Refresh upload info after successful expense upload
           if (this.fileUploadComponent) {
             setTimeout(() => {
-              this.fileUploadComponent?.refreshUploadInfo(this.params.callNbr, this.params.techId);
+              this.loadUploadInfo();
             }, 500);
           }
         } else {

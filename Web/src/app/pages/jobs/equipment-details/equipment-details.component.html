@@ -20,323 +20,365 @@
           <h2 class="text-primary fw-bold">Job ID: {{ params.callNbr }}</h2>
         </div>
 
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5></h5>
+          <button type="button" class="btn btn-primary" (click)="goBack()">
+            <i class="bi bi-arrow-left"></i> Back
+          </button>
+        </div>
+
         <!-- Upload Information Grid -->
-        <div style="text-align: center; margin: 20px 0">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Upload Information</h5>
-            <button 
-              type="button" 
-              class="btn btn-primary"
-              (click)="goBack()">
-              <i class="bi bi-arrow-right"></i> Back
+        <div class="mb-5">
+  <div class="table-responsive">
+    <table
+      class="table table-row-dashed align-middle text-center fs-6 fw-bold upload-info-table"
+    >
+      <thead>
+        <tr>
+          <th
+            class="text-center"
+            style="background: linear-gradient(to right, #6bdf67, #8ccf4e); color: black;"
+          >
+            Last Uploaded By
+          </th>
+          <th
+            class="text-center"
+            style="background: linear-gradient(to right, #9bc844, #bcb82e); color: black;"
+          >
+            Uploaded On
+          </th>
+          <th
+            class="text-center"
+            style="background: linear-gradient(to right, #d2ae1f, #ff6600); color: black;"
+          >
+            Type
+          </th>
+        </tr>
+      </thead>
+      <tbody *ngIf="uploadInfo && uploadInfo.length > 0; else noUploadInfo">
+        <tr>
+          <td>{{ uploadInfo[0]?.UploadedBy }}</td>
+          <td>{{ uploadInfo[0]?.UploadJobDt | date:'dd-MMM-yyyy HH:mm' }}</td>
+          <td>{{ uploadInfo[0]?.Type }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #noUploadInfo>
+      <div class="text-muted text-center py-4">
+        No upload information available.
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+      <!-- Error/Success Messages -->
+      <div class="card" *ngIf="errorMessage || successMessage">
+        <div class="card-body">
+          <div *ngIf="errorMessage" class="alert alert-danger">
+            {{ errorMessage }}
+            <br *ngIf="showJobNotesLink || showJobSafetyLink" />
+            <a
+              *ngIf="showJobNotesLink"
+              style="color: #00b27a; cursor: pointer"
+              (click)="navigateToJobNotes()"
+            >
+              Click here
+            </a>
+            <span *ngIf="showJobNotesLink"> to go to Job Notes Info Page</span>
+            <a
+              *ngIf="showJobSafetyLink"
+              style="color: #7bb752; cursor: pointer"
+              (click)="navigateToJobSafety()"
+            >
+              Click here
+            </a>
+            <span *ngIf="showJobSafetyLink"> to go to Job Safety Page</span>
+          </div>
+          <div *ngIf="successMessage" class="alert alert-success">
+            {{ successMessage }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Back Link -->
+      <!-- <div style="text-align: left; margin: 10px 0">
+      <button type="button" class="btn btn-primary" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i>
+      </button>
+    </div> -->
+
+      <!-- Action Buttons -->
+      <div class="card">
+        <div class="card-body">
+          <div style="text-align: right">
+            <button
+              *ngIf="uploadJobVisible"
+              class="btn btn-primary me-2"
+              style="width: 150px; font-size: 10pt"
+              [disabled]="!uploadJobEnabled || loading"
+              (click)="uploadJob()"
+            >
+              Upload Job
+            </button>
+
+            <button
+              *ngIf="uploadExpenseVisible"
+              class="btn btn-warning me-2"
+              style="width: 200px; font-size: 10pt"
+              [disabled]="!uploadExpenseEnabled || loading || uploadingExpenses"
+              (click)="uploadExpenses()"
+            >
+              <span *ngIf="!uploadingExpenses">Upload Expenses</span>
+              <span *ngIf="uploadingExpenses">
+                <i
+                  class="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></i>
+                Uploading... {{ expenseUploadProgress }}%
+              </span>
+            </button>
+
+            <button
+              *ngIf="helpButtonVisible"
+              class="btn btn-secondary me-2"
+              style="width: 48px; font-size: 10pt"
+              (click)="showHelp()"
+            >
+              Help
             </button>
           </div>
-          <table
-            class="table table-bordered table-sm"
-            style="width: 60%; margin: 0 auto"
-          >
-            <thead style="background-color: #e5e5e5; color: black">
-              <tr>
-                <th class="text-center" style="width: 180px">
-                  Last Uploaded By
-                </th>
-                <th class="text-center" style="width: 180px">Uploaded On</th>
-                <th class="text-center" style="width: 100px">Type</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- Display upload records if available -->
-              <tr *ngFor="let info of uploadInfo" class="text-center">
-                <td>{{ info.uploadedBy }}</td>
-                <td>{{ info.uploadJobDt | date : "dd-MMM-yyyy HH:mm" }}</td>
-                <td>{{ info.type }}</td>
-              </tr>
-
-              <!-- Display "no records" message if no upload info -->
-              <tr
-                *ngIf="!uploadInfo || uploadInfo.length === 0"
-                class="text-center"
-              >
-                <td colspan="3" class="text-muted py-3">
-                  There are no records available.
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
-    </div>
 
-    <!-- Error/Success Messages -->
-    <div class="card" *ngIf="errorMessage || successMessage">
-      <div class="card-body">
-        <div
-          *ngIf="errorMessage"
-          class="alert alert-danger">
-          {{ errorMessage }}
-          <br *ngIf="showJobNotesLink">
-          <a 
-            *ngIf="showJobNotesLink"
-            style="color:#00B27A; cursor: pointer;" 
-            (click)="navigateToJobNotes()">
-            Click here
-          </a>
-          <span *ngIf="showJobNotesLink"> to go to Job Notes Info Page</span>
-        </div>
-        <div *ngIf="successMessage" class="alert alert-success">
-          {{ successMessage }}
-        </div>
-      </div>
-    </div>
-
-    <!-- Back Link -->
-    <div style="text-align: left; margin: 10px 0">
-      <button class="btn p-0" (click)="goBack()">
-        <i class="bi bi-arrow-left"></i> Back to Job List
-      </button>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="card">
-      <div class="card-body">
-        <div style="text-align: right">
-          <button
-            *ngIf="uploadJobVisible"
-            class="btn btn-primary me-2"
-            style="width: 150px; font-size: 10pt"
-            [disabled]="!uploadJobEnabled || loading"
-            (click)="uploadJob()"
-          >
-            Upload Job
-          </button>
-
-          <button
-            *ngIf="uploadExpenseVisible"
-            class="btn btn-warning me-2"
-            style="width: 200px; font-size: 10pt"
-            [disabled]="!uploadExpenseEnabled || loading"
-            (click)="uploadExpenses()"
-          >
-            Upload Expenses
-          </button>
-
-          <button
-            *ngIf="uploadFilesVisible"
-            class="btn btn-info me-2"
-            style="width: 150px; font-size: 10pt"
-            (click)="openUploadFiles()"
-          >
-            Upload Files
-          </button>
-
-          <button
-            *ngIf="helpButtonVisible"
-            class="btn btn-primary me-2" 
-            style="width: 48px; font-size: 10pt;"
-            (click)="showHelp()">
-            Help
-          </button>
-
-          <button
-            *ngIf="enableExpenseVisible"
-            class="btn btn-success me-2"
-            style="width: 150px; font-size: 10pt"
-            (click)="enableExpenses()"
-          >
-            Enable Expenses
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Equipment Table -->
-    <div class="card card-xxl-stretch">
-      <div class="card-body py-3">
-        <!-- begin::Table container -->
-        <div class="table-max-height">
-          <!-- begin::Table -->
-          <table
-            class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4"
-            style="text-align: center"
-          >
-            <!-- begin::Table head -->
-            <thead>
-              <tr class="text-dark fw-bolder badge-light-primary fs-6">
-                <th class="min-w-70px">ID</th>
-                <th class="min-w-180px">Equip No</th>
-                <th class="min-w-130px">Make</th>
-                <th class="min-w-130px">Model</th>
-                <th class="min-w-130px">Serial No</th>
-                <th class="min-w-90px">KVA/Batt</th>
-                <th class="min-w-200px">Location</th>
-                <th class="min-w-150px">Status</th>
-                <th class="min-w-120px">Modified</th>
-                <th class="min-w-80px">Files</th>
-                <th class="min-w-80px">Images</th>
-                <th class="min-w-80px">Mode</th>
-                <th class="min-w-80px">Edit</th>
-              </tr>
-            </thead>
-            <!-- end::Table head -->
-
-            <!-- begin::Table body -->
-            <tbody
-              class="text-dark mb-1 fs-6"
-              *ngIf="equipmentList && equipmentList.length > 0"
+      <!-- Expense Upload Progress -->
+      <div class="card" *ngIf="uploadingExpenses">
+        <div class="card-body">
+          <h6>Uploading Expenses...</h6>
+          <div class="progress mb-3">
+            <div
+              class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar"
+              [style.width.%]="expenseUploadProgress"
+              [attr.aria-valuenow]="expenseUploadProgress"
+              aria-valuemin="0"
+              aria-valuemax="100"
             >
-              <tr *ngFor="let equipment of equipmentList">
-                <!-- Equipment ID -->
-                <td>{{ equipment.equipId }}</td>
-
-                <!-- Equipment Number (clickable) -->
-                <td>
-                  <a
-                    href="javascript:void(0)"
-                    (click)="navigateToEquipmentReadings(equipment)"
-                    class="text-hover-primary fw-bold"
-                    style="cursor: pointer; color: #428bca"
-                  >
-                    {{ equipment.equipNo }}
-                  </a>
-                </td>
-
-                <!-- Make -->
-                <td>{{ equipment.vendorId }}</td>
-
-                <!-- Model -->
-                <td>{{ equipment.version }}</td>
-
-                <!-- Serial No -->
-                <td>{{ equipment.serialID }}</td>
-
-                <!-- KVA/Batt -->
-                <td>{{ equipment.rating }}</td>
-
-                <!-- Location -->
-                <td>{{ equipment.location }}</td>
-
-                <!-- Status (with color coding) -->
-                <td>
-                  <span
-                    [style.color]="
-                      getEquipmentStatusDisplay(equipment.codeEquipmentStatus)
-                        .color
-                    "
-                  >
-                    {{
-                      getEquipmentStatusDisplay(equipment.codeEquipmentStatus)
-                        .text
-                    }}
-                  </span>
-                </td>
-
-                <!-- Modified Date -->
-                <td>{{ equipment.last_Modifed | date : "dd-MMM-yyyy" }}</td>
-
-                <!-- Summary column removed -->
-
-                <!-- Files -->
-                <td>
-                  <a
-                    href="javascript:void(0)"
-                    (click)="navigateToFileUpload(equipment)"
-                    style="font-size: 18px; color: #2563eb !important"
-                    title="Files"
-                  >
-                    <i class="bi bi-file-earmark-text"></i>
-                  </a>
-                </td>
-
-                <!-- Images -->
-                <td>
-                  <a
-                    href="javascript:void(0)"
-                    (click)="navigateToImageUpload(equipment)"
-                    style="font-size: 18px; color: #7c3aed !important"
-                    title="Images"
-                  >
-                    <i class="bi bi-image"></i>
-                  </a>
-                </td>
-
-                <!-- Mode -->
-                <td>{{ getModeDisplay(equipment.saveStatus) }}</td>
-
-                <!-- Edit -->
-                <td>
-                  <a
-                    href="javascript:void(0)"
-                    (click)="navigateToEditEquipment(equipment)"
-                    style="font-size: 18px; color: #dc2626 !important"
-                    title="Edit Equipment"
-                  >
-                    <i class="bi bi-pencil"></i>
-                  </a>
-                </td>
-              </tr>
-            </tbody>
-            <!-- end::Table body -->
-          </table>
-
-          <!-- No data message -->
-          <div
-            *ngIf="!equipmentList || equipmentList.length === 0"
-            class="text-center py-5"
-          >
-            <p class="text-muted">No equipment found for this job.</p>
+              {{ expenseUploadProgress }}%
+            </div>
           </div>
-          <!-- end::Table -->
+          <small class="text-muted">
+            <span *ngIf="expenseUploadProgress <= 20"
+              >Checking for duplicate entries...</span
+            >
+            <span
+              *ngIf="expenseUploadProgress > 20 && expenseUploadProgress <= 40"
+              >Validating expense requirements...</span
+            >
+            <span
+              *ngIf="expenseUploadProgress > 40 && expenseUploadProgress < 100"
+              >Uploading to system...</span
+            >
+            <span *ngIf="expenseUploadProgress >= 100">Upload completed!</span>
+          </small>
         </div>
-        <!-- end::Table container -->
+      </div>
+
+      <!-- Equipment Table -->
+      <div class="card card-xxl-stretch">
+        <div class="card-body py-3">
+          <!-- begin::Table container -->
+          <div class="table-max-height">
+            <!-- begin::Table -->
+            <table
+              class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4"
+              style="text-align: center"
+            >
+              <!-- begin::Table head -->
+              <thead>
+                <tr class="text-dark fw-bolder badge-light-primary fs-6">
+                  <th class="min-w-70px">ID</th>
+                  <th class="min-w-180px">Equip No</th>
+                  <th class="min-w-130px">Make</th>
+                  <th class="min-w-130px">Model</th>
+                  <th class="min-w-130px">Serial No</th>
+                  <th class="min-w-90px">KVA/Batt</th>
+                  <th class="min-w-200px">Location</th>
+                  <th class="min-w-150px">Status</th>
+                  <th class="min-w-120px">Modified</th>
+                  <th class="min-w-80px">Files</th>
+                  <th class="min-w-80px">Images</th>
+                  <th class="min-w-80px">Mode</th>
+                  <th class="min-w-80px">Edit</th>
+                </tr>
+              </thead>
+              <!-- end::Table head -->
+
+              <!-- begin::Table body -->
+              <tbody
+                class="text-dark mb-1 fs-6"
+                *ngIf="equipmentList && equipmentList.length > 0"
+              >
+                <tr *ngFor="let equipment of equipmentList">
+                  <!-- Equipment ID -->
+                  <td>{{ equipment.equipId }}</td>
+
+                  <!-- Equipment Number (clickable) -->
+                  <td>
+                    <a
+                      href="javascript:void(0)"
+                      (click)="navigateToEquipmentReadings(equipment)"
+                      class="text-hover-primary fw-bold"
+                      style="cursor: pointer; color: #428bca"
+                    >
+                      {{ equipment.equipNo }}
+                    </a>
+                  </td>
+
+                  <!-- Make -->
+                  <td>{{ equipment.vendorId }}</td>
+
+                  <!-- Model -->
+                  <td>{{ equipment.version }}</td>
+
+                  <!-- Serial No -->
+                  <td>{{ equipment.serialID }}</td>
+
+                  <!-- KVA/Batt -->
+                  <td>{{ equipment.rating }}</td>
+
+                  <!-- Location -->
+                  <td>{{ equipment.location }}</td>
+
+                  <!-- Status (with color coding) -->
+                  <td>
+                    <span
+                      [style.color]="
+                        getEquipmentStatusDisplay(equipment.codeEquipmentStatus)
+                          .color
+                      "
+                    >
+                      {{
+                        getEquipmentStatusDisplay(equipment.codeEquipmentStatus)
+                          .text
+                      }}
+                    </span>
+                  </td>
+
+                  <!-- Modified Date -->
+                  <td>{{ equipment.last_Modifed | date : "dd-MMM-yyyy" }}</td>
+
+                  <!-- Summary column removed -->
+
+                  <!-- Files -->
+                  <td>
+                    <a
+                      href="javascript:void(0)"
+                      (click)="navigateToFileUpload(equipment)"
+                      style="font-size: 18px; color: #2563eb !important"
+                      title="Files"
+                    >
+                      <i class="bi bi-file-earmark-text"></i>
+                    </a>
+                  </td>
+
+                  <!-- Images -->
+                  <td>
+                    <a
+                      href="javascript:void(0)"
+                      (click)="navigateToImageUpload(equipment)"
+                      style="font-size: 18px; color: #7c3aed !important"
+                      title="Images"
+                    >
+                      <i class="bi bi-image"></i>
+                    </a>
+                  </td>
+
+                  <!-- Mode -->
+                  <td>{{ getModeDisplay(equipment.saveStatus) }}</td>
+
+                  <!-- Edit -->
+                  <td>
+                    <a
+                      href="javascript:void(0)"
+                      (click)="navigateToEditEquipment(equipment)"
+                      style="font-size: 18px; color: #dc2626 !important"
+                      title="Edit Equipment"
+                    >
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+              <!-- end::Table body -->
+            </table>
+
+            <!-- No data message -->
+            <div
+              *ngIf="!equipmentList || equipmentList.length === 0"
+              class="text-center py-5"
+            >
+              <p class="text-muted">No equipment found for this job.</p>
+            </div>
+            <!-- end::Table -->
+          </div>
+          <!-- end::Table container -->
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- File Upload Modal -->
-<div
-  class="modal fade"
-  id="fileUploadModal"
-  tabindex="-1"
-  role="dialog"
-  [class.show]="showFileUploadModal"
-  [style.display]="showFileUploadModal ? 'block' : 'none'"
-  aria-labelledby="fileUploadModalLabel"
-  aria-hidden="true"
->
-  <div class="modal-dialog modal-xl" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="fileUploadModalLabel">
-          <i class="bi bi-cloud-upload me-2"></i>
-          {{ isEquipmentFileUpload ? 'Upload Files - Equipment ' + selectedEquipment?.equipId : 'Upload Files - Job ' + jobId }}
-        </h5>
-        <button
-          type="button"
-          class="btn-close"
-          (click)="closeFileUploadModal()"
-          aria-label="Close"
-        ></button>
-      </div>
-      <div class="modal-body p-4">
-        <!-- File Upload Component -->
-        <app-file-upload 
-          #fileUploadComponent
-          [jobId]="isEquipmentFileUpload ? undefined : jobId"
-          [equipmentId]="isEquipmentFileUpload ? selectedEquipment?.equipId : undefined"
-          [techId]="isEquipmentFileUpload ? params.techId : undefined"
-          [callNbr]="params.callNbr"
-          (onClose)="closeFileUploadModal()">
-        </app-file-upload>
+  <!-- File Upload Modal -->
+  <div
+    class="modal fade"
+    id="fileUploadModal"
+    tabindex="-1"
+    role="dialog"
+    [class.show]="showFileUploadModal"
+    [style.display]="showFileUploadModal ? 'block' : 'none'"
+    aria-labelledby="fileUploadModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="fileUploadModalLabel">
+            <i class="bi bi-cloud-upload me-2"></i>
+            {{
+              isEquipmentFileUpload
+                ? "Upload Files - Equipment " + selectedEquipment?.equipId
+                : "Upload Files - Job " + jobId
+            }}
+          </h5>
+          <button
+            type="button"
+            class="btn-close"
+            (click)="closeFileUploadModal()"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="modal-body p-4">
+          <!-- File Upload Component -->
+          <app-file-upload
+            [jobId]="jobId"
+            [callNbr]="params.callNbr"
+            [equipmentId]="selectedEquipment?.equipId"
+            [equipmentNo]="selectedEquipment?.equipNo"
+            [techId]="params.techId"
+            [techName]="params.techName"
+            (onClose)="closeFileUploadModal()"
+          >
+          </app-file-upload>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Modal backdrop -->
-<div
-  class="modal-backdrop fade"
-  [class.show]="showFileUploadModal"
-  [style.display]="showFileUploadModal ? 'block' : 'none'"
-  *ngIf="showFileUploadModal"
-></div>
+  <!-- Modal backdrop -->
+  <div
+    class="modal-backdrop fade"
+    [class.show]="showFileUploadModal"
+    [style.display]="showFileUploadModal ? 'block' : 'none'"
+    *ngIf="showFileUploadModal"
+  ></div>
+</div>

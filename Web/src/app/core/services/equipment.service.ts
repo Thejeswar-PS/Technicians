@@ -44,7 +44,23 @@ export class EquipmentService {
     .set('callNbr', callNbr)
     .set('techId', techId);
 
-  return this.http.get<UploadInfo[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params });
+  return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params }).pipe(
+    map((data: any[]) => {
+      return (data || []).map((item, index) => {
+        // Based on your debug output, the API returns:
+        // - uploadJobDt: "2025-10-24T19:02:31.03"
+        // - uploadedBy: "Ajay.Sharmal"  
+        // - type: "Job"
+        const rawDate = item.uploadJobDt || item.uploadedJobDt || item.UploadJobDt || '';
+        
+        return {
+          UploadedBy: item.uploadedBy || item.UploadedBy || '',
+          UploadJobDt: rawDate ? new Date(rawDate) : null,
+          Type: item.type || item.Type || ''
+        };
+      });
+    })
+  );
 }
 
   /**
@@ -311,31 +327,7 @@ export class EquipmentService {
     formData.append('Img_Type', imageData.img_Type || '');
     formData.append('ImgFile', imageData.imgFile); // File field - matches controller parameter
 
-    console.log('=== SERVICE UPLOAD DEBUG ===');
-    console.log('FormData fields (matching controller parameters):');
-    console.log('CallNbr:', imageData.callNbr || '');
-    console.log('EquipID:', imageData.equipID.toString());
-    console.log('EquipNo:', imageData.equipNo || '');
-    console.log('TechName:', imageData.techName || '');
-    console.log('TechID:', imageData.techID || '');
-    console.log('Img_Title:', imageData.img_Title || '');
-    console.log('Img_Type:', imageData.img_Type || '');
-    console.log('ImgFile:', imageData.imgFile ? `File(${imageData.imgFile.name}, ${imageData.imgFile.size} bytes)` : 'null');
-    console.log('API URL:', `${this.apiUrl}/EquipmentDetails/InsertGetEquipmentImages`);
-    console.log('=== SERVICE DEBUG END ===');
-
-    return this.http.post<{ success: boolean; message: string; rowsAffected?: number }>(`${this.apiUrl}/EquipmentDetails/InsertGetEquipmentImages`, formData)
-      .pipe(
-        map((response: { success: boolean; message: string; rowsAffected?: number }) => {
-          console.log('=== HTTP RESPONSE DEBUG ===');
-          console.log('Raw HTTP response:', response);
-          console.log('Response.success:', response.success);
-          console.log('Response.message:', response.message);
-          console.log('Response.rowsAffected:', response.rowsAffected);
-          console.log('=== HTTP RESPONSE DEBUG END ===');
-          return response;
-        })
-      );
+    return this.http.post<{ success: boolean; message: string; rowsAffected?: number }>(`${this.apiUrl}/EquipmentDetails/InsertGetEquipmentImages`, formData);
   }
 
   /**
@@ -343,18 +335,11 @@ export class EquipmentService {
    * Equivalent to da.DeleteEquipmentImage(imgId) in legacy code
    */
   deleteEquipmentImage(imgId: number): Observable<{ success: boolean; message?: string; rowsAffected?: number }> {
-    console.log('=== DELETE IMAGE DEBUG ===');
-    console.log('Deleting image with ID:', imgId);
-    console.log('API Base URL:', this.apiUrl);
-    
     // Try path parameter approach first
     const pathUrl = `${this.apiUrl}/EquipmentDetails/DeleteEquipmentImage/${imgId}`;
-    console.log('Delete URL (path param):', pathUrl);
     
     // Alternative: query parameter approach
     const queryUrl = `${this.apiUrl}/EquipmentDetails/DeleteEquipmentImage?imgId=${imgId}`;
-    console.log('Delete URL (query param):', queryUrl);
-    console.log('=== DELETE DEBUG END ===');
     
     // Use query parameter approach (more reliable)
     return this.http.delete<{ success: boolean; message?: string; rowsAffected?: number }>(queryUrl);

@@ -1,23 +1,27 @@
-<!-- Page Header -->
-<div class="text-center mb-4">
-  <h2 class="fw-bold fs-1 mb-3 text-primary">Equipment Images</h2>
-  <div class="bg-primary text-white p-3 rounded d-inline-block">
-    <h4 class="fw-semibold mb-0">Call: {{ callNbr }} | Equipment: {{ equipNo }} | ID: {{ equipId }}</h4>
+<!-- Modern Header -->
+<div class="modern-header">
+  <div class="header-content">
+    <div class="header-center">
+      <h4 class="header-title">
+        <i class="fas fa-images me-2"></i>
+        Equipment Images
+      </h4>
+      <div class="equipment-info">
+        Call: {{ callNbr }} | Equipment: {{ equipNo }} | ID: {{ equipId }}
+      </div>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn btn-outline-light me-2" (click)="goBack()">
+        <i class="fas fa-arrow-left me-1"></i>
+        Back
+      </button>
+    </div>
   </div>
 </div>
 
 <!-- Equipment Images Page -->
 <div class="container" style="max-width: 1800px;">
   <div class="card">
-    <!-- Header -->
-    <div class="card-header border-0 pt-5">
-      <div class="d-flex align-items-center">
-        <button type="button" class="btn btn-primary" (click)="goBack()">
-          <i class="bi bi-arrow-left me-1"></i>Back
-        </button>
-      </div>
-    </div>
-
   <!-- Card Body -->
   <div class="card-body py-3">
     <!-- Loading Spinner -->

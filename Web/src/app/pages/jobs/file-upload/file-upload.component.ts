@@ -1,8 +1,7 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { FileUploadService, UploadedFile, EquipmentFileResponseDto } from '../../../core/services/file-upload.service';
-import { UploadInfo } from '../../../core/model/equipment-details.model';
 import { EquipmentService } from '../../../core/services/equipment.service';
 
 @Component({
@@ -10,18 +9,19 @@ import { EquipmentService } from '../../../core/services/equipment.service';
   templateUrl: './file-upload.component.html',
   styleUrls: ['./file-upload.component.scss']
 })
-export class FileUploadComponent implements OnInit {
+export class FileUploadComponent implements OnInit, OnChanges {
   @Input() jobId?: string;
   @Input() equipmentId?: number;  // New input for equipment-specific uploads
+  @Input() equipmentNo?: string;  // Equipment number for API requirements
   @Input() techId?: string;       // New input for tech ID (required for equipment uploads)
+  @Input() techName?: string;     // Tech name for API requirements
   @Input() callNbr?: string;      // New input for call number (required for upload info)
   @Output() onClose = new EventEmitter<void>();
   @Output() closed = new EventEmitter<void>();
   
-  selectedFiles: (File | null)[] = [null, null, null, null, null]; // 5 file slots like legacy
+  selectedFiles: (File | null)[] = [null, null]; // 2 file slots as requested
   uploadedFiles: UploadedFile[] = [];
   equipmentFiles: EquipmentFileResponseDto[] = []; // Equipment-specific files
-  uploadInfo: UploadInfo[] = []; // Upload history information
   loading = false;
   uploading = false;
   errorMessage = '';
@@ -33,7 +33,10 @@ export class FileUploadComponent implements OnInit {
 
   // Computed properties
   get isEquipmentMode(): boolean {
-    return this.equipmentId !== undefined && this.equipmentId > 0 && !!this.techId;
+    // Use equipment mode if we have techId (since that's what we're using for uploads)
+    const result = !!this.techId;
+    
+    return result;
   }
 
   get displayTitle(): string {
@@ -54,45 +57,101 @@ export class FileUploadComponent implements OnInit {
     const resolvedCallNbr = this.callNbr || this.jobId || this.route.snapshot.queryParamMap.get('CallNbr') || '';
     this.callNbr = resolvedCallNbr;
     
+    // Initialize with clean file slots
+    this.selectedFiles = [null, null];
+    console.log('=== FILE UPLOAD COMPONENT INIT ===');
+    console.log('Initial selectedFiles state:', this.selectedFiles.map((f, i) => `${i}: ${f?.name || 'null'}`));
+    
     console.log('FileUpload component initialized:', {
       isEquipmentMode: this.isEquipmentMode,
       equipmentId: this.equipmentId,
+      equipmentNo: this.equipmentNo,
       techId: this.techId,
+      techName: this.techName,
       callNbr: this.callNbr
     });
     
+    this.loadFilesIfReady();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Handle changes to input properties
+    if (changes['equipmentId'] || changes['techId'] || changes['callNbr']) {
+      console.log('FileUpload component inputs changed:', {
+        equipmentId: this.equipmentId,
+        techId: this.techId,
+        callNbr: this.callNbr
+      });
+      this.loadFilesIfReady();
+    }
+  }
+
+  private loadFilesIfReady(): void {
     // Always use equipment mode since both header and bottom uploads now use equipment functionality
     if (this.equipmentId && this.techId && this.callNbr) {
       console.log('FileUpload component - Equipment mode:', this.equipmentId, 'Tech:', this.techId, 'CallNbr:', this.callNbr);
       this.loadEquipmentFiles();
-      this.loadUploadInfo(); // Load upload history
     } else {
       console.warn('FileUpload component - Missing required info:', { equipmentId: this.equipmentId, techId: this.techId, callNbr: this.callNbr });
-      this.uploadedFiles = [];
-      this.equipmentFiles = [];
-      this.uploadInfo = [];
+      
+      // Try to load files anyway if we have at least equipmentId
+      if (this.equipmentId) {
+        console.log('Attempting to load files with equipmentId only:', this.equipmentId);
+        this.loadEquipmentFiles();
+      } else if (this.techId) {
+        this.uploadedFiles = [];
+        this.equipmentFiles = [];
+      } else {
+        this.uploadedFiles = [];
+        this.equipmentFiles = [];
+      }
     }
   }
 
   onFileSelected(event: any, index: number): void {
-    console.log(`File selection triggered for index ${index}`);
     const file = event.target.files[0];
     console.log(`File selected:`, file ? { name: file.name, size: file.size, type: file.type } : 'null');
     
     if (file) {
       if (this.validateFile(file)) {
-        this.selectedFiles[index] = file;
+        // Ensure we create a completely new array to trigger change detection
+        const newSelectedFiles: (File | null)[] = [null, null];
+        // Copy existing files except for the current index
+        for (let i = 0; i < this.selectedFiles.length; i++) {
+          if (i !== index) {
+            newSelectedFiles[i] = this.selectedFiles[i];
+          }
+        }
+        // Set the new file for the specific index
+        newSelectedFiles[index] = file;
+        this.selectedFiles = newSelectedFiles;
         this.clearMessages();
         console.log(`File successfully selected for slot ${index}:`, file.name);
+        console.log(`Updated selectedFiles:`, this.selectedFiles.map((f, i) => `${i}: ${f?.name || 'null'}`));
       } else {
-        // Clear the input
+        // Clear the input and ensure slot is reset
         event.target.value = '';
-        this.selectedFiles[index] = null;
+        const newSelectedFiles: (File | null)[] = [null, null];
+        // Copy existing files except for the current index
+        for (let i = 0; i < this.selectedFiles.length; i++) {
+          if (i !== index) {
+            newSelectedFiles[i] = this.selectedFiles[i];
+          }
+        }
+        this.selectedFiles = newSelectedFiles;
         console.log(`File validation failed for slot ${index}:`, file.name);
       }
     } else {
-      this.selectedFiles[index] = null;
-      console.log(`No file selected for slot ${index}`);
+      // No file selected (user cancelled or cleared), make sure to reset
+      event.target.value = '';
+      const newSelectedFiles: (File | null)[] = [null, null];
+      // Copy existing files except for the current index
+      for (let i = 0; i < this.selectedFiles.length; i++) {
+        if (i !== index) {
+          newSelectedFiles[i] = this.selectedFiles[i];
+        }
+      }
+      this.selectedFiles = newSelectedFiles;
     }
   }
 
@@ -162,14 +221,19 @@ export class FileUploadComponent implements OnInit {
       // Upload each file
       for (const file of filesToUpload) {
         try {
-          const uploadType = this.isEquipmentMode ? `equipment: ${this.equipmentId}` : `callNbr: ${this.callNbr}`;
-          console.log(`Uploading file: ${file.name} for ${uploadType}`);
-          
+          const uploadType = this.isEquipmentMode ? `equipment: ${this.equipmentId}` : `callNbr: ${this.callNbr}`;          
           let result: any;
           // Always use equipment upload if we have equipment info, otherwise use job upload
           if (this.equipmentId && this.techId) {
-            console.log(`Using equipment upload: equipmentId=${this.equipmentId}, techId=${this.techId}`);
-            result = await this.fileUploadService.uploadEquipmentFile(this.equipmentId, this.techId, file).toPromise();
+            result = await this.fileUploadService.uploadEquipmentFile(
+              this.equipmentId, 
+              this.techId, 
+              file, 
+              this.techId, 
+              this.callNbr, 
+              this.equipmentNo, 
+              this.techName
+            ).toPromise();
           } else if (this.callNbr) {
             console.log(`Using job upload: callNbr=${this.callNbr}`);
             result = await this.fileUploadService.uploadFile(this.callNbr, file).toPromise();
@@ -233,15 +297,18 @@ export class FileUploadComponent implements OnInit {
         this.toastr.success(`${successCount} file(s) uploaded successfully`);
         this.clearFileInputs();
         
-        // Refresh the file list and upload info
+        console.log('Files uploaded successfully, refreshing file list...');
+        
+        // Refresh the file list
         if (this.isEquipmentMode) {
-          this.loadEquipmentFiles();
+          await this.loadEquipmentFiles();
         } else {
           this.loadExistingFiles();
         }
         
-        // Refresh upload history
-        this.loadUploadInfo();
+        // Removed loadUploadInfo() since upload history grid was removed
+        
+        console.log('File list refreshed after upload. Current files count:', this.displayFiles.length);
       }
 
       if (errorMessages.length > 0) {
@@ -277,10 +344,56 @@ export class FileUploadComponent implements OnInit {
   }
 
   private clearFileInputs(): void {
-    this.selectedFiles = [null, null, null, null, null];
-    // Clear file input values
-    const fileInputs = document.querySelectorAll('input[type="file"]') as NodeListOf<HTMLInputElement>;
-    fileInputs.forEach(input => input.value = '');
+    // Reset the selectedFiles array with new null references
+    this.selectedFiles = [null, null]; // Only 2 file slots as requested
+    
+    // Clear each file input by ID to ensure proper reset
+    setTimeout(() => {
+      for (let i = 0; i < 2; i++) {
+        const fileInput = document.getElementById(`fileInput${i}`) as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+          fileInput.files = null;
+          console.log(`Cleared file input ${i}`);
+        }
+      }
+    }, 0);
+    
+    console.log('All file inputs cleared, selectedFiles reset:', this.selectedFiles);
+  }
+
+  // Method to clear individual file slot
+  clearFileSlot(index: number): void {
+    if (index >= 0 && index < 2) {
+      console.log(`Clearing file slot ${index}`);
+      
+      // Create completely new array
+      const newSelectedFiles: (File | null)[] = [null, null];
+      // Copy existing files except for the current index
+      for (let i = 0; i < this.selectedFiles.length; i++) {
+        if (i !== index) {
+          newSelectedFiles[i] = this.selectedFiles[i];
+        }
+      }
+      this.selectedFiles = newSelectedFiles;
+      
+      // Clear the specific file input
+      setTimeout(() => {
+        const fileInput = document.getElementById(`fileInput${index}`) as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+          fileInput.files = null;
+          console.log(`DOM input cleared for slot ${index}`);
+        }
+      }, 0);
+      
+      console.log(`File slot ${index} cleared. New state:`, this.selectedFiles.map((f, i) => `${i}: ${f?.name || 'null'}`));
+    }
+  }
+
+  // TrackBy function for ngFor to ensure proper element tracking
+  trackByIndex(index: number, item: any): number {
+    return index;
   }
 
   private async loadExistingFiles(): Promise<void> {
@@ -292,12 +405,9 @@ export class FileUploadComponent implements OnInit {
 
     try {
       this.loading = true;
-      console.log('Loading files for callNbr:', this.callNbr);
       const files = await this.fileUploadService.getUploadedFiles(this.callNbr).toPromise();
       this.uploadedFiles = files || [];
-      console.log('Loaded files:', this.uploadedFiles);
     } catch (error: any) {
-      console.error('Error loading files:', error);
       
       // Log the error but don't disable the service - let users try uploading
       if (error.status === 404) {
@@ -314,24 +424,39 @@ export class FileUploadComponent implements OnInit {
   }
 
   private async loadEquipmentFiles(): Promise<void> {
-    if (!this.equipmentId) {
-      console.warn('Cannot load equipment files: equipmentId is empty');
-      this.equipmentFiles = [];
-      return;
+    // Try to get equipmentId - if not available, try to use the first equipment from the page
+    let effectiveEquipmentId = this.equipmentId;
+    
+    if (!effectiveEquipmentId) {
+      // Try to get from route params or use a fallback
+      const urlParams = new URLSearchParams(window.location.search);
+      effectiveEquipmentId = parseInt(urlParams.get('equipmentId') || '0');
+      
+      if (!effectiveEquipmentId) {
+        this.equipmentFiles = [];
+        return;
+      }
     }
 
     try {
       this.loading = true;
-      console.log('Loading equipment files for equipmentId:', this.equipmentId);
-      const response = await this.fileUploadService.getEquipmentFiles(this.equipmentId).toPromise();
-      this.equipmentFiles = response?.data || [];
-      console.log('Loaded equipment files:', this.equipmentFiles);
+      console.log('=== LOADING EQUIPMENT FILES ===');
+      console.log('Loading equipment files for equipmentId:', effectiveEquipmentId);
+      console.log('Component inputs:', {
+        equipmentId: this.equipmentId,
+        effectiveEquipmentId: effectiveEquipmentId,
+        equipmentNo: this.equipmentNo,
+        techId: this.techId,
+        techName: this.techName,
+        callNbr: this.callNbr
+      });
       
+      const response = await this.fileUploadService.getEquipmentFiles(effectiveEquipmentId).toPromise();
+      this.equipmentFiles = response?.data || [];
+
       // If we successfully loaded files, the service is definitely available
       this.serviceUnavailable = false;
     } catch (error: any) {
-      console.error('Error loading equipment files:', error);
-      
       // Log the error but don't disable the service - let users try uploading
       if (error.status === 404) {
         console.warn('Equipment files API endpoint not found - but upload may still work');
@@ -347,44 +472,6 @@ export class FileUploadComponent implements OnInit {
       this.loading = false;
     }
   }
-
-  private async loadUploadInfo(): Promise<void> {
-    if (!this.callNbr || !this.techId) {
-      console.warn('Cannot load upload info: callNbr or techId is empty');
-      this.uploadInfo = [];
-      return;
-    }
-
-    try {
-      console.log('Loading upload info for callNbr:', this.callNbr, 'techId:', this.techId);
-      const uploadInfo = await this.equipmentService.getUploadInfo(this.callNbr, this.techId).toPromise();
-      this.uploadInfo = uploadInfo || [];
-      console.log('Loaded upload info:', this.uploadInfo);
-    } catch (error: any) {
-      console.error('Error loading upload info:', error);
-      
-      // Log the error but don't fail silently
-      if (error.status === 404) {
-        console.warn('Upload info API endpoint not found');
-      } else {
-        console.warn('Failed to load upload information');
-      }
-      
-      this.uploadInfo = [];
-    }
-  }
-
-  // Public method to refresh upload info (can be called from parent component)
-  public refreshUploadInfo(callNbr?: string, techId?: string): void {
-    console.log('refreshUploadInfo called with:', { callNbr, techId, currentCallNbr: this.callNbr, currentTechId: this.techId });
-    
-    // Update values if provided
-    if (callNbr) this.callNbr = callNbr;
-    if (techId) this.techId = techId;
-    
-    this.loadUploadInfo();
-  }
-
   // Public method to refresh all data
   public refreshAllData(): void {
     if (this.isEquipmentMode) {
@@ -392,7 +479,6 @@ export class FileUploadComponent implements OnInit {
     } else {
       this.loadExistingFiles();
     }
-    this.loadUploadInfo();
   }
 
   openFile(file: UploadedFile): void {
@@ -441,17 +527,39 @@ export class FileUploadComponent implements OnInit {
 
   // Get file name for display (handles both types)
   getFileName(file: UploadedFile | EquipmentFileResponseDto): string {
-    return this.isEquipmentMode ? (file as EquipmentFileResponseDto).fileName : (file as UploadedFile).name;
+    const fileName = this.isEquipmentMode ? (file as EquipmentFileResponseDto).fileName : (file as UploadedFile).name;
+    return fileName;
   }
 
   // Get file date for display (handles both types)
   getFileDate(file: UploadedFile | EquipmentFileResponseDto): Date {
-    return this.isEquipmentMode ? (file as EquipmentFileResponseDto).createdOn : (file as UploadedFile).creationTime;
+    const date = this.isEquipmentMode ? (file as EquipmentFileResponseDto).createdOn : (file as UploadedFile).creationTime;
+    return date;
+  }
+
+  // Get file created by for display (handles both types)
+  getFileCreatedBy(file: UploadedFile | EquipmentFileResponseDto): string {
+    const createdBy = this.isEquipmentMode ? (file as EquipmentFileResponseDto).createdBy : this.techId || 'Unknown';
+    return createdBy;
+  }
+
+  // Download file method
+  downloadFile(file: UploadedFile | EquipmentFileResponseDto): void {
+    if (this.isEquipmentMode) {
+      const equipmentFile = file as EquipmentFileResponseDto;
+      // Use existing openAnyFile method or implement specific download logic
+      this.openAnyFile(file);
+    } else {
+      const uploadedFile = file as UploadedFile;
+      // Use existing openAnyFile method or implement specific download logic
+      this.openAnyFile(file);
+    }
   }
 
   // Get files for display
   get displayFiles(): (UploadedFile | EquipmentFileResponseDto)[] {
-    return this.isEquipmentMode ? this.equipmentFiles : this.uploadedFiles;
+    const files = this.isEquipmentMode ? this.equipmentFiles : this.uploadedFiles;
+    return files;
   }
 
   // Method to reset service availability (for the Reset Service button)

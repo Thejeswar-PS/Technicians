@@ -23,9 +23,9 @@ export interface EquipmentDetail {
 }
 
 export interface UploadInfo {
-  uploadedBy: string;
-  uploadJobDt: Date;
-  type: string;
+  UploadedBy: string;
+  UploadJobDt: Date | null;
+  Type: string;
 }
 
 export interface EquipmentDetailsParams {

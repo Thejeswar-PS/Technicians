@@ -1,190 +1,202 @@
-<div class="container-fluid">
+<div class="modern-container">
   <!-- Loading State -->
-  <div *ngIf="loading" class="d-flex justify-content-center align-items-center p-5">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
+  <div *ngIf="loading" class="loading-state">
+    <div class="loading-content">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <span class="loading-text">Loading equipment details...</span>
     </div>
-    <span class="ms-3">Loading equipment details...</span>
   </div>
 
   <!-- Error State -->
-  <div *ngIf="errorMessage && !loading" class="alert alert-danger" role="alert">
+  <div *ngIf="errorMessage && !loading" class="alert alert-danger modern-alert" role="alert">
     <i class="fas fa-exclamation-triangle me-2"></i>
     {{ errorMessage }}
   </div>
 
   <!-- Success Message -->
-  <div *ngIf="successMessage" class="alert alert-success" role="alert">
+  <div *ngIf="successMessage" class="alert alert-success modern-alert" role="alert">
     <i class="fas fa-check-circle me-2"></i>
     {{ successMessage }}
   </div>
 
   <!-- Main Content -->
-  <div *ngIf="!loading" class="card">
+  <div *ngIf="!loading" class="modern-card" [ngClass]="layoutClass">
     <!-- Header -->
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h4 class="card-title mb-0">
-        <i class="fas fa-edit me-2"></i>
-        Edit Equipment Details
-      </h4>
-      <div class="d-flex gap-2">
-        <button type="button" class="btn btn-secondary" (click)="goBack()">
-          <i class="fas fa-arrow-left me-1"></i>
-          Back
-        </button>
-        <button 
-          type="button" 
-          class="btn btn-primary" 
-          (click)="onSave()"
-          [disabled]="saving">
-          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
-          <i *ngIf="!saving" class="fas fa-save me-1"></i>
-          {{ saving ? 'Saving...' : 'Save Equipment' }}
-        </button>
+    <div class="modern-header">
+      <div class="header-content">
+        <h4 class="header-title">
+          <i class="fas fa-edit me-2"></i>
+          Edit Equipment Details
+          <span class="equipment-type-badge" *ngIf="basicInfoForm.get('equipType')?.value">
+            {{ getEquipmentTypeLabel() }}
+          </span>
+        </h4>
+        <div class="header-actions">
+          <button type="button" class="btn btn-outline-light me-2" (click)="goBack()">
+            <i class="fas fa-arrow-left me-1"></i>
+            Back
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-success" 
+            (click)="onSave()"
+            [disabled]="saving">
+            <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
+            <i *ngIf="!saving" class="fas fa-save me-1"></i>
+            {{ saving ? 'Saving...' : 'Save Equipment' }}
+          </button>
+        </div>
       </div>
     </div>
 
-    <div class="card-body">
-      <div class="row">
-        <!-- Left Column - Basic Information -->
-        <div class="col-lg-6">
-          <form [formGroup]="basicInfoForm" class="equipment-form">
-            <h5 class="text-primary border-bottom pb-2 mb-4">Equipment Information</h5>
+    <div class="modern-body">
+      <!-- Dynamic Layout Container -->
+      <div class="layout-container" [ngClass]="getLayoutModeClass()">
+        
+        <!-- Left Column / Main Column - Basic Information Section -->
+        <div class="form-section basic-info-section main-column">
+          <form [formGroup]="basicInfoForm" class="modern-form">
+            <div class="section-header">
+              <h5 class="section-title">
+                <i class="fas fa-info-circle me-2"></i>
+                Equipment Information
+              </h5>
+            </div>
             
-            <!-- Job Number -->
-            <div class="form-group mb-3">
-              <label class="form-label required">Job Number:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="callNbr"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'callNbr')"
-                readonly>
-              <div *ngIf="isFieldInvalid(basicInfoForm, 'callNbr')" class="invalid-feedback">
-                {{ getFieldError(basicInfoForm, 'callNbr') }}
-              </div>
-            </div>
-
-            <!-- Equipment No -->
-            <div class="form-group mb-3">
-              <label class="form-label required">Equipment No:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="equipNo"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'equipNo')"
-                readonly>
-              <div *ngIf="isFieldInvalid(basicInfoForm, 'equipNo')" class="invalid-feedback">
-                {{ getFieldError(basicInfoForm, 'equipNo') }}
-              </div>
-            </div>
-
-            <!-- Serial No -->
-            <div class="form-group mb-3">
-              <label class="form-label">Serial No:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="serialId"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'serialId')">
-            </div>
-
-            <!-- Location -->
-            <div class="form-group mb-3">
-              <label class="form-label">Location:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="location"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'location')">
-            </div>
-
-            <!-- DateCode Month & Year -->
-            <div class="form-group mb-3">
-              <label class="form-label">DateCode Month & Year:</label>
-              <div class="d-flex gap-2">
+            <div class="form-grid">
+              <!-- Job Number -->
+              <div class="form-field">
+                <label class="form-label required">Job Number</label>
                 <input 
                   type="text" 
                   class="form-control" 
-                  placeholder="Month"
-                  formControlName="dateCodeMonth"
-                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'dateCodeMonth')">
+                  formControlName="callNbr"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'callNbr')"
+                  readonly>
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'callNbr')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'callNbr') }}
+                </div>
+              </div>
+
+              <!-- Equipment No -->
+              <div class="form-field">
+                <label class="form-label required">Equipment No</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="equipNo"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'equipNo')"
+                  readonly>
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'equipNo')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'equipNo') }}
+                </div>
+              </div>
+
+              <!-- Serial No -->
+              <div class="form-field">
+                <label class="form-label">Serial No</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="serialId"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'serialId')">
+              </div>
+
+              <!-- Location -->
+              <div class="form-field">
+                <label class="form-label">Location</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="location"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'location')">
+              </div>
+
+              <!-- DateCode Month & Year -->
+              <div class="form-field date-code-field">
+                <label class="form-label">DateCode Month & Year</label>
+                <div class="date-inputs">
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    placeholder="Month"
+                    formControlName="dateCodeMonth"
+                    [class.is-invalid]="isFieldInvalid(basicInfoForm, 'dateCodeMonth')">
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    placeholder="Year"
+                    min="1900"
+                    max="2100"
+                    formControlName="dateCodeYear"
+                    [class.is-invalid]="isFieldInvalid(basicInfoForm, 'dateCodeYear')">
+                </div>
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'dateCodeYear')" class="invalid-feedback d-block">
+                  {{ getFieldError(basicInfoForm, 'dateCodeYear') }}
+                </div>
+              </div>
+
+              <!-- Status -->
+              <div class="form-field">
+                <label class="form-label required">Status</label>
+                <select 
+                  class="form-select" 
+                  formControlName="status"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'status')">
+                  <option value="" disabled>Please select status</option>
+                  <option *ngFor="let option of statusOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'status')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'status') }}
+                </div>
+              </div>
+
+              <!-- Equipment Type -->
+              <div class="form-field">
+                <label class="form-label required">Equipment Type</label>
+                <select 
+                  class="form-select" 
+                  formControlName="equipType"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'equipType')">
+                  <option *ngFor="let option of equipmentTypeOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'equipType')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'equipType') }}
+                </div>
+              </div>
+
+              <!-- Float Voltage Selection - Only show for BATTERY equipment -->
+              <div *ngIf="showBatteryPanel" class="form-field">
+                <label class="form-label">Float Voltage Selection</label>
+                <select class="form-select" formControlName="floatVoltageSelection">
+                  <option *ngFor="let option of floatVoltageOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+
+              <!-- # of Battery Packs - Only show for BATTERY equipment -->
+              <div *ngIf="showBatteryPanel" class="form-field">
+                <label class="form-label"># of Battery Packs</label>
                 <input 
                   type="number" 
                   class="form-control" 
-                  placeholder="Year"
-                  min="1900"
-                  max="2100"
-                  formControlName="dateCodeYear"
-                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'dateCodeYear')">
+                  formControlName="batteryPackCount"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'batteryPackCount')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'batteryPackCount')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'batteryPackCount') }}
+                </div>
               </div>
-              <div *ngIf="isFieldInvalid(basicInfoForm, 'dateCodeYear')" class="invalid-feedback d-block">
-                {{ getFieldError(basicInfoForm, 'dateCodeYear') }}
-              </div>
-            </div>
 
-            <!-- Status -->
-            <div class="form-group mb-3">
-              <label class="form-label required">Status:</label>
-              <select 
-                class="form-select" 
-                formControlName="status"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'status')">
-                <option *ngFor="let option of statusOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <div *ngIf="isFieldInvalid(basicInfoForm, 'status')" class="invalid-feedback">
-                {{ getFieldError(basicInfoForm, 'status') }}
-              </div>
-            </div>
-
-            <!-- Equipment Type -->
-            <div class="form-group mb-3">
-              <label class="form-label required">Equipment Type:</label>
-              <select 
-                class="form-select" 
-                formControlName="equipType"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'equipType')">
-                <option *ngFor="let option of equipmentTypeOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <div *ngIf="isFieldInvalid(basicInfoForm, 'equipType')" class="invalid-feedback">
-                {{ getFieldError(basicInfoForm, 'equipType') }}
-              </div>
-            </div>
-
-            <!-- Float Voltage Selection -->
-            <div class="form-group mb-3">
-              <label class="form-label">Float Voltage Selection:</label>
-              <select class="form-select" formControlName="floatVoltageSelection">
-                <option *ngFor="let option of floatVoltageOptions" [value]="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-            </div>
-
-            <!-- # of Battery Packs -->
-            <div class="form-group mb-3">
-              <label class="form-label"># of Battery Packs:</label>
-              <input 
-                type="number" 
-                class="form-control" 
-                formControlName="batteryPackCount"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'batteryPackCount')">
-              <div *ngIf="isFieldInvalid(basicInfoForm, 'batteryPackCount')" class="invalid-feedback">
-                {{ getFieldError(basicInfoForm, 'batteryPackCount') }}
-              </div>
-            </div>
-
-            <!-- Battery Panel (shown for BATTERY type) -->
-            <div *ngIf="showBatteryPanel" class="battery-panel border rounded p-3 mb-3 bg-light">
-              <h6 class="text-secondary mb-3">Battery Information</h6>
-              
               <!-- Batteries per string -->
-              <div class="form-group mb-3">
-                <label class="form-label required">Batteries per string:</label>
+              <div *ngIf="showBatteryPanel" class="form-field">
+                <label class="form-label required">Batteries per string</label>
                 <input 
                   type="number" 
                   class="form-control" 
@@ -196,364 +208,378 @@
               </div>
 
               <!-- Reading Type -->
-              <div class="form-group mb-3">
-                <label class="form-label">Reading Type:</label>
+              <div class="form-field">
+                <label class="form-label">Reading Type</label>
                 <select class="form-select" formControlName="readingType">
                   <option *ngFor="let option of readingTypeOptions" [value]="option.value">
                     {{ option.label }}
                   </option>
                 </select>
               </div>
-            </div>
 
-            <!-- UPS KVA -->
-            <div class="form-group mb-3">
-              <label class="form-label">UPS KVA:</label>
-              <input 
-                type="number" 
-                step="0.1"
-                class="form-control" 
-                formControlName="kva"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'kva')">
-              <div *ngIf="isFieldInvalid(basicInfoForm, 'kva')" class="invalid-feedback">
-                {{ getFieldError(basicInfoForm, 'kva') }}
+              <!-- KVA -->
+              <div class="form-field">
+                <label class="form-label">KVA</label>
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  formControlName="kva"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'kva')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'kva')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'kva') }}
+                </div>
               </div>
-            </div>
 
-            <!-- Vendor ID -->
-            <div class="form-group mb-3">
-              <label class="form-label">Vendor ID:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="vendorId"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'vendorId')">
-            </div>
+              <!-- Vendor ID -->
+              <div class="form-field">
+                <label class="form-label">Vendor ID</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="vendorId"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'vendorId')">
+              </div>
 
-            <!-- Version -->
-            <div class="form-group mb-3">
-              <label class="form-label">Version:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="version"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'version')">
-            </div>
+              <!-- Version -->
+              <div class="form-field">
+                <label class="form-label">Version</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="version"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'version')">
+              </div>
 
-            <!-- Tag -->
-            <div class="form-group mb-3">
-              <label class="form-label">Tag:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="tag"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'tag')">
-            </div>
+              <!-- Tag -->
+              <div class="form-field">
+                <label class="form-label">Tag</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="tag"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'tag')">
+              </div>
 
-            <!-- Contract -->
-            <div class="form-group mb-3">
-              <label class="form-label">Contract:</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                formControlName="contract"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'contract')">
-            </div>
+              <!-- Contract -->
+              <div class="form-field">
+                <label class="form-label">Contract</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="contract"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'contract')">
+              </div>
 
-            <!-- Task Description -->
-            <div class="form-group mb-3">
-              <label class="form-label">Task Description:</label>
-              <textarea 
-                class="form-control" 
-                rows="3"
-                formControlName="taskDescription"
-                [class.is-invalid]="isFieldInvalid(basicInfoForm, 'taskDescription')">
-              </textarea>
+              <!-- Task Description -->
+              <div class="form-field task-description-field">
+                <label class="form-label">Task Description</label>
+                <textarea 
+                  class="form-control" 
+                  formControlName="taskDescription"
+                  rows="3"
+                  [class.is-invalid]="isFieldInvalid(basicInfoForm, 'taskDescription')"></textarea>
+              </div>
             </div>
           </form>
         </div>
 
-        <!-- Right Column - Capacitor Panel & Board Details -->
-        <div class="col-lg-6">
+        <!-- Right Column - UPS Specific Data (only visible for UPS equipment) -->
+        <div *ngIf="isUpsEquipment()" class="ups-specific-column">
           
-          <!-- Capacitor Panel (shown for UPS type) -->
-          <div *ngIf="showCapacitorPanel" class="capacitor-panel mb-4">
-            <form [formGroup]="capacitorForm">
-              <h5 class="text-primary border-bottom pb-2 mb-4">UPS Capacitor Information</h5>
-              
-              <!-- DC Caps -->
-              <div class="cap-section mb-4">
-                <h6 class="text-secondary mb-3">DC Capacitors</h6>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small">DC Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="dcfCapsPartNo" maxlength="50"
-                           [class.is-invalid]="hasError('dcfCapsPartNo', capacitorForm, 'maxlength')"
-                           (input)="onPartNumberInput($event, 'dcfCapsPartNo', 50)"
-                           (focus)="onPartNumberFocus($event, 'dcfCapsPartNo')"
-                           (blur)="onPartNumberBlur($event, 'dcfCapsPartNo')">
-                    <div class="invalid-feedback" *ngIf="hasError('dcfCapsPartNo', capacitorForm, 'maxlength')">
-                      {{ getErrorMessage('dcfCapsPartNo', capacitorForm) }}
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Qty</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="dcfQty">
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <label class="form-label small">Month</label>
-                    <select class="form-select form-control-sm" formControlName="dcfMonth">
-                      <option value="">Select Month</option>
-                      <option *ngFor="let month of monthOptions" [value]="month.value">
-                        {{ month.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Year</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="dcfYear">
+          <!-- UPS Capacitor Information Section -->
+          <div *ngIf="showCapacitorPanel" class="form-section capacitor-section">
+            <form [formGroup]="capacitorForm" class="modern-form">
+              <div class="section-header">
+                <h5 class="section-title">
+                  <i class="fas fa-microchip me-2"></i>
+                  UPS Capacitor Information
+                </h5>
+              </div>
+            
+            <!-- DC Capacitors -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">DC Caps Part #</h6>
+              <div class="cap-grid">
+                <div class="cap-field">
+                  <input type="text" class="form-control form-control-sm" formControlName="dcfCapsPartNo" maxlength="50"
+                         [class.is-invalid]="hasError('dcfCapsPartNo', capacitorForm, 'maxlength')"
+                         (input)="onPartNumberInput($event, 'dcfCapsPartNo', 50)"
+                         (focus)="onPartNumberFocus($event, 'dcfCapsPartNo')"
+                         (blur)="onPartNumberBlur($event, 'dcfCapsPartNo')"
+                         placeholder="Enter part number">
+                  <div class="invalid-feedback" *ngIf="hasError('dcfCapsPartNo', capacitorForm, 'maxlength')">
+                    {{ getErrorMessage('dcfCapsPartNo', capacitorForm) }}
                   </div>
                 </div>
-              </div>
-
-              <!-- AC I/P Caps -->
-              <div class="cap-section mb-4">
-                <h6 class="text-secondary mb-3">AC Input Capacitors</h6>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small">AC I/P Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="acfipCapsPartNo" maxlength="50"
-                           [class.is-invalid]="hasError('acfipCapsPartNo', capacitorForm, 'maxlength')"
-                           (input)="onPartNumberInput($event, 'acfipCapsPartNo', 50)"
-                           (focus)="onPartNumberFocus($event, 'acfipCapsPartNo')"
-                           (blur)="onPartNumberBlur($event, 'acfipCapsPartNo')">
-                    <div class="invalid-feedback" *ngIf="hasError('acfipCapsPartNo', capacitorForm, 'maxlength')">
-                      {{ getErrorMessage('acfipCapsPartNo', capacitorForm) }}
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Qty</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="acfQty">
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <label class="form-label small">Month</label>
-                    <select class="form-select form-control-sm" formControlName="acfMonth">
-                      <option value="">Select Month</option>
-                      <option *ngFor="let month of monthOptions" [value]="month.value">
-                        {{ month.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Year</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="acfYear">
-                  </div>
+                <div class="cap-field">
+                  <label class="form-label small">Qty</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="dcfQty">
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Month</label>
+                  <select class="form-select form-control-sm" formControlName="dcfMonth">
+                    <option value="">Select Month</option>
+                    <option *ngFor="let month of monthOptions" [value]="month.value">
+                      {{ month.label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Year</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="dcfYear">
                 </div>
               </div>
+            </div>
 
-              <!-- AC O/P WYE Caps -->
-              <div class="cap-section mb-4">
-                <h6 class="text-secondary mb-3">AC Output WYE Capacitors</h6>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small">AC O/P WYE Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="dcCommCapsPartNo" maxlength="50"
-                           [class.is-invalid]="hasError('dcCommCapsPartNo', capacitorForm, 'maxlength')"
-                           (input)="onPartNumberInput($event, 'dcCommCapsPartNo', 50)"
-                           (focus)="onPartNumberFocus($event, 'dcCommCapsPartNo')"
-                           (blur)="onPartNumberBlur($event, 'dcCommCapsPartNo')">
-                    <div class="invalid-feedback" *ngIf="hasError('dcCommCapsPartNo', capacitorForm, 'maxlength')">
-                      {{ getErrorMessage('dcCommCapsPartNo', capacitorForm) }}
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Qty</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="commQty">
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <label class="form-label small">Month</label>
-                    <select class="form-select form-control-sm" formControlName="commMonth">
-                      <option value="">Select Month</option>
-                      <option *ngFor="let month of monthOptions" [value]="month.value">
-                        {{ month.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Year</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="commYear">
+            <!-- AC Input Capacitors -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">AC I/P Caps Part #</h6>
+              <div class="cap-grid">
+                <div class="cap-field">
+                  <input type="text" class="form-control form-control-sm" formControlName="acfipCapsPartNo" maxlength="50"
+                         [class.is-invalid]="hasError('acfipCapsPartNo', capacitorForm, 'maxlength')"
+                         (input)="onPartNumberInput($event, 'acfipCapsPartNo', 50)"
+                         (focus)="onPartNumberFocus($event, 'acfipCapsPartNo')"
+                         (blur)="onPartNumberBlur($event, 'acfipCapsPartNo')"
+                         placeholder="Enter part number">
+                  <div class="invalid-feedback" *ngIf="hasError('acfipCapsPartNo', capacitorForm, 'maxlength')">
+                    {{ getErrorMessage('acfipCapsPartNo', capacitorForm) }}
                   </div>
                 </div>
-              </div>
-
-              <!-- AC O/P Delta Caps -->
-              <div class="cap-section mb-4">
-                <h6 class="text-secondary mb-3">AC Output Delta Capacitors</h6>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small">AC O/P Delta Caps Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="acfopCapsPartNo" maxlength="50"
-                           [class.is-invalid]="hasError('acfopCapsPartNo', capacitorForm, 'maxlength')"
-                           (input)="onPartNumberInput($event, 'acfopCapsPartNo', 50)"
-                           (focus)="onPartNumberFocus($event, 'acfopCapsPartNo')"
-                           (blur)="onPartNumberBlur($event, 'acfopCapsPartNo')">
-                    <div class="invalid-feedback" *ngIf="hasError('acfopCapsPartNo', capacitorForm, 'maxlength')">
-                      {{ getErrorMessage('acfopCapsPartNo', capacitorForm) }}
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Qty</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="acfopQty">
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <label class="form-label small">Month</label>
-                    <select class="form-select form-control-sm" formControlName="acfopMonth">
-                      <option value="">Select Month</option>
-                      <option *ngFor="let month of monthOptions" [value]="month.value">
-                        {{ month.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Year</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="acfopYear">
-                  </div>
+                <div class="cap-field">
+                  <label class="form-label small">Qty</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="acfQty">
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Month</label>
+                  <select class="form-select form-control-sm" formControlName="acfMonth">
+                    <option value="">Select Month</option>
+                    <option *ngFor="let month of monthOptions" [value]="month.value">
+                      {{ month.label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Year</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="acfYear">
                 </div>
               </div>
+            </div>
 
-              <!-- Fans -->
-              <div class="cap-section mb-4">
-                <h6 class="text-secondary mb-3">Fans</h6>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small">Fans Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="fansPartNo" maxlength="100"
-                           [class.is-invalid]="hasError('fansPartNo', capacitorForm, 'maxlength')"
-                           (focus)="onPartNumberFocus($event, 'fansPartNo')"
-                           (blur)="onPartNumberBlur($event, 'fansPartNo')">
-                    <div class="invalid-feedback" *ngIf="hasError('fansPartNo', capacitorForm, 'maxlength')">
-                      {{ getErrorMessage('fansPartNo', capacitorForm) }}
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Qty</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="fansQty">
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <label class="form-label small">Month</label>
-                    <select class="form-select form-control-sm" formControlName="fansMonth">
-                      <option value="">Select Month</option>
-                      <option *ngFor="let month of monthOptions" [value]="month.value">
-                        {{ month.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Year</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="fansYear">
+            <!-- AC Output WYE Capacitors -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">AC O/P WYE Caps Part #</h6>
+              <div class="cap-grid">
+                <div class="cap-field">
+                  <input type="text" class="form-control form-control-sm" formControlName="dcCommCapsPartNo" maxlength="50"
+                         [class.is-invalid]="hasError('dcCommCapsPartNo', capacitorForm, 'maxlength')"
+                         (input)="onPartNumberInput($event, 'dcCommCapsPartNo', 50)"
+                         (focus)="onPartNumberFocus($event, 'dcCommCapsPartNo')"
+                         (blur)="onPartNumberBlur($event, 'dcCommCapsPartNo')"
+                         placeholder="Enter part number">
+                  <div class="invalid-feedback" *ngIf="hasError('dcCommCapsPartNo', capacitorForm, 'maxlength')">
+                    {{ getErrorMessage('dcCommCapsPartNo', capacitorForm) }}
                   </div>
                 </div>
-              </div>
-
-              <!-- Blowers -->
-              <div class="cap-section mb-4">
-                <h6 class="text-secondary mb-3">Blowers</h6>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small">Blowers Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="blowersPartNo" maxlength="100"
-                           [class.is-invalid]="hasError('blowersPartNo', capacitorForm, 'maxlength')"
-                           (focus)="onPartNumberFocus($event, 'blowersPartNo')"
-                           (blur)="onPartNumberBlur($event, 'blowersPartNo')">
-                    <div class="invalid-feedback" *ngIf="hasError('blowersPartNo', capacitorForm, 'maxlength')">
-                      {{ getErrorMessage('blowersPartNo', capacitorForm) }}
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Qty</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="blowersQty">
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <label class="form-label small">Month</label>
-                    <select class="form-select form-control-sm" formControlName="blowersMonth">
-                      <option value="">Select Month</option>
-                      <option *ngFor="let month of monthOptions" [value]="month.value">
-                        {{ month.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Year</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="blowersYear">
-                  </div>
+                <div class="cap-field">
+                  <label class="form-label small">Qty</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="commQty">
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Month</label>
+                  <select class="form-select form-control-sm" formControlName="commMonth">
+                    <option value="">Select Month</option>
+                    <option *ngFor="let month of monthOptions" [value]="month.value">
+                      {{ month.label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Year</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="commYear">
                 </div>
               </div>
+            </div>
 
-              <!-- Miscellaneous -->
-              <div class="cap-section mb-4">
-                <h6 class="text-secondary mb-3">Miscellaneous</h6>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="form-label small">Miscellaneous Part #</label>
-                    <input type="text" class="form-control form-control-sm" formControlName="miscPartNo" maxlength="100"
-                           [class.is-invalid]="hasError('miscPartNo', capacitorForm, 'maxlength')"
-                           (focus)="onPartNumberFocus($event, 'miscPartNo')"
-                           (blur)="onPartNumberBlur($event, 'miscPartNo')">
-                    <div class="invalid-feedback" *ngIf="hasError('miscPartNo', capacitorForm, 'maxlength')">
-                      {{ getErrorMessage('miscPartNo', capacitorForm) }}
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Qty</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="miscQty">
-                  </div>
-                  <div class="col-6 col-md-4">
-                    <label class="form-label small">Month</label>
-                    <select class="form-select form-control-sm" formControlName="miscMonth">
-                      <option value="">Select Month</option>
-                      <option *ngFor="let month of monthOptions" [value]="month.value">
-                        {{ month.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="col-3">
-                    <label class="form-label small">Year</label>
-                    <input type="number" class="form-control form-control-sm" formControlName="miscYear">
+            <!-- AC Delta Capacitors -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">AC O/P Delta Caps Part #</h6>
+              <div class="cap-grid">
+                <div class="cap-field">
+                  <input type="text" class="form-control form-control-sm" formControlName="acfopCapsPartNo" maxlength="50"
+                         [class.is-invalid]="hasError('acfopCapsPartNo', capacitorForm, 'maxlength')"
+                         (input)="onPartNumberInput($event, 'acfopCapsPartNo', 50)"
+                         (focus)="onPartNumberFocus($event, 'acfopCapsPartNo')"
+                         (blur)="onPartNumberBlur($event, 'acfopCapsPartNo')"
+                         placeholder="Enter part number">
+                  <div class="invalid-feedback" *ngIf="hasError('acfopCapsPartNo', capacitorForm, 'maxlength')">
+                    {{ getErrorMessage('acfopCapsPartNo', capacitorForm) }}
                   </div>
                 </div>
+                <div class="cap-field">
+                  <label class="form-label small">Qty</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="acfopQty">
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Month</label>
+                  <select class="form-select form-control-sm" formControlName="acfopMonth">
+                    <option value="">Select Month</option>
+                    <option *ngFor="let month of monthOptions" [value]="month.value">
+                      {{ month.label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Year</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="acfopYear">
+                </div>
               </div>
+            </div>
 
-              <!-- Comments -->
-              <div class="form-group mb-3">
-                <label class="form-label">Comments:</label>
+            <!-- Fans -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">Fans Part #</h6>
+              <div class="cap-grid">
+                <div class="cap-field">
+                  <input type="text" class="form-control form-control-sm" formControlName="fansPartNo" maxlength="100"
+                         [class.is-invalid]="hasError('fansPartNo', capacitorForm, 'maxlength')"
+                         (input)="onPartNumberInput($event, 'fansPartNo', 100)"
+                         (focus)="onPartNumberFocus($event, 'fansPartNo')"
+                         (blur)="onPartNumberBlur($event, 'fansPartNo')"
+                         placeholder="Enter part number">
+                  <div class="invalid-feedback" *ngIf="hasError('fansPartNo', capacitorForm, 'maxlength')">
+                    {{ getErrorMessage('fansPartNo', capacitorForm) }}
+                  </div>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Qty</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="fansQty">
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Month</label>
+                  <select class="form-select form-control-sm" formControlName="fansMonth">
+                    <option value="">Select Month</option>
+                    <option *ngFor="let month of monthOptions" [value]="month.value">
+                      {{ month.label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Year</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="fansYear">
+                </div>
+              </div>
+            </div>
+
+            <!-- Blowers -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">Blowers Part #</h6>
+              <div class="cap-grid">
+                <div class="cap-field">
+                  <input type="text" class="form-control form-control-sm" formControlName="blowersPartNo" maxlength="100"
+                         [class.is-invalid]="hasError('blowersPartNo', capacitorForm, 'maxlength')"
+                         (input)="onPartNumberInput($event, 'blowersPartNo', 100)"
+                         (focus)="onPartNumberFocus($event, 'blowersPartNo')"
+                         (blur)="onPartNumberBlur($event, 'blowersPartNo')"
+                         placeholder="Enter part number">
+                  <div class="invalid-feedback" *ngIf="hasError('blowersPartNo', capacitorForm, 'maxlength')">
+                    {{ getErrorMessage('blowersPartNo', capacitorForm) }}
+                  </div>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Qty</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="blowersQty">
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Month</label>
+                  <select class="form-select form-control-sm" formControlName="blowersMonth">
+                    <option value="">Select Month</option>
+                    <option *ngFor="let month of monthOptions" [value]="month.value">
+                      {{ month.label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Year</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="blowersYear">
+                </div>
+              </div>
+            </div>
+
+            <!-- Miscellaneous -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">Miscellaneous Part #</h6>
+              <div class="cap-grid">
+                <div class="cap-field">
+                  <input type="text" class="form-control form-control-sm" formControlName="miscPartNo" maxlength="100"
+                         [class.is-invalid]="hasError('miscPartNo', capacitorForm, 'maxlength')"
+                         (input)="onPartNumberInput($event, 'miscPartNo', 100)"
+                         (focus)="onPartNumberFocus($event, 'miscPartNo')"
+                         (blur)="onPartNumberBlur($event, 'miscPartNo')"
+                         placeholder="Enter part number">
+                  <div class="invalid-feedback" *ngIf="hasError('miscPartNo', capacitorForm, 'maxlength')">
+                    {{ getErrorMessage('miscPartNo', capacitorForm) }}
+                  </div>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Qty</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="miscQty">
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Month</label>
+                  <select class="form-select form-control-sm" formControlName="miscMonth">
+                    <option value="">Select Month</option>
+                    <option *ngFor="let month of monthOptions" [value]="month.value">
+                      {{ month.label }}
+                    </option>
+                  </select>
+                </div>
+                <div class="cap-field">
+                  <label class="form-label small">Year</label>
+                  <input type="number" class="form-control form-control-sm" formControlName="miscYear">
+                </div>
+              </div>
+            </div>
+
+            <!-- Comments -->
+            <div class="cap-subsection">
+              <h6 class="subsection-title">Comments</h6>
+              <div class="comments-field">
                 <textarea 
-                  class="form-control form-control-sm" 
-                  rows="4"
+                  class="form-control" 
                   formControlName="comments"
+                  rows="4"
                   maxlength="1000"
+                  placeholder="Enter any additional comments or notes..."
                   [class.is-invalid]="hasError('comments', capacitorForm, 'maxlength')"
-                  (focus)="onPartNumberFocus($event, 'comments')"
-                  (blur)="onPartNumberBlur($event, 'comments')">
+                  (input)="onPartNumberInput($event, 'comments', 1000)">
                 </textarea>
                 <div class="invalid-feedback" *ngIf="hasError('comments', capacitorForm, 'maxlength')">
                   {{ getErrorMessage('comments', capacitorForm) }}
                 </div>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
+        </div>
 
-          <!-- Board Details Panel (shown for UPS type) -->
-          <div *ngIf="showBoardPanel" class="board-panel">
-            <form [formGroup]="boardDetailsForm">
-              <h5 class="text-primary border-bottom pb-2 mb-4">Equipment Board / Assembly Details</h5>
-              
+        <!-- Board Details Section (only for UPS equipment) -->
+        <div *ngIf="showBoardPanel" class="form-section board-section">
+          <form [formGroup]="boardDetailsForm" class="modern-form">
+            <div class="section-header">
+              <h5 class="section-title">
+                <i class="fas fa-microchip me-2"></i>
+                Board Details
+              </h5>
+            </div>
+            
+            <div class="board-table-container">
               <div class="table-responsive">
-                <table class="table table-sm table-bordered">
-                  <thead class="table-primary">
+                <table class="table table-modern">
+                  <thead>
                     <tr>
-                      <th style="width: 40px;">ID</th>
-                      <th style="width: 150px;">Part No</th>
-                      <th style="width: 60px;">Qty</th>
+                      <th style="width: 50px;">#</th>
+                      <th style="width: 200px;">Part Number</th>
+                      <th style="width: 80px;">Qty</th>
                       <th style="width: 200px;">Description</th>
                       <th>Comments</th>
                     </tr>
@@ -564,56 +590,60 @@
                       <td>
                         <input 
                           type="text" 
-                          class="form-control form-control-sm border-0" 
+                          class="form-control form-control-sm" 
                           formControlName="partNo"
                           placeholder="Enter part number">
                       </td>
                       <td>
                         <input 
                           type="number" 
-                          class="form-control form-control-sm border-0 text-center" 
+                          class="form-control form-control-sm text-center" 
                           formControlName="qty"
                           placeholder="Qty">
                       </td>
                       <td>
                         <input 
                           type="text" 
-                          class="form-control form-control-sm border-0" 
+                          class="form-control form-control-sm" 
                           formControlName="description"
                           placeholder="Enter description">
                       </td>
                       <td>
-                        <input 
-                          type="text" 
-                          class="form-control form-control-sm border-0" 
+                        <textarea 
+                          class="form-control form-control-sm" 
                           formControlName="comments"
-                          placeholder="Enter comments">
+                          rows="2"
+                          placeholder="Comments"></textarea>
                       </td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-            </form>
-          </div>
+            </div>
+          </form>
+        </div>
+        
+        </div> <!-- End UPS Specific Column -->
+      </div>
+      
+      <!-- Bottom Action Buttons -->
+      <div class="bottom-actions">
+        <div class="action-buttons">
+          <button type="button" class="btn btn-outline-secondary" (click)="goBack()">
+            <i class="fas fa-arrow-left me-2"></i>
+            Back
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-success" 
+            (click)="onSave()"
+            [disabled]="saving">
+            <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <i *ngIf="!saving" class="fas fa-save me-2"></i>
+            {{ saving ? 'Saving...' : 'Save Equipment' }}
+          </button>
         </div>
       </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="card-footer d-flex justify-content-between">
-      <button type="button" class="btn btn-outline-secondary" (click)="goBack()">
-        <i class="fas fa-times me-1"></i>
-        Cancel
-      </button>
-      <button 
-        type="button" 
-        class="btn btn-success" 
-        (click)="onSave()"
-        [disabled]="saving">
-        <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
-        <i *ngIf="!saving" class="fas fa-save me-1"></i>
-        {{ saving ? 'Saving...' : 'Save Equipment' }}
-      </button>
     </div>
   </div>
 </div>
