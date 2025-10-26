@@ -57,19 +57,19 @@ export class JobListComponent implements OnInit {
   empName: string = '';
 
   months : any[] = [
-     {Text : 'January',value:'1' }
-    ,{Text : 'February',value:'2' }
-    ,{Text : 'March',value:'3' }
-    ,{Text : 'April',value:'4' }
-    ,{Text : 'May',value:'5' }
-    ,{Text : 'June',value:'6' }
-    ,{Text : 'July',value:'7' }
-    ,{Text : 'August',value:'8' }
-    ,{Text : 'September',value:'9' }
-    ,{Text : 'October',value:'10'}
-    ,{Text : 'November',value:'11'}
-    ,{Text : 'December',value:'12'}
-    ,{Text : 'All',value:'0'}
+     {Text : 'January',value:1 }
+    ,{Text : 'February',value:2 }
+    ,{Text : 'March',value:3 }
+    ,{Text : 'April',value:4 }
+    ,{Text : 'May',value:5 }
+    ,{Text : 'June',value:6 }
+    ,{Text : 'July',value:7 }
+    ,{Text : 'August',value:8 }
+    ,{Text : 'September',value:9 }
+    ,{Text : 'October',value:10}
+    ,{Text : 'November',value:11}
+    ,{Text : 'December',value:12}
+    ,{Text : 'All',value:0}
   ];
   sortedColumn: string = '';
   sortDirection: number = 1;
@@ -193,9 +193,15 @@ export class JobListComponent implements OnInit {
     
     if (this.userRole === 'Technician' || this.userRole === 'TechManager') {
       techId = this.empID;
+      currentMonth = 0; // Set to 'All' when tech is selected
     } else if (this.userRole === 'Manager' || this.userRole === 'Other') {
       mgrId = this.empID;
+      currentMonth = 0; // Set to 'All' when manager is selected
     }
+    
+    // Initialize previous values for change detection
+    this.previousTechId = techId;
+    this.previousMgrId = mgrId;
     
     this.jobFilterForm = this.fb.group({
       empId: [this.empID],
@@ -273,29 +279,47 @@ public Load(initialLoad: boolean = false)
     localStorage.setItem("joblist", JSON.stringify(data))
   })
 }
+  private previousTechId: string = '';
+  private previousMgrId: string = '';
+
   public onFilterChanges()
   {
     this.jobFilterForm.valueChanges.subscribe(selectedValue  => {
       console.log('Filter changed - selectedValue:', selectedValue);
+      
+      // Check if tech or manager filter changed (not month)
+      const techChanged = this.previousTechId !== selectedValue.techId;
+      const mgrChanged = this.previousMgrId !== selectedValue.mgrId;
+      
+      let effectiveMonth = parseInt(selectedValue.month);
+      
+      // Only auto-adjust month when tech or manager changes, not when month is manually selected
+      if (techChanged || mgrChanged) {
+        if (selectedValue.mgrId !== 'All' || selectedValue.techId !== 'All') {
+          // Set month to 0 when either manager or tech is selected
+          effectiveMonth = 0;
+          this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
+        } else if (selectedValue.mgrId === 'All' && selectedValue.techId === 'All') {
+          // Reset to current month when both are set back to 'All'
+          const currentMonth = new Date().getMonth() + 1;
+          effectiveMonth = currentMonth;
+          this.jobFilterForm.patchValue({ month: currentMonth }, { emitEvent: false });
+        }
+      }
+      
+      // Update previous values for next change detection
+      this.previousTechId = selectedValue.techId;
+      this.previousMgrId = selectedValue.mgrId;
+
+      // Now set the request values with the effective month
       this.jobListRequest.empId = selectedValue.empId;
       this.jobListRequest.techId = selectedValue.techId;
       this.jobListRequest.mgrId = selectedValue.mgrId;
       this.jobListRequest.rbButton = parseInt(selectedValue.rbButton!);
       this.jobListRequest.currentYear = selectedValue.currentYear;
-      this.jobListRequest.month = selectedValue.month;
-      // Remove jobId from regular filter request - it's only for search
+      this.jobListRequest.month = effectiveMonth; // Use the effective month
       
       console.log('Job request object:', this.jobListRequest);
-
-      // Apply legacy month logic
-      if (selectedValue.mgrId !== 'All' || selectedValue.techId !== 'All') {
-        // Set month to 0 when either manager or tech is selected
-        this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
-      } else if (selectedValue.mgrId === 'All' && selectedValue.techId === 'All') {
-        // Reset to current month when both are set back to 'All'
-        const currentMonth = new Date().getMonth() + 1;
-        this.jobFilterForm.patchValue({ month: currentMonth }, { emitEvent: false });
-      }
 
       // Only load regular job list when jobId is empty (filter changes)
       if(selectedValue.jobId === '' || selectedValue.jobId == null)
@@ -362,7 +386,7 @@ public Load(initialLoad: boolean = false)
 
     // Update the form with the correct empID
     if (this.jobFilterForm) {
-      this.jobFilterForm.patchValue({ empId: this.empID });
+      this.jobFilterForm.patchValue({ empId: this.empID }, { emitEvent: false });
       console.log('Updated form empId to:', this.jobFilterForm.get('empId')?.value);
     }
 
@@ -476,7 +500,7 @@ public Load(initialLoad: boolean = false)
   private setUserRoleBasedDefaults(userData: any) {
     // Set user role based selection logic
     if (this.userRole === 'Technician' || this.userRole === 'TechManager') {
-      this.jobFilterForm.patchValue({ techId: this.empID });
+      this.jobFilterForm.patchValue({ techId: this.empID }, { emitEvent: false });
       // Disable MgrId dropdown for technicians
     } else if (this.userRole === 'Manager' || this.userRole === 'Other') {
       // Check if current user exists in account managers list
@@ -484,9 +508,9 @@ public Load(initialLoad: boolean = false)
         mgr.offid === this.empID || mgr.offname.trim() === this.empID
       );
       if (userManager) {
-        this.jobFilterForm.patchValue({ mgrId: userManager.offid });
+        this.jobFilterForm.patchValue({ mgrId: userManager.offid }, { emitEvent: false });
       } else {
-        this.jobFilterForm.patchValue({ mgrId: 'All' });
+        this.jobFilterForm.patchValue({ mgrId: 'All' }, { emitEvent: false });
       }
     }
   }
@@ -500,7 +524,7 @@ public Load(initialLoad: boolean = false)
           jobId: params.get('jobId'),
           techId: 'All',
           mgrId: 'All'
-        });
+        }, { emitEvent: false });
         // Trigger search when jobId is provided via URL
         this.SearchJobs();
       }

@@ -33,7 +33,6 @@
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="techId"
                 style="width:150px;padding:4px;"
-                (change)="onFilterChanges()"
               >
                 <option class="fw-bold text-dark me-5" value="All" selected>All</option>
                 <option class="fw-bold text-dark me-5" *ngFor="let tech of technicians" [value]="tech.TechID">
@@ -46,7 +45,6 @@
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="mgrId"
                 style="width:150px;padding:4px;"
-                (change)="onFilterChanges()"
                 [disabled]="userRole === 'Technician'"
               >
                 <option class="fw-bold text-dark me-5" value="All" selected>All</option>
@@ -60,7 +58,6 @@
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="rbButton"
                 style="width:100px;padding:4px;"
-                (change)="onFilterChanges()"
               >
                 <option class="fw-bold text-dark me-5" value="0" selected>Active</option>
                 <option class="fw-bold text-dark me-5" value="1">Archive</option>
@@ -71,7 +68,6 @@
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="currentYear"
                 style="width:100px;padding:4px;"
-                (change)="onFilterChanges()"
               >
                 <option class="fw-bold text-dark me-5" *ngFor="let year of fiscalYears" [value]="year">
                   {{year}}
@@ -83,7 +79,6 @@
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="month"
                 style="width:150px;padding:4px;"
-                (change)="onFilterChanges()"
               >
                 <option class="fw-bold text-dark me-5" *ngFor="let month of months" [value]="month.value">
                   {{month.Text}}
