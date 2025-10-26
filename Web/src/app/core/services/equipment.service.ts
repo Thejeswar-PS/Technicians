@@ -47,12 +47,7 @@ export class EquipmentService {
   return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params }).pipe(
     map((data: any[]) => {
       return (data || []).map((item, index) => {
-        // Based on your debug output, the API returns:
-        // - uploadJobDt: "2025-10-24T19:02:31.03"
-        // - uploadedBy: "Ajay.Sharmal"  
-        // - type: "Job"
         const rawDate = item.uploadJobDt || item.uploadedJobDt || item.UploadJobDt || '';
-        
         return {
           UploadedBy: item.uploadedBy || item.UploadedBy || '',
           UploadJobDt: rawDate ? new Date(rawDate) : null,
@@ -62,7 +57,6 @@ export class EquipmentService {
     })
   );
 }
-
   /**
    * Get button states for upload functionality
    * Equivalent to ProtectUploadingJobandExpenses() in legacy code

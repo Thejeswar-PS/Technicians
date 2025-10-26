@@ -66,7 +66,7 @@
 
     <ng-template #noUploadInfo>
       <div class="text-muted text-center py-4">
-        No upload information available.
+        There are no records available.
       </div>
     </ng-template>
   </div>
@@ -76,7 +76,7 @@
       <div class="card" *ngIf="errorMessage || successMessage">
         <div class="card-body">
           <div *ngIf="errorMessage" class="alert alert-danger">
-            {{ errorMessage }}
+            <div [innerHTML]="errorMessage"></div>
             <br *ngIf="showJobNotesLink || showJobSafetyLink" />
             <a
               *ngIf="showJobNotesLink"
@@ -116,17 +116,24 @@
               *ngIf="uploadJobVisible"
               class="btn btn-primary me-2"
               style="width: 150px; font-size: 10pt"
-              [disabled]="!uploadJobEnabled || loading"
+              [disabled]="!uploadJobEnabled || loading || uploadingJob"
               (click)="uploadJob()"
             >
-              Upload Job
+              <span *ngIf="!uploadingJob">Upload Job</span>
+              <span *ngIf="uploadingJob">
+                <i
+                  class="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></i>
+                Uploading... {{ jobUploadProgress }}%
+              </span>
             </button>
 
             <button
               *ngIf="uploadExpenseVisible"
               class="btn btn-warning me-2"
               style="width: 200px; font-size: 10pt"
-              [disabled]="!uploadExpenseEnabled || loading || uploadingExpenses"
+              [disabled]="!uploadExpenseEnabled || uploadingExpenses"
               (click)="uploadExpenses()"
             >
               <span *ngIf="!uploadingExpenses">Upload Expenses</span>
@@ -180,6 +187,47 @@
               >Uploading to system...</span
             >
             <span *ngIf="expenseUploadProgress >= 100">Upload completed!</span>
+          </small>
+        </div>
+      </div>
+
+      <!-- Job Upload Progress -->
+      <div class="card" *ngIf="uploadingJob">
+        <div class="card-body">
+          <h6>Uploading Job...</h6>
+          <div class="progress mb-3">
+            <div
+              class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+              role="progressbar"
+              [style.width.%]="jobUploadProgress"
+              [attr.aria-valuenow]="jobUploadProgress"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            >
+              {{ jobUploadProgress }}%
+            </div>
+          </div>
+          <small class="text-muted">
+            <span *ngIf="jobUploadProgress <= 15"
+              >Getting job notes and details...</span
+            >
+            <span
+              *ngIf="jobUploadProgress > 15 && jobUploadProgress <= 30"
+              >Checking job safety requirements...</span
+            >
+            <span
+              *ngIf="jobUploadProgress > 30 && jobUploadProgress <= 50"
+              >Validating equipment information...</span
+            >
+            <span
+              *ngIf="jobUploadProgress > 50 && jobUploadProgress <= 65"
+              >Checking parts and expenses...</span
+            >
+            <span
+              *ngIf="jobUploadProgress > 65 && jobUploadProgress < 100"
+              >Uploading job to system...</span
+            >
+            <span *ngIf="jobUploadProgress >= 100">Upload completed!</span>
           </small>
         </div>
       </div>

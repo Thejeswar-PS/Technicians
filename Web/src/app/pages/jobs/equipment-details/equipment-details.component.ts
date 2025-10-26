@@ -37,6 +37,8 @@ export class EquipmentDetailsComponent implements OnInit {
   showJobSafetyLink = false;
   uploadingExpenses = false;
   expenseUploadProgress = 0;
+  uploadingJob = false;
+  jobUploadProgress = 0;
   
   // Button states
   uploadJobEnabled = true;
@@ -104,6 +106,7 @@ export class EquipmentDetailsComponent implements OnInit {
     
     this.loading = true;
     this.errorMessage = '';
+    this.showJobSafetyLink = false;
     
     // Load equipment info and upload info in parallel
     Promise.all([
@@ -381,19 +384,40 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   // Upload methods
+  private updateJobUploadProgress(progress: number, delay: number = 600): Promise<void> {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        this.jobUploadProgress = progress;
+        resolve();
+      }, delay);
+    });
+  }
+
+  private updateExpenseUploadProgress(progress: number, delay: number = 600): Promise<void> {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        this.expenseUploadProgress = progress;
+        resolve();
+      }, delay);
+    });
+  }
+
   async uploadJob(): Promise<void> {
     if (!confirm('Are you sure you want to upload Job?')) {
       return;
     }
 
-    this.loading = true;
+    this.uploadingJob = true;
+    this.jobUploadProgress = 0;
     this.errorMessage = '';
+    this.showJobSafetyLink = false;
     this.successMessage = '';
     let notes = '';
     let jobType = '';
 
     try {
       // Step 1: Get PM Visual Notes and Job Type (equivalent to da.GetPMVisualNotes)
+      await this.updateJobUploadProgress(10);
       console.log('Getting PM Visual Notes...');
       try {
         const pmNotesResult = await this.equipmentService.getPMVisualNotes(this.params.callNbr, this.params.techName).toPromise();
@@ -431,17 +455,19 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 2: Check Pre Job Safety completion (equivalent to da.IsPreJobSafetyDone)
+      await this.updateJobUploadProgress(20);
       console.log('Validating Pre Job Safety...');
       const preJobSafetyResult = await this.equipmentService.validatePreJobSafety(this.params.callNbr).toPromise();
       console.log('Pre Job Safety Result:', preJobSafetyResult);
       console.log('Is Pre Job Safety Completed:', preJobSafetyResult?.isCompleted);
       if (!preJobSafetyResult) {
-        this.errorMessage = 'Job Upload Failed : Pre Job Safety list must be completed before uploading job.<br/>' +
-                           `<a style="font-size:8pt;color:#7bb752;font-family:arial;cursor:pointer;" href="/#/jobs/job-safety?CallNbr=${this.params.callNbr}">Go to Job Safety Page</a>`;
+        this.errorMessage = 'Job Upload Failed : Pre Job Safety list must be completed before uploading job.';
+        this.showJobSafetyLink = true;
         return;
       }
 
       // Step 3: PM Job specific validations
+      await this.updateJobUploadProgress(30);
       if (jobType.toLowerCase().includes('pm')) {
         console.log('Validating PM Job requirements...');
         
@@ -453,8 +479,10 @@ export class EquipmentDetailsComponent implements OnInit {
         }
 
         // Get equipment info and validate readings for each equipment (equivalent to da.GetEquipInfo)
+        await this.updateJobUploadProgress(40);
         const equipmentList = await this.equipmentService.getEquipmentInfo(this.params.callNbr).toPromise();
         if (equipmentList && equipmentList.length > 0) {
+          await this.updateJobUploadProgress(50);
           for (const equipment of equipmentList) {
             // For UPS equipment in major PM jobs, check caps parts info
             if (equipment.equipType?.trim() === 'UPS') {
@@ -485,6 +513,7 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 4: Check if parts are returned by tech (equivalent to da.IsPartsReturnedbyTech)
+      await this.updateJobUploadProgress(55);
       console.log('Validating parts return...');
       const partsResult = await this.equipmentService.validatePartsReturned(this.params.callNbr).toPromise();
       if (!partsResult?.isReturned) {
@@ -494,6 +523,7 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 5: Check for duplicate hours/expenses (equivalent to da.CheckDuplicateHours)
+      await this.updateJobUploadProgress(60);
       console.log('Checking duplicate hours/expenses...');
       const duplicateResult = await this.equipmentService.checkDuplicateHours(this.params.callNbr, this.params.techName).toPromise();
       if (duplicateResult?.hasDuplicates) {
@@ -537,9 +567,11 @@ export class EquipmentDetailsComponent implements OnInit {
         return;
       }
       
+      await this.updateJobUploadProgress(65);
       console.log('Technician notes validation passed:', notes.substring(0, 50) + '...');
 
       // Step 7: Perform final upload to GP (equivalent to da.UploadJobToGP)
+      await this.updateJobUploadProgress(70);
       console.log('Uploading job to GP...');
       const result = await this.equipmentService.uploadJob(
         this.params.callNbr,
@@ -547,10 +579,15 @@ export class EquipmentDetailsComponent implements OnInit {
         this.params.techName
       ).toPromise();
 
+      await this.updateJobUploadProgress(90);
       console.log('UploadJob API Response:', result);
 
       // Handle response - check success property first
       if (result?.success) {
+        await this.updateJobUploadProgress(100);
+        // Give users a moment to see the completion
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         // Success case
         this.successMessage = result.message || 'Job Uploaded Successfully.';
         this.toastr.success(this.successMessage);
@@ -594,7 +631,8 @@ export class EquipmentDetailsComponent implements OnInit {
       this.errorMessage = errorMsg;
       this.toastr.error(errorMsg);
     } finally {
-      this.loading = false;
+      this.uploadingJob = false;
+      this.jobUploadProgress = 0;
     }
   }
 
@@ -603,12 +641,14 @@ export class EquipmentDetailsComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
+    this.uploadingExpenses = true;
+    this.expenseUploadProgress = 0;
     this.errorMessage = '';
     this.successMessage = '';
 
     try {
       // Step 1: Check for duplicate hours/expenses (equivalent to da.CheckDuplicateHours)
+      await this.updateExpenseUploadProgress(20);
       console.log('Checking duplicate hours/expenses...');
       const duplicateResult = await this.equipmentService.checkDuplicateHours(this.params.callNbr, this.params.techName).toPromise();
       if (duplicateResult?.hasDuplicates) {
@@ -618,21 +658,28 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 2: Validate expense upload requirements (equivalent to da.ValidateExpenseUpload)
+      await this.updateExpenseUploadProgress(40);
       console.log('Validating expense upload requirements...');
       const validationResult = await this.equipmentService.validateExpenseUpload(this.params.callNbr).toPromise();
       
       if (validationResult === 'Success') {
         // Step 3: Perform actual expense upload (equivalent to da.UploadExpensesToGP)
+        await this.updateExpenseUploadProgress(70);
         console.log('Uploading expenses to GP...');
         const result = await this.equipmentService.uploadExpenses(
           this.params.callNbr,
           this.params.techName
         ).toPromise();
 
+        await this.updateExpenseUploadProgress(90);
         console.log('UploadExpenses API Response:', result);
 
         // Handle response - check success property first
         if (result?.success) {
+          await this.updateExpenseUploadProgress(100);
+          // Give users a moment to see the completion
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
           // Success case
           this.successMessage = result.message || 'Expenses Uploaded Successfully.';
           this.toastr.success(this.successMessage);
@@ -667,7 +714,8 @@ export class EquipmentDetailsComponent implements OnInit {
       this.errorMessage = error.message || 'Failed to upload expenses';
       this.toastr.error(this.errorMessage);
     } finally {
-      this.loading = false;
+      this.uploadingExpenses = false;
+      this.expenseUploadProgress = 0;
     }
   }
 
