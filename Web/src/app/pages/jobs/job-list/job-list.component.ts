@@ -568,7 +568,7 @@ public Load(initialLoad: boolean = false)
       case 'C': return { icon: '', tooltip: 'On-Line(Minor Deficiency)', color: '#ffc107', symbol: '🟡' }; // Yellow
       case 'E': return { icon: '', tooltip: 'Critical Deficiency', color: '#dc3545', symbol: '🔴' }; // Red
       case 'F': return { icon: '', tooltip: 'Replacement Recommended', color: '#fd7e14', symbol: '🟠' }; // Orange
-      case 'G': return { icon: '', tooltip: 'Proactive Replacement', color: '#6610f2', symbol: '🟣' }; // Purple
+      case 'G': return { icon: '', tooltip: 'Proactive Replacement', color: '#00cdcd', symbol: '🟣' }; // Purple
       default: return { icon: '', tooltip: 'On-Line', color: '#198754', symbol: '🟢' }; // Green
     }
   }

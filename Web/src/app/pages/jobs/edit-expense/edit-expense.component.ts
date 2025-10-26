@@ -383,9 +383,6 @@ export class EditExpenseComponent implements OnInit {
     let notes = 'PS';
     let otherReason = '';
     
-    console.log('Notes/Description data from any field:', notesData);
-    console.log('ExpType:', data.expType, 'Purpose:', data.purpose);
-    
     if (notesData) {
       console.log('NotesData is truthy, processing...');
       if (data.expType === '22' && data.purpose === '30') {

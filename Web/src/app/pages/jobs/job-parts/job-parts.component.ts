@@ -138,7 +138,10 @@ export class JobPartsComponent implements OnInit {
   private createSiteInfoForm(): FormGroup {
     return this.fb.group({
       contactName: ['', Validators.required],
-      contactPh: ['', Validators.required],
+      contactPh: ['', [
+        Validators.required,
+        Validators.pattern(/^[0-9-]+$/)  // Only numbers and dashes
+      ]],
       verifyPh: [false, Validators.requiredTrue],
       shippingStatus: ['Initiated'],
       shippingNotes: ['']
@@ -761,6 +764,23 @@ export class JobPartsComponent implements OnInit {
   }
 
   private validateSiteInfo(): boolean {
+    // Check if form is valid (including phone pattern validation)
+    if (this.siteInfoForm.invalid) {
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.siteInfoForm.controls).forEach(key => {
+        this.siteInfoForm.get(key)?.markAsTouched();
+      });
+      
+      if (this.siteInfoForm.get('contactPh')?.errors?.['pattern']) {
+        this.toastr.error('Please enter a valid phone number (only numbers and dashes)');
+      } else if (this.siteInfoForm.get('contactPh')?.errors?.['required']) {
+        this.toastr.error('Contact phone number is required');
+      } else {
+        this.toastr.error('Please fix all validation errors before updating');
+      }
+      return false;
+    }
+
     const formValue = this.siteInfoForm.value;
 
     if (formValue.shippingNotes && formValue.shippingNotes.includes("'")) {

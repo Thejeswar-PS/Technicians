@@ -273,22 +273,12 @@ export class EditPartsComponent implements OnInit {
     }
   }
   
-  private toDateTimeLocal(value: string | null | undefined): string {
+  private toDateOnly(value: string | null | undefined): string {
     if (!value) {
       return '';
     }
-
-    const date = new Date(value);
-    if (isNaN(date.getTime())) {
-      return value;
-    }
-
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, '0');
-    const day = `${date.getDate()}`.padStart(2, '0');
-    const hours = `${date.getHours()}`.padStart(2, '0');
-    const minutes = `${date.getMinutes()}`.padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Handles both 'YYYY-MM-DDTHH:mm:ss' and 'YYYY-MM-DD' formats
+    return value.split('T')[0];
   }
   
   private formatDisplayDate(value: string | null | undefined): string {
@@ -329,7 +319,7 @@ export class EditPartsComponent implements OnInit {
         if (part) {
           this.editForm.patchValue({
             ...part,
-            requiredDate: this.toDateTimeLocal(part.requiredDate)
+            requiredDate: this.toDateOnly(part.requiredDate)
           });
           if (this.mode === 'edit') {
             this.editForm.get('qty')?.disable({ emitEvent: false });
@@ -362,8 +352,8 @@ export class EditPartsComponent implements OnInit {
             trackingNum: part.trackingNum,
             shipmentType: part.shipmentType,
             shippingCost: part.shippingCost,
-            shipDate: this.toDateTimeLocal(part.shipDate),
-            eta: this.toDateTimeLocal(part.eta),
+            shipDate: this.toDateOnly(part.shipDate),
+            eta: this.toDateOnly(part.eta),
             shippedFrom: part.shippedFrom
           });
           if (this.mode === 'edit') {
@@ -923,7 +913,7 @@ export class EditPartsComponent implements OnInit {
 
     // Validation: If not brand new, Total must equal Faulty + Unused
     if (!brandNew && total !== faulty + unused) {
-      this.toastr.error('Total quantity must equal Faulty + Unused (when not brand new)');
+      this.toastr.error('Total quantity must equal Defective + Unused (when not brand new)');
       return false;
     }
 
@@ -939,14 +929,14 @@ export class EditPartsComponent implements OnInit {
       return false;
     }
 
-    // Validation: Faulty parts cannot exceed total
+    // Validation: Defective parts cannot exceed total
     if (faulty > total) {
-      this.toastr.error('Faulty parts cannot exceed total quantity');
+      this.toastr.error('Defective parts cannot exceed total quantity');
       return false;
     }
 
     if (faulty > 0 && (!data.faultyDesc || data.faultyDesc === 'None')) {
-      this.toastr.error('Please select a Faulty Parts info value');
+      this.toastr.error('Please select a Defective Parts info value');
       return false;
     }
 
