@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, timeout } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { EquipmentDetail, UploadInfo, UploadResponse, EquipmentImage, EquipmentImageUpload, DeleteEquipmentImage } from '../model/equipment-details.model';
 import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus } from '../model/ups-readings.model';
 import { EditEquipmentInfo, EquipBoardDetail, UpdateEquipmentRequest, UpdateEquipmentResponse } from '../model/edit-equipment.model';
@@ -44,16 +44,27 @@ export class EquipmentService {
     .set('callNbr', callNbr)
     .set('techId', techId);
 
+  console.log('EquipmentService: Calling getUploadInfo API with params:', { callNbr, techId });
+
   return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params }).pipe(
     map((data: any[]) => {
-      return (data || []).map((item, index) => {
+      console.log('EquipmentService: Raw API response:', data);
+      const mappedData = (data || []).map((item, index) => {
         const rawDate = item.uploadJobDt || item.uploadedJobDt || item.UploadJobDt || '';
-        return {
+        const mapped = {
           UploadedBy: item.uploadedBy || item.UploadedBy || '',
           UploadJobDt: rawDate ? new Date(rawDate) : null,
           Type: item.type || item.Type || ''
         };
+        console.log(`EquipmentService: Mapped item ${index}:`, mapped);
+        return mapped;
       });
+      console.log('EquipmentService: Final mapped data:', mappedData);
+      return mappedData;
+    }),
+    catchError((error: any) => {
+      console.error('EquipmentService: Error in getUploadInfo:', error);
+      throw error;
     })
   );
 }

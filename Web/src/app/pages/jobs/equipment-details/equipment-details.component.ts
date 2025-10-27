@@ -73,6 +73,7 @@ export class EquipmentDetailsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log('🚀 COMPONENT INITIALIZING - Equipment Details');
     this.loadUserInfo();
     this.loadRouteParams();
     this.loadData();
@@ -82,6 +83,7 @@ export class EquipmentDetailsComponent implements OnInit {
     // For now, use placeholder methods until AuthService is properly implemented
     this.userRole = 'Manager'; // Default role for testing
     this.currentUserId = '1'; // Default user ID for testing
+    console.log('👤 User info loaded:', { userRole: this.userRole, currentUserId: this.currentUserId });
   }
 
   private loadRouteParams(): void {
@@ -94,16 +96,25 @@ export class EquipmentDetailsComponent implements OnInit {
         year: params['Year'] || ''
       };
       
+      console.log('📋 Route params loaded:', this.params);
+      
       if (!this.params.callNbr) {
         this.errorMessage = 'Invalid job number provided';
+        console.error('❌ No CallNbr provided in route params');
         return;
       }
+      
+      // Initial check of local storage with these params
+      console.log('🔍 Initial localStorage check for expense upload status...');
+      const isLocallyUploaded = this.isExpenseUploadedLocally();
+      console.log('📱 Initial expense upload status from localStorage:', isLocallyUploaded);
     });
   }
 
   private loadData(): void {
     if (!this.params.callNbr) return;
     
+    console.log('📊 Loading component data...');
     this.loading = true;
     this.errorMessage = '';
     this.showJobSafetyLink = false;
@@ -115,7 +126,55 @@ export class EquipmentDetailsComponent implements OnInit {
       this.setupButtonStates()
     ]).finally(() => {
       this.loading = false;
+      console.log('✅ Component data loading complete');
+      
+      // Final validation after all data is loaded
+      setTimeout(() => {
+        this.performFinalExpenseButtonValidation();
+      }, 100);
     });
+  }
+
+  // Final comprehensive validation to ensure button stays hidden
+  private performFinalExpenseButtonValidation(): void {
+    console.log('🔒 PERFORMING FINAL EXPENSE BUTTON VALIDATION');
+    
+    const localStorageCheck = this.isExpenseUploadedLocally();
+    
+    let uploadInfoCheck = false;
+    if (this.uploadInfo && this.uploadInfo.length > 0) {
+      uploadInfoCheck = this.uploadInfo.some(info => 
+        info.Type?.toLowerCase().includes('expense') && info.UploadJobDt
+      );
+    }
+    
+    console.log('Final validation results:', {
+      localStorageCheck,
+      uploadInfoCheck,
+      currentButtonVisible: this.uploadExpenseVisible,
+      currentButtonEnabled: this.uploadExpenseEnabled
+    });
+    
+    // If ANY validation indicates expense was uploaded, hide the button
+    if (localStorageCheck || uploadInfoCheck) {
+      if (this.uploadExpenseVisible) {
+        console.log('🚨 FINAL OVERRIDE: Forcing expense button to be hidden');
+        this.uploadExpenseVisible = false;
+        this.uploadExpenseEnabled = false;
+        
+        // Force change detection
+        setTimeout(() => {
+          console.log('🔄 Change detection triggered. Final button state:', {
+            uploadExpenseVisible: this.uploadExpenseVisible,
+            uploadExpenseEnabled: this.uploadExpenseEnabled
+          });
+        }, 50);
+      } else {
+        console.log('✅ Button already hidden - validation passed');
+      }
+    } else {
+      console.log('ℹ️ No evidence of expense upload found - button can remain visible');
+    }
   }
 
   private async loadEquipmentInfo(): Promise<void> {
@@ -138,9 +197,9 @@ export class EquipmentDetailsComponent implements OnInit {
       // Trigger change detection to ensure UI updates
       this.cdr.detectChanges();
       
-      // If no upload info found, try again after a short delay (for timing issues)
+      // If no upload info found, try again after a longer delay for database consistency
       if (this.uploadInfo.length === 0) {
-        console.log('No upload info found, retrying in 2 seconds...');
+        console.log('No upload info found, retrying in 3 seconds...');
         setTimeout(async () => {
           try {
             const retryUploadInfo = await this.equipmentService.getUploadInfo(this.params.callNbr, this.params.techId).toPromise();
@@ -156,7 +215,7 @@ export class EquipmentDetailsComponent implements OnInit {
           } catch (retryError: any) {
             console.error('Error during upload info retry:', retryError);
           }
-        }, 2000);
+        }, 3000); // Increased delay for database consistency
       }
     } catch (error: any) {
       console.error('Error loading upload info:', error);
@@ -173,16 +232,72 @@ export class EquipmentDetailsComponent implements OnInit {
 
   private async setupButtonStates(): Promise<void> {
     try {
+      console.log('=== SETTING UP BUTTON STATES ===');
       const buttonStates = await this.equipmentService.getButtonStates(this.params.callNbr, this.params.techId).toPromise();
+      console.log('Raw button states from server:', buttonStates);
+      
       if (buttonStates) {
         this.uploadJobEnabled = buttonStates.uploadJobEnabled;
         this.uploadExpenseVisible = buttonStates.uploadExpenseVisible;
         this.uploadExpenseEnabled = buttonStates.uploadExpenseEnabled;
         this.enableExpenseVisible = buttonStates.enableExpenseVisible;
+        
+        console.log('Button states applied:', {
+          uploadExpenseVisible: this.uploadExpenseVisible,
+          uploadExpenseEnabled: this.uploadExpenseEnabled,
+          uploadJobEnabled: this.uploadJobEnabled
+        });
+        
+        // Enhanced validation: check upload info to verify expense upload status
+        console.log('Checking upload info for expense upload validation...');
+        console.log('Current uploadInfo:', this.uploadInfo);
+        
+        if (this.uploadInfo && this.uploadInfo.length > 0) {
+          console.log('Upload info details:', this.uploadInfo.map(info => ({
+            Type: info.Type,
+            UploadJobDt: info.UploadJobDt,
+            UploadedBy: info.UploadedBy
+          })));
+          
+          const expenseUploaded = this.uploadInfo.some(info => {
+            const hasExpenseType = info.Type?.toLowerCase().includes('expense');
+            const hasUploadDate = !!info.UploadJobDt;
+            console.log(`Checking info: Type="${info.Type}", hasExpenseType=${hasExpenseType}, hasUploadDate=${hasUploadDate}`);
+            return hasExpenseType && hasUploadDate;
+          });
+          
+          console.log('Expense uploaded (from uploadInfo):', expenseUploaded);
+          
+          if (expenseUploaded && this.uploadExpenseVisible) {
+            console.warn('SERVER MISMATCH: Server returned uploadExpenseVisible=true but expenses already uploaded. Correcting client state.');
+            this.uploadExpenseVisible = false;
+            this.uploadExpenseEnabled = false;
+          }
+        } else {
+          console.log('No upload info available for validation');
+        }
+        
+        // Check local storage for expense upload status (backup validation)
+        const localExpenseUploaded = this.isExpenseUploadedLocally();
+        console.log('Expense uploaded (from localStorage):', localExpenseUploaded);
+        
+        if (localExpenseUploaded && this.uploadExpenseVisible) {
+          console.warn('LOCAL STORAGE OVERRIDE: Local storage indicates expenses already uploaded. Hiding button.');
+          this.uploadExpenseVisible = false;
+          this.uploadExpenseEnabled = false;
+        }
+        
+        console.log('Final button state after validation:', {
+          uploadExpenseVisible: this.uploadExpenseVisible,
+          uploadExpenseEnabled: this.uploadExpenseEnabled
+        });
+      } else {
+        console.error('No button states received from server');
       }
     } catch (error: any) {
       console.error('Error setting up button states:', error);
     }
+    console.log('=== BUTTON STATES SETUP COMPLETE ===');
   }
 
   // Navigation methods
@@ -370,7 +485,22 @@ export class EquipmentDetailsComponent implements OnInit {
     this.isEquipmentFileUpload = false;
     this.selectedEquipment = null;
     // Refresh upload info after closing modal (equivalent to legacy parent window refresh)
-    this.loadUploadInfo();
+    this.refreshUploadInfo();
+  }
+
+  // Add a dedicated refresh method for upload info
+  async refreshUploadInfo(): Promise<void> {
+    console.log('Refreshing upload info...');
+    try {
+      const uploadInfo = await this.equipmentService.getUploadInfo(this.params.callNbr, this.params.techId).toPromise();
+      this.uploadInfo = uploadInfo || [];
+      console.log('Upload info refreshed successfully:', this.uploadInfo);
+      
+      // Force change detection
+      this.cdr.detectChanges();
+    } catch (error: any) {
+      console.error('Error refreshing upload info:', error);
+    }
   }
 
   showHelp(): void {
@@ -383,23 +513,91 @@ export class EquipmentDetailsComponent implements OnInit {
           'Click on equipment numbers to view detailed readings and information.');
   }
 
-  // Upload methods
-  private updateJobUploadProgress(progress: number, delay: number = 600): Promise<void> {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        this.jobUploadProgress = progress;
-        resolve();
-      }, delay);
-    });
+  // Upload methods - optimized for performance
+  private setJobUploadProgress(progress: number): void {
+    if (this.jobUploadProgress !== progress) {
+      this.jobUploadProgress = progress;
+    }
   }
 
-  private updateExpenseUploadProgress(progress: number, delay: number = 600): Promise<void> {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        this.expenseUploadProgress = progress;
-        resolve();
-      }, delay);
+  private setExpenseUploadProgress(progress: number): void {
+    if (this.expenseUploadProgress !== progress) {
+      this.expenseUploadProgress = progress;
+    }
+  }
+
+  // Local storage keys for persistent upload status
+  private getExpenseUploadStorageKey(): string {
+    const key = `expense_uploaded_${this.params.callNbr}_${this.params.techId}`;
+    console.log('Generated storage key:', key);
+    return key;
+  }
+
+  private markExpenseAsUploaded(): void {
+    try {
+      const key = this.getExpenseUploadStorageKey();
+      localStorage.setItem(key, 'true');
+      console.log('✅ MARKED EXPENSE AS UPLOADED in localStorage with key:', key);
+      
+      // Verify it was saved
+      const saved = localStorage.getItem(key);
+      console.log('✅ Verification - localStorage value:', saved);
+    } catch (error) {
+      console.warn('❌ Could not save expense upload status to localStorage:', error);
+    }
+  }
+
+  private isExpenseUploadedLocally(): boolean {
+    try {
+      const key = this.getExpenseUploadStorageKey();
+      const value = localStorage.getItem(key);
+      const isUploaded = value === 'true';
+      console.log(`🔍 Checking localStorage for key "${key}": value="${value}", isUploaded=${isUploaded}`);
+      return isUploaded;
+    } catch (error) {
+      console.warn('❌ Could not read expense upload status from localStorage:', error);
+      return false;
+    }
+  }
+
+  // Debug method to dump all relevant state information
+  public debugExpenseButtonState(): void {
+    console.log('=== EXPENSE BUTTON DEBUG DUMP ===');
+    console.log('Current Parameters:', this.params);
+    console.log('Generated Storage Key:', this.getExpenseUploadStorageKey());
+    console.log('LocalStorage Value:', localStorage.getItem(this.getExpenseUploadStorageKey()));
+    console.log('isExpenseUploadedLocally():', this.isExpenseUploadedLocally());
+    console.log('Current Button States:', {
+      uploadExpenseVisible: this.uploadExpenseVisible,
+      uploadExpenseEnabled: this.uploadExpenseEnabled,
+      uploadJobEnabled: this.uploadJobEnabled,
+      enableExpenseVisible: this.enableExpenseVisible
     });
+    console.log('Upload Info:', this.uploadInfo);
+    if (this.uploadInfo) {
+      console.log('Upload Info Details:', this.uploadInfo.map(info => ({
+        Type: info.Type,
+        UploadJobDt: info.UploadJobDt,
+        UploadedBy: info.UploadedBy
+      })));
+    }
+    console.log('=== END DEBUG DUMP ===');
+  }
+
+  // Method to clear expense upload status (for testing)
+  public clearExpenseUploadStatus(): void {
+    try {
+      const key = this.getExpenseUploadStorageKey();
+      localStorage.removeItem(key);
+      console.log('🗑️ Cleared expense upload status from localStorage');
+      
+      // Reset button states
+      this.uploadExpenseVisible = true;
+      this.uploadExpenseEnabled = true;
+      console.log('🔄 Reset button states to visible/enabled');
+    } catch (error) {
+      console.warn('❌ Could not clear expense upload status from localStorage:', error);
+    }
   }
 
   async uploadJob(): Promise<void> {
@@ -416,8 +614,8 @@ export class EquipmentDetailsComponent implements OnInit {
     let jobType = '';
 
     try {
-      // Step 1: Get PM Visual Notes and Job Type (equivalent to da.GetPMVisualNotes)
-      await this.updateJobUploadProgress(10);
+      // Step 1: Get PM Visual Notes and Job Type + Pre Job Safety validation
+      this.setJobUploadProgress(20);
       console.log('Getting PM Visual Notes...');
       try {
         const pmNotesResult = await this.equipmentService.getPMVisualNotes(this.params.callNbr, this.params.techName).toPromise();
@@ -455,7 +653,6 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 2: Check Pre Job Safety completion (equivalent to da.IsPreJobSafetyDone)
-      await this.updateJobUploadProgress(20);
       console.log('Validating Pre Job Safety...');
       const preJobSafetyResult = await this.equipmentService.validatePreJobSafety(this.params.callNbr).toPromise();
       console.log('Pre Job Safety Result:', preJobSafetyResult);
@@ -466,8 +663,8 @@ export class EquipmentDetailsComponent implements OnInit {
         return;
       }
 
-      // Step 3: PM Job specific validations
-      await this.updateJobUploadProgress(30);
+      // Step 3: PM Job specific validations + Equipment validation
+      this.setJobUploadProgress(40);
       if (jobType.toLowerCase().includes('pm')) {
         console.log('Validating PM Job requirements...');
         
@@ -479,10 +676,8 @@ export class EquipmentDetailsComponent implements OnInit {
         }
 
         // Get equipment info and validate readings for each equipment (equivalent to da.GetEquipInfo)
-        await this.updateJobUploadProgress(40);
         const equipmentList = await this.equipmentService.getEquipmentInfo(this.params.callNbr).toPromise();
         if (equipmentList && equipmentList.length > 0) {
-          await this.updateJobUploadProgress(50);
           for (const equipment of equipmentList) {
             // For UPS equipment in major PM jobs, check caps parts info
             if (equipment.equipType?.trim() === 'UPS') {
@@ -512,8 +707,8 @@ export class EquipmentDetailsComponent implements OnInit {
         }
       }
 
-      // Step 4: Check if parts are returned by tech (equivalent to da.IsPartsReturnedbyTech)
-      await this.updateJobUploadProgress(55);
+      // Step 4: Parts and expenses validation
+      this.setJobUploadProgress(60);
       console.log('Validating parts return...');
       const partsResult = await this.equipmentService.validatePartsReturned(this.params.callNbr).toPromise();
       if (!partsResult?.isReturned) {
@@ -523,7 +718,6 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 5: Check for duplicate hours/expenses (equivalent to da.CheckDuplicateHours)
-      await this.updateJobUploadProgress(60);
       console.log('Checking duplicate hours/expenses...');
       const duplicateResult = await this.equipmentService.checkDuplicateHours(this.params.callNbr, this.params.techName).toPromise();
       if (duplicateResult?.hasDuplicates) {
@@ -567,11 +761,10 @@ export class EquipmentDetailsComponent implements OnInit {
         return;
       }
       
-      await this.updateJobUploadProgress(65);
       console.log('Technician notes validation passed:', notes.substring(0, 50) + '...');
 
       // Step 7: Perform final upload to GP (equivalent to da.UploadJobToGP)
-      await this.updateJobUploadProgress(70);
+      this.setJobUploadProgress(80);
       console.log('Uploading job to GP...');
       const result = await this.equipmentService.uploadJob(
         this.params.callNbr,
@@ -579,34 +772,33 @@ export class EquipmentDetailsComponent implements OnInit {
         this.params.techName
       ).toPromise();
 
-      await this.updateJobUploadProgress(90);
       console.log('UploadJob API Response:', result);
 
       // Handle response - check success property first
       if (result?.success) {
-        await this.updateJobUploadProgress(100);
-        // Give users a moment to see the completion
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        this.setJobUploadProgress(100);
         
         // Success case
         this.successMessage = result.message || 'Job Uploaded Successfully.';
         this.toastr.success(this.successMessage);
         console.log('Job upload successful, refreshing upload info...');
         
+        // Hide the upload job button by disabling it (visibility stays true per legacy behavior)
+        this.uploadJobEnabled = false;
+        
         // Add a longer delay to ensure database is updated before refreshing
         setTimeout(async () => {
           console.log('Attempting to refresh upload info after job upload...');
-          await this.loadUploadInfo(); // Equivalent to GetUploadedInfo()
+          await this.refreshUploadInfo();
+          await this.setupButtonStates(); // Refresh button states from server
           console.log('Upload info refreshed, current uploadInfo:', this.uploadInfo);
         }, 1500); // Increased delay to 1.5 seconds
-        
-        this.uploadJobEnabled = false; // Equivalent to CmdUploadJob.Enabled = false
         
         // Refresh file upload component upload info if it exists
         if (this.fileUploadComponent) {
           setTimeout(() => {
             console.log('Refreshing upload info after job upload');
-            this.loadUploadInfo();
+            this.refreshUploadInfo();
           }, 1500); // Match the delay
         }
       } else {
@@ -648,7 +840,7 @@ export class EquipmentDetailsComponent implements OnInit {
 
     try {
       // Step 1: Check for duplicate hours/expenses (equivalent to da.CheckDuplicateHours)
-      await this.updateExpenseUploadProgress(20);
+      this.setExpenseUploadProgress(30);
       console.log('Checking duplicate hours/expenses...');
       const duplicateResult = await this.equipmentService.checkDuplicateHours(this.params.callNbr, this.params.techName).toPromise();
       if (duplicateResult?.hasDuplicates) {
@@ -658,44 +850,61 @@ export class EquipmentDetailsComponent implements OnInit {
       }
 
       // Step 2: Validate expense upload requirements (equivalent to da.ValidateExpenseUpload)
-      await this.updateExpenseUploadProgress(40);
+      this.setExpenseUploadProgress(60);
       console.log('Validating expense upload requirements...');
       const validationResult = await this.equipmentService.validateExpenseUpload(this.params.callNbr).toPromise();
       
       if (validationResult === 'Success') {
         // Step 3: Perform actual expense upload (equivalent to da.UploadExpensesToGP)
-        await this.updateExpenseUploadProgress(70);
+        this.setExpenseUploadProgress(80);
         console.log('Uploading expenses to GP...');
         const result = await this.equipmentService.uploadExpenses(
           this.params.callNbr,
           this.params.techName
         ).toPromise();
 
-        await this.updateExpenseUploadProgress(90);
         console.log('UploadExpenses API Response:', result);
 
         // Handle response - check success property first
         if (result?.success) {
-          await this.updateExpenseUploadProgress(100);
-          // Give users a moment to see the completion
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          this.setExpenseUploadProgress(100);
           
           // Success case
           this.successMessage = result.message || 'Expenses Uploaded Successfully.';
           this.toastr.success(this.successMessage);
           console.log('Expense upload successful, refreshing upload info...');
           
-          // Add a small delay to ensure database is updated before refreshing
-          setTimeout(() => {
-            this.loadUploadInfo(); // Equivalent to GetUploadedInfo()
+          // Hide the upload expense button immediately and permanently
+          this.uploadExpenseVisible = false;
+          this.uploadExpenseEnabled = false;
+          
+          // Mark as uploaded locally for persistence
+          this.markExpenseAsUploaded();
+          
+          // Multiple refresh attempts to ensure server state synchronization
+          setTimeout(async () => {
+            await this.refreshUploadInfo(); 
+            await this.setupButtonStates();
+            console.log('First refresh completed. Upload expense visible:', this.uploadExpenseVisible);
           }, 500);
           
-          this.uploadExpenseEnabled = false; // Equivalent to CmdUploadExpense.Enabled = false
+          // Second refresh to ensure server state is fully synchronized
+          setTimeout(async () => {
+            await this.setupButtonStates();
+            console.log('Second refresh completed. Upload expense visible:', this.uploadExpenseVisible);
+            
+            // Final failsafe - if server hasn't updated, keep client state
+            if (this.uploadExpenseVisible) {
+              console.warn('Server state not yet updated, maintaining client state');
+              this.uploadExpenseVisible = false;
+              this.uploadExpenseEnabled = false;
+            }
+          }, 2000);
           
           // Refresh upload info after successful expense upload
           if (this.fileUploadComponent) {
             setTimeout(() => {
-              this.loadUploadInfo();
+              this.refreshUploadInfo();
             }, 500);
           }
         } else {

@@ -12,17 +12,39 @@
     flex-wrap: wrap;
     gap: 1rem;
     position: relative;
+    min-height: 60px;
+    
+    // Handle narrow screens better
+    @media (max-width: 1199px) {
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+    }
   }
   
   .header-center {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
+    // Use flexbox centering instead of absolute positioning
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+    text-align: center;
     gap: 0.5rem;
+    
+    // Remove absolute positioning for better responsiveness
+    @media (min-width: 1200px) {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    
+    @media (max-width: 1199px) {
+      position: static;
+      transform: none;
+      order: 1;
+      width: 100%;
+    }
   }
   
   .header-title {
@@ -109,6 +131,26 @@
     
     .equipment-info {
       font-size: 1rem;
+    }
+  }
+  
+  // Additional breakpoint for medium screens and dev tools
+  @media (max-width: 1199px) and (min-width: 769px) {
+    padding: 1.25rem 1rem;
+    
+    .header-title {
+      font-size: 1.75rem;
+    }
+    
+    .equipment-info {
+      font-size: 1.1rem;
+      padding: 0.4rem 0.8rem;
+    }
+    
+    .header-actions {
+      order: 2;
+      justify-content: center;
+      margin-top: 0.5rem;
     }
   }
 }
@@ -306,27 +348,129 @@
   }
 }
 
-// Container styling
+// Container styling - Responsive and flexible
 .container {
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 15px;
+  max-width: 100%;
+  
+  // Responsive max-widths that adapt to viewport
+  @media (min-width: 576px) {
+    max-width: 540px;
+    padding: 0 15px;
+  }
+  
+  @media (min-width: 768px) {
+    max-width: 720px;
+    padding: 0 20px;
+  }
+  
+  @media (min-width: 992px) {
+    max-width: 960px;
+    padding: 0 20px;
+  }
+  
+  @media (min-width: 1200px) {
+    max-width: 1140px;
+    padding: 0 20px;
+  }
+  
+  @media (min-width: 1400px) {
+    max-width: 1320px;
+    padding: 0 20px;
+  }
+  
+  // Handle narrow viewports (like when dev tools are open)
+  @media (max-width: 1199px) {
+    max-width: 95%;
+    padding: 0 10px;
+  }
 }
 
-// Card sizing improvements
+// Card sizing improvements - More responsive
 .card {
   min-height: 400px;
+  margin: 1rem 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  
+  // Ensure card doesn't break layout
+  max-width: 100%;
+  box-sizing: border-box;
   
   .card-body {
     padding: 2.5rem;
     font-size: 1.1rem;
+    
+    // Responsive padding
+    @media (max-width: 1199px) {
+      padding: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+      padding: 1.5rem;
+      font-size: 1rem;
+    }
   }
 
   .card-header {
     padding: 2rem;
     
+    @media (max-width: 1199px) {
+      padding: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      padding: 1.25rem;
+    }
+    
     h4.card-title {
       font-size: 1.4rem;
       font-weight: 700;
+      
+      @media (max-width: 768px) {
+        font-size: 1.2rem;
+      }
+    }
+  }
+}
+
+// Ensure images don't break layout
+.img-fluid {
+  max-width: 100% !important;
+  height: auto !important;
+  object-fit: contain;
+  
+  &.cursor-pointer {
+    transition: transform 0.2s ease;
+    
+    &:hover {
+      transform: scale(1.02);
+    }
+  }
+}
+
+// Grid system improvements
+.row {
+  margin: 0 -15px;
+  
+  @media (max-width: 1199px) {
+    margin: 0 -10px;
+  }
+  
+  @media (max-width: 768px) {
+    margin: 0 -5px;
+  }
+  
+  > * {
+    padding: 0 15px;
+    
+    @media (max-width: 1199px) {
+      padding: 0 10px;
+    }
+    
+    @media (max-width: 768px) {
+      padding: 0 5px;
     }
   }
 }
@@ -434,20 +578,70 @@
   cursor: pointer;
 }
 
-// Responsive adjustments
+// Responsive adjustments - Enhanced for dev tools and narrow viewports
 @media (max-width: 768px) {
   .container {
     max-width: 100% !important;
     padding: 0 10px;
   }
   
-  .col-lg-8, .col-lg-10 {
+  .col-lg-8, .col-lg-10, .col-lg-11 {
     max-width: 100%;
+    padding: 0 5px;
   }
   
   .col-md-8, .col-md-4 {
     .img-fluid {
       height: 250px !important;
+    }
+  }
+  
+  .card-body {
+    padding: 1.5rem !important;
+  }
+}
+
+// Medium screens and dev tools scenarios
+@media (max-width: 1199px) and (min-width: 769px) {
+  .container {
+    max-width: 95% !important;
+    padding: 0 15px;
+  }
+  
+  .col-lg-11 {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+  
+  .card-body {
+    padding: 2rem !important;
+  }
+  
+  .row {
+    margin: 0 -10px;
+    
+    > * {
+      padding: 0 10px;
+    }
+  }
+}
+
+// Very narrow screens (dev tools open on smaller screens)
+@media (max-width: 991px) {
+  .col-md-8 {
+    .img-fluid {
+      height: 200px !important;
+      width: 100% !important;
+    }
+  }
+  
+  .col-md-4 {
+    margin-top: 1rem;
+  }
+  
+  .card {
+    .row.g-0 {
+      flex-direction: column;
     }
   }
 }

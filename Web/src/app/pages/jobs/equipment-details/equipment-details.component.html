@@ -16,15 +16,14 @@
     <!-- Job ID Header -->
     <div class="card">
       <div class="card-body border-0 pt-5">
-        <div style="text-align: center; width: 100%">
-          <h2 class="text-primary fw-bold">Job ID: {{ params.callNbr }}</h2>
-        </div>
-
         <div class="d-flex justify-content-between align-items-center mb-3">
-          <h5></h5>
           <button type="button" class="btn btn-primary" (click)="goBack()">
             <i class="bi bi-arrow-left"></i> Back
           </button>
+          <div style="text-align: center; flex: 1;">
+            <h2 class="text-primary fw-bold">Job ID: {{ params.callNbr }}</h2>
+          </div>
+          <div style="width: 80px;"></div> <!-- Spacer to center the title -->
         </div>
 
         <!-- Upload Information Grid -->
@@ -56,18 +55,23 @@
         </tr>
       </thead>
       <tbody *ngIf="uploadInfo && uploadInfo.length > 0; else noUploadInfo">
+        <tr *ngFor="let upload of uploadInfo; let i = index">
+          <td>{{ upload?.UploadedBy || 'N/A' }}</td>
+          <td>{{ upload?.UploadJobDt | date:'dd-MMM-yyyy HH:mm' || 'N/A' }}</td>
+          <td>{{ upload?.Type || 'N/A' }}</td>
+        </tr>
+      </tbody>
+      <tbody *ngIf="!uploadInfo || uploadInfo.length === 0">
         <tr>
-          <td>{{ uploadInfo[0]?.UploadedBy }}</td>
-          <td>{{ uploadInfo[0]?.UploadJobDt | date:'dd-MMM-yyyy HH:mm' }}</td>
-          <td>{{ uploadInfo[0]?.Type }}</td>
+          <td colspan="3" class="text-muted text-center py-4">
+            There are no records available.
+          </td>
         </tr>
       </tbody>
     </table>
 
     <ng-template #noUploadInfo>
-      <div class="text-muted text-center py-4">
-        There are no records available.
-      </div>
+      <!-- This template is no longer needed as we handle the message in tbody -->
     </ng-template>
   </div>
 </div>
@@ -164,7 +168,7 @@
           <h6>Uploading Expenses...</h6>
           <div class="progress mb-3">
             <div
-              class="progress-bar progress-bar-striped progress-bar-animated"
+              class="progress-bar progress-bar-striped progress-bar-animated bg-warning"
               role="progressbar"
               [style.width.%]="expenseUploadProgress"
               [attr.aria-valuenow]="expenseUploadProgress"
@@ -175,16 +179,16 @@
             </div>
           </div>
           <small class="text-muted">
-            <span *ngIf="expenseUploadProgress <= 20"
+            <span *ngIf="expenseUploadProgress <= 30"
               >Checking for duplicate entries...</span
             >
             <span
-              *ngIf="expenseUploadProgress > 20 && expenseUploadProgress <= 40"
+              *ngIf="expenseUploadProgress > 30 && expenseUploadProgress <= 60"
               >Validating expense requirements...</span
             >
             <span
-              *ngIf="expenseUploadProgress > 40 && expenseUploadProgress < 100"
-              >Uploading to system...</span
+              *ngIf="expenseUploadProgress > 60 && expenseUploadProgress < 100"
+              >Uploading expenses to system...</span
             >
             <span *ngIf="expenseUploadProgress >= 100">Upload completed!</span>
           </small>
@@ -208,23 +212,19 @@
             </div>
           </div>
           <small class="text-muted">
-            <span *ngIf="jobUploadProgress <= 15"
-              >Getting job notes and details...</span
+            <span *ngIf="jobUploadProgress <= 20"
+              >Getting job notes and safety info...</span
             >
             <span
-              *ngIf="jobUploadProgress > 15 && jobUploadProgress <= 30"
-              >Checking job safety requirements...</span
+              *ngIf="jobUploadProgress > 20 && jobUploadProgress <= 40"
+              >Validating equipment and PM requirements...</span
             >
             <span
-              *ngIf="jobUploadProgress > 30 && jobUploadProgress <= 50"
-              >Validating equipment information...</span
-            >
-            <span
-              *ngIf="jobUploadProgress > 50 && jobUploadProgress <= 65"
+              *ngIf="jobUploadProgress > 40 && jobUploadProgress <= 60"
               >Checking parts and expenses...</span
             >
             <span
-              *ngIf="jobUploadProgress > 65 && jobUploadProgress < 100"
+              *ngIf="jobUploadProgress > 60 && jobUploadProgress < 100"
               >Uploading job to system...</span
             >
             <span *ngIf="jobUploadProgress >= 100">Upload completed!</span>
@@ -429,4 +429,3 @@
     [style.display]="showFileUploadModal ? 'block' : 'none'"
     *ngIf="showFileUploadModal"
   ></div>
-</div>

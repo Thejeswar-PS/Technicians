@@ -139,18 +139,21 @@
       }
       
       &.btn-success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        border: none;
-        color: white;
-        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        background: rgb(13, 45, 226); // Match Back button styling
+        border: 2px solid #2f7cc9;
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(13, 45, 226, 0.3);
         
         &:hover {
-          background: linear-gradient(135deg, #218838 0%, #1e9a89 100%);
-          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+          background: #398ee3;
+          border-color: #2f7cc9;
+          color: #ffffff;
+          box-shadow: 0 4px 12px rgba(13, 45, 226, 0.4);
         }
         
         &:disabled {
           background: #6c757d;
+          border-color: #6c757d;
           opacity: 0.6;
           cursor: not-allowed;
           transform: none;
@@ -261,8 +264,8 @@
     
     .section-title {
       margin: 0;
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1.2rem; // Increased from 1.1rem
+      font-weight: 700; // Increased from 600
       color: #2c5530;
       
       i {
@@ -330,18 +333,21 @@
       }
       
       &.btn-success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        border: none;
-        color: white;
-        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        background: rgb(13, 45, 226); // Match Back button styling
+        border: 2px solid #2f7cc9;
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(13, 45, 226, 0.3);
         
         &:hover {
-          background: linear-gradient(135deg, #218838 0%, #1e9a89 100%);
-          box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+          background: #398ee3;
+          border-color: #2f7cc9;
+          color: #ffffff;
+          box-shadow: 0 4px 12px rgba(13, 45, 226, 0.4);
         }
         
         &:disabled {
           background: #6c757d;
+          border-color: #6c757d;
           opacity: 0.6;
           cursor: not-allowed;
           transform: none;
@@ -370,9 +376,9 @@
   
   .form-label {
     font-weight: 600;
-    color: #495057;
+    color: #2c3e50; // Darker color for better visibility
     margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 1rem; // Increased from 0.9rem
     
     &.required::after {
       content: ' *';
@@ -380,7 +386,7 @@
     }
     
     &.small {
-      font-size: 0.8rem;
+      font-size: 0.9rem; // Increased from 0.8rem
       margin-bottom: 0.25rem;
     }
   }
@@ -390,7 +396,9 @@
     border-radius: 8px;
     padding: 0.75rem;
     transition: all 0.3s ease;
-    font-size: 0.95rem;
+    font-size: 1rem; // Increased from 0.95rem
+    color: #2c3e50; // Darker text color for better readability
+    font-weight: 500; // Slightly bolder text
     
     &:focus {
       border-color: #667eea;
@@ -400,7 +408,8 @@
     
     &.form-control-sm {
       padding: 0.5rem;
-      font-size: 0.85rem;
+      font-size: 0.95rem; // Increased from 0.85rem
+      font-weight: 500; // Consistent weight
     }
     
     &.is-invalid {
@@ -442,9 +451,9 @@
     }
     
     .subsection-title {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #2c5530;
+      font-size: 1.05rem; // Increased from 1rem
+      font-weight: 700; // Increased from 600
+      color: #2c3e50; // Darker color for better visibility
       margin-bottom: 1rem;
       padding-bottom: 0.5rem;
       border-bottom: 2px solid #e9ecef;
@@ -454,20 +463,58 @@
       display: grid;
       grid-template-columns: 2fr 1fr 1fr 1fr;
       gap: 1rem;
-      align-items: end;
+      align-items: start; // Changed from 'end' to 'start'
       
       @media (max-width: 768px) {
         grid-template-columns: 1fr;
-      }
-      
-      .cap-field:first-child {
-        align-self: center;
       }
     }
     
     .cap-field {
       display: flex;
       flex-direction: column;
+      min-height: 60px; // Ensure consistent minimum height
+      justify-content: flex-end; // Align inputs to bottom of container
+      
+      // Ensure consistent spacing for fields without labels
+      &:first-child {
+        padding-top: 24px; // Add top padding to match label height + margin
+      }
+      
+      .form-label.small {
+        margin-bottom: 0.25rem;
+        height: 22px; // Increased from 20px to accommodate larger font
+        line-height: 22px;
+        font-weight: 600;
+        color: #2c3e50; // Darker color for better visibility
+      }
+      
+      .form-control,
+      .form-select {
+        margin-top: auto; // Push input to bottom
+        height: 40px; // Increased from 38px for better proportion
+        padding: 0.6rem; // Increased from 0.5rem
+        font-size: 0.95rem; // Increased from 0.85rem
+        font-weight: 500; // Added for better readability
+        color: #2c3e50; // Darker text color
+        line-height: 1.4; // Consistent line height
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        
+        // Ensure select dropdown doesn't affect alignment
+        &.form-select {
+          background-position: right 0.6rem center;
+          background-size: 16px 12px;
+          padding-right: 2.2rem; // Adjusted for new padding
+          font-weight: 500; // Ensure dropdown text is prominent
+        }
+        
+        &:focus {
+          border-color: #667eea;
+          box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+          transform: none; // Remove transform on focus to prevent misalignment
+        }
+      }
     }
   }
   
@@ -506,10 +553,10 @@
         
         th {
           color: white;
-          font-weight: 600;
+          font-weight: 700; // Increased from 600
           border: none;
           padding: 1rem 0.75rem;
-          font-size: 0.9rem;
+          font-size: 1rem; // Increased from 0.9rem
         }
       }
       
@@ -528,6 +575,9 @@
             
             .form-control {
               border: 1px solid #ced4da;
+              font-size: 0.95rem; // Increased font size
+              font-weight: 500; // Added weight for better readability
+              color: #2c3e50; // Darker text color
               
               &:focus {
                 transform: none;

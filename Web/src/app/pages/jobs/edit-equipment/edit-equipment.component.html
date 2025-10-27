@@ -207,8 +207,8 @@
                 </div>
               </div>
 
-              <!-- Reading Type -->
-              <div class="form-field">
+              <!-- Reading Type - Only show for BATTERY equipment -->
+              <div *ngIf="showBatteryPanel" class="form-field">
                 <label class="form-label">Reading Type</label>
                 <select class="form-select" formControlName="readingType">
                   <option *ngFor="let option of readingTypeOptions" [value]="option.value">
