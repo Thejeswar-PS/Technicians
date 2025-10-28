@@ -745,14 +745,14 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
     let errorMsg = '';
 
     // Check if at least one quote priority is selected
-    if (!this.jobNotesForm.get('quotePriority')?.value) {
+    if (!this.jobNotesForm.get('quotePriorityOptions')?.value) {
       errorMsg += 'At least one Quote Priority must be selected\n';
       isValid = false;
     }
 
     // Check reconciliation selection
-    if (!this.jobNotesForm.get('reconciliationNewEquip')?.value) {
-      errorMsg += 'At least one checkbox value must be selected\n';
+    if (!this.jobNotesForm.get('reconciliationOptions')?.value) {
+      errorMsg += 'At least one reconciliation option must be selected\n';
       isValid = false;
     }
 

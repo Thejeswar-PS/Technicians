@@ -34,18 +34,18 @@
                 formControlName="techId"
                 style="width:150px;padding:4px;"
               >
-                <option class="fw-bold text-dark me-5" value="All" selected>All</option>
+                <option class="fw-bold text-dark me-5" value="All" *ngIf="!(employeeStatus === 'Technician' || employeeStatus === 'TechManager' || userRole === 'Technician' || userRole === 'TechManager')">All</option>
                 <option class="fw-bold text-dark me-5" *ngFor="let tech of technicians" [value]="tech.TechID">
                   {{tech.TechName}}
                 </option>
               </select>
             </td>
             <td>
-              <select
+                <select
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="mgrId"
                 style="width:150px;padding:4px;"
-                [disabled]="userRole === 'Technician'"
+                [disabled]="(employeeStatus === 'Technician' || employeeStatus === 'TechManager' || userRole === 'Technician' || userRole === 'TechManager')"
               >
                 <option class="fw-bold text-dark me-5" value="All" selected>All</option>
                 <option class="fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.offname?.toUpperCase()">
