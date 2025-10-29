@@ -801,5 +801,35 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, new { error = "Failed to retrieve equipment files" });
             }
         }
+
+        // 11a. UpdateEquipBoardInfo (POST)
+        [HttpPost("UpdateEquipBoardInfo")]
+        public async Task<IActionResult> UpdateEquipBoardInfo([FromBody] UpdateEquipBoardInfoRequest request)
+        {
+            if (request == null)
+                return BadRequest("Request body is required.");
+
+            if (string.IsNullOrWhiteSpace(request.EquipNo) || request.EquipId <= 0)
+                return BadRequest("EquipNo and EquipID are required.");
+
+            if (request.Rows == null)
+                return BadRequest("Rows data is required.");
+
+            try
+            {
+                var result = await _repository.UpdateEquipBoardInfoAsync(request.EquipNo, request.EquipId, request.Rows);
+
+                bool success = result > 0;
+
+                return Ok(new { success, rowsUpdated = result });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating equip board info for EquipNo: {EquipNo}, EquipId: {EquipId}", 
+                    request.EquipNo, request.EquipId);
+                return StatusCode(500, new { success = false, message = "An error occurred while updating equipment board information." });
+            }
+        }
+
     }
 }

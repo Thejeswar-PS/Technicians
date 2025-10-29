@@ -81,10 +81,10 @@
         <div class="card-body">
           <div *ngIf="errorMessage" class="alert alert-danger">
             <div [innerHTML]="errorMessage"></div>
-            <br *ngIf="showJobNotesLink || showJobSafetyLink" />
+            <br *ngIf="showJobNotesLink || showJobSafetyLink || showPartsPageLink || showExpensesPageLink" />
             <a
               *ngIf="showJobNotesLink"
-              style="color: #00b27a; cursor: pointer"
+              style="color: #1200ff; cursor: pointer"
               (click)="navigateToJobNotes()"
             >
               Click here
@@ -92,12 +92,28 @@
             <span *ngIf="showJobNotesLink"> to go to Job Notes Info Page</span>
             <a
               *ngIf="showJobSafetyLink"
-              style="color: #7bb752; cursor: pointer"
+              style="color: #1200ff; cursor: pointer"
               (click)="navigateToJobSafety()"
             >
               Click here
             </a>
             <span *ngIf="showJobSafetyLink"> to go to Job Safety Page</span>
+            <a
+              *ngIf="showPartsPageLink"
+              style="color: #1200ff; cursor: pointer"
+              (click)="navigateToJobParts()"
+            >
+              Click here
+            </a>
+            <span *ngIf="showPartsPageLink"> to go to Parts Page</span>
+            <a
+              *ngIf="showExpensesPageLink"
+              style="color: #1200ff; cursor: pointer"
+              (click)="navigateToJobExpenses()"
+            >
+              Click here
+            </a>
+            <span *ngIf="showExpensesPageLink"> to go to Expenses Page</span>
           </div>
           <div *ngIf="successMessage" class="alert alert-success">
             {{ successMessage }}

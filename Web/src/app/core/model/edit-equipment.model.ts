@@ -291,3 +291,17 @@ export interface EditEquipmentFormData {
     comments: string;
   };
 }
+
+// Board Details Update Request - matching backend DTOs
+export interface UpdateEquipBoardInfoRequest {
+  equipNo: string;
+  equipId: number;
+  rows: EquipBoardRow[];
+}
+
+export interface EquipBoardRow {
+  partNo: string;
+  description: string;
+  qty: number;
+  comments: string;
+}

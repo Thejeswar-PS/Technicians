@@ -1,57 +1,55 @@
-<div class="modern-container">
-  <!-- Loading State -->
-  <div *ngIf="loading" class="loading-state">
-    <div class="loading-content">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
+<div class="container-fluid">
+  <div class="responsive-wrapper">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="loading-content">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <span class="loading-text">Loading equipment details...</span>
       </div>
-      <span class="loading-text">Loading equipment details...</span>
     </div>
-  </div>
 
-  <!-- Error State -->
-  <div *ngIf="errorMessage && !loading" class="alert alert-danger modern-alert" role="alert">
-    <i class="fas fa-exclamation-triangle me-2"></i>
-    {{ errorMessage }}
-  </div>
+    <!-- Error State -->
+    <div *ngIf="errorMessage && !loading" class="alert alert-danger modern-alert" role="alert">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{ errorMessage }}
+    </div>
 
-  <!-- Success Message -->
-  <div *ngIf="successMessage" class="alert alert-success modern-alert" role="alert">
-    <i class="fas fa-check-circle me-2"></i>
-    {{ successMessage }}
-  </div>
+    <!-- Success Message -->
+    <div *ngIf="successMessage" class="alert alert-success modern-alert" role="alert">
+      <i class="fas fa-check-circle me-2"></i>
+      {{ successMessage }}
+    </div>
 
   <!-- Main Content -->
-  <div *ngIf="!loading" class="modern-card" [ngClass]="layoutClass">
-    <!-- Header -->
-    <div class="modern-header">
-      <div class="header-content">
-        <h4 class="header-title">
-          <i class="fas fa-edit me-2"></i>
-          Edit Equipment Details
-          <span class="equipment-type-badge" *ngIf="basicInfoForm.get('equipType')?.value">
+  <div *ngIf="!loading" class="card">
+    <div class="card-body border-0 pt-5">
+      <!-- Clean header layout like Job Details -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <button type="button" class="btn btn-primary" (click)="goBack()">
+          <i class="fas fa-arrow-left me-1"></i>
+          Back
+        </button>
+        <div style="text-align: center; flex: 1;">
+          <h2 class="text-primary fw-bold">
+            <i class="fas fa-edit me-2"></i>
+            Edit Equipment Details
+          </h2>
+          <div class="text-muted" *ngIf="basicInfoForm.get('equipType')?.value">
             {{ getEquipmentTypeLabel() }}
-          </span>
-        </h4>
-        <div class="header-actions">
-          <button type="button" class="btn btn-outline-light me-2" (click)="goBack()">
-            <i class="fas fa-arrow-left me-1"></i>
-            Back
-          </button>
-          <button 
-            type="button" 
-            class="btn btn-success" 
-            (click)="onSave()"
-            [disabled]="saving">
-            <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
-            <i *ngIf="!saving" class="fas fa-save me-1"></i>
-            {{ saving ? 'Saving...' : 'Save Equipment' }}
-          </button>
+          </div>
         </div>
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="onSave()"
+          [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          <i *ngIf="!saving" class="fas fa-save me-1"></i>
+          {{ saving ? 'Saving...' : 'Save Equipment' }}
+        </button>
       </div>
-    </div>
-
-    <div class="modern-body">
       <!-- Dynamic Layout Container -->
       <div class="layout-container" [ngClass]="getLayoutModeClass()">
         
@@ -102,6 +100,9 @@
                   class="form-control" 
                   formControlName="serialId"
                   [class.is-invalid]="isFieldInvalid(basicInfoForm, 'serialId')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'serialId')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'serialId') }}
+                </div>
               </div>
 
               <!-- Location -->
@@ -112,6 +113,9 @@
                   class="form-control" 
                   formControlName="location"
                   [class.is-invalid]="isFieldInvalid(basicInfoForm, 'location')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'location')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'location') }}
+                </div>
               </div>
 
               <!-- DateCode Month & Year -->
@@ -238,6 +242,9 @@
                   class="form-control" 
                   formControlName="vendorId"
                   [class.is-invalid]="isFieldInvalid(basicInfoForm, 'vendorId')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'vendorId')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'vendorId') }}
+                </div>
               </div>
 
               <!-- Version -->
@@ -248,6 +255,9 @@
                   class="form-control" 
                   formControlName="version"
                   [class.is-invalid]="isFieldInvalid(basicInfoForm, 'version')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'version')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'version') }}
+                </div>
               </div>
 
               <!-- Tag -->
@@ -258,6 +268,9 @@
                   class="form-control" 
                   formControlName="tag"
                   [class.is-invalid]="isFieldInvalid(basicInfoForm, 'tag')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'tag')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'tag') }}
+                </div>
               </div>
 
               <!-- Contract -->
@@ -268,6 +281,9 @@
                   class="form-control" 
                   formControlName="contract"
                   [class.is-invalid]="isFieldInvalid(basicInfoForm, 'contract')">
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'contract')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'contract') }}
+                </div>
               </div>
 
               <!-- Task Description -->
@@ -278,6 +294,9 @@
                   formControlName="taskDescription"
                   rows="3"
                   [class.is-invalid]="isFieldInvalid(basicInfoForm, 'taskDescription')"></textarea>
+                <div *ngIf="isFieldInvalid(basicInfoForm, 'taskDescription')" class="invalid-feedback">
+                  {{ getFieldError(basicInfoForm, 'taskDescription') }}
+                </div>
               </div>
             </div>
           </form>
@@ -317,12 +336,11 @@
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Month</label>
-                  <select class="form-select form-control-sm" formControlName="dcfMonth">
-                    <option value="">Select Month</option>
-                    <option *ngFor="let month of monthOptions" [value]="month.value">
-                      {{ month.label }}
-                    </option>
-                  </select>
+                  <input 
+                    type="text" 
+                    class="form-control form-control-sm" 
+                    formControlName="dcfMonth"
+                    placeholder="Month">
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Year</label>
@@ -352,12 +370,11 @@
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Month</label>
-                  <select class="form-select form-control-sm" formControlName="acfMonth">
-                    <option value="">Select Month</option>
-                    <option *ngFor="let month of monthOptions" [value]="month.value">
-                      {{ month.label }}
-                    </option>
-                  </select>
+                  <input 
+                    type="text" 
+                    class="form-control form-control-sm" 
+                    formControlName="acfMonth"
+                    placeholder="Month">
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Year</label>
@@ -387,12 +404,11 @@
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Month</label>
-                  <select class="form-select form-control-sm" formControlName="commMonth">
-                    <option value="">Select Month</option>
-                    <option *ngFor="let month of monthOptions" [value]="month.value">
-                      {{ month.label }}
-                    </option>
-                  </select>
+                  <input 
+                    type="text" 
+                    class="form-control form-control-sm" 
+                    formControlName="commMonth"
+                    placeholder="Month">
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Year</label>
@@ -422,12 +438,11 @@
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Month</label>
-                  <select class="form-select form-control-sm" formControlName="acfopMonth">
-                    <option value="">Select Month</option>
-                    <option *ngFor="let month of monthOptions" [value]="month.value">
-                      {{ month.label }}
-                    </option>
-                  </select>
+                  <input 
+                    type="text" 
+                    class="form-control form-control-sm" 
+                    formControlName="acfopMonth"
+                    placeholder="Month">
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Year</label>
@@ -457,12 +472,11 @@
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Month</label>
-                  <select class="form-select form-control-sm" formControlName="fansMonth">
-                    <option value="">Select Month</option>
-                    <option *ngFor="let month of monthOptions" [value]="month.value">
-                      {{ month.label }}
-                    </option>
-                  </select>
+                  <input 
+                    type="text" 
+                    class="form-control form-control-sm" 
+                    formControlName="fansMonth"
+                    placeholder="Month">
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Year</label>
@@ -492,12 +506,11 @@
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Month</label>
-                  <select class="form-select form-control-sm" formControlName="blowersMonth">
-                    <option value="">Select Month</option>
-                    <option *ngFor="let month of monthOptions" [value]="month.value">
-                      {{ month.label }}
-                    </option>
-                  </select>
+                  <input 
+                    type="text" 
+                    class="form-control form-control-sm" 
+                    formControlName="blowersMonth"
+                    placeholder="Month">
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Year</label>
@@ -527,12 +540,11 @@
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Month</label>
-                  <select class="form-select form-control-sm" formControlName="miscMonth">
-                    <option value="">Select Month</option>
-                    <option *ngFor="let month of monthOptions" [value]="month.value">
-                      {{ month.label }}
-                    </option>
-                  </select>
+                  <input 
+                    type="text" 
+                    class="form-control form-control-sm" 
+                    formControlName="miscMonth"
+                    placeholder="Month">
                 </div>
                 <div class="cap-field">
                   <label class="form-label small">Year</label>
@@ -577,11 +589,11 @@
                 <table class="table table-modern">
                   <thead>
                     <tr>
-                      <th style="width: 50px;">#</th>
-                      <th style="width: 200px;">Part Number</th>
-                      <th style="width: 80px;">Qty</th>
-                      <th style="width: 200px;">Description</th>
-                      <th>Comments</th>
+                      <th class="col-num">#</th>
+                      <th class="col-part">Part Number</th>
+                      <th class="col-qty">Qty</th>
+                      <th class="col-desc">Description</th>
+                      <th class="col-comments">Comments</th>
                     </tr>
                   </thead>
                   <tbody formArrayName="boardItems">
@@ -599,7 +611,11 @@
                           type="number" 
                           class="form-control form-control-sm text-center" 
                           formControlName="qty"
-                          placeholder="Qty">
+                          placeholder="Qty"
+                          min="0"
+                          step="1"
+                          (input)="onQtyInput($event, i)"
+                          (keydown)="onQtyKeyDown($event)">
                       </td>
                       <td>
                         <input 
@@ -625,25 +641,24 @@
         
         </div> <!-- End UPS Specific Column -->
       </div>
-      
-      <!-- Bottom Action Buttons -->
-      <div class="bottom-actions">
-        <div class="action-buttons">
-          <button type="button" class="btn btn-outline-secondary" (click)="goBack()">
-            <i class="fas fa-arrow-left me-2"></i>
-            Back
-          </button>
-          <button 
-            type="button" 
-            class="btn btn-success" 
-            (click)="onSave()"
-            [disabled]="saving">
-            <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
-            <i *ngIf="!saving" class="fas fa-save me-2"></i>
-            {{ saving ? 'Saving...' : 'Save Equipment' }}
-          </button>
-        </div>
+    
+      <!-- Bottom Navigation -->
+      <div class="d-flex justify-content-between mt-4 mb-3">
+        <button type="button" class="btn btn-outline-primary" (click)="goBack()">
+          <i class="fas fa-arrow-left me-1"></i>
+          Back
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          (click)="onSave()"
+          [disabled]="saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm me-1" role="status"></span>
+          <i *ngIf="!saving" class="fas fa-save me-1"></i>
+          {{ saving ? 'Saving...' : 'Save Equipment' }}
+        </button>
       </div>
     </div>
+  </div>
   </div>
 </div>

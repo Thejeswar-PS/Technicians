@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;
+using System.Text;
 using Technicians.Api.Models;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
@@ -849,5 +850,57 @@ namespace Technicians.Api.Repository
 
             return files;   
         }
+
+        // 11. UpdateEquipBoardInfo - Simple SQL approach like other methods
+        public async Task<int> UpdateEquipBoardInfoAsync(string equipNo, int equipId, List<EquipBoardRow> rows)
+        {
+            if (string.IsNullOrWhiteSpace(equipNo) || equipId <= 0 || rows == null)
+                return 0;
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                // Step 1: Delete existing rows
+                const string deleteQuery = "DELETE FROM dbo.EquipBoardDetails WHERE EquipNo = @EquipNo AND EquipID = @EquipID";
+                
+                await using var deleteCmd = new SqlCommand(deleteQuery, conn);
+                deleteCmd.Parameters.AddWithValue("@EquipNo", equipNo);
+                deleteCmd.Parameters.AddWithValue("@EquipID", equipId);
+                await deleteCmd.ExecuteNonQueryAsync();
+
+                // Step 2: Insert new rows if any
+                if (rows.Count > 0)
+                {
+                    const string insertQuery = @"
+                        INSERT INTO dbo.EquipBoardDetails 
+                        (EquipNo, EquipID, RowID, PartNo, Description, Qty, Comments, LastModifiedOn, LastModifiedBy)
+                        VALUES (@EquipNo, @EquipID, @RowID, @PartNo, @Description, @Qty, @Comments, CURRENT_TIMESTAMP, SUSER_NAME())";
+
+                    for (int i = 0; i < rows.Count; i++)
+                    {
+                        var row = rows[i];
+                        
+                        await using var insertCmd = new SqlCommand(insertQuery, conn);
+                        insertCmd.Parameters.AddWithValue("@EquipNo", equipNo);
+                        insertCmd.Parameters.AddWithValue("@EquipID", equipId);
+                        insertCmd.Parameters.AddWithValue("@RowID", i + 1);
+                        insertCmd.Parameters.AddWithValue("@PartNo", row.PartNo ?? string.Empty);
+                        insertCmd.Parameters.AddWithValue("@Description", row.Description ?? string.Empty);
+                        insertCmd.Parameters.AddWithValue("@Qty", row.Qty);
+                        insertCmd.Parameters.AddWithValue("@Comments", row.Comments ?? string.Empty);
+
+                        await insertCmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                return rows.Count;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
     }
- }
+}

@@ -1,29 +1,24 @@
-<!-- Modern Header -->
-<div class="modern-header">
-  <div class="header-content">
-    <div class="header-center">
-      <h4 class="header-title">
-        <i class="fas fa-images me-2"></i>
-        Equipment Images
-      </h4>
-      <div class="equipment-info">
-        Call: {{ callNbr }} | Equipment: {{ equipNo }} | ID: {{ equipId }}
-      </div>
-    </div>
-    <div class="header-actions">
-      <button type="button" class="btn btn-outline-light me-2" (click)="goBack()">
-        <i class="fas fa-arrow-left me-1"></i>
-        Back
-      </button>
-    </div>
-  </div>
-</div>
-
 <!-- Equipment Images Page -->
 <div class="container">
   <div class="card">
-  <!-- Card Body -->
-  <div class="card-body py-3">
+    <div class="card-body border-0 pt-5">
+      <!-- Clean header layout like Job Details -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <button type="button" class="btn btn-primary" (click)="goBack()">
+          <i class="fas fa-arrow-left me-1"></i>
+          Back
+        </button>
+        <div style="text-align: center; flex: 1;">
+          <h2 class="text-primary fw-bold">
+            <i class="fas fa-images me-2"></i>
+            Equipment Images
+          </h2>
+          <div class="text-muted">
+            Call: {{ callNbr }} | Equipment: {{ equipNo }} | ID: {{ equipId }}
+          </div>
+        </div>
+        <div style="width: 80px;"></div> <!-- Spacer to center the title -->
+      </div>
     <!-- Loading Spinner -->
     <div *ngIf="loading" class="text-center py-10">
       <div class="spinner-border text-primary" role="status">

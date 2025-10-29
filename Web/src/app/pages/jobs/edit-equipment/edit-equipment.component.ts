@@ -11,6 +11,8 @@ import {
   EditEquipmentInfo, 
   EquipBoardDetail, 
   UpdateEquipmentRequest,
+  UpdateEquipBoardInfoRequest,
+  EquipBoardRow,
   EQUIPMENT_STATUS_OPTIONS,
   EQUIPMENT_TYPE_OPTIONS,
   FLOAT_VOLTAGE_OPTIONS,
@@ -122,24 +124,24 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
 
   private initializeForms(): void {
     this.basicInfoForm = this.fb.group({
-      callNbr: ['', Validators.required],
-      equipNo: ['', Validators.required],
-      serialId: [''],
-      location: [''],
+      callNbr: ['', [Validators.required, Validators.maxLength(11)]],
+      equipNo: ['', [Validators.required, Validators.maxLength(21)]],
+      serialId: ['', [Validators.maxLength(50)]],
+      location: ['', [Validators.maxLength(128)]],
       dateCodeMonth: [''],
       dateCodeYear: [null, [Validators.pattern(/^\d{2,4}$/)]],
       status: ['Online', Validators.required], // Default to 'Online' instead of empty
-      equipType: ['SELECT', Validators.required],
+      equipType: ['SELECT', [Validators.required, Validators.maxLength(50)]],
       floatVoltageSelection: ['PS'],
       batteryPackCount: [null, [Validators.pattern(/^\d+$/)]],
       batteriesPerString: [null, [Validators.pattern(/^\d+$/)]],
-      readingType: ['1'],
+      readingType: ['1', [Validators.maxLength(25)]],
       kva: [null, [Validators.pattern(/^\d+(\.\d+)?$/)]],
-      vendorId: [''],
-      version: [''],
-      tag: [''],
-      contract: [''],
-      taskDescription: ['']
+      vendorId: ['', [Validators.maxLength(50)]],
+      version: ['', [Validators.maxLength(200)]],
+      tag: ['', [Validators.maxLength(50)]],
+      contract: ['', [Validators.maxLength(11)]],
+      taskDescription: ['', [Validators.maxLength(500)]]
     });
 
     this.capacitorForm = this.fb.group({
@@ -349,24 +351,28 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     const boardItemsArray = this.boardDetailsForm.get('boardItems') as FormArray;
     boardItemsArray.clear();
     
-    // If no board details exist, create 15 empty rows for UPS equipment
-    if (this.boardDetails.length === 0 && this.equipmentInfo?.equipType === 'UPS') {
+    // For UPS equipment, always create 15 rows
+    if (this.equipmentInfo?.equipType === 'UPS') {
       for (let i = 0; i < 15; i++) {
-        boardItemsArray.push(this.createBoardDetailFormGroup({
-          rowID: i + 1,
-          equipNo: this.equipNo,
-          equipID: this.equipId,
-          partNo: '',
-          qty: undefined,
-          description: '',
-          comments: ''
-        }));
+        // Check if we have existing data for this row
+        const existingDetail = this.boardDetails.find(detail => detail.rowID === (i + 1));
+        
+        if (existingDetail) {
+          // Use existing data
+          boardItemsArray.push(this.createBoardDetailFormGroup(existingDetail));
+        } else {
+          // Create empty row
+          boardItemsArray.push(this.createBoardDetailFormGroup({
+            rowID: i + 1,
+            equipNo: this.equipNo,
+            equipID: this.equipId,
+            partNo: '',
+            qty: undefined,
+            description: '',
+            comments: ''
+          }));
+        }
       }
-    } else {
-      // Populate with existing board details
-      this.boardDetails.forEach(detail => {
-        boardItemsArray.push(this.createBoardDetailFormGroup(detail));
-      });
     }
   }
 
@@ -376,7 +382,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       equipNo: [detail.equipNo || this.equipNo],
       equipID: [detail.equipID || this.equipId],
       partNo: [detail.partNo || ''],
-      qty: [detail.qty, [Validators.pattern(/^\d+$/)]],
+      qty: [detail.qty, [Validators.min(0), Validators.pattern(/^\d+$/)]],
       description: [detail.description || ''],
       comments: [detail.comments || '']
     });
@@ -473,6 +479,80 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       }
       
       const response = await this.equipmentService.saveUpdateEquipmentInfo(request).toPromise();
+      
+      // Save board details if UPS equipment and board panel is shown
+      if (this.showBoardPanel && this.boardItemsArray.length > 0) {
+        try {
+          // Convert form data to board details
+          const boardDetailsToSave = this.boardItemsArray.controls
+            .map((control, index) => {
+              const value = control.value;
+              return {
+                equipNo: this.equipNo,
+                equipID: this.equipId,
+                rowID: index + 1, // Use 1-based indexing
+                partNo: value.partNo || '',
+                description: value.description || '',
+                qty: parseInt(value.qty) || 0,
+                comments: value.comments || '',
+                lastModifiedBy: this.authService.currentUserValue?.userName || 'system',
+                lastModifiedOn: new Date()
+              } as EquipBoardDetail;
+            })
+            .filter(detail => detail.partNo.trim() !== '' || detail.description.trim() !== ''); // Only save non-empty rows
+          
+          // Always call the API, even if boardDetailsToSave is empty (to clear all records)
+          console.log(`Saving board details (${boardDetailsToSave.length} items):`, boardDetailsToSave);
+          
+          // Prepare the request for the UpdateEquipBoardInfo API
+          const boardUpdateRequest: UpdateEquipBoardInfoRequest = {
+            equipNo: this.equipNo,
+            equipId: this.equipId,
+            rows: boardDetailsToSave.map(detail => ({
+              partNo: detail.partNo,
+              description: detail.description,
+              qty: detail.qty || 0,
+              comments: detail.comments
+            } as EquipBoardRow))
+          };
+          
+          try {
+            const result = await this.equipmentService.updateEquipBoardInfo(boardUpdateRequest).toPromise();
+            
+            if (result?.success) {
+              if (boardDetailsToSave.length > 0) {
+                console.log(`Board details saved successfully. ${result.rowsUpdated} rows updated.`);
+                this.toastr.success(`Board details saved successfully! ${result.rowsUpdated} rows updated.`);
+              } else {
+                console.log('Board details cleared successfully.');
+                this.toastr.success('Board details cleared successfully!');
+              }
+              
+              // Store in component for session persistence
+              this.boardDetails = boardDetailsToSave;
+              
+              // Reload board details to confirm persistence
+              try {
+                const reloadedBoardDetails = await this.equipmentService.getEquipBoardInfo(this.equipNo, this.equipId).toPromise();
+                this.boardDetails = reloadedBoardDetails || [];
+                this.setupBoardDetailsForm(); // Refresh the form with saved data
+              } catch (reloadError) {
+                console.warn('Could not reload board details after save:', reloadError);
+              }
+            } else {
+              console.warn('Board details save returned unsuccessful result');
+              this.toastr.warning('Equipment saved successfully, but board details may not have been saved properly.');
+            }
+          } catch (boardSaveError: any) {
+            console.error('Failed to save board details:', boardSaveError);
+            this.toastr.warning('Equipment saved successfully, but board details could not be saved. Please try again.');
+          }
+        } catch (boardError: any) {
+          // Don't fail the whole save if board details fail, just warn
+          console.warn('Failed to process board details:', boardError);
+          this.toastr.warning('Equipment saved successfully, but there was an issue processing board details.');
+        }
+      }
       
       // API returns { Message: "Equipment inserted or updated successfully" } on success
       // Since we get here, the request was successful (no exception thrown)
@@ -714,9 +794,13 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   getFieldError(formGroup: FormGroup, fieldName: string): string {
     const field = formGroup.get(fieldName);
     if (field?.errors) {
-      if (field.errors['required']) return `${fieldName} is required`;
-      if (field.errors['pattern']) return `${fieldName} must contain only numbers`;
-      if (field.errors['numeric']) return `${fieldName} must contain only integer values`;
+      if (field.errors['required']) return `${this.getFieldLabel(fieldName)} is required`;
+      if (field.errors['maxlength']) {
+        const maxLength = field.errors['maxlength'].requiredLength;
+        return `${this.getFieldLabel(fieldName)} cannot exceed ${maxLength} characters`;
+      }
+      if (field.errors['pattern']) return `${this.getFieldLabel(fieldName)} must contain only numbers`;
+      if (field.errors['numeric']) return `${this.getFieldLabel(fieldName)} must contain only integer values`;
     }
     return '';
   }
@@ -870,6 +954,19 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
   // Helper method to get user-friendly field labels
   private getFieldLabel(fieldName: string): string {
     const labels: { [key: string]: string } = {
+      // Basic Info Form Fields
+      'callNbr': 'Job Number',
+      'equipNo': 'Equipment No',
+      'serialId': 'Serial No',
+      'location': 'Location',
+      'equipType': 'Equipment Type',
+      'readingType': 'Reading Type',
+      'vendorId': 'Vendor ID',
+      'version': 'Version',
+      'tag': 'Tag',
+      'contract': 'Contract',
+      'taskDescription': 'Task Description',
+      // Capacitor Form Fields
       'dcfCapsPartNo': 'DC Caps Part Number',
       'acfipCapsPartNo': 'AC Input Caps Part Number',
       'dcCommCapsPartNo': 'AC Output WYE Caps Part Number',
@@ -890,6 +987,38 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     }
     if (this.showBoardPanel) {
       this.boardDetailsForm.markAllAsTouched();
+    }
+  }
+
+  /**
+   * Handle qty input to prevent negative values
+   */
+  onQtyInput(event: any, rowIndex: number): void {
+    const value = parseInt(event.target.value);
+    if (value < 0 || isNaN(value)) {
+      const control = this.boardItemsArray.at(rowIndex).get('qty');
+      control?.setValue(0);
+      event.target.value = 0;
+    }
+  }
+
+  /**
+   * Prevent negative numbers from being typed
+   */
+  onQtyKeyDown(event: KeyboardEvent): void {
+    // Allow: backspace, delete, tab, escape, enter
+    if ([8, 9, 27, 13, 46].indexOf(event.keyCode) !== -1 ||
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+        (event.keyCode === 65 && event.ctrlKey === true) ||
+        (event.keyCode === 67 && event.ctrlKey === true) ||
+        (event.keyCode === 86 && event.ctrlKey === true) ||
+        (event.keyCode === 88 && event.ctrlKey === true)) {
+      return;
+    }
+    // Prevent: minus sign and anything that's not a number
+    if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && 
+        (event.keyCode < 96 || event.keyCode > 105)) {
+      event.preventDefault();
     }
   }
 }

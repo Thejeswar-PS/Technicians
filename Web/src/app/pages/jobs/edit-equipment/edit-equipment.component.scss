@@ -1,3 +1,40 @@
+// Responsive Container Wrapper
+/* Enhanced zoom level consistency and viewport stability */
+:host {
+  // Ensure consistent rendering across zoom levels
+  transform-origin: top left;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  // Prevent layout shifts during zoom
+  * {
+    box-sizing: border-box;
+  }
+}
+
+.responsive-wrapper {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: 100vh;
+  
+  @media (min-width: 576px) {
+    padding: 1.5rem;
+  }
+  
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+  
+  @media (min-width: 1200px) {
+    padding: 2rem 3rem;
+  }
+  
+  @media (min-width: 1400px) {
+    padding: 2rem 4rem;
+  }
+}
+
 // Modern Container Styles
 .modern-container {
   min-height: 100vh;
@@ -67,12 +104,12 @@
   border: 1px solid #e9ecef;
 }
 
-// Header with Neutral Theme
+// Header with Clean Theme
 .modern-header {
-  background: linear-gradient(to right, #6bdf67, #9bc844, #d2ae1f, #ff6600);
+  background: #ffffff;
   padding: 1.5rem 2rem;
-  border-bottom: 2px solid #cedae5;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid #e9ecef;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   
   .header-content {
     display: flex;
@@ -199,10 +236,13 @@
 .layout-container {
   display: grid;
   gap: 2rem;
+  max-width: 1600px; // Increased overall max-width for more space
+  margin: 0 auto; // Center the layout
   
   // UPS Mode: Two Column Layout
   &.ups-mode {
     grid-template-columns: 1fr 1fr;
+    gap: 3rem; // Increased gap for better spacing
     
     .main-column {
       grid-column: 1;
@@ -215,7 +255,7 @@
       gap: 2rem;
     }
     
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) { // Updated breakpoint to accommodate larger layout
       grid-template-columns: 1fr;
       
       .main-column {
@@ -231,7 +271,7 @@
   // Standard Mode: Single Centered Column
   &.standard-mode {
     grid-template-columns: 1fr;
-    max-width: 900px;
+    max-width: 1200px; // Increased from 900px for more space
     margin: 0 auto;
     
     .main-column {
@@ -258,7 +298,7 @@
   }
   
   .section-header {
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    background: #f8f9fa;
     padding: 1.25rem 1.5rem;
     border-bottom: 1px solid #e9ecef;
     
@@ -291,7 +331,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 1rem;
-    max-width: 1200px;
+    max-width: 1400px; // Increased from 1200px for more space
     margin: 0 auto;
     padding: 0 2rem;
     
@@ -534,54 +574,126 @@
 
 // Board Section Specific Styles
 .board-section {
+  min-width: 100%; // Ensure full width usage
+  
   .board-table-container {
-    background: #f8f9fa;
+    background: transparent; // Remove gray background for clean look
     border-radius: 8px;
-    padding: 1rem;
+    padding: 0.5rem; // Reduced padding for more space
+    width: 100%; // Use full available width instead of minimum width
+    overflow-x: auto; // Handle overflow at container level
     
     .table-responsive {
       border-radius: 8px;
-      overflow: hidden;
+      overflow: visible; // Let container handle overflow
+      
+      // Enhanced scrolling behavior
+      -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
+      
+      // Better scroll indicators
+      &::-webkit-scrollbar {
+        height: 8px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f3f4;
+        border-radius: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #c1c7d0;
+        border-radius: 4px;
+        
+        &:hover {
+          background: #9aa0a6;
+        }
+      }
     }
     
+    // Ultra-specific selector to override any external CSS
     .table-modern {
       margin: 0;
       background: white;
+      width: 100%; // Ensure table uses full available width
+      table-layout: auto; // Let content determine column sizing like job list
+      font-size: 10px; // Match job list font size
       
-      thead {
-        background: linear-gradient(135deg, #495057 0%, #6c757d 100%);
+      // Job list style responsive column sizing
+      .col-num { width: auto; min-width: 30px; }      // # column - very compact
+      .col-part { width: auto; min-width: 100px; }    // Part Number
+      .col-qty { width: auto; min-width: 60px; }      // Qty
+      .col-desc { width: auto; min-width: 100px; }    // Description  
+      .col-comments { width: auto; min-width: 150px; } // Comments
+      
+      // Ensure inputs never overflow their cells
+      .form-control {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        word-wrap: break-word;
+        font-size: 10px; // Match job list font size
+        padding: 2px 4px; // Very compact like job list
+        height: 22px; // Match job list row height
+      }
+      
+      // Prevent text overflow in cells - job list style
+      th, td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding: 1px 2px; // Very compact padding like job list
+        height: 22px; // Match job list row height
+        vertical-align: middle;
         
-        th {
-          color: white;
-          font-weight: 700; // Increased from 600
-          border: none;
-          padding: 1rem 0.75rem;
-          font-size: 1rem; // Increased from 0.9rem
+        &.col-comments {
+          white-space: normal; // Allow wrapping in comments
         }
       }
       
-      tbody {
+      // Header styling to match job list
+      thead th {
+        font-size: 10px;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+      }
+      
+      // Force override any Bootstrap or external gradient styles
+      thead {
+        background: #f5f5f5 !important;
+        background-image: none !important;
+        background-color: #f5f5f5 !important;
+        border-bottom: 1px solid #dee2e6;
+        
         tr {
-          transition: all 0.2s ease;
+          background: #f5f5f5 !important;
+          background-image: none !important;
           
-          &:hover {
-            background-color: #f8f9fa;
+          th {
+            background: #f5f5f5 !important;
+            background-image: none !important;
+            background-color: #f5f5f5 !important;
+            color: #495057 !important;
+            font-weight: 600;
+            border: none;
+            padding: 1rem 0.75rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
           }
-          
-          td {
-            padding: 0.75rem;
-            border-top: 1px solid #e9ecef;
-            vertical-align: middle;
+        }
+      }
+      
+      // Enhanced styling for form controls in board details
+      tbody {
+        td {
+          .form-control {
+            min-width: 120px; // Ensure minimum width for inputs
             
-            .form-control {
-              border: 1px solid #ced4da;
-              font-size: 0.95rem; // Increased font size
-              font-weight: 500; // Added weight for better readability
-              color: #2c3e50; // Darker text color
-              
-              &:focus {
-                transform: none;
-              }
+            // Special styling for comments column (wider input)
+            &[formControlName="comments"] {
+              min-width: 200px; // Extra width for comments
+              width: 100%; // Use full available space
             }
           }
         }
@@ -632,6 +744,123 @@
   .board-section {
     .table-responsive {
       font-size: 0.85rem;
+    }
+  }
+}
+
+/* Enhanced header responsiveness for alignment consistency */
+.card-body {
+  .d-flex.justify-content-between.align-items-center {
+    // Better button and title alignment
+    gap: 1rem;
+    
+    // Stack on smaller screens
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+      
+      button {
+        width: 100%;
+        max-width: 220px;
+        align-self: center;
+      }
+      
+      div[style*="text-align: center"] {
+        order: -1; // Move title to top on mobile
+        margin-bottom: 0.5rem;
+        padding: 0 !important;
+      }
+    }
+    
+    // Maintain proper spacing on larger screens
+    @media (min-width: 769px) {
+      align-items: center;
+      min-height: 60px; // Consistent header height
+      
+      button {
+        min-width: 140px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      
+      div[style*="text-align: center"] {
+        flex: 1;
+        padding: 0 1.5rem;
+        min-width: 0; // Allow title to shrink if needed
+      }
+    }
+    
+    // Fine-tune for large screens
+    @media (min-width: 1200px) {
+      div[style*="text-align: center"] {
+        padding: 0 2rem;
+      }
+    }
+  }
+}
+
+/* Simplified table responsiveness matching job list style */
+@media (max-width: 200px) {
+  .board-table-container {
+    padding: 0.25rem;
+    
+    .table-modern {
+      font-size: 9px; // Slightly smaller for medium screens
+      
+      .form-control {
+        font-size: 9px;
+        padding: 1px 3px;
+        height: 20px;
+      }
+      
+      th, td {
+        padding: 1px;
+        height: 20px;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .board-table-container {
+    padding: 0.125rem;
+    margin: 0 -0.5rem; // Extend to screen edges
+    
+    .table-modern {
+      font-size: 8px; // Very small for mobile
+      
+      .form-control {
+        font-size: 8px;
+        padding: 1px 2px;
+        height: 18px;
+      }
+      
+      th, td {
+        padding: 0.5px 1px;
+        height: 18px;
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .board-table-container {
+    padding: 0;
+    margin: 0 -0.75rem; // Extend further on very small screens
+    
+    .table-modern {
+      font-size: 7px; // Ultra compact
+      
+      .form-control {
+        font-size: 7px;
+        padding: 1px;
+        height: 16px;
+      }
+      
+      th, td {
+        padding: 0.5px;
+        height: 16px;
+      }
     }
   }
 }

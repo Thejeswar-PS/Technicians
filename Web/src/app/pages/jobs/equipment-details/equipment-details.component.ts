@@ -35,6 +35,8 @@ export class EquipmentDetailsComponent implements OnInit {
   successMessage = '';
   showJobNotesLink = false;
   showJobSafetyLink = false;
+  showPartsPageLink = false;
+  showExpensesPageLink = false;
   uploadingExpenses = false;
   expenseUploadProgress = 0;
   uploadingJob = false;
@@ -331,6 +333,24 @@ export class EquipmentDetailsComponent implements OnInit {
     this.router.navigate(['/jobs/job-safety'], {
       queryParams: {
         CallNbr: this.params.callNbr
+      }
+    });
+  }
+
+  navigateToJobParts(): void {
+    this.router.navigate(['/jobs/parts'], {
+      queryParams: {
+        CallNbr: this.params.callNbr,
+        TechName: this.params.techName
+      }
+    });
+  }
+
+  navigateToJobExpenses(): void {
+    this.router.navigate(['/jobs/expenses'], {
+      queryParams: {
+        CallNbr: this.params.callNbr,
+        TechName: this.params.techName
       }
     });
   }
@@ -663,18 +683,21 @@ export class EquipmentDetailsComponent implements OnInit {
         return;
       }
 
+      // Step 2.5: Check Save As Draft status for ALL jobs (equivalent to da.CheckSaveAsDraft)
+      console.log('Validating Draft mode status...');
+      const draftResult = await this.equipmentService.checkSaveAsDraft(this.params.callNbr).toPromise();
+      if (draftResult && draftResult.trim() !== '') {
+        this.errorMessage = `Job Upload Failed : ${draftResult}`;
+        console.log('Job upload blocked due to draft mode:', draftResult);
+        return;
+      }
+      console.log('Draft mode validation passed - job is not in draft mode');
+
       // Step 3: PM Job specific validations + Equipment validation
       this.setJobUploadProgress(40);
       if (jobType.toLowerCase().includes('pm')) {
         console.log('Validating PM Job requirements...');
         
-        // Check Save As Draft status (equivalent to da.CheckSaveAsDraft)
-        const draftResult = await this.equipmentService.checkSaveAsDraft(this.params.callNbr).toPromise();
-        if (draftResult && draftResult.trim() !== '') {
-          this.errorMessage = `Job Upload Failed : ${draftResult}`;
-          return;
-        }
-
         // Get equipment info and validate readings for each equipment (equivalent to da.GetEquipInfo)
         const equipmentList = await this.equipmentService.getEquipmentInfo(this.params.callNbr).toPromise();
         if (equipmentList && equipmentList.length > 0) {
@@ -712,8 +735,8 @@ export class EquipmentDetailsComponent implements OnInit {
       console.log('Validating parts return...');
       const partsResult = await this.equipmentService.validatePartsReturned(this.params.callNbr).toPromise();
       if (!partsResult?.isReturned) {
-        this.errorMessage = 'Job Upload Failed : Parts usage info must be updated by Technician or Account Manager<br/>' +
-                           `<a style="font-size:8pt;color:#7bb752;font-family:arial" href="/jobs/parts?CallNbr=${this.params.callNbr}&TechName=${encodeURIComponent(this.params.techName)}">Go to Parts Page</a>`;
+        this.errorMessage = 'Job Upload Failed : Parts usage info must be updated by Technician or Account Manager';
+        this.showPartsPageLink = true;
         return;
       }
 
@@ -721,13 +744,8 @@ export class EquipmentDetailsComponent implements OnInit {
       console.log('Checking duplicate hours/expenses...');
       const duplicateResult = await this.equipmentService.checkDuplicateHours(this.params.callNbr, this.params.techName).toPromise();
       if (duplicateResult?.hasDuplicates) {
-        let errorMsg = `Job Upload Failed : ${duplicateResult.message}`;
-        if (duplicateResult.message.includes('food')) {
-          errorMsg += '<br/> Please go to the Expenses page and edit your expenses';
-        } else {
-          errorMsg += '<br/> Please go to the Expenses page and edit your hours';
-        }
-        this.errorMessage = errorMsg;
+        this.errorMessage = `Job Upload Failed : ${duplicateResult.message}`;
+        this.showExpensesPageLink = true;
         return;
       }
 
@@ -844,7 +862,8 @@ export class EquipmentDetailsComponent implements OnInit {
       console.log('Checking duplicate hours/expenses...');
       const duplicateResult = await this.equipmentService.checkDuplicateHours(this.params.callNbr, this.params.techName).toPromise();
       if (duplicateResult?.hasDuplicates) {
-        this.errorMessage = `Upload Failed : ${duplicateResult.message}<br/> Please go to the Expenses page and edit tech expenses`;
+        this.errorMessage = `Upload Failed : ${duplicateResult.message}`;
+        this.showExpensesPageLink = true;
         this.toastr.error(this.errorMessage);
         return;
       }
@@ -985,5 +1004,8 @@ export class EquipmentDetailsComponent implements OnInit {
     this.errorMessage = '';
     this.successMessage = '';
     this.showJobNotesLink = false;
+    this.showJobSafetyLink = false;
+    this.showPartsPageLink = false;
+    this.showExpensesPageLink = false;
   }
 }

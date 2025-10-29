@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, timeout } from 'rxjs';
+import { Observable, timeout, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { EquipmentDetail, UploadInfo, UploadResponse, EquipmentImage, EquipmentImageUpload, DeleteEquipmentImage } from '../model/equipment-details.model';
 import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus } from '../model/ups-readings.model';
-import { EditEquipmentInfo, EquipBoardDetail, UpdateEquipmentRequest, UpdateEquipmentResponse } from '../model/edit-equipment.model';
+import { EditEquipmentInfo, EquipBoardDetail, UpdateEquipmentRequest, UpdateEquipmentResponse, UpdateEquipBoardInfoRequest } from '../model/edit-equipment.model';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -295,8 +295,28 @@ export class EquipmentService {
   checkSaveAsDraft(callNbr: string): Observable<string> {
     return this.http.get(`${this.apiUrl}/EquipmentDetails/CheckSaveAsDraft/?callNbr=${callNbr}`, { responseType: 'text' });
   }
-  
 
+  /**
+   * Check if job is in draft mode and uploads should be restricted
+   * Returns an observable that resolves to an object with isDraft boolean and optional message
+   */
+  checkDraftModeForUploads(callNbr: string): Observable<{ isDraft: boolean; message?: string }> {
+    return this.checkSaveAsDraft(callNbr).pipe(
+      map(result => {
+        const trimmedResult = result ? result.trim() : '';
+        const isDraft = trimmedResult !== '';
+        return {
+          isDraft,
+          message: isDraft ? trimmedResult : undefined
+        };
+      }),
+      catchError(error => {
+        console.error('Error checking draft mode:', error);
+        // Return false for draft mode if API fails to allow uploads
+        return of({ isDraft: false, message: 'Unable to verify draft status' });
+      })
+    );
+  }
 
   /**
    * Get equipment images for a specific equipment
@@ -382,6 +402,14 @@ export class EquipmentService {
    */
   saveUpdateEquipmentInfo(request: UpdateEquipmentRequest): Observable<{ Message?: string; success?: boolean; rowsAffected?: number; message?: string }> {
     return this.http.post<{ Message?: string; success?: boolean; rowsAffected?: number; message?: string }>(`${this.apiUrl}/EquipmentDetails/spEquipmentInsertUpdate`, request);
+  }
+
+  /**
+   * Update equipment board information
+   * Matches your UpdateEquipBoardInfo API endpoint
+   */
+  updateEquipBoardInfo(request: UpdateEquipBoardInfoRequest): Observable<{ success: boolean; rowsUpdated: number }> {
+    return this.http.post<{ success: boolean; rowsUpdated: number }>(`${this.apiUrl}/EquipmentDetails/UpdateEquipBoardInfo`, request);
   }
 
   /**

@@ -56,20 +56,46 @@
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 0 6px rgba(0, 0, 0, 0.05);
+  border: 2px solid #a6aaae; /* Add outer table border */
+  border-bottom: 4px solid #495057 !important; /* Darker and thicker bottom border for clear visibility */
 
   th {
     padding: 7.5px;
     font-size: 18px;
     font-weight: 600;
     text-align: center;
-    border-right: 1px solid #e5e5e5;
+    border: 1px solid #8f9295; /* Consistent border for all sides */
+    border-bottom: 2px solid #a9acae; /* Stronger bottom border for header */
   }
 
   td {
     padding: 10px;
-    border: 1px solid #e5e5e5;
+    border: 1px solid #dee2e6; /* Consistent border color */
     font-size: 16px;
     color: #222;
+  }
+
+  /* Ensure the last row has a clear bottom border */
+  tbody tr:last-child td {
+    border-bottom: 2px solid #495057 !important;
+  }
+
+  /* Ensure consistent borders for all rows */
+  tr {
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  /* Header row styling */
+  thead tr {
+    border-top: 2px solid #dee2e6;
+    border-bottom: 2px solid #56585b;
+  }
+
+  /* Body rows */
+  tbody tr {
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #9ca0a3;
   }
 
   tr:nth-child(even) td {
