@@ -254,7 +254,7 @@
   <button 
     type="button" 
     class="btn btn-danger" 
-    *ngIf="canDelete"
+    *ngIf="showDeleteButton && canDelete"
     (click)="onDelete()">
     <i class="bi bi-trash me-2"></i>
     Delete
@@ -262,6 +262,7 @@
   <button 
     type="button" 
     class="btn btn-primary" 
+    *ngIf="showSaveButton"
     [disabled]="!canSave || isLoading"
     (click)="onSave()">
     <span *ngIf="!isLoading">

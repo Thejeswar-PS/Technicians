@@ -14,6 +14,7 @@ import {
   mapJobPartsInfo
 } from 'src/app/core/model/job-parts.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { CommonService } from 'src/app/core/services/common.service';
 import { EditPartsComponent } from '../edit-parts/edit-parts.component';
 
 @Component({
@@ -76,6 +77,8 @@ export class JobPartsComponent implements OnInit {
   canAddParts: boolean = true;
   canEditParts: boolean = true;
   showProcessButton: boolean = false;
+  // Role flag
+  isTechnicianFlag: boolean = false;
 
   // Dropdown options
   shippingStatusOptions = [
@@ -106,6 +109,7 @@ export class JobPartsComponent implements OnInit {
     private jobPartsService: JobPartsService,
     private toastr: ToastrService,
     private modalService: NgbModal
+    , private _commonService: CommonService
   ) {
     this.techInfoForm = this.createTechInfoForm();
     this.siteInfoForm = this.createSiteInfoForm();
@@ -116,6 +120,8 @@ export class JobPartsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCurrentUserEmpId();
+    // Determine employee status (Technician or not) early
+    this.determineEmployeeStatus();
     this.route.queryParams.subscribe(params => {
       this.callNbr = params['CallNbr'] || '';
       this.techName = params['TechName'] || '';
@@ -125,6 +131,41 @@ export class JobPartsComponent implements OnInit {
         this.loadAllData();
       }
     });
+  }
+
+  private determineEmployeeStatus(): void {
+    try {
+      const userDataRaw = localStorage.getItem('userData');
+      if (!userDataRaw) return;
+      const userData = JSON.parse(userDataRaw);
+      const windowsID = userData?.windowsID || userData?.WindowsID || null;
+      if (!windowsID) return;
+
+      this._commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+        next: (statusData: any) => {
+          if (statusData && Array.isArray(statusData) && statusData.length > 0) {
+            const status = statusData[0].Status || '';
+            this.isTechnicianFlag = (status === 'Technician' || status === 'TechManager');
+          }
+          // If technician, enforce UI restrictions
+          if (this.isTechnicianFlag) {
+            this.canEditShipping = false;
+            this.canAddParts = false;
+            this.canEditParts = false;
+            this.canEditTechInfo = false;
+            // hide process button for technicians
+            this.showProcessButton = false;
+            // hide tech return panel
+            this.showTechReturnPanel = false;
+          }
+        },
+        error: (err) => {
+          console.error('Error getting employee status for job parts:', err);
+        }
+      });
+    } catch (err) {
+      console.error('Error determining employee status:', err);
+    }
   }
 
   private createTechInfoForm(): FormGroup {
@@ -888,9 +929,7 @@ export class JobPartsComponent implements OnInit {
 
   // Permission check - isTechnician
   get isTechnician(): boolean {
-    // This should check user role from AuthService
-    // For now, returning true as placeholder
-    return true;
+    return this.isTechnicianFlag;
   }
 
   // Handle received checkbox change

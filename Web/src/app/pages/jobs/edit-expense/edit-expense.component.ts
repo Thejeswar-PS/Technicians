@@ -2,6 +2,8 @@ import { Component, OnInit, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { JobService } from 'src/app/core/services/job.service';
+import { EquipmentService } from 'src/app/core/services/equipment.service';
+import { CommonService } from 'src/app/core/services/common.service';
 import { ToastrService } from 'ngx-toastr';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { firstValueFrom } from 'rxjs';
@@ -80,6 +82,10 @@ export class EditExpenseComponent implements OnInit {
   showNotesDropdown: boolean = true;
   showOtherReason: boolean = false;
 
+  // Controls visibility of Save/Delete based on uploaded info and user role
+  showSaveButton: boolean = true;
+  showDeleteButton: boolean = true;
+
   // File upload state
   selectedFile: File | null = null;
   selectedFileBase64: string | null = null;
@@ -147,6 +153,8 @@ export class EditExpenseComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private jobService: JobService,
+    private equipmentService: EquipmentService,
+    private _commonService: CommonService,
     private toastr: ToastrService,
     public activeModal: NgbActiveModal
   ) {
@@ -190,6 +198,9 @@ export class EditExpenseComponent implements OnInit {
         console.log('Setting up for new expense...');
         this.onExpenseTypeChange();
       }
+      // Decide visibility of Save/Delete based on uploaded info and employee role
+      // Run after inputs are known
+      this.protectUploadingJobAndExpenses();
     } else {
       // Route mode - use query params (for backward compatibility)
       console.log('Router URL:', this.router.url);
@@ -231,6 +242,8 @@ export class EditExpenseComponent implements OnInit {
           // Set default values for new expense
           this.onExpenseTypeChange();
         }
+        // Decide visibility of Save/Delete based on uploaded info and employee role
+        this.protectUploadingJobAndExpenses();
       });
     }
     
@@ -336,6 +349,95 @@ export class EditExpenseComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  /**
+   * Mirror legacy ProtectUploadingJobandExpenses behavior.
+   * Query uploaded-info for the job/tech and employee status to decide
+   * whether Save/Delete should be visible.
+   */
+  private protectUploadingJobAndExpenses(): void {
+    try {
+      // default to visible
+      this.showSaveButton = true;
+      this.showDeleteButton = true;
+
+      if (!this.callNbr) {
+        // nothing to check yet
+        return;
+      }
+
+      const techIdToUse = (this.techID || this.empId || '').toString().trim();
+
+      // Check uploaded info for this job and tech
+      this.equipmentService.getUploadInfo(this.callNbr, techIdToUse).subscribe({
+        next: (items: any[]) => {
+          const hasExpenseUpload = Array.isArray(items) && items.some(i => (i?.Type || '').toString().trim().toLowerCase() === 'expense');
+
+          if (hasExpenseUpload) {
+            // If any expense has been uploaded, hide save/delete by default
+            this.showSaveButton = false;
+            this.showDeleteButton = false;
+          } else {
+            this.showSaveButton = true;
+            this.showDeleteButton = true;
+          }
+
+          // Now consult employee status for the current user to apply role rules
+          const stored = localStorage.getItem('userData');
+          const windowsID = stored ? (JSON.parse(stored)?.windowsID || JSON.parse(stored)?.WindowsID) : null;
+          if (!windowsID) {
+            return;
+          }
+
+          this._commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+            next: (statusData: any) => {
+              try {
+                if (!statusData || !Array.isArray(statusData) || statusData.length === 0) {
+                  return;
+                }
+
+                // Determine final visibility according to legacy rules.
+                // If any rule grants visibility, we'll allow Save/Delete.
+                let finalVisible = false;
+
+                for (const dr of statusData) {
+                  const status = (dr?.Status || dr?.status || '').toString().trim();
+                  const rowEmpId = (dr?.EmpID || dr?.empID || dr?.empId || '').toString().trim();
+
+                  if (status === 'Technician' || status === 'TechManager') {
+                    if (techIdToUse && techIdToUse === rowEmpId) {
+                      finalVisible = !hasExpenseUpload;
+                    } else {
+                      finalVisible = false;
+                    }
+                  } else if (status === 'Manager') {
+                    finalVisible = !hasExpenseUpload;
+                  } else {
+                    finalVisible = false;
+                  }
+
+                  if (finalVisible) break;
+                }
+
+                this.showSaveButton = finalVisible;
+                this.showDeleteButton = finalVisible;
+              } catch (inner) {
+                console.error('Error applying employee status logic:', inner);
+              }
+            },
+            error: (err: any) => {
+              console.error('Error getting employee status for expense protection:', err);
+            }
+          });
+        },
+        error: (err: any) => {
+          console.error('Error getting uploaded info for expense protection:', err);
+        }
+      });
+    } catch (ex) {
+      console.error('protectUploadingJobAndExpenses error:', ex);
+    }
   }
 
   private populateForm(data: any): void {

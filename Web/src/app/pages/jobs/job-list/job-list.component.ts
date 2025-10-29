@@ -143,12 +143,10 @@ export class JobListComponent implements OnInit {
     this.subscribeSharedServiceData();
 
     this.route.queryParamMap.subscribe((params) => {
-      if(params.has('jobId'))
+      if(params.has('jobId') || params.has('CallNbr'))
       {
-        // this.jobFilterForm.patchValue({
-        //   jobId: params.get('jobId')
-        // });
-        //this.Load(false);
+        // If the URL contains a jobId or CallNbr we should avoid the default Load
+        // and instead let handleQueryParameters perform the search after filters are loaded
         loadDefault = false;
       }
 
@@ -591,15 +589,21 @@ public Load(initialLoad: boolean = false)
   private handleQueryParameters() {
     // Handle query parameters for specific job search
     this.route.queryParamMap.subscribe((params) => {
-      if(params.has('jobId'))
-      {
+      // Support both legacy 'jobId' and 'CallNbr' query params
+      const incomingCall = params.get('jobId') || params.get('CallNbr');
+      if (incomingCall) {
+        // Patch the search field with the provided call number (trimmed)
+        const callValue = (incomingCall || '').toString().trim();
+        // If the incoming value looks like a numeric ID shorter than 10, let SearchJobs add leading zeros
+        const normalized = this.addPrefixToCallNbr(callValue);
         this.jobFilterForm.patchValue({
-          jobId: params.get('jobId'),
+          jobId: normalized,
           techId: 'All',
           mgrId: 'All'
         }, { emitEvent: false });
-        // Trigger search when jobId is provided via URL
-        this.SearchJobs();
+
+        // Trigger the search after small delay to ensure form state settled
+        setTimeout(() => this.SearchJobs(), 50);
       }
     });
   }

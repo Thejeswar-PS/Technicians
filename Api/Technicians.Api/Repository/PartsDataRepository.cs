@@ -91,6 +91,7 @@ namespace Technicians.Api.Repository
                     Shipped_from = Get<string>(dict, "Shipped_from"),
                     Create_Date = Get<DateTime?>(dict, "Create_Date"),
                     LastModified = Get<DateTime?>(dict, "LastModified"),
+                    BackOrder = Get<bool>(dict, "BackOrder"),
                     Maint_Auth_ID = Get<string>(dict, "Maint_Auth_ID")
                 };
             }).ToList();

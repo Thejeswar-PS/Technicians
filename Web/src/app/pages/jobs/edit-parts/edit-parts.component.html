@@ -351,9 +351,17 @@
             </div>
             <div class="col-md-3">
               <label class="form-label fw-bold">Unused Parts Info:</label>
-              <select class="form-select" formControlName="unusedDesc">
-                <option *ngFor="let option of partsInfoOptions" [ngValue]="option">{{ option }}</option>
-              </select>
+              <!-- If Unused Qty is zero show a disabled 'None' select to match legacy behavior -->
+              <ng-container *ngIf="editForm.get('unusedParts')?.value === 0; else showUnusedSelect">
+                <select class="form-select" disabled>
+                  <option value="">None</option>
+                </select>
+              </ng-container>
+              <ng-template #showUnusedSelect>
+                <select class="form-select" formControlName="unusedDesc">
+                  <option *ngFor="let option of partsInfoOptions" [ngValue]="option">{{ option }}</option>
+                </select>
+              </ng-template>
               <div class="invalid-feedback" *ngIf="hasError('unusedDesc', 'required')">
                 {{ getErrorMessage('unusedDesc') }}
               </div>
