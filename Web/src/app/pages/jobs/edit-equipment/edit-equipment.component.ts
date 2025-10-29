@@ -351,8 +351,11 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     const boardItemsArray = this.boardDetailsForm.get('boardItems') as FormArray;
     boardItemsArray.clear();
     
+    // Get current equipment type from form (user may have changed it)
+    const currentEquipType = this.basicInfoForm?.get('equipType')?.value || this.equipmentInfo?.equipType;
+    
     // For UPS equipment, always create 15 rows
-    if (this.equipmentInfo?.equipType === 'UPS') {
+    if (currentEquipType === 'UPS') {
       for (let i = 0; i < 15; i++) {
         // Check if we have existing data for this row
         const existingDetail = this.boardDetails.find(detail => detail.rowID === (i + 1));
@@ -407,6 +410,15 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       batteriesControl?.clearValidators();
     }
     batteriesControl?.updateValueAndValidity();
+    
+    // Recreate board details form when switching to UPS equipment
+    if (cleanEquipType === 'UPS') {
+      this.setupBoardDetailsForm();
+    } else {
+      // Clear board details form for non-UPS equipment
+      const boardItemsArray = this.boardDetailsForm.get('boardItems') as FormArray;
+      boardItemsArray.clear();
+    }
   }
 
   async onSave(): Promise<void> {
@@ -525,7 +537,6 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
                 this.toastr.success(`Board details saved successfully! ${result.rowsUpdated} rows updated.`);
               } else {
                 console.log('Board details cleared successfully.');
-                this.toastr.success('Board details cleared successfully!');
               }
               
               // Store in component for session persistence
@@ -541,16 +552,35 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
               }
             } else {
               console.warn('Board details save returned unsuccessful result');
-              this.toastr.warning('Equipment saved successfully, but board details may not have been saved properly.');
+              // Only show warning if there was actual data to save (not when clearing)
+              if (boardDetailsToSave.length > 0) {
+                this.toastr.warning('Equipment saved successfully, but board details may not have been saved properly.');
+              }
             }
           } catch (boardSaveError: any) {
             console.error('Failed to save board details:', boardSaveError);
-            this.toastr.warning('Equipment saved successfully, but board details could not be saved. Please try again.');
+            // Only show warning if there was actual data to save (not when clearing)
+            if (boardDetailsToSave.length > 0) {
+              this.toastr.warning('Equipment saved successfully, but board details could not be saved. Please try again.');
+            }
           }
         } catch (boardError: any) {
           // Don't fail the whole save if board details fail, just warn
           console.warn('Failed to process board details:', boardError);
-          this.toastr.warning('Equipment saved successfully, but there was an issue processing board details.');
+          // Only show warning if there was actual data to save (not when clearing)
+          const boardDetailsToSave = this.boardItemsArray.controls
+            .map((control, index) => {
+              const value = control.value;
+              return {
+                partNo: value.partNo || '',
+                description: value.description || ''
+              };
+            })
+            .filter(detail => detail.partNo.trim() !== '' || detail.description.trim() !== '');
+          
+          if (boardDetailsToSave.length > 0) {
+            this.toastr.warning('Equipment saved successfully, but there was an issue processing board details.');
+          }
         }
       }
       
