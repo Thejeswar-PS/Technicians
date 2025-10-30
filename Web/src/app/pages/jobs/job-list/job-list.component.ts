@@ -215,6 +215,11 @@ export class JobListComponent implements OnInit {
       month: [currentMonth],
       jobId: [''],
     });
+    // Track initial previous values for change detection
+    this.previousMonth = this.jobFilterForm.get('month')?.value;
+    this.previousYear = this.jobFilterForm.get('currentYear')?.value;
+    this.previousRbButton = this.jobFilterForm.get('rbButton')?.value;
+    this.previousEmpId = this.jobFilterForm.get('empId')?.value;
     
     console.log('Form initialized with empId:', this.jobFilterForm.get('empId')?.value);
     console.log('Form values:', this.jobFilterForm.value);
@@ -327,31 +332,24 @@ public Load(initialLoad: boolean = false)
 }
   private previousTechId: string = '';
   private previousMgrId: string = '';
+  private previousMonth: any = null;
+  private previousYear: any = null;
+  private previousRbButton: any = null;
+  private previousEmpId: any = null;
 
   public onFilterChanges()
   {
     this.jobFilterForm.valueChanges.subscribe(selectedValue  => {
       console.log('Filter changed - selectedValue:', selectedValue);
-      // If any filter changed, cancel any active Job ID search by clearing jobId
-      // This ensures filter changes don't run alongside a specific job search
-      try {
-        const currentJobId = (selectedValue && selectedValue.jobId) ? String(selectedValue.jobId).trim() : '';
-        if (currentJobId) {
-          // Clear the search field without emitting another valueChanges
-          this.jobFilterForm.patchValue({ jobId: '' }, { emitEvent: false });
-          // Also clear current job list so Load(false) repopulates it (later in this function)
-          this.jobList = [];
-          this.errorMessage = '';
-          console.log('Cleared jobId search because filters changed');
-        }
-      } catch (e) {
-        console.warn('Error while attempting to clear jobId on filter change', e);
-      }
-      
-      // Check if tech or manager filter changed (not month)
+
+      // Determine whether any non-jobId filter changed (tech, mgr, month, year, rbButton, empId)
       const techChanged = this.previousTechId !== selectedValue.techId;
       const mgrChanged = this.previousMgrId !== selectedValue.mgrId;
-      
+      const monthChanged = this.previousMonth !== selectedValue.month;
+      const yearChanged = this.previousYear !== selectedValue.currentYear;
+      const rbChanged = this.previousRbButton !== selectedValue.rbButton;
+      const empChanged = this.previousEmpId !== selectedValue.empId;
+
       let effectiveMonth = parseInt(selectedValue.month);
       
       // Only auto-adjust month when tech or manager changes, not when month is manually selected
@@ -368,9 +366,13 @@ public Load(initialLoad: boolean = false)
         }
       }
       
-      // Update previous values for next change detection
-      this.previousTechId = selectedValue.techId;
-      this.previousMgrId = selectedValue.mgrId;
+  // Update previous values for next change detection
+  this.previousTechId = selectedValue.techId;
+  this.previousMgrId = selectedValue.mgrId;
+  this.previousMonth = selectedValue.month;
+  this.previousYear = selectedValue.currentYear;
+  this.previousRbButton = selectedValue.rbButton;
+  this.previousEmpId = selectedValue.empId;
 
       // Now set the request values with the effective month
       this.jobListRequest.empId = selectedValue.empId;
@@ -382,9 +384,14 @@ public Load(initialLoad: boolean = false)
       
       console.log('Job request object:', this.jobListRequest);
 
-      // Only load regular job list when jobId is empty (filter changes)
-      if(!this.jobFilterForm.get('jobId')?.value)
-      {
+      // If any non-jobId filter changed, clear the jobId search (if present) and reload
+      if (techChanged || mgrChanged || monthChanged || yearChanged || rbChanged || empChanged) {
+        if (this.jobFilterForm.get('jobId')?.value) {
+          this.jobFilterForm.patchValue({ jobId: '' }, { emitEvent: false });
+          this.jobList = [];
+          this.errorMessage = '';
+          console.log('Cleared jobId search because other filters changed');
+        }
         this.Load(false);
       }
       // Don't automatically search when jobId changes - only on button click
@@ -583,13 +590,15 @@ public Load(initialLoad: boolean = false)
     // Decide sensible defaults for techId/mgrId similar to handleQueryParameters
     const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
     const defaultTech = isTech ? (this.empID || 'All') : 'All';
-    let defaultMgr = (this.employeeStatus === 'Manager' || this.userRole === 'Manager') ? (this.empID || 'All') : 'All';
-
-    // If current user is Manager and exists in accountManagers, set mgr to their offname uppercase
+    // Default to 'All' for manager unless the current user is actually present in accountManagers
+    let defaultMgr = 'All';
     if (this.employeeStatus === 'Manager' || this.userRole === 'Manager') {
       const userManager = this.accountManagers.find((mgr: any) => mgr.offid === this.empID || (mgr.offname && mgr.offname.trim() === this.empID));
       if (userManager) {
         defaultMgr = (userManager.offname || '').toUpperCase();
+      } else {
+        // If the logged-in manager is not present in accountManagers, fall back to 'All'
+        defaultMgr = 'All';
       }
     }
 
