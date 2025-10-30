@@ -500,7 +500,7 @@
                   </span>
                 </td>
                 <td class="text-center">
-                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 1, part.scidInc)" title="Edit Part">
+                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 1, part.scidInc)" title="Edit Part" [disabled]="isTechnician">
                     <i class="bi bi-pencil-square fs-5"></i>
                   </button>
                 </td>
@@ -540,7 +540,7 @@
             </thead>
             <tbody>
               <ng-container *ngFor="let ship of shippingParts">
-                <tr *ngIf="!ship.backOrder">
+                <tr>
                 <td class="text-nowrap manuf-part-col">
                   {{ ship.partNum || '—' }}
                   <span class="visually-hidden">{{ ship.shippingCompany }}</span>
@@ -561,7 +561,7 @@
                 <td>{{ ship.shipDate ? (ship.shipDate | date:'dd-MMM-yyyy') : '—' }}</td>
                 <td>{{ ship.eta ? (ship.eta | date:'dd-MMM-yyyy') : '—' }}</td>
                 <td class="text-center">
-                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 2, ship.scidInc)" title="Edit Shipment">
+                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 2, ship.scidInc)" title="Edit Shipment" [disabled]="isTechnician">
                     <i class="bi bi-pencil-square fs-5"></i>
                   </button>
                 </td>

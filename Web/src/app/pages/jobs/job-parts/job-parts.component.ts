@@ -255,7 +255,8 @@ export class JobPartsComponent implements OnInit {
     // Load shipping parts
     this.jobPartsService.getShippingParts(this.callNbr).subscribe({
       next: (data) => {
-        this.shippingParts = data.filter(p => !p.backOrder);
+        // Show all shipping parts, including backorders. Previously we filtered out backOrder items.
+        this.shippingParts = data;
       },
       error: (error) => {
         console.error('Error loading shipping parts:', error);
@@ -665,6 +666,10 @@ export class JobPartsComponent implements OnInit {
               } else {
                 this.navigateToEditParts('add', 1);
               }
+            },
+            error: (err) => {
+              console.error('Error checking equipment info:', err);
+              this.toastr.error('Error checking equipment info');
             }
           });
         } else {
@@ -705,9 +710,10 @@ export class JobPartsComponent implements OnInit {
     modalRef.componentInstance.callNbr = this.callNbr;
     modalRef.componentInstance.displayMode = display;
     modalRef.componentInstance.mode = mode;
-  modalRef.componentInstance.source = this.source;
-  modalRef.componentInstance.empId = this.currentEmpId;
-  modalRef.componentInstance.techName = this.techName;
+    modalRef.componentInstance.source = this.source;
+    modalRef.componentInstance.empId = this.currentEmpId;
+    modalRef.componentInstance.techName = this.techName;
+    modalRef.componentInstance.isTechnician = this.isTechnicianFlag;
     if (scidInc !== undefined) {
       modalRef.componentInstance.scidInc = scidInc;
     }

@@ -275,7 +275,9 @@ export class JobPartsService {
    * Legacy: CmdNew_Click() → da.IsEquipInfoInPartReq
    */
   isEquipInfoInPartReq(callNbr: string): Observable<string> {
-    return this.http.get<string>(`${this.API}/PartsData/IsEquipInfoInPartReq?callNbr=${encodeURIComponent(callNbr)}`);
+    // The legacy API returns plain text messages like "Please fill the equipment info"
+    // so request the response as text to avoid HttpClient JSON parsing errors.
+    return this.http.get(`${this.API}/PartsData/IsEquipInfoInPartReq?callNbr=${encodeURIComponent(callNbr)}`, { responseType: 'text' });
   }
 
   /**

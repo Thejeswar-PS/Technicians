@@ -31,6 +31,9 @@ export class JobListComponent implements OnInit {
   jobListRequest : JobListRequest | any= {};
   accountManagers : any = [];
   technicians: any = [];
+  // When an incoming CallNbr is present we hold it until filters are loaded
+  private pendingIncomingCall: string | null = null;
+  private currentUserData: any = null;
   quoteOwner: any;
   jobStatus: any[];
   quoteStatus : any = [];
@@ -246,8 +249,12 @@ export class JobListComponent implements OnInit {
 
 public Load(initialLoad: boolean = false)
 {
-  // If this is the initial load but we don't yet have employeeStatus or technicians, defer it
-  if (initialLoad && (!this.employeeStatus || (Array.isArray(this.technicians) && this.technicians.length === 0))) {
+  // If this is the initial load but we don't yet have employeeStatus, technicians, or account managers, defer it
+  if (initialLoad && (
+      !this.employeeStatus ||
+      (Array.isArray(this.technicians) && this.technicians.length === 0) ||
+      (Array.isArray(this.accountManagers) && this.accountManagers.length === 0)
+    )) {
     console.log('Deferring initial Load until employeeStatus and technicians are available');
     this.pendingInitialLoad = true;
     return;
@@ -325,6 +332,21 @@ public Load(initialLoad: boolean = false)
   {
     this.jobFilterForm.valueChanges.subscribe(selectedValue  => {
       console.log('Filter changed - selectedValue:', selectedValue);
+      // If any filter changed, cancel any active Job ID search by clearing jobId
+      // This ensures filter changes don't run alongside a specific job search
+      try {
+        const currentJobId = (selectedValue && selectedValue.jobId) ? String(selectedValue.jobId).trim() : '';
+        if (currentJobId) {
+          // Clear the search field without emitting another valueChanges
+          this.jobFilterForm.patchValue({ jobId: '' }, { emitEvent: false });
+          // Also clear current job list so Load(false) repopulates it (later in this function)
+          this.jobList = [];
+          this.errorMessage = '';
+          console.log('Cleared jobId search because filters changed');
+        }
+      } catch (e) {
+        console.warn('Error while attempting to clear jobId on filter change', e);
+      }
       
       // Check if tech or manager filter changed (not month)
       const techChanged = this.previousTechId !== selectedValue.techId;
@@ -361,7 +383,7 @@ public Load(initialLoad: boolean = false)
       console.log('Job request object:', this.jobListRequest);
 
       // Only load regular job list when jobId is empty (filter changes)
-      if(selectedValue.jobId === '' || selectedValue.jobId == null)
+      if(!this.jobFilterForm.get('jobId')?.value)
       {
         this.Load(false);
       }
@@ -417,6 +439,7 @@ public Load(initialLoad: boolean = false)
   public LoadFilters()
   {
     let userData = JSON.parse(localStorage.getItem("userData")!);
+    this.currentUserData = userData;
     console.log('LoadFilters - User data from localStorage:', userData);
     this.empID = (userData.empID || '').trim();
     this.userRole = userData.role || '';
@@ -477,6 +500,8 @@ public Load(initialLoad: boolean = false)
       
       // Step 2: After Account Managers are loaded, get Employee Status
       this.getEmployeeStatus(userData);
+      // If a CallNbr came in earlier, try running the pending search now
+      this.attemptRunPendingQuery();
     });
   }
 
@@ -533,7 +558,9 @@ public Load(initialLoad: boolean = false)
       this.setUserRoleBasedDefaults(userData);
       
       // Handle query parameters for specific job search
-      this.handleQueryParameters();
+  this.handleQueryParameters();
+  // After technicians and managers are loaded, attempt any pending CallNbr search
+  this.attemptRunPendingQuery();
       
       // If an initial load was deferred earlier because employeeStatus/technicians weren't ready, run it now
       if (this.pendingInitialLoad) {
@@ -542,6 +569,36 @@ public Load(initialLoad: boolean = false)
         this.Load(true);
       }
     });
+  }
+
+  private attemptRunPendingQuery(): void {
+    if (!this.pendingIncomingCall) return;
+
+    // Ensure filters are ready
+    if (!this.employeeStatus || (Array.isArray(this.technicians) && this.technicians.length === 0) || (Array.isArray(this.accountManagers) && this.accountManagers.length === 0)) {
+      // Not ready yet
+      return;
+    }
+
+    // Decide sensible defaults for techId/mgrId similar to handleQueryParameters
+    const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
+    const defaultTech = isTech ? (this.empID || 'All') : 'All';
+    let defaultMgr = (this.employeeStatus === 'Manager' || this.userRole === 'Manager') ? (this.empID || 'All') : 'All';
+
+    // If current user is Manager and exists in accountManagers, set mgr to their offname uppercase
+    if (this.employeeStatus === 'Manager' || this.userRole === 'Manager') {
+      const userManager = this.accountManagers.find((mgr: any) => mgr.offid === this.empID || (mgr.offname && mgr.offname.trim() === this.empID));
+      if (userManager) {
+        defaultMgr = (userManager.offname || '').toUpperCase();
+      }
+    }
+
+    // Patch the form and run search
+    this.jobFilterForm.patchValue({ jobId: this.pendingIncomingCall, techId: defaultTech, mgrId: defaultMgr }, { emitEvent: false });
+    // Clear pending call and execute search
+    const callToSearch = this.pendingIncomingCall;
+    this.pendingIncomingCall = null;
+    setTimeout(() => this.SearchJobs(), 50);
   }
 
   private setUserRoleBasedDefaults(userData: any) {
@@ -597,21 +654,14 @@ public Load(initialLoad: boolean = false)
         // If the incoming value looks like a numeric ID shorter than 10, let SearchJobs add leading zeros
         const normalized = this.addPrefixToCallNbr(callValue);
 
-        // Decide sensible defaults for techId/mgrId:
-        // If current user is a Technician (employeeStatus/userRole), set techId to their empID.
-        // Otherwise default to 'All'. For managers, mgrId may be set to empID earlier in setUserRoleBasedDefaults.
+        // Save pending incoming call and attempt to run the search when filters are ready
+        this.pendingIncomingCall = normalized;
+        // Patch jobId and techId now (mgrId will be set when filters are ready)
         const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
         const defaultTech = isTech ? (this.empID || 'All') : 'All';
-        const defaultMgr = (this.employeeStatus === 'Manager' || this.userRole === 'Manager') ? (this.empID || 'All') : 'All';
-
-        this.jobFilterForm.patchValue({
-          jobId: normalized,
-          techId: defaultTech,
-          mgrId: defaultMgr
-        }, { emitEvent: false });
-
-        // Trigger the search after small delay to ensure form state settled
-        setTimeout(() => this.SearchJobs(), 50);
+        this.jobFilterForm.patchValue({ jobId: normalized, techId: defaultTech }, { emitEvent: false });
+        // Attempt to run pending query immediately if filters are already loaded
+        this.attemptRunPendingQuery();
       }
     });
   }

@@ -272,26 +272,29 @@ namespace Technicians.Api.Repository
         }
 
         //10. IsUPSTaskedForJob
-        public async Task<bool> IsUPSTaskedForJobAsync(string callNbr)
+        public async Task<int> IsUPSTaskedForJobAsync(string callNbr)
         {
             try
             {
                 using (var connection = new SqlConnection(_connectionString))
                 using (var command = new SqlCommand("SELECT dbo.IsUPSTaskedForJob(@CallNbr)", connection))
                 {
-                    command.Parameters.AddWithValue("@CallNbr", callNbr);
+                    command.Parameters.AddWithValue("@CallNbr", callNbr?.Trim() ?? (object)DBNull.Value);
 
                     await connection.OpenAsync();
                     var result = await command.ExecuteScalarAsync();
 
-                    return Convert.ToInt32(result) == 1;
+                    // Ensure proper int conversion (like legacy Convert.ToInt32)
+                    return result != null && int.TryParse(result.ToString(), out int val) ? val : 0;
                 }
             }
             catch
             {
-                return false;
+                // Return 0 on any failure (consistent with legacy)
+                return 0;
             }
         }
+
 
         //11. Check Inventory Item and return it's description
         public async Task<InventoryItemCheckDto> CheckInventoryItemAsync(string itemNbr)
@@ -385,7 +388,7 @@ namespace Technicians.Api.Repository
         public async Task SaveOrUpdatePartsRequestAsync(PartsRequestDto request, String empId)
         {
             using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand("dbo.SaveUpdatePartsReq", connection))
+            using (var command = new SqlCommand("SaveUpdatePartsReq", connection))
             {
                 command.CommandType = CommandType.StoredProcedure;
 
@@ -407,6 +410,16 @@ namespace Technicians.Api.Repository
 
                 await connection.OpenAsync();
                 await command.ExecuteNonQueryAsync();
+
+                //using (var updateCommand = new SqlCommand(@"UPDATE Parts_Ship_Log_Part SET BackOrder = @BackOrder 
+                //        WHERE Service_Call_ID = @Service_Call_ID AND SCID_Inc = @RowID", connection))
+                //{
+                //    updateCommand.Parameters.AddWithValue("@BackOrder", request.BackOrder ? 1 : 0);
+                //    updateCommand.Parameters.AddWithValue("@Service_Call_ID", request.ServiceCallID?.Trim() ?? (object)DBNull.Value);
+                //    updateCommand.Parameters.AddWithValue("@RowID", request.ScidInc);
+
+                //    await updateCommand.ExecuteNonQueryAsync();
+                //}
             }
         }
 

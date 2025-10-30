@@ -171,7 +171,7 @@ namespace Technicians.Api.Controllers
 
             try
             {
-                bool isTasked = await _repository.IsUPSTaskedForJobAsync(callNbr);
+                int isTasked = await _repository.IsUPSTaskedForJobAsync(callNbr);
                 return Ok(isTasked);
             }
             catch (Exception ex)

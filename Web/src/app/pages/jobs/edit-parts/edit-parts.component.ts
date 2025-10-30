@@ -21,6 +21,7 @@ export class EditPartsComponent implements OnInit {
   @Input() source: string = '';
   @Input() empId: string = '';
   @Input() techName: string = '';
+  @Input() isTechnician: boolean = false;
   isLoading: boolean = false;
   isSaving: boolean = false;
   isCheckingInventory: boolean = false;
@@ -28,6 +29,8 @@ export class EditPartsComponent implements OnInit {
   showAddAnother: boolean = false;
   lastModifiedBy: string = '';
   lastModifiedOn: string = '';
+  // Tracks whether any successful save occurred while modal is open so parent can refresh
+  private needsRefresh: boolean = false;
   private faultyEditedByUser: boolean = false;
   private lastInventoryLookup: string | null = null;
 
@@ -963,7 +966,12 @@ export class EditPartsComponent implements OnInit {
 
   goBack(): void {
     if (this.modalContext && this.activeModal) {
-      this.activeModal.dismiss('cancel');
+      // If we saved any changes while modal was open, notify parent to refresh.
+      if (this.needsRefresh) {
+        this.activeModal.close({ refresh: true });
+      } else {
+        this.activeModal.dismiss('cancel');
+      }
       return;
     }
 
@@ -994,11 +1002,28 @@ export class EditPartsComponent implements OnInit {
     this.toastr.success(message);
     this.isSaving = false;
 
+    // Mark that we've changed data so the parent can refresh when the modal finally closes
+    this.needsRefresh = true;
+
+    // If running inside a modal and we're adding a new part, keep the modal open so the
+    // user can continue adding parts. For edits, close the modal and notify the parent.
     if (this.modalContext && this.activeModal) {
-      this.activeModal.close({ refresh: true });
-      return;
+      if (this.mode === 'add') {
+        // Prepare form for another add (preserves legacy 'Add Another' behaviour while
+        // keeping the modal open). Do not close the modal here.
+        const normalizedSource = (this.source || '').trim().toLowerCase();
+        this.showAddAnother = normalizedSource !== 'pen';
+        // Reset form for next add
+        this.onAddAnother();
+        return;
+      } else {
+        // For non-add modes (edits), close and request parent refresh
+        this.activeModal.close({ refresh: true });
+        return;
+      }
     }
 
+    // Non-modal flow: show Add Another button for adds, or navigate back for edits
     if (this.mode === 'add') {
       const normalizedSource = (this.source || '').trim().toLowerCase();
       this.showAddAnother = normalizedSource !== 'pen';

@@ -270,7 +270,7 @@
               <label class="form-label fw-bold">Description:</label>
               <textarea class="form-control" formControlName="description" rows="3" maxlength="200"></textarea>
             </div>
-            <div class="col-md-6">
+            <div class="col-md-6" *ngIf="!isTechnician">
               <label class="form-label fw-bold required">Received This Part?</label>
               <div class="d-flex flex-column gap-2">
                 <label class="form-check" *ngFor="let status of receivedStatusOptions">

@@ -250,6 +250,14 @@ export class EditExpenseComponent implements OnInit {
     // Subscribe to form changes for dynamic behavior
     console.log('Setting up form subscriptions...');
     this.setupFormSubscriptions();
+    // Set max allowed datetime value for datetime-local inputs (no future dates)
+    try {
+      this.maxDateTimeForInput = this.getNowForInput();
+    } catch (e) {
+      console.warn('Unable to compute maxDateTimeForInput, defaulting to empty string', e);
+      this.maxDateTimeForInput = '';
+    }
+
     console.log('=== EDIT EXPENSE COMPONENT INIT END ===');
   }
 
@@ -995,6 +1003,18 @@ export class EditExpenseComponent implements OnInit {
       return false;
     }
 
+    // Prevent future start datetime
+    try {
+      const now = new Date();
+      const startDt = new Date(formValue.startDateTime);
+      if (this.isValidDate(startDt) && startDt.getTime() > now.getTime()) {
+        this.toastr.error('Start date and time cannot be in the future.');
+        return false;
+      }
+    } catch (err) {
+      // fall through - other validations will catch invalid date values
+    }
+
     if (expType !== '22') {
       if (!formValue.endDateTime) {
         this.toastr.error('Please enter the End date and Time.');
@@ -1003,6 +1023,17 @@ export class EditExpenseComponent implements OnInit {
 
       const startDate = new Date(formValue.startDateTime);
       const endDate = new Date(formValue.endDateTime);
+
+      // Prevent future end datetime
+      try {
+        const now = new Date();
+        if (this.isValidDate(endDate) && endDate.getTime() > now.getTime()) {
+          this.toastr.error('End date and time cannot be in the future.');
+          return false;
+        }
+      } catch (err) {
+        // ignore
+      }
 
       if (startDate >= endDate) {
         this.toastr.error('Start date and time should be less than End date and time.');
@@ -1346,5 +1377,16 @@ export class EditExpenseComponent implements OnInit {
 
   get canSave(): boolean {
     return !this.isLoading;
+  }
+
+  // Maximum allowed datetime for inputs (formatted for datetime-local: YYYY-MM-DDTHH:mm)
+  maxDateTimeForInput: string = '';
+
+  private getNowForInput(): string {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${dateStr}T${hours}:${minutes}`;
   }
 }
