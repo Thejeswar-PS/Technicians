@@ -1122,7 +1122,7 @@ export class EditPartsComponent implements OnInit {
 
   private buildPartsRequestPayload(data: any): any {
     return {
-      scidInc: data.scidInc ?? 0,
+      scidInc: data.scidInc ?? 999999999,
       callNbr: this.callNbr,
       serviceCallID: data.serviceCallID || this.callNbr,
       partNum: this.normalizeString(data.partNum),
@@ -1141,7 +1141,7 @@ export class EditPartsComponent implements OnInit {
 
   private buildShippingPartPayload(data: any): any {
     return {
-      scidInc: data.scidInc ?? 0,
+      scidInc: data.scidInc ?? 999999999,
       callNbr: this.callNbr,
       serviceCallID: data.serviceCallID || this.callNbr,
       partNum: this.normalizeString(data.partNum),
@@ -1188,7 +1188,7 @@ export class EditPartsComponent implements OnInit {
   }
 
   private buildAutoShippingPayloadFromRequest(partsPayload: any): any {
-    const scidInc = Number(partsPayload.scidInc ?? this.scidInc ?? 0) || 0;
+    const scidInc = Number(partsPayload.scidInc ?? this.scidInc ?? 999999999) || 999999999;
 
     const autoShippingData = {
       scidInc,
@@ -1213,7 +1213,7 @@ export class EditPartsComponent implements OnInit {
   }
 
   private buildTechPartPayloadFromShipping(shippingPayload: any, existingTechPart?: TechPart | null): any {
-    const resolvedScidInc = Number(shippingPayload.scidInc ?? existingTechPart?.scidInc ?? this.scidInc ?? 0) || 0;
+    const resolvedScidInc = Number(shippingPayload.scidInc ?? existingTechPart?.scidInc ?? this.scidInc ?? 999999999) || 999999999;
     const existingTotalQty = existingTechPart ? this.toNumber(existingTechPart.totalQty, 0) : 0;
     const totalQtyFromShipping = this.toNumber(shippingPayload.qty, existingTotalQty);
     const hasExisting = !!existingTechPart;
@@ -1272,7 +1272,7 @@ export class EditPartsComponent implements OnInit {
     const receivedStatus: 'Yes' | 'No' | 'NA' = data.receivedStatus || (data.isReceived ? 'Yes' : 'No');
 
     return {
-      scidInc: data.scidInc ?? 0,
+      scidInc: data.scidInc ?? 999999999,
       callNbr: this.callNbr,
       serviceCallID: data.serviceCallID || this.callNbr,
       partNum: this.normalizeString(data.partNum),

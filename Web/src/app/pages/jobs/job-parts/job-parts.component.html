@@ -540,7 +540,7 @@
             </thead>
             <tbody>
               <ng-container *ngFor="let ship of shippingParts">
-                <tr>
+                <tr *ngIf="!ship.backOrder">
                 <td class="text-nowrap manuf-part-col">
                   {{ ship.partNum || '—' }}
                   <span class="visually-hidden">{{ ship.shippingCompany }}</span>
