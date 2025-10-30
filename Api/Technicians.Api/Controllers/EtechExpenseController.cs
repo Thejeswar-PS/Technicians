@@ -91,26 +91,49 @@ namespace Technicians.Api.Controllers
 
         [HttpGet("CanTechAddFoodExpenses")]
         public async Task<IActionResult> CanTechAddFoodExpenses(
-        [FromQuery] string callNbr,
-        [FromQuery] string techName,
-        [FromQuery] decimal expAmount,
-        [FromQuery] decimal currentAmount,
-        [FromQuery] string type,
-        [FromQuery] DateTime date)
+            [FromQuery] string callNbr,
+            [FromQuery] string techName,
+            [FromQuery] decimal expAmount,
+            [FromQuery] decimal currentAmount,
+            [FromQuery] string type,
+            [FromQuery] DateTime date)
         {
             if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(techName))
                 return BadRequest("CallNbr and TechName are required.");
 
             try
             {
-                var result = await _repository.HowMuchCanTechAddFoodExpensesAsync(callNbr, techName, expAmount, currentAmount, type, date);
-                return Ok(result.ToString());
+                // Same function name alignment as legacy
+                var resultMsg = await _repository.CanTechAddFoodExpensesAsync(
+                    callNbr, techName, expAmount, currentAmount, type, date);
+
+                // Legacy: If message exists, it's an error. Otherwise, success.
+                if (!string.IsNullOrEmpty(resultMsg))
+                {
+                    return Ok($"Error: {resultMsg}");
+                }
+
+                return Ok("OK"); // or empty string if no error
             }
             catch (Exception ex)
             {
                 return StatusCode(500, $"Error calculating food expense: {ex.Message}");
             }
         }
+
+
+        [HttpGet("GetAllowedAmountForFoodExpenses")]
+        public IActionResult GetAllowedAmountForFoodExpenses(string callNbr, string techName)
+        {
+            if (string.IsNullOrEmpty(callNbr) || string.IsNullOrEmpty(techName))
+                return BadRequest("Missing parameters.");
+
+            string result = _repository.AllowedAmountForFoodExpenses(callNbr, techName);
+
+            // Return plain text, not JSON (for Angular text parsing)
+            return Content(result ?? string.Empty, "text/plain");
+        }
+
 
 
 

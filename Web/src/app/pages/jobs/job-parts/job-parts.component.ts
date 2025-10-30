@@ -377,6 +377,10 @@ export class JobPartsComponent implements OnInit {
     });
 
     this.showTechReturnPanel = (this.unusedSent + this.faultySent) > 0;
+    // Ensure technicians never see the Tech Return panel (legacy behavior)
+    if (this.isTechnicianFlag) {
+      this.showTechReturnPanel = false;
+    }
     
     this.techReturnForm.patchValue({
       unusedSent: this.unusedSent,

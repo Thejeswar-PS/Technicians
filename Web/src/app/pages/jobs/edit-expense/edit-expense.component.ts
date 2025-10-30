@@ -902,7 +902,7 @@ export class EditExpenseComponent implements OnInit {
         );
 
         if (resultMsg && resultMsg.length > 0) {
-          this.errorMessage = 'Error: ' + resultMsg;
+          this.errorMessage = resultMsg;
           this.isLoading = false;
           return;
         }

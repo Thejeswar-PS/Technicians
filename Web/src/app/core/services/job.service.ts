@@ -165,10 +165,11 @@ export class JobService {
   }
 
   canTechAddFoodExpenses(callNbr: string, techName: string, expAmount: number, currentAmount: number, type: string, date: Date): Observable<string> {
-    // Based on legacy: da.CanTechAddFoodExpenses(CallNbr, TechName, ExpAmount, CL, Type, dtNewStrt)
-    const dateStr = this.formatDateTimeParam(date);
-    return this.http.get<string>(`${this.API}/EtechExpense/CanTechAddFoodExpenses?callNbr=${encodeURIComponent(callNbr)}&techName=${encodeURIComponent(techName)}&expAmount=${expAmount}&currentAmount=${currentAmount}&type=${encodeURIComponent(type)}&date=${encodeURIComponent(dateStr)}`, { headers: this.headers });
-  }
+  const dateStr = this.formatDateTimeParam(date);
+  return this.http.get(`${this.API}/EtechExpense/CanTechAddFoodExpenses?callNbr=${encodeURIComponent(callNbr)}&techName=${encodeURIComponent(techName)}&expAmount=${expAmount}&currentAmount=${currentAmount}&type=${encodeURIComponent(type)}&date=${encodeURIComponent(dateStr)}`,
+    { headers: this.headers, responseType: 'text' });
+}
+
 
   private formatDateParam(date: Date): string {
     const localDate = new Date(date);

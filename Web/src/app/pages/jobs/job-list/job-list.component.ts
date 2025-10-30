@@ -596,10 +596,18 @@ public Load(initialLoad: boolean = false)
         const callValue = (incomingCall || '').toString().trim();
         // If the incoming value looks like a numeric ID shorter than 10, let SearchJobs add leading zeros
         const normalized = this.addPrefixToCallNbr(callValue);
+
+        // Decide sensible defaults for techId/mgrId:
+        // If current user is a Technician (employeeStatus/userRole), set techId to their empID.
+        // Otherwise default to 'All'. For managers, mgrId may be set to empID earlier in setUserRoleBasedDefaults.
+        const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
+        const defaultTech = isTech ? (this.empID || 'All') : 'All';
+        const defaultMgr = (this.employeeStatus === 'Manager' || this.userRole === 'Manager') ? (this.empID || 'All') : 'All';
+
         this.jobFilterForm.patchValue({
           jobId: normalized,
-          techId: 'All',
-          mgrId: 'All'
+          techId: defaultTech,
+          mgrId: defaultMgr
         }, { emitEvent: false });
 
         // Trigger the search after small delay to ensure form state settled
