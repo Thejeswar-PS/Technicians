@@ -48,7 +48,7 @@ export class FileUploadService {
   /**
    * Upload a file for a specific job - uses same endpoint as equipment uploads
    */
-  uploadFile(callNbr: string, file: File): Observable<UploadResponse> {
+  uploadFile(callNbr: string, file: File, createdBy?: string): Observable<UploadResponse> {
     const formData = new FormData();
     
     // Use same format as equipment uploads, but with EquipID = 0 for job files
@@ -56,7 +56,7 @@ export class FileUploadService {
     formData.append('TechID', callNbr);
     formData.append('Img_Title', file.name);
     formData.append('Img_Type', file.type || 'application/octet-stream');
-    formData.append('CreatedBy', callNbr);
+    formData.append('CreatedBy', createdBy || callNbr);
     
     // Adding file size if backend expects it
     formData.append('FileSize', file.size.toString());
@@ -72,7 +72,7 @@ export class FileUploadService {
       TechID: callNbr,
       Img_Title: file.name,
       Img_Type: file.type,
-      CreatedBy: callNbr,
+      CreatedBy: createdBy || callNbr,
       FileSize: file.size
     });
     

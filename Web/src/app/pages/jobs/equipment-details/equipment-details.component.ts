@@ -4,6 +4,7 @@ import { ToastrService } from 'ngx-toastr';
 import { EquipmentDetail, UploadInfo, EquipmentDetailsParams, UploadResponse, ValidationResult } from 'src/app/core/model/equipment-details.model';
 import { EquipmentService } from 'src/app/core/services/equipment.service';
 import { JobNotesInfoService } from 'src/app/core/services/job-notes-info.service';
+import { JobService } from 'src/app/core/services/job.service';
 import { AuthService } from 'src/app/modules/auth';
 import { FileUploadComponent } from '../file-upload/file-upload.component';
 
@@ -51,8 +52,9 @@ export class EquipmentDetailsComponent implements OnInit {
   enableExpenseVisible = true;   // Controlled by server logic
   helpButtonVisible = false;      // Controlled by server logic
   
-    // File upload modal state
+  // File upload modal state
   showFileUploadModal = false;
+  showUploadModal = false;  // Add this line for general upload modal control
   isEquipmentFileUpload = false;  // Track if current upload is for equipment
   
   // Getter for template usage
@@ -63,12 +65,17 @@ export class EquipmentDetailsComponent implements OnInit {
   // User info
   userRole = '';
   currentUserId = '';
+  currentUserName = ''; // Add current user's name property
+  
+  // Track uploads made in current session
+  currentSessionUploads: Set<string> = new Set(); // Track upload types made in current session
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private equipmentService: EquipmentService,
     private jobNotesInfoService: JobNotesInfoService,
+    private jobService: JobService,
     private authService: AuthService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
@@ -82,10 +89,83 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   private loadUserInfo(): void {
-    // For now, use placeholder methods until AuthService is properly implemented
-    this.userRole = 'Manager'; // Default role for testing
-    this.currentUserId = '1'; // Default user ID for testing
-    console.log('👤 User info loaded:', { userRole: this.userRole, currentUserId: this.currentUserId });
+    // Get current user from AuthService
+    const currentUser = this.authService.currentUserValue;
+    
+    console.log('🔍 Raw currentUser object:', currentUser);
+    console.log('🔍 Available properties:', currentUser ? Object.keys(currentUser) : 'No user object');
+    
+    if (currentUser) {
+      this.userRole = 'Manager'; // You can map this from user roles if available
+      this.currentUserId = currentUser.id?.toString() || currentUser.windowsID?.toString() || '1';
+      
+      // Get user's display name - prefer fullname, then username, then firstname + lastname
+      this.currentUserName = this.getCurrentUserDisplayName(currentUser);
+      
+      console.log('👤 User info loaded:', { 
+        userRole: this.userRole, 
+        currentUserId: this.currentUserId,
+        currentUserName: this.currentUserName,
+        user: currentUser 
+      });
+    } else {
+      // Fallback for when no user is authenticated
+      this.userRole = 'Manager';
+      this.currentUserId = '1';
+      this.currentUserName = 'System User';
+      console.log('👤 No authenticated user found, using defaults');
+    }
+  }
+
+  // Helper method to get the current user's display name
+  private getCurrentUserDisplayName(user: any): string {
+    // For LoginResponse object, use empName and empLabel
+    if (user.empName && user.empName.trim()) {
+      return user.empName.trim();
+    }
+    
+    if (user.empLabel && user.empLabel.trim()) {
+      return user.empLabel.trim();
+    }
+    
+    if (user.windowsID && user.windowsID.trim()) {
+      return user.windowsID.trim();
+    }
+    
+    // Fallback to UserModel properties if available
+    if (user.fullname && user.fullname.trim()) {
+      return user.fullname.trim();
+    }
+    
+    if (user.firstname && user.lastname) {
+      return `${user.firstname.trim()} ${user.lastname.trim()}`.trim();
+    }
+    
+    if (user.username && user.username.trim()) {
+      return user.username.trim();
+    }
+    
+    return 'Current User';
+  }
+
+  // Public method to get current user name for template usage
+  getCurrentUserName(): string {
+    return this.currentUserName || 'Current User';
+  }
+
+  // Method to determine what name to display in the upload info table
+  getUploadedByDisplayName(uploadInfo: UploadInfo): string {
+    // Only show current user name for uploads made in the current session
+    const uploadType = uploadInfo.Type;
+    
+    // Check if this upload type was made in current session
+    if (uploadType && this.currentSessionUploads.has(uploadType)) {
+      // For uploads made in current session, show current user name
+      return this.getCurrentUserName();
+    }
+    
+    // For all other uploads (previous sessions, other users), show the stored name
+    return uploadInfo.UploadedBy || 'Unknown';
   }
 
   private loadRouteParams(): void {
@@ -494,6 +574,16 @@ export class EquipmentDetailsComponent implements OnInit {
     this.showFileUploadModal = true;
   }
 
+  // Called when user clicks the "Upload" button
+  openFileUploadModal(equipment?: EquipmentDetail): void {
+    if (equipment) {
+      this.isEquipmentFileUpload = true;
+      this.selectedEquipment = equipment;
+      this.showFileUploadModal = true;
+    }
+    this.showUploadModal = true;
+  }
+
   openEquipmentUploadFiles(equipment: EquipmentDetail): void {
     this.isEquipmentFileUpload = true;
     this.selectedEquipment = equipment;
@@ -502,6 +592,7 @@ export class EquipmentDetailsComponent implements OnInit {
 
   closeFileUploadModal(): void {
     this.showFileUploadModal = false;
+    this.showUploadModal = false;  // Close both modal states
     this.isEquipmentFileUpload = false;
     this.selectedEquipment = null;
     // Refresh upload info after closing modal (equivalent to legacy parent window refresh)
@@ -784,10 +875,14 @@ export class EquipmentDetailsComponent implements OnInit {
       // Step 7: Perform final upload to GP (equivalent to da.UploadJobToGP)
       this.setJobUploadProgress(80);
       console.log('Uploading job to GP...');
+      
+      // Get current user's name for upload attribution
+      const currentUserName = this.getCurrentUserName();
+      
       const result = await this.equipmentService.uploadJob(
         this.params.callNbr,
         this.params.techId,
-        this.params.techName
+        currentUserName // Pass current user's name instead of technician name
       ).toPromise();
 
       console.log('UploadJob API Response:', result);
@@ -795,6 +890,9 @@ export class EquipmentDetailsComponent implements OnInit {
       // Handle response - check success property first
       if (result?.success) {
         this.setJobUploadProgress(100);
+        
+        // Track this upload in current session
+        this.currentSessionUploads.add('Job');
         
         // Success case
         this.successMessage = result.message || 'Job Uploaded Successfully.';
@@ -857,6 +955,24 @@ export class EquipmentDetailsComponent implements OnInit {
     this.successMessage = '';
 
     try {
+      // Step 0: Check if there are any expenses to upload
+      this.setExpenseUploadProgress(15);
+      console.log('Checking if expenses exist for this job...');
+      const expenseData = await this.jobService.getExpenseInfo(this.params.callNbr, this.params.techName).toPromise();
+      
+      // Filter expenses by callNbr if we get data for multiple jobs
+      const jobExpenses = expenseData?.filter(expense => expense.callNbr === this.params.callNbr) || [];
+      
+      if (!jobExpenses || jobExpenses.length === 0) {
+        this.errorMessage = 'Upload Failed: No expenses found for this job. Please add expenses in the Expenses page before uploading.';
+        this.showExpensesPageLink = true;
+        this.toastr.error(this.errorMessage);
+        console.log('No expenses found for job:', this.params.callNbr);
+        return;
+      }
+      
+      console.log(`Found ${jobExpenses.length} expense(s) for job ${this.params.callNbr}`);
+
       // Step 1: Check for duplicate hours/expenses (equivalent to da.CheckDuplicateHours)
       this.setExpenseUploadProgress(30);
       console.log('Checking duplicate hours/expenses...');
@@ -877,9 +993,13 @@ export class EquipmentDetailsComponent implements OnInit {
         // Step 3: Perform actual expense upload (equivalent to da.UploadExpensesToGP)
         this.setExpenseUploadProgress(80);
         console.log('Uploading expenses to GP...');
+        
+        // Get current user's name for upload attribution
+        const currentUserName = this.getCurrentUserName();
+        
         const result = await this.equipmentService.uploadExpenses(
           this.params.callNbr,
-          this.params.techName
+          currentUserName // Pass current user's name instead of technician name
         ).toPromise();
 
         console.log('UploadExpenses API Response:', result);
@@ -887,6 +1007,9 @@ export class EquipmentDetailsComponent implements OnInit {
         // Handle response - check success property first
         if (result?.success) {
           this.setExpenseUploadProgress(100);
+          
+          // Track this upload in current session
+          this.currentSessionUploads.add('Expense');
           
           // Success case
           this.successMessage = result.message || 'Expenses Uploaded Successfully.';

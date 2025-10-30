@@ -534,7 +534,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
             if (result?.success) {
               if (boardDetailsToSave.length > 0) {
                 console.log(`Board details saved successfully. ${result.rowsUpdated} rows updated.`);
-                this.toastr.success(`Board details saved successfully! ${result.rowsUpdated} rows updated.`);
+                // Removed board details success toastr - only show main equipment success message
               } else {
                 console.log('Board details cleared successfully.');
               }
@@ -586,8 +586,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
       
       // API returns { Message: "Equipment inserted or updated successfully" } on success
       // Since we get here, the request was successful (no exception thrown)
-      const successMsg = (response as any)?.Message || response?.message || 'Equipment updated successfully!';
-      this.successMessage = successMsg;
+      this.successMessage = 'Equipment updated successfully.';
       this.toastr.success(this.successMessage);
       
     } catch (error: any) {

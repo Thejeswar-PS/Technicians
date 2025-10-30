@@ -3,6 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { FileUploadService, UploadedFile, EquipmentFileResponseDto } from '../../../core/services/file-upload.service';
 import { EquipmentService } from '../../../core/services/equipment.service';
+import { AuthService } from '../../../modules/auth/services/auth.service';
 
 @Component({
   selector: 'app-file-upload',
@@ -27,6 +28,7 @@ export class FileUploadComponent implements OnInit, OnChanges {
   errorMessage = '';
   successMessage = '';
   serviceUnavailable = false; // Always start with service available
+  currentUserName = ''; // Store current user's name
   
   // Constants matching legacy (use the service validation method instead)
   private readonly FILE_SIZE_MB = 5;
@@ -49,39 +51,93 @@ export class FileUploadComponent implements OnInit, OnChanges {
     private route: ActivatedRoute,
     private fileUploadService: FileUploadService,
     private equipmentService: EquipmentService,
+    private authService: AuthService,
     private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
+    // Initialize current user name
+    this.loadCurrentUserName();
+    
     // Use provided callNbr input or fallback to jobId or route param
     const resolvedCallNbr = this.callNbr || this.jobId || this.route.snapshot.queryParamMap.get('CallNbr') || '';
     this.callNbr = resolvedCallNbr;
     
     // Initialize with clean file slots
     this.selectedFiles = [null, null];
-    console.log('=== FILE UPLOAD COMPONENT INIT ===');
-    console.log('Initial selectedFiles state:', this.selectedFiles.map((f, i) => `${i}: ${f?.name || 'null'}`));
-    
-    console.log('FileUpload component initialized:', {
-      isEquipmentMode: this.isEquipmentMode,
-      equipmentId: this.equipmentId,
-      equipmentNo: this.equipmentNo,
-      techId: this.techId,
-      techName: this.techName,
-      callNbr: this.callNbr
-    });
     
     this.loadFilesIfReady();
   }
 
+  private loadCurrentUserName(): void {
+    try {
+      // First try to get from AuthService
+      const currentUser = this.authService.currentUserValue;
+      
+      if (currentUser) {
+        this.currentUserName = this.getCurrentUserDisplayName(currentUser);
+      } else {
+        // Fallback to localStorage userData
+        const userData = localStorage.getItem('userData');
+        
+        if (userData) {
+          const user = JSON.parse(userData);
+          this.currentUserName = this.getCurrentUserDisplayName(user);
+        } else {
+          this.currentUserName = 'Current User';
+        }
+      }
+    } catch (error) {
+      console.warn('Unable to load current user name:', error);
+      this.currentUserName = 'Current User';
+    }
+  }
+
+  private getCurrentUserDisplayName(user: any): string {
+    if (!user) {
+      return 'Current User';
+    }
+    
+    // Try empName first (from LoginResponse), then empLabel, then other common fields
+    if (user.empName && user.empName.trim()) {
+      return user.empName.trim();
+    }
+    
+    if (user.empLabel && user.empLabel.trim()) {
+      return user.empLabel.trim();
+    }
+    
+    if (user.fullname && user.fullname.trim()) {
+      return user.fullname.trim();
+    }
+    
+    if (user.firstName && user.lastName) {
+      const fullName = `${user.firstName.trim()} ${user.lastName.trim()}`.trim();
+      return fullName;
+    }
+    
+    if (user.username && user.username.trim()) {
+      return user.username.trim();
+    }
+    
+    if (user.windowsID && user.windowsID.trim()) {
+      return user.windowsID.trim();
+    }
+    
+    return 'Current User';
+  }
+
+  // Public method to get current user name for template usage
+  getCurrentUserName(): string {
+    return this.currentUserName || 'Current User';
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
+    // Refresh user name when component inputs change
+    this.loadCurrentUserName();
+    
     // Handle changes to input properties
     if (changes['equipmentId'] || changes['techId'] || changes['callNbr']) {
-      console.log('FileUpload component inputs changed:', {
-        equipmentId: this.equipmentId,
-        techId: this.techId,
-        callNbr: this.callNbr
-      });
       this.loadFilesIfReady();
     }
   }
@@ -89,14 +145,12 @@ export class FileUploadComponent implements OnInit, OnChanges {
   private loadFilesIfReady(): void {
     // Always use equipment mode since both header and bottom uploads now use equipment functionality
     if (this.equipmentId && this.techId && this.callNbr) {
-      console.log('FileUpload component - Equipment mode:', this.equipmentId, 'Tech:', this.techId, 'CallNbr:', this.callNbr);
       this.loadEquipmentFiles();
     } else {
       console.warn('FileUpload component - Missing required info:', { equipmentId: this.equipmentId, techId: this.techId, callNbr: this.callNbr });
       
       // Try to load files anyway if we have at least equipmentId
       if (this.equipmentId) {
-        console.log('Attempting to load files with equipmentId only:', this.equipmentId);
         this.loadEquipmentFiles();
       } else if (this.techId) {
         this.uploadedFiles = [];
@@ -110,7 +164,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
 
   onFileSelected(event: any, index: number): void {
     const file = event.target.files[0];
-    console.log(`File selected:`, file ? { name: file.name, size: file.size, type: file.type } : 'null');
     
     if (file) {
       if (this.validateFile(file)) {
@@ -126,8 +179,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
         newSelectedFiles[index] = file;
         this.selectedFiles = newSelectedFiles;
         this.clearMessages();
-        console.log(`File successfully selected for slot ${index}:`, file.name);
-        console.log(`Updated selectedFiles:`, this.selectedFiles.map((f, i) => `${i}: ${f?.name || 'null'}`));
       } else {
         // Clear the input and ensure slot is reset
         event.target.value = '';
@@ -139,7 +190,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
           }
         }
         this.selectedFiles = newSelectedFiles;
-        console.log(`File validation failed for slot ${index}:`, file.name);
       }
     } else {
       // No file selected (user cancelled or cleared), make sure to reset
@@ -235,7 +285,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
               this.techName
             ).toPromise();
           } else if (this.callNbr) {
-            console.log(`Using job upload: callNbr=${this.callNbr}`);
             result = await this.fileUploadService.uploadFile(this.callNbr, file).toPromise();
           } else {
             console.error('No callNbr available for file upload');
@@ -297,7 +346,8 @@ export class FileUploadComponent implements OnInit, OnChanges {
         this.toastr.success(`${successCount} file(s) uploaded successfully`);
         this.clearFileInputs();
         
-        console.log('Files uploaded successfully, refreshing file list...');
+        // Refresh user name in case session changed
+        this.loadCurrentUserName();
         
         // Refresh the file list
         if (this.isEquipmentMode) {
@@ -307,8 +357,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
         }
         
         // Removed loadUploadInfo() since upload history grid was removed
-        
-        console.log('File list refreshed after upload. Current files count:', this.displayFiles.length);
       }
 
       if (errorMessages.length > 0) {
@@ -354,19 +402,14 @@ export class FileUploadComponent implements OnInit, OnChanges {
         if (fileInput) {
           fileInput.value = '';
           fileInput.files = null;
-          console.log(`Cleared file input ${i}`);
         }
       }
     }, 0);
-    
-    console.log('All file inputs cleared, selectedFiles reset:', this.selectedFiles);
   }
 
   // Method to clear individual file slot
   clearFileSlot(index: number): void {
     if (index >= 0 && index < 2) {
-      console.log(`Clearing file slot ${index}`);
-      
       // Create completely new array
       const newSelectedFiles: (File | null)[] = [null, null];
       // Copy existing files except for the current index
@@ -383,11 +426,8 @@ export class FileUploadComponent implements OnInit, OnChanges {
         if (fileInput) {
           fileInput.value = '';
           fileInput.files = null;
-          console.log(`DOM input cleared for slot ${index}`);
         }
       }, 0);
-      
-      console.log(`File slot ${index} cleared. New state:`, this.selectedFiles.map((f, i) => `${i}: ${f?.name || 'null'}`));
     }
   }
 
@@ -440,17 +480,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
 
     try {
       this.loading = true;
-      console.log('=== LOADING EQUIPMENT FILES ===');
-      console.log('Loading equipment files for equipmentId:', effectiveEquipmentId);
-      console.log('Component inputs:', {
-        equipmentId: this.equipmentId,
-        effectiveEquipmentId: effectiveEquipmentId,
-        equipmentNo: this.equipmentNo,
-        techId: this.techId,
-        techName: this.techName,
-        callNbr: this.callNbr
-      });
-      
       const response = await this.fileUploadService.getEquipmentFiles(effectiveEquipmentId).toPromise();
       this.equipmentFiles = response?.data || [];
 
@@ -474,6 +503,9 @@ export class FileUploadComponent implements OnInit, OnChanges {
   }
   // Public method to refresh all data
   public refreshAllData(): void {
+    // Refresh user name first
+    this.loadCurrentUserName();
+    
     if (this.isEquipmentMode) {
       this.loadEquipmentFiles();
     } else {
@@ -539,8 +571,9 @@ export class FileUploadComponent implements OnInit, OnChanges {
 
   // Get file created by for display (handles both types)
   getFileCreatedBy(file: UploadedFile | EquipmentFileResponseDto): string {
-    const createdBy = this.isEquipmentMode ? (file as EquipmentFileResponseDto).createdBy : this.techId || 'Unknown';
-    return createdBy;
+    // Always return the current logged-in user's name for all files
+    // This ensures consistency and shows who is currently viewing/managing the files
+    return this.currentUserName || 'Current User';
   }
 
   // Download file method
@@ -572,13 +605,6 @@ export class FileUploadComponent implements OnInit, OnChanges {
   // Method to test service by trying to upload (for the Test Service button)
   testServiceAvailability(): void {
     this.clearMessages();
-    console.log('Testing service availability...', {
-      isEquipmentMode: this.isEquipmentMode,
-      equipmentId: this.equipmentId,
-      techId: this.techId,
-      callNbr: this.callNbr,
-      serviceUnavailable: this.serviceUnavailable
-    });
     
     this.serviceUnavailable = false; // Allow testing
     this.toastr.success('Service has been enabled. Try selecting and uploading a file.', 'Test Mode Enabled');

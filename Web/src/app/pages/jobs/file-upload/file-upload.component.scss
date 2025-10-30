@@ -1,170 +1,288 @@
-// File Upload Component Styles
-// Matches legacy ASP.NET WebForm styling
-
-// // Modal Header Styling
-// ::ng-deep .modal .modal-header {
-//   background: linear-gradient(to right, #6bdf67, #9bc844, #d2ae1f, #ff6600);
-//   border-bottom: 1px solid #afb6be;
-//   color: white;
-// }
+// File Upload Component Styles - Optimized for Modal Display
 
 .upload-container {
   font-family: Arial, sans-serif;
-  font-size: 8pt;
+  font-size: 13px;
+  padding: 0;
+  background-color: white;
+}
+
+/* Guidelines Panel - Yellow */
+.guidelines-panel {
+  background-color: #fffbf0;
+  border: 1px solid #e6cc80;
+  border-radius: 6px;
   padding: 10px;
+  margin-bottom: 15px;
 }
 
-.message-success {
-  color: green;
+.guidelines-heading {
   font-weight: bold;
-  font-size: 9pt;
-  margin-bottom: 5px;
+  color: #b8860b;
+  font-size: 13px;
+  margin-bottom: 8px;
 }
 
-.message-error {
-  color: red;
-  font-weight: bold;
-  font-size: 8pt;
-  margin-bottom: 5px;
-}
-
-.message-note {
-  color: rgb(209, 167, 60);
-  font-weight: bold;
-  font-size: 8pt;
-  margin-bottom: 10px;
-}
-
-.upload-table {
-  width: 80%;
-  border-collapse: collapse;
-  border: 2px solid #ccc;
+.guidelines-content {
+  font-size: 12px;
+  color: #333;
+  margin: 0;
   
-  .header-row {
-    background-color: #4a4a4a;
-    color: white;
-    font-weight: bold;
-    text-align: center;
-    
-    td {
-      padding: 8px;
-      border: 1px solid #ccc;
-    }
+  ul {
+    margin: 0;
+    padding-left: 18px;
   }
   
-  td {
-    padding: 8px;
-    border: 1px solid #ccc;
+  li {
+    margin-bottom: 3px;
   }
+}
+
+/* Add Attachments Section - Blue Header */
+.attachments-section {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.section-header {
+  background-color: #4285f4;
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.file-inputs-container {
+  padding: 12px;
+  background-color: #f8f9fa;
+}
+
+.file-input-group {
+  margin-bottom: 12px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.file-input-label {
+  display: block;
+  font-size: 12px;
+  color: #333;
+  margin-bottom: 4px;
+  font-weight: normal;
 }
 
 .file-input {
   width: 100%;
-  padding: 2px;
-  font-size: 8pt;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: white;
+  box-sizing: border-box;
 }
 
-.button-container {
-  text-align: right;
-  padding: 5px;
+.file-selected-info {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #28a745;
+}
+
+.clear-file-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  padding: 2px 5px;
+  font-size: 10px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 15px;
 }
 
 .btn {
-  padding: 4px 8px;
-  margin: 0 2px;
-  font-size: 8pt;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: normal;
   cursor: pointer;
   border: 1px solid;
+  min-width: 70px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   
   &:disabled {
-    background-color: #ccc;
-    cursor: not-allowed;
     opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background-color: #4285f4;
   color: white;
-  border-color: #007bff;
+  border-color: #4285f4;
+  
+  &:hover:not(:disabled) {
+    background-color: #3367d6;
+    border-color: #3367d6;
+  }
 }
 
 .btn-secondary {
   background-color: #6c757d;
   color: white;
   border-color: #6c757d;
+  
+  &:hover {
+    background-color: #5a6268;
+    border-color: #5a6268;
+  }
 }
 
-.progress-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: Navy;
-  color: white;
-  padding: 15px;
-  border: 2px solid #ccc;
-  text-align: center;
-  font-family: 'Trebuchet MS', sans-serif;
+/* Messages */
+.message-success {
+  color: #28a745;
   font-weight: bold;
-  z-index: 1000;
-  
-  &.hide {
-    display: none;
-  }
-  
-  &.show {
-    display: block;
-  }
+  font-size: 12px;
+  margin-bottom: 8px;
 }
 
-.files-grid {
+.message-error {
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+/* Uploaded Attachments Section */
+.uploaded-section {
+  margin-top: 15px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+/* Files Table */
+.table-responsive {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.files-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: small;
-  margin-top: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: 11px;
   
   th {
-    background-color: #f0f0f0;
-    padding: 5px 8px;
-    border: 1px solid #ccc;
-    text-align: left;
+    background-color: #4285f4;
+    color: white;
+    font-size: 12px;
     font-weight: bold;
+    padding: 8px 6px;
+    text-align: left;
+    border-right: 1px solid #3367d6;
+    
+    &:last-child {
+      border-right: none;
+    }
   }
   
   td {
-    padding: 3px 8px;
-    border: 1px solid #ccc;
-    vertical-align: middle;
+    padding: 6px;
+    color: #333;
+    border-bottom: 1px solid #ddd;
+    border-right: 1px solid #ddd;
+    
+    &:last-child {
+      border-right: none;
+    }
   }
   
-  tr:nth-child(even) {
-    background-color: #E6E5E5;
+  tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+  }
+  
+  tbody tr:nth-child(odd) {
+    background-color: white;
   }
 }
 
 .file-link {
-  color: blue;
-  text-decoration: underline;
+  color: #0066cc;
+  text-decoration: none;
   cursor: pointer;
   
   &:hover {
-    color: darkblue;
+    text-decoration: underline;
   }
 }
 
+.download-btn {
+  background-color: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  
+  &:hover {
+    background-color: #3367d6;
+  }
+}
+
+/* Loading Spinner */
 .spinner {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #3498db;
+  width: 14px;
+  height: 14px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-right: 5px;
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Loading State */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  color: #666;
+  gap: 8px;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
 }
