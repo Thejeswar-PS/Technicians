@@ -265,7 +265,15 @@ export class EquipmentDetailsComponent implements OnInit {
       this.equipmentList = equipment || [];
     } catch (error: any) {
       console.error('Error loading equipment info:', error);
-      this.errorMessage = error.message || 'Failed to load equipment information';
+      // For 404 errors (no equipment found), just set empty array to show "no equipment found" message
+      // instead of showing a technical error message
+      if (error.status === 404) {
+        this.equipmentList = [];
+        console.log('No equipment found for this job (404), showing user-friendly message');
+      } else {
+        // For other errors, show the error message
+        this.errorMessage = error.message || 'Failed to load equipment information';
+      }
     }
   }
 

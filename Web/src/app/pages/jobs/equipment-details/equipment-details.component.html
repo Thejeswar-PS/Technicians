@@ -283,25 +283,25 @@
             <div class="table-max-height">
               <!-- begin::Table -->
               <table
-                class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4"
-                style="text-align: center"
+                class="table table-row-dashed table-row-gray-300 align-middle gs-1 gy-2"
+                style="text-align: center; table-layout: fixed;"
               >
                 <!-- begin::Table head -->
                 <thead>
                   <tr class="text-dark fw-bolder badge-light-primary fs-6">
-                    <th class="min-w-70px">ID</th>
-                    <th class="min-w-180px">Equip No</th>
-                    <th class="min-w-130px">Make</th>
-                    <th class="min-w-130px">Model</th>
-                    <th class="min-w-130px">Serial No</th>
-                    <th class="min-w-90px">KVA/Batt</th>
-                    <th class="min-w-200px">Location</th>
-                    <th class="min-w-150px">Status</th>
-                    <th class="min-w-120px">Modified</th>
-                    <th class="min-w-80px">Files</th>
-                    <th class="min-w-80px">Images</th>
-                    <th class="min-w-80px">Mode</th>
-                    <th class="min-w-80px">Edit</th>
+                    <th class="min-w-50px" style="width: 6%;">ID</th>
+                    <th class="min-w-120px" style="width: 12%;">Equip No</th>
+                    <th class="min-w-100px" style="width: 10%;">Make</th>
+                    <th class="min-w-100px" style="width: 10%;">Model</th>
+                    <th class="min-w-100px" style="width: 10%;">Serial No</th>
+                    <th class="min-w-70px" style="width: 8%;">KVA/Batt</th>
+                    <th class="min-w-140px" style="width: 16%;">Location</th>
+                    <th class="min-w-120px" style="width: 12%;">Status</th>
+                    <th class="min-w-90px" style="width: 10%;">Modified</th>
+                    <th class="min-w-60px" style="width: 6%;">Files</th>
+                    <th class="min-w-60px" style="width: 6%;">Images</th>
+                    <th class="min-w-60px" style="width: 6%;">Mode</th>
+                    <th class="min-w-60px" style="width: 6%;">Edit</th>
                   </tr>
                 </thead>
                 <!-- end::Table head -->
@@ -412,7 +412,9 @@
                 *ngIf="!equipmentList || equipmentList.length === 0"
                 class="text-center py-5"
               >
-                <p class="text-muted">No equipment found for this job.</p>
+                <div class="d-flex flex-column align-items-center">
+                  <p class="text-muted">There is no equipment associated with this job at the moment.</p>
+                </div>
               </div>
               <!-- end::Table -->
             </div>
