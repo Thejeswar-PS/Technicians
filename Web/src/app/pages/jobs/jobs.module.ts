@@ -13,7 +13,6 @@ import { InlineSVGModule } from 'ng-inline-svg-2';
 import { EquipmentDetailsComponent } from './equipment-details/equipment-details.component';
 import { EditEquipmentComponent } from './edit-equipment/edit-equipment.component';
 import { NotesViewComponent } from './modal/notes-view/notes-view.component';
-import { FileUploadComponent } from './file-upload/file-upload.component';
 import { EquipmentImagesComponent } from './equipment-images/equipment-images.component';
 import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
@@ -34,7 +33,6 @@ import { EditPartsComponent } from './edit-parts/edit-parts.component';
     EquipmentDetailsComponent,
     EditEquipmentComponent,
     NotesViewComponent,
-    FileUploadComponent,
     EquipmentImagesComponent,
     JobNotesInfoComponent,
     JobSafetyComponent,

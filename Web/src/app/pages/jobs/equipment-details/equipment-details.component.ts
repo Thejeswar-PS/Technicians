@@ -6,7 +6,7 @@ import { EquipmentService } from 'src/app/core/services/equipment.service';
 import { JobNotesInfoService } from 'src/app/core/services/job-notes-info.service';
 import { JobService } from 'src/app/core/services/job.service';
 import { AuthService } from 'src/app/modules/auth';
-import { FileUploadComponent } from '../file-upload/file-upload.component';
+import { FileUploadService, EquipmentFileResponseDto } from 'src/app/core/services/file-upload.service';
 
 @Component({
   selector: 'app-equipment-details',
@@ -14,7 +14,6 @@ import { FileUploadComponent } from '../file-upload/file-upload.component';
   styleUrls: ['./equipment-details.component.scss']
 })
 export class EquipmentDetailsComponent implements OnInit {
-  @ViewChild('fileUploadComponent') fileUploadComponent?: FileUploadComponent;
   
   // Page parameters
   params: EquipmentDetailsParams = {
@@ -29,6 +28,7 @@ export class EquipmentDetailsComponent implements OnInit {
   equipmentList: EquipmentDetail[] = [];
   uploadInfo: UploadInfo[] = [];
   selectedEquipment: EquipmentDetail | null = null; // Track selected equipment for uploads
+  equipmentFiles: EquipmentFileResponseDto[] = []; // Files for the selected equipment
   
   // UI state
   loading = false;
@@ -56,6 +56,9 @@ export class EquipmentDetailsComponent implements OnInit {
   showFileUploadModal = false;
   showUploadModal = false;  // Add this line for general upload modal control
   isEquipmentFileUpload = false;  // Track if current upload is for equipment
+  selectedFiles: (File | null)[] = [null, null]; // Files selected for upload
+  isUploading = false; // Track upload progress
+  fileValidationError = ''; // Store validation error messages
   
   // Getter for template usage
   get jobId(): string {
@@ -78,7 +81,8 @@ export class EquipmentDetailsComponent implements OnInit {
     private jobService: JobService,
     private authService: AuthService,
     private toastr: ToastrService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private fileUploadService: FileUploadService
   ) {}
 
   ngOnInit(): void {
@@ -564,6 +568,9 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   openUploadFiles(): void {
+    // Reset all upload state when opening modal
+    this.clearFiles();
+    
     // Make header upload work exactly like equipment upload
     // Use the first equipment if available, or create a default one
     if (this.equipmentList && this.equipmentList.length > 0) {
@@ -583,16 +590,25 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   // Called when user clicks the "Upload" button
-  openFileUploadModal(equipment?: EquipmentDetail): void {
+  async openFileUploadModal(equipment?: EquipmentDetail): Promise<void> {
+    // Reset all upload state when opening modal
+    this.clearFiles();
+    
     if (equipment) {
       this.isEquipmentFileUpload = true;
       this.selectedEquipment = equipment;
       this.showFileUploadModal = true;
+      
+      // Load files for this equipment
+      await this.loadEquipmentFiles(equipment.equipId);
     }
     this.showUploadModal = true;
   }
 
   openEquipmentUploadFiles(equipment: EquipmentDetail): void {
+    // Reset all upload state when opening modal
+    this.clearFiles();
+    
     this.isEquipmentFileUpload = true;
     this.selectedEquipment = equipment;
     this.showFileUploadModal = true;
@@ -918,13 +934,11 @@ export class EquipmentDetailsComponent implements OnInit {
           console.log('Upload info refreshed, current uploadInfo:', this.uploadInfo);
         }, 1500); // Increased delay to 1.5 seconds
         
-        // Refresh file upload component upload info if it exists
-        if (this.fileUploadComponent) {
-          setTimeout(() => {
-            console.log('Refreshing upload info after job upload');
-            this.refreshUploadInfo();
-          }, 1500); // Match the delay
-        }
+        // Refresh upload info after job upload
+        setTimeout(() => {
+          console.log('Refreshing upload info after job upload');
+          this.refreshUploadInfo();
+        }, 1500); // Match the delay
       } else {
         // Error case - handle specific GP error messages
         let errorMsg = result?.message || 'Failed to upload job';
@@ -1052,11 +1066,9 @@ export class EquipmentDetailsComponent implements OnInit {
           }, 2000);
           
           // Refresh upload info after successful expense upload
-          if (this.fileUploadComponent) {
-            setTimeout(() => {
-              this.refreshUploadInfo();
-            }, 500);
-          }
+          setTimeout(() => {
+            this.refreshUploadInfo();
+          }, 500);
         } else {
           // Error case - show message if available
           this.errorMessage = result?.message || 'Failed to upload expenses';
@@ -1138,5 +1150,203 @@ export class EquipmentDetailsComponent implements OnInit {
     this.showJobSafetyLink = false;
     this.showPartsPageLink = false;
     this.showExpensesPageLink = false;
+  }
+
+  // File management methods
+  getFileName(file: EquipmentFileResponseDto): string {
+    return file.fileName || 'Unknown File';
+  }
+
+  getFileDate(file: EquipmentFileResponseDto): string {
+    if (file.createdOn) {
+      return new Date(file.createdOn).toISOString();
+    }
+    return new Date().toISOString();
+  }
+
+  getFileCreatedBy(file: EquipmentFileResponseDto): string {
+    return file.createdBy || 'Unknown User';
+  }
+
+  openAnyFile(file: EquipmentFileResponseDto): void {
+    if (file.data && file.fileName && file.contentType) {
+      this.fileUploadService.downloadEquipmentFile(file.data, file.fileName, file.contentType);
+    } else {
+      this.toastr.error('File data is not available');
+    }
+  }
+
+  downloadFile(file: EquipmentFileResponseDto): void {
+    this.openAnyFile(file);
+  }
+
+  // Load equipment files when modal is opened
+  private async loadEquipmentFiles(equipmentId: number): Promise<void> {
+    if (!equipmentId) {
+      this.equipmentFiles = [];
+      return;
+    }
+
+    try {
+      const response = await this.fileUploadService.getEquipmentFiles(equipmentId).toPromise();
+      this.equipmentFiles = response?.data || [];
+    } catch (error) {
+      console.error('Error loading equipment files:', error);
+      this.equipmentFiles = [];
+      this.toastr.error('Failed to load equipment files');
+    }
+  }
+
+  // File upload methods
+  onFileSelected(fileSlot: number, event: any): void {
+    const file = event.target.files[0];
+    
+    // Clear any previous validation errors
+    this.fileValidationError = '';
+    
+    if (file) {
+      // Check if filename contains spaces
+      if (file.name.includes(' ')) {
+        this.fileValidationError = `File "${file.name}" contains spaces. Please rename the file using underscores (_) or hyphens (-) instead of spaces.`;
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+
+      // Check if file type is supported
+      const supportedTypes = ['.pdf', '.jpg', '.jpeg', '.doc', '.docx', '.txt', '.pptx', '.xls', '.rtf', '.log'];
+      const fileName = file.name.toLowerCase();
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+      
+      if (!supportedTypes.includes(fileExtension)) {
+        this.fileValidationError = `File type "${fileExtension}" is not supported. Supported file types: PDF, JPG, JPEG, DOC, DOCX, TXT, PPTX, XLS, RTF, LOG.`;
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+
+      // Check for duplicate filenames
+      const existingFileNames = this.equipmentFiles.map(f => f.fileName);
+      if (existingFileNames.includes(file.name)) {
+        this.fileValidationError = `File "${file.name}" already exists. Duplicate filenames are not allowed. Please rename the file or choose a different file.`;
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+
+      // Check if this filename is already selected in another slot
+      const currentlySelectedNames = this.selectedFiles
+        .filter((f, index) => f !== null && index !== (fileSlot - 1))
+        .map(f => f!.name);
+      if (currentlySelectedNames.includes(file.name)) {
+        this.fileValidationError = `File "${file.name}" is already selected for upload. Please choose a different file.`;
+        // Clear the file input
+        event.target.value = '';
+        return;
+      }
+    }
+    
+    if (fileSlot >= 1 && fileSlot <= 2) {
+      this.selectedFiles[fileSlot - 1] = file;
+      // Clear any validation errors since a valid file was selected
+      this.fileValidationError = '';
+    }
+  }
+
+  async uploadFiles(): Promise<void> {
+    // Clear any previous validation errors
+    this.fileValidationError = '';
+    
+    if (!this.selectedEquipment) {
+      this.fileValidationError = 'No equipment selected';
+      return;
+    }
+
+    const filesToUpload = this.selectedFiles.filter((f): f is File => f !== null);
+    if (filesToUpload.length === 0) {
+      this.fileValidationError = 'Please select at least one file to upload';
+      return;
+    }
+
+    // Validate that no filenames contain spaces
+    const filesWithSpaces = filesToUpload.filter(file => file.name.includes(' '));
+    if (filesWithSpaces.length > 0) {
+      const fileNames = filesWithSpaces.map(f => f.name).join(', ');
+      this.fileValidationError = `Cannot upload files with spaces in filename: ${fileNames}. Please rename using underscores (_) or hyphens (-) instead.`;
+      return;
+    }
+
+    // Validate file types
+    const supportedTypes = ['.pdf', '.jpg', '.jpeg', '.doc', '.docx', '.txt', '.pptx', '.xls', '.rtf', '.log'];
+    const unsupportedFiles = filesToUpload.filter(file => {
+      const fileName = file.name.toLowerCase();
+      const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
+      return !supportedTypes.includes(fileExtension);
+    });
+    
+    if (unsupportedFiles.length > 0) {
+      const fileNames = unsupportedFiles.map(f => f.name).join(', ');
+      this.fileValidationError = `Unsupported file types: ${fileNames}. Supported file types: PDF, JPG, JPEG, DOC, DOCX, TXT, PPTX, XLS, RTF, LOG.`;
+      return;
+    }
+
+    // Validate against duplicate filenames (existing files)
+    const existingFileNames = this.equipmentFiles.map(f => f.fileName);
+    const duplicateFiles = filesToUpload.filter(file => existingFileNames.includes(file.name));
+    if (duplicateFiles.length > 0) {
+      const fileNames = duplicateFiles.map(f => f.name).join(', ');
+      this.fileValidationError = `Cannot upload duplicate files: ${fileNames}. These files already exist. Please rename or choose different files.`;
+      return;
+    }
+
+    // Validate against duplicate filenames within selected files
+    const selectedFileNames = filesToUpload.map(f => f.name);
+    const uniqueNames = new Set(selectedFileNames);
+    if (selectedFileNames.length !== uniqueNames.size) {
+      this.fileValidationError = `Cannot upload files with duplicate names. Please ensure all selected files have unique names.`;
+      return;
+    }
+
+    // Get current logged-in user
+    const currentUser = this.authService.currentUserValue;
+    const createdBy = currentUser?.windowsID || this.params.techName; // Fallback to techName if no user
+
+    this.isUploading = true;
+    try {
+      // Upload files using the FileUploadService
+      for (const file of filesToUpload) {
+        await this.fileUploadService.uploadEquipmentFile(
+          this.selectedEquipment.equipId,
+          this.params.techId,
+          file,
+          createdBy, // Use current logged-in user
+          this.params.callNbr,
+          this.selectedEquipment.equipNo,
+          this.params.techName
+        ).toPromise();
+      }
+
+      this.toastr.success('Files uploaded successfully');
+      this.clearFiles();
+      
+      // Reload equipment files
+      await this.loadEquipmentFiles(this.selectedEquipment.equipId);
+      
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      this.toastr.error('Failed to upload files');
+    } finally {
+      this.isUploading = false;
+    }
+  }
+
+  clearFiles(): void {
+    this.selectedFiles = [null, null];
+    this.fileValidationError = ''; // Clear validation errors
+    // Clear file inputs
+    const fileInput1 = document.querySelector('input[type="file"]:nth-of-type(1)') as HTMLInputElement;
+    const fileInput2 = document.querySelector('input[type="file"]:nth-of-type(2)') as HTMLInputElement;
+    if (fileInput1) fileInput1.value = '';
+    if (fileInput2) fileInput2.value = '';
   }
 }
