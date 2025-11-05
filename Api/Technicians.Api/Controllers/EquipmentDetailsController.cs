@@ -831,5 +831,377 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        //26. UpdateEquipStatus (PUT) - Updates equipment status across multiple related tables
+        [HttpPut("UpdateEquipStatus")]
+        public async Task<IActionResult> UpdateEquipStatus([FromBody] UpdateEquipStatusDto request)
+        {
+            try
+            {
+                // Basic validation
+                if (request == null)
+                    return BadRequest(new { success = false, message = "Request body is required." });
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for UpdateEquipStatus with CallNbr: {CallNbr}, EquipId: {EquipId}. Errors: {ModelStateErrors}",
+                        request?.CallNbr ?? "null", request?.EquipId ?? 0, JsonSerializer.Serialize(ModelState));
+                    return BadRequest(new { success = false, message = "Invalid request data.", errors = ModelState });
+                }
+
+                // Additional business logic validation
+                if (string.IsNullOrWhiteSpace(request.CallNbr))
+                    return BadRequest(new { success = false, message = "CallNbr is required." });
+
+                if (request.EquipId <= 0)
+                    return BadRequest(new { success = false, message = "Valid EquipId is required." });
+
+                if (string.IsNullOrWhiteSpace(request.Status))
+                    return BadRequest(new { success = false, message = "Status is required." });
+
+                if (string.IsNullOrWhiteSpace(request.TableName))
+                    return BadRequest(new { success = false, message = "TableName is required." });
+
+                // Log the request for debugging
+                _logger.LogInformation("UpdateEquipStatus called for CallNbr={CallNbr}, EquipId={EquipId}, Status={Status}, TableName={TableName}",
+                    request.CallNbr, request.EquipId, request.Status, request.TableName);
+
+                // Call repository method
+                var result = await _repository.UpdateEquipStatusAsync(request);
+
+                _logger.LogInformation("UpdateEquipStatus completed successfully for CallNbr={CallNbr}, EquipId={EquipId}. Rows affected: {RowsAffected}",
+                    request.CallNbr, request.EquipId, result);
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Equipment status updated successfully.", 
+                    rowsAffected = result,
+                    callNbr = request.CallNbr,
+                    equipId = request.EquipId,
+                    status = request.Status
+                });
+            }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "Database error in UpdateEquipStatus for CallNbr={CallNbr}, EquipId={EquipId}",
+                    request?.CallNbr ?? "null", request?.EquipId ?? 0);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "Database error occurred while updating equipment status.",
+                    error = sqlEx.Message 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in UpdateEquipStatus for CallNbr={CallNbr}, EquipId={EquipId}",
+                    request?.CallNbr ?? "null", request?.EquipId ?? 0);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "An unexpected error occurred while updating equipment status.",
+                    error = ex.Message 
+                });
+            }
+        }
+
+        // 28. GetEquipFilterCurrents (GET) - Get equipment filter currents data
+        [HttpGet("GetEquipFilterCurrents")]
+        public async Task<IActionResult> GetEquipFilterCurrents([FromQuery] string callNbr, [FromQuery] int equipId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(callNbr))
+                    return BadRequest(new { success = false, message = "CallNbr is required." });
+
+                if (equipId <= 0)
+                    return BadRequest(new { success = false, message = "Valid EquipId is required." });
+
+                _logger.LogInformation("GetEquipFilterCurrents called for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+
+                var result = await _repository.GetEquipFilterCurrentsAsync(callNbr, equipId);
+
+                if (result == null)
+                {
+                    _logger.LogInformation("No equipment filter currents found for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+                    return NotFound(new { success = false, message = "No equipment filter currents found." });
+                }
+
+                _logger.LogInformation("Equipment filter currents retrieved successfully for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Equipment filter currents retrieved successfully.", 
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving equipment filter currents for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "An error occurred while retrieving equipment filter currents.",
+                    error = ex.Message 
+                });
+            }
+        }
+
+        // 29. SaveUpdateEquipFilterCurrents (POST) - Save or update equipment filter currents data
+        [HttpPost("SaveUpdateEquipFilterCurrents")]
+        public async Task<IActionResult> SaveUpdateEquipFilterCurrents([FromBody] EquipFilterCurrentsDto request)
+        {
+            try
+            {
+                // Basic validation
+                if (request == null)
+                    return BadRequest(new { success = false, message = "Request body is required." });
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for SaveUpdateEquipFilterCurrents with CallNbr: {CallNbr}, EquipId: {EquipId}. Errors: {ModelStateErrors}",
+                        request?.CallNbr ?? "null", request?.EquipID ?? 0, JsonSerializer.Serialize(ModelState));
+                    return BadRequest(new { success = false, message = "Invalid request data.", errors = ModelState });
+                }
+
+                // Additional business logic validation
+                if (string.IsNullOrWhiteSpace(request.CallNbr))
+                    return BadRequest(new { success = false, message = "CallNbr is required." });
+
+                if (request.EquipID <= 0)
+                    return BadRequest(new { success = false, message = "Valid EquipID is required." });
+
+                // Log the request for debugging
+                _logger.LogInformation("SaveUpdateEquipFilterCurrents called for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+
+                // Call repository method
+                var result = await _repository.SaveUpdateEquipFilterCurrentsAsync(request);
+
+                _logger.LogInformation("SaveUpdateEquipFilterCurrents completed successfully for CallNbr={CallNbr}, EquipID={EquipID}. Rows affected: {RowsAffected}",
+                    request.CallNbr, request.EquipID, result);
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Equipment filter currents saved successfully.", 
+                    rowsAffected = result,
+                    callNbr = request.CallNbr,
+                    equipId = request.EquipID
+                });
+            }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "Database error in SaveUpdateEquipFilterCurrents for CallNbr={CallNbr}, EquipID={EquipID}",
+                    request?.CallNbr ?? "null", request?.EquipID ?? 0);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "Database error occurred while saving equipment filter currents.",
+                    error = sqlEx.Message 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SaveUpdateEquipFilterCurrents for CallNbr={CallNbr}, EquipID={EquipID}",
+                    request?.CallNbr ?? "null", request?.EquipID ?? 0);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "An unexpected error occurred while saving equipment filter currents.",
+                    error = ex.Message 
+                });
+            }
+        }
+
+        // 30. SaveUpdateaaETechUPS (POST) - Save or update UPS data using the stored procedure
+        [HttpPost("SaveUpdateaaETechUPS")]
+        public async Task<IActionResult> SaveUpdateaaETechUPS([FromBody] SaveUpdateaaETechUPSDto request)
+        {
+            try
+            {
+                // Basic validation
+                if (request == null)
+                    return BadRequest(new { success = false, message = "Request body is required." });
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for SaveUpdateaaETechUPS with CallNbr: {CallNbr}, EquipId: {EquipId}, UpsId: {UpsId}. Errors: {ModelStateErrors}",
+                        request?.CallNbr ?? "null", request?.EquipId ?? 0, request?.UpsId ?? "null", JsonSerializer.Serialize(ModelState));
+                    return BadRequest(new { success = false, message = "Invalid request data.", errors = ModelState });
+                }
+
+                // Additional business logic validation
+                if (string.IsNullOrWhiteSpace(request.CallNbr))
+                    return BadRequest(new { success = false, message = "CallNbr is required." });
+
+                if (request.EquipId <= 0)
+                    return BadRequest(new { success = false, message = "Valid EquipId is required." });
+
+                if (string.IsNullOrWhiteSpace(request.UpsId))
+                    return BadRequest(new { success = false, message = "UpsId is required." });
+
+                // Log the request for debugging
+                _logger.LogInformation("SaveUpdateaaETechUPS called for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}", 
+                    request.CallNbr, request.EquipId, request.UpsId);
+
+                // Call repository method
+                var result = await _repository.SaveUpdateaaETechUPSAsync(request);
+
+                _logger.LogInformation("SaveUpdateaaETechUPS completed successfully for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}. Rows affected: {RowsAffected}",
+                    request.CallNbr, request.EquipId, request.UpsId, result);
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "UPS data saved successfully.", 
+                    rowsAffected = result,
+                    callNbr = request.CallNbr,
+                    equipId = request.EquipId,
+                    upsId = request.UpsId
+                });
+            }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "Database error in SaveUpdateaaETechUPS for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}",
+                    request?.CallNbr ?? "null", request?.EquipId ?? 0, request?.UpsId ?? "null");
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "Database error occurred while saving UPS data.",
+                    error = sqlEx.Message 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SaveUpdateaaETechUPS for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}",
+                    request?.CallNbr ?? "null", request?.EquipId ?? 0, request?.UpsId ?? "null");
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "An unexpected error occurred while saving UPS data.",
+                    error = ex.Message 
+                });
+            }
+        }
+
+        // 31. GetJobSummarySample (GET) - Get job summary sample data based on equipment type
+        [HttpGet("GetJobSummarySample")]
+        public async Task<IActionResult> GetJobSummarySample(
+            [FromQuery] string callNbr, 
+            [FromQuery] int equipId, 
+            [FromQuery] string equipType, 
+            [FromQuery] string scheduled = "Y")
+        {
+            try
+            {
+                // Basic validation
+                if (string.IsNullOrWhiteSpace(callNbr))
+                    return BadRequest(new { success = false, message = "CallNbr is required." });
+
+                if (equipId <= 0)
+                    return BadRequest(new { success = false, message = "Valid EquipId is required." });
+
+                if (string.IsNullOrWhiteSpace(equipType))
+                    return BadRequest(new { success = false, message = "EquipType is required." });
+
+                // Validate Scheduled parameter
+                if (string.IsNullOrWhiteSpace(scheduled) || (scheduled.ToUpper() != "Y" && scheduled.ToUpper() != "N"))
+                    scheduled = "Y"; // Default to 'Y'
+
+                var request = new JobSummarySampleRequestDto
+                {
+                    CallNbr = callNbr,
+                    EquipID = equipId,
+                    EquipType = equipType,
+                    Scheduled = scheduled.ToUpper()
+                };
+
+                // Log the request for debugging
+                _logger.LogInformation("GetJobSummarySample called for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}, Scheduled={Scheduled}", 
+                    request.CallNbr, request.EquipID, request.EquipType, request.Scheduled);
+
+                // Call repository method
+                var result = await _repository.GetJobSummarySampleAsync(request);
+
+                if (result == null)
+                {
+                    _logger.LogInformation("No job summary sample data found for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}", 
+                        callNbr, equipId, equipType);
+                    return NotFound(new { success = false, message = "No job summary sample data found." });
+                }
+
+                _logger.LogInformation("GetJobSummarySample completed successfully for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}", 
+                    callNbr, equipId, equipType);
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Job summary sample data retrieved successfully.", 
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving job summary sample data for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}", 
+                    callNbr, equipId, equipType);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "An error occurred while retrieving job summary sample data.",
+                    error = ex.Message 
+                });
+            }
+        }
+
+        // 32. GetStatusDescription (GET) - Get status descriptions for equipment type
+        [HttpGet("GetStatusDescription")]
+        public async Task<IActionResult> GetStatusDescription([FromQuery] string equipType)
+        {
+            try
+            {
+                // Basic validation
+                if (string.IsNullOrWhiteSpace(equipType))
+                    return BadRequest(new { success = false, message = "EquipType is required." });
+
+                // Log the request for debugging
+                _logger.LogInformation("GetStatusDescription called for EquipType={EquipType}", equipType);
+
+                // Call repository method
+                var result = await _repository.GetStatusDescriptionAsync(equipType);
+
+                if (result == null || !result.Any())
+                {
+                    _logger.LogInformation("No status descriptions found for EquipType={EquipType}", equipType);
+                    return Ok(new 
+                    { 
+                        success = true, 
+                        message = "No status descriptions found.", 
+                        data = new List<object>()
+                    });
+                }
+
+                _logger.LogInformation("GetStatusDescription completed successfully for EquipType={EquipType}. Found {Count} records", 
+                    equipType, result.Count);
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Status descriptions retrieved successfully.", 
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving status descriptions for EquipType={EquipType}", equipType);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "An error occurred while retrieving status descriptions.",
+                    error = ex.Message 
+                });
+            }
+        }
     }
 }

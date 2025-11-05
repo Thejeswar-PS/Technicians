@@ -76,6 +76,11 @@ const routes: Routes = [
     path: 'edit-parts',
     component: EditPartsComponent
   }
+  // Job summary sample route commented out for integration-only usage
+  // {
+  //   path: 'job-summary-sample',
+  //   component: JobSummarySampleComponent
+  // }
 ];
 
 @NgModule({

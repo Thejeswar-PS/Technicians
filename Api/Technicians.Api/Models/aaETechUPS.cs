@@ -78,6 +78,14 @@
         public string AFThick1 { get; set; }
         public string AFQty1 { get; set; }
 
+        // Date Code fields (missing from original model)
+        public string UpsDateCodeMonth { get; set; }
+        public int UpsDateCodeYear { get; set; }
+
+        // Maintenance fields
+        public DateTime Create_Date { get; set; }
+        public string Maint_Auth_ID { get; set; }
+
         // Input/Output readings
         public string Input { get; set; }
         public double InputVoltA_T { get; set; }
@@ -151,6 +159,7 @@
         public string ACOutputCapsLeak_PF { get; set; }
         public string ACOutputCapsAge_PF { get; set; }
         public string CommCapsLeak_PF { get; set; }
+        public string CommCapsAge_PF { get; set; }
 
         public string DCGAction1 { get; set; }
         public string CustAction1 { get; set; }
@@ -168,6 +177,9 @@
         public string SNMPPresent { get; set; }
         public bool SaveAsDraft { get; set; }
         public string ModularUPS { get; set; }
+
+        // Air Filter Email field (from SP)
+        public bool AFEmailSent { get; set; }
 
         public string SvcDescr { get; set; }
     }

@@ -567,6 +567,21 @@ export class EquipmentDetailsComponent implements OnInit {
     });
   }
 
+  // Job summary navigation disabled for UI - keeping for integration only
+  // navigateToJobSummarySample(equipment: EquipmentDetail): void {
+  //   this.router.navigate(['/jobs/job-summary-sample'], {
+  //     queryParams: {
+  //       callNbr: this.params.callNbr,
+  //       equipId: equipment.equipId.toString(),
+  //       equipType: equipment.equipType,
+  //       techId: this.params.techId,
+  //       techName: this.params.techName,
+  //       archive: this.params.archive,
+  //       year: this.params.year
+  //     }
+  //   });
+  // }
+
   openUploadFiles(): void {
     // Reset all upload state when opening modal
     this.clearFiles();

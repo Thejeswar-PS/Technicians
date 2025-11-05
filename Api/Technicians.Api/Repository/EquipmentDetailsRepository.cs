@@ -902,5 +902,535 @@ namespace Technicians.Api.Repository
                 return 0;
             }
         }
+
+        //25. UpdateEquipStatus - Updates equipment status across multiple related tables
+        public async Task<int> UpdateEquipStatusAsync(UpdateEquipStatusDto request)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("UpdateEquipStatus", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                // Add all parameters matching the stored procedure signature
+                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
+                cmd.Parameters.AddWithValue("@EquipId", request.EquipId);
+                cmd.Parameters.AddWithValue("@Status", request.Status);
+                cmd.Parameters.AddWithValue("@Notes", request.Notes ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@TableName", request.TableName);
+                cmd.Parameters.AddWithValue("@Manufacturer", request.Manufacturer ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ModelNo", request.ModelNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SerialNo", request.SerialNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Location", request.Location ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Maint_Auth_ID", request.MaintAuthID ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@MonthName", request.MonthName ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Year", request.Year);
+                cmd.Parameters.AddWithValue("@ReadingType", request.ReadingType ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BatteriesPerString", request.BatteriesPerString);
+                cmd.Parameters.AddWithValue("@BatteriesPerPack", request.BatteriesPerPack);
+                cmd.Parameters.AddWithValue("@VFSelection", request.VFSelection ?? (object)DBNull.Value);
+
+                await conn.OpenAsync();
+                var result = await cmd.ExecuteNonQueryAsync();
+                
+                _logger.LogInformation("UpdateEquipStatus completed for CallNbr={CallNbr}, EquipId={EquipId}, Status={Status}", 
+                    request.CallNbr, request.EquipId, request.Status);
+                
+                return result;
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL error in UpdateEquipStatusAsync for CallNbr={CallNbr}, EquipId={EquipId}", 
+                    request.CallNbr, request.EquipId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in UpdateEquipStatusAsync for CallNbr={CallNbr}, EquipId={EquipId}", 
+                    request.CallNbr, request.EquipId);
+                throw;
+            }
+        }
+
+        //26. GetEquipFilterCurrents - Get equipment filter currents data
+        public async Task<EquipFilterCurrentsDto> GetEquipFilterCurrentsAsync(string callNbr, int equipId)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("usp_GetEquipFilterCurrents", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+                cmd.Parameters.AddWithValue("@EquipID", equipId);
+
+                await conn.OpenAsync();
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    return new EquipFilterCurrentsDto
+                    {
+                        CallNbr = reader.GetString("CallNbr"),
+                        EquipID = reader.GetInt32("EquipID"),
+                        ChkIPFilter = reader.IsDBNull("chkIPFilter") ? null : reader.GetBoolean("chkIPFilter"),
+                        ChkIPTHD = reader.IsDBNull("chkIPTHD") ? null : reader.GetBoolean("chkIPTHD"),
+                        IPFilterCurrA_T = reader.IsDBNull("IPFilterCurrA_T") ? null : reader.GetDecimal("IPFilterCurrA_T"),
+                        IPFilterCurrA_PF = reader.IsDBNull("IPFilterCurrA_PF") ? null : reader.GetString("IPFilterCurrA_PF"),
+                        IPFilterCurrB_T = reader.IsDBNull("IPFilterCurrB_T") ? null : reader.GetDecimal("IPFilterCurrB_T"),
+                        IPFilterCurrB_PF = reader.IsDBNull("IPFilterCurrB_PF") ? null : reader.GetString("IPFilterCurrB_PF"),
+                        IPFilterCurrC_T = reader.IsDBNull("IPFilterCurrC_T") ? null : reader.GetDecimal("IPFilterCurrC_T"),
+                        IPFilterCurrC_PF = reader.IsDBNull("IPFilterCurrC_PF") ? null : reader.GetString("IPFilterCurrC_PF"),
+                        IPFilterTHDA_T = reader.IsDBNull("IPFilterTHDA_T") ? null : reader.GetDecimal("IPFilterTHDA_T"),
+                        IPFilterTHDA_PF = reader.IsDBNull("IPFilterTHDA_PF") ? null : reader.GetString("IPFilterTHDA_PF"),
+                        IPFilterTHDB_T = reader.IsDBNull("IPFilterTHDB_T") ? null : reader.GetDecimal("IPFilterTHDB_T"),
+                        IPFilterTHDB_PF = reader.IsDBNull("IPFilterTHDB_PF") ? null : reader.GetString("IPFilterTHDB_PF"),
+                        IPFilterTHDC_T = reader.IsDBNull("IPFilterTHDC_T") ? null : reader.GetDecimal("IPFilterTHDC_T"),
+                        IPFilterTHDC_PF = reader.IsDBNull("IPFilterTHDC_PF") ? null : reader.GetString("IPFilterTHDC_PF"),
+                        ChkOPFilter = reader.IsDBNull("chkOPFilter") ? null : reader.GetBoolean("chkOPFilter"),
+                        ChkOPTHD = reader.IsDBNull("chkOPTHD") ? null : reader.GetBoolean("chkOPTHD"),
+                        OPFilterCurrA_T = reader.IsDBNull("OPFilterCurrA_T") ? null : reader.GetDecimal("OPFilterCurrA_T"),
+                        OPFilterCurrA_PF = reader.IsDBNull("OPFilterCurrA_PF") ? null : reader.GetString("OPFilterCurrA_PF"),
+                        OPFilterCurrB_T = reader.IsDBNull("OPFilterCurrB_T") ? null : reader.GetDecimal("OPFilterCurrB_T"),
+                        OPFilterCurrB_PF = reader.IsDBNull("OPFilterCurrB_PF") ? null : reader.GetString("OPFilterCurrB_PF"),
+                        OPFilterCurrC_T = reader.IsDBNull("OPFilterCurrC_T") ? null : reader.GetDecimal("OPFilterCurrC_T"),
+                        OPFilterCurrC_PF = reader.IsDBNull("OPFilterCurrC_PF") ? null : reader.GetString("OPFilterCurrC_PF"),
+                        OPFilterTHDA_T = reader.IsDBNull("OPFilterTHDA_T") ? null : reader.GetDecimal("OPFilterTHDA_T"),
+                        OPFilterTHDA_PF = reader.IsDBNull("OPFilterTHDA_PF") ? null : reader.GetString("OPFilterTHDA_PF"),
+                        OPFilterTHDB_T = reader.IsDBNull("OPFilterTHDB_T") ? null : reader.GetDecimal("OPFilterTHDB_T"),
+                        OPFilterTHDB_PF = reader.IsDBNull("OPFilterTHDB_PF") ? null : reader.GetString("OPFilterTHDB_PF"),
+                        OPFilterTHDC_T = reader.IsDBNull("OPFilterTHDC_T") ? null : reader.GetDecimal("OPFilterTHDC_T"),
+                        OPFilterTHDC_PF = reader.IsDBNull("OPFilterTHDC_PF") ? null : reader.GetString("OPFilterTHDC_PF")
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving equipment filter currents for CallNbr={CallNbr}, EquipID={EquipID}", callNbr, equipId);
+                throw;
+            }
+        }
+
+        //27. SaveUpdateEquipFilterCurrents - Save or update equipment filter currents data
+        public async Task<int> SaveUpdateEquipFilterCurrentsAsync(EquipFilterCurrentsDto request)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("SaveUpdateEquipFilterCurrents", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                // Add all parameters matching the stored procedure signature
+                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
+                cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
+                cmd.Parameters.AddWithValue("@chkIPFilter", request.ChkIPFilter ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@chkIPTHD", request.ChkIPTHD ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterCurrA_T", request.IPFilterCurrA_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterCurrA_PF", request.IPFilterCurrA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterCurrB_T", request.IPFilterCurrB_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterCurrB_PF", request.IPFilterCurrB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterCurrC_T", request.IPFilterCurrC_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterCurrC_PF", request.IPFilterCurrC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterTHDA_T", request.IPFilterTHDA_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterTHDA_PF", request.IPFilterTHDA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterTHDB_T", request.IPFilterTHDB_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterTHDB_PF", request.IPFilterTHDB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterTHDC_T", request.IPFilterTHDC_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@IPFilterTHDC_PF", request.IPFilterTHDC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@chkOPFilter", request.ChkOPFilter ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@chkOPTHD", request.ChkOPTHD ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterCurrA_T", request.OPFilterCurrA_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterCurrA_PF", request.OPFilterCurrA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterCurrB_T", request.OPFilterCurrB_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterCurrB_PF", request.OPFilterCurrB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterCurrC_T", request.OPFilterCurrC_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterCurrC_PF", request.OPFilterCurrC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterTHDA_T", request.OPFilterTHDA_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterTHDA_PF", request.OPFilterTHDA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterTHDB_T", request.OPFilterTHDB_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterTHDB_PF", request.OPFilterTHDB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterTHDC_T", request.OPFilterTHDC_T ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OPFilterTHDC_PF", request.OPFilterTHDC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ModifiedBy", request.ModifiedBy ?? (object)DBNull.Value);
+
+                await conn.OpenAsync();
+                var result = await cmd.ExecuteNonQueryAsync();
+
+                _logger.LogInformation("SaveUpdateEquipFilterCurrents completed for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+
+                return result;
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL error in SaveUpdateEquipFilterCurrentsAsync for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SaveUpdateEquipFilterCurrentsAsync for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+                throw;
+            }
+        }
+
+        //28. SaveUpdateaaETechUPS - Save or update UPS data using the stored procedure
+        public async Task<int> SaveUpdateaaETechUPSAsync(SaveUpdateaaETechUPSDto request)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("SaveUpdateaaETechUPS", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                // Add all parameters matching the stored procedure signature
+                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
+                cmd.Parameters.AddWithValue("@EquipId", request.EquipId);
+                cmd.Parameters.AddWithValue("@UpsId", request.UpsId);
+                cmd.Parameters.AddWithValue("@Manufacturer", request.Manufacturer ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@KVA", request.KVA ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@MultiModule", request.MultiModule ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@MaintByPass", request.MaintByPass ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Other", request.Other ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ModelNo", request.ModelNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SerialNo", request.SerialNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Status", request.Status ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ParallelCabinet", request.ParallelCabinet ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_Input", request.Measure_Input ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_LCD", request.Measure_LCD ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_Load", request.Measure_Load ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_3Phase", request.Measure_3Phase ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_KVA", request.Measure_KVA ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_Normal", request.Measure_Normal ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_Caliberation", request.Measure_Caliberation ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Measure_EOL", request.Measure_EOL ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_NoAlarms", request.Visual_NoAlarms ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_Tightness", request.Visual_Tightness ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_Broken", request.Visual_Broken ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_Vaccum", request.Visual_Vaccum ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_EPO", request.Visual_EPO ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_Noise", request.Visual_Noise ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_FansAge", request.Visual_FansAge ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Visual_ReplaceFilters", request.Visual_ReplaceFilters ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Environment_RoomTemp", request.Environment_RoomTemp ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Environment_Saftey", request.Environment_Saftey ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Environment_Clean", request.Environment_Clean ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Environment_Space", request.Environment_Space ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Environment_Circuit", request.Environment_Circuit ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Transfer_Major", request.Transfer_Major ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Transfer_Static", request.Transfer_Static ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Transfer_ByPass", request.Transfer_ByPass ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Transfer_Wave", request.Transfer_Wave ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Transfer_Normal", request.Transfer_Normal ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Transfer_Alarm", request.Transfer_Alarm ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Comments1", request.Comments1 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Comments2", request.Comments2 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Comments3", request.Comments3 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Comments4", request.Comments4 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DateCodeMonth", request.DateCodeMonth ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DateCodeYear", request.DateCodeYear);
+                cmd.Parameters.AddWithValue("@StatusReason", request.StatusReason ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@chkDCBreak", request.chkDCBreak);
+                cmd.Parameters.AddWithValue("@chkOverLoad", request.chkOverLoad);
+                cmd.Parameters.AddWithValue("@chkTransfer", request.chkTransfer);
+                cmd.Parameters.AddWithValue("@chkFault", request.chkFault);
+                cmd.Parameters.AddWithValue("@BatteryStringID", request.BatteryStringID);
+                cmd.Parameters.AddWithValue("@AFLength", request.AFLength);
+                cmd.Parameters.AddWithValue("@AFWidth", request.AFWidth);
+                cmd.Parameters.AddWithValue("@AFThickness", request.AFThickness);
+                cmd.Parameters.AddWithValue("@AFQty", request.AFQty);
+                cmd.Parameters.AddWithValue("@AFLength1", request.AFLength1);
+                cmd.Parameters.AddWithValue("@AFWidth1", request.AFWidth1);
+                cmd.Parameters.AddWithValue("@AFThickness1", request.AFThickness1);
+                cmd.Parameters.AddWithValue("@AFQty1", request.AFQty1);
+                
+                // Ensure Maint_Auth_ID is never null - use default if empty
+                var maintAuthId = string.IsNullOrWhiteSpace(request.Maint_Auth_ID) ? "SYSTEM" : request.Maint_Auth_ID;
+                cmd.Parameters.AddWithValue("@Maint_Auth_ID", maintAuthId);
+                
+                cmd.Parameters.AddWithValue("@Input", request.Input ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@InputVoltA_T", request.InputVoltA_T);
+                cmd.Parameters.AddWithValue("@InputVoltA_PF", request.InputVoltA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@InputVoltB_T", request.InputVoltB_T);
+                cmd.Parameters.AddWithValue("@InputVoltB_PF", request.InputVoltB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@InputVoltC_T", request.InputVoltC_T);
+                cmd.Parameters.AddWithValue("@InputVoltC_PF", request.InputVoltC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@InputCurrA_T", request.InputCurrA_T);
+                cmd.Parameters.AddWithValue("@InputCurrA_PF", request.InputCurrA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@InputCurrB_T", request.InputCurrB_T);
+                cmd.Parameters.AddWithValue("@InputCurrB_PF", request.InputCurrB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@InputCurrC_T", request.InputCurrC_T);
+                cmd.Parameters.AddWithValue("@InputCurrC_PF", request.InputCurrC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@InputFreq_T", request.InputFreq_T);
+                cmd.Parameters.AddWithValue("@InputFreq_PF", request.InputFreq_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Bypass", request.Bypass ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BypassVoltA_T", request.BypassVoltA_T);
+                cmd.Parameters.AddWithValue("@BypassVoltA_PF", request.BypassVoltA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BypassVoltB_T", request.BypassVoltB_T);
+                cmd.Parameters.AddWithValue("@BypassVoltB_PF", request.BypassVoltB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BypassVoltC_T", request.BypassVoltC_T);
+                cmd.Parameters.AddWithValue("@BypassVoltC_PF", request.BypassVoltC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BypassCurrA_T", request.BypassCurrA_T);
+                cmd.Parameters.AddWithValue("@BypassCurrA_PF", request.BypassCurrA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BypassCurrB_T", request.BypassCurrB_T);
+                cmd.Parameters.AddWithValue("@BypassCurrB_PF", request.BypassCurrB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BypassCurrC_T", request.BypassCurrC_T);
+                cmd.Parameters.AddWithValue("@BypassCurrC_PF", request.BypassCurrC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@BypassFreq_T", request.BypassFreq_T);
+                cmd.Parameters.AddWithValue("@BypassFreq_PF", request.BypassFreq_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Output", request.Output ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputVoltA_T", request.OutputVoltA_T);
+                cmd.Parameters.AddWithValue("@OutputVoltA_PF", request.OutputVoltA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputVoltB_T", request.OutputVoltB_T);
+                cmd.Parameters.AddWithValue("@OutputVoltB_PF", request.OutputVoltB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputVoltC_T", request.OutputVoltC_T);
+                cmd.Parameters.AddWithValue("@OutputVoltC_PF", request.OutputVoltC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputCurrA_T", request.OutputCurrA_T);
+                cmd.Parameters.AddWithValue("@OutputCurrA_PF", request.OutputCurrA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputCurrB_T", request.OutputCurrB_T);
+                cmd.Parameters.AddWithValue("@OutputCurrB_PF", request.OutputCurrB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputCurrC_T", request.OutputCurrC_T);
+                cmd.Parameters.AddWithValue("@OutputCurrC_PF", request.OutputCurrC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputFreq_T", request.OutputFreq_T);
+                cmd.Parameters.AddWithValue("@OutputFreq_PF", request.OutputFreq_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputLoadA", request.OutputLoadA);
+                cmd.Parameters.AddWithValue("@OutputLoadB", request.OutputLoadB);
+                cmd.Parameters.AddWithValue("@OutputLoadC", request.OutputLoadC);
+                cmd.Parameters.AddWithValue("@TotalLoad", request.TotalLoad);
+                cmd.Parameters.AddWithValue("@RectFloatVolt_PF", request.RectFloatVolt_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCVoltage_T", request.DCVoltage_T);
+                cmd.Parameters.AddWithValue("@DCVoltage_PF", request.DCVoltage_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACRipple_T", request.ACRipple_T);
+                cmd.Parameters.AddWithValue("@ACRipple_PF", request.ACRipple_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCCurrent_T", request.DCCurrent_T);
+                cmd.Parameters.AddWithValue("@DCCurrent_PF", request.DCCurrent_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACRippleVolt_T", request.ACRippleVolt_T);
+                cmd.Parameters.AddWithValue("@ACRippleVolt_PF", request.ACRippleVolt_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@POStoGND_T", request.POStoGND_T);
+                cmd.Parameters.AddWithValue("@POStoGND_PF", request.POStoGND_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACRippleCurr_T", request.ACRippleCurr_T);
+                cmd.Parameters.AddWithValue("@ACRippleCurr_PF", request.ACRippleCurr_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@NEGtoGND_T", request.NEGtoGND_T);
+                cmd.Parameters.AddWithValue("@NEGtoGND_PF", request.NEGtoGND_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputLoadA_PF", request.OutputLoadA_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputLoadB_PF", request.OutputLoadB_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@OutputLoadC_PF", request.OutputLoadC_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Comments5", request.Comments5 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCCapsLeak_PF", request.DCCapsLeak_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCCapsAge_PF", request.DCCapsAge_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACInputCapsLeak_PF", request.ACInputCapsLeak_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACInputCapsAge_PF", request.ACInputCapsAge_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACOutputCapsLeak_PF", request.ACOutputCapsLeak_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACOutputCapsAge_PF", request.ACOutputCapsAge_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@CommCapsLeak_PF", request.CommCapsLeak_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@CommCapsAge_PF", request.CommCapsAge_PF ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCGAction1", request.DCGAction1 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@CustAction1", request.CustAction1 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ManufSpecification", request.ManufSpecification ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCGAction2", request.DCGAction2 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@CustAction2", request.CustAction2 ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@DCCapsYear", request.DCCapsYear);
+                cmd.Parameters.AddWithValue("@ACInputCapsYear", request.ACInputCapsYear);
+                cmd.Parameters.AddWithValue("@ACOutputCapsYear", request.ACOutputCapsYear);
+                cmd.Parameters.AddWithValue("@CommCapsYear", request.CommCapsYear);
+                cmd.Parameters.AddWithValue("@FansYear", request.FansYear);
+                cmd.Parameters.AddWithValue("@Location", request.Location ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SNMPPresent", request.SNMPPresent ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SaveAsDraft", request.SaveAsDraft);
+                cmd.Parameters.AddWithValue("@ModularUPS", request.ModularUPS ?? (object)DBNull.Value);
+
+                await conn.OpenAsync();
+                var result = await cmd.ExecuteNonQueryAsync();
+
+                _logger.LogInformation("SaveUpdateaaETechUPS completed for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}", 
+                    request.CallNbr, request.EquipId, request.UpsId);
+
+                return result;
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL error in SaveUpdateaaETechUPSAsync for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}", 
+                    request.CallNbr, request.EquipId, request.UpsId);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SaveUpdateaaETechUPSAsync for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}", 
+                    request.CallNbr, request.EquipId, request.UpsId);
+                throw;
+            }
+        }
+
+        //29. GetJobSummarySample - Get job summary sample data based on equipment type
+        public async Task<JobSummarySampleResponseDto> GetJobSummarySampleAsync(JobSummarySampleRequestDto request)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("GetJobSummarySample", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
+                cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
+                cmd.Parameters.AddWithValue("@EquipType", request.EquipType);
+                cmd.Parameters.AddWithValue("@Scheduled", request.Scheduled);
+
+                await conn.OpenAsync();
+
+                var response = new JobSummarySampleResponseDto
+                {
+                    EquipType = request.EquipType,
+                    HasSecondaryData = false
+                };
+
+                // Handle different equipment types and their specific data structures
+                switch (request.EquipType.ToUpper())
+                {
+                    case "BATTERY":
+                        await using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            // First result set: aaEtechBatteryString data
+                            var primaryData = new List<BatteryStringDto>();
+                            while (await reader.ReadAsync())
+                            {
+                                primaryData.Add(new BatteryStringDto
+                                {
+                                    CallNbr = reader["CALLNBR"]?.ToString(),
+                                    EquipId = Convert.ToInt32(reader["EQUIPID"]),
+                                    StringId = reader["StringId"] != DBNull.Value ? Convert.ToInt32(reader["StringId"]) : 0,
+                                    BattPerString = reader["BattPerString"] != DBNull.Value ? Convert.ToInt32(reader["BattPerString"]) : 0,
+                                    VoltageV = reader["VoltageV"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageV"]) : null,
+                                    VoltageS = reader["VoltageS"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageS"]) : null,
+                                    FloatVoltV = reader["FloatVoltV"] != DBNull.Value ? Convert.ToDecimal(reader["FloatVoltV"]) : null,
+                                    FloatVoltS = reader["FloatVoltS"] != DBNull.Value ? Convert.ToDecimal(reader["FloatVoltS"]) : null,
+                                    Discharge = reader["Discharge"]?.ToString(),
+                                    DischargeTime = reader["DischargeTime"]?.ToString(),
+                                    Condition = reader["Condition"]?.ToString(),
+                                    Notes = reader["Notes"]?.ToString(),
+                                    TargetVoltage = reader["TargetVoltage"] != DBNull.Value ? Convert.ToDecimal(reader["TargetVoltage"]) : null,
+                                    BatteryType = reader["BatteryType"]?.ToString(),
+                                    BatteryHousing = reader["BatteryHousing"]?.ToString(),
+                                    Created = reader["Created"] != DBNull.Value ? Convert.ToDateTime(reader["Created"]) : null,
+                                    MaintAuthID = reader["Maint_Auth_ID"]?.ToString()
+                                });
+                            }
+                            response.PrimaryData = primaryData;
+
+                            // Second result set: Battery details with filtering conditions
+                            if (await reader.NextResultAsync())
+                            {
+                                var secondaryData = new List<BatteryDetailsDto>();
+                                while (await reader.ReadAsync())
+                                {
+                                    secondaryData.Add(new BatteryDetailsDto
+                                    {
+                                        CallNbr = reader["CALLNBR"]?.ToString(),
+                                        EquipId = Convert.ToInt32(reader["EQUIPID"]),
+                                        StringId = reader["StringId"] != DBNull.Value ? Convert.ToInt32(reader["StringId"]) : 0,
+                                        BatteryNo = reader["BatteryNo"] != DBNull.Value ? Convert.ToInt32(reader["BatteryNo"]) : 0,
+                                        VoltageV = reader["VoltageV"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageV"]) : null,
+                                        VoltageS = reader["VoltageS"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageS"]) : null,
+                                        Condition = reader["Condition"]?.ToString(),
+                                        ReplacementNeeded = reader["ReplacementNeeded"]?.ToString(),
+                                        MonitoringBattery = reader["MonitoringBattery"]?.ToString(),
+                                        Cracks = reader["Cracks"]?.ToString(),
+                                        Notes = reader["Notes"]?.ToString(),
+                                        Created = reader["Created"] != DBNull.Value ? Convert.ToDateTime(reader["Created"]) : null
+                                    });
+                                }
+                                response.SecondaryData = secondaryData;
+                                response.HasSecondaryData = secondaryData.Any();
+                            }
+                        }
+                        break;
+
+                    default:
+                        // For all other equipment types (UPS, ATS, PDU, RECTIFIER, GENERATOR, HVAC, SCC, STATIC SWITCH, STS)
+                        // Return dynamic data since each table has different schemas
+                        await using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            var dynamicData = new List<Dictionary<string, object>>();
+                            
+                            while (await reader.ReadAsync())
+                            {
+                                var row = new Dictionary<string, object>();
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    var columnName = reader.GetName(i);
+                                    var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                                    row[columnName] = value;
+                                }
+                                dynamicData.Add(row);
+                            }
+                            response.PrimaryData = dynamicData;
+                        }
+                        break;
+                }
+
+                _logger.LogInformation("GetJobSummarySample completed for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}", 
+                    request.CallNbr, request.EquipID, request.EquipType);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetJobSummarySampleAsync for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}", 
+                    request.CallNbr, request.EquipID, request.EquipType);
+                throw;
+            }
+        }
+
+        //30. GetStatusDescription - Get status descriptions for equipment type (no DTO approach)
+        public async Task<List<Dictionary<string, object>>> GetStatusDescriptionAsync(string equipType)
+        {
+            const string query = "SELECT * FROM STATUSDESCRIPTION WHERE EQUIPTYPE = @EquipType ORDER BY StatusType";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@EquipType", equipType ?? string.Empty);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                var results = new List<Dictionary<string, object>>();
+                while (await reader.ReadAsync())
+                {
+                    var row = new Dictionary<string, object>();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        var columnName = reader.GetName(i);
+                        var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        row[columnName] = value;
+                    }
+                    results.Add(row);
+                }
+
+                _logger.LogInformation("GetStatusDescription completed for EquipType={EquipType}. Found {Count} records", 
+                    equipType, results.Count);
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetStatusDescriptionAsync for EquipType={EquipType}", equipType);
+                throw;
+            }
+        }
     }
 }

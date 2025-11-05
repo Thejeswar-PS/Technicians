@@ -14,11 +14,12 @@ import { EquipmentDetailsComponent } from './equipment-details/equipment-details
 import { EditEquipmentComponent } from './edit-equipment/edit-equipment.component';
 import { NotesViewComponent } from './modal/notes-view/notes-view.component';
 import { EquipmentImagesComponent } from './equipment-images/equipment-images.component';
-import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
 import { JobPartsComponent } from './job-parts/job-parts.component';
 import { EditPartsComponent } from './edit-parts/edit-parts.component';
+import { JobSummarySampleComponent } from './job-summary-sample/job-summary-sample.component';
+import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 
 
 
@@ -37,7 +38,8 @@ import { EditPartsComponent } from './edit-parts/edit-parts.component';
     JobNotesInfoComponent,
     JobSafetyComponent,
     JobPartsComponent,
-    EditPartsComponent
+    EditPartsComponent,
+    JobSummarySampleComponent
   ],
   imports: [
     CommonModule,

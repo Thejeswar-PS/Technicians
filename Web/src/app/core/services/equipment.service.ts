@@ -3,9 +3,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, timeout, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { EquipmentDetail, UploadInfo, UploadResponse, EquipmentImage, EquipmentImageUpload, DeleteEquipmentImage } from '../model/equipment-details.model';
-import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus } from '../model/ups-readings.model';
+import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus, EquipFilterCurrents, SaveUpdateaaETechUPSDto, SaveUpdateUPSResponse } from '../model/ups-readings.model';
 import { EditEquipmentInfo, EquipBoardDetail, UpdateEquipmentRequest, UpdateEquipmentResponse, UpdateEquipBoardInfoRequest } from '../model/edit-equipment.model';
-import { environment } from 'src/environments/environment';
+import { JobSummarySampleRequest, JobSummarySampleResponse } from '../model/job-summary-sample.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -95,7 +96,254 @@ export class EquipmentService {
    * Equivalent to da.GetManufNames(ref ddlmanufacturer) in legacy code
    */
   getManufacturerNames(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/GetManufacturerNames`);
+    console.log('EquipmentService: Calling GetManufacturerNames API...');
+    
+    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/GetManufacturerNames`)
+      .pipe(
+        map((response: any) => {
+          console.log('EquipmentService: Raw manufacturers response:', response);
+          
+          // Handle different response formats
+          let manufacturers: any[] = [];
+          
+          if (Array.isArray(response)) {
+            // Direct array response
+            manufacturers = response;
+          } else if (response && response.data && Array.isArray(response.data)) {
+            // Wrapped in data property
+            manufacturers = response.data;
+          } else if (response && response.manufacturers && Array.isArray(response.manufacturers)) {
+            // Wrapped in manufacturers property
+            manufacturers = response.manufacturers;
+          } else if (response && response.Tables && Array.isArray(response.Tables) && response.Tables[0] && response.Tables[0].Rows) {
+            // DataSet format with Tables and Rows
+            manufacturers = response.Tables[0].Rows;
+          } else if (response && typeof response === 'object') {
+            // Single object, convert to array
+            manufacturers = [response];
+          }
+          
+          // Ensure proper format with value and text properties
+          const formattedManufacturers = manufacturers.map((item: any) => {
+            if (typeof item === 'string') {
+              return { value: item, text: item };
+            } else if (item && typeof item === 'object') {
+              // Handle various property names that might contain manufacturer data
+              const manufacturerValue = item.value || item.Value || item.name || item.Name || 
+                                      item.manufacturer || item.Manufacturer || item.ManufacturerName ||
+                                      item.manufacturerName || item.MANUFACTURER || item.text || item.Text ||
+                                      item.ManufacturerID || item.ManufName || item.mfg || item.MFG || '';
+              
+              const manufacturerText = item.text || item.Text || item.name || item.Name || 
+                                     item.manufacturer || item.Manufacturer || item.ManufacturerName ||
+                                     item.manufacturerName || item.MANUFACTURER || item.value || item.Value ||
+                                     item.ManufName || item.mfg || item.MFG || manufacturerValue || '';
+              
+              return {
+                value: manufacturerValue.toString(),
+                text: manufacturerText.toString()
+              };
+            }
+            return { value: '', text: '' };
+          }).filter(item => item.value && item.text);
+          
+          console.log('EquipmentService: Formatted manufacturers:', formattedManufacturers);
+          
+          // If we still don't have any manufacturers, return the comprehensive fallback list
+          if (formattedManufacturers.length === 0) {
+            console.warn('EquipmentService: No manufacturers found in API response, using comprehensive fallback');
+            return this.getComprehensiveManufacturerList();
+          }
+          
+          return formattedManufacturers;
+        }),
+        catchError((error) => {
+          console.error('EquipmentService: Error loading manufacturers from API:', error);
+          console.log('EquipmentService: Using comprehensive fallback manufacturer list');
+          
+          return of(this.getComprehensiveManufacturerList());
+        })
+      );
+  }
+
+  /**
+   * Get comprehensive manufacturer list as fallback
+   * Based on the actual options from the legacy system
+   */
+  private getComprehensiveManufacturerList(): any[] {
+    return [
+      { value: '*APC', text: '*APC' },
+      { value: '*CSB', text: '*CSB' },
+      { value: '*DATA SAFE', text: '*DATA SAFE' },
+      { value: '*EATON', text: '*EATON' },
+      { value: '*LIEBERT', text: '*LIEBERT' },
+      { value: '*MGE', text: '*MGE' },
+      { value: '*MITSUBISHI', text: '*MITSUBISHI' },
+      { value: '*POWERSAFE', text: '*POWERSAFE' },
+      { value: '*POWERWARE', text: '*POWERWARE' },
+      { value: '*SCHNEIDER', text: '*SCHNEIDER' },
+      { value: '*TOSHIBA', text: '*TOSHIBA' },
+      { value: '*TRIPPLITE', text: '*TRIPPLITE' },
+      { value: 'ABB', text: 'ABB' },
+      { value: 'APC', text: 'American Power Conversion' },
+      { value: 'ASCO', text: 'ASCO' },
+      { value: 'BEST POWER', text: 'BEST POWER' },
+      { value: 'C&D', text: 'C&D' },
+      { value: 'CATERPILLAR', text: 'Caterpillar' },
+      { value: 'CHLORIDE', text: 'Chloride' },
+      { value: 'CLARY', text: 'Clary' },
+      { value: 'CSB', text: 'CSB' },
+      { value: 'CUMMINS', text: 'Cummins' },
+      { value: 'CUTLER HAMMER', text: 'Cutler Hammer' },
+      { value: 'CYBEREX', text: 'Cyberex' },
+      { value: 'CyberPower', text: 'CyberPower' },
+      { value: 'Data Safe', text: 'Data Safe' },
+      { value: 'DATASAFE', text: 'DATASAFE' },
+      { value: 'DEKA', text: 'Deka' },
+      { value: 'Delta', text: 'Delta' },
+      { value: 'DELTEC', text: 'Deltec' },
+      { value: 'DUAL LITE', text: 'DUAL LITE' },
+      { value: 'DYNASTY', text: 'Dynasty' },
+      { value: 'EAST PENN', text: 'EAST PENN' },
+      { value: 'Eaton', text: 'Eaton' },
+      { value: 'ELGAR', text: 'Elgar' },
+      { value: 'Eltek', text: 'Eltek' },
+      { value: 'EMERSON', text: 'Emerson' },
+      { value: 'ENERSYS', text: 'Enersys' },
+      { value: 'EXIDE', text: 'Exide' },
+      { value: 'FERRUPS', text: 'FERRUPS' },
+      { value: 'FIAMM', text: 'Fiamm' },
+      { value: 'FULLRIVER', text: 'FULLRIVER' },
+      { value: 'GAMATRONIC', text: 'Gamatronic UPS' },
+      { value: 'GE', text: 'GE' },
+      { value: 'Genesis', text: 'Genesis' },
+      { value: 'GNB', text: 'GNB' },
+      { value: 'HAWKER', text: 'Hawker Powersafe' },
+      { value: 'HAZE', text: 'HAZE' },
+      { value: 'INTERSTATE', text: 'Interstate' },
+      { value: 'JOHNSON', text: 'Johnson Controls' },
+      { value: 'KOHLER', text: 'Kohler' },
+      { value: 'LAMARCHE', text: 'Lamarche' },
+      { value: 'LEOCH', text: 'LEOCH' },
+      { value: 'LIEBERT', text: 'LIEBERT' },
+      { value: 'LINEAGE POWER', text: 'LINEAGE POWER' },
+      { value: 'LITHONIA', text: 'Lithonia' },
+      { value: 'LONG', text: 'LONG' },
+      { value: 'MAGNETEK', text: 'MAGNETEK' },
+      { value: 'MARATHON', text: 'Marathon' },
+      { value: 'MGE', text: 'MGE' },
+      { value: 'Minuteman', text: 'Minuteman' },
+      { value: 'MITSUBISHI', text: 'Mitsubishi' },
+      { value: 'MK', text: 'MK' },
+      { value: 'NARADA', text: 'NARADA' },
+      { value: 'NEWMAR', text: 'NEWMAR' },
+      { value: 'NORTEL', text: 'Nortel' },
+      { value: 'NPP', text: 'NPP' },
+      { value: 'ONAN', text: 'Onan' },
+      { value: 'ONEAC', text: 'ONEAC' },
+      { value: 'PANASONIC', text: 'Panasonic' },
+      { value: 'PECO', text: 'PECO' },
+      { value: 'PILLER', text: 'PILLER' },
+      { value: 'PORTALAC', text: 'Portalac' },
+      { value: 'POWER SONIC', text: 'POWER SONIC' },
+      { value: 'POWERSAFE', text: 'POWERSAFE' },
+      { value: 'POWERSONIC', text: 'Powersonic Corporation' },
+      { value: 'POWERVAR', text: 'POWERVAR' },
+      { value: 'POWERWARE', text: 'POWERWARE' },
+      { value: 'Riello', text: 'Riello' },
+      { value: 'RITAR', text: 'RITAR' },
+      { value: 'Saft', text: 'Saft' },
+      { value: 'Samsung', text: 'Samsung' },
+      { value: 'SBS Battery', text: 'SBS Battery' },
+      { value: 'SCHNEIDER', text: 'SCHNEIDER' },
+      { value: 'SIEMENS', text: 'Siemens' },
+      { value: 'SOLA', text: 'Sola' },
+      { value: 'Socomec', text: 'Socomec' },
+      { value: 'SQUARE D', text: 'Square D' },
+      { value: 'Staco', text: 'Staco' },
+      { value: 'Sure-Lite', text: 'Sure-Lite' },
+      { value: 'TOPAZ', text: 'Topaz' },
+      { value: 'TOSHIBA', text: 'Toshiba' },
+      { value: 'TRIPP LITE', text: 'TRIPP LITE' },
+      { value: 'TRIPPLITE', text: 'TrippLite' },
+      { value: 'TROJAN', text: 'Trojan' },
+      { value: 'UNIGY', text: 'UNIGY' },
+      { value: 'UNIVERSAL', text: 'Universal' },
+      { value: 'Vertiv', text: 'Vertiv' },
+      { value: 'VISION', text: 'VISION' },
+      { value: 'VYCON', text: 'VYCON' },
+      { value: 'Yuasa', text: 'Yuasa' }
+    ];
+  }
+
+  /**
+   * Get UPS types for dropdown
+   * Returns predefined UPS types matching legacy system
+   */
+  getUPSTypes(): Observable<{ value: string; text: string }[]> {
+    const upsTypes = [
+      { value: 'NO', text: 'Normal UPS' },
+      { value: 'YS', text: 'Modular UPS' },
+      { value: 'LC', text: 'Longer Caps Life UPS(10 Yrs)' },
+      { value: 'LT', text: 'Longer Caps Life UPS(15 Yrs)' }
+    ];
+    return of(upsTypes);
+  }
+
+  /**
+   * Get maintenance bypass types for dropdown
+   * Returns predefined maintenance bypass options matching legacy system
+   */
+  getMaintenanceBypassTypes(): Observable<{ value: string; text: string }[]> {
+    const bypassTypes = [
+      { value: 'NA', text: 'None' },
+      { value: 'EM', text: 'External Make Before Break' },
+      { value: 'EB', text: 'External Break Before Make' },
+      { value: 'IB', text: 'Internal Bypass ONLY' },
+      { value: 'IR', text: 'Internal Rotary/ Maintenance Bypass ONLY' }
+    ];
+    return of(bypassTypes);
+  }
+
+  /**
+   * Get multi-module types for dropdown
+   * Returns predefined multi-module options matching legacy system
+   */
+  getMultiModuleTypes(): Observable<{ value: string; text: string }[]> {
+    const multiModuleTypes = [
+      { value: 'Select', text: 'Select' },
+      { value: 'N1', text: 'N + 1' },
+      { value: 'N2', text: 'N + 2' },
+      { value: 'N3', text: 'N + 3' },
+      { value: 'N4', text: 'N + 4' },
+      { value: 'N5', text: 'N + 5' },
+      { value: 'N6', text: 'N + 6' },
+      { value: 'NA', text: 'N/A' }
+    ];
+    return of(multiModuleTypes);
+  }
+
+  /**
+   * Get equipment status options for dropdown
+   * This could be enhanced to call backend API for dynamic status options
+   */
+  getEquipmentStatusOptions(): Observable<{ value: string; text: string }[]> {
+    return this.http.get<{ value: string; text: string }[]>(`${this.apiUrl}/EquipmentDetails/GetStatusOptions`)
+      .pipe(
+        catchError(() => {
+          // Fallback to predefined options if API fails
+          const statusOptions = [
+            { value: 'Online', text: 'Online' },
+            { value: 'OnLine(MinorDeficiency)', text: 'OnLine(Minor Deficiency)' },
+            { value: 'OnLine(MajorDeficiency)', text: 'OnLine(Major Deficiency)' },
+            { value: 'CriticalDeficiency', text: 'Critical Deficiency' },
+            { value: 'ReplacementRecommended', text: 'Replacement Recommended' },
+            { value: 'ProactiveReplacement', text: 'Proactive Replacement' },
+            { value: 'Offline', text: 'Offline' }
+          ];
+          return of(statusOptions);
+        })
+      );
   }
 
   /**
@@ -117,6 +365,16 @@ export class EquipmentService {
    */
   saveUpdateUPSReadings(upsData: any): Observable<{ success: boolean; message: string }> {
     return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/UPSReadings/SaveUpdateUPSReadings`, upsData);
+  }
+
+  /**
+   * Save or update UPS data using the comprehensive DTO and new API endpoint
+   * Uses the SaveUpdateaaETechUPS stored procedure with all UPS parameters
+   * @param upsData - Complete UPS data matching SaveUpdateaaETechUPSDto interface
+   * @returns Observable with success status, message, and metadata
+   */
+  saveUpdateaaETechUPS(upsData: SaveUpdateaaETechUPSDto): Observable<SaveUpdateUPSResponse> {
+    return this.http.post<SaveUpdateUPSResponse>(`${this.apiUrl}/EquipmentDetails/SaveUpdateaaETechUPS`, upsData);
   }
 
   /**
@@ -142,9 +400,10 @@ export class EquipmentService {
   /**
    * Update equipment status
    * Equivalent to da.UpdateEquipStatus(UES) in legacy code
+   * Uses the new UpdateEquipStatus API endpoint with PUT method
    */
-  updateEquipStatus(statusData: any): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/UPSReadings/UpdateEquipStatus`, statusData);
+  updateEquipStatus(statusData: UpdateEquipStatus): Observable<{ success: boolean; message: string; rowsAffected?: number; callNbr?: string; equipId?: number; status?: string }> {
+    return this.http.put<{ success: boolean; message: string; rowsAffected?: number; callNbr?: string; equipId?: number; status?: string }>(`${this.apiUrl}/EquipmentDetails/UpdateEquipStatus`, statusData);
   }
 
   /**
@@ -424,6 +683,47 @@ export class EquipmentService {
     };
     
     return this.http.delete<{ success: boolean; message?: string; rowsAffected?: number }>(`${this.apiUrl}/EquipmentDetails/delete`, { body: requestBody });
+  }
+
+  // ========== EQUIPMENT FILTER CURRENTS METHODS ==========
+
+  /**
+   * Get equipment filter currents data
+   * Matches your GetEquipFilterCurrents API endpoint
+   */
+  getEquipFilterCurrents(callNbr: string, equipId: number): Observable<{ success: boolean; message: string; data?: EquipFilterCurrents }> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString());
+    
+    return this.http.get<{ success: boolean; message: string; data?: EquipFilterCurrents }>(`${this.apiUrl}/EquipmentDetails/GetEquipFilterCurrents`, { params });
+  }
+
+  /**
+   * Save or update equipment filter currents data
+   * Matches your SaveUpdateEquipFilterCurrents API endpoint
+   */
+  saveUpdateEquipFilterCurrents(filterCurrentsData: EquipFilterCurrents): Observable<{ success: boolean; message: string; rowsAffected?: number; callNbr?: string; equipId?: number }> {
+    return this.http.post<{ success: boolean; message: string; rowsAffected?: number; callNbr?: string; equipId?: number }>(`${this.apiUrl}/EquipmentDetails/SaveUpdateEquipFilterCurrents`, filterCurrentsData);
+  }
+
+  // ========== JOB SUMMARY SAMPLE METHODS ==========
+
+  /**
+   * Get job summary sample data based on equipment type
+   * Equivalent to GetJobSummarySample API endpoint
+   * Returns different data structures based on equipment type:
+   * - BATTERY: Returns structured BatteryString and BatteryDetails data
+   * - Other types: Returns dynamic data based on equipment-specific tables
+   */
+  getJobSummarySample(request: JobSummarySampleRequest): Observable<{ success: boolean; message: string; data?: JobSummarySampleResponse }> {
+    const params = new HttpParams()
+      .set('callNbr', request.callNbr)
+      .set('equipId', request.equipId.toString())
+      .set('equipType', request.equipType)
+      .set('scheduled', request.scheduled);
+    
+    return this.http.get<{ success: boolean; message: string; data?: JobSummarySampleResponse }>(`${this.apiUrl}/EquipmentDetails/GetJobSummarySample`, { params });
   }
 
 }

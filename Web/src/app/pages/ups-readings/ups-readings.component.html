@@ -13,13 +13,58 @@
       <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
           <h4 class="mb-0">UPS Readings</h4>
-          <button type="button" class="btn btn-outline-secondary" (click)="onGoBack()">
-            <i class="fas fa-arrow-left"></i> Back to Equipment Details
-          </button>
+          <div class="d-flex gap-2">
+            <!-- Job Summary button removed - integration only functionality -->
+            <!-- <button type="button" class="btn btn-outline-info btn-sm d-none" (click)="onViewJobSummarySample()">
+              <i class="fas fa-chart-line"></i> Job Summary Sample
+            </button> -->
+            <button type="button" class="btn btn-outline-secondary" (click)="onGoBack()">
+              <i class="fas fa-arrow-left"></i> Back to Equipment Details
+            </button>
+          </div>
         </div>
       </div>
       <div class="card-body">
-        <h6 class="text-muted">{{ getSummary() }}</h6>
+        <!-- Job summary hidden from UI but kept for integration purposes -->
+        <h6 class="text-muted d-none">{{ getSummary() }}</h6>
+        
+        <!-- Equipment Summary Info (Read-only display) - Hidden from UI but kept for integration purposes -->
+        <div class="row mt-3 d-none" *ngIf="equipmentForm.get('manufacturer')?.value">
+          <div class="col-12">
+            <div class="alert alert-info">
+              <h6 class="mb-2"><strong>Equipment Summary</strong></h6>
+              <div class="row">
+                <div class="col-md-6">
+                  <p class="mb-1"><strong>Make:</strong> {{ equipmentForm.get('manufacturer')?.value || 'POWERWARE' }}</p>
+                  <p class="mb-1"><strong>Model No:</strong> {{ equipmentForm.get('model')?.value || '9315-225' }}</p>
+                  <p class="mb-1"><strong>CTO / Part No:</strong> {{ equipmentForm.get('ctoPartNo')?.value || 'P30002167714104' }}</p>
+                  <p class="mb-1"><strong>Serial No:</strong> {{ equipmentForm.get('serialNo')?.value || 'EB033ZBX02' }}</p>
+                </div>
+                <div class="col-md-6">
+                  <p class="mb-1"><strong>Location:</strong> {{ equipmentForm.get('location')?.value || 'Room A224A, 2nd Floor' }}</p>
+                  <p class="mb-1"><strong>Status:</strong> <span [class]="getStatusClass(equipmentForm.get('status')?.value)">{{ equipmentForm.get('status')?.value || 'Replacement Recommended' }}</span></p>
+                  <p class="mb-1"><strong>Maintenance Bypass:</strong> {{ getMaintenanceBypassText(equipmentForm.get('maintByPass')?.value) || 'External – Make Before Break' }}</p>
+                  <p class="mb-1"><strong>KVA Rating:</strong> {{ equipmentForm.get('kva')?.value || '225.00' }}</p>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-md-6">
+                  <p class="mb-1"><strong>Multi-Module:</strong> {{ getMultiModuleText(equipmentForm.get('multiModule')?.value) || 'N/A' }}</p>
+                  <p class="mb-1"><strong>Parallel Cabinet:</strong> {{ getYesNoText(equipmentForm.get('parallelCabinet')?.value) || 'No' }}</p>
+                </div>
+                <div class="col-md-6">
+                  <p class="mb-1"><strong>SNMP Card Present:</strong> {{ getYesNoText(equipmentForm.get('snmpPresent')?.value) || 'Yes' }}</p>
+                  <p class="mb-1"><strong>UPS Type:</strong> {{ equipmentForm.get('upsType')?.value || 'Normal UPS' }}</p>
+                </div>
+              </div>
+              <div class="row mt-2" *ngIf="equipmentForm.get('dateCode')?.value">
+                <div class="col-12">
+                  <p class="mb-0"><strong>Date Code:</strong> {{ equipmentForm.get('dateCode')?.value }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -40,173 +85,294 @@
                   (click)="showReconciliation = !showReconciliation"
                   [attr.aria-expanded]="showReconciliation">
             <i class="fas" [class.fa-chevron-down]="showReconciliation" [class.fa-chevron-right]="!showReconciliation"></i>
-            Equipment Verification
+            Equipment Verification – UPS
           </button>
         </h5>
       </div>
       <div class="collapse" [class.show]="showReconciliation">
         <div class="card-body">
           <form [formGroup]="equipmentForm">
+            <!-- Row 1: Make, Model No, CTO/Part No -->
             <div class="row">
               <div class="col-md-4">
-                <label class="form-label">Manufacturer *</label>
+                <label class="form-label">Make <span class="text-danger">*</span></label>
                 <select class="form-select" formControlName="manufacturer" 
                         [class.is-invalid]="equipmentForm.get('manufacturer')?.invalid && equipmentForm.get('manufacturer')?.touched">
                   <option value="">Please Select</option>
                   <option *ngFor="let mfg of manufacturers" [value]="mfg.value">{{ mfg.text }}</option>
                 </select>
+                <div class="invalid-feedback" *ngIf="equipmentForm.get('manufacturer')?.invalid && equipmentForm.get('manufacturer')?.touched">
+                  Make is required
+                </div>
+                <!-- Debug info - remove this after testing -->
+                <small class="text-muted" *ngIf="manufacturers && manufacturers.length > 0">
+                  {{ manufacturers.length }} manufacturers loaded
+                </small>
+                <small class="text-danger" *ngIf="!manufacturers || manufacturers.length === 0">
+                  No manufacturers available
+                </small>
               </div>
               <div class="col-md-4">
-                <label class="form-label">KVA *</label>
-                <input type="text" class="form-control" formControlName="kva"
-                       [class.is-invalid]="equipmentForm.get('kva')?.invalid && equipmentForm.get('kva')?.touched">
+                <label class="form-label">Model No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="model"
+                       [class.is-invalid]="equipmentForm.get('model')?.invalid && equipmentForm.get('model')?.touched"
+                       placeholder="e.g., 9315-225">
+                <div class="invalid-feedback" *ngIf="equipmentForm.get('model')?.invalid && equipmentForm.get('model')?.touched">
+                  Model No is required
+                </div>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Multi-Module</label>
-                <select class="form-select" formControlName="multiModule">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
+                <label class="form-label">CTO / Part No</label>
+                <input type="text" class="form-control" formControlName="ctoPartNo"
+                       placeholder="e.g., P30002167714104">
               </div>
             </div>
+
+            <!-- Row 2: Serial No, Location, Status -->
+            <div class="row mt-3">
+              <div class="col-md-4">
+                <label class="form-label">Serial No <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="serialNo"
+                       [class.is-invalid]="equipmentForm.get('serialNo')?.invalid && equipmentForm.get('serialNo')?.touched"
+                       placeholder="e.g., EB033ZBX02">
+                <div class="invalid-feedback" *ngIf="equipmentForm.get('serialNo')?.invalid && equipmentForm.get('serialNo')?.touched">
+                  Serial No is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Location <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" formControlName="location"
+                       [class.is-invalid]="equipmentForm.get('location')?.invalid && equipmentForm.get('location')?.touched"
+                       placeholder="e.g., Room A224A, 2nd Floor">
+                <div class="invalid-feedback" *ngIf="equipmentForm.get('location')?.invalid && equipmentForm.get('location')?.touched">
+                  Location is required
+                </div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Status <span class="text-danger">*</span></label>
+                <select class="form-select" formControlName="status"
+                        [class.is-invalid]="equipmentForm.get('status')?.invalid && equipmentForm.get('status')?.touched">
+                  <option *ngFor="let status of (equipmentStatusOptions.length ? equipmentStatusOptions : statusOptions)" [value]="status.value">{{ status.text }}</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="equipmentForm.get('status')?.invalid && equipmentForm.get('status')?.touched">
+                  Status is required
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Maintenance Bypass, KVA Rating, Multi-Module -->
             <div class="row mt-3">
               <div class="col-md-4">
                 <label class="form-label">Maintenance Bypass</label>
                 <select class="form-select" formControlName="maintByPass">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
+                  <option value="">Please Select</option>
+                  <option *ngFor="let option of maintenanceBypassTypes" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Model *</label>
-                <input type="text" class="form-control" formControlName="model"
-                       [class.is-invalid]="equipmentForm.get('model')?.invalid && equipmentForm.get('model')?.touched">
+                <label class="form-label">KVA Rating <span class="text-danger">*</span></label>
+                <div class="input-group">
+                  <input type="number" class="form-control" formControlName="kva"
+                         [class.is-invalid]="equipmentForm.get('kva')?.invalid && equipmentForm.get('kva')?.touched"
+                         placeholder="e.g., 225.00" step="0.01" min="0">
+                  <span class="input-group-text">KVA</span>
+                </div>
+                <div class="invalid-feedback" *ngIf="equipmentForm.get('kva')?.invalid && equipmentForm.get('kva')?.touched">
+                  KVA Rating is required
+                </div>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Serial No *</label>
-                <input type="text" class="form-control" formControlName="serialNo"
-                       [class.is-invalid]="equipmentForm.get('serialNo')?.invalid && equipmentForm.get('serialNo')?.touched">
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-4">
-                <label class="form-label">Location *</label>
-                <input type="text" class="form-control" formControlName="location"
-                       [class.is-invalid]="equipmentForm.get('location')?.invalid && equipmentForm.get('location')?.touched">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Date Code *</label>
-                <input type="date" class="form-control" formControlName="dateCode"
-                       [class.is-invalid]="equipmentForm.get('dateCode')?.invalid && equipmentForm.get('dateCode')?.touched">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Status *</label>
-                <select class="form-select" formControlName="status">
-                  <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.text }}</option>
+                <label class="form-label">Multi-Module</label>
+                <select class="form-select" formControlName="multiModule">
+                  <option value="">Please Select</option>
+                  <option *ngFor="let option of multiModuleTypes" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
             </div>
+
+            <!-- Row 4: Parallel Cabinet, SNMP Card Present, UPS Type -->
             <div class="row mt-3">
               <div class="col-md-4">
                 <label class="form-label">Parallel Cabinet</label>
                 <select class="form-select" formControlName="parallelCabinet">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
+                  <option value="">Please Select</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                  <option value="N/A">N/A</option>
                 </select>
               </div>
               <div class="col-md-4">
-                <label class="form-label">SNMP Present</label>
+                <label class="form-label">SNMP Card Present</label>
                 <select class="form-select" formControlName="snmpPresent">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
+                  <option value="">Please Select</option>
+                  <option value="Y">Yes</option>
+                  <option value="N">No</option>
+                  <option value="N/A">N/A</option>
                 </select>
               </div>
               <div class="col-md-4">
-                <label class="form-label">Modular UPS</label>
-                <select class="form-select" formControlName="modularUPS">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
+                <label class="form-label">UPS Type</label>
+                <select class="form-select" formControlName="upsType">
+                  <option value="">Please Select</option>
+                  <option *ngFor="let option of upsTypes" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
             </div>
+
+            <!-- Row 5: Date Code -->
             <div class="row mt-3">
-              <div class="col-md-6">
-                <label class="form-label">Other</label>
-                <input type="text" class="form-control" formControlName="other">
+              <div class="col-md-4">
+                <label class="form-label">Date Code</label>
+                <input type="text" class="form-control" formControlName="dateCode"
+                       placeholder="Enter date code (e.g., 2010, 1995)">
+                <small class="form-text text-muted">
+                  Enter the year from equipment manufacture date
+                </small>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-8">
                 <label class="form-label">Status Notes</label>
-                <textarea class="form-control" formControlName="statusNotes" rows="2"></textarea>
+                <textarea class="form-control" formControlName="statusNotes" rows="2"
+                          placeholder="Enter any additional notes about the equipment status"></textarea>
               </div>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
 
-          <!-- Equipment Reconciliation -->
-          <hr class="my-4">
-          <h6>Equipment Reconciliation</h6>
+    <!-- Equipment Reconciliation Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <div class="flex-grow-1">
+            <h5 class="mb-0">
+              <button class="btn btn-link text-decoration-none p-0 fw-bold" 
+                      type="button" 
+                      (click)="showReconciliationDetails = !showReconciliationDetails"
+                      [attr.aria-expanded]="showReconciliationDetails">
+                <i class="fas" [class.fa-chevron-down]="showReconciliationDetails" [class.fa-chevron-right]="!showReconciliationDetails"></i>
+                Equipment Reconciliation
+              </button>
+            </h5>
+          </div>
+          <div class="form-check d-flex align-items-center">
+            <input type="checkbox" 
+                   class="form-check-input me-2" 
+                   formControlName="verified" 
+                   id="verifiedHeader"
+                   style="transform: scale(1.4); accent-color: #28a745;">
+            <label class="form-check-label fw-bold mb-0" 
+                   [class]="reconciliationForm.get('verified')?.value ? 'text-success' : 'text-dark'" 
+                   for="verifiedHeader"
+                   style="cursor: pointer; font-size: 1.1rem;">
+              <i class="fas me-1" 
+                 [class]="reconciliationForm.get('verified')?.value ? 'fa-check-circle text-success' : 'fa-circle text-secondary'"
+                 style="font-size: 1.2rem;"></i>
+              <span [class]="reconciliationForm.get('verified')?.value ? 'text-success fw-bold' : 'text-dark fw-bold'">
+                Verified
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="collapse" [class.show]="showReconciliationDetails">
+        <div class="card-body">
+          <p class="text-muted small mb-3">
+            <i class="fas fa-info-circle me-1"></i>
+            Verify that the current equipment values match what is physically observed. 
+            Select "Yes" if correct, "No" if incorrect, or "N/A" if not applicable.
+          </p>
           <form [formGroup]="reconciliationForm">
             <div class="row">
               <div class="col-md-3">
                 <label class="form-label">Model</label>
-                <input type="text" class="form-control" formControlName="model">
+                <input type="text" class="form-control" formControlName="model" 
+                       [class]="getReconciliationFieldClass('modelCorrect', 'model', 'actModel')"
+                       readonly>
               </div>
               <div class="col-md-3">
-                <label class="form-label">Model Correct</label>
+                <label class="form-label">Is this correct?</label>
                 <select class="form-select" formControlName="modelCorrect">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
+                  <option value="">Please Select</option>
+                  <option *ngFor="let option of yesNoNAOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Actual Model</label>
-                <input type="text" class="form-control" formControlName="actModel">
+              <div class="col-md-5">
+                <label class="form-label">Actual Model <span class="text-muted">(if different)</span></label>
+                <input type="text" class="form-control" formControlName="actModel" 
+                       [class]="getReconciliationFieldClass('modelCorrect', 'model', 'actModel')"
+                       placeholder="Enter actual model if different from current">
+              </div>
+              <div class="col-md-1 d-flex align-items-end">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" 
+                         [checked]="reconciliationForm.get('modelCorrect')?.value === 'Y'" 
+                         [disabled]="true" id="modelVerified">
+                  <label class="form-check-label text-muted" for="modelVerified">
+                    <small>✓</small>
+                  </label>
+                </div>
               </div>
             </div>
             <div class="row mt-3">
               <div class="col-md-3">
                 <label class="form-label">Serial No</label>
-                <input type="text" class="form-control" formControlName="serialNo">
+                <input type="text" class="form-control" formControlName="serialNo" 
+                       [class]="getReconciliationFieldClass('serialNoCorrect', 'serialNo', 'actSerialNo')"
+                       readonly>
               </div>
               <div class="col-md-3">
-                <label class="form-label">Serial No Correct</label>
+                <label class="form-label">Is this correct?</label>
                 <select class="form-select" formControlName="serialNoCorrect">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
+                  <option value="">Please Select</option>
+                  <option *ngFor="let option of yesNoNAOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Actual Serial No</label>
-                <input type="text" class="form-control" formControlName="actSerialNo">
+              <div class="col-md-5">
+                <label class="form-label">Actual Serial No <span class="text-muted">(if different)</span></label>
+                <input type="text" class="form-control" formControlName="actSerialNo" 
+                       [class]="getReconciliationFieldClass('serialNoCorrect', 'serialNo', 'actSerialNo')"
+                       placeholder="Enter actual serial number if different">
+              </div>
+              <div class="col-md-1 d-flex align-items-end">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" 
+                         [checked]="reconciliationForm.get('serialNoCorrect')?.value === 'Y'" 
+                         [disabled]="true" id="serialVerified">
+                  <label class="form-check-label text-muted" for="serialVerified">
+                    <small>✓</small>
+                  </label>
+                </div>
               </div>
             </div>
             <div class="row mt-3">
               <div class="col-md-3">
                 <label class="form-label">KVA Size</label>
-                <input type="text" class="form-control" formControlName="kvaSize">
+                <input type="text" class="form-control" formControlName="kvaSize" 
+                       [class]="getReconciliationFieldClass('kvaCorrect', 'kvaSize', 'actKVA')"
+                       readonly>
               </div>
               <div class="col-md-3">
-                <label class="form-label">KVA Correct</label>
+                <label class="form-label">Is this correct?</label>
                 <select class="form-select" formControlName="kvaCorrect">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
+                  <option value="">Please Select</option>
+                  <option *ngFor="let option of yesNoNAOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
-              <div class="col-md-6">
-                <label class="form-label">Actual KVA</label>
-                <input type="text" class="form-control" formControlName="actKVA">
+              <div class="col-md-5">
+                <label class="form-label">Actual KVA <span class="text-muted">(if different)</span></label>
+                <input type="text" class="form-control" formControlName="actKVA" 
+                       [class]="getReconciliationFieldClass('kvaCorrect', 'kvaSize', 'actKVA')"
+                       placeholder="Enter actual KVA if different">
               </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-3">
-                <label class="form-label">Total Equipment</label>
-                <input type="text" class="form-control" formControlName="totalEquips">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Total Equipment Correct</label>
-                <select class="form-select" formControlName="totalEquipsCorrect">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Actual Total Equipment</label>
-                <input type="text" class="form-control" formControlName="actTotalEquips">
-              </div>
-              <div class="col-md-2">
-                <div class="form-check mt-4">
-                  <input type="checkbox" class="form-check-input" formControlName="verified" id="verified">
-                  <label class="form-check-label" for="verified">Verified</label>
+              <div class="col-md-1 d-flex align-items-end">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" 
+                         [checked]="reconciliationForm.get('kvaCorrect')?.value === 'Y'" 
+                         [disabled]="true" id="kvaVerified">
+                  <label class="form-check-label text-muted" for="kvaVerified">
+                    <small>✓</small>
+                  </label>
                 </div>
               </div>
             </div>
@@ -232,48 +398,50 @@
         <div class="card-body">
           <form [formGroup]="measurementsForm">
             <div class="row">
-              <div class="col-md-3">
-                <label class="form-label">Input Power</label>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Verifying that the UPS is properly synchronized to INPUT power and operating properly:</label>
                 <select class="form-select" formControlName="inputPower">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+                  <option *ngFor="let option of measurementOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">LCD</label>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Verifying LCD backlight and contrast controls are functional and all display pixels are visible:</label>
                 <select class="form-select" formControlName="lcd">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Load KVA</label>
-                <select class="form-select" formControlName="loadKVA">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">3 Phase</label>
-                <select class="form-select" formControlName="threePhase">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+                  <option *ngFor="let option of measurementOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
             </div>
             <div class="row mt-3">
-              <div class="col-md-3">
-                <label class="form-label">Normal</label>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">% load (KVA) on UPS is not overloaded > 85%:</label>
+                <select class="form-select" formControlName="loadKVA">
+                  <option *ngFor="let option of measurementOptions" [value]="option.value">{{ option.text }}</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Are all 3 input currents within 20% balance?</label>
+                <select class="form-select" formControlName="threePhase">
+                  <option *ngFor="let option of measurementOptions" [value]="option.value">{{ option.text }}</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mt-3">
+              <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">UPS is in normal operational mode:</label>
                 <select class="form-select" formControlName="normal">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+                  <option *ngFor="let option of measurementOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">Calibration</label>
+              <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Verify system calibration:</label>
                 <select class="form-select" formControlName="caliberation">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+                  <option *ngFor="let option of measurementOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">End of Life</label>
+              <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">UPS date code is < 25 years (End of Life):</label>
                 <select class="form-select" formControlName="endOfLife">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+                  <option *ngFor="let option of measurementOptions" [value]="option.value">{{ option.text }}</option>
                 </select>
               </div>
             </div>
@@ -282,7 +450,7 @@
       </div>
     </div>
 
-    <!-- Visual/Mechanical Section -->
+    <!-- Visual and Mechanical Verification Section -->
     <div class="card mb-4">
       <div class="card-header">
         <h5 class="mb-0">
@@ -291,63 +459,142 @@
                   (click)="showVisual = !showVisual"
                   [attr.aria-expanded]="showVisual">
             <i class="fas" [class.fa-chevron-down]="showVisual" [class.fa-chevron-right]="!showVisual"></i>
-            Visual/Mechanical
+            Visual and Mechanical Verification
           </button>
         </h5>
       </div>
       <div class="collapse" [class.show]="showVisual">
         <div class="card-body">
           <form [formGroup]="visualForm">
-            <div class="row">
-              <div class="col-md-3">
-                <label class="form-label">No Alarms</label>
-                <select class="form-select" formControlName="noAlarms">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Tightness</label>
-                <select class="form-select" formControlName="tightness">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Broken</label>
-                <select class="form-select" formControlName="broken">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Vacuum</label>
-                <select class="form-select" formControlName="vacuum">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
+            <!-- Checklist Items -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">1. UPS on-line without alarms:</label>
+                  <select class="form-select" formControlName="upsOnline">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">2. Check all nuts, bolts, screws and connections for tightness:</label>
+                  <select class="form-select" formControlName="checkConnections">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">3. Inspect for broken, damaged, or burned components as well as cables:</label>
+                  <select class="form-select" formControlName="inspectDamage">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">4. Vacuum interior of UPS and wipe down exterior:</label>
+                  <select class="form-select" formControlName="vacuumClean">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">5. Verify there is a cover on the EPO switch:</label>
+                  <select class="form-select" formControlName="epoSwitch">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">6. Verify all cooling fans are operating without noise:</label>
+                  <select class="form-select" formControlName="coolingFans">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">7. Fans are less than 7 years old:</label>
+                  <select class="form-select" formControlName="fansAge">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">8. Inspect and clean or replace UPS air filters:</label>
+                  <select class="form-select" formControlName="airFilters">
+                    <option *ngFor="let option of airFilterOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
               </div>
             </div>
-            <div class="row mt-3">
-              <div class="col-md-3">
-                <label class="form-label">EPO</label>
-                <select class="form-select" formControlName="epo">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
+            
+            <!-- Air Filter Details Section -->
+            <div *ngIf="showAirFilterDetails" class="row mb-4">
+              <div class="col-12">
+                <h6 class="fw-bold mb-3">Air Filter Details</h6>
+                
+                <!-- Filter Set 1 -->
+                <div class="card mb-3">
+                  <div class="card-header">
+                    <h6 class="mb-0">Filter Set 1</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Length:</label>
+                        <input type="text" class="form-control" formControlName="filterSet1Length" readonly>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Width:</label>
+                        <input type="text" class="form-control" formControlName="filterSet1Width" readonly>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Thickness:</label>
+                        <input type="text" class="form-control" formControlName="filterSet1Thickness" readonly>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Quantity:</label>
+                        <input type="text" class="form-control" formControlName="filterSet1Quantity" readonly>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Filter Set 2 (Optional) -->
+                <div class="card">
+                  <div class="card-header">
+                    <h6 class="mb-0">Filter Set 2 (Optional)</h6>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Length:</label>
+                        <input type="text" class="form-control" formControlName="filterSet2Length" readonly>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Width:</label>
+                        <input type="text" class="form-control" formControlName="filterSet2Width" readonly>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Thickness:</label>
+                        <input type="text" class="form-control" formControlName="filterSet2Thickness" readonly>
+                      </div>
+                      <div class="col-md-3 mb-3">
+                        <label class="form-label">Quantity:</label>
+                        <input type="text" class="form-control" formControlName="filterSet2Quantity" readonly>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div class="col-md-3">
-                <label class="form-label">Noise</label>
-                <select class="form-select" formControlName="noise">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Fans Age</label>
-                <select class="form-select" formControlName="fansAge">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Replace Filters</label>
-                <select class="form-select" formControlName="replaceFilters">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
+            </div>
+            
+            <!-- Comments Section -->
+            <div class="row">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Visual and Mechanical Verification Comments:</label>
+                  <textarea class="form-control" rows="3" formControlName="visualComments" placeholder="Enter any additional comments or notes..."></textarea>
+                </div>
               </div>
             </div>
           </form>
@@ -355,7 +602,7 @@
       </div>
     </div>
 
-    <!-- Environment Section -->
+    <!-- Environment Verification Section -->
     <div class="card mb-4">
       <div class="card-header">
         <h5 class="mb-0">
@@ -364,427 +611,665 @@
                   (click)="showEnvironment = !showEnvironment"
                   [attr.aria-expanded]="showEnvironment">
             <i class="fas" [class.fa-chevron-down]="showEnvironment" [class.fa-chevron-right]="!showEnvironment"></i>
-            Environment
+            Environment Verification
           </button>
         </h5>
       </div>
       <div class="collapse" [class.show]="showEnvironment">
         <div class="card-body">
           <form [formGroup]="environmentForm">
-            <div class="row">
-              <div class="col-md-3">
-                <label class="form-label">Room Temperature</label>
-                <select class="form-select" formControlName="roomTemp">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Safety</label>
-                <select class="form-select" formControlName="safety">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Clean</label>
-                <select class="form-select" formControlName="clean">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Space</label>
-                <select class="form-select" formControlName="space">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-3">
-                <label class="form-label">Circuit</label>
-                <select class="form-select" formControlName="circuit">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Input Power Readings Section -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <button class="btn btn-link text-decoration-none p-0 fw-bold" 
-                  type="button" 
-                  (click)="showInputReadings = !showInputReadings"
-                  [attr.aria-expanded]="showInputReadings">
-            <i class="fas" [class.fa-chevron-down]="showInputReadings" [class.fa-chevron-right]="!showInputReadings"></i>
-            Input Power Readings
-          </button>
-        </h5>
-      </div>
-      <div class="collapse" [class.show]="showInputReadings">
-        <div class="card-body">
-          <form [formGroup]="inputReadingsForm">
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label class="form-label">Voltage Configuration</label>
-                <select class="form-select" formControlName="configuration" 
-                        (change)="onVoltageConfigurationChange('input', $any($event.target).value)">
-                  <option *ngFor="let config of voltageConfigurations" [value]="config.id">{{ config.name }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Dynamic voltage fields based on configuration -->
-            <div *ngIf="inputConfig">
-              <!-- Single Phase Configuration -->
-              <div *ngIf="inputConfig.phaseCount === 1" class="row">
-                <div class="col-md-2">
-                  <label class="form-label">Voltage A</label>
-                  <input type="number" class="form-control" formControlName="voltA" step="0.01">
-                </div>
-                <div class="col-md-2">
-                  <select class="form-select" formControlName="voltA_PF">
-                    <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+            <!-- Environment Checklist Items -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">1. UPS room temperature / ventilation is acceptable:</label>
+                  <select class="form-select" formControlName="roomTempVentilation">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
                   </select>
                 </div>
-                <div class="col-md-2">
-                  <label class="form-label">Current A</label>
-                  <input type="number" class="form-control" formControlName="currA" step="0.01">
-                </div>
-                <div class="col-md-2">
-                  <select class="form-select" formControlName="currA_PF">
-                    <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">2. Safety equipment is present:</label>
+                  <select class="form-select" formControlName="safetyEquipment">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
                   </select>
                 </div>
-                <div class="col-md-2">
-                  <label class="form-label">Frequency</label>
-                  <input type="number" class="form-control" formControlName="freq" step="0.01">
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">3. Any hostile environment (water, heat, dust, debris, burn marks, or tampering by non-DC Group employee):</label>
+                  <select class="form-select" formControlName="hostileEnvironment">
+                    <option *ngFor="let option of yesNoNAOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
                 </div>
-                <div class="col-md-2">
-                  <select class="form-select" formControlName="freq_PF">
-                    <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">4. Adequate service space is available:</label>
+                  <select class="form-select" formControlName="serviceSpace">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
+                  </select>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">5. Circuit breakers are labeled accurately:</label>
+                  <select class="form-select" formControlName="circuitBreakers">
+                    <option *ngFor="let option of visualMechanicalOptions" [value]="option.value">{{ option.text }}</option>
                   </select>
                 </div>
               </div>
-
-              <!-- Two Phase Configuration -->
-              <div *ngIf="inputConfig.phaseCount === 2">
-                <div class="row">
-                  <div class="col-md-2">
-                    <label class="form-label">Voltage A</label>
-                    <input type="number" class="form-control" formControlName="voltA" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="voltA_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Current A</label>
-                    <input type="number" class="form-control" formControlName="currA" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="currA_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Frequency</label>
-                    <input type="number" class="form-control" formControlName="freq" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="freq_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="row mt-3">
-                  <div class="col-md-2">
-                    <label class="form-label">Voltage B</label>
-                    <input type="number" class="form-control" formControlName="voltB" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="voltB_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Current B</label>
-                    <input type="number" class="form-control" formControlName="currB" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="currB_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Three Phase Configuration -->
-              <div *ngIf="inputConfig.phaseCount === 3">
-                <div class="row">
-                  <div class="col-md-2">
-                    <label class="form-label">Voltage A to B</label>
-                    <input type="number" class="form-control" formControlName="voltA" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="voltA_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Current A</label>
-                    <input type="number" class="form-control" formControlName="currA" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="currA_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Frequency</label>
-                    <input type="number" class="form-control" formControlName="freq" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="freq_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="row mt-3">
-                  <div class="col-md-2">
-                    <label class="form-label">Voltage B to C</label>
-                    <input type="number" class="form-control" formControlName="voltB" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="voltB_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Current B</label>
-                    <input type="number" class="form-control" formControlName="currB" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="currB_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                  <div class="col-md-2">
-                    <label class="form-label">Voltage C to A</label>
-                    <input type="number" class="form-control" formControlName="voltC" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="voltC_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="row mt-3">
-                  <div class="col-md-2">
-                    <label class="form-label">Current C</label>
-                    <input type="number" class="form-control" formControlName="currC" step="0.01">
-                  </div>
-                  <div class="col-md-2">
-                    <select class="form-select" formControlName="currC_PF">
-                      <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Phase to Neutral calculations for applicable configurations -->
-                <div *ngIf="shouldShowPhaseToNeutral(inputConfig)" class="row mt-3">
-                  <div class="col-12">
-                    <h6 class="text-muted">Phase to Neutral Voltages (Calculated)</h6>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">A to N</label>
-                    <input type="text" class="form-control" 
-                           [value]="getPhaseToNeutralVoltage(inputReadingsForm.get('voltA')?.value)" 
-                           readonly>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">B to N</label>
-                    <input type="text" class="form-control" 
-                           [value]="getPhaseToNeutralVoltage(inputReadingsForm.get('voltB')?.value)" 
-                           readonly>
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">C to N</label>
-                    <input type="text" class="form-control" 
-                           [value]="getPhaseToNeutralVoltage(inputReadingsForm.get('voltC')?.value)" 
-                           readonly>
-                  </div>
-                </div>
-              </div>
             </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bypass Power Readings Section -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <button class="btn btn-link text-decoration-none p-0 fw-bold" 
-                  type="button" 
-                  (click)="showBypassReadings = !showBypassReadings"
-                  [attr.aria-expanded]="showBypassReadings">
-            <i class="fas" [class.fa-chevron-down]="showBypassReadings" [class.fa-chevron-right]="!showBypassReadings"></i>
-            Bypass Power Readings
-          </button>
-        </h5>
-      </div>
-      <div class="collapse" [class.show]="showBypassReadings">
-        <div class="card-body">
-          <form [formGroup]="bypassReadingsForm">
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label class="form-label">Voltage Configuration</label>
-                <select class="form-select" formControlName="configuration" 
-                        (change)="onVoltageConfigurationChange('bypass', $any($event.target).value)">
-                  <option *ngFor="let config of voltageConfigurations" [value]="config.id">{{ config.name }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Similar voltage configuration structure as Input readings -->
-            <!-- (Implementation similar to Input section above) -->
             
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Output Power Readings Section -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <button class="btn btn-link text-decoration-none p-0 fw-bold" 
-                  type="button" 
-                  (click)="showOutputReadings = !showOutputReadings"
-                  [attr.aria-expanded]="showOutputReadings">
-            <i class="fas" [class.fa-chevron-down]="showOutputReadings" [class.fa-chevron-right]="!showOutputReadings"></i>
-            Output Power Readings
-          </button>
-        </h5>
-      </div>
-      <div class="collapse" [class.show]="showOutputReadings">
-        <div class="card-body">
-          <form [formGroup]="outputReadingsForm">
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label class="form-label">Voltage Configuration</label>
-                <select class="form-select" formControlName="configuration" 
-                        (change)="onVoltageConfigurationChange('output', $any($event.target).value)">
-                  <option *ngFor="let config of voltageConfigurations" [value]="config.id">{{ config.name }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Similar voltage configuration structure as Input readings, plus Load fields -->
-            <!-- (Implementation similar to Input section above, with additional Load fields) -->
-            
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Rectifier Readings Section -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <button class="btn btn-link text-decoration-none p-0 fw-bold" 
-                  type="button" 
-                  (click)="showRectifier = !showRectifier"
-                  [attr.aria-expanded]="showRectifier">
-            <i class="fas" [class.fa-chevron-down]="showRectifier" [class.fa-chevron-right]="!showRectifier"></i>
-            Rectifier Readings
-          </button>
-        </h5>
-      </div>
-      <div class="collapse" [class.show]="showRectifier">
-        <div class="card-body">
-          <form [formGroup]="rectifierForm">
+            <!-- Action Buttons -->
             <div class="row">
-              <div class="col-md-2">
-                <label class="form-label">Float Voltage</label>
-                <select class="form-select" formControlName="floatVolt_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">DC Voltage</label>
-                <input type="number" class="form-control" formControlName="dcVoltage" step="0.01">
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" formControlName="dcVoltage_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">AC Ripple %</label>
-                <input type="number" class="form-control" formControlName="acRipple" step="0.01">
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" formControlName="acRipple_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-2">
-                <label class="form-label">DC Current</label>
-                <input type="number" class="form-control" formControlName="dcCurrent" step="0.01">
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" formControlName="dcCurrent_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">AC Ripple Volt</label>
-                <input type="number" class="form-control" formControlName="acRippleVolt" step="0.01">
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" formControlName="acRippleVolt_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Pos to GND</label>
-                <input type="number" class="form-control" formControlName="posToGND" step="0.01">
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" formControlName="posToGND_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-2">
-                <label class="form-label">AC Ripple Curr</label>
-                <input type="number" class="form-control" formControlName="acRippleCurr" step="0.01">
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" formControlName="acRippleCurr_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Neg to GND</label>
-                <input type="number" class="form-control" formControlName="negToGND" step="0.01">
-              </div>
-              <div class="col-md-2">
-                <select class="form-select" formControlName="negToGND_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
+              <div class="col-12">
+                <div class="d-flex gap-2 justify-content-end">
+                  <button type="button" class="btn btn-outline-primary" (click)="saveDraft()">
+                    <i class="fas fa-save me-2"></i>Save Draft
+                  </button>
+                  <button type="button" class="btn btn-primary" (click)="saveUPS()">
+                    <i class="fas fa-check me-2"></i>Save UPS
+                  </button>
+                </div>
               </div>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Power Verification Section -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <button class="btn btn-link text-decoration-none p-0 fw-bold" 
+                  type="button" 
+                  (click)="showPowerVerification = !showPowerVerification"
+                  [attr.aria-expanded]="showPowerVerification">
+            <i class="fas" [class.fa-chevron-down]="showPowerVerification" [class.fa-chevron-right]="!showPowerVerification"></i>
+            Power Verification
+          </button>
+        </h5>
+      </div>
+      <div class="collapse" [class.show]="showPowerVerification">
+        <div class="card-body">
+          
+          <!-- Input Section -->
+          <div class="mb-4">
+            <form [formGroup]="inputReadingsForm">
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <label class="form-label fw-bold text-primary">Input:</label>
+                  <select class="form-select" formControlName="configuration" 
+                          (change)="onVoltageConfigurationChange('input', $any($event.target).value)">
+                    <option value="">Select</option>
+                    <option *ngFor="let config of voltageConfigurations" [value]="config.id">{{ config.name }}</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" formControlName="inputFilterCurrent" id="inputFilterCurrent">
+                    <label class="form-check-label text-success" for="inputFilterCurrent">
+                      Input Filter Current
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" formControlName="inputThdPercent" id="inputThdPercent">
+                    <label class="form-check-label text-success" for="inputThdPercent">
+                      Input THD %
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Input voltage readings in compact table format -->
+              <div *ngIf="inputConfig" class="row">
+                <div class="col-12">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <!-- Single Phase Headers -->
+                        <th *ngIf="inputConfig.phaseCount === 1">Voltage A</th>
+                        <th *ngIf="inputConfig.phaseCount === 1">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 1">Current A</th>
+                        <th *ngIf="inputConfig.phaseCount === 1">Status</th>
+                        
+                        <!-- Two Phase Headers -->
+                        <th *ngIf="inputConfig.phaseCount === 2">Voltage A</th>
+                        <th *ngIf="inputConfig.phaseCount === 2">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 2">Current A</th>
+                        <th *ngIf="inputConfig.phaseCount === 2">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 2">Voltage B</th>
+                        <th *ngIf="inputConfig.phaseCount === 2">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 2">Current B</th>
+                        <th *ngIf="inputConfig.phaseCount === 2">Status</th>
+                        
+                        <!-- Three Phase Headers -->
+                        <th *ngIf="inputConfig.phaseCount === 3">Voltage A-B</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Current A</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Voltage B-C</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Current B</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Voltage C-A</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Current C</th>
+                        <th *ngIf="inputConfig.phaseCount === 3">Status</th>
+                        
+                        <th>Frequency</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <!-- Single Phase Fields -->
+                        <td *ngIf="inputConfig.phaseCount === 1">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltA" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 1">
+                          <select class="form-select form-select-sm" formControlName="voltA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 1">
+                          <input type="number" class="form-control form-control-sm" formControlName="currA" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 1">
+                          <select class="form-select form-select-sm" formControlName="currA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <!-- Two Phase Fields -->
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltA" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="voltA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="currA" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="currA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltB" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="voltB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="currB" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="currB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <!-- Three Phase Fields -->
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltA" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="voltA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="currA" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="currA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltB" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="voltB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="currB" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="currB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltC" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="voltC_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="currC" step="0.01">
+                        </td>
+                        <td *ngIf="inputConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="currC_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <!-- Frequency (common to all) -->
+                        <td>
+                          <input type="number" class="form-control form-control-sm" formControlName="freq" step="0.01">
+                        </td>
+                        <td>
+                          <select class="form-select form-select-sm" formControlName="freq_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- By-Pass Section -->
+          <div class="mb-4">
+            <form [formGroup]="bypassReadingsForm">
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <label class="form-label fw-bold text-warning">By-Pass:</label>
+                  <select class="form-select" formControlName="configuration" 
+                          (change)="onVoltageConfigurationChange('bypass', $any($event.target).value)">
+                    <option value="">Select</option>
+                    <option *ngFor="let config of voltageConfigurations" [value]="config.id">{{ config.name }}</option>
+                  </select>
+                </div>
+              </div>
+              <!-- Similar table structure for bypass readings -->
+              <div *ngIf="bypassConfig" class="row">
+                <div class="col-12">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <!-- Single Phase Headers -->
+                        <th *ngIf="bypassConfig.phaseCount === 1">Voltage A</th>
+                        <th *ngIf="bypassConfig.phaseCount === 1">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 1">Current A</th>
+                        <th *ngIf="bypassConfig.phaseCount === 1">Status</th>
+                        
+                        <!-- Two Phase Headers -->
+                        <th *ngIf="bypassConfig.phaseCount === 2">Voltage A</th>
+                        <th *ngIf="bypassConfig.phaseCount === 2">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 2">Current A</th>
+                        <th *ngIf="bypassConfig.phaseCount === 2">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 2">Voltage B</th>
+                        <th *ngIf="bypassConfig.phaseCount === 2">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 2">Current B</th>
+                        <th *ngIf="bypassConfig.phaseCount === 2">Status</th>
+                        
+                        <!-- Three Phase Headers -->
+                        <th *ngIf="bypassConfig.phaseCount === 3">Voltage A-B</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Current A</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Voltage B-C</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Current B</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Voltage C-A</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Status</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Current C</th>
+                        <th *ngIf="bypassConfig.phaseCount === 3">Status</th>
+                        
+                        <th>Frequency</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <!-- Single Phase Fields -->
+                        <td *ngIf="bypassConfig.phaseCount === 1">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltA" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 1">
+                          <select class="form-select form-select-sm" formControlName="voltA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 1">
+                          <input type="number" class="form-control form-control-sm" formControlName="currA" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 1">
+                          <select class="form-select form-select-sm" formControlName="currA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <!-- Two Phase Fields -->
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltA" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="voltA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="currA" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="currA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltB" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="voltB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="currB" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 2">
+                          <select class="form-select form-select-sm" formControlName="currB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <!-- Three Phase Fields -->
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltA" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="voltA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="currA" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="currA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltB" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="voltB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="currB" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="currB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltC" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="voltC_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="currC" step="0.01">
+                        </td>
+                        <td *ngIf="bypassConfig.phaseCount === 3">
+                          <select class="form-select form-select-sm" formControlName="currC_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <!-- Frequency (common to all) -->
+                        <td>
+                          <input type="number" class="form-control form-control-sm" formControlName="freq" step="0.01">
+                        </td>
+                        <td>
+                          <select class="form-select form-select-sm" formControlName="freq_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Output Section -->
+          <div class="mb-4">
+            <form [formGroup]="outputReadingsForm">
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <label class="form-label fw-bold text-success">Output:</label>
+                  <select class="form-select" formControlName="configuration" 
+                          (change)="onVoltageConfigurationChange('output', $any($event.target).value)">
+                    <option value="">Select</option>
+                    <option *ngFor="let config of voltageConfigurations" [value]="config.id">{{ config.name }}</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" formControlName="outputFilterCurrent" id="outputFilterCurrent">
+                    <label class="form-check-label text-success" for="outputFilterCurrent">
+                      Output Filter Current
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" formControlName="outputThdPercent" id="outputThdPercent">
+                    <label class="form-check-label text-success" for="outputThdPercent">
+                      Output THD %
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Output voltage readings with Load fields -->
+              <div *ngIf="outputConfig" class="row">
+                <div class="col-12">
+                  <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                      <tr>
+                        <th *ngIf="outputConfig.phaseCount >= 1">Voltage A-B</th>
+                        <th *ngIf="outputConfig.phaseCount >= 1">Status</th>
+                        <th *ngIf="outputConfig.phaseCount >= 1">Current A</th>
+                        <th *ngIf="outputConfig.phaseCount >= 1">Status</th>
+                        <th *ngIf="outputConfig.phaseCount >= 1">Load(%) A</th>
+                        <th *ngIf="outputConfig.phaseCount >= 1">Status</th>
+                        <th *ngIf="outputConfig.phaseCount >= 2">Current B</th>
+                        <th *ngIf="outputConfig.phaseCount >= 2">Status</th>
+                        <th *ngIf="outputConfig.phaseCount >= 2">Load(%) B</th>
+                        <th *ngIf="outputConfig.phaseCount >= 2">Status</th>
+                        <th *ngIf="outputConfig.phaseCount >= 3">Current C</th>
+                        <th *ngIf="outputConfig.phaseCount >= 3">Status</th>
+                        <th>Frequency</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td *ngIf="outputConfig.phaseCount >= 1">
+                          <input type="number" class="form-control form-control-sm" formControlName="voltA" step="0.01">
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 1">
+                          <select class="form-select form-select-sm" formControlName="voltA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 1">
+                          <input type="number" class="form-control form-control-sm" formControlName="currA" step="0.01">
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 1">
+                          <select class="form-select form-select-sm" formControlName="currA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 1">
+                          <input type="number" class="form-control form-control-sm" formControlName="loadA" step="0.01">
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 1">
+                          <select class="form-select form-select-sm" formControlName="loadA_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="currB" step="0.01">
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 2">
+                          <select class="form-select form-select-sm" formControlName="currB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 2">
+                          <input type="number" class="form-control form-control-sm" formControlName="loadB" step="0.01">
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 2">
+                          <select class="form-select form-select-sm" formControlName="loadB_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 3">
+                          <input type="number" class="form-control form-control-sm" formControlName="currC" step="0.01">
+                        </td>
+                        <td *ngIf="outputConfig.phaseCount >= 3">
+                          <select class="form-select form-select-sm" formControlName="currC_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <!-- Frequency (common to all) -->
+                        <td>
+                          <input type="number" class="form-control form-control-sm" formControlName="freq" step="0.01">
+                        </td>
+                        <td>
+                          <select class="form-select form-select-sm" formControlName="freq_PF">
+                            <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                          </select>
+                        </td>
+                        
+                        <td>
+                          <input type="number" class="form-control form-control-sm" formControlName="totalLoad" step="0.01">
+                        </td>
+                        <td>
+                          <button type="button" class="btn btn-primary btn-sm" (click)="calculateTotalLoad()">
+                            Calculate
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Rectifier Section -->
+          <div class="mb-4">
+            <div class="row mb-3">
+              <div class="col-12">
+                <label class="form-label fw-bold text-info">Rect:</label>
+                <small class="text-muted ms-2">Verify correct float voltage settings</small>
+              </div>
+            </div>
+            <form [formGroup]="rectifierForm">
+              <table class="table table-sm table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>DC Float Voltage</th>
+                    <th>Status</th>
+                    <th>AC Ripple Voltage</th>
+                    <th>Status</th>
+                    <th>DC Current</th>
+                    <th>Status</th>
+                    <th>POS to GND</th>
+                    <th>Status</th>
+                    <th>NEG to GND</th>
+                    <th>Status</th>
+                    <th>AC Ripple Curr</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="dcFloatVoltage" step="0.01">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="floatVolt_PF">
+                        <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="acRippleVolt" step="0.01">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="acRippleVolt_PF">
+                        <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="dcCurrent" step="0.01">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="dcCurrent_PF">
+                        <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="posToGND" step="0.01">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="posToGND_PF">
+                        <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="negToGND" step="0.01">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="negToGND_PF">
+                        <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" class="form-control form-control-sm" formControlName="acRippleCurr" step="0.01">
+                    </td>
+                    <td>
+                      <select class="form-select form-select-sm" formControlName="acRippleCurr_PF">
+                        <option *ngFor="let option of powerVerificationOptions" [value]="option.value">{{ option.text }}</option>
+                      </select>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </form>
+          </div>
+
         </div>
       </div>
     </div>
@@ -805,80 +1290,107 @@
       <div class="collapse" [class.show]="showCapacitor">
         <div class="card-body">
           <form [formGroup]="capacitorForm">
-            <div class="row">
-              <div class="col-md-2">
-                <label class="form-label">DC Caps Leak</label>
-                <select class="form-select" formControlName="dcCaps_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">DC Caps Age</label>
-                <select class="form-select" formControlName="dcCapsAge_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">DC Caps Year</label>
-                <input type="number" class="form-control" formControlName="dcCapsAge">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">AC Input Caps Leak</label>
-                <select class="form-select" formControlName="acInputCaps_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">AC Input Caps Age</label>
-                <select class="form-select" formControlName="acInputCapsAge_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">AC Input Year</label>
-                <input type="number" class="form-control" formControlName="acInputCapsAge">
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-2">
-                <label class="form-label">AC Output Caps Leak</label>
-                <select class="form-select" formControlName="acOutputCaps_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">AC Output Caps Age</label>
-                <select class="form-select" formControlName="acOutputCapsAge_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">AC Output Year</label>
-                <input type="number" class="form-control" formControlName="acOutputCapsAge">
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Comm Caps Leak</label>
-                <select class="form-select" formControlName="commCaps_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Comm Caps Age</label>
-                <select class="form-select" formControlName="commCapsAge_PF">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label class="form-label">Comm Year</label>
-                <input type="number" class="form-control" formControlName="commCapsAge">
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-4">
-                <label class="form-label">Fans Year</label>
-                <input type="number" class="form-control" formControlName="fansYear">
-              </div>
-            </div>
+            <!-- Replicating legacy table structure for better alignment -->
+            <table class="table table-borderless">
+              <tbody>
+                <!-- Row 1: DC Caps -->
+                <tr>
+                  <td style="width: 300px;">
+                    <span class="form-label fw-bold">DC Caps Leaking/ Swelling:</span>
+                  </td>
+                  <td style="width: 100px; text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="dcCaps_PF" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                  <td style="width: 200px; text-align: left; padding-left: 20px;">
+                    <span class="form-label fw-bold">DC Caps Year:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <input type="text" class="form-control form-control-sm" formControlName="dcCapsAge" 
+                           maxlength="4" style="width: 50px;" placeholder="2017">
+                  </td>
+                </tr>
+                
+                <!-- Row 2: AC Input Caps -->
+                <tr>
+                  <td>
+                    <span class="form-label fw-bold">AC Input Caps Leaking/Swelling:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="acInputCaps_PF" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                  <td style="text-align: left; padding-left: 20px;">
+                    <span class="form-label fw-bold">AC Input Caps Year:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <input type="text" class="form-control form-control-sm" formControlName="acInputCapsAge" 
+                           maxlength="4" style="width: 50px;" placeholder="2017">
+                  </td>
+                </tr>
+                
+                <!-- Row 3: AC Output Caps -->
+                <tr>
+                  <td>
+                    <span class="form-label fw-bold">AC Output Caps Leaking/Swelling:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="acOutputCaps_PF" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                  <td style="text-align: left; padding-left: 20px;">
+                    <span class="form-label fw-bold">AC O/P WYE Caps Year:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <input type="text" class="form-control form-control-sm" formControlName="acOutputCapsAge" 
+                           maxlength="4" style="width: 50px;" placeholder="2017">
+                  </td>
+                </tr>
+                
+                <!-- Row 4: Comm Caps -->
+                <tr>
+                  <td>
+                    <span class="form-label fw-bold">Comm Caps Leaking/ Swelling:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="commCaps_PF" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                  <td style="text-align: left; padding-left: 20px;">
+                    <span class="form-label fw-bold">AC O/P Delta Caps Year:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <input type="text" class="form-control form-control-sm" formControlName="commCapsAge" 
+                           maxlength="4" style="width: 50px;" placeholder="2017">
+                  </td>
+                </tr>
+                
+                <!-- Row 5: Fans Year -->
+                <tr>
+                  <td></td>
+                  <td></td>
+                  <td style="text-align: left; padding-left: 20px;">
+                    <span class="form-label fw-bold">Fans DateCode Year:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <input type="text" class="form-control form-control-sm" formControlName="fansYear" 
+                           maxlength="4" style="width: 50px;" placeholder="2017">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </form>
         </div>
       </div>
@@ -893,171 +1405,163 @@
                   (click)="showTransfer = !showTransfer"
                   [attr.aria-expanded]="showTransfer">
             <i class="fas" [class.fa-chevron-down]="showTransfer" [class.fa-chevron-right]="!showTransfer"></i>
-            Transfer Test
+            Transfer Verification (Major PM Only)
           </button>
         </h5>
       </div>
       <div class="collapse" [class.show]="showTransfer">
         <div class="card-body">
           <form [formGroup]="transferForm">
-            <div class="row">
-              <div class="col-md-4">
-                <label class="form-label">First Major (if applicable)</label>
-                <select class="form-select" formControlName="firstMajor">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Static Bypass</label>
-                <select class="form-select" formControlName="staticBypass">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Transfer Maint Bypass</label>
-                <select class="form-select" formControlName="transMaintByPass">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-4">
-                <label class="form-label">Current Wave</label>
-                <select class="form-select" formControlName="currentWave">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Normal Mode</label>
-                <select class="form-select" formControlName="normalMode">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Verify Alarm</label>
-                <select class="form-select" formControlName="verifyAlarm">
-                  <option *ngFor="let option of passfailOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-            </div>
+            <!-- Replicating legacy table structure -->
+            <table style="width: 100%" class="table table-borderless">
+              <tbody>
+                <!-- Row 1: First Major Inspection -->
+                <tr>
+                  <td style="width: 816px; height: 21px;">
+                    <span class="form-label fw-bold">1. The first major inspection performed on this unit :</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="firstMajor" style="width: 60px;">
+                      <option value="Ys">Yes</option>
+                      <option value="No">No</option>
+                      <option value="NA">N/A</option>
+                    </select>
+                  </td>
+                </tr>
+                
+                <!-- Row 2: Static By-Pass -->
+                <tr>
+                  <td style="width: 816px; height: 21px;">
+                    <span class="form-label fw-bold">2. Transfer to Static By-Pass [Internal]:</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="staticBypass" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                </tr>
+                
+                <!-- Row 3: Maintenance By-Pass -->
+                <tr>
+                  <td style="width: 100px;">
+                    <span class="form-label fw-bold">3. Transfer to Maintenance By-Pass [Only When Required] :</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="transMaintByPass" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                </tr>
+                
+                <!-- Row 4: Voltage/Current Wave Form -->
+                <tr>
+                  <td>
+                    <span class="form-label fw-bold">4. Voltage / Current Wave Form :</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="currentWave" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                </tr>
+                
+                <!-- Row 5: Transfer to Normal Mode -->
+                <tr>
+                  <td style="width: 100px;">
+                    <span class="form-label fw-bold">5. Transfer to Normal Mode :</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="normalMode" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                </tr>
+                
+                <!-- Row 6: Verify Active Alarm -->
+                <tr>
+                  <td style="width: 816px; height: 26px;">
+                    <span class="form-label fw-bold">6. Verify any Active Alarm :</span>
+                  </td>
+                  <td style="text-align: right;">
+                    <select class="form-select form-select-sm" formControlName="verifyAlarm" style="width: 60px;">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </form>
         </div>
       </div>
     </div>
 
-    <!-- Action Items Section -->
+    <!-- Action Required Section -->
     <div class="card mb-4">
       <div class="card-header">
         <h5 class="mb-0">
           <button class="btn btn-link text-decoration-none p-0 fw-bold" 
                   type="button" 
-                  (click)="showActions = !showActions"
-                  [attr.aria-expanded]="showActions">
-            <i class="fas" [class.fa-chevron-down]="showActions" [class.fa-chevron-right]="!showActions"></i>
-            Action Items
+                  (click)="showActionRequired = !showActionRequired"
+                  [attr.aria-expanded]="showActionRequired">
+            <i class="fas" [class.fa-chevron-down]="showActionRequired" [class.fa-chevron-right]="!showActionRequired"></i>
+            Action Required
           </button>
         </h5>
       </div>
-      <div class="collapse" [class.show]="showActions">
+      <div class="collapse" [class.show]="showActionRequired">
         <div class="card-body">
-          <form [formGroup]="actionForm">
-            <div class="row">
-              <div class="col-md-6">
-                <label class="form-label">DCG Action Required</label>
-                <select class="form-select" formControlName="dcgAction1">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Customer Action Required</label>
-                <select class="form-select" formControlName="custAction1">
-                  <option *ngFor="let option of yesNoOptions" [value]="option.value">{{ option.text }}</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Air Filter Information -->
-            <hr class="my-4">
-            <h6>Air Filter Information</h6>
-            <div class="row">
-              <div class="col-md-3">
-                <label class="form-label">Length</label>
-                <input type="text" class="form-control" formControlName="airFilterLength">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Width</label>
-                <input type="text" class="form-control" formControlName="airFilterWidth">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Thickness</label>
-                <input type="text" class="form-control" formControlName="airFilterThick">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Quantity</label>
-                <input type="text" class="form-control" formControlName="airFilterQty">
-              </div>
-            </div>
-            <div class="row mt-3">
-              <div class="col-md-3">
-                <label class="form-label">Length 1</label>
-                <input type="text" class="form-control" formControlName="airFilterLength1">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Width 1</label>
-                <input type="text" class="form-control" formControlName="airFilterWidth1">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Thickness 1</label>
-                <input type="text" class="form-control" formControlName="airFilterThick1">
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Quantity 1</label>
-                <input type="text" class="form-control" formControlName="airFilterQty1">
-              </div>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <!-- Comments Section -->
-    <div class="card mb-4">
-      <div class="card-header">
-        <h5 class="mb-0">
-          <button class="btn btn-link text-decoration-none p-0 fw-bold" 
-                  type="button" 
-                  (click)="showComments = !showComments"
-                  [attr.aria-expanded]="showComments">
-            <i class="fas" [class.fa-chevron-down]="showComments" [class.fa-chevron-right]="!showComments"></i>
-            Comments
-          </button>
-        </h5>
-      </div>
-      <div class="collapse" [class.show]="showComments">
-        <div class="card-body">
-          <form [formGroup]="commentsForm">
-            <div class="row">
-              <div class="col-12 mb-3">
-                <label class="form-label">Comments 1</label>
-                <textarea class="form-control" formControlName="comments1" rows="3"></textarea>
-              </div>
-              <div class="col-12 mb-3">
-                <label class="form-label">Comments 2</label>
-                <textarea class="form-control" formControlName="comments2" rows="3"></textarea>
-              </div>
-              <div class="col-12 mb-3">
-                <label class="form-label">Comments 3</label>
-                <textarea class="form-control" formControlName="comments3" rows="3"></textarea>
-              </div>
-              <div class="col-12 mb-3">
-                <label class="form-label">Comments 4</label>
-                <textarea class="form-control" formControlName="comments4" rows="3"></textarea>
-              </div>
-              <div class="col-12 mb-3">
-                <label class="form-label">Comments 5</label>
-                <textarea class="form-control" formControlName="comments5" rows="3"></textarea>
-              </div>
-            </div>
+          <form [formGroup]="actionRequiredForm">
+            <!-- Replicating legacy table structure -->
+            <table style="width: 100%" class="table table-borderless">
+              <tbody>
+                <!-- Row 1: DC Group Action Required -->
+                <tr>
+                  <td style="width: 100px; height: 24px;">
+                    <span class="form-label fw-bold" style="display:inline-block;width:183px;">DC Group Action Required :</span>
+                  </td>
+                  <td style="width: 100px; height: 24px;">
+                    <select class="form-select form-select-sm" formControlName="dcgAction1" style="width: 65px;">
+                      <option value="N">No</option>
+                      <option value="Y">Yes</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                  <td style="width: 100px; height: 24px;">
+                    <!-- Empty cell for spacing -->
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table style="width: 100%" class="table table-borderless">
+              <tbody>
+                <!-- Row 2: Customer Action Required -->
+                <tr>
+                  <td style="width: 100px; height: 21px;">
+                    <span class="form-label fw-bold" style="display:inline-block;width:184px;">Customer Action Required :</span>
+                  </td>
+                  <td style="width: 100px; height: 21px;">
+                    <select class="form-select form-select-sm" formControlName="custAction1" style="width: 65px;">
+                      <option value="N">No</option>
+                      <option value="Y">Yes</option>
+                      <option value="A">N/A</option>
+                    </select>
+                  </td>
+                  <td style="width: 100px; height: 21px;">
+                    <!-- Empty cell for spacing -->
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </form>
         </div>
       </div>
@@ -1092,6 +1596,34 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer Section -->
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <tr style="vertical-align: top">
+        <td style="text-align: left; width: 1000px; height: 100px;">
+          <table style="text-align: center; width: 700px; margin: 0 auto;">
+            <tbody>
+              <tr>
+                <td>
+                  <br>
+                  <br>
+                </td>
+              </tr>
+              <tr style="vertical-align: top">
+                <td class="links" style="text-align: center; vertical-align: top; background-image: url(../Images/header.gif);">
+                  <span id="PlaceHolderMain_Label4">Copyright DC-Group, 2013. Rights Reserved</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          &nbsp; &nbsp;
+        </td>
+      </tr>
     </div>
   </div>
 </div>
