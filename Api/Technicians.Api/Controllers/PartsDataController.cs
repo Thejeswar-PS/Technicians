@@ -321,6 +321,54 @@ namespace Technicians.Api.Controllers
             return Ok(new { success = true, message = "Part deleted successfully" });
         }
 
+        //19. Update Tech Return Info
+        [HttpPost("UpdateTechReturnInfo")]
+        public IActionResult UpdateTechReturnInfo([FromBody] TechReturnUpdateDto dto, [FromQuery] string empId)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.CallNbr))
+                return BadRequest(new { success = false, message = "Invalid input data." });
+
+            try
+            {
+                var success = _repository.SaveUpdateReturnedPartsByTech(dto, empId, out string errorMsg);
+
+                if (success && string.IsNullOrEmpty(errorMsg))
+                    return Ok(new { success = true, message = "Update Successful." });
+
+                return BadRequest(new { success = false, message = errorMsg });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        //20. Re-Upload job to GP
+        [HttpPost("ReUploadJobToGP")]
+        public IActionResult ReUploadJobToGP([FromBody] ReUploadJobRequestDto request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.CallNbr) || string.IsNullOrWhiteSpace(request.TechID))
+            {
+                return BadRequest(new { success = false, message = "CallNbr and TechID are required." });
+            }
+
+            try
+            {
+                bool success = _repository.ReUploadJobToGP(request.CallNbr, request.TechID, out string errorMsg);
+
+                if (success && string.IsNullOrEmpty(errorMsg))
+                    return Ok(new { success = true, message = "Job uploaded successfully." });
+                else
+                    return BadRequest(new { success = false, message = errorMsg });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error uploading job: {ex.Message}" });
+            }
+        }
+
+
+
 
 
 

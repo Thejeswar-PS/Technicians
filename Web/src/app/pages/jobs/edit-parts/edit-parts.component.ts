@@ -5,6 +5,8 @@ import { ToastrService } from 'ngx-toastr';
 import { JobPartsService } from 'src/app/core/services/job-parts.service';
 import { PartsRequest, ShippingPart, TechPart } from 'src/app/core/model/job-parts.model';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { EquipmentService } from 'src/app/core/services/equipment.service';
+import { CommonService } from 'src/app/core/services/common.service';
 
 @Component({
   selector: 'app-edit-parts',
@@ -29,6 +31,11 @@ export class EditPartsComponent implements OnInit {
   showAddAnother: boolean = false;
   lastModifiedBy: string = '';
   lastModifiedOn: string = '';
+  
+  // Controls visibility of Save/Delete based on uploaded info and user role
+  showSaveButton: boolean = true;
+  showDeleteButton: boolean = true;
+  
   // Tracks whether any successful save occurred while modal is open so parent can refresh
   private needsRefresh: boolean = false;
   private faultyEditedByUser: boolean = false;
@@ -78,6 +85,8 @@ export class EditPartsComponent implements OnInit {
     private router: Router,
     private jobPartsService: JobPartsService,
     private toastr: ToastrService,
+    private equipmentService: EquipmentService,
+    private commonService: CommonService,
     @Optional() public activeModal?: NgbActiveModal
   ) {}
 
@@ -90,6 +99,8 @@ export class EditPartsComponent implements OnInit {
       if (this.mode === 'edit' && this.scidInc) {
         this.loadPartData();
       }
+      // Check upload protection for parts
+      this.protectUploadingJobAndParts();
       return;
     }
 
@@ -108,6 +119,9 @@ export class EditPartsComponent implements OnInit {
       if (this.mode === 'edit' && this.scidInc) {
         this.loadPartData();
       }
+      
+      // Check upload protection for parts
+      this.protectUploadingJobAndParts();
     });
   }
 
@@ -273,6 +287,95 @@ export class EditPartsComponent implements OnInit {
 
     if (unusedQty === 0) {
       this.editForm.get('unusedDesc')?.setValue('None', { emitEvent: false });
+    }
+  }
+
+  /**
+   * Mirror legacy ProtectUploadingJobandExpenses behavior for parts.
+   * Query uploaded-info for the job/tech and employee status to decide
+   * whether Save/Delete should be visible.
+   */
+  private protectUploadingJobAndParts(): void {
+    try {
+      // default to visible
+      this.showSaveButton = true;
+      this.showDeleteButton = true;
+
+      if (!this.callNbr) {
+        // nothing to check yet
+        return;
+      }
+
+      const techIdToUse = (this.techName || this.empId || '').toString().trim();
+
+      // Check uploaded info for this job and tech
+      this.equipmentService.getUploadInfo(this.callNbr, techIdToUse).subscribe({
+        next: (items: any[]) => {
+          const hasExpenseUpload = Array.isArray(items) && items.some(i => (i?.Type || '').toString().trim().toLowerCase() === 'expense');
+
+          if (hasExpenseUpload) {
+            // If any expense has been uploaded, hide save/delete by default
+            this.showSaveButton = false;
+            this.showDeleteButton = false;
+          } else {
+            this.showSaveButton = true;
+            this.showDeleteButton = true;
+          }
+
+          // Now consult employee status for the current user to apply role rules
+          const stored = localStorage.getItem('userData');
+          const windowsID = stored ? (JSON.parse(stored)?.windowsID || JSON.parse(stored)?.WindowsID) : null;
+          if (!windowsID) {
+            return;
+          }
+
+          this.commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+            next: (statusData: any) => {
+              try {
+                if (!statusData || !Array.isArray(statusData) || statusData.length === 0) {
+                  return;
+                }
+
+                // Determine final visibility according to legacy rules.
+                // If any rule grants visibility, we'll allow Save/Delete.
+                let finalVisible = false;
+
+                for (const dr of statusData) {
+                  const status = (dr?.Status || dr?.status || '').toString().trim();
+                  const rowEmpId = (dr?.EmpID || dr?.empID || dr?.empId || '').toString().trim();
+
+                  if (status === 'Technician' || status === 'TechManager') {
+                    if (techIdToUse && techIdToUse === rowEmpId) {
+                      finalVisible = !hasExpenseUpload;
+                    } else {
+                      finalVisible = false;
+                    }
+                  } else if (status === 'Manager') {
+                    finalVisible = !hasExpenseUpload;
+                  } else {
+                    finalVisible = false;
+                  }
+
+                  if (finalVisible) break;
+                }
+
+                this.showSaveButton = finalVisible;
+                this.showDeleteButton = finalVisible;
+              } catch (inner) {
+                console.error('Error applying employee status logic:', inner);
+              }
+            },
+            error: (err: any) => {
+              console.error('Error getting employee status for parts protection:', err);
+            }
+          });
+        },
+        error: (err: any) => {
+          console.error('Error getting uploaded info for parts protection:', err);
+        }
+      });
+    } catch (ex) {
+      console.error('protectUploadingJobAndParts error:', ex);
     }
   }
   

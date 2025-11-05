@@ -174,10 +174,10 @@ export class JobPartsService {
       map(d => ({
         unusedSentBack: +d.unUsedSentBack || 0,
         faultySentBack: +d.faultySentBack || 0,
-        returnStatus: d.returnStatus,
-        lastModified: d.lastModified,
-        maintAuthId: '',
-        returnNotes: d.returnNotes
+        returnStatus: d.returnStatus || '',
+        lastModified: d.lastModified || '',
+        maintAuthId: d.maint_Auth_Id || '',
+        returnNotes: d.returnNotes || ''
       } as TechReturnInfo))
     );
 }
@@ -227,8 +227,8 @@ export class JobPartsService {
    * Update tech return info
    * Legacy: UpdateTechReturnedInfo() → da.SaveUpdateReturnedPartsbyTech
    */
-  updateTechReturnInfo(data: any): Observable<any> {
-    return this.http.post<any>(`${this.API}/JobParts/UpdateTechReturnInfo`, data, { headers: this.headers });
+  updateTechReturnInfo(data: any, empId: string): Observable<any> {
+    return this.http.post<any>(`${this.API}/PartsData/UpdateTechReturnInfo?empId=${encodeURIComponent(empId)}`, data, { headers: this.headers });
   }
 
   /**
@@ -285,7 +285,7 @@ export class JobPartsService {
    * Legacy: UpdateTechReturnedInfo() → da.IsAllPartsReceivedbyWH
    */
   isAllPartsReceivedByWH(callNbr: string): Observable<number> {
-    return this.http.get<number>(`${this.API}/JobParts/IsAllPartsReceivedByWH?callNbr=${encodeURIComponent(callNbr)}`);
+    return this.http.get<number>(`${this.API}/PartsData/IsAllPartsReceivedByWH?callNbr=${encodeURIComponent(callNbr)}`);
   }
 
   /**
@@ -293,7 +293,7 @@ export class JobPartsService {
    * Legacy: cmdReUpload_Click() → da.ReUploadJobToGP
    */
   reUploadJobToGP(callNbr: string, techID: string): Observable<any> {
-    return this.http.post<any>(`${this.API}/JobParts/ReUploadJobToGP`, 
+    return this.http.post<any>(`${this.API}/PartsData/ReUploadJobToGP`, 
       { callNbr, techID }, 
       { headers: this.headers }
     );
