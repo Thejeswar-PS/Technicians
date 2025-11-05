@@ -43,7 +43,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAngularDevClient",
         builder =>
         {
-            builder.WithOrigins("http://localhost:4200","http://dcg-sql-dev:3500", "http://dcg-sql-dev:3600") // Angular dev server
+            builder.AllowAnyOrigin()
                    .AllowAnyHeader()
                    .AllowAnyMethod(); // includes GET, POST, PUT, DELETE, OPTIONS
         });

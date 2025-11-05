@@ -515,7 +515,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-
         //18. Delete Part
         public string DeletePart(DeletePartRequest request)
         {
@@ -545,6 +544,74 @@ namespace Technicians.Api.Repository
 
             return errMsg;
         }
+
+        //19. Update Tech Return Info
+        public bool SaveUpdateReturnedPartsByTech(TechReturnUpdateDto dto, string empId, out string errorMsg)
+        {
+            errorMsg = string.Empty;
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (var cmd = new SqlCommand("SaveUpdateTechReturnedParts", connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@Service_Call_ID", dto.CallNbr?.Trim());
+                        cmd.Parameters.AddWithValue("@UnusedSentBack", dto.UnusedSent);
+                        cmd.Parameters.AddWithValue("@FaultySentBack", dto.FaultySent);
+                        cmd.Parameters.AddWithValue("@ReturnStatus", dto.ReturnStatus ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ReturnNotes", dto.ReturnNotes ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@TruckStock", dto.TrunkStock);
+                        cmd.Parameters.AddWithValue("@TechName", dto.TechName ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Maint_Auth_ID", empId ?? "system");
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMsg = ex.Message;
+                return false;
+            }
+        }
+
+        //20. Re-Upload job to GP
+        public bool ReUploadJobToGP(string callNbr, string techID, out string errorMsg)
+        {
+            errorMsg = string.Empty;
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand cmd = new SqlCommand("UploadJobToGP_Wow", connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@CallNbr", callNbr?.Trim());
+                        cmd.Parameters.AddWithValue("@strUser", techID?.Trim());
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMsg = ex.Message;
+                return false;
+            }
+        }
+
+
+
+
 
 
 

@@ -416,7 +416,7 @@
             <button type="button" class="btn btn-light" (click)="goBack()">
               <i class="bi bi-x-circle"></i> Cancel
             </button>
-            <button *ngIf="mode === 'edit'" type="button" class="btn btn-danger ms-2" (click)="onDelete()">
+            <button *ngIf="mode === 'edit' && showDeleteButton" type="button" class="btn btn-danger ms-2" (click)="onDelete()">
               <i class="bi bi-trash"></i> Delete
             </button>
           </div>
@@ -424,7 +424,7 @@
             <button *ngIf="showAddAnother && !modalContext" type="button" class="btn btn-success me-2" (click)="onAddAnother()">
               <i class="bi bi-plus-circle"></i> Add Another
             </button>
-            <button type="submit" class="btn btn-primary" [disabled]="isSaving || editForm.invalid">
+            <button *ngIf="showSaveButton" type="submit" class="btn btn-primary" [disabled]="isSaving || editForm.invalid">
               <span *ngIf="!isSaving">
                 <i class="bi bi-save"></i> {{ mode === 'add' ? 'Add' : 'Save Changes' }}
               </span>

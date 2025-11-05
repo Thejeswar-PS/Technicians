@@ -540,12 +540,12 @@ export class JobPartsComponent implements OnInit {
 
     this.jobPartsService.updatePartsEquipInfo(data, this.currentEmpId).subscribe({
       next: () => {
-        this.toastr.success('Equipment information updated successfully');
-        this.successMessage = 'Equipment information updated successfully';
+        this.toastr.success('Updated successfully');
+        this.successMessage = 'Updated successfully';
         this.errorMessage = '';
       },
       error: (error) => {
-        const message = 'Error updating equipment information: ' + (error.error?.message || error.message);
+        const message = 'Error updating information: ' + (error.error?.message || error.message);
         this.toastr.error(message);
         this.errorMessage = message;
         this.successMessage = '';
@@ -562,9 +562,18 @@ export class JobPartsComponent implements OnInit {
     if (!this.validateTechReturn()) return;
 
     const formValue = this.techReturnForm.value;
+    
+    // Calculate TrunkStock by summing unusedParts where unusedDesc is "Trunk Stock"
+    // This matches legacy logic: if (args.Row.Cells[7].Text == "Trunk Stock") { TrunkStock += ... }
+    const trunkStock = this.techParts
+      .filter(part => part.unusedDesc === 'Trunk Stock')
+      .reduce((sum, part) => sum + (part.unusedParts || 0), 0);
+
     const data = {
       callNbr: this.callNbr,
       techName: this.techInfoForm.value.technician,
+      techID: this.techInfoForm.value.techID,
+      trunkStock: trunkStock, // Calculated value matching legacy
       unusedSent: Number(formValue.unusedSent || 0),
       faultySent: Number(formValue.faultySent || 0),
       returnStatus: formValue.returnStatus,
@@ -591,7 +600,7 @@ export class JobPartsComponent implements OnInit {
   }
 
   private updateTechReturn(data: any): void {
-    this.jobPartsService.updateTechReturnInfo(data).subscribe({
+    this.jobPartsService.updateTechReturnInfo(data, this.currentEmpId).subscribe({
       next: () => {
         this.toastr.success('Tech return information updated successfully');
         this.techReturnMessage = '';

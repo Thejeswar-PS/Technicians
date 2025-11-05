@@ -702,13 +702,11 @@
                   <div class="row mt-3">
                     <div class="col-6">
                       <label class="form-label fw-bold">Processed By</label>
-                      <div class="form-control-plaintext">{{ techReturnInfo?.maintAuthId || '—' }}</div>
+                      <br>{{ techReturnInfo?.maintAuthId || '—' }}
                     </div>
                     <div class="col-6">
                       <label class="form-label fw-bold">Last Updated</label>
-                      <div class="form-control-plaintext">
-                        {{ techReturnInfo?.lastModified ? (techReturnInfo?.lastModified | date:'medium') : '—' }}
-                      </div>
+                      <br>{{ techReturnInfo?.lastModified ? (techReturnInfo?.lastModified | date:'medium') : '—' }}
                     </div>
                   </div>
                 </div>
@@ -724,7 +722,7 @@
 
               <div class="d-flex justify-content-end flex-wrap gap-3">
                 <button type="button" class="btn btn-primary" (click)="onUpdateTechReturn()" [disabled]="isTechnician">
-                  <i class="bi bi-save"></i> Update Return Info
+                  <i class="bi bi-save"></i> Update Status
                 </button>
                 <button type="button" class="btn btn-warning" (click)="onReUploadJob()" [disabled]="isTechnician">
                   <i class="bi bi-cloud-upload"></i> Re-Upload Job
@@ -747,7 +745,8 @@
             </div>
           </div>
           <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-primary" (click)="onUpdateTechNotes()">
+            <button type="button" class="btn btn-primary" (click)="onUpdateTechNotes()" 
+                    [disabled]="!techNotesForm.get('emgNotes')?.value?.trim()">
               <i class="bi bi-save"></i> Save Notes
             </button>
           </div>
