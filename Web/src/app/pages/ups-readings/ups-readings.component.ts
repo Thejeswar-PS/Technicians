@@ -106,17 +106,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   // Loading and error states
   loading = true;
   saving = false;
+  saveMode: 'draft' | 'ups' | null = null;
   errorMessage = '';
   successMessage = '';
   
   // UI state
-  showReconciliation = true; // Show by default for testing
+  showReconciliation = true; // Equipment Verification - always expanded by default
   showReconciliationDetails = false; // Separate collapsible for Equipment Reconciliation
   showMeasurements = false;
   showAirFilterDetails = false;
   showVisual = false;
   showEnvironment = false;
-  showPowerVerification = false;
+  showPowerVerification = true; // Power Verification - always expanded by default
   showInputReadings = false;
   showBypassReadings = false;
   showOutputReadings = false;
@@ -134,12 +135,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   // Dynamic labels
   endOfLifeLabel = '7. UPS date code is < 25 years (End of Life):';
   
-  // Date picker state
-  showDatePicker = false;
-  showMonthYearPicker = false;
+  // Basic date state (for legacy compatibility)
   currentCalendarDate = new Date();
   selectedDate: Date | null = null;
   selectedYear = new Date().getFullYear();
+  
+  // Temporary properties to avoid compilation errors (these methods should be removed eventually)
+  showDatePicker = false;
+  showMonthYearPicker = false;
   
   constructor(
     private fb: FormBuilder,
@@ -181,6 +184,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     this.getRouteParams();
     this.loadData();
     
+    // Set up date code display value watcher
+    this.setupDateCodeDisplayWatcher();
+    
     // Watch for air filter dropdown changes
     this.visualForm.get('airFilters')?.valueChanges.subscribe(value => {
       this.showAirFilterDetails = value && value !== '';
@@ -202,6 +208,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /**
+   * Set up date code display value watcher
+   */
+  private setupDateCodeDisplayWatcher(): void {
+    // No custom date picker logic needed - just using simple text input
   }
 
   private getRouteParams(): void {
@@ -227,7 +240,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       model: ['', Validators.required],
       serialNo: ['', Validators.required],
       location: ['', Validators.required],
-      dateCode: [''],
+      monthName: ['', Validators.required],
+      year: ['', [Validators.required, Validators.min(1900)]],
       status: ['Online', Validators.required],
       statusNotes: [''],
       parallelCabinet: [''],
@@ -674,6 +688,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   private populateFormsWithData(data: AAETechUPS): void {
+    // Log the date-related fields from backend
+    console.log('Backend date data:', {
+      monthName: data.monthName,
+      year: data.year
+    });
+    
     // Determine default values for parallel cabinet and SNMP based on UPS characteristics
     const defaultParallelCabinet = this.determineDefaultParallelCabinet(data);
     const defaultSnmpPresent = this.determineDefaultSnmpPresent(data);
@@ -697,7 +717,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       model: data.modelNo || '',
       serialNo: data.serialNo || '',
       location: data.location || '',
-      dateCode: this.formatDateCodeFromData(data.monthName, data.year),
+      monthName: data.monthName || '',
+      year: data.year || '',
       status: data.status || 'Online',
       statusNotes: data.statusReason || '',
       parallelCabinet: data.parallelCabinet || defaultParallelCabinet, // Use backend data or intelligent default
@@ -1576,15 +1597,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     }
 
     // Validate date code
-    const dateCode = this.equipmentForm.get('dateCode')?.value;
-    if (!dateCode || dateCode === '' || dateCode === '01/01/1900') {
-      alert('Please enter the DateCode.');
-      this.equipmentForm.get('dateCode')?.markAsTouched();
+    const monthName = this.equipmentForm.get('monthName')?.value;
+    const year = this.equipmentForm.get('year')?.value;
+    if (!monthName || monthName === '' || !year || year === '') {
+      alert('Please enter the Month and Year.');
+      this.equipmentForm.get('monthName')?.markAsTouched();
+      this.equipmentForm.get('year')?.markAsTouched();
       return false;
     }
 
-    // Validate date code age
-    if (!this.validateDateCodeAge(dateCode, kva)) {
+    // Validate date code age - format for validation
+    const dateCodeForValidation = `${this.getMonthNumber(monthName)}/${year}`;
+    if (!this.validateDateCodeAge(dateCodeForValidation, kva)) {
       return false;
     }
 
@@ -1601,7 +1625,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     }
 
     // Validate end of life
-    if (!this.validateEndOfLife(dateCode, kva)) {
+    if (!this.validateEndOfLife(dateCodeForValidation, kva)) {
       return false;
     }
 
@@ -1759,7 +1783,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   private validateCapacitorData(): boolean {
-    const dateCode = this.equipmentForm.get('dateCode')?.value;
+    const monthName = this.equipmentForm.get('monthName')?.value;
+    const year = this.equipmentForm.get('year')?.value;
     const modularUPS = this.equipmentForm.get('modularUPS')?.value;
     
     // Check if this is a major service (would need to be determined from service description)
@@ -1770,22 +1795,23 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       const acInputCapsAge = this.capacitorForm.get('acInputCapsAge')?.value;
       const acOutputCapsAge = this.capacitorForm.get('acOutputCapsAge')?.value;
       const commCapsAge = this.capacitorForm.get('commCapsAge')?.value;
+      const dateCodeDisplay = `${monthName} ${year}`;
 
       if (!dcCapsAge || dcCapsAge.trim() === '') {
-        alert(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCode}`);
+        alert(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`);
         this.capacitorForm.get('dcCapsAge')?.markAsTouched();
         return false;
       }
 
       if (!acInputCapsAge || acInputCapsAge.trim() === '') {
-        alert(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCode}`);
+        alert(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`);
         this.capacitorForm.get('acInputCapsAge')?.markAsTouched();
         return false;
       }
 
       if ((!acOutputCapsAge || acOutputCapsAge.trim() === '') && 
           (!commCapsAge || commCapsAge.trim() === '')) {
-        alert(`You must enter AC OP WYE or OP Delta Caps Year. Here is the UPS DateCode: ${dateCode}`);
+        alert(`You must enter AC OP WYE or OP Delta Caps Year. Here is the UPS DateCode: ${dateCodeDisplay}`);
         this.capacitorForm.get('acOutputCapsAge')?.markAsTouched();
         return false;
       }
@@ -2064,11 +2090,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   onSave(): void {
+    this.saveMode = 'ups';
     this.save(false);
   }
 
   onSaveAsDraft(): void {
+    this.saveMode = 'draft';
     this.save(true);
+  }
+
+  onSaveUPS(): void {
+    this.saveMode = 'ups';
+    this.save(false);
   }
 
   private save(isDraft: boolean): void {
@@ -2112,12 +2145,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
             this.toastr.error(this.errorMessage);
           }
           this.saving = false;
+          this.saveMode = null;
         },
         error: (error) => {
           console.error('Error saving UPS readings:', error);
           this.errorMessage = 'Error saving UPS readings. Please try again.';
           this.toastr.error(this.errorMessage);
           this.saving = false;
+          this.saveMode = null;
         }
       });
   }
@@ -2331,7 +2366,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
 
   private updateEquipmentStatus(): void {
     const status = this.calculateEquipStatus();
-    const dateCode = new Date(this.equipmentForm.get('dateCode')?.value);
+    const monthName = this.equipmentForm.get('monthName')?.value;
+    const year = this.equipmentForm.get('year')?.value;
     
     const statusData: UpdateEquipStatus = {
       callNbr: this.callNbr,
@@ -2344,8 +2380,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       serialNo: this.equipmentForm.get('serialNo')?.value,
       location: this.equipmentForm.get('location')?.value,
       maintAuthID: '', // Default or get from form if available
-      monthName: dateCode.toLocaleDateString('en-US', { month: 'long' }),
-      year: dateCode.getFullYear(),
+      monthName: monthName,
+      year: parseInt(year),
       readingType: '1',
       batteriesPerString: 0,
       batteriesPerPack: 0, // Added required field
@@ -2558,7 +2594,27 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
 
   private formatDateCodeFromData(monthName: string, year: number): string {
     if (!monthName || !year || year <= 0) return '';
-    return `${monthName} ${year}`;
+    
+    // Convert month name to month number (1-12)
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const monthIndex = monthNames.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
+    if (monthIndex >= 0) {
+      const monthStr = (monthIndex + 1).toString().padStart(2, '0');
+      return `${monthStr}/${year}`;
+    }
+    
+    // Fallback: try to extract month number if monthName is numeric
+    const monthNum = parseInt(monthName);
+    if (monthNum >= 1 && monthNum <= 12) {
+      const monthStr = monthNum.toString().padStart(2, '0');
+      return `${monthStr}/${year}`;
+    }
+    
+    // Last fallback: return MM/YYYY with 01 as default month
+    return `01/${year}`;
   }
 
   private formatEquipDateCode(month: string, year: string): string {
@@ -2685,28 +2741,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     return ''; // Default styling
   }
 
-  // ========== CLICK OUTSIDE HANDLER ==========
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (this.showDatePicker) {
-      const target = event.target as HTMLElement;
-      const pickerElement = this.elementRef.nativeElement.querySelector('.compact-date-picker');
-      const triggerElement = this.elementRef.nativeElement.querySelector('.input-group button[title="Select date"]');
-      
-      this.log('Document click detected, target:', target, 'picker exists:', !!pickerElement, 'trigger exists:', !!triggerElement);
-      
-      // Close picker if click is outside picker and trigger button
-      if (pickerElement && !pickerElement.contains(target) && 
-          triggerElement && !triggerElement.contains(target)) {
-        this.log('Closing date picker due to outside click');
-        this.showDatePicker = false;
-        this.showMonthYearPicker = false;
-      }
-    }
-  }
-
-  // ========== ENHANCED DATE PICKER METHODS ==========
+  // ========== CUSTOM DATE PICKER METHODS ==========
+  
+  // ========== UTILITY METHODS ==========
   /**
    * Compact date picker implementation with the following features:
    * 1. Minimal space usage with inline positioning

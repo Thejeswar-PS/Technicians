@@ -6,6 +6,25 @@
   min-height: 100vh;
   padding: 2rem 1rem;
 
+  // Page title styling - now inline with buttons
+  .ups-page-title {
+    text-align: center;
+    flex: 1; // Take remaining space and center the title
+    
+    h2 {
+      color: #5486ff; // Blue color matching table headers
+      font-size: 2.2rem; // Slightly smaller to fit better inline
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0; // Remove any default margins
+      
+      i {
+        color: #5486ff;
+        font-size: 2rem;
+      }
+    }
+  }
+
   .ups-readings-loading {
     position: fixed;
     top: 0;
@@ -100,7 +119,8 @@
       }
     }
 
-    &__back {
+    &__back,
+    &__action {
       background: rgba(255, 255, 255, 0.2);
       color: white;
       border-color: rgba(255, 255, 255, 0.3);
@@ -108,15 +128,6 @@
       &:hover {
         background: rgba(255, 255, 255, 0.25);
         border-color: rgba(255, 255, 255, 0.4);
-      }
-    }
-
-    &__action {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: white;
-
-      &:hover {
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
       }
 
       &:disabled {
@@ -273,14 +284,14 @@
 
         h5 {
           margin: 0;
-          font-size: 1.25rem;
+          font-size: 1.4rem; // Bigger section titles
           font-weight: 700;
           color: #1e293b;
         }
 
         small {
           color: #64748b;
-          font-size: 0.9rem;
+          font-size: 1rem; // Bigger description text
           margin-left: 1rem;
         }
       }
@@ -295,7 +306,7 @@
           background: rgba(255, 255, 255, 0.5);
 
           &.rotate-90 {
-            transform: rotate(90deg);
+            transform: rotate(0deg); // Keep downward arrow pointing down when expanded
             background: rgba(99, 102, 241, 0.1);
             color: #4338ca;
           }
@@ -326,6 +337,15 @@
     .form-floating {
       position: relative;
 
+      // Ensure proper positioning for textarea containers
+      &:has(textarea) {
+        // Add extra spacing for textarea containers
+        .form-control {
+          padding-top: 1.75rem;
+          padding-bottom: 0.75rem;
+        }
+      }
+
       .form-control,
       .form-select {
         border: 2px solid #e5e7eb;
@@ -333,9 +353,10 @@
         padding: 1rem 1rem 0.25rem;
         background: rgba(255, 255, 255, 0.8);
         transition: all 0.3s ease;
-        font-size: 1rem;
+        font-size: 1.1rem; // Bigger font size for inputs
         height: auto;
-        min-height: 3.5rem;
+        min-height: 3.8rem; // Slightly taller inputs
+        font-weight: 500;
 
         &:focus {
           border-color: #4f46e5;
@@ -352,12 +373,263 @@
             box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
           }
         }
+
+        // Special handling for textarea elements in floating labels
+        &[type="textarea"],
+        &:is(textarea) {
+          padding-top: 1.75rem; // More top padding for textarea to accommodate label
+          padding-bottom: 0.75rem; // Proper bottom padding
+          min-height: 6rem; // Adequate minimum height for textarea
+          resize: vertical; // Allow vertical resize only
+          line-height: 1.5; // Better line height for text content
+          font-family: inherit; // Use system font
+
+          &:focus,
+          &:not(:placeholder-shown) {
+            padding-top: 1.75rem; // Maintain consistent top padding when focused/filled
+            padding-bottom: 0.75rem;
+          }
+
+          // Override any height restrictions for textarea
+          &:focus {
+            min-height: 6rem; // Ensure minimum height is maintained on focus
+          }
+        }
+
+        // Special styling for month input - restore functionality
+        &[type="month"] {
+          position: relative;
+          cursor: pointer;
+          padding-right: 3rem; // Make space for calendar icon
+          font-size: 1.1rem;
+          font-weight: 500;
+          color: #374151; // Normal text color for values
+          background: white;
+          
+          // Only show content when it has a value
+          &:valid {
+            color: #374151 !important;
+          }
+
+          // Hide the field when empty (no value from backend)
+          &:invalid,
+          &:placeholder-shown {
+            color: transparent !important;
+          }
+          
+          &::-webkit-calendar-picker-indicator {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            opacity: 1;
+            z-index: 2; // Above any overlay
+            background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%236b7280' viewBox='0 0 16 16'%3e%3cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3e%3c/svg%3e");
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+          }
+
+          &::-webkit-inner-spin-button {
+            display: none;
+          }
+
+          &::-webkit-clear-button {
+            display: none;
+          }
+
+          // Hide webkit datetime elements when empty, show when filled
+          &::-webkit-datetime-edit,
+          &::-webkit-datetime-edit-fields-wrapper,
+          &::-webkit-datetime-edit-text {
+            color: transparent !important; // Always hide separators and dashes
+          }
+          
+          &::-webkit-datetime-edit-month-field,
+          &::-webkit-datetime-edit-year-field {
+            color: inherit; // Use parent color (transparent when invalid, normal when valid)
+            background: transparent;
+            border: none;
+            outline: none;
+          }
+
+          // Focus state - keep separators hidden but allow field editing
+          &:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            background: white;
+            color: #374151 !important; // Show content when focused
+            
+            // Keep separators and dashes hidden even when focused
+            &::-webkit-datetime-edit,
+            &::-webkit-datetime-edit-fields-wrapper,
+            &::-webkit-datetime-edit-text {
+              color: transparent !important;
+              display: none !important;
+            }
+            
+            // Show only the actual month/year fields when focused for editing
+            &::-webkit-datetime-edit-month-field,
+            &::-webkit-datetime-edit-year-field {
+              color: #374151 !important;
+              display: inline !important;
+            }
+            
+            &::-webkit-calendar-picker-indicator {
+              background: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%234f46e5' viewBox='0 0 16 16'%3e%3cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3e%3c/svg%3e");
+            }
+          }
+        }
+
+        // Add calendar icon for month input using inline SVG
+        &[type="month"] + label::after {
+          content: "";
+          position: absolute;
+          right: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 18px;
+          height: 18px;
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%236b7280' viewBox='0 0 16 16'%3e%3cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3e%3c/svg%3e");
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          pointer-events: none;
+          z-index: 3;
+        }
+
+        // Focus state for month input calendar icon
+        &[type="month"]:focus + label::after {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%234f46e5' viewBox='0 0 16 16'%3e%3cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3e%3c/svg%3e");
+        }
+      }
+
+      // Date code container styling
+      &.date-code-container {
+        position: relative;
+
+        // Remove the placeholder overlay completely
+        &::before {
+          display: none;
+        }
+
+        .date-code-toggle {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          z-index: 4;
+          padding: 0.25rem 0.5rem;
+          font-size: 0.75rem;
+          border-radius: 0.375rem;
+          
+          &:hover {
+            background-color: #f3f4f6;
+          }
+        }
+
+        .date-code-month,
+        .date-code-text {
+          padding-right: 4rem; // Make space for toggle button and calendar icon
+          position: relative;
+        }
+
+        // Remove calendar icon overlay to allow native input interaction
+        &::after {
+          display: none; // Hide the overlay calendar icon
+        }
+
+        // Display overlay for formatted date when value exists
+        &.has-value::before {
+          content: var(--display-value, "");
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 3rem; // Leave space for calendar icon
+          bottom: 0;
+          background: white;
+          display: flex;
+          align-items: center;
+          padding: 0 1rem;
+          color: #374151;
+          font-size: 1.1rem;
+          font-weight: 500;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        // Hide display overlay when focused to allow editing
+        &:focus.has-value::before {
+          display: none;
+        }
+
+        // Focus state for calendar icon
+        &:focus-within::after {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%234f46e5' viewBox='0 0 16 16'%3e%3cpath d='M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z'/%3e%3c/svg%3e");
+        }
+
+        // Ensure proper label positioning
+        label {
+          z-index: 1;
+          pointer-events: none;
+        }
+      }
+
+      // Custom dropdown arrow for form-select
+      .form-select {
+        background-image: none;
+        padding-right: 3rem;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+      }
+
+      // Add custom dropdown arrow
+      &:has(.form-select)::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        right: 1rem;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 8px solid #6b7280;
+        pointer-events: none;
+        z-index: 2;
+        transition: all 0.3s ease;
+      }
+
+      // Alternative method using Bootstrap icon for better visual
+      &:has(.form-select) {
+        &::before {
+          content: "\F282"; // Bootstrap chevron-down icon
+          position: absolute;
+          top: 50%;
+          right: 1rem;
+          transform: translateY(-50%);
+          font-family: "bootstrap-icons";
+          font-size: 1rem;
+          color: #6b7280;
+          pointer-events: none;
+          z-index: 2;
+          transition: all 0.3s ease;
+        }
+
+        .form-select:focus + * + *::before,
+        &:focus-within::before {
+          color: #4f46e5;
+        }
       }
 
       label {
-        color: #6b7280;
+        color: #4f46e5; // Blue color for all labels like Make, Model
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 1rem; // Bigger font size
         padding-left: 1rem;
         padding-right: 1rem;
         background: transparent;
@@ -368,8 +640,48 @@
       .form-control:not(:placeholder-shown) + label,
       .form-select:focus + label,
       .form-select:not([value=""]) + label {
+        color: #4f46e5; // Keep blue color on focus
+        transform: scale(0.9) translateY(-0.5rem); // Slightly bigger scale
+      }
+
+      // Special label positioning for textarea elements
+      textarea.form-control + label {
+        // Position label at top of textarea when not focused/empty
+        top: 1rem;
+        left: 1rem;
+        transform-origin: 0 0;
+      }
+
+      textarea.form-control:focus + label,
+      textarea.form-control:not(:placeholder-shown) + label {
         color: #4f46e5;
-        transform: scale(0.85) translateY(-0.5rem);
+        transform: scale(0.85) translateY(-0.8rem); // Move label higher and make smaller for textarea
+        top: 0.25rem; // Position at the very top
+      }
+
+      // Specific styling for Status Notes field
+      #statusNotes {
+        padding-top: 1.75rem !important;
+        padding-bottom: 0.75rem !important;
+        min-height: 6rem !important;
+        resize: vertical;
+        line-height: 1.5;
+      }
+
+      // Ensure Status Notes label doesn't overlap
+      label[for="statusNotes"] {
+        top: 0.25rem !important;
+        left: 1rem;
+        transform-origin: 0 0;
+        z-index: 2;
+        background: transparent;
+        pointer-events: none;
+      }
+
+      #statusNotes:focus + label[for="statusNotes"],
+      #statusNotes:not(:placeholder-shown) + label[for="statusNotes"] {
+        transform: scale(0.85) translateY(-0.3rem) !important;
+        color: #4f46e5 !important;
       }
     }
 
@@ -430,9 +742,12 @@
       background: transparent;
 
       thead {
+        &.table-header-primary,
+        &.table-header-primary th {
+          background: #5486ff !important; // Changed to requested blue color
+        }
+        
         &.table-header-primary {
-          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-          
           th {
             color: white;
             font-weight: 700;
@@ -444,9 +759,12 @@
           }
         }
 
+        &.table-header-warning,
+        &.table-header-warning th {
+          background: #5486ff !important; // Changed to requested blue color
+        }
+        
         &.table-header-warning {
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-          
           th {
             color: white;
             font-weight: 700;
@@ -458,9 +776,12 @@
           }
         }
 
+        &.table-header-success,
+        &.table-header-success th {
+          background: #5486ff !important; // Changed to requested blue color
+        }
+        
         &.table-header-success {
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          
           th {
             color: white;
             font-weight: 700;
@@ -472,9 +793,12 @@
           }
         }
 
+        &.table-header-info,
+        &.table-header-info th {
+          background: #5486ff !important; // Changed to requested blue color
+        }
+        
         &.table-header-info {
-          background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-          
           th {
             color: white;
             font-weight: 700;
@@ -522,6 +846,17 @@
               }
             }
 
+            .modern-select {
+              padding-right: 2rem;
+              background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+              background-repeat: no-repeat;
+              background-position: right 0.5rem center;
+              background-size: 12px 10px;
+              appearance: none;
+              -webkit-appearance: none;
+              -moz-appearance: none;
+            }
+
             .btn-sm {
               padding: 0.5rem 1rem;
               font-size: 0.875rem;
@@ -532,6 +867,18 @@
         }
       }
     }
+  }
+
+  // General form-select dropdown arrow styling (fallback for any missed selects)
+  .form-select:not(.modern-select) {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 2.5rem;
   }
 
   // Measurements grid
@@ -580,7 +927,7 @@
 
     .measurement-content {
       .form-label {
-        font-size: 0.875rem;
+        font-size: 1rem; // Bigger font for measurement labels
         font-weight: 600;
         color: #475569;
         margin-bottom: 0.75rem;
@@ -590,14 +937,29 @@
       .form-select {
         border: 2px solid #e5e7eb;
         border-radius: 0.5rem;
-        padding: 0.75rem;
+        padding: 0.875rem 2.5rem 0.875rem 0.875rem; // Bigger padding
         background: white;
+        background-image: none;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
         transition: all 0.3s ease;
+        position: relative;
+        font-size: 1.05rem; // Bigger font for dropdown text
+        font-weight: 500;
 
         &:focus {
           border-color: #4f46e5;
           box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
+      }
+
+      // Custom dropdown arrow for measurement form-select
+      .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
       }
     }
   }
@@ -649,18 +1011,28 @@
         font-weight: 600;
         color: #374151;
         line-height: 1.4;
+        font-size: 1.05rem; // Bigger font for checklist titles
       }
     }
 
     .checklist-control {
-      min-width: 150px;
+      min-width: 160px; // Slightly wider for bigger text
 
       .form-select {
         border: 2px solid #e5e7eb;
         border-radius: 0.5rem;
-        padding: 0.75rem;
+        padding: 0.875rem 2.5rem 0.875rem 0.875rem; // Bigger padding
         background: white;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 16px 12px;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
         transition: all 0.3s ease;
+        font-size: 1.05rem; // Bigger font for dropdown options
+        font-weight: 500;
 
         &:focus {
           border-color: #4f46e5;
@@ -695,6 +1067,28 @@
     margin-bottom: 1rem;
     transition: all 0.3s ease;
 
+    .form-control {
+      background-color: #f8f9fa; // Light gray background for readonly fields
+      color: #212529; // Ensure dark text color for readability
+      border: 1px solid #ced4da; // Standard border
+
+      &:read-only,
+      &[readonly] {
+        background-color: #e9ecef; // Slightly darker for readonly
+        cursor: not-allowed;
+      }
+    }
+
+    // Override browser autofill styles that cause yellow background
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px white inset !important;
+      box-shadow: 0 0 0 30px white inset !important;
+      -webkit-text-fill-color: #212529 !important;
+    }
+
     &:hover {
       border-color: #4f46e5;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -714,6 +1108,9 @@
   // Verification status styling
   .verification-status {
     .form-check {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem; // Add gap between checkbox and label
       background: white;
       border: 1px solid #e5e7eb;
       border-radius: 0.5rem;
@@ -723,6 +1120,11 @@
       &:hover {
         border-color: #10b981;
         background: rgba(16, 185, 129, 0.05);
+      }
+
+      .form-check-input {
+        margin: 0; // Remove default margin
+        transform: scale(1.2); // Keep the size enhancement
       }
 
       .form-check-input:checked + .form-check-label {
@@ -816,12 +1218,114 @@
     }
   }
 
+  // New Action Buttons Section (within sections)
+  .ups-action-buttons {
+    padding: 1rem 0;
+    
+    .save-draft-btn,
+    .save-ups-btn {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      border: 2px solid #2563eb;
+      color: white;
+      font-weight: 700;
+      font-size: 1.1rem;
+      border-radius: 0.75rem;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      min-width: 180px;
+
+      &:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+        border-color: #1d4ed8;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
+        color: white;
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        color: white;
+      }
+
+      &:disabled {
+        background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+        border-color: #94a3b8;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+
+        &:hover {
+          background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+          border-color: #94a3b8;
+          transform: none;
+          box-shadow: none;
+          color: rgba(255, 255, 255, 0.8);
+        }
+      }
+
+      i {
+        margin-right: 0.5rem;
+        font-size: 1rem;
+      }
+
+      .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        margin-right: 0.5rem;
+      }
+    }
+
+    .save-draft-btn {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      border-color: #0ea5e9;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.3);
+
+      &:hover {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        border-color: #0284c7;
+        box-shadow: 0 8px 25px rgba(14, 165, 233, 0.4);
+        color: white;
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        color: white;
+      }
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: center;
+      
+      .save-draft-btn,
+      .save-ups-btn {
+        width: 100%;
+        max-width: 300px;
+        margin-bottom: 1rem;
+        min-width: auto;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+
   // Footer
   .ups-footer {
-    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
-    color: #d1d5db;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    color: #64748b;
     padding: 2rem 0;
     margin-top: 3rem;
+    border-top: 1px solid #e2e8f0;
 
     .footer-content {
       padding: 1rem;
@@ -834,7 +1338,7 @@
         font-size: 0.875rem;
 
         i {
-          color: #10b981;
+          color: #5486ff;
         }
       }
     }
@@ -921,52 +1425,253 @@
       padding: 1rem;
     }
   }
-}
 
-// Additional animations and effects
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
+  // Reconciliation specific styles
+  .reconciliation-row {
+    .form-control {
+      background-color: #f8f9fa; // Light gray background for readonly fields
+      color: #212529; // Ensure dark text color for readability
+      border: 1px solid #ced4da; // Standard border
+
+      &:read-only,
+      &[readonly] {
+        background-color: #e9ecef; // Slightly darker for readonly
+        cursor: not-allowed;
+      }
+    }
+
+    // Override browser autofill styles that cause yellow background
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px white inset !important;
+      box-shadow: 0 0 0 30px white inset !important;
+      -webkit-text-fill-color: #212529 !important;
+    }
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  // Additional animations and effects
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
-}
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
-  50% {
-    opacity: 0.5;
+
+  .ups-readings-section {
+    animation: fadeInUp 0.6s ease forwards;
   }
+
+  .ups-readings-section:nth-child(1) { animation-delay: 0.1s; }
+  .ups-readings-section:nth-child(2) { animation-delay: 0.2s; }
+  .ups-readings-section:nth-child(3) { animation-delay: 0.3s; }
+  .ups-readings-section:nth-child(4) { animation-delay: 0.4s; }
+  .ups-readings-section:nth-child(5) { animation-delay: 0.5s; }
+
+  .spinner-border {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  // Smooth scrolling
+  html {
+    scroll-behavior: smooth;
+  }
+
+  // Focus styles for accessibility
+  *:focus {
+    outline: 2px solid #4f46e5;
+    outline-offset: 2px;
+  }
+
+  // Inline Date Picker Dropdown Styles
+  .date-picker-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 200px; // Reduced width for more compact design
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    display: none;
+    margin-top: 2px;
+
+    &.show {
+      display: block;
+    }
+
+    .picker-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      border-radius: 6px 6px 0 0;
+
+      .picker-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151;
+        margin: 0;
+      }
+
+      .btn-back {
+        background: none;
+        border: none;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #4f46e5;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background: #e0e7ff;
+        }
+      }
+
+      .btn-close-small {
+        background: none;
+        border: none;
+        font-size: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        color: #6b7280;
+        padding: 0;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 3px;
+
+        &:hover {
+          color: #374151;
+          background: #f3f4f6;
+        }
+      }
+    }
+
+    .years-list {
+      max-height: 100px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.25rem;
+      grid-auto-rows: min-content;
+
+      .year-btn {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 0.5rem 0.2rem;
+        text-align: center;
+        cursor: pointer;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #374151;
+        transition: all 0.2s;
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+          background: #f3f4f6;
+          border-color: #d1d5db;
+        }
+
+        &.selected {
+          background: #4f46e5;
+          border-color: #4f46e5;
+          color: white;
+        }
+      }
+
+      // Custom scrollbar
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+
+        &:hover {
+          background: #94a3b8;
+        }
+      }
+    }
+
+    .months-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.25rem;
+      padding: 0.5rem;
+      max-height: 150px; // Reduced height for more compact month view
+
+      .month-btn {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        padding: 0.4rem 0.2rem; // Reduced padding for more compact buttons
+        cursor: pointer;
+        font-size: 0.7rem; // Slightly smaller font
+        font-weight: 500;
+        color: #374151;
+        transition: all 0.2s;
+        text-align: center;
+        min-height: 28px; // Consistent button height
+
+        &:hover {
+          background: #f3f4f6;
+          border-color: #d1d5db;
+        }
+
+        &.selected {
+          background: #4f46e5;
+          border-color: #4f46e5;
+          color: white;
+        }
+      }
+    }
 }
 
-.ups-readings-section {
-  animation: fadeInUp 0.6s ease forwards;
-}
+// Date Code Display Field Styling
+.date-code-display {
+  cursor: pointer;
+  font-weight: 500;
+  
+  &:focus {
+    cursor: pointer;
+  }
 
-.ups-readings-section:nth-child(1) { animation-delay: 0.1s; }
-.ups-readings-section:nth-child(2) { animation-delay: 0.2s; }
-.ups-readings-section:nth-child(3) { animation-delay: 0.3s; }
-.ups-readings-section:nth-child(4) { animation-delay: 0.4s; }
-.ups-readings-section:nth-child(5) { animation-delay: 0.5s; }
-
-.spinner-border {
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-// Smooth scrolling
-html {
-  scroll-behavior: smooth;
-}
-
-// Focus styles for accessibility
-*:focus {
-  outline: 2px solid #4f46e5;
-  outline-offset: 2px;
+  &::placeholder {
+    color: #9ca3af;
+  }
 }
 
 // Custom scrollbar
@@ -986,4 +1691,5 @@ html {
 
 .ups-section-content::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
 }
