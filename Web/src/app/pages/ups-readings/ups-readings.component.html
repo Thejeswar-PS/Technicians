@@ -405,7 +405,7 @@
                     </div>
                   </div>
                   <div class="col-md-2">
-                    <div class="form-floating">
+                    <div class="form-floating position-relative">
                       <input
                         type="text"
                         class="form-control"
@@ -415,7 +415,7 @@
                           equipmentForm.get('monthName')?.touched
                         "
                         id="monthName"
-                        placeholder="Month">
+                        placeholder="Enter month (e.g., Jan, Feb, Mar...)">
                       
                       <label for="monthName">
                         Month <span class="text-danger">*</span>
@@ -1476,12 +1476,12 @@
 
           <div class="ups-section-content" [class.show]="showPowerVerification">
             <!-- Input Section -->
-            <div class="mb-4">
+            <div class="mb-4 configuration-section">
               <form [formGroup]="inputReadingsForm">
                 <div class="form-group-modern">
                   <div class="row g-3">
                     <div class="col-md-3">
-                      <div class="form-floating">
+                      <div class="form-floating configuration-header">
                         <select
                           class="form-select"
                           formControlName="configuration"
@@ -1508,7 +1508,21 @@
                         >
                       </div>
                     </div>
-                    <div class="col-md-4">
+                    <!-- Voltage and Frequency Tolerance Display -->
+                    <div class="col-md-5" *ngIf="inputConfig">
+                      <div class="tolerance-display p-2 bg-light border rounded">
+                        <small class="text-primary fw-semibold">
+                          <i class="bi bi-info-circle me-1"></i>
+                          V-Tolerance: {{ getVoltageToleranceRange(inputReadingsForm.get('configuration')?.value, 'input') }}
+                        </small>
+                        <br>
+                        <small class="text-info fw-semibold">
+                          <i class="bi bi-speedometer me-1"></i>
+                          Frequency Tolerance: {{ getFrequencyToleranceRange('input') }}
+                        </small>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
                       <div class="form-check d-flex align-items-center h-100">
                         <input
                           class="form-check-input me-2"
@@ -1525,7 +1539,7 @@
                         </label>
                       </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-2">
                       <div class="form-check d-flex align-items-center h-100">
                         <input
                           class="form-check-input me-2"
@@ -1541,6 +1555,94 @@
                           Input THD %
                         </label>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Input Filter Current Detail Section -->
+                <div *ngIf="showInputFilterCurrent" class="dynamic-section mt-3 p-3 border rounded bg-light">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Filter Current A:</label>
+                      <input type="text" class="form-control" formControlName="filterCurrentA" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="filterCurrentA_PF">
+                        <option value="">Pass</option>
+                        <option value="Pass">Fail</option>
+                        <option value="Fail">N/A</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Filter Current B:</label>
+                      <input type="text" class="form-control" formControlName="filterCurrentB" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="filterCurrentB_PF">
+                        <option value="">Pass</option>
+                        <option value="Pass">Fail</option>
+                        <option value="Fail">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Filter Current C:</label>
+                      <input type="text" class="form-control" formControlName="filterCurrentC" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="filterCurrentC_PF">
+                        <option value="">Pass</option>
+                        <option value="Pass">Fail</option>
+                        <option value="Fail">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Input THD Detail Section -->
+                <div *ngIf="showInputTHD" class="dynamic-section mt-3 p-3 border rounded bg-light">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Input THD % A:</label>
+                      <input type="text" class="form-control" formControlName="inputThdA" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="inputThdA_PF">
+                        <option value="">Pass</option>
+                        <option value="Pass">Fail</option>
+                        <option value="Fail">N/A</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Input THD % B:</label>
+                      <input type="text" class="form-control" formControlName="inputThdB" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="inputThdB_PF">
+                        <option value="">Pass</option>
+                        <option value="Pass">Fail</option>
+                        <option value="Fail">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Input THD % C:</label>
+                      <input type="text" class="form-control" formControlName="inputThdC" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="inputThdC_PF">
+                        <option value="">Pass</option>
+                        <option value="Pass">Fail</option>
+                        <option value="Fail">N/A</option>
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -1565,13 +1667,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 1"
+                            *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 1"
+                            *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -1591,13 +1693,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2"
+                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2"
+                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -1615,13 +1717,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2"
+                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Current B
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2"
+                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -1641,13 +1743,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3"
+                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3"
+                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -1665,13 +1767,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3"
+                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Current B
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3"
+                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -1689,13 +1791,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3"
+                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Current C
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3"
+                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -1731,7 +1833,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 1">
+                          <td *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1740,7 +1842,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 1">
+                          <td *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1779,7 +1881,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1788,7 +1890,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1825,7 +1927,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1834,7 +1936,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -1873,7 +1975,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1882,7 +1984,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1919,7 +2021,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1928,7 +2030,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -1965,7 +2067,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1974,7 +2076,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currC_PF"
@@ -2022,12 +2124,12 @@
             </div>
 
             <!-- By-Pass Section -->
-            <div class="mb-4">
+            <div class="mb-4 configuration-section">
               <form [formGroup]="bypassReadingsForm">
                 <div class="form-group-modern">
                   <div class="row g-3">
                     <div class="col-md-6">
-                      <div class="form-floating">
+                      <div class="form-floating configuration-header">
                         <select
                           class="form-select"
                           formControlName="configuration"
@@ -2048,10 +2150,24 @@
                           </option>
                         </select>
                         <label for="bypassConfiguration"
-                          ><strong class="text-warning"
+                          ><strong class="text-primary"
                             >By-Pass Configuration</strong
                           ></label
                         >
+                      </div>
+                    </div>
+                    <!-- Voltage and Frequency Tolerance Display -->
+                    <div class="col-md-6" *ngIf="bypassConfig">
+                      <div class="tolerance-display p-2 bg-light border rounded">
+                        <small class="text-primary fw-semibold">
+                          <i class="bi bi-info-circle me-1"></i>
+                          V-Tolerance: {{ getVoltageToleranceRange(bypassReadingsForm.get('configuration')?.value, 'bypass') }}
+                        </small>
+                        <br>
+                        <small class="text-info fw-semibold">
+                          <i class="bi bi-speedometer me-1"></i>
+                          Frequency Tolerance: {{ getFrequencyToleranceRange('bypass') }}
+                        </small>
                       </div>
                     </div>
                   </div>
@@ -2533,12 +2649,12 @@
             </div>
 
             <!-- Output Section -->
-            <div class="mb-4">
+            <div class="mb-4 configuration-section">
               <form [formGroup]="outputReadingsForm">
                 <div class="form-group-modern">
                   <div class="row g-3">
                     <div class="col-md-3">
-                      <div class="form-floating">
+                      <div class="form-floating configuration-header">
                         <select
                           class="form-select"
                           formControlName="configuration"
@@ -2559,13 +2675,27 @@
                           </option>
                         </select>
                         <label for="outputConfiguration"
-                          ><strong class="text-success"
+                          ><strong class="text-primary"
                             >Output Configuration</strong
                           ></label
                         >
                       </div>
                     </div>
-                    <div class="col-md-4">
+                    <!-- Voltage and Frequency Tolerance Display -->
+                    <div class="col-md-5" *ngIf="outputConfig">
+                      <div class="tolerance-display p-2 bg-light border rounded">
+                        <small class="text-primary fw-semibold">
+                          <i class="bi bi-info-circle me-1"></i>
+                          V-Tolerance: {{ getVoltageToleranceRange(outputReadingsForm.get('configuration')?.value, 'output') }}
+                        </small>
+                        <br>
+                        <small class="text-info fw-semibold">
+                          <i class="bi bi-speedometer me-1"></i>
+                          Frequency Tolerance: {{ getFrequencyToleranceRange('output') }}
+                        </small>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
                       <div class="form-check d-flex align-items-center h-100">
                         <input
                           class="form-check-input me-2"
@@ -2602,6 +2732,94 @@
                   </div>
                 </div>
 
+                <!-- Output Filter Current Detail Section -->
+                <div *ngIf="showOutputFilterCurrent" class="dynamic-section mt-3 p-3 border rounded bg-light">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Filter Current A:</label>
+                      <input type="text" class="form-control" formControlName="outputFilterCurrentA" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="outputFilterCurrentA_PF">
+                        <option value="">Pass</option>
+                        <option value="Fail">Fail</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Filter Current B:</label>
+                      <input type="text" class="form-control" formControlName="outputFilterCurrentB" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="outputFilterCurrentB_PF">
+                        <option value="">Pass</option>
+                        <option value="Fail">Fail</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Filter Current C:</label>
+                      <input type="text" class="form-control" formControlName="outputFilterCurrentC" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="outputFilterCurrentC_PF">
+                        <option value="">Pass</option>
+                        <option value="Fail">Fail</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Output THD Detail Section -->
+                <div *ngIf="showOutputTHD" class="dynamic-section mt-3 p-3 border rounded bg-light">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Output THD % A:</label>
+                      <input type="text" class="form-control" formControlName="outputThdA" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="outputThdA_PF">
+                        <option value="">Pass</option>
+                        <option value="Fail">Fail</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Output THD % B:</label>
+                      <input type="text" class="form-control" formControlName="outputThdB" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="outputThdB_PF">
+                        <option value="">Pass</option>
+                        <option value="Fail">Fail</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="row g-3 mt-2">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold">Output THD % C:</label>
+                      <input type="text" class="form-control" formControlName="outputThdC" placeholder="Enter value">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label fw-semibold">Pass:</label>
+                      <select class="form-select" formControlName="outputThdC_PF">
+                        <option value="">Pass</option>
+                        <option value="Fail">Fail</option>
+                        <option value="N/A">N/A</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Output voltage readings with Load fields -->
                 <div *ngIf="outputConfig" class="modern-table-container">
                   <div class="table-responsive">
@@ -2621,13 +2839,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 1"
+                            *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 1"
+                            *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -2645,13 +2863,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 2"
+                            *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent"
                             class="text-center"
                           >
                             Current B
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 2"
+                            *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -2669,13 +2887,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 3"
+                            *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent"
                             class="text-center"
                           >
                             Current C
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 3"
+                            *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent"
                             class="text-center"
                           >
                             Status
@@ -2711,7 +2929,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
+                          <td *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2720,7 +2938,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
+                          <td *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -2757,7 +2975,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2">
+                          <td *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2766,7 +2984,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2">
+                          <td *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -2803,7 +3021,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
+                          <td *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2812,7 +3030,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
+                          <td *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent">
                             <select
                               class="form-select modern-select"
                               formControlName="currC_PF"

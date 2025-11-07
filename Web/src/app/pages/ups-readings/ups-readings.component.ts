@@ -1,9 +1,9 @@
-import { Component, OnInit, OnDestroy, ElementRef, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, HostListener, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, debounceTime } from 'rxjs/operators';
 
 import { EquipmentService } from '../../core/services/equipment.service';
 import { AuthService } from '../../modules/auth/services/auth.service';
@@ -29,7 +29,7 @@ import { convertToSaveUpdateDto, convertFromSaveUpdateDto } from '../../core/uti
   templateUrl: './ups-readings.component.html',
   styleUrls: ['./ups-readings.component.scss']
 })
-export class UpsReadingsComponent implements OnInit, OnDestroy {
+export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
   
   // Form groups
@@ -66,6 +66,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   reconciliationData: EquipReconciliationInfo | null = null;
   filterCurrentsData: EquipFilterCurrents | null = null;
   
+  // Section visibility control properties (legacy showdiv/hidediv functionality)
+  showAdditionalNotes: boolean = false;
+  showAdvancedSettings: boolean = false;
+  showDebugInfo: boolean = false;
+  showMaintenanceDetails: boolean = false;
+  showPowerDetails: boolean = false;
+  
+  // Form validation state
+  isFormSubmission: boolean = false; // Track if validation is triggered by form submission
+  validationErrors: { [key: string]: string } = {}; // Store validation errors for inline display
+  
   // Configuration options
   voltageConfigurations = VOLTAGE_CONFIGURATIONS;
   passfailOptions = PASS_FAIL_OPTIONS;
@@ -75,6 +86,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     { value: 'F', text: 'Fail' },
     { value: 'N', text: 'N/A' }
   ];
+
+
   
   // Visual and Mechanical options (same as measurement options)
   visualMechanicalOptions = [
@@ -158,6 +171,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Initialize validation state for page load
+    this.isFormSubmission = false;
+    this.clearAllValidationErrors();
     
     // Initialize with comprehensive manufacturer list immediately to ensure dropdown is populated
     this.manufacturers = [
@@ -198,6 +214,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  ngAfterViewInit(): void {
+    // Setup checkbox subscriptions after view initialization to ensure forms are ready
+    this.setupFilterCurrentCheckboxHandlers();
   }
 
   /**
@@ -313,7 +334,21 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       currC: [''],
       currC_PF: ['P'],
       freq: [''],
-      freq_PF: ['P']
+      freq_PF: ['P'],
+      // Filter Current detail fields
+      filterCurrentA: [''],
+      filterCurrentA_PF: [''],
+      filterCurrentB: [''],
+      filterCurrentB_PF: [''],
+      filterCurrentC: [''],
+      filterCurrentC_PF: [''],
+      // Input THD detail fields
+      inputThdA: [''],
+      inputThdA_PF: [''],
+      inputThdB: [''],
+      inputThdB_PF: [''],
+      inputThdC: [''],
+      inputThdC_PF: ['']
     });
 
     this.bypassReadingsForm = this.fb.group({
@@ -358,7 +393,21 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       loadB_PF: ['P'],
       loadC: [''],
       loadC_PF: ['P'],
-      totalLoad: ['']
+      totalLoad: [''],
+      // Output Filter Current detail fields
+      outputFilterCurrentA: [''],
+      outputFilterCurrentA_PF: [''],
+      outputFilterCurrentB: [''],
+      outputFilterCurrentB_PF: [''],
+      outputFilterCurrentC: [''],
+      outputFilterCurrentC_PF: [''],
+      // Output THD detail fields
+      outputThdA: [''],
+      outputThdA_PF: [''],
+      outputThdB: [''],
+      outputThdB_PF: [''],
+      outputThdC: [''],
+      outputThdC_PF: ['']
     });
 
     this.rectifierForm = this.fb.group({
@@ -428,11 +477,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Subscribe to equipment form changes to keep reconciliation form in sync
     this.setupEquipmentReconciliationSync();
     
-    // Subscribe to filter current checkbox changes
-    this.setupFilterCurrentCheckboxHandlers();
-    
     // Subscribe to KVA changes for dynamic end-of-life label
     this.setupKVAChangeHandlers();
+    
+    // Setup dynamic field control (legacy EnabletoEdit functionality)
+    this.setupDynamicFieldControl();
+    
+    // Initialize enhanced form features
+    this.initializeEnhancedFormFeatures();
   }
 
   private setupEquipmentReconciliationSync(): void {
@@ -504,24 +556,72 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   private setupPhaseToNeutralCalculations(): void {
-    // Input voltage calculations
+    // Input voltage and current calculations with legacy methods
     ['voltA', 'voltB', 'voltC'].forEach(field => {
       this.inputReadingsForm.get(field)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.calculatePhaseToNeutral('input');
+        this.updatePhaseToNeutralDisplay('input');
+        this.calculateAndUpdatePowerValues('input');
+        // Validate voltage against legacy tolerance ranges
+        if (!this.isFormSubmission) {
+          this.validateAllVoltagesForConfig('input');
+        }
       });
     });
 
-    // Bypass voltage calculations
+    ['currA', 'currB', 'currC'].forEach(field => {
+      this.inputReadingsForm.get(field)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.calculateAndUpdatePowerValues('input');
+        // Validate current against legacy tolerance
+        if (!this.isFormSubmission) {
+          this.validateCurrentReadingsLegacy('input');
+        }
+      });
+    });
+
+    // Bypass voltage and current calculations with legacy methods
     ['voltA', 'voltB', 'voltC'].forEach(field => {
       this.bypassReadingsForm.get(field)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.calculatePhaseToNeutral('bypass');
+        this.updatePhaseToNeutralDisplay('bypass');
+        this.calculateAndUpdatePowerValues('bypass');
+        // Validate voltage against legacy tolerance ranges
+        if (!this.isFormSubmission) {
+          this.validateAllVoltagesForConfig('bypass');
+        }
       });
     });
 
-    // Output voltage calculations
+    ['currA', 'currB', 'currC'].forEach(field => {
+      this.bypassReadingsForm.get(field)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.calculateAndUpdatePowerValues('bypass');
+        // Validate current against legacy tolerance
+        if (!this.isFormSubmission) {
+          this.validateCurrentReadingsLegacy('bypass');
+        }
+      });
+    });
+
+    // Output voltage and current calculations with legacy methods
     ['voltA', 'voltB', 'voltC'].forEach(field => {
       this.outputReadingsForm.get(field)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
         this.calculatePhaseToNeutral('output');
+        this.updatePhaseToNeutralDisplay('output');
+        this.calculateAndUpdatePowerValues('output');
+        // Validate voltage against legacy tolerance ranges
+        if (!this.isFormSubmission) {
+          this.validateAllVoltagesForConfig('output');
+        }
+      });
+    });
+
+    ['currA', 'currB', 'currC'].forEach(field => {
+      this.outputReadingsForm.get(field)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+        this.calculateAndUpdatePowerValues('output');
+        // Validate current against legacy tolerance
+        if (!this.isFormSubmission) {
+          this.validateCurrentReadingsLegacy('output');
+        }
       });
     });
   }
@@ -660,6 +760,91 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
           this.toastr.error('Error loading equipment data. Using default values.');
         }
       });
+  }
+
+  /**
+   * Setup dynamic field control (legacy EnabletoEdit functionality)
+   * Enables/disables related textboxes when dropdown values change
+   */
+  private setupDynamicFieldControl(): void {
+    // Monitor parallel cabinet dropdown changes
+    this.equipmentForm.get('parallelCabinet')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        this.enableToEdit('parallelCabinet', value);
+      });
+
+    // Monitor SNMP present dropdown changes
+    this.equipmentForm.get('snmpPresent')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        this.enableToEdit('snmpPresent', value);
+      });
+
+    // Monitor modular UPS dropdown changes
+    this.equipmentForm.get('modularUPS')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        this.enableToEdit('modularUPS', value);
+      });
+
+    // Monitor equipment status changes for status notes
+    this.equipmentForm.get('status')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(value => {
+        const statusNotesControl = this.equipmentForm.get('statusNotes');
+        if (value && value !== 'Online') {
+          statusNotesControl?.enable();
+          statusNotesControl?.setValidators([Validators.required]);
+        } else {
+          statusNotesControl?.disable();
+          statusNotesControl?.clearValidators();
+          statusNotesControl?.setValue('');
+        }
+        statusNotesControl?.updateValueAndValidity();
+      });
+  }
+
+  /**
+   * Legacy EnabletoEdit function - enables textbox editing when dropdown is "NO"
+   * @param fieldType The field type being controlled
+   * @param dropdownValue The current dropdown value
+   */
+  private enableToEdit(fieldType: string, dropdownValue: string): void {
+    // Enable related text field when dropdown is "NO" or specific values
+    const shouldEnable = dropdownValue === 'NO' || dropdownValue === 'N' || dropdownValue === 'Other';
+    
+    switch (fieldType) {
+      case 'parallelCabinet':
+        const parallelOtherControl = this.equipmentForm.get('parallelCabinetOther');
+        if (shouldEnable) {
+          parallelOtherControl?.enable();
+        } else {
+          parallelOtherControl?.disable();
+          parallelOtherControl?.setValue('');
+        }
+        break;
+        
+      case 'snmpPresent':
+        const snmpOtherControl = this.equipmentForm.get('snmpPresentOther');
+        if (shouldEnable) {
+          snmpOtherControl?.enable();
+        } else {
+          snmpOtherControl?.disable();
+          snmpOtherControl?.setValue('');
+        }
+        break;
+        
+      case 'modularUPS':
+        const modularOtherControl = this.equipmentForm.get('modularUPSOther');
+        if (shouldEnable) {
+          modularOtherControl?.enable();
+        } else {
+          modularOtherControl?.disable();
+          modularOtherControl?.setValue('');
+        }
+        break;
+    }
   }
 
   private loadReconciliationDataAfterEquipment(): void {
@@ -970,7 +1155,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     
     verificationFields.forEach(field => {
       this.reconciliationForm.get(field)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
-        console.log(`Verification status updated - ${field}: ${value}`);
         
         // Auto-check verified checkbox if all fields are verified
         this.checkAutoVerificationComplete();
@@ -995,7 +1179,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     );
     
     if (allFieldsVerified && !this.reconciliationForm.get('verified')?.value) {
-      console.log('All verification fields completed - auto-checking verified status');
       this.reconciliationForm.patchValue({ verified: true });
     }
   }
@@ -1049,7 +1232,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
 
     if (Object.keys(updateValues).length > 0) {
       this.reconciliationForm.patchValue(updateValues);
-      console.log('Updated reconciliation form with current equipment values:', updateValues);
     }
   }
 
@@ -1229,7 +1411,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       case '11': // 400V Three Phase
         return this.calculateThreePhaseLoad(upsKVA, '400');
       default:
-        alert('You must enter the values for Input, Bypass and Output voltages.');
+        this.showValidationMessage('You must enter the values for Input, Bypass and Output voltages.', 'voltageConfig');
         return false;
     }
   }
@@ -1245,10 +1427,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     const voltage = this.convertToDouble(voltageField);
 
     if (current === 0) {
-      // Only show alert during active use, not during page load
-      if (!this.loading) {
-        alert('Output Current cannot be empty');
-      }
+      this.showValidationMessage('Output Current cannot be empty', 'outputCurrent', currentField);
       return false;
     }
 
@@ -1269,10 +1448,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     const voltageB = this.convertToDouble(this.getOutputVoltageField('B', voltageType));
 
     if (currentA === 0 || currentB === 0) {
-      // Only show alert during active use, not during page load
-      if (!this.loading) {
-        alert('Output Current A or Output Current B cannot be empty');
-      }
+      this.showValidationMessage('Output Current A or Output Current B cannot be empty', 'outputCurrentTwoPhase');
       return false;
     }
 
@@ -1309,10 +1485,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     const voltageC = this.convertToDouble(this.getOutputVoltageField('C', voltageType));
 
     if (currentA === 0 || currentB === 0 || currentC === 0) {
-      // Only show alert during active use, not during page load
-      if (!this.loading) {
-        alert('Output Current A, B, C cannot be empty');
-      }
+      this.showValidationMessage('Output Current A, B, C cannot be empty', 'outputCurrentThreePhase');
       return false;
     }
 
@@ -1422,7 +1595,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
 
     // Validate A and B phases
     if (currentA === 0 || currentB === 0) {
-      alert('Input Current A or B cannot be empty');
+      this.showValidationMessage('Input Current A or B cannot be empty', 'inputCurrentTwoPhase');
       return false;
     }
 
@@ -1444,7 +1617,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate C phase if it's a three-phase configuration
     if (this.isThreePhaseConfiguration(configuration)) {
       if (currentC === 0) {
-        alert('Input Current C cannot be empty');
+        this.showValidationMessage('Input Current C cannot be empty', 'inputCurrentThreePhase');
         return false;
       }
 
@@ -1494,7 +1667,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate manufacturer
     const manufacturer = this.equipmentForm.get('manufacturer')?.value;
     if (!manufacturer || manufacturer.substring(0, 3) === 'Ple' || manufacturer === '') {
-      alert('Please select the manufacturer');
+      this.showValidationMessage('Please select the manufacturer', 'manufacturer', 'manufacturer');
       this.equipmentForm.get('manufacturer')?.markAsTouched();
       return false;
     }
@@ -1502,7 +1675,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate model
     const model = this.equipmentForm.get('model')?.value;
     if (!model || model.trim() === '') {
-      alert('Please enter the Model No');
+      this.showValidationMessage('Please enter the Model No', 'model', 'model');
       this.equipmentForm.get('model')?.markAsTouched();
       return false;
     }
@@ -1510,7 +1683,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate CTO/Part No
     const ctoPartNo = this.equipmentForm.get('ctoPartNo')?.value;
     if (!ctoPartNo || ctoPartNo.trim() === '') {
-      alert('Please enter the CTO / Part No');
+      this.showValidationMessage('Please enter the CTO / Part No', 'ctoPartNo', 'ctoPartNo');
       this.equipmentForm.get('ctoPartNo')?.markAsTouched();
       return false;
     }
@@ -1518,7 +1691,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate serial number
     const serialNo = this.equipmentForm.get('serialNo')?.value;
     if (!serialNo || serialNo.trim() === '') {
-      alert('Please enter the Serial No');
+      this.showValidationMessage('Please enter the Serial No', 'serialNo', 'serialNo');
       this.equipmentForm.get('serialNo')?.markAsTouched();
       return false;
     }
@@ -1526,7 +1699,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate location
     const location = this.equipmentForm.get('location')?.value;
     if (!location || location.trim() === '') {
-      alert('Please enter the Location');
+      this.showValidationMessage('Please enter the Location', 'location', 'location');
       this.equipmentForm.get('location')?.markAsTouched();
       return false;
     }
@@ -1534,14 +1707,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate KVA
     const kvaValue = this.equipmentForm.get('kva')?.value;
     if (!kvaValue || kvaValue.trim() === '') {
-      alert('KVA value cannot be empty');
+      this.showValidationMessage('KVA value cannot be empty', 'kva', 'kva');
       this.equipmentForm.get('kva')?.markAsTouched();
       return false;
     }
 
     const kva = this.convertToDouble(kvaValue);
     if (kva <= 0) {
-      alert('Please enter valid KVA Value');
+      this.showValidationMessage('Please enter valid KVA Value', 'kva', 'kva');
       this.equipmentForm.get('kva')?.markAsTouched();
       return false;
     }
@@ -1549,7 +1722,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate maintenance bypass
     const maintByPass = this.equipmentForm.get('maintByPass')?.value;
     if (maintByPass === 'NA' || !maintByPass) {
-      alert('Please select the value for Maintenance ByPass');
+      this.showValidationMessage('Please select the value for Maintenance ByPass', 'maintByPass', 'maintByPass');
       this.equipmentForm.get('maintByPass')?.markAsTouched();
       return false;
     }
@@ -1557,7 +1730,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate SNMP
     const snmpPresent = this.equipmentForm.get('snmpPresent')?.value;
     if (snmpPresent === 'PS' || !snmpPresent) {
-      alert('Please select the value for SNMP Card Present ?');
+      this.showValidationMessage('Please select the value for SNMP Card Present ?', 'snmpPresent', 'snmpPresent');
       this.equipmentForm.get('snmpPresent')?.markAsTouched();
       return false;
     }
@@ -1566,7 +1739,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     const monthName = this.equipmentForm.get('monthName')?.value;
     const year = this.equipmentForm.get('year')?.value;
     if (!monthName || monthName === '' || !year || year === '') {
-      alert('Please enter the Month and Year.');
+      this.showValidationMessage('Please enter the Month and Year.', 'monthYear', 'monthName');
       this.equipmentForm.get('monthName')?.markAsTouched();
       this.equipmentForm.get('year')?.markAsTouched();
       return false;
@@ -1581,7 +1754,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Validate reconciliation
     const verified = this.reconciliationForm.get('verified')?.value;
     if (!verified) {
-      alert('You must verify the Reconciliation section before Saving PM form');
+      this.showValidationMessage('You must verify the Reconciliation section before Saving PM form', 'reconciliation');
       return false;
     }
 
@@ -1592,6 +1765,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
 
     // Validate end of life
     if (!this.validateEndOfLife(dateCodeForValidation, kva)) {
+      return false;
+    }
+
+    // Validate and sanitize all inputs
+    if (!this.validateAndSanitizeAllInputs()) {
       return false;
     }
 
@@ -1647,7 +1825,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       const today = new Date();
 
       if (dateCodeDate > today) {
-        alert('DateCode cannot be higher than today\'s date');
+        this.showValidationMessage('DateCode cannot be higher than today\'s date', 'dateCodeFuture', 'dateCode');
         return false;
       }
 
@@ -1661,7 +1839,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
 
       return true;
     } catch (error) {
-      alert('Invalid date format in DateCode');
+      this.showValidationMessage('Invalid date format in DateCode', 'dateCodeFormat', 'dateCode');
       return false;
     }
   }
@@ -1716,31 +1894,132 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Enhanced Validation Methods
+  /**
+   * Stores a validation error for inline display instead of showing alert
+   * @param fieldKey - Unique identifier for the field (e.g., 'outputCurrent', 'manufacturer')
+   * @param message - Error message to display
+   * @param elementId - Optional HTML element ID to scroll to and highlight
+   */
+  private setValidationError(fieldKey: string, message: string, elementId?: string): void {
+    this.validationErrors[fieldKey] = message;
+    
+    // Only show visual cues during form submission, not page load
+    if (this.isFormSubmission && elementId) {
+      this.highlightAndScrollToField(elementId);
+    }
+  }
+
+  /**
+   * Clears a specific validation error
+   * @param fieldKey - Field key to clear
+   */
+  private clearValidationError(fieldKey: string): void {
+    delete this.validationErrors[fieldKey];
+  }
+
+  /**
+   * Clears all validation errors
+   */
+  private clearAllValidationErrors(): void {
+    this.validationErrors = {};
+  }
+
+  /**
+   * Shows validation message - alert during form submission, stored for inline display during page load
+   * @param message - Message to show
+   * @param fieldKey - Field key for inline storage
+   * @param elementId - Element ID to highlight and scroll to
+   */
+  private showValidationMessage(message: string, fieldKey?: string, elementId?: string): void {
+    if (this.isFormSubmission) {
+      // During form submission, show alert and visual cues
+      alert(message);
+      if (elementId) {
+        this.highlightAndScrollToField(elementId);
+      }
+    } else if (fieldKey) {
+      // During page load, just store for inline display
+      this.setValidationError(fieldKey, message, elementId);
+    }
+  }
+
+  /**
+   * Highlights a field with red border and scrolls to it
+   * @param elementId - ID of element to highlight
+   */
+  private highlightAndScrollToField(elementId: string): void {
+    setTimeout(() => {
+      const element = document.getElementById(elementId);
+      if (element) {
+        // Add red border highlight
+        element.style.border = '2px solid #dc3545';
+        element.style.borderRadius = '4px';
+        
+        // Scroll to element
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+        
+        // Focus the element if it's an input
+        if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+          element.focus();
+        }
+        
+        // Remove highlight after 3 seconds
+        setTimeout(() => {
+          element.style.border = '';
+          element.style.borderRadius = '';
+        }, 3000);
+      }
+    }, 100);
+  }
+
   private validateDataFormat(): boolean {
-    // Get all input elements and check for forward slashes
+    // Enhanced data format validation matching legacy findwrongdata() function
+    const prohibitedChars = ['/', '\\', '<', '>', '&', '"', "'"];
     const excludedFields = [
       'dateCode', 'model', 'actModel', 'serialNo', 'actSerialNo', 'ctoPartNo'
     ];
 
     const forms = [
-      this.equipmentForm,
-      this.reconciliationForm,
-      this.measurementsForm,
-      this.inputReadingsForm,
-      this.bypassReadingsForm,
-      this.outputReadingsForm,
-      this.rectifierForm,
-      this.capacitorForm
+      { form: this.equipmentForm, name: 'Equipment' },
+      { form: this.reconciliationForm, name: 'Reconciliation' },
+      { form: this.measurementsForm, name: 'Measurements' },
+      { form: this.inputReadingsForm, name: 'Input Readings' },
+      { form: this.bypassReadingsForm, name: 'Bypass Readings' },
+      { form: this.outputReadingsForm, name: 'Output Readings' },
+      { form: this.rectifierForm, name: 'Rectifier' },
+      { form: this.capacitorForm, name: 'Capacitor' }
     ];
 
-    for (const form of forms) {
+    for (const { form, name } of forms) {
       const formValues = form.value;
       for (const [fieldName, value] of Object.entries(formValues)) {
         if (excludedFields.includes(fieldName)) continue;
         
-        if (typeof value === 'string' && value.includes('/')) {
-          alert(`${fieldName} - data / is not allowed in textbox`);
-          return false;
+        if (typeof value === 'string' && value) {
+          // Check for prohibited characters
+          for (const char of prohibitedChars) {
+            if (value.includes(char)) {
+              this.showValidationMessage(`${name} ${fieldName} - Character "${char}" is not allowed in textbox`, 'invalidCharacter', fieldName);
+              const control = form.get(fieldName);
+              if (control) {
+                control.markAsTouched();
+                control.setErrors({ 'invalidCharacter': true });
+              }
+              return false;
+            }
+          }
+          
+          // Check for excessive whitespace
+          if (value !== value.trim()) {
+            const control = form.get(fieldName);
+            if (control) {
+              control.setValue(value.trim());
+            }
+          }
         }
       }
     }
@@ -1764,20 +2043,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       const dateCodeDisplay = `${monthName} ${year}`;
 
       if (!dcCapsAge || dcCapsAge.trim() === '') {
-        alert(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`);
+        this.showValidationMessage(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'dcCapsYear', 'dcCapsAge');
         this.capacitorForm.get('dcCapsAge')?.markAsTouched();
         return false;
       }
 
       if (!acInputCapsAge || acInputCapsAge.trim() === '') {
-        alert(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`);
+        this.showValidationMessage(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'acInputCapsYear', 'acInputCapsAge');
         this.capacitorForm.get('acInputCapsAge')?.markAsTouched();
         return false;
       }
 
       if ((!acOutputCapsAge || acOutputCapsAge.trim() === '') && 
           (!commCapsAge || commCapsAge.trim() === '')) {
-        alert(`You must enter AC OP WYE or OP Delta Caps Year. Here is the UPS DateCode: ${dateCodeDisplay}`);
+        this.showValidationMessage(`You must enter AC OP WYE or OP Delta Caps Year. Here is the UPS DateCode: ${dateCodeDisplay}`, 'acOutputCapsYear', 'acOutputCapsAge');
         this.capacitorForm.get('acOutputCapsAge')?.markAsTouched();
         return false;
       }
@@ -1792,11 +2071,26 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     const outputConfig = this.outputReadingsForm.get('configuration')?.value;
 
     if (inputConfig === '0' || bypassConfig === '0' || outputConfig === '0') {
-      alert('You must enter the values for Input, Bypass and Output voltages.');
+      this.showValidationMessage('You must enter the values for Input, Bypass and Output voltages.', 'voltageConfigSettings');
       return false;
     }
 
-    return true;
+    // Validate actual voltage values against legacy tolerance ranges
+    let allValid = true;
+    
+    if (!this.validateAllVoltagesForConfig('input')) {
+      allValid = false;
+    }
+    
+    if (!this.validateAllVoltagesForConfig('bypass')) {
+      allValid = false;
+    }
+    
+    if (!this.validateAllVoltagesForConfig('output')) {
+      allValid = false;
+    }
+
+    return allValid;
   }
 
   private validateLoadPercentageThreshold(): boolean {
@@ -1827,46 +2121,365 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   private validateAllCurrentReadings(): boolean {
-    return this.validateCurrentReadings('input') && 
-           this.validateCurrentReadings('bypass') && 
-           this.validateCurrentReadings('output');
+    // Use legacy-compatible validation methods
+    return this.validateCurrentReadingsLegacy('input') && 
+           this.validateCurrentReadingsLegacy('bypass') && 
+           this.validateCurrentReadingsLegacy('output');
   }
 
   private validateFrequencyRanges(): boolean {
+    return this.validateFrequencyRangesLegacy();
+  }
+
+  /**
+   * Enhanced frequency validation with exact legacy behavior
+   * No popup on page load, visual warnings only
+   */
+  private validateFrequencyRangesLegacy(): boolean {
+    let validationPassed = true;
+
     // Input frequency: 55-65 Hz
     const inputFreq = this.convertToDouble(this.inputReadingsForm.get('freq')?.value);
-    if (inputFreq < 55 || inputFreq > 65) {
-      if (!confirm('Are you sure that Input Frequency not within specified tolerance')) {
-        return false;
+    if (inputFreq > 0) { // Only validate if value is entered
+      if (inputFreq < 55 || inputFreq > 65) {
+        if (this.isFormSubmission) {
+          if (!confirm('Are you sure that Input Frequency not within specified tolerance (55-65 Hz)?')) {
+            validationPassed = false;
+          }
+        }
+        this.inputReadingsForm.get('freq_PF')?.setValue('F');
+      } else {
+        this.inputReadingsForm.get('freq_PF')?.setValue('P');
       }
-      this.inputReadingsForm.get('freq_PF')?.setValue('F');
-    } else {
-      this.inputReadingsForm.get('freq_PF')?.setValue('P');
     }
 
     // Bypass frequency: 55-65 Hz
     const bypassFreq = this.convertToDouble(this.bypassReadingsForm.get('freq')?.value);
-    if (bypassFreq < 55 || bypassFreq > 65) {
-      if (!confirm('Are you sure that Bypass Frequency not within specified tolerance')) {
-        return false;
+    if (bypassFreq > 0) { // Only validate if value is entered
+      if (bypassFreq < 55 || bypassFreq > 65) {
+        if (this.isFormSubmission) {
+          if (!confirm('Are you sure that Bypass Frequency not within specified tolerance (55-65 Hz)?')) {
+            validationPassed = false;
+          }
+        }
+        this.bypassReadingsForm.get('freq_PF')?.setValue('F');
+      } else {
+        this.bypassReadingsForm.get('freq_PF')?.setValue('P');
       }
-      this.bypassReadingsForm.get('freq_PF')?.setValue('F');
-    } else {
-      this.bypassReadingsForm.get('freq_PF')?.setValue('P');
     }
 
     // Output frequency: 58-62 Hz
     const outputFreq = this.convertToDouble(this.outputReadingsForm.get('freq')?.value);
-    if (outputFreq < 58 || outputFreq > 62) {
-      if (!confirm('Are you sure that Output Frequency not within specified tolerance')) {
-        return false;
+    if (outputFreq > 0) { // Only validate if value is entered
+      if (outputFreq < 58 || outputFreq > 62) {
+        if (this.isFormSubmission) {
+          if (!confirm('Are you sure that Output Frequency not within specified tolerance (58-62 Hz)?')) {
+            validationPassed = false;
+          }
+        }
+        this.outputReadingsForm.get('freq_PF')?.setValue('F');
+      } else {
+        this.outputReadingsForm.get('freq_PF')?.setValue('P');
       }
-      this.outputReadingsForm.get('freq_PF')?.setValue('F');
-    } else {
-      this.outputReadingsForm.get('freq_PF')?.setValue('P');
     }
 
-    return true;
+    return validationPassed;
+  }
+
+  /**
+   * Voltage validation using exact legacy tolerance ranges
+   * Validates voltage against the specific ranges from the reference table
+   * Now supports different ranges for Input vs Bypass
+   */
+  validateVoltageRange(voltage: number, configId: string, type: 'input' | 'bypass' | 'output' = 'input'): 'pass' | 'fail' {
+    const bounds = this.getVoltageToleranceBounds(configId, type);
+    
+    if (bounds.min === 0 && bounds.max === 0) {
+      return 'pass'; // Unknown configuration, don't fail
+    }
+    
+    if (voltage >= bounds.min && voltage <= bounds.max) {
+      return 'pass';
+    } else {
+      return 'fail';
+    }
+  }
+
+  /**
+   * Enhanced voltage validation for all phases in a configuration
+   */
+  validateAllVoltagesForConfig(type: 'input' | 'bypass' | 'output'): boolean {
+    const form = type === 'input' ? this.inputReadingsForm : 
+                  type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
+    
+    const configId = form.get('configuration')?.value;
+    if (!configId) return true; // No configuration selected
+    
+    const config = this.getVoltageConfiguration(configId);
+    if (!config) return true;
+    
+    let allVoltagesValid = true;
+    
+    // Validate Phase A voltage
+    const voltA = this.convertToDouble(form.get('voltA')?.value);
+    if (voltA > 0) {
+      const validA = this.validateVoltageRange(voltA, configId, type);
+      if (validA === 'fail') {
+        if (this.isFormSubmission) {
+          const bounds = this.getVoltageToleranceBounds(configId, type);
+          if (!confirm(`${type.charAt(0).toUpperCase() + type.slice(1)} Voltage A (${voltA}V) is outside tolerance range (${bounds.min}V - ${bounds.max}V). Continue?`)) {
+            allVoltagesValid = false;
+          }
+        }
+        form.get('voltA_PF')?.setValue('F');
+      } else {
+        form.get('voltA_PF')?.setValue('P');
+      }
+    }
+    
+    // Validate Phase B voltage (if multi-phase)
+    if (config.phaseCount >= 2) {
+      const voltB = this.convertToDouble(form.get('voltB')?.value);
+      if (voltB > 0) {
+        const validB = this.validateVoltageRange(voltB, configId, type);
+        if (validB === 'fail') {
+          if (this.isFormSubmission) {
+            const bounds = this.getVoltageToleranceBounds(configId, type);
+            if (!confirm(`${type.charAt(0).toUpperCase() + type.slice(1)} Voltage B (${voltB}V) is outside tolerance range (${bounds.min}V - ${bounds.max}V). Continue?`)) {
+              allVoltagesValid = false;
+            }
+          }
+          form.get('voltB_PF')?.setValue('F');
+        } else {
+          form.get('voltB_PF')?.setValue('P');
+        }
+      }
+    }
+    
+    // Validate Phase C voltage (if three-phase)
+    if (config.phaseCount >= 3) {
+      const voltC = this.convertToDouble(form.get('voltC')?.value);
+      if (voltC > 0) {
+        const validC = this.validateVoltageRange(voltC, configId, type);
+        if (validC === 'fail') {
+          if (this.isFormSubmission) {
+            const bounds = this.getVoltageToleranceBounds(configId, type);
+            if (!confirm(`${type.charAt(0).toUpperCase() + type.slice(1)} Voltage C (${voltC}V) is outside tolerance range (${bounds.min}V - ${bounds.max}V). Continue?`)) {
+              allVoltagesValid = false;
+            }
+          }
+          form.get('voltC_PF')?.setValue('F');
+        } else {
+          form.get('voltC_PF')?.setValue('P');
+        }
+      }
+    }
+    
+    return allVoltagesValid;
+  }
+
+  /**
+   * Temperature validation with legacy behavior
+   * Acceptable range: 67°F – 78°F
+   * Values outside range trigger minor deficiency (yellow warning) but don't block submission
+   */
+  validateTemperatureRange(temperatureFahrenheit: number): 'pass' | 'warning' | 'fail' {
+    if (temperatureFahrenheit >= 67 && temperatureFahrenheit <= 78) {
+      return 'pass';
+    } else {
+      // Outside acceptable range - minor deficiency
+      return 'warning';
+    }
+  }
+
+  /**
+   * Automatic power calculation with legacy formulas
+   * This method should be called when voltage/current values change
+   */
+  calculateAndUpdatePowerValues(type: 'input' | 'bypass' | 'output'): void {
+    const form = type === 'input' ? this.inputReadingsForm : 
+                  type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
+    
+    const config = type === 'input' ? this.inputConfig : 
+                   type === 'bypass' ? this.bypassConfig : this.outputConfig;
+
+    if (!config) return;
+
+    const voltageA = this.convertToDouble(form.get('voltA')?.value);
+    const currentA = this.convertToDouble(form.get('currA')?.value);
+    const ratedKVA = this.convertToDouble(this.equipmentForm.get('kva')?.value);
+
+    if (voltageA > 0 && currentA > 0 && ratedKVA > 0) {
+      // Calculate actual kVA using legacy formula
+      const actualKVA = this.calculateLegacyKVA(voltageA, currentA, config.phaseCount);
+      
+      // Calculate load percentage
+      const loadPercent = this.calculateLoadPercentage(actualKVA, ratedKVA);
+      
+      // Update load percentage field if it exists (for output section)
+      if (type === 'output') {
+        form.get('loadA')?.setValue(Math.round(loadPercent * 10) / 10, { emitEvent: false });
+        
+        // Apply load validation thresholds
+        if (loadPercent >= 90) {
+          form.get('loadA_PF')?.setValue('F');
+        } else if (loadPercent >= 85) {
+          form.get('loadA_PF')?.setValue('F'); // Warning level - could be 'W' if that option exists
+        } else {
+          form.get('loadA_PF')?.setValue('P');
+        }
+      }
+    }
+  }
+
+  /**
+   * Legacy-compatible phase-to-neutral calculation for display
+   * Called automatically when line-to-line voltages are entered
+   */
+  updatePhaseToNeutralDisplay(type: 'input' | 'bypass' | 'output'): void {
+    const form = type === 'input' ? this.inputReadingsForm : 
+                  type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
+    
+    const config = type === 'input' ? this.inputConfig : 
+                   type === 'bypass' ? this.bypassConfig : this.outputConfig;
+
+    if (!config || !config.showPhaseToNeutral) return;
+
+    // Convert line-to-line voltages to phase-to-neutral
+    const voltA = this.convertToDouble(form.get('voltA')?.value);
+    const voltB = this.convertToDouble(form.get('voltB')?.value);
+    const voltC = this.convertToDouble(form.get('voltC')?.value);
+
+    if (voltA > 0) {
+      const phaseToNeutralA = this.convertLineToNeutralVoltage(voltA);
+      // Store for display purposes (could add to form or display variable)
+    }
+    
+    if (voltB > 0) {
+      const phaseToNeutralB = this.convertLineToNeutralVoltage(voltB);
+    }
+    
+    if (voltC > 0) {
+      const phaseToNeutralC = this.convertLineToNeutralVoltage(voltC);
+    }
+  }
+
+  /**
+   * Summary method to demonstrate all legacy validation implementations
+   */
+  getLegacyValidationSummary(): any {
+    const kvaValue = this.convertToDouble(this.equipmentForm.get('kva')?.value);
+    
+    return {
+      currentTolerance: {
+        description: 'Current Tolerance Calculation',
+        implementation: 'KVA > 200 → 30% (0.30), KVA ≤ 200 → 50% (0.50)',
+        currentKVA: kvaValue,
+        calculatedTolerance: this.calculateCurrentTolerance(kvaValue, 'UPS'),
+        method: 'calculateCurrentTolerance()'
+      },
+      frequencyValidation: {
+        description: 'Frequency Validation Ranges',
+        implementation: 'Input/Bypass: 55-65 Hz, Output: 58-62 Hz',
+        inputRange: this.getFrequencyToleranceRange('input'),
+        bypassRange: this.getFrequencyToleranceRange('bypass'),
+        outputRange: this.getFrequencyToleranceRange('output'),
+        method: 'validateFrequencyRangesLegacy()'
+      },
+      powerCalculation: {
+        description: 'Legacy Power Calculations',
+        implementation: 'Single: (I × V) / 1000, Three: (V × I) / 1732',
+        singlePhaseFormula: '(I × V) / 1000',
+        threePhaseFormula: '(V × I) / 1732',
+        method: 'calculateLegacyKVA()'
+      },
+      loadPercentage: {
+        description: 'Load Percentage Thresholds',
+        implementation: '≥90% → Fail, ≥85% (UPS) → Warning',
+        criticalLimit: '≥90%',
+        warningLimit: '≥85% (UPS) / ≥80% (PDU/STS)',
+        method: 'validateLoadPercentage()'
+      },
+      temperatureValidation: {
+        description: 'Temperature Range Validation',
+        implementation: '67°F – 78°F acceptable range',
+        acceptableRange: '67°F - 78°F',
+        outsideRangeBehavior: 'Minor deficiency (yellow warning)',
+        method: 'validateTemperatureRange()'
+      },
+      voltageToleranceValidation: {
+        description: 'Exact Legacy Voltage Tolerance Ranges',
+        implementation: 'Specific ranges per voltage/phase configuration',
+        examples: {
+          '120V 1Ph': '110V - 130V (L-N)',
+          '240V 2Ph': '220V - 260V (L-L)',
+          '208V 3Ph': '192V - 224V (P-N)',
+          '480V 3Ph': '456V - 504V (P-N)',
+          '277V 1Ph': '262V - 292V (L-N)'
+        },
+        method: 'getVoltageToleranceRange(), validateVoltageRange()'
+      },
+      phaseToNeutralConversion: {
+        description: 'Line-to-Neutral Voltage Conversion',
+        implementation: 'Math.round(lineVoltage / 1.732)',
+        formula: 'phaseToNeutral = Math.round(lineVoltage / 1.732)',
+        method: 'convertLineToNeutralVoltage()'
+      }
+    };
+  }
+
+
+
+  /**
+   * Get detailed explanation of voltage tolerance calculation logic
+   * This helps understand why specific ranges are used for different configurations
+   */
+  getVoltageToleranceExplanation(configId: string): string {
+    const config = this.getVoltageConfiguration(configId);
+    const nominalVoltage = this.getNominalVoltageFromConfig(configId);
+    
+    if (!config || nominalVoltage === 0) {
+      return 'Unknown configuration';
+    }
+
+    const explanation = [];
+    explanation.push(`Configuration: ${config.name}`);
+    explanation.push(`Nominal Voltage: ${nominalVoltage}V`);
+    explanation.push(`Phase Count: ${config.phaseCount}`);
+    explanation.push(`Phase-to-Neutral: ${config.showPhaseToNeutral ? 'Yes' : 'No'}`);
+    
+    if (config.showPhaseToNeutral) {
+      explanation.push(`Calculation Method: Phase-to-Neutral (P-N) tolerance rules`);
+      explanation.push(`Logic: Three-phase P-N configurations use line-to-line voltage tolerance calculations`);
+    } else {
+      explanation.push(`Calculation Method: Single/Two-phase specific legacy ranges`);
+      if (nominalVoltage <= 240 && (config.phaseCount === 1 || config.phaseCount === 2)) {
+        explanation.push(`Logic: Lower voltages in single/two phase use 110V-130V legacy range`);
+      } else {
+        explanation.push(`Logic: Higher voltages use voltage-specific legacy patterns`);
+      }
+    }
+    
+    const range = this.getVoltageToleranceRange(configId);
+    explanation.push(`Result: ${range}`);
+    
+    return explanation.join('\n');
+  }
+
+  /**
+   * Get frequency tolerance range - different ranges for input, bypass, and output
+   */
+  getFrequencyToleranceRange(type: 'input' | 'bypass' | 'output'): string {
+    switch (type) {
+      case 'input':
+        return '55 Hz - 65 Hz'; // Input frequency tolerance
+      case 'bypass':
+        return '55 Hz - 62 Hz'; // Bypass frequency tolerance (updated per user specs)
+      case 'output':
+        return '58 Hz - 62 Hz'; // Output frequency tolerance
+      default:
+        return '';
+    }
   }
 
   getPhaseToNeutralVoltage(phaseToPhaseVoltage: string): string {
@@ -1876,6 +2489,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     const result = Math.round(voltage / 1.732);
     return result.toString();
   }
+
+
+
+
+
+  /**
+   * Handle document clicks to close month selector when clicking outside
+   */
+
 
   /**
    * Calculate equipment status based on form values
@@ -2055,6 +2677,342 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     return ['3', '4', '5', '6', '11'].includes(configId);
   }
 
+  /**
+   * Get nominal voltage value from configuration ID
+   * These are the base voltages before tolerance calculations
+   */
+  private getNominalVoltageFromConfig(configId: string): number {
+    const voltageMap: { [key: string]: number } = {
+      '1': 120,   // 120V Single Phase
+      '2': 240,   // 240V Two Phase
+      '3': 208,   // 208V Three Phase
+      '4': 480,   // 480V Three Phase
+      '5': 600,   // 600V Three Phase
+      '6': 575,   // 575V Three Phase
+      '7': 208,   // 208V Single Phase
+      '8': 208,   // 208V Two Phase
+      '9': 480,   // 480V Single Phase
+      '10': 277,  // 277V Single Phase
+      '11': 400   // 400V Three Phase
+    };
+    
+    return voltageMap[configId] || 0;
+  }
+
+  /**
+   * Dynamic voltage tolerance calculation based on legacy patterns
+   * Analyzes the configuration properties to determine the appropriate tolerance rule
+   * Now supports different ranges for Input vs Bypass
+   */
+  private calculateDynamicVoltageToleranceRange(nominalVoltage: number, configId: string, type: 'input' | 'bypass' | 'output' = 'input'): { min: number, max: number } {
+    const config = this.getVoltageConfiguration(configId);
+    if (!config) {
+      // Fallback for unknown configs
+      const fallbackTolerance = nominalVoltage * 0.1; // ±10%
+      return { 
+        min: Math.round(nominalVoltage - fallbackTolerance), 
+        max: Math.round(nominalVoltage + fallbackTolerance) 
+      };
+    }
+
+    // Legacy pattern analysis:
+    // 1. For Phase-to-Neutral (P-N) configurations: Use line voltage tolerance ranges
+    // 2. For single/two phase at certain voltages: Use specific legacy ranges
+    // 3. Different calculation rules based on voltage levels and phase configurations
+    
+    if (config.showPhaseToNeutral) {
+      // Three-phase P-N configurations - use line-to-line voltage tolerance calculations
+      return this.calculatePhaseToNeutralToleranceRange(nominalVoltage, configId, type);
+    } else {
+      // Single/Two phase configurations - use legacy specific ranges
+      return this.calculateSingleTwoPhaseToleranceRange(nominalVoltage, configId, config, type);
+    }
+  }
+
+  /**
+   * Calculate tolerance for Phase-to-Neutral (P-N) configurations
+   * These typically use line-to-line voltage calculations
+   * Now supports different ranges for Input vs Bypass
+   */
+  private calculatePhaseToNeutralToleranceRange(nominalVoltage: number, configId: string, type: 'input' | 'bypass' | 'output' = 'input'): { min: number, max: number } {
+    // For P-N configurations, legacy typically uses specific voltage ranges
+    // that correspond to the phase-to-neutral voltage calculations
+    
+    switch (nominalVoltage) {
+      case 208: // 208V P-N -> Different values for Output
+        if (type === 'output') {
+          return { min: 197, max: 219 }; // Output specific values
+        } else {
+          return { min: 192, max: 224 }; // Input/Bypass values
+        }
+        
+      case 400: // 400V P-N -> Same for all types
+        return { min: 380, max: 420 };
+        
+      case 480: // 480V P-N -> Different values for Output
+        if (type === 'output') {
+          return { min: 460, max: 500 }; // Output specific values
+        } else {
+          return { min: 455, max: 505 }; // Input/Bypass values
+        }
+        
+      case 575: // 575V P-N -> Different values for Input vs Bypass vs Output
+        if (type === 'bypass' || type === 'output') {
+          return { min: 547, max: 603 }; // Bypass and Output use same values
+        } else {
+          return { min: 545, max: 605 }; // Input specific values
+        }
+        
+      case 600: // 600V P-N -> Different values for Output
+        if (type === 'output') {
+          return { min: 580, max: 620 }; // Output specific values
+        } else {
+          return { min: 570, max: 630 }; // Input/Bypass values
+        }
+        
+      default:
+        // For unknown P-N voltages, use approximately ±5% tolerance
+        const tolerance = Math.round(nominalVoltage * 0.05);
+        return { 
+          min: nominalVoltage - tolerance, 
+          max: nominalVoltage + tolerance 
+        };
+    }
+  }
+
+  /**
+   * Calculate tolerance for single/two phase configurations
+   * These have specific legacy patterns that don't follow P-N rules
+   * Now supports different ranges for Input vs Bypass
+   */
+  private calculateSingleTwoPhaseToleranceRange(nominalVoltage: number, configId: string, config: any, type: 'input' | 'bypass' | 'output' = 'input'): { min: number, max: number } {
+    // Legacy pattern observations:
+    // - Lower voltages (120V, some 208V, some 240V) often use 110V-130V range
+    // - Higher single phase voltages use different patterns
+    // - Some 208V configurations use 192V-224V range
+    
+    // Special legacy cases that don't follow normal percentage rules
+    if (nominalVoltage === 120 || 
+        (nominalVoltage === 240 && config.phaseCount === 2) || 
+        (nominalVoltage === 208 && config.phaseCount === 2)) {
+      // These configurations have different values for Output
+      if (type === 'output') {
+        return { min: 114, max: 126 }; // Output specific values for lower voltages
+      } else {
+        return { min: 110, max: 130 }; // Input/Bypass values
+      }
+    }
+    
+    if (nominalVoltage === 208 && config.phaseCount === 1) {
+      // 208V single phase uses different range for Output
+      if (type === 'output') {
+        return { min: 197, max: 219 }; // Output specific values
+      } else {
+        return { min: 192, max: 224 }; // Input/Bypass values
+      }
+    }
+    
+    if (nominalVoltage === 277) {
+      // 277V single phase uses different range for Output
+      if (type === 'output') {
+        return { min: 197, max: 219 }; // Output specific values
+      } else {
+        return { min: 192, max: 224 }; // Input/Bypass values
+      }
+    }
+    
+    if (nominalVoltage === 480 && config.phaseCount === 1) {
+      // 480V single phase uses different range for Output
+      if (type === 'output') {
+        return { min: 460, max: 500 }; // Output specific values
+      } else {
+        return { min: 455, max: 505 }; // Input/Bypass values
+      }
+    }
+    
+    // Default calculation for other single/two phase configurations
+    // Use approximately ±8% tolerance for most standard voltages
+    const tolerance = Math.round(nominalVoltage * 0.08);
+    return { 
+      min: nominalVoltage - tolerance, 
+      max: nominalVoltage + tolerance 
+    };
+  }
+
+  /**
+   * Calculate voltage tolerance percentage using dynamic calculations
+   */
+  private getVoltageTolerancePercentage(nominalVoltage: number, configId: string): number {
+    const dynamicRange = this.calculateDynamicVoltageToleranceRange(nominalVoltage, configId);
+    const toleranceValue = (dynamicRange.max - nominalVoltage);
+    return toleranceValue / nominalVoltage;
+  }
+
+  /**
+   * Get voltage tolerance range string for display with automatic P-N detection
+   * Now supports different ranges for Input vs Bypass
+   */
+  getVoltageToleranceRange(configId: string, type: 'input' | 'bypass' | 'output' = 'input'): string {
+    const nominalVoltage = this.getNominalVoltageFromConfig(configId);
+    if (nominalVoltage === 0) return '';
+    
+    const dynamicRange = this.calculateDynamicVoltageToleranceRange(nominalVoltage, configId, type);
+    const config = this.getVoltageConfiguration(configId);
+    const pnSuffix = config?.showPhaseToNeutral ? ' (P-N)' : '';
+    
+    return `${dynamicRange.min}V - ${dynamicRange.max}V${pnSuffix}`;
+  }
+
+  /**
+   * Get voltage tolerance bounds for validation using dynamic calculations
+   * Now supports different ranges for Input vs Bypass
+   */
+  getVoltageToleranceBounds(configId: string, type: 'input' | 'bypass' | 'output' = 'input'): { min: number, max: number } {
+    const nominalVoltage = this.getNominalVoltageFromConfig(configId);
+    if (nominalVoltage === 0) return { min: 0, max: 0 };
+    
+    return this.calculateDynamicVoltageToleranceRange(nominalVoltage, configId, type);
+  }
+
+  /**
+   * Legacy-compatible power calculation methods
+   * These match the exact behavior from UPSPage.js and EmgUPSPage.js
+   */
+
+  /**
+   * Calculate kVA using legacy formulas
+   * Single phase: ActKVA = (I × V) / 1000
+   * Three phase: CalKVA = (V × I) / 1732
+   */
+  calculateLegacyKVA(voltage: number, current: number, phaseCount: number): number {
+    if (phaseCount === 1) {
+      // Single phase: ActKVA = (I × V) / 1000
+      return (current * voltage) / 1000;
+    } else {
+      // Three phase: CalKVA = (V × I) / 1732 (exact constant from legacy)
+      return (voltage * current) / 1732;
+    }
+  }
+
+  /**
+   * Calculate load percentage: (ActualKVA / RatedKVA) × 100
+   */
+  calculateLoadPercentage(actualKVA: number, ratedKVA: number): number {
+    if (ratedKVA === 0) return 0;
+    return (actualKVA / ratedKVA) * 100;
+  }
+
+  /**
+   * Legacy-compatible phase-to-neutral conversion
+   * phaseToNeutral = Math.round(lineVoltage / 1.732)
+   */
+  convertLineToNeutralVoltage(lineVoltage: number): number {
+    return Math.round(lineVoltage / 1.732);
+  }
+
+  /**
+   * Enhanced current tolerance calculation with exact legacy behavior
+   * Determine tolerance based on UPS KVA rating and system type
+   */
+  calculateCurrentTolerance(kvaValue: number, systemType: 'UPS' | 'PDU' | 'STS' = 'UPS'): number {
+    if (systemType === 'PDU' || systemType === 'STS') {
+      // Fixed 30% tolerance for PDU/STS systems
+      return 0.30;
+    }
+    
+    // UPS systems: KVA > 200 → 30%, KVA ≤ 200 → 50%
+    return kvaValue > 200 ? 0.30 : 0.50;
+  }
+
+  /**
+   * Enhanced current validation with exact legacy behavior
+   */
+  validateCurrentReadingsLegacy(type: 'input' | 'bypass' | 'output', systemType: 'UPS' | 'PDU' | 'STS' = 'UPS'): boolean {
+    const form = type === 'input' ? this.inputReadingsForm : 
+                  type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
+    
+    const configuration = form.get('configuration')?.value;
+    const kvaValue = this.equipmentForm.get('kva')?.value;
+    
+    // Only validate for multi-phase configurations
+    if (!this.isMultiPhaseConfiguration(configuration)) {
+      return true;
+    }
+
+    const upsKVA = this.convertToDouble(kvaValue);
+    const tolerance = this.calculateCurrentTolerance(upsKVA, systemType);
+
+    const currentA = this.convertToDouble(form.get('currA')?.value);
+    const currentB = this.convertToDouble(form.get('currB')?.value);
+    const currentC = this.convertToDouble(form.get('currC')?.value);
+
+    // Validate A and B phases
+    if (currentA === 0 || currentB === 0) {
+      this.showValidationMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} Current A or B cannot be empty`, `${type}CurrentTwoPhase`);
+      return false;
+    }
+
+    // Calculate tolerance value - multiply by current and round to one decimal place
+    const toleranceValueA = Math.round((currentA * tolerance) * 10) / 10;
+
+    // Check A vs B tolerance
+    const diffAB = Math.abs(currentA - currentB);
+    if (diffAB > toleranceValueA) {
+      const message = `${type.charAt(0).toUpperCase() + type.slice(1)} Current A and Current B not in Tolerance. Power Verification will be failed.\nAre you sure you want to do this?\nTolerance range can be: +- ${toleranceValueA}`;
+      
+      if (this.isFormSubmission) {
+        if (confirm(message)) {
+          form.get('currA_PF')?.setValue('F');
+          form.get('currB_PF')?.setValue('F');
+        } else {
+          form.get('currB')?.markAsTouched();
+          return false;
+        }
+      } else {
+        // Visual warning without popup on page load
+        form.get('currA_PF')?.setValue('F');
+        form.get('currB_PF')?.setValue('F');
+      }
+    } else {
+      form.get('currA_PF')?.setValue('P');
+      form.get('currB_PF')?.setValue('P');
+    }
+
+    // Validate C phase if it's a three-phase configuration
+    if (this.isThreePhaseConfiguration(configuration)) {
+      if (currentC === 0) {
+        this.showValidationMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} Current C cannot be empty`, `${type}CurrentThreePhase`);
+        return false;
+      }
+
+      const toleranceValueB = Math.round((currentB * tolerance) * 10) / 10;
+      const diffBC = Math.abs(currentB - currentC);
+
+      if (diffBC > toleranceValueB) {
+        const message = `${type.charAt(0).toUpperCase() + type.slice(1)} Current B and Current C not in Tolerance. Power Verification will be failed.\nAre you sure you want to do this?\nTolerance range can be: +- ${toleranceValueB}`;
+        
+        if (this.isFormSubmission) {
+          if (confirm(message)) {
+            form.get('currB_PF')?.setValue('F');
+            form.get('currC_PF')?.setValue('F');
+          } else {
+            form.get('currC')?.markAsTouched();
+            return false;
+          }
+        } else {
+          // Visual warning without popup on page load
+          form.get('currB_PF')?.setValue('F');
+          form.get('currC_PF')?.setValue('F');
+        }
+      } else {
+        form.get('currB_PF')?.setValue('P');
+        form.get('currC_PF')?.setValue('P');
+      }
+    }
+
+    return true;
+  }
+
   onSave(): void {
     this.saveMode = 'ups';
     this.save(false);
@@ -2071,8 +3029,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   private save(isDraft: boolean): void {
+    // Set form submission flag for validation
+    this.isFormSubmission = true;
+    this.clearAllValidationErrors();
+    
     if (!isDraft && !this.validateComprehensiveInputs()) {
       this.toastr.error('Please correct validation errors before saving');
+      this.isFormSubmission = false; // Reset flag after validation
       return;
     }
 
@@ -2083,8 +3046,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     // Build UPS data using the comprehensive DTO approach
     const upsData = this.buildUPSData(isDraft);
     const saveUpdateDto = convertToSaveUpdateDto(upsData, this.authService.currentUserValue?.username || 'SYSTEM');
-    
-    console.log('Saving UPS data with DTO:', saveUpdateDto);
     
     // Use the new comprehensive SaveUpdateaaETechUPS API method
     this.equipmentService.saveUpdateaaETechUPS(saveUpdateDto)
@@ -2105,13 +3066,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
             this.successMessage = isDraft ? 'Draft saved successfully' : 'UPS readings saved successfully';
             this.toastr.success(this.successMessage);
             
-            console.log('UPS data saved successfully:', response);
+
           } else {
             this.errorMessage = response.message;
             this.toastr.error(this.errorMessage);
           }
           this.saving = false;
           this.saveMode = null;
+          this.isFormSubmission = false; // Reset form submission flag
         },
         error: (error) => {
           console.error('Error saving UPS readings:', error);
@@ -2119,6 +3081,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
           this.toastr.error(this.errorMessage);
           this.saving = false;
           this.saveMode = null;
+          this.isFormSubmission = false; // Reset form submission flag
         }
       });
   }
@@ -2361,7 +3324,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
           if (!response.success) {
             console.error('Error updating equipment status:', response.message);
           } else {
-            console.log('Equipment status updated successfully:', response);
+
           }
         },
         error: (error) => {
@@ -2513,11 +3476,182 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Legacy IsNumeric function - check if input is a valid number
+   * Enhanced legacy IsNumeric function with additional validation
    */
   private isNumeric(input: string): boolean {
+    if (!input || input.trim() === '') return false;
+    
     const RE = /^-{0,1}\d*\.{0,1}\d+$/;
-    return RE.test(input);
+    return RE.test(input.trim());
+  }
+
+  /**
+   * Enhanced legacy findwrongdata function - validates input for prohibited characters
+   * @param input The input string to validate
+   * @param fieldName The name of the field being validated (for error messages)
+   * @returns true if input is valid, false if prohibited characters found
+   */
+  private validateInputCharacters(input: string, fieldName: string): boolean {
+    if (!input) return true; // Empty input is allowed
+    
+    const prohibitedChars = ['/', '\\', '<', '>', '&', '"', "'", ';', ','];
+    
+    for (const char of prohibitedChars) {
+      if (input.includes(char)) {
+        this.showValidationMessage(`${fieldName} - Character "${char}" is not allowed in this field`, 'invalidCharacterInput', fieldName);
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * Enhanced input sanitization and validation
+   * @param input The input string to sanitize
+   * @returns Sanitized string with prohibited characters removed
+   */
+  private sanitizeInput(input: string): string {
+    if (!input) return '';
+    
+    // Remove prohibited characters
+    const prohibitedChars = ['/', '\\', '<', '>', '&', '"', "'"];
+    let sanitized = input;
+    
+    for (const char of prohibitedChars) {
+      sanitized = sanitized.replace(new RegExp(`\\${char}`, 'g'), '');
+    }
+    
+    // Trim whitespace and normalize spacing
+    return sanitized.trim().replace(/\s+/g, ' ');
+  }
+
+  /**
+   * Validate and sanitize form inputs before saving
+   */
+  private validateAndSanitizeAllInputs(): boolean {
+    const forms = [
+      { form: this.equipmentForm, name: 'Equipment' },
+      { form: this.reconciliationForm, name: 'Reconciliation' },
+      { form: this.measurementsForm, name: 'Measurements' },
+      { form: this.inputReadingsForm, name: 'Input Readings' },
+      { form: this.bypassReadingsForm, name: 'Bypass Readings' },
+      { form: this.outputReadingsForm, name: 'Output Readings' },
+      { form: this.rectifierForm, name: 'Rectifier' },
+      { form: this.capacitorForm, name: 'Capacitor' }
+    ];
+
+    for (const { form, name } of forms) {
+      const formValues = form.value;
+      
+      for (const [fieldName, value] of Object.entries(formValues)) {
+        if (typeof value === 'string' && value) {
+          // Validate characters
+          if (!this.validateInputCharacters(value, `${name} ${fieldName}`)) {
+            return false;
+          }
+          
+          // Auto-sanitize the input
+          const sanitized = this.sanitizeInput(value);
+          if (sanitized !== value) {
+            form.get(fieldName)?.setValue(sanitized, { emitEvent: false });
+          }
+        }
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * Enhanced legacy ValidateCurr function - validates current entry order and values
+   * @param currentId The current field being validated
+   * @param value The value being entered
+   * @returns true if validation passes, false otherwise
+   */
+  private validateCurrentEntry(currentId: string, value: string): boolean {
+    if (!value || this.trimAll(value) === '') {
+      return true; // Allow empty values during form setup
+    }
+
+    // Validate numeric input
+    if (!this.isNumeric(value)) {
+      this.showValidationMessage(`${currentId} must be a valid number`, 'invalidNumber', currentId);
+      return false;
+    }
+
+    // Validate current entry order for multi-phase configurations
+    if (currentId.includes('currB') || currentId.includes('currC')) {
+      return this.validateCurrentEntryOrder(currentId, this.getPreviousCurrentField(currentId));
+    }
+
+    return true;
+  }
+
+  /**
+   * Get the previous current field in the sequence for validation
+   * @param currentId The current field ID
+   * @returns The previous field ID in sequence
+   */
+  private getPreviousCurrentField(currentId: string): string {
+    if (currentId.includes('currC')) {
+      return currentId.replace('currC', 'currB');
+    } else if (currentId.includes('currB')) {
+      return currentId.replace('currB', 'currA');
+    }
+    return '';
+  }
+
+  /**
+   * Enhanced current validation with real-time feedback
+   * @param fieldName The field name being validated
+   * @param value The current value
+   */
+  onCurrentFieldChange(fieldName: string, value: string): void {
+    // Only perform validation if form is being submitted or user is actively editing
+    if (!this.loading && !this.isFormSubmission) {
+      // During normal usage, just validate numeric format without alerts
+      if (value && !this.isNumeric(value)) {
+        const control = this.getFormControlByFieldName(fieldName);
+        if (control) {
+          control.setErrors({ 'numeric': true });
+        }
+      }
+    } else if (this.isFormSubmission) {
+      // During form submission, perform full validation with alerts
+      if (value && !this.isNumeric(value)) {
+        const control = this.getFormControlByFieldName(fieldName);
+        if (control) {
+          control.setErrors({ 'numeric': true });
+        }
+      } else {
+        this.validateCurrentEntry(fieldName, value);
+      }
+    }
+    // During page load (loading = true), skip all validation
+  }
+
+  /**
+   * Get form control by field name across all forms
+   * @param fieldName The field name to find
+   * @returns The FormControl if found
+   */
+  private getFormControlByFieldName(fieldName: string): any {
+    const forms = [
+      this.inputReadingsForm,
+      this.bypassReadingsForm,
+      this.outputReadingsForm,
+      this.equipmentForm
+    ];
+
+    for (const form of forms) {
+      const control = form.get(fieldName);
+      if (control) {
+        return control;
+      }
+    }
+    
+    return null;
   }
 
   /**
@@ -2531,7 +3665,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       const phaseLabel = currentId.includes('A') ? 'A' : currentId.includes('B') ? 'B' : 'C';
       const previousPhase = previousCurrentId.includes('A') ? 'A' : 'B';
       
-      alert(`Please first enter Input Current ${previousPhase}`);
+      this.showValidationMessage(`Please first enter Input Current ${previousPhase}`, 'inputCurrentSequence', previousCurrentId);
       previousField?.markAsTouched();
       return false;
     }
@@ -2542,13 +3676,105 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       const bPhaseField = this.outputReadingsForm.get(bPhaseId);
       
       if (!bPhaseField?.value || this.trimAll(bPhaseField.value) === '') {
-        alert('Please first enter Input Current B');
+        this.showValidationMessage('Please first enter Input Current B', 'inputCurrentB', bPhaseId);
         bPhaseField?.markAsTouched();
         return false;
       }
     }
 
     return true;
+  }
+
+  /**
+   * Enhanced form initialization with dynamic field control
+   */
+  private initializeEnhancedFormFeatures(): void {
+    // Set up real-time input validation for current fields
+    this.setupCurrentFieldValidation();
+    
+    // Set up automatic field sanitization
+    this.setupFieldSanitization();
+    
+    // Initialize section visibility based on equipment type
+    this.initializeSectionVisibility();
+  }
+
+  /**
+   * Set up real-time validation for current input fields
+   */
+  private setupCurrentFieldValidation(): void {
+    const currentFields = ['currA', 'currB', 'currC'];
+    const forms = [this.inputReadingsForm, this.bypassReadingsForm, this.outputReadingsForm];
+
+    forms.forEach(form => {
+      currentFields.forEach(fieldName => {
+        const control = form.get(fieldName);
+        if (control) {
+          control.valueChanges
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(value => {
+              if (value) {
+                this.onCurrentFieldChange(fieldName, value);
+              }
+            });
+        }
+      });
+    });
+  }
+
+  /**
+   * Set up automatic field sanitization on value changes
+   */
+  private setupFieldSanitization(): void {
+    const forms = [
+      this.equipmentForm,
+      this.reconciliationForm,
+      this.measurementsForm,
+      this.capacitorForm
+    ];
+
+    forms.forEach(form => {
+      Object.keys(form.controls).forEach(fieldName => {
+        const control = form.get(fieldName);
+        if (control) {
+          // Add value change handling for auto-sanitization
+          control.valueChanges
+            .pipe(
+              takeUntil(this.destroy$),
+              debounceTime(500) // Wait for user to stop typing
+            )
+            .subscribe(value => {
+              if (typeof value === 'string' && value) {
+                const sanitized = this.sanitizeInput(value);
+                if (sanitized !== value) {
+                  control.setValue(sanitized, { emitEvent: false });
+                }
+              }
+            });
+        }
+      });
+    });
+  }
+
+  /**
+   * Initialize section visibility based on equipment characteristics
+   */
+  private initializeSectionVisibility(): void {
+    // Show advanced settings for complex UPS systems
+    const kva = this.convertToDouble(this.equipmentForm.get('kva')?.value || '0');
+    
+    if (kva > 200) {
+      this.showAdvancedSettings = true;
+      this.showPowerDetails = true;
+    }
+    
+    // Show maintenance details for older equipment
+    const year = this.convertToInt(this.equipmentForm.get('year')?.value || new Date().getFullYear());
+    const currentYear = new Date().getFullYear();
+    
+    if (currentYear - year > 10) {
+      this.showMaintenanceDetails = true;
+    }
   }
 
   private formatDateCode(monthName: string, year: number): string {
@@ -3056,9 +4282,114 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     return 'N'; // Default to No for older or smaller systems
   }
 
+  /**
+   * Section visibility control methods (legacy showdiv/hidediv functionality)
+   * These methods provide programmatic control over UI section visibility
+   */
+  
+  /**
+   * Show a specific section (legacy showdiv equivalent)
+   * @param sectionId The section identifier to show
+   */
+  showSection(sectionId: string): void {
+    switch (sectionId) {
+      case 'additionalNotes':
+        this.showAdditionalNotes = true;
+        break;
+      case 'advancedSettings':
+        this.showAdvancedSettings = true;
+        break;
+      case 'debugInfo':
+        this.showDebugInfo = true;
+        break;
+      case 'maintenanceDetails':
+        this.showMaintenanceDetails = true;
+        break;
+      case 'powerDetails':
+        this.showPowerDetails = true;
+        break;
+      default:
+        console.warn(`Unknown section ID: ${sectionId}`);
+    }
+  }
+
+  /**
+   * Hide a specific section (legacy hidediv equivalent)
+   * @param sectionId The section identifier to hide
+   */
+  hideSection(sectionId: string): void {
+    switch (sectionId) {
+      case 'additionalNotes':
+        this.showAdditionalNotes = false;
+        break;
+      case 'advancedSettings':
+        this.showAdvancedSettings = false;
+        break;
+      case 'debugInfo':
+        this.showDebugInfo = false;
+        break;
+      case 'maintenanceDetails':
+        this.showMaintenanceDetails = false;
+        break;
+      case 'powerDetails':
+        this.showPowerDetails = false;
+        break;
+      default:
+        console.warn(`Unknown section ID: ${sectionId}`);
+    }
+  }
+
+  /**
+   * Toggle a specific section visibility
+   * @param sectionId The section identifier to toggle
+   */
+  toggleSection(sectionId: string): void {
+    switch (sectionId) {
+      case 'additionalNotes':
+        this.showAdditionalNotes = !this.showAdditionalNotes;
+        break;
+      case 'advancedSettings':
+        this.showAdvancedSettings = !this.showAdvancedSettings;
+        break;
+      case 'debugInfo':
+        this.showDebugInfo = !this.showDebugInfo;
+        break;
+      case 'maintenanceDetails':
+        this.showMaintenanceDetails = !this.showMaintenanceDetails;
+        break;
+      case 'powerDetails':
+        this.showPowerDetails = !this.showPowerDetails;
+        break;
+      default:
+        console.warn(`Unknown section ID: ${sectionId}`);
+    }
+  }
+
+  /**
+   * Check if a section is currently visible
+   * @param sectionId The section identifier to check
+   * @returns true if section is visible, false otherwise
+   */
+  isSectionVisible(sectionId: string): boolean {
+    switch (sectionId) {
+      case 'additionalNotes':
+        return this.showAdditionalNotes;
+      case 'advancedSettings':
+        return this.showAdvancedSettings;
+      case 'debugInfo':
+        return this.showDebugInfo;
+      case 'maintenanceDetails':
+        return this.showMaintenanceDetails;
+      case 'powerDetails':
+        return this.showPowerDetails;
+      default:
+        console.warn(`Unknown section ID: ${sectionId}`);
+        return false;
+    }
+  }
+
   // Save methods for Environment section
   saveDraft(): void {
-    console.log('Saving as draft...');
     // TODO: Implement save as draft functionality
     this.successMessage = 'UPS readings saved as draft successfully';
     this.errorMessage = '';
@@ -3070,7 +4401,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   saveUPS(): void {
-    console.log('Saving UPS readings...');
     // TODO: Implement save UPS functionality
     this.successMessage = 'UPS readings saved successfully';
     this.errorMessage = '';

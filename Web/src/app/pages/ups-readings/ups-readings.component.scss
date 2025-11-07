@@ -334,6 +334,80 @@
       margin-bottom: 2rem;
     }
 
+    // Enhanced Configuration Boxes Styling
+    .configuration-section {
+      background: linear-gradient(135deg, #7f7a7a 0%, #f8fafc 100%);
+      border: 2px solid #90b0d0;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%);
+        border-radius: 1rem 1rem 0 0;
+      }
+
+      &:hover {
+        border-color: #4f46e5;
+        box-shadow: 0 12px 35px rgba(79, 70, 229, 0.15);
+        transform: translateY(-2px);
+      }
+
+      .configuration-header {
+        margin-bottom: 1rem;
+        
+        .text-primary {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #1e40af !important;
+          text-shadow: 0 1px 2px rgba(30, 64, 175, 0.1);
+          letter-spacing: 0.5px;
+        }
+      }
+    }
+
+    // Enhanced form floating elements within configuration sections
+    .configuration-section .form-floating {
+      .form-select {
+        border: 2px solid #d1d5db;
+        border-radius: 0.75rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #374151;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+
+        &:focus {
+          border-color: #4f46e5;
+          box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1), 0 4px 12px rgba(79, 70, 229, 0.1);
+          background: #ffffff;
+        }
+
+        &:hover {
+          border-color: #9ca3af;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+      }
+
+      label {
+        color: #1e40af !important;
+        font-weight: 700;
+        font-size: 1rem;
+        text-shadow: 0 1px 2px rgba(30, 64, 175, 0.1);
+      }
+    }
+
     .form-floating {
       position: relative;
 
@@ -1692,4 +1766,137 @@
 .ups-section-content::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+// Dynamic Field Expansion Animations
+.table-modern {
+  th, td {
+    transition: all 0.3s ease-in-out;
+  }
+  
+  // Smooth expansion/collapse for current columns
+  th[class*="Current"], 
+  td[class*="curr"] {
+    &.ng-enter {
+      opacity: 0;
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+    
+    &.ng-enter-active {
+      opacity: 1;
+      transform: scaleX(1);
+      transition: all 0.3s ease-out;
+    }
+    
+    &.ng-leave {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+    
+    &.ng-leave-active {
+      opacity: 0;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: all 0.3s ease-in;
+    }
+  }
+}
+
+// Smooth expansion for THD related fields
+.thd-details {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.4s ease-in-out;
+  
+  &.show {
+    opacity: 1;
+    max-height: 500px;
+  }
+}
+
+// Enhanced modern table animations
+.modern-table-container {
+  overflow: hidden;
+  
+  .table-responsive {
+    transition: all 0.3s ease-in-out;
+  }
+}
+
+// Dynamic expansion animations for filter current and THD fields
+.dynamic-section {
+  animation: slideInDown 0.3s ease-out;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border: 1px solid #dee2e6 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+  
+  .form-label {
+    color: #495057;
+    font-weight: 600;
+  }
+  
+  .form-control, .form-select {
+    border: 1px solid #ced4da;
+    transition: all 0.2s ease;
+    
+    &:focus {
+      border-color: #80bdff;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Voltage and Frequency Tolerance Display Styling
+.tolerance-display {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  small {
+    display: block;
+    margin-bottom: 2px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    i {
+      color: #007bff;
+    }
+  }
+  
+  .text-primary {
+    color: #007bff !important;
+  }
+  
+  .text-info {
+    color: #17a2b8 !important;
+  }
+}
+
+
 }
