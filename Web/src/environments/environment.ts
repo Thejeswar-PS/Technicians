@@ -8,9 +8,9 @@ export const environment = {
   USERDATA_KEY: 'authf649fc9a5f55',
   isMockEnabled: true,
   //apiUrl: 'http://localhost:5001/api',
-  //apiUrl: 'https://localhost:7217/api',
+  apiUrl: 'https://localhost:7217/api',
   //apiUrl: 'http://10.0.0.19:3500/api',  // Try this DEV environment
-  apiUrl: 'http://10.0.1.129:3001/api', //DEV
+  // apiUrl: 'http://10.0.1.129:3001/api', //DEV
   //apiUrl: 'http://10.0.1.129:4004/api', //PROD-US
   //apiUrl: 'http://10.0.1.129:4010/api', //PROD-CAN
   appThemeName: 'Metronic',

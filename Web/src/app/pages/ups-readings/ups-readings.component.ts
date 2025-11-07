@@ -158,7 +158,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log('UPS Component: ngOnInit called');
     
     // Initialize with comprehensive manufacturer list immediately to ensure dropdown is populated
     this.manufacturers = [
@@ -179,8 +178,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       { value: 'Vertiv', text: 'Vertiv' }
     ];
     
-    console.log('UPS Component: Initial manufacturers set:', this.manufacturers);
-    
     this.getRouteParams();
     this.loadData();
     
@@ -194,14 +191,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
 
     // Debug form after initialization
     setTimeout(() => {
-      console.log('Equipment form controls after init:', Object.keys(this.equipmentForm.controls));
-      console.log('Equipment form values after init:', this.equipmentForm.value);
-      console.log('Form valid:', this.equipmentForm.valid);
-      console.log('Dropdown data loaded:');
-      console.log('- Manufacturers:', this.manufacturers.length);
-      console.log('- UPS Types:', this.upsTypes.length);
-      console.log('- Multi-Module Types:', this.multiModuleTypes.length);
-      console.log('- Maintenance Bypass Types:', this.maintenanceBypassTypes.length);
+      // Form initialization debug removed
     }, 1000);
   }
 
@@ -256,13 +246,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       modelCorrect: [''], // Default to blank - let user make conscious choice
       actModel: [''],
       serialNo: [''],
-      serialNoCorrect: [''], // Default to blank - let user make conscious choice
+      serialNoCorrect: [''], 
       actSerialNo: [''],
       kvaSize: [''],
-      kvaCorrect: [''], // Default to blank - let user make conscious choice
+      kvaCorrect: [''], 
       actKVA: [''],
       totalEquips: [''],
-      totalEquipsCorrect: [''], // Default to blank - let user make conscious choice
+      totalEquipsCorrect: [''], 
       actTotalEquips: [''],
       verified: [false]
     });
@@ -509,7 +499,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       const currentValue = this.reconciliationForm.get(reconciliationField)?.value;
       if (!currentValue) {
         this.reconciliationForm.patchValue({ [reconciliationField]: value || '' });
-        console.log(`Updated reconciliation ${reconciliationField} to: ${value}`);
       }
     }
   }
@@ -541,21 +530,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
     this.loading = true;
     
     // Load manufacturers
-    console.log('UPS Component: Loading manufacturers...');
     this.equipmentService.getManufacturerNames()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (manufacturers) => {
-          console.log('UPS Component: Received manufacturers:', manufacturers);
           
           // Always update with the API response, which includes comprehensive fallback if API fails
           if (manufacturers && manufacturers.length > 0) {
             this.manufacturers = manufacturers;
-            console.log('UPS Component: Updated manufacturers list with', manufacturers.length, 'items');
           }
         },
         error: (error) => {
-          console.error('UPS Component: Error loading manufacturers:', error);
           // Keep the initial fallback list that was set in ngOnInit
           this.toastr.warning('Using default manufacturer list. Please check your connection.');
         }
@@ -624,7 +609,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error) => {
-          console.error('Error loading UPS data:', error);
           this.loadEquipmentInfo(); // Fallback to equipment info
         }
       });
@@ -640,7 +624,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
           }
         },
         error: (error) => {
-          console.error('Error loading filter currents data:', error);
           // This is not a critical error, so we don't show a toast
         }
       });
@@ -659,9 +642,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
           this.loading = false;
         },
         error: (error: any) => {
-          console.error('Error loading equipment info:', error);
-          this.toastr.error('Error loading equipment information');
+          
+          // Final fallback - ensure month/year are populated even when all data loading fails
+          const currentDate = new Date();
+          const defaultMonthName = currentDate.toLocaleDateString('en-US', { month: 'long' });
+          const defaultYear = currentDate.getFullYear();
+          
+          this.equipmentForm.patchValue({
+            monthName: defaultMonthName,
+            year: defaultYear
+          });
+          
+          // Load reconciliation data after equipment form is populated
+          this.loadReconciliationDataAfterEquipment();
+          
           this.loading = false;
+          this.toastr.error('Error loading equipment data. Using default values.');
         }
       });
   }
@@ -669,12 +665,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   private loadReconciliationDataAfterEquipment(): void {
     // Add a small delay to ensure equipment form is fully populated
     setTimeout(() => {
-      console.log('Loading reconciliation data for CallNbr:', this.callNbr, 'EquipId:', this.equipId);
       this.equipmentService.getEquipReconciliationInfo(this.callNbr, this.equipId)
         .pipe(takeUntil(this.destroy$))
         .subscribe({
           next: (data) => {
-            console.log('Reconciliation data received:', data);
             this.reconciliationData = data;
             this.populateReconciliationForm(data);
           },
@@ -688,26 +682,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
   }
 
   private populateFormsWithData(data: AAETechUPS): void {
-    // Log the date-related fields from backend
-    console.log('Backend date data:', {
-      monthName: data.monthName,
-      year: data.year
-    });
+    // Use the mapped date values for form population
+    const actualMonthName = data.monthName;
+    const actualYear = data.year;
     
     // Determine default values for parallel cabinet and SNMP based on UPS characteristics
     const defaultParallelCabinet = this.determineDefaultParallelCabinet(data);
     const defaultSnmpPresent = this.determineDefaultSnmpPresent(data);
-    
-    console.log('UPS data for form population:', {
-      parallelCabinet: data.parallelCabinet,
-      snmpPresent: data.snmpPresent,
-      defaultParallelCabinet,
-      defaultSnmpPresent,
-      manufacturer: data.manufacturer,
-      kva: data.kva
-    });
 
-    // Populate equipment form
+    // Populate equipment form (following legacy logic - use backend data only)
     this.equipmentForm.patchValue({
       manufacturer: data.manufacturer || '',
       kva: data.kva || '',
@@ -717,8 +700,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       model: data.modelNo || '',
       serialNo: data.serialNo || '',
       location: data.location || '',
-      monthName: data.monthName || '',
-      year: data.year || '',
+      monthName: actualMonthName || '', // Use mapped backend month only, empty if not provided
+      year: actualYear || null, // Use mapped backend year only, null if not provided
       status: data.status || 'Online',
       statusNotes: data.statusReason || '',
       parallelCabinet: data.parallelCabinet || defaultParallelCabinet, // Use backend data or intelligent default
@@ -728,17 +711,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       upsType: data.modularUPS || 'NO' // Use the actual modularUPS value from backend or default to 'NO' (Normal UPS)
     });
 
-    // Update selected date for calendar if dateCode exists
-    if (data.monthName && data.year) {
+    // Log the actual form values after patching to verify what's being set
+    // Update selected date for calendar only if we have valid backend date data
+    if (actualMonthName && actualYear) {
       try {
-        const month = this.getMonthNumber(data.monthName);
+        const month = this.getMonthNumber(actualMonthName);
         if (month !== -1) {
-          this.selectedDate = new Date(parseInt(data.year.toString()), month, 1);
+          this.selectedDate = new Date(actualYear, month, 1);
           this.currentCalendarDate = new Date(this.selectedDate);
           this.selectedYear = this.selectedDate.getFullYear(); // Sync year selector
         }
       } catch (error) {
-        console.log('Could not parse date for calendar:', error);
+        // Could not parse date for calendar
       }
     }
 
@@ -871,25 +855,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
       const defaultParallelCabinet = this.determineDefaultParallelCabinet(tempData);
       const defaultSnmpPresent = this.determineDefaultSnmpPresent(tempData);
       
-      console.log('Equipment info for auto-population:', {
-        equipInfo,
-        tempData,
-        defaultParallelCabinet,
-        defaultSnmpPresent
-      });
-      
       this.equipmentForm.patchValue({
         kva: equipInfo?.Upskva || '',
         serialNo: equipInfo?.SerialID || '',
         location: equipInfo?.Location || '',
         model: equipInfo?.Version || '',
-        dateCode: this.formatEquipDateCode(equipInfo?.EquipMonth, equipInfo?.EquipYear),
+        monthName: equipInfo?.EquipMonth || '', // Use backend month only, empty if not provided
+        year: this.convertToInt(equipInfo?.EquipYear) || null, // Use backend year only, null if not provided
         // Enhanced auto-population with intelligent defaults
         parallelCabinet: tempData.parallelCabinet || defaultParallelCabinet,
         snmpPresent: tempData.snmpPresent || defaultSnmpPresent,
         upsType: equipInfo?.ModularUPS || equipInfo?.UpsType || 'NO'
       });
 
+      // Log the actual form values after patching from equipment info
       if (capsInfo) {
         this.capacitorForm.patchValue({
           dcCapsAge: this.convertZeroToEmpty(capsInfo.DCCapsYear),
@@ -919,18 +898,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
         verified: data.verified || false
       });
       
-      console.log('Reconciliation form populated with existing data:', {
-        modelCorrect: data.modelCorrect,
-        serialNoCorrect: data.serialNoCorrect,
-        kvaCorrect: data.kvaCorrect,
-        totalEquipsCorrect: data.totalEquipsCorrect,
-        populated: {
-          modelCorrect: this.getVerificationDefault(data.modelCorrect),
-          serialNoCorrect: this.getVerificationDefault(data.serialNoCorrect),
-          kvaCorrect: this.getVerificationDefault(data.kvaCorrect),
-          totalEquipsCorrect: this.getVerificationDefault(data.totalEquipsCorrect)
-        }
-      });
     } else {
       // No existing data - use default values for new records
       this.reconciliationForm.patchValue({
@@ -940,7 +907,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy {
         totalEquipsCorrect: this.getVerificationDefault(null)
       });
       
-      console.log('No reconciliation data found - using defaults for new record');
     }
 
     // Set current equipment values from equipment form for comparison

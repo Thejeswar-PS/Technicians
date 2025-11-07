@@ -145,7 +145,13 @@ namespace Technicians.Api.Models
         [MaxLength(500)]
         public string? Comments5 { get; set; }
 
-        // Date Code
+        // Date Code - FIXED: Added missing UPS date code fields
+        [MaxLength(25)]
+        public string? UpsDateCodeMonth { get; set; }
+        
+        public int UpsDateCodeYear { get; set; }
+        
+        // Legacy date code fields (keeping for backward compatibility)
         [MaxLength(25)]
         public string? DateCodeMonth { get; set; }
         
@@ -170,6 +176,15 @@ namespace Technicians.Api.Models
         public float AFWidth1 { get; set; }
         public float AFThickness1 { get; set; }
         public float AFQty1 { get; set; }
+        
+        // MISSING: Added AFEmailSent field to match database
+        public bool AFEmailSent { get; set; }
+        
+        // Maintenance fields
+        public DateTime Create_Date { get; set; }
+        
+        // MISSING: Added LastModified field to match database  
+        public DateTime LastModified { get; set; }
         
         // This field is required by the database - make it non-nullable with default
         [Required]
@@ -307,6 +322,7 @@ namespace Technicians.Api.Models
         [MaxLength(1)]
         public string? DCVoltage_PF { get; set; }
         
+        // MISSING RECTIFIER FIELDS - Added to match stored procedure
         public decimal ACRipple_T { get; set; }
         
         [MaxLength(1)]
