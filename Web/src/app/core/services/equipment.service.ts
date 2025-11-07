@@ -45,11 +45,8 @@ export class EquipmentService {
     .set('callNbr', callNbr)
     .set('techId', techId);
 
-  console.log('EquipmentService: Calling getUploadInfo API with params:', { callNbr, techId });
-
   return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/uploaded-info`, { params }).pipe(
     map((data: any[]) => {
-      console.log('EquipmentService: Raw API response:', data);
       const mappedData = (data || []).map((item, index) => {
         const rawDate = item.uploadJobDt || item.uploadedJobDt || item.UploadJobDt || '';
         const mapped = {
@@ -57,14 +54,11 @@ export class EquipmentService {
           UploadJobDt: rawDate ? new Date(rawDate) : null,
           Type: item.type || item.Type || ''
         };
-        console.log(`EquipmentService: Mapped item ${index}:`, mapped);
         return mapped;
       });
-      console.log('EquipmentService: Final mapped data:', mappedData);
       return mappedData;
     }),
     catchError((error: any) => {
-      console.error('EquipmentService: Error in getUploadInfo:', error);
       throw error;
     })
   );
@@ -96,12 +90,10 @@ export class EquipmentService {
    * Equivalent to da.GetManufNames(ref ddlmanufacturer) in legacy code
    */
   getManufacturerNames(): Observable<any[]> {
-    console.log('EquipmentService: Calling GetManufacturerNames API...');
     
     return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/GetManufacturerNames`)
       .pipe(
         map((response: any) => {
-          console.log('EquipmentService: Raw manufacturers response:', response);
           
           // Handle different response formats
           let manufacturers: any[] = [];
@@ -147,19 +139,14 @@ export class EquipmentService {
             return { value: '', text: '' };
           }).filter(item => item.value && item.text);
           
-          console.log('EquipmentService: Formatted manufacturers:', formattedManufacturers);
-          
           // If we still don't have any manufacturers, return the comprehensive fallback list
           if (formattedManufacturers.length === 0) {
-            console.warn('EquipmentService: No manufacturers found in API response, using comprehensive fallback');
             return this.getComprehensiveManufacturerList();
           }
           
           return formattedManufacturers;
         }),
         catchError((error) => {
-          console.error('EquipmentService: Error loading manufacturers from API:', error);
-          console.log('EquipmentService: Using comprehensive fallback manufacturer list');
           
           return of(this.getComprehensiveManufacturerList());
         })
