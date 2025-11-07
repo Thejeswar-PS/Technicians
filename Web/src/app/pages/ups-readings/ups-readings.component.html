@@ -1667,13 +1667,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 1"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 1"
                             class="text-center"
                           >
                             Status
@@ -1693,13 +1693,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 2"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 2"
                             class="text-center"
                           >
                             Status
@@ -1717,13 +1717,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 2"
                             class="text-center"
                           >
                             Current B
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 2"
                             class="text-center"
                           >
                             Status
@@ -1743,13 +1743,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 3"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 3"
                             class="text-center"
                           >
                             Status
@@ -1767,13 +1767,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 3"
                             class="text-center"
                           >
                             Current B
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 3"
                             class="text-center"
                           >
                             Status
@@ -1791,13 +1791,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 3"
                             class="text-center"
                           >
                             Current C
                           </th>
                           <th
-                            *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent"
+                            *ngIf="inputConfig.phaseCount === 3"
                             class="text-center"
                           >
                             Status
@@ -1833,7 +1833,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 1">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1842,7 +1842,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 1 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 1">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1881,7 +1881,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 2">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1890,7 +1890,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 2">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1927,7 +1927,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 2">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1936,7 +1936,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 2">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -1975,7 +1975,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1984,7 +1984,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -2021,7 +2021,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2030,7 +2030,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -2067,7 +2067,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2076,7 +2076,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3 && showInputFilterCurrent">
+                          <td *ngIf="inputConfig.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="currC_PF"
@@ -2839,13 +2839,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent"
+                            *ngIf="outputConfig.phaseCount >= 1"
                             class="text-center"
                           >
                             Current A
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent"
+                            *ngIf="outputConfig.phaseCount >= 1"
                             class="text-center"
                           >
                             Status
@@ -2863,13 +2863,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent"
+                            *ngIf="outputConfig.phaseCount >= 2"
                             class="text-center"
                           >
                             Current B
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent"
+                            *ngIf="outputConfig.phaseCount >= 2"
                             class="text-center"
                           >
                             Status
@@ -2887,13 +2887,13 @@
                             Status
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent"
+                            *ngIf="outputConfig.phaseCount >= 3"
                             class="text-center"
                           >
                             Current C
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent"
+                            *ngIf="outputConfig.phaseCount >= 3"
                             class="text-center"
                           >
                             Status
@@ -2929,7 +2929,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent">
+                          <td *ngIf="outputConfig.phaseCount >= 1">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2938,7 +2938,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1 && showOutputFilterCurrent">
+                          <td *ngIf="outputConfig.phaseCount >= 1">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -2975,7 +2975,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent">
+                          <td *ngIf="outputConfig.phaseCount >= 2">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2984,7 +2984,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2 && showOutputFilterCurrent">
+                          <td *ngIf="outputConfig.phaseCount >= 2">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -3021,7 +3021,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent">
+                          <td *ngIf="outputConfig.phaseCount >= 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -3030,7 +3030,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3 && showOutputFilterCurrent">
+                          <td *ngIf="outputConfig.phaseCount >= 3">
                             <select
                               class="form-select modern-select"
                               formControlName="currC_PF"
@@ -3525,7 +3525,6 @@
                       class="form-select"
                       formControlName="transMaintByPass"
                     >
-                      <option value="">Select status</option>
                       <option value="P">Pass</option>
                       <option value="F">Fail</option>
                       <option value="A">N/A</option>

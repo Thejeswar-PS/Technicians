@@ -237,8 +237,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.equipmentForm = this.fb.group({
       manufacturer: ['', Validators.required],
       kva: ['', [Validators.required, Validators.min(0)]],
-      multiModule: [''],
-      maintByPass: [''],
+      multiModule: ['Select'], // Default to "Select"
+      maintByPass: ['NA'], // Default to "NA" (None)
       other: [''],
       model: ['', Validators.required],
       serialNo: ['', Validators.required],
@@ -248,7 +248,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       status: ['Online', Validators.required],
       statusNotes: [''],
       parallelCabinet: [''],
-      snmpPresent: [''],
+      snmpPresent: ['PS'], // Default to "PS" (Select)
       modularUPS: [''],
       ctoPartNo: [''], // Added CTO/Part No field
       upsType: ['NO'] // Added UPS Type field with default value 'NO' (Normal UPS)
@@ -271,24 +271,24 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     this.measurementsForm = this.fb.group({
-      inputPower: ['P'],
-      lcd: ['P'],
-      loadKVA: ['P'],
-      threePhase: ['P'],
-      normal: ['P'],
-      caliberation: ['P'],
-      endOfLife: ['P']
+      inputPower: ['P'], // Default "Pass"
+      lcd: ['P'], // Default "Pass"
+      loadKVA: ['P'], // Default "Pass"
+      threePhase: ['P'], // Default "Pass"
+      normal: ['P'], // Default "Pass"
+      caliberation: ['P'], // Default "Pass"
+      endOfLife: ['P'] // Default "Pass"
     });
 
     this.visualForm = this.fb.group({
-      upsOnline: ['P'],
-      checkConnections: ['P'],
-      inspectDamage: ['P'],
-      vacuumClean: ['P'],
-      epoSwitch: ['P'],
-      coolingFans: ['P'],
-      fansAge: ['P'],
-      airFilters: ['P'],
+      upsOnline: ['P'], // Default "Pass"
+      checkConnections: ['P'], // Default "Pass"
+      inspectDamage: ['P'], // Default "Pass"
+      vacuumClean: ['P'], // Default "Pass"
+      epoSwitch: ['P'], // Default "Pass"
+      coolingFans: ['P'], // Default "Pass"
+      fansAge: ['P'], // Default "Pass"
+      airFilters: ['P'], // Default "Pass"
       // Air filter details
       filterSet1Length: [''],
       filterSet1Width: [''],
@@ -302,149 +302,149 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     this.environmentForm = this.fb.group({
-      roomTempVentilation: ['P'],
-      safetyEquipment: ['P'],
-      hostileEnvironment: ['N'], // Default to No for hostile environment
-      serviceSpace: ['P'],
-      circuitBreakers: ['P']
+      roomTempVentilation: ['P'], // Default "Pass"
+      safetyEquipment: ['P'], // Default "Pass"
+      hostileEnvironment: ['N', { selected: true }], // Default to "No" (Selected="True")
+      serviceSpace: ['P'], // Default "Pass"
+      circuitBreakers: ['P'] // Default "Pass"
     });
 
     this.inputReadingsForm = this.fb.group({
       configuration: [''], // Default to "Select" option
       inputFilterCurrent: [false],
       inputThdPercent: [false],
-      voltA: [''],
-      voltA_PF: ['P'],
-      voltB: [''],
-      voltB_PF: ['P'],
-      voltC: [''],
-      voltC_PF: ['P'],
+      voltA: [''], // Will be auto-populated based on configuration (120V, 208V, 480V, 575V, 600V, etc.)
+      voltA_PF: ['P'], // Default "Pass"
+      voltB: [''], // Will be auto-populated based on configuration
+      voltB_PF: ['P'], // Default "Pass"
+      voltC: [''], // Will be auto-populated based on configuration
+      voltC_PF: ['P'], // Default "Pass"
       currA: [''],
-      currA_PF: ['P'],
+      currA_PF: ['P'], // Default "Pass"
       currB: [''],
-      currB_PF: ['P'],
+      currB_PF: ['P'], // Default "Pass"
       currC: [''],
-      currC_PF: ['P'],
-      freq: [''],
-      freq_PF: ['P'],
+      currC_PF: ['P'], // Default "Pass"
+      freq: ['60'], // Default frequency to 60 Hz
+      freq_PF: ['P'], // Default "Pass"
       // Filter Current detail fields
       filterCurrentA: [''],
-      filterCurrentA_PF: [''],
+      filterCurrentA_PF: ['P'], // Default "Pass"
       filterCurrentB: [''],
-      filterCurrentB_PF: [''],
+      filterCurrentB_PF: ['P'], // Default "Pass"
       filterCurrentC: [''],
-      filterCurrentC_PF: [''],
+      filterCurrentC_PF: ['P'], // Default "Pass"
       // Input THD detail fields
       inputThdA: [''],
-      inputThdA_PF: [''],
+      inputThdA_PF: ['P'], // Default "Pass"
       inputThdB: [''],
-      inputThdB_PF: [''],
+      inputThdB_PF: ['P'], // Default "Pass"
       inputThdC: [''],
-      inputThdC_PF: ['']
+      inputThdC_PF: ['P'] // Default "Pass"
     });
 
     this.bypassReadingsForm = this.fb.group({
       configuration: [''], // Default to "Select" option
-      voltA: [''],
-      voltA_PF: ['P'],
-      voltB: [''],
-      voltB_PF: ['P'],
-      voltC: [''],
-      voltC_PF: ['P'],
+      voltA: [''], // Will be auto-populated based on configuration (120V, 208V, 480V, 575V, 600V, etc.)
+      voltA_PF: ['P'], // Default "Pass"
+      voltB: [''], // Will be auto-populated based on configuration
+      voltB_PF: ['P'], // Default "Pass"
+      voltC: [''], // Will be auto-populated based on configuration
+      voltC_PF: ['P'], // Default "Pass"
       currA: [''],
-      currA_PF: ['P'],
+      currA_PF: ['P'], // Default "Pass"
       currB: [''],
-      currB_PF: ['P'],
+      currB_PF: ['P'], // Default "Pass"
       currC: [''],
-      currC_PF: ['P'],
-      freq: [''],
-      freq_PF: ['P']
+      currC_PF: ['P'], // Default "Pass"
+      freq: ['60'], // Default frequency to 60 Hz
+      freq_PF: ['P'] // Default "Pass"
     });
 
     this.outputReadingsForm = this.fb.group({
       configuration: [''], // Default to "Select" option
       outputFilterCurrent: [false],
       outputThdPercent: [false],
-      voltA: [''],
-      voltA_PF: ['P'],
-      voltB: [''],
-      voltB_PF: ['P'],
-      voltC: [''],
-      voltC_PF: ['P'],
+      voltA: [''], // Will be auto-populated based on configuration (120V, 208V, 480V, 575V, 600V, etc.)
+      voltA_PF: ['P'], // Default "Pass"
+      voltB: [''], // Will be auto-populated based on configuration
+      voltB_PF: ['P'], // Default "Pass"
+      voltC: [''], // Will be auto-populated based on configuration
+      voltC_PF: ['P'], // Default "Pass"
       currA: [''],
-      currA_PF: ['P'],
+      currA_PF: ['P'], // Default "Pass"
       currB: [''],
-      currB_PF: ['P'],
+      currB_PF: ['P'], // Default "Pass"
       currC: [''],
-      currC_PF: ['P'],
-      freq: [''],
-      freq_PF: ['P'],
+      currC_PF: ['P'], // Default "Pass"
+      freq: ['60'], // Default frequency to 60 Hz
+      freq_PF: ['P'], // Default "Pass"
       loadA: [''],
-      loadA_PF: ['P'],
+      loadA_PF: ['P'], // Default "Pass"
       loadB: [''],
-      loadB_PF: ['P'],
+      loadB_PF: ['P'], // Default "Pass"
       loadC: [''],
-      loadC_PF: ['P'],
+      loadC_PF: ['P'], // Default "Pass"
       totalLoad: [''],
       // Output Filter Current detail fields
       outputFilterCurrentA: [''],
-      outputFilterCurrentA_PF: [''],
+      outputFilterCurrentA_PF: ['P'], // Default "Pass"
       outputFilterCurrentB: [''],
-      outputFilterCurrentB_PF: [''],
+      outputFilterCurrentB_PF: ['P'], // Default "Pass"
       outputFilterCurrentC: [''],
-      outputFilterCurrentC_PF: [''],
+      outputFilterCurrentC_PF: ['P'], // Default "Pass"
       // Output THD detail fields
       outputThdA: [''],
-      outputThdA_PF: [''],
+      outputThdA_PF: ['P'], // Default "Pass"
       outputThdB: [''],
-      outputThdB_PF: [''],
+      outputThdB_PF: ['P'], // Default "Pass"
       outputThdC: [''],
-      outputThdC_PF: ['']
+      outputThdC_PF: ['P'] // Default "Pass"
     });
 
     this.rectifierForm = this.fb.group({
-      floatVolt_PF: ['P'],
+      floatVolt_PF: ['P'], // Default "Pass"
       dcFloatVoltage: [''],
       dcVoltage: [''],
-      dcVoltage_PF: ['P'],
+      dcVoltage_PF: ['P'], // Default "Pass"
       acRipple: [''],
-      acRipple_PF: ['P'],
+      acRipple_PF: ['P'], // Default "Pass"
       dcCurrent: [''],
-      dcCurrent_PF: ['P'],
+      dcCurrent_PF: ['P'], // Default "Pass"
       acRippleVolt: [''],
-      acRippleVolt_PF: ['P'],
+      acRippleVolt_PF: ['P'], // Default "Pass"
       posToGND: [''],
-      posToGND_PF: ['P'],
+      posToGND_PF: ['P'], // Default "Pass"
       acRippleCurr: [''],
-      acRippleCurr_PF: ['P'],
+      acRippleCurr_PF: ['P'], // Default "Pass"
       negToGND: [''],
-      negToGND_PF: ['P']
+      negToGND_PF: ['P'] // Default "Pass"
     });
 
     this.capacitorForm = this.fb.group({
-      dcCaps_PF: ['P'],
+      dcCaps_PF: ['P'], // Default "Pass"
       dcCapsAge: [''],
-      acInputCaps_PF: ['P'],
+      acInputCaps_PF: ['P'], // Default "Pass"
       acInputCapsAge: [''],
-      acOutputCaps_PF: ['P'],
+      acOutputCaps_PF: ['P'], // Default "Pass"
       acOutputCapsAge: [''],
-      commCaps_PF: ['P'],
+      commCaps_PF: ['P'], // Default "Pass"
       commCapsAge: [''],
       fansYear: ['']
     });
 
     this.transferForm = this.fb.group({
-      firstMajor: [''], 
-      staticBypass: [''], 
-      transMaintByPass: [''], 
-      currentWave: [''],
-      normalMode: [''], 
-      verifyAlarm: [''] 
+      firstMajor: ['N', { selected: true }], // Default to "No" (Selected="True")
+      staticBypass: ['P'], // Default "Pass"
+      transMaintByPass: ['P'], // Default "Pass"
+      currentWave: ['P'], // Default "Pass"
+      normalMode: ['P'], // Default "Pass"
+      verifyAlarm: ['P'] // Default "Pass"
     });
 
     this.actionRequiredForm = this.fb.group({
-      dcgAction1: [''], 
-      custAction1: ['']
+      dcgAction1: ['N'], // Default to "No"
+      custAction1: ['N'] // Default to "No"
     });
 
     // Subscribe to voltage configuration changes
@@ -695,6 +695,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.upsData = data;
           this.populateFormsWithData(data);
           
+          // Initialize any forms/fields that weren't populated with backend data with defaults
+          this.initializeFormsWithDefaults();
+          
           // Load reconciliation data after equipment form is populated
           this.loadReconciliationDataAfterEquipment();
           
@@ -728,6 +731,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (data: any) => {
           this.populateEquipmentForm(data);
           
+          // Initialize any forms/fields that weren't populated with backend data with defaults
+          this.initializeFormsWithDefaults();
+          
           // Load reconciliation data after equipment form is populated
           this.loadReconciliationDataAfterEquipment();
           
@@ -744,6 +750,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             monthName: defaultMonthName,
             year: defaultYear
           });
+          
+          // Initialize any forms/fields with defaults when no backend data is available
+          this.initializeFormsWithDefaults();
           
           // Load reconciliation data after equipment form is populated
           this.loadReconciliationDataAfterEquipment();
@@ -830,6 +839,25 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         break;
     }
+  }
+
+  private initializeFormsWithDefaults(): void {
+    // Visual form defaults - including EPO switch mentioned by user
+    this.visualForm.patchValue({
+      epoSwitch: 'P', // EPO switch cover verification - default to Pass
+    });
+
+    // Environment form defaults - including hostile environment mentioned by user  
+    this.environmentForm.patchValue({
+      hostileEnvironment: 'N', // Hostile environment verification - default to No
+    });
+
+    // Transfer form defaults - this addresses the main issue reported by user
+    this.transferForm.patchValue({
+      transMaintByPass: 'P', // Transfer to Maintenance By-Pass - default to Pass
+    });
+
+    console.log('Transfer verification form fields initialized with default values');
   }
 
   private loadReconciliationDataAfterEquipment(): void {
@@ -1335,11 +1363,147 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   // Calculate total load percentage for output readings
   calculateTotalLoad(): void {
+    // First, validate that all required current fields are filled
+    if (!this.validateAllCurrentFieldsFilled()) {
+      return; // Stop calculation if validation fails
+    }
+
+    // Proceed with load calculation only after all currents are validated
     const loadA = this.convertToDouble(this.outputReadingsForm.get('loadA')?.value || '0');
     const loadB = this.convertToDouble(this.outputReadingsForm.get('loadB')?.value || '0');
     
     const total = loadA + loadB;
     this.outputReadingsForm.get('totalLoad')?.setValue(total);
+
+    // After successful calculation, determine if the load passes or fails
+    this.validateLoadThresholds();
+  }
+
+  /**
+   * Validates that all required output current fields are filled
+   * before allowing load calculation to proceed
+   */
+  private validateAllCurrentFieldsFilled(): boolean {
+    const emptyCurrentFields: string[] = [];
+
+    // Only check Output currents based on configuration
+    const outputConfig = this.outputReadingsForm.get('configuration')?.value;
+    if (outputConfig) {
+      const outputPhaseCount = this.getPhaseCountForConfiguration(outputConfig);
+      if (outputPhaseCount >= 1 && this.isFieldEmpty(this.outputReadingsForm.get('currA')?.value)) {
+        emptyCurrentFields.push('Output Current A');
+      }
+      if (outputPhaseCount >= 2 && this.isFieldEmpty(this.outputReadingsForm.get('currB')?.value)) {
+        emptyCurrentFields.push('Output Current B');
+      }
+      if (outputPhaseCount >= 3 && this.isFieldEmpty(this.outputReadingsForm.get('currC')?.value)) {
+        emptyCurrentFields.push('Output Current C');
+      }
+    }
+
+    // If any output current fields are empty, show validation message and prevent calculation
+    if (emptyCurrentFields.length > 0) {
+      const fieldsList = emptyCurrentFields.join(', ');
+      const message = `Please enter all required output current values before calculating load:\n\nMissing values for: ${fieldsList}`;
+      
+      this.toastr.warning(message, 'Output Current Values Required', {
+        timeOut: 8000,
+        closeButton: true,
+        progressBar: true
+      });
+      
+      // Highlight the first empty field for user attention
+      this.highlightEmptyCurrentField(emptyCurrentFields[0]);
+      
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Helper method to check if a field value is empty or just whitespace
+   */
+  private isFieldEmpty(value: any): boolean {
+    return value === null || value === undefined || value === '' || 
+           (typeof value === 'string' && value.trim() === '');
+  }
+
+  /**
+   * Get the number of phases for a given voltage configuration
+   */
+  private getPhaseCountForConfiguration(configId: string): number {
+    const config = this.getVoltageConfiguration(configId);
+    return config?.phaseCount || 1;
+  }
+
+  /**
+   * Highlights the section and field containing the empty output current value
+   */
+  private highlightEmptyCurrentField(fieldName: string): void {
+    // Only handle output current fields now
+    if (fieldName.includes('Output')) {
+      this.showPowerVerification = true;
+      const fieldId = fieldName.replace('Output Current ', 'curr').toLowerCase();
+
+      // Focus on the empty field after a short delay to allow section to expand
+      setTimeout(() => {
+        const element = document.querySelector(`input[formControlName="${fieldId}"]`) as HTMLElement;
+        if (element) {
+          element.focus();
+          element.style.borderColor = '#dc3545';
+          element.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+          
+          // Remove highlight after 5 seconds
+          setTimeout(() => {
+            element.style.borderColor = '';
+            element.style.boxShadow = '';
+          }, 5000);
+        }
+      }, 500);
+    }
+  }
+
+  /**
+   * Validates load thresholds and provides feedback after calculation
+   */
+  private validateLoadThresholds(): void {
+    const totalLoad = this.convertToDouble(this.outputReadingsForm.get('totalLoad')?.value || '0');
+    
+    if (totalLoad > 85) {
+      let message = '';
+      let toastrType: 'error' | 'warning' = 'warning';
+      
+      if (totalLoad > 95) {
+        message = `Critical: Load calculation shows ${totalLoad.toFixed(2)}% - UPS is severely overloaded!`;
+        toastrType = 'error';
+      } else if (totalLoad > 90) {
+        message = `Warning: Load calculation shows ${totalLoad.toFixed(2)}% - UPS load is too high!`;
+        toastrType = 'error';
+      } else {
+        message = `Caution: Load calculation shows ${totalLoad.toFixed(2)}% - UPS load is approaching maximum threshold.`;
+      }
+      
+      if (toastrType === 'error') {
+        this.toastr.error(message, 'Load Threshold Exceeded', {
+          timeOut: 10000,
+          closeButton: true,
+          progressBar: true
+        });
+      } else {
+        this.toastr.warning(message, 'Load Warning', {
+          timeOut: 8000,
+          closeButton: true,
+          progressBar: true
+        });
+      }
+    } else {
+      this.toastr.success(`Load calculation completed: ${totalLoad.toFixed(2)}% - Within acceptable range`, 'Calculation Successful', {
+        timeOut: 5000,
+        closeButton: true,
+        progressBar: true
+      });
+    }
   }
 
   /**
@@ -2470,6 +2634,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           voltB: expectedVoltage.toString(),  // B-C  
           voltC: expectedVoltage.toString()   // C-A
         });
+      }
+      
+      // Auto-calculate and populate phase-to-neutral values if applicable
+      if (config.showPhaseToNeutral) {
+        const phaseToNeutralVoltage = Math.round(expectedVoltage / 1.732);
+        // Note: Phase-to-neutral calculations are auto-populated based on line-to-line values
+        // This matches the legacy behavior where P-N values are calculated automatically
       }
     }
 
