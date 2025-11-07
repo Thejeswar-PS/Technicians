@@ -1203,5 +1203,55 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Save or update equipment reconciliation information
+        /// </summary>
+        /// <param name="request">Equipment reconciliation data</param>
+        /// <returns>Success status with operation details</returns>
+        [HttpPost("SaveUpdateEquipReconciliation")]
+        public async Task<ActionResult<object>> SaveUpdateEquipReconciliation([FromBody] SaveUpdateEquipReconciliationDto request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return BadRequest(new { success = false, message = "Request data is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.CallNbr))
+                {
+                    return BadRequest(new { success = false, message = "CallNbr is required" });
+                }
+
+                if (request.EquipID <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Valid EquipID is required" });
+                }
+
+                var result = await _repository.SaveUpdateEquipReconciliationAsync(request);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Equipment reconciliation saved successfully",
+                    rowsAffected = result,
+                    callNbr = request.CallNbr,
+                    equipId = request.EquipID
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving equipment reconciliation for CallNbr: {CallNbr}, EquipID: {EquipID}", 
+                    request?.CallNbr, request?.EquipID);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while saving equipment reconciliation",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

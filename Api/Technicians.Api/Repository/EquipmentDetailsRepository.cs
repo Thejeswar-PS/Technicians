@@ -1432,5 +1432,65 @@ namespace Technicians.Api.Repository
                 throw;
             }
         }
+
+        //31. SaveUpdateEquipReconciliation - Save or update equipment reconciliation data
+        public async Task<int> SaveUpdateEquipReconciliationAsync(SaveUpdateEquipReconciliationDto request)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("SaveUpdateEquipReconciliation", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                // Add all parameters matching the stored procedure signature
+                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
+                cmd.Parameters.AddWithValue("@Make", request.Make ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@MakeCorrect", request.MakeCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActMake", request.ActMake ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Model", request.Model ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ModelCorrect", request.ModelCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActModel", request.ActModel ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SerialNo", request.SerialNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SerialNoCorrect", request.SerialNoCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActSerialNo", request.ActSerialNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@KVA", request.KVA ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@KVACorrect", request.KVACorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActKVA", request.ActKVA ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ASCStringsNo", request.ASCStringsNo);
+                cmd.Parameters.AddWithValue("@ASCStringsCorrect", request.ASCStringsCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActASCStringNo", request.ActASCStringNo);
+                cmd.Parameters.AddWithValue("@BattPerString", request.BattPerString);
+                cmd.Parameters.AddWithValue("@BattPerStringCorrect", request.BattPerStringCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActBattPerString", request.ActBattPerString);
+                cmd.Parameters.AddWithValue("@TotalEquips", request.TotalEquips);
+                cmd.Parameters.AddWithValue("@TotalEquipsCorrect", request.TotalEquipsCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActTotalEquips", request.ActTotalEquips);
+                cmd.Parameters.AddWithValue("@Verified", request.Verified);
+                cmd.Parameters.AddWithValue("@ModifiedBy", request.ModifiedBy ?? "SYSTEM");
+
+                await conn.OpenAsync();
+                var result = await cmd.ExecuteNonQueryAsync();
+
+                _logger.LogInformation("SaveUpdateEquipReconciliation completed for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+
+                return result;
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL error in SaveUpdateEquipReconciliationAsync for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SaveUpdateEquipReconciliationAsync for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+                throw;
+            }
+        }
     }
 }

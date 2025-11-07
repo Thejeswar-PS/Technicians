@@ -312,11 +312,23 @@ export class EquipmentService {
 
   /**
    * Get equipment status options for dropdown
-   * This could be enhanced to call backend API for dynamic status options
+   * Calls the backend GetStatusDescription endpoint for dynamic status options
    */
   getEquipmentStatusOptions(): Observable<{ value: string; text: string }[]> {
-    return this.http.get<{ value: string; text: string }[]>(`${this.apiUrl}/EquipmentDetails/GetStatusOptions`)
+    const params = new HttpParams().set('equipType', 'UPS'); // Default to UPS equipment type
+    
+    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/EquipmentDetails/GetStatusDescription`, { params })
       .pipe(
+        map(response => {
+          if (response.success && response.data && response.data.length > 0) {
+            // Map backend data to dropdown format
+            return response.data.map(item => ({
+              value: item.StatusType || item.statusType || '',
+              text: item.StatusDescription || item.statusDescription || item.StatusType || item.statusType || ''
+            }));
+          }
+          return [];
+        }),
         catchError(() => {
           // Fallback to predefined options if API fails
           const statusOptions = [
@@ -378,10 +390,10 @@ export class EquipmentService {
 
   /**
    * Save equipment reconciliation info
-   * Equivalent to dl.SaveUpdateEquipReconciliationInfo(ARI, ref ErrMsg) in legacy code
+   * Uses the SaveUpdateEquipReconciliation API endpoint with correct DTO structure
    */
-  saveEquipReconciliationInfo(reconciliationData: any): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/UPSReadings/SaveEquipReconciliationInfo`, reconciliationData);
+  saveEquipReconciliationInfo(reconciliationData: any): Observable<{ success: boolean; message: string; rowsAffected?: number; callNbr?: string; equipId?: number }> {
+    return this.http.post<{ success: boolean; message: string; rowsAffected?: number; callNbr?: string; equipId?: number }>(`${this.apiUrl}/EquipmentDetails/SaveUpdateEquipReconciliation`, reconciliationData);
   }
 
   /**

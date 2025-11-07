@@ -27,6 +27,10 @@
         <i class="bi bi-speedometer2 me-2"></i>
         UPS Readings & Verification
       </h2>
+      <!-- Job and Equipment Information -->
+      <div class="text-dark mt-2" *ngIf="!loading">
+        <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | UPS ID: {{ upsId || 'N/A' }}</span>
+      </div>
     </div>
     
     <button
@@ -1810,7 +1814,7 @@
                       <tbody>
                         <tr>
                           <!-- Single Phase Fields -->
-                          <td *ngIf="inputConfig.phaseCount === 1">
+                          <td *ngIf="inputConfig?.phaseCount === 1">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1819,7 +1823,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 1">
+                          <td *ngIf="inputConfig?.phaseCount === 1">
                             <select
                               class="form-select modern-select"
                               formControlName="voltA_PF"
@@ -1833,7 +1837,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 1">
+                          <td *ngIf="inputConfig?.phaseCount === 1">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1842,7 +1846,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 1">
+                          <td *ngIf="inputConfig?.phaseCount === 1">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1858,7 +1862,7 @@
                           </td>
 
                           <!-- Two Phase Fields -->
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1867,7 +1871,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <select
                               class="form-select modern-select"
                               formControlName="voltA_PF"
@@ -1881,7 +1885,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1890,7 +1894,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1904,7 +1908,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1913,7 +1917,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <select
                               class="form-select modern-select"
                               formControlName="voltB_PF"
@@ -1927,7 +1931,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1936,7 +1940,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 2">
+                          <td *ngIf="inputConfig?.phaseCount === 2">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -1952,7 +1956,7 @@
                           </td>
 
                           <!-- Three Phase Fields -->
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1961,7 +1965,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="voltA_PF"
@@ -1975,7 +1979,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -1984,7 +1988,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="currA_PF"
@@ -1998,7 +2002,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2007,7 +2011,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="voltB_PF"
@@ -2021,7 +2025,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2030,7 +2034,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="currB_PF"
@@ -2044,7 +2048,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2053,7 +2057,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="voltC_PF"
@@ -2067,7 +2071,7 @@
                               </option>
                             </select>
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2076,7 +2080,7 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="inputConfig.phaseCount === 3">
+                          <td *ngIf="inputConfig?.phaseCount === 3">
                             <select
                               class="form-select modern-select"
                               formControlName="currC_PF"

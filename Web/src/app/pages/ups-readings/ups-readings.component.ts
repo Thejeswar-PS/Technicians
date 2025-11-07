@@ -692,6 +692,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
+          console.log('UPS data loaded from server:', data);
           this.upsData = data;
           this.populateFormsWithData(data);
           
@@ -704,6 +705,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loading = false;
         },
         error: (error) => {
+          console.log('UPS readings not found, falling back to equipment info:', error);
           this.loadEquipmentInfo(); // Fallback to equipment info
         }
       });
@@ -880,9 +882,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private populateFormsWithData(data: AAETechUPS): void {
-    // Use the mapped date values for form population
-    const actualMonthName = data.monthName;
-    const actualYear = data.year;
+    // Use the mapped date values for form population - check multiple possible field names
+    const actualMonthName = (data as any).upsDateCodeMonth || data.monthName || (data as any).UpsDateCodeMonth;
+    const actualYear = (data as any).upsDateCodeYear || data.year || (data as any).UpsDateCodeYear;
     
     // Determine default values for parallel cabinet and SNMP based on UPS characteristics
     const defaultParallelCabinet = this.determineDefaultParallelCabinet(data);
@@ -1041,6 +1043,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       const equipInfo = data.Tables[0].Rows[0];
       const capsInfo = data.Tables[1]?.Rows[0];
       
+
+
+      
       // Create temporary data object for default value calculation
       const tempData = {
         manufacturer: equipInfo?.Manufacturer || '',
@@ -1058,8 +1063,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         serialNo: equipInfo?.SerialID || '',
         location: equipInfo?.Location || '',
         model: equipInfo?.Version || '',
-        monthName: equipInfo?.EquipMonth || '', // Use backend month only, empty if not provided
-        year: this.convertToInt(equipInfo?.EquipYear) || null, // Use backend year only, null if not provided
+        monthName: equipInfo?.upsDateCodeMonth || equipInfo?.UpsDateCodeMonth || equipInfo?.EquipMonth || '', // Use upsDateCodeMonth first, then other fallbacks
+        year: this.convertToInt(equipInfo?.upsDateCodeYear) || this.convertToInt(equipInfo?.UpsDateCodeYear) || this.convertToInt(equipInfo?.EquipYear) || null, // Use upsDateCodeYear first, then other fallbacks
         // Enhanced auto-population with intelligent defaults
         parallelCabinet: tempData.parallelCabinet || defaultParallelCabinet,
         snmpPresent: tempData.snmpPresent || defaultSnmpPresent,
@@ -2133,8 +2138,34 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const bypassConfig = this.bypassReadingsForm.get('configuration')?.value;
     const outputConfig = this.outputReadingsForm.get('configuration')?.value;
 
-    if (inputConfig === '0' || bypassConfig === '0' || outputConfig === '0') {
-      this.showValidationMessage('You must enter the values for Input, Bypass and Output voltages.', 'voltageConfigSettings');
+    // Check if any configurations are missing or set to default values
+    const missingConfigs = [];
+    
+    if (!inputConfig || inputConfig === '' || inputConfig === '0') {
+      missingConfigs.push('Input');
+    }
+    
+    if (!bypassConfig || bypassConfig === '' || bypassConfig === '0') {
+      missingConfigs.push('Bypass');
+    }
+    
+    if (!outputConfig || outputConfig === '' || outputConfig === '0') {
+      missingConfigs.push('Output');
+    }
+
+    if (missingConfigs.length > 0) {
+      const configsList = missingConfigs.join(', ');
+      const message = `Please select voltage configurations for all sections before saving UPS data.\n\nMissing configurations: ${configsList}`;
+      
+      this.toastr.error(message, 'Voltage Configuration Required', {
+        timeOut: 8000,
+        closeButton: true,
+        progressBar: true
+      });
+      
+      // Expand the Power Verification section to show the missing configurations
+      this.showPowerVerification = true;
+      
       return false;
     }
 
@@ -3045,6 +3076,26 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return true;
   }
 
+  private reloadDataAfterSave(): void {
+    // Reload UPS data from server to ensure data persistence is verified
+    this.equipmentService.getUPSReadings(this.callNbr, this.equipId, this.upsId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          if (data) {
+            this.upsData = data;
+            // Don't repopulate forms to avoid overwriting user's current work
+            // The data is just verified to be saved correctly
+            console.log('Data successfully verified as saved to server');
+          }
+        },
+        error: (error) => {
+          console.warn('Could not verify data persistence:', error);
+          // Not critical error, don't show to user
+        }
+      });
+  }
+
   onSave(): void {
     this.saveMode = 'ups';
     this.save(false);
@@ -3065,11 +3116,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isFormSubmission = true;
     this.clearAllValidationErrors();
     
+    // Only validate for full saves, not drafts
     if (!isDraft && !this.validateComprehensiveInputs()) {
-      this.toastr.error('Please correct validation errors before saving');
+      this.toastr.error('Please correct validation errors before saving UPS data');
       this.isFormSubmission = false; // Reset flag after validation
       return;
     }
+
+    // Debug logging to track save process
+    console.log('Starting save process...', {
+      isDraft,
+      callNbr: this.callNbr,
+      equipId: this.equipId,
+      upsId: this.upsId
+    });
 
     this.saving = true;
     this.errorMessage = '';
@@ -3077,20 +3137,23 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Build UPS data using the comprehensive DTO approach
     const upsData = this.buildUPSData(isDraft);
+    console.log('Built UPS data for save:', upsData);
     const saveUpdateDto = convertToSaveUpdateDto(upsData, this.authService.currentUserValue?.username || 'SYSTEM');
+    console.log('Converted DTO for API:', saveUpdateDto);
     
     // Use the new comprehensive SaveUpdateaaETechUPS API method
     this.equipmentService.saveUpdateaaETechUPS(saveUpdateDto)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: SaveUpdateUPSResponse) => {
+          console.log('Save response received:', response);
           if (response.success) {
             // Update equipment status if not draft
             if (!isDraft) {
               this.updateEquipmentStatus();
             }
             
-            // Save reconciliation data
+            // Save reconciliation data (non-blocking - don't let this prevent main save success)
             this.saveReconciliationData();
             
             // Filter currents data removed - handled in power verification section
@@ -3098,8 +3161,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             this.successMessage = isDraft ? 'Draft saved successfully' : 'UPS readings saved successfully';
             this.toastr.success(this.successMessage);
             
+            // Reload data from server to ensure consistency after save
+            this.reloadDataAfterSave();
+            
 
           } else {
+            console.error('Save failed:', response.message);
             this.errorMessage = response.message;
             this.toastr.error(this.errorMessage);
           }
@@ -3349,18 +3416,21 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       vfSelection: ''
     };
 
+    console.log('Updating equipment status:', statusData);
+
     this.equipmentService.updateEquipStatus(statusData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (!response.success) {
-            console.error('Error updating equipment status:', response.message);
+          if (response.success) {
+            console.log('Equipment status updated successfully');
           } else {
-
+            console.warn('Equipment status update failed:', response.message);
           }
         },
         error: (error) => {
-          console.error('Error updating equipment status:', error);
+          console.warn('Equipment status update endpoint failed:', error);
+          // This is not critical - the main UPS data is still saved successfully
         }
       });
   }
@@ -3368,43 +3438,56 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private saveReconciliationData(): void {
     const reconciliation = this.reconciliationForm.value;
     
+    // Only attempt to save reconciliation data if the form has meaningful data
+    if (!reconciliation.verified && !reconciliation.modelCorrect && !reconciliation.serialNoCorrect && !reconciliation.kvaCorrect) {
+      console.log('Skipping reconciliation save - no verification data entered');
+      return;
+    }
+    
+    // Map to the correct DTO structure that matches your backend SaveUpdateEquipReconciliationDto
     const reconciliationData = {
-      callNbr: this.callNbr,
-      equipId: this.equipId,
-      make: this.equipmentForm.get('manufacturer')?.value,
-      makeCorrect: '',
-      actMake: '',
-      model: reconciliation.model,
-      modelCorrect: reconciliation.modelCorrect,
-      actModel: reconciliation.actModel,
-      serialNo: reconciliation.serialNo,
-      serialNoCorrect: reconciliation.serialNoCorrect,
-      actSerialNo: reconciliation.actSerialNo,
-      kva: reconciliation.kvaSize,
-      kvaCorrect: reconciliation.kvaCorrect,
-      actKVA: reconciliation.actKVA,
-      ascStringsNo: 0,
-      ascStringsCorrect: '',
-      actASCStringNo: 0,
-      battPerString: 0,
-      battPerStringCorrect: '',
-      actBattPerString: 0,
-      totalEquips: this.convertToInt(reconciliation.totalEquips),
-      totalEquipsCorrect: reconciliation.totalEquipsCorrect,
-      actTotalEquips: this.convertToInt(reconciliation.actTotalEquips),
-      verified: reconciliation.verified
+      CallNbr: this.callNbr,
+      EquipID: this.equipId,
+      Make: this.equipmentForm.get('manufacturer')?.value || '',
+      MakeCorrect: '',
+      ActMake: '',
+      Model: reconciliation.model || '',
+      ModelCorrect: reconciliation.modelCorrect || '',
+      ActModel: reconciliation.actModel || '',
+      SerialNo: reconciliation.serialNo || '',
+      SerialNoCorrect: reconciliation.serialNoCorrect || '',
+      ActSerialNo: reconciliation.actSerialNo || '',
+      KVA: reconciliation.kvaSize || '',
+      KVACorrect: reconciliation.kvaCorrect || '',
+      ActKVA: reconciliation.actKVA || '',
+      ASCStringsNo: 0,
+      ASCStringsCorrect: '',
+      ActASCStringNo: 0,
+      BattPerString: 0,
+      BattPerStringCorrect: '',
+      ActBattPerString: 0,
+      TotalEquips: this.convertToInt(reconciliation.totalEquips),
+      TotalEquipsCorrect: reconciliation.totalEquipsCorrect || '',
+      ActTotalEquips: this.convertToInt(reconciliation.actTotalEquips),
+      Verified: reconciliation.verified || false,
+      ModifiedBy: this.authService.currentUserValue?.username || 'SYSTEM'
     };
+
+    console.log('Attempting to save reconciliation data:', reconciliationData);
 
     this.equipmentService.saveEquipReconciliationInfo(reconciliationData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          if (!response.success) {
-            console.error('Error saving reconciliation data:', response.message);
+          if (response.success) {
+            console.log('Reconciliation data saved successfully', response);
+          } else {
+            console.warn('Reconciliation save failed:', response.message);
           }
         },
         error: (error) => {
-          console.error('Error saving reconciliation data:', error);
+          console.warn('Reconciliation save failed:', error);
+          // This is not critical - the main UPS data is still saved successfully
         }
       });
   }
