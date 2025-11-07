@@ -20,6 +20,7 @@ import { JobPartsComponent } from './job-parts/job-parts.component';
 import { EditPartsComponent } from './edit-parts/edit-parts.component';
 import { JobSummarySampleComponent } from './job-summary-sample/job-summary-sample.component';
 import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
+import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
 
 
 
@@ -39,7 +40,8 @@ import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
     JobSafetyComponent,
     JobPartsComponent,
     EditPartsComponent,
-    JobSummarySampleComponent
+    JobSummarySampleComponent,
+    BatteryReadingsComponent
   ],
   imports: [
     CommonModule,

@@ -13,6 +13,7 @@ import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component
 import { JobSafetyComponent } from './job-safety/job-safety.component';
 import { JobPartsComponent } from './job-parts/job-parts.component';
 import { EditPartsComponent } from './edit-parts/edit-parts.component';
+import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
 
 const routes: Routes = [
   {
@@ -75,6 +76,10 @@ const routes: Routes = [
   {
     path: 'edit-parts',
     component: EditPartsComponent
+  },
+  {
+    path: 'battery-readings',
+    component: BatteryReadingsComponent
   }
   // Job summary sample route commented out for integration-only usage
   // {

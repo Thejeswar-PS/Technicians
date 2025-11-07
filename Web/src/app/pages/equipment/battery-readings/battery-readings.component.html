@@ -1,0 +1,1331 @@
+<div class="container-fluid bg-light pt-5 pb-5">
+  <!-- Error/Success Messages -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <strong>Error:</strong> {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''" aria-label="Close"></button>
+  </div>
+
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    <strong>Success:</strong> {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = ''" aria-label="Close"></button>
+  </div>
+
+  <!-- Header Section -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        Battery Readings - Job No: {{ callNbr }} | Equipment: {{ batStrId }} | ID: {{ equipId }}
+      </h4>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <p class="mb-2">
+            <strong>Equipment ID:</strong> {{ equipId }} | <strong>Tech:</strong> {{ techName }} |
+            <strong>Reading Type:</strong> {{ readingType }}
+          </p>
+        </div>
+        <div class="col-md-4 text-end">
+          <button class="btn btn-secondary btn-sm" (click)="goBack()">
+            <i class="fa fa-arrow-left"></i> Back to Equipment Details
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="batteryStringForm">
+    <!-- BATTERY STRING INFORMATION SECTION -->
+    <div class="card mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Equipment Information</h5>
+      </div>
+      <div class="card-body">
+        <!-- Row 1: Manufacturer / Battery Housing / Model / Serial -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="manufacturer" class="form-label">Manufacturer :</label>
+              <select class="form-select" id="manufacturer" formControlName="manufacturer">
+                <option value="">Please Select</option>
+                <option *ngFor="let mfg of manufacturers" [value]="mfg.id">{{ mfg.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="batteryHousing" class="form-label">Battery Housing :</label>
+              <select class="form-select" id="batteryHousing" formControlName="batteryHousing">
+                <option value="PS">Please Select</option>
+                <option value="Cabinet">Cabinet</option>
+                <option value="Rack">Rack</option>
+                <option value="Encapsulated Tray">Encapsulated Tray</option>
+                <option value="Internal">Internal</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="modelNo" class="form-label">Model No :</label>
+              <input type="text" class="form-control" id="modelNo" formControlName="modelNo" />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="serialNo" class="form-label">Serial / Identification No :</label>
+              <input type="text" class="form-control" id="serialNo" formControlName="serialNo" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Location / Battery Voltage Type / Battery Type Category / Status / Date Code -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="location" class="form-label">Location :</label>
+              <input type="text" class="form-control" id="location" formControlName="location" />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="batteryType" class="form-label">Battery Type :</label>
+              <select
+                class="form-select"
+                id="batteryType"
+                formControlName="batteryType"
+                (change)="onBatteryTypeChange()"
+              >
+                <option value="PS">Please Select</option>
+                <option value="SV">16 V</option>
+                <option value="FV">14 V</option>
+                <option value="V">12 V</option>
+                <option value="TV">10 V</option>
+                <option value="8V">8 V</option>
+                <option value="6V">6 V</option>
+                <option value="4V">4 V</option>
+                <option value="4L">4L-Long Life</option>
+                <option value="2V">2 V</option>
+                <option value="1V">1.2 V</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <!-- Legacy had this second dropdown in same row without a label -->
+              <label for="batteryTypeName" class="form-label d-none">Battery Type Name</label>
+              <select
+                class="form-select"
+                id="batteryTypeName"
+                formControlName="batteryTypeName"
+                (change)="onBatteryTypeChange()"
+              >
+                <option value="">Please Select</option>
+                <option value="S">Sealed</option>
+                <option value="L">Long Life</option>
+                <option value="F">Flooded</option>
+                <option value="I">Li-Ion</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="equipStatus" class="form-label">Status :</label>
+              <select class="form-select" id="equipStatus" formControlName="equipStatus">
+                <option value="Online">On-Line</option>
+                <option value="CriticalDeficiency">Critical Deficiency</option>
+                <option value="ReplacementRecommended">Replacement Recommended</option>
+                <option value="ProactiveReplacement">Proactive Replacement</option>
+                <option value="OnLine(MajorDeficiency)">On-Line(Major Deficiency)</option>
+                <option value="OnLine(MinorDeficiency)">On-Line(Minor Deficiency)</option>
+                <option value="Offline">Off-Line</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="startDate" class="form-label">Date Code :</label>
+              <input
+                type="text"
+                class="form-control"
+                id="startDate"
+                formControlName="startDate"
+                placeholder="MM/DD/YYYY"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Reason for Status conditional -->
+        <div class="row" *ngIf="batteryStringForm.get('equipStatus')?.value && batteryStringForm.get('equipStatus')?.value !== 'Online'">
+          <div class="col-md-12">
+            <div class="mb-3">
+              <label for="commentsUsed" class="form-label">Reason for Status:</label>
+              <textarea class="form-control" id="commentsUsed" formControlName="commentsUsed" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECONCILIATION SECTION MOVED IMMEDIATELY AFTER EQUIPMENT INFO -->
+    <div class="card mb-4" [formGroup]="reconciliationForm">
+      <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Reconciliation</h5>
+        <div class="form-check ms-2">
+          <input type="checkbox" class="form-check-input" id="reconciled" formControlName="reconciled" />
+          <label class="form-check-label fw-bold text-warning" for="reconciled">Verified</label>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Make Row -->
+        <div class="row align-items-end g-3">
+          <div class="col-md-3">
+            <label for="recMake" class="form-label">Make :</label>
+            <input type="text" class="form-control" id="recMake" formControlName="recMake" readonly />
+          </div>
+          <div class="col-md-2">
+            <label for="recMakeCorrect" class="form-label">Is this Correct ?</label>
+            <select class="form-select" id="recMakeCorrect" formControlName="recMakeCorrect">
+              <option value="Y">Yes</option>
+              <option value="N">No</option>
+              <option value="NA">N/A</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="actMake" class="form-label">Actual :</label>
+            <input type="text" class="form-control" id="actMake" formControlName="actMake" />
+          </div>
+        </div>
+
+        <!-- Model Row -->
+        <div class="row align-items-end g-3 mt-2">
+          <div class="col-md-3">
+            <label for="recModel" class="form-label">Model :</label>
+            <input type="text" class="form-control" id="recModel" formControlName="recModel" readonly />
+          </div>
+          <div class="col-md-2">
+            <label for="recModelCorrect" class="form-label">Is this Correct ?</label>
+            <select class="form-select" id="recModelCorrect" formControlName="recModelCorrect">
+              <option value="Y">Yes</option>
+              <option value="N">No</option>
+              <option value="NA">N/A</option>
+            </select>
+          </div>
+            <div class="col-md-3">
+            <label for="actModel" class="form-label">Actual :</label>
+            <input type="text" class="form-control" id="actModel" formControlName="actModel" />
+          </div>
+        </div>
+
+        <!-- Serial Row -->
+        <div class="row align-items-end g-3 mt-2">
+          <div class="col-md-3">
+            <label for="recSerialNo" class="form-label">Serial No :</label>
+            <input type="text" class="form-control" id="recSerialNo" formControlName="recSerialNo" readonly />
+          </div>
+          <div class="col-md-2">
+            <label for="recSerialNoCorrect" class="form-label">Is this Correct ?</label>
+            <select class="form-select" id="recSerialNoCorrect" formControlName="recSerialNoCorrect">
+              <option value="Y">Yes</option>
+              <option value="N">No</option>
+              <option value="NA">N/A</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="actSerialNo" class="form-label">Actual :</label>
+            <input type="text" class="form-control" id="actSerialNo" formControlName="actSerialNo" />
+          </div>
+        </div>
+
+        <!-- Batteries per String Row -->
+        <div class="row align-items-end g-3 mt-2">
+          <div class="col-md-3">
+            <label for="battPerString" class="form-label">Batteries Per String :</label>
+            <input type="number" class="form-control" id="battPerString" formControlName="battPerString" readonly />
+          </div>
+          <div class="col-md-2">
+            <label for="battPerStringCorrect" class="form-label">Is this Correct ?</label>
+            <select class="form-select" id="battPerStringCorrect" formControlName="battPerStringCorrect">
+              <option value="Y">Yes</option>
+              <option value="N">No</option>
+              <option value="NA">N/A</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label for="actBattPerString" class="form-label">Actual :</label>
+            <input type="number" class="form-control" id="actBattPerString" formControlName="actBattPerString" />
+          </div>
+        </div>
+
+        <!-- Sealed Battery: Container & Cover / Battery Environment (Legacy) -->
+        <div *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'S'" class="mt-4">
+          <div class="row mb-2">
+            <div class="col-md-6"><h6 class="fw-bold">Container and Cover</h6></div>
+            <div class="col-md-6"><h6 class="fw-bold">Battery Environment</h6></div>
+          </div>
+          <div class="row g-3">
+            <!-- Bulged / Pass-Fail -->
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="bulgedCheck2" formControlName="bulgedCheck" />
+                <label class="form-check-label" for="bulgedCheck2">Bulged</label>
+              </div>
+              <select class="form-select" formControlName="bulgedPf">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+            <!-- Cracked / Pass-Fail -->
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="crackedCheck2" formControlName="crackedCheck" />
+                <label class="form-check-label" for="crackedCheck2">Cracked</label>
+              </div>
+              <select class="form-select" formControlName="crackedPf">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+            <!-- Debris / Pass-Fail -->
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="debrisCheck2" formControlName="debrisCheck" />
+                <label class="form-check-label" for="debrisCheck2">Debris/Sediments</label>
+              </div>
+              <select class="form-select" formControlName="debrisPf">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+            <!-- Rotten Odor / Pass-Fail -->
+            <div class="col-md-3">
+              <label class="form-label small">Sulfurous Odor</label>
+              <select class="form-select" formControlName="rotten">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mt-2">
+            <div class="col-md-3">
+              <label class="form-label small">Safety Equipment</label>
+              <select class="form-select" formControlName="verifySaftey">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="containerComments2" class="form-label small">Container Comments</label>
+              <textarea id="containerComments2" rows="2" class="form-control" formControlName="containerComments"></textarea>
+            </div>
+            <div class="col-md-5">
+              <label for="environmentComments2" class="form-label small">Environment Comments</label>
+              <textarea id="environmentComments2" rows="2" class="form-control" formControlName="environmentComments"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Flooded Battery: Plates / Flame Arrestors & Covers / Electrolyte Levels (Legacy) -->
+        <div *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'F'" class="mt-4">
+          <h6 class="fw-bold mb-3">General Appearance (Flooded Battery)</h6>
+          <div class="row g-3">
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="plusWrappedCheck2" formControlName="plusWrappedCheck" />
+                <label class="form-check-label" for="plusWrappedCheck2">Wrapped</label>
+              </div>
+              <select class="form-select" formControlName="plusWrappedVerify">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="plusSulfatedCheck2" formControlName="plusSulfatedCheck" />
+                <label class="form-check-label" for="plusSulfatedCheck2">Sulfated</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="plusMisposCheck2" formControlName="plusMisposCheck" />
+                <label class="form-check-label" for="plusMisposCheck2">Mis-Positioned</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="missingCheck2" formControlName="missingCheck" />
+                <label class="form-check-label" for="missingCheck2">Missing</label>
+              </div>
+              <select class="form-select" formControlName="missingVerify">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-3 mt-2">
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="brokenCheck2" formControlName="brokenCheck" />
+                <label class="form-check-label" for="brokenCheck2">Broken</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-check mb-1">
+                <input type="checkbox" class="form-check-input" id="needsCleaningCheck2" formControlName="needsCleaningCheck" />
+                <label class="form-check-label" for="needsCleaningCheck2">Needs Cleaning</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small" for="platesComments2">Plates/Terminal Comments</label>
+              <textarea id="platesComments2" rows="2" class="form-control" formControlName="platesComments"></textarea>
+            </div>
+          </div>
+          <div class="row g-3 mt-2">
+            <div class="col-md-4">
+              <label for="waterLevel2" class="form-label">Electrolyte Level</label>
+              <select id="waterLevel2" class="form-select" formControlName="waterLevel">
+                <option value="Q">1/4 Below High Line</option>
+                <option value="H">1/2 Below High Line</option>
+                <option value="T">3/4 Below High Line</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label for="waterLevelVerify2" class="form-label">Pass/Fail</label>
+              <select id="waterLevelVerify2" class="form-select" formControlName="waterLevelVerify">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="electrolytesComments2" class="form-label">Electrolytes Comments</label>
+              <textarea id="electrolytesComments2" rows="2" class="form-control" formControlName="electrolytesComments"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATTERY CHARGING SYSTEM VERIFICATION -->
+    <div class="card mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Battery Charging System Verification</h5>
+      </div>
+      <div class="card-body">
+        <!-- Row 1: Total Float Voltage + Verify -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="totalBatteryVoltage" class="form-label">Total Float voltage :</label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control"
+                id="totalBatteryVoltage"
+                formControlName="totalBatteryVoltage"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="batteryVoltageVerify" class="form-label">Pass/Fail</label>
+              <select
+                class="form-select"
+                id="batteryVoltageVerify"
+                formControlName="batteryVoltageVerify"
+              >
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Positive terminal to ground + Verify -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="plusTerminalToGnd" class="form-label">Positive terminal to ground :</label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control"
+                id="plusTerminalToGnd"
+                formControlName="plusTerminalToGnd"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="plusTerminalVerify" class="form-label">Pass/Fail</label>
+              <select
+                class="form-select"
+                id="plusTerminalVerify"
+                formControlName="plusTerminalVerify"
+              >
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+                <option value="A">NA</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Negative terminal to ground + Verify -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="minusTerminalToGnd" class="form-label">Negative terminal to ground :</label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control"
+                id="minusTerminalToGnd"
+                formControlName="minusTerminalToGnd"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="minusTerminalVerify" class="form-label">Pass/Fail</label>
+              <select
+                class="form-select"
+                id="minusTerminalVerify"
+                formControlName="minusTerminalVerify"
+              >
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+                <option value="A">NA</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 4: DC Charging Current + Verify -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="dcChargeCurrent" class="form-label">DC Charging Current :</label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control"
+                id="dcChargeCurrent"
+                formControlName="dcChargeCurrent"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="dcChargingVerify" class="form-label">Pass/Fail</label>
+              <select
+                class="form-select"
+                id="dcChargingVerify"
+                formControlName="dcChargingVerify"
+              >
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+                <option value="A">NA</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: A/C Ripple Voltage + Verify -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="acRippleVoltage" class="form-label">A/C Ripple Voltage :</label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control"
+                id="acRippleVoltage"
+                formControlName="acRippleVoltage"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="acRippleVoltageVerify" class="form-label">Pass/Fail</label>
+              <select
+                class="form-select"
+                id="acRippleVoltageVerify"
+                formControlName="acRippleVoltageVerify"
+              >
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+                <option value="A">NA</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 6: A/C Ripple Current + Verify -->
+        <div class="row">
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="acRippleCurrent" class="form-label">A/C Ripple Current :</label>
+              <input
+                type="number"
+                step="0.01"
+                class="form-control"
+                id="acRippleCurrent"
+                formControlName="acRippleCurrent"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="acRippleCurrentVerify" class="form-label">Pass/Fail</label>
+              <select
+                class="form-select"
+                id="acRippleCurrentVerify"
+                formControlName="acRippleCurrentVerify"
+              >
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+                <option value="A">NA</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 7: Intercell Resistance Acceptable -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="intercellConnector" class="form-label">Intercell Resistance Acceptable :</label>
+              <select class="form-select" id="intercellConnector" formControlName="intercellConnector">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 8: Strap Torque (2V Sealed Battery) -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="torqueVerify" class="form-label">For 2 volt Sealed Battery, Check strap torque :</label>
+              <select class="form-select" id="torqueVerify" formControlName="torqueVerify">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+                <option value="A">N/A</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <div class="mb-3">
+              <label for="chargingComments" class="form-label">Charging System Comments</label>
+              <textarea
+                class="form-control"
+                id="chargingComments"
+                formControlName="chargingComments"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATTERY READINGS PAGE FOR MULTIMETER/MIDTRONICS -->
+    <div class="card mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Battery Readings Page For Multimeter/Midtronics</h5>
+      </div>
+      <div class="card-body">
+        <!-- Row 1: Room Temperature -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="roomTemp" class="form-label">Room Temperature :</label>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <input type="number" step="0.1" class="form-control" id="roomTemp" formControlName="roomTemp" />
+                </div>
+                <div class="col-md-4">
+                  <select class="form-select" id="roomTempVerify" formControlName="roomTempVerify">
+                    <option value="P">Pass</option>
+                    <option value="F">Fail</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Battery Temperature -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="batteryTemp" class="form-label">Battery Temperature :</label>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <input type="number" step="0.1" class="form-control" id="batteryTemp" formControlName="batteryTemp" />
+                </div>
+                <div class="col-md-4">
+                  <select class="form-select" id="batteryTempVerify" formControlName="batteryTempVerify">
+                    <option value="P">Pass</option>
+                    <option value="F">Fail</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Battery Terminal Type -->
+        <div class="row">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label for="battTerminalType" class="form-label">Battery Terminal Type :</label>
+              <select class="form-select" id="battTerminalType" formControlName="battTerminalType">
+                <option value="PS">Please Select</option>
+                <option value="LG">L(Horizontal) Post - bolt</option>
+                <option value="FG">Flag(Vertical) Post - bolt</option>
+                <option value="TI">Threaded Insert</option>
+                <option value="SD">Studded</option>
+                <option value="SP">Spade</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 4: Battery Terminal Size -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="battTerminal" class="form-label">Battery Terminal Size :</label>
+              <select class="form-select" id="battTerminal" formControlName="battTerminal">
+                <option value="PS">Please Select</option>
+                <option value="T1">T1 Spade - 3/16 -0.187mm</option>
+                <option value="T2">T2 Spade - 1/4 -0.250mm</option>
+                <option value="M4">Bolt - 4mm (M4) - Head - 7mm</option>
+                <option value="M5">Bolt - 5mm (M5) - Head - 8mm</option>
+                <option value="M6">Bolt - 6mm (M6)- Head - 10mm</option>
+                <option value="M8">Bolt - 8mm (M8)- Head - 13mm</option>
+                <option value="M10">Bolt - 10mm (M10)- Head - 16mm</option>
+                <option value="M12">Bolt - 12mm (M12)- Head - 18mm</option>
+                <option value="M14">Bolt - 14mm (M14)- Head - 21mm</option>
+                <option value="M16">Bolt - 16mm (M16)- Head - 24mm</option>
+                <option value="M20">Bolt - 20mm (M20)- Head - 30mm</option>
+                <option value="N6">US Bolt -0.1380 (#6)- Head - 1/4inch</option>
+                <option value="N8">US Bolt -0.1640" (#8)- Head - 1/4inch</option>
+                <option value="N10">US Bolt -0.1900" (#10)- Head - 5/16inch</option>
+                <option value="N12">US Bolt -0.2160" (#12)- Head - 5/16inch</option>
+                <option value="1/4">US Bolt -1/4- Head - 7/16 or 3/8</option>
+                <option value="5/16">US Bolt -5/16- Head - 1/2</option>
+                <option value="3/8">US Bolt -3/8- Head - 9/16</option>
+                <option value="7/16">US Bolt -7/16- Head - 5/8</option>
+                <option value="1/2">US Bolt -1/2- Head - 3/4</option>
+                <option value="9/16">US Bolt -9/16- Head - 13/16</option>
+                <option value="5/8">US Bolt -5/8- Head - 15/16</option>
+                <option value="3/4">US Bolt -3/4- Head - 1-1/8</option>
+                <option value="7/8">US Bolt -7/8 Head - 1-5/16</option>
+                <option value="1">US Bolt -1- Head - 1-1/2</option>
+                <option value="118">US Bolt -1-1/8- Head - 1-11/16</option>
+                <option value="114">US Bolt -1-1/4- Head - 1-7/8</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="mb-3">
+              <label for="battTerminalValue" class="form-label">Other Value:</label>
+              <input type="text" class="form-control" id="battTerminalValue" formControlName="battTerminalValue" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: Rack Integrity & Vent Fan Operation -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Verify Rack Integrity/Vent Fan Operation:</label>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <select class="form-select" formControlName="rackIntegrity">
+                    <option value="P">Pass</option>
+                    <option value="F">Fail</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <select class="form-select" formControlName="ventFanOperation">
+                    <option value="P">Pass</option>
+                    <option value="F">Fail</option>
+                    <option value="A">N/A</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 6: Battery Disconnect / Interconnections -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Individual Battery Disconnect / Interconnections :</label>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <select class="form-select" formControlName="battDisconnect">
+                    <option value="P">Pass</option>
+                    <option value="F">Fail</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <select class="form-select" formControlName="indBattInterconnection">
+                    <option value="Cables">Cables</option>
+                    <option value="Busbar">Busbar</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 7: Replace Complete String -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Recommend to Replace Complete String ?</label>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" />
+                    <label class="form-check-label" for="replaceWholeString">Replace</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <select class="form-select" formControlName="reasonToReplace">
+                    <option value="PS">Select</option>
+                    <option value="DA">Due to Age</option>
+                    <option value="DF">Due to Faulty Batteries</option>
+                    <option value="BT">Due to Age and Faulty Batteries</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 8: Quantities to Replace/Monitor -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label fw-bold">Recommend to replace/monitor :</label>
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <input type="number" class="form-control" formControlName="usedQuantity" placeholder="Replace" />
+                </div>
+                <div class="col-md-3">
+                  <input type="number" class="form-control" formControlName="monitored" placeholder="Monitor" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 9: Float Voltage Selection / Value -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">Float Voltage Selection / Value :</label>
+              <div class="row g-2">
+                <div class="col-md-5">
+                  <select class="form-select" formControlName="floatVoltageStatus">
+                    <option value="PS">Please Select</option>
+                    <option value="OF">Breaker Open</option>
+                    <option value="ON">Breaker Closed</option>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <select class="form-select" formControlName="floatVoltageValue">
+                    <option value="PS">Please Select</option>
+                    <option value="1">Normal Float</option>
+                    <option value="2">ABM Charger</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 10: Readings Taken By -->
+        <div class="row">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label class="form-label">Readings Taken By:</label>
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <select class="form-select" id="midType" formControlName="midType">
+                    <option value="2">Fluke</option>
+                    <option value="3">BCM</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <input type="text" class="form-control" placeholder="Battery Make/Model" />
+                </div>
+                <div class="col-md-3">
+                  <input type="text" class="form-control" placeholder="Ref Value" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 11: String Type -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="stringType" class="form-label">String Type:</label>
+              <select class="form-select" id="stringType" formControlName="stringType">
+                <option value="1">External</option>
+                <option value="2">Internal Single / Parallel Strings</option>
+                <option value="3">Battery Packs / Trays</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 12: Reading Type -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label for="readingType" class="form-label">Reading Type:</label>
+              <select class="form-select" id="readingType" formControlName="readingType">
+                <option value="1">Voltage Only</option>
+                <option value="2">Voltage & Conductance / Resistance</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 13: No of Battery Packs -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <label class="form-label">No of Batteries per String :</label>
+                </div>
+                <div class="col-md-2">
+                  <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="Count" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 14: How readings calculated -->
+        <div class="row">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <label class="form-label">How do you want readings to be calculated ?:</label>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <select class="form-select" formControlName="repMonCalculate">
+                    <option value="0">Select</option>
+                    <option value="1">System</option>
+                    <option value="2">Manual</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check pt-2">
+                    <input type="checkbox" class="form-check-input" id="readingsGraphCheck" formControlName="readingsGraphCheck" />
+                    <label class="form-check-label fw-bold text-danger" for="readingsGraphCheck">Verified the Graph?</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 15: Checkboxes - Enable mVAC / Enable Straps -->
+        <div class="row">
+          <div class="col-md-8">
+            <div class="mb-3">
+              <div class="row g-4">
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="mvacCheck" formControlName="mvacCheck" checked />
+                    <label class="form-check-label" for="mvacCheck">Enable mVAC?</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="strapCheck" formControlName="strapCheck" checked />
+                    <label class="form-check-label" for="strapCheck">Enable Straps?</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATTERY READINGS GRID -->
+    <div class="card mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Battery Readings</h5>
+      </div>
+      <div class="card-body">
+        <!-- Battery Readings Table -->
+        <div class="table-responsive">
+          <table class="table" style="width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background-color: #f0f0f0; font-weight: bold; font-size: 10pt;">
+                <th style="width:10px; text-align: left; padding: 5px; border: 1px solid #ddd;">ID.</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">VDC</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">mVAC</th>
+                <th style="width:100px; text-align: left; padding: 5px; border: 1px solid #ddd;">Conductance / Resistance</th>
+                <th style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap1</th>
+                <th style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap2</th>
+                <th style="width:55px; text-align: left; padding: 5px; border: 1px solid #ddd;">Specific Gravity</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Leaking / Damaged / Corrosion</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Replace?</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Monitor?</th>
+                <th style="text-align: left; padding: 5px; border: 1px solid #ddd;">Action Plan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of batteryReadings; let i = index" style="font-size: 10pt;">
+                <td style="width:10px; padding: 5px; border: 1px solid #ddd;">{{ row.batteryId }}</td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 50px; padding: 2px;"
+                    [(ngModel)]="row.vdc"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 50px; padding: 2px;"
+                    [(ngModel)]="row.vac"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td style="width:100px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 60px; padding: 2px;"
+                    [(ngModel)]="row.mhos"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td style="width:35px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 45px; padding: 2px;"
+                    [(ngModel)]="row.strap1"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td style="width:35px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 55px; padding: 2px;"
+                    [(ngModel)]="row.strap2"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td style="width:55px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.0001"
+                    style="border-width: 0px; width: 55px; padding: 2px;"
+                    [(ngModel)]="row.spGravity"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <select style="border-width: 1px; width: 100%; padding: 2px;" [(ngModel)]="row.cracks" [ngModelOptions]="{ standalone: true }">
+                    <option value="P">Pass</option>
+                    <option value="F">Fail</option>
+                  </select>
+                </td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <select style="border-width: 1px; width: 100%; padding: 2px;" [(ngModel)]="row.replacementNeeded" [ngModelOptions]="{ standalone: true }">
+                    <option value="N">No</option>
+                    <option value="Y">Yes</option>
+                  </select>
+                </td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <select style="border-width: 1px; width: 100%; padding: 2px;" [(ngModel)]="row.monitoringBattery" [ngModelOptions]="{ standalone: true }">
+                    <option value="N">No</option>
+                    <option value="Y">Yes</option>
+                  </select>
+                </td>
+                <td style="width:210px; padding: 5px; border: 1px solid #ddd; vertical-align: top;">
+                  <input
+                    type="text"
+                    style="border-width: 0px; width: 280px; color: red; font-size: 10pt; padding: 2px;"
+                    [(ngModel)]="row.actionPlan"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECONCILIATION SECTION REMOVED FROM ORIGINAL POSITION (now placed earlier) -->
+
+    <!-- REPLACEMENT/MONITORING SECTION -->
+    <div class="card mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Replacement/Monitoring</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="reasonToReplace" class="form-label">Reason for Replacement</label>
+              <select class="form-select" id="reasonToReplace" formControlName="reasonToReplace">
+                <option value="">Select</option>
+                <option value="Age">Age</option>
+                <option value="Performance">Performance</option>
+                <option value="DA">Design Alteration (DA)</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="repMonCalculate" class="form-label">Rep/Mon Calculate</label>
+              <select class="form-select" id="repMonCalculate" formControlName="repMonCalculate">
+                <option value="1">Auto Calculate</option>
+                <option value="0">Manual</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="mb-3">
+              <div class="form-check pt-4">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="replaceWholeString"
+                  formControlName="replaceWholeString"
+                />
+                <label class="form-check-label" for="replaceWholeString">
+                  Replace Whole String
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="mvacCheck"
+                  formControlName="mvacCheck"
+                />
+                <label class="form-check-label" for="mvacCheck">
+                  Enable mVAC Readings
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="strapCheck"
+                  formControlName="strapCheck"
+                />
+                <label class="form-check-label" for="strapCheck">
+                  Enable Strap Readings
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <div class="form-check">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  id="readingsGraphCheck"
+                  formControlName="readingsGraphCheck"
+                />
+                <label class="form-check-label" for="readingsGraphCheck">
+                  Generate Readings Graph
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADDITIONAL BATTERY INFO -->
+    <div class="card mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Additional Battery Information</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="battTemp" class="form-label">Battery Temperature</label>
+              <input
+                type="number"
+                class="form-control"
+                id="battTemp"
+                formControlName="battTemp"
+              />
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="batteryTempVerify" class="form-label">Battery Temp Verify</label>
+              <select
+                class="form-select"
+                id="batteryTempVerify"
+                formControlName="batteryTempVerify"
+              >
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="intercellConnector" class="form-label">Intercell Connector</label>
+              <select class="form-select" id="intercellConnector" formControlName="intercellConnector">
+                <option value="P">Pass</option>
+                <option value="F">Fail</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="battDisconnect" class="form-label">Battery Disconnect</label>
+              <select class="form-select" id="battDisconnect" formControlName="battDisconnect">
+                <option value="OK">OK</option>
+                <option value="Replace">Replace</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="indBattInterconnection" class="form-label">Individual Battery Interconnection</label>
+              <select
+                class="form-select"
+                id="indBattInterconnection"
+                formControlName="indBattInterconnection"
+              >
+                <option value="OK">OK</option>
+                <option value="Issue">Issue</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="mb-3">
+              <label for="rackIntegrity" class="form-label">Rack Integrity</label>
+              <select class="form-select" id="rackIntegrity" formControlName="rackIntegrity">
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+                <option value="Poor">Poor</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <div class="mb-3">
+              <label for="ventFanOperation" class="form-label">Ventilation/Fan Operation</label>
+              <select class="form-select" id="ventFanOperation" formControlName="ventFanOperation">
+                <option value="Operating">Operating</option>
+                <option value="NotOperating">Not Operating</option>
+                <option value="NA">N/A</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVE BUTTONS -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-12">
+            <button
+              type="button"
+              class="btn btn-success btn-lg me-2"
+              (click)="onSaveBatteryReadings('Save')"
+              [disabled]="isSaving"
+            >
+              <i class="fa fa-save"></i> {{ isSaving ? 'Saving...' : 'Save' }}
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-warning btn-lg me-2"
+              (click)="onSaveBatteryReadings('SaveAsDraft')"
+              [disabled]="isSaving"
+            >
+              <i class="fa fa-file"></i> {{ isSaving ? 'Saving...' : 'Save as Draft' }}
+            </button>
+
+            <button type="button" class="btn btn-secondary btn-lg" (click)="goBack()">
+              <i class="fa fa-times"></i> Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

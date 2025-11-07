@@ -462,14 +462,15 @@ export class EquipmentDetailsComponent implements OnInit {
 
     switch (equipment.equipType?.trim()) {
       case 'BATTERY':
-        route = equipment.scheduled === 'T' ? '/equipment/battery-readings-temp' : '/equipment/battery-readings';
-        params = {
-          ...params,
-          ReadingType: equipment.readingType || '',
-          BattNum: equipment.batteriesPerString?.toString() || '0',
-          BattPack: equipment.batteriesPerPack?.toString() || '0'
-        };
-        break;
+          route = equipment.scheduled === 'T' ? '/equipment/battery-readings-temp' : '/equipment/battery-readings';
+          params = {
+            ...params,
+            ReadingType: equipment.readingType || '',
+            BattNum: equipment.batteriesPerString?.toString() || '0',
+            BattPack: equipment.batteriesPerPack?.toString() || '0',
+            TechName: this.params.techName
+          };
+          break;
         
       case 'UPS':
         if (equipment.probcde?.includes('EMGSERV')) {
