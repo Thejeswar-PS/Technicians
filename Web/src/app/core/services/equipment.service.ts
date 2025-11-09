@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, timeout, of } from 'rxjs';
+import { Observable, timeout, of, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { EquipmentDetail, UploadInfo, UploadResponse, EquipmentImage, EquipmentImageUpload, DeleteEquipmentImage } from '../model/equipment-details.model';
 import { AAETechUPS, EquipReconciliationInfo, UpdateEquipStatus, EquipFilterCurrents, SaveUpdateaaETechUPSDto, SaveUpdateUPSResponse } from '../model/ups-readings.model';
@@ -315,35 +315,56 @@ export class EquipmentService {
    * Calls the backend GetStatusDescription endpoint for dynamic status options
    */
   getEquipmentStatusOptions(): Observable<{ value: string; text: string }[]> {
-    const params = new HttpParams().set('equipType', 'UPS'); // Default to UPS equipment type
+    const params = new HttpParams().set('equipType', 'UPS');
+    const upsApiUrl = `${this.apiUrl}/UPSReadings/GetStatusDescription`;
     
-    return this.http.get<{ success: boolean; data: any[] }>(`${this.apiUrl}/EquipmentDetails/GetStatusDescription`, { params })
-      .pipe(
-        map(response => {
-          if (response.success && response.data && response.data.length > 0) {
-            // Map backend data to dropdown format
-            return response.data.map(item => ({
-              value: item.StatusType || item.statusType || '',
-              text: item.StatusDescription || item.statusDescription || item.StatusType || item.statusType || ''
-            }));
+    return this.http.get<any[]>(upsApiUrl, { params }).pipe(
+      map(response => {
+        if (response && Array.isArray(response) && response.length > 0) {
+          const mappedOptions = response
+            .filter(item => item && (item.StatusType || item.statusType))
+            .map(item => {
+              const statusType = item.StatusType || item.statusType || '';
+              const statusDescription = item.StatusDescription || item.statusDescription || statusType;
+              
+              return {
+                value: statusType,
+                text: statusDescription
+              };
+            })
+            .filter((option, index, self) => 
+              self.findIndex(o => o.value === option.value) === index
+            );
+          
+          if (mappedOptions.length > 0) {
+            return mappedOptions;
           }
-          return [];
-        }),
-        catchError(() => {
-          // Fallback to predefined options if API fails
-          const statusOptions = [
-            { value: 'Online', text: 'Online' },
-            { value: 'OnLine(MinorDeficiency)', text: 'OnLine(Minor Deficiency)' },
-            { value: 'OnLine(MajorDeficiency)', text: 'OnLine(Major Deficiency)' },
-            { value: 'CriticalDeficiency', text: 'Critical Deficiency' },
-            { value: 'ReplacementRecommended', text: 'Replacement Recommended' },
-            { value: 'ProactiveReplacement', text: 'Proactive Replacement' },
-            { value: 'Offline', text: 'Offline' }
-          ];
-          return of(statusOptions);
-        })
-      );
+        }
+        
+        return this.getFallbackStatusOptions();
+      }),
+      catchError(() => {
+        return of(this.getFallbackStatusOptions());
+      })
+    );
   }
+
+  /**
+   * Get fallback status options when API fails or returns invalid data
+   */
+  private getFallbackStatusOptions(): { value: string; text: string }[] {
+    return [
+      { value: 'Online', text: 'On-Line' },
+      { value: 'CriticalDeficiency', text: 'Critical Deficiency' },
+      { value: 'ReplacementRecommended', text: 'Replacement Recommended' },
+      { value: 'ProactiveReplacement', text: 'Proactive Replacement' },
+      { value: 'OnLine(MajorDeficiency)', text: 'On-Line(Major Deficiency)' },
+      { value: 'OnLine(MinorDeficiency)', text: 'On-Line(Minor Deficiency)' },
+      { value: 'Offline', text: 'Off-Line' }
+    ];
+  }
+
+
 
   /**
    * Get UPS readings data
@@ -385,7 +406,38 @@ export class EquipmentService {
       .set('callNbr', callNbr)
       .set('equipId', equipId.toString());
 
-    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/GetEquipReconciliationInfo`, { params });
+    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/GetEquipReconciliationInfo`, { params })
+      .pipe(
+        map((response) => {
+          // Clean up string fields that may have trailing spaces from database
+          if (response) {
+            const cleanedResponse = { ...response };
+            const stringFields = ['make', 'model', 'serialNo', 'kva', 'actMake', 'actModel', 'actSerialNo', 'actKVA'];
+            const verificationFields = ['makeCorrect', 'modelCorrect', 'serialNoCorrect', 'kvaCorrect', 'totalEquipsCorrect'];
+            
+            // Clean regular string fields
+            stringFields.forEach(field => {
+              if (cleanedResponse[field]) {
+                cleanedResponse[field] = cleanedResponse[field].toString().trim();
+              }
+            });
+            
+            // Clean verification fields
+            verificationFields.forEach(field => {
+              if (cleanedResponse[field]) {
+                cleanedResponse[field] = cleanedResponse[field].toString().trim();
+              }
+            });
+            
+            return cleanedResponse;
+          }
+          
+          return response;
+        }),
+        catchError((error) => {
+          return throwError(() => error);
+        })
+      );
   }
 
   /**
@@ -569,7 +621,6 @@ export class EquipmentService {
         };
       }),
       catchError(error => {
-        console.error('Error checking draft mode:', error);
         // Return false for draft mode if API fails to allow uploads
         return of({ isDraft: false, message: 'Unable to verify draft status' });
       })

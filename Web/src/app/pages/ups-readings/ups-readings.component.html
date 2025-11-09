@@ -259,12 +259,9 @@
                         "
                         id="status"
                       >
+                        <option value="" disabled selected>Please select status</option>
                         <option
-                          *ngFor="
-                            let status of equipmentStatusOptions.length
-                              ? equipmentStatusOptions
-                              : statusOptions
-                          "
+                          *ngFor="let status of currentStatusOptions"
                           [value]="status.value"
                         >
                           {{ status.text }}
@@ -367,9 +364,8 @@
                         formControlName="parallelCabinet"
                         id="parallelCabinet"
                       >
-                        <option value="">Choose option...</option>
                         <option value="Y">Yes</option>
-                        <option value="N">No</option>
+                        <option value="NO">No</option>
                         <option value="N/A">N/A</option>
                       </select>
                       <label for="parallelCabinet">Parallel Cabinet</label>
@@ -383,9 +379,9 @@
                         id="snmpPresent"
                       >
                         <option value="">Choose option...</option>
-                        <option value="Y">Yes</option>
-                        <option value="N">No</option>
-                        <option value="N/A">N/A</option>
+                        <option *ngFor="let option of yesNoOptions" [value]="option.value">
+                          {{ option.text }}
+                        </option>
                       </select>
                       <label for="snmpPresent">SNMP Card Present</label>
                     </div>
@@ -466,20 +462,6 @@
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              <!-- Status Notes -->
-              <div class="form-group-modern">
-                <div class="form-floating">
-                  <textarea
-                    class="form-control"
-                    formControlName="statusNotes"
-                    id="statusNotes"
-                    placeholder="Enter any additional notes about the equipment status"
-                    style="height: 80px"
-                  ></textarea>
-                  <label for="statusNotes">Status Notes</label>
                 </div>
               </div>
             </form>
@@ -586,7 +568,7 @@
                           {{ option.text }}
                         </option>
                       </select>
-                      <label for="modelCorrect">Verification</label>
+                      <label for="modelCorrect">Is this Correct ?</label>
                     </div>
                   </div>
                   <div class="col-md-5">
@@ -663,7 +645,7 @@
                           {{ option.text }}
                         </option>
                       </select>
-                      <label for="serialNoCorrect">Verification</label>
+                      <label for="serialNoCorrect">Is this Correct ?</label>
                     </div>
                   </div>
                   <div class="col-md-5">
@@ -742,7 +724,7 @@
                           {{ option.text }}
                         </option>
                       </select>
-                      <label for="kvaCorrect">Verification</label>
+                      <label for="kvaCorrect">Is this Correct ?</label>
                     </div>
                   </div>
                   <div class="col-md-5">

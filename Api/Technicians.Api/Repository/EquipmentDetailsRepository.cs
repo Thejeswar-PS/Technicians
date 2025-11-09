@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Data;
+using System.Globalization;
 using System.Text;
 using Technicians.Api.Models;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
@@ -1083,6 +1084,231 @@ namespace Technicians.Api.Repository
             }
         }
 
+
+
+        //29. SaveUpdateEquipReconciliation - Save or update equipment reconciliation data
+        public async Task<int> SaveUpdateEquipReconciliationAsync(SaveUpdateEquipReconciliationDto request)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("SaveUpdateEquipReconciliation", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                // Add all parameters matching the stored procedure signature
+                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
+                cmd.Parameters.AddWithValue("@Make", request.Make ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@MakeCorrect", request.MakeCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActMake", request.ActMake ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Model", request.Model ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ModelCorrect", request.ModelCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActModel", request.ActModel ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SerialNo", request.SerialNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@SerialNoCorrect", request.SerialNoCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActSerialNo", request.ActSerialNo ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@KVA", request.KVA ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@KVACorrect", request.KVACorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActKVA", request.ActKVA ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ASCStringsNo", request.ASCStringsNo);
+                cmd.Parameters.AddWithValue("@ASCStringsCorrect", request.ASCStringsCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActASCStringNo", request.ActASCStringNo);
+                cmd.Parameters.AddWithValue("@BattPerString", request.BattPerString);
+                cmd.Parameters.AddWithValue("@BattPerStringCorrect", request.BattPerStringCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActBattPerString", request.ActBattPerString);
+                cmd.Parameters.AddWithValue("@TotalEquips", request.TotalEquips);
+                cmd.Parameters.AddWithValue("@TotalEquipsCorrect", request.TotalEquipsCorrect ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ActTotalEquips", request.ActTotalEquips);
+                cmd.Parameters.AddWithValue("@Verified", request.Verified);
+                cmd.Parameters.AddWithValue("@ModifiedBy", request.ModifiedBy ?? "SYSTEM");
+
+                await conn.OpenAsync();
+                var result = await cmd.ExecuteNonQueryAsync();
+
+                _logger.LogInformation("SaveUpdateEquipReconciliation completed for CallNbr={CallNbr}, EquipID={EquipID}",
+                    request.CallNbr, request.EquipID);
+
+                return result;
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL error in SaveUpdateEquipReconciliationAsync for CallNbr={CallNbr}, EquipID={EquipID}",
+                    request.CallNbr, request.EquipID);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in SaveUpdateEquipReconciliationAsync for CallNbr={CallNbr}, EquipID={EquipID}",
+                    request.CallNbr, request.EquipID);
+                throw;
+            }
+        }
+    
+
+
+//29. GetJobSummarySample - Get job summary sample data based on equipment type
+public async Task<JobSummarySampleResponseDto> GetJobSummarySampleAsync(JobSummarySampleRequestDto request)
+        {
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await using var cmd = new SqlCommand("GetJobSummarySample", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
+                cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
+                cmd.Parameters.AddWithValue("@EquipType", request.EquipType);
+                cmd.Parameters.AddWithValue("@Scheduled", request.Scheduled);
+
+                await conn.OpenAsync();
+
+                var response = new JobSummarySampleResponseDto
+                {
+                    EquipType = request.EquipType,
+                    HasSecondaryData = false
+                };
+
+                // Handle different equipment types and their specific data structures
+                switch (request.EquipType.ToUpper())
+                {
+                    case "BATTERY":
+                        await using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            // First result set: aaEtechBatteryString data
+                            var primaryData = new List<BatteryStringDto>();
+                            while (await reader.ReadAsync())
+                            {
+                                primaryData.Add(new BatteryStringDto
+                                {
+                                    CallNbr = reader["CALLNBR"]?.ToString(),
+                                    EquipId = Convert.ToInt32(reader["EQUIPID"]),
+                                    StringId = reader["StringId"] != DBNull.Value ? Convert.ToInt32(reader["StringId"]) : 0,
+                                    BattPerString = reader["BattPerString"] != DBNull.Value ? Convert.ToInt32(reader["BattPerString"]) : 0,
+                                    VoltageV = reader["VoltageV"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageV"]) : null,
+                                    VoltageS = reader["VoltageS"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageS"]) : null,
+                                    FloatVoltV = reader["FloatVoltV"] != DBNull.Value ? Convert.ToDecimal(reader["FloatVoltV"]) : null,
+                                    FloatVoltS = reader["FloatVoltS"] != DBNull.Value ? Convert.ToDecimal(reader["FloatVoltS"]) : null,
+                                    Discharge = reader["Discharge"]?.ToString(),
+                                    DischargeTime = reader["DischargeTime"]?.ToString(),
+                                    Condition = reader["Condition"]?.ToString(),
+                                    Notes = reader["Notes"]?.ToString(),
+                                    TargetVoltage = reader["TargetVoltage"] != DBNull.Value ? Convert.ToDecimal(reader["TargetVoltage"]) : null,
+                                    BatteryType = reader["BatteryType"]?.ToString(),
+                                    BatteryHousing = reader["BatteryHousing"]?.ToString(),
+                                    Created = reader["Created"] != DBNull.Value ? Convert.ToDateTime(reader["Created"]) : null,
+                                    MaintAuthID = reader["Maint_Auth_ID"]?.ToString()
+                                });
+                            }
+                            response.PrimaryData = primaryData;
+
+                            // Second result set: Battery details with filtering conditions
+                            if (await reader.NextResultAsync())
+                            {
+                                var secondaryData = new List<BatteryDetailsDto>();
+                                while (await reader.ReadAsync())
+                                {
+                                    secondaryData.Add(new BatteryDetailsDto
+                                    {
+                                        CallNbr = reader["CALLNBR"]?.ToString(),
+                                        EquipId = Convert.ToInt32(reader["EQUIPID"]),
+                                        StringId = reader["StringId"] != DBNull.Value ? Convert.ToInt32(reader["StringId"]) : 0,
+                                        BatteryNo = reader["BatteryNo"] != DBNull.Value ? Convert.ToInt32(reader["BatteryNo"]) : 0,
+                                        VoltageV = reader["VoltageV"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageV"]) : null,
+                                        VoltageS = reader["VoltageS"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageS"]) : null,
+                                        Condition = reader["Condition"]?.ToString(),
+                                        ReplacementNeeded = reader["ReplacementNeeded"]?.ToString(),
+                                        MonitoringBattery = reader["MonitoringBattery"]?.ToString(),
+                                        Cracks = reader["Cracks"]?.ToString(),
+                                        Notes = reader["Notes"]?.ToString(),
+                                        Created = reader["Created"] != DBNull.Value ? Convert.ToDateTime(reader["Created"]) : null
+                                    });
+                                }
+                                response.SecondaryData = secondaryData;
+                                response.HasSecondaryData = secondaryData.Any();
+                            }
+                        }
+                        break;
+
+                    default:
+                        // For all other equipment types (UPS, ATS, PDU, RECTIFIER, GENERATOR, HVAC, SCC, STATIC SWITCH, STS)
+                        // Return dynamic data since each table has different schemas
+                        await using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            var dynamicData = new List<Dictionary<string, object>>();
+
+                            while (await reader.ReadAsync())
+                            {
+                                var row = new Dictionary<string, object>();
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    var columnName = reader.GetName(i);
+                                    var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                                    row[columnName] = value;
+                                }
+                                dynamicData.Add(row);
+                            }
+                            response.PrimaryData = dynamicData;
+                        }
+                        break;
+                }
+
+                _logger.LogInformation("GetJobSummarySample completed for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}",
+                    request.CallNbr, request.EquipID, request.EquipType);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetJobSummarySampleAsync for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}",
+                    request.CallNbr, request.EquipID, request.EquipType);
+                throw;
+            }
+        }
+
+        //30. GetStatusDescription - Get status descriptions for equipment type (no DTO approach)
+        public async Task<List<Dictionary<string, object>>> GetStatusDescriptionAsync(string equipType)
+        {
+            const string query = "SELECT * FROM STATUSDESCRIPTION WHERE EQUIPTYPE = @EquipType ORDER BY StatusType";
+
+            try
+            {
+                await using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
+
+                await using var cmd = new SqlCommand(query, conn);
+                cmd.Parameters.AddWithValue("@EquipType", equipType ?? string.Empty);
+
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                var results = new List<Dictionary<string, object>>();
+                while (await reader.ReadAsync())
+                {
+                    var row = new Dictionary<string, object>();
+                    for (int i = 0; i < reader.FieldCount; i++)
+                    {
+                        var columnName = reader.GetName(i);
+                        var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
+                        row[columnName] = value;
+                    }
+                    results.Add(row);
+                }
+
+                _logger.LogInformation("GetStatusDescription completed for EquipType={EquipType}. Found {Count} records",
+                    equipType, results.Count);
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetStatusDescriptionAsync for EquipType={EquipType}", equipType);
+                throw;
+            }
+        }
+
         //28. SaveUpdateaaETechUPS - Save or update UPS data using the stored procedure
         public async Task<int> SaveUpdateaaETechUPSAsync(SaveUpdateaaETechUPSDto request)
         {
@@ -1093,6 +1319,60 @@ namespace Technicians.Api.Repository
                 {
                     CommandType = CommandType.StoredProcedure
                 };
+
+                // ✅ 1. Defensive validation for Month and Year
+                string ValidateAndFormatMonth(string month)
+                {
+                    if (string.IsNullOrWhiteSpace(month) || month.Equals("Invalid Date", StringComparison.OrdinalIgnoreCase))
+                        return DateTime.Now.ToString("MMMM"); // fallback: current month
+                    try
+                    {
+                        // Try to parse full month name, e.g., "January"
+                        DateTime test = DateTime.ParseExact(month.Trim(), "MMMM", CultureInfo.InvariantCulture);
+                        return test.ToString("MMMM");
+                    }
+                    catch
+                    {
+                        return DateTime.Now.ToString("MMMM");
+                    }
+                }
+
+                int ValidateAndFormatYear(int year)
+                {
+                    if (year < 1900 || year > DateTime.Now.Year + 1)
+                        return DateTime.Now.Year;
+                    return year;
+                }
+
+                // ✅ 2. Determine the correct month and year to use
+                string finalMonth;
+                int finalYear;
+
+                // Use UPS-specific date fields if available, otherwise fallback to legacy or current date
+                if (!string.IsNullOrEmpty(request.UpsDateCodeMonth) && request.UpsDateCodeYear > 0)
+                {
+                    finalMonth = ValidateAndFormatMonth(request.UpsDateCodeMonth);
+                    finalYear = ValidateAndFormatYear(request.UpsDateCodeYear);
+                }
+                else if (!string.IsNullOrEmpty(request.DateCodeMonth) && request.DateCodeYear > 0)
+                {
+                    finalMonth = ValidateAndFormatMonth(request.DateCodeMonth);
+                    finalYear = ValidateAndFormatYear(request.DateCodeYear);
+                }
+                else
+                {
+                    finalMonth = DateTime.Now.ToString("MMMM");
+                    finalYear = DateTime.Now.Year;
+                    _logger.LogWarning("No valid date code provided, defaulted to current: {Month} {Year}", finalMonth, finalYear);
+                }
+
+                // ✅ 3. Optional: Ensure it's a parseable combination before sending to SQL
+                if (!DateTime.TryParse($"{finalMonth} 1, {finalYear}", out _))
+                {
+                    _logger.LogWarning("Invalid month/year combination detected, resetting to current date.");
+                    finalMonth = DateTime.Now.ToString("MMMM");
+                    finalYear = DateTime.Now.Year;
+                }
 
                 // Add all parameters matching the stored procedure signature
                 cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
@@ -1138,8 +1418,11 @@ namespace Technicians.Api.Repository
                 cmd.Parameters.AddWithValue("@Comments2", request.Comments2 ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Comments3", request.Comments3 ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Comments4", request.Comments4 ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@DateCodeMonth", request.DateCodeMonth ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@DateCodeYear", request.DateCodeYear);
+
+                // Use the validated and final date code fields - only send one set
+                cmd.Parameters.AddWithValue("@DateCodeMonth", finalMonth);
+                cmd.Parameters.AddWithValue("@DateCodeYear", finalYear);
+
                 cmd.Parameters.AddWithValue("@StatusReason", request.StatusReason ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@chkDCBreak", request.chkDCBreak);
                 cmd.Parameters.AddWithValue("@chkOverLoad", request.chkOverLoad);
@@ -1154,11 +1437,11 @@ namespace Technicians.Api.Repository
                 cmd.Parameters.AddWithValue("@AFWidth1", request.AFWidth1);
                 cmd.Parameters.AddWithValue("@AFThickness1", request.AFThickness1);
                 cmd.Parameters.AddWithValue("@AFQty1", request.AFQty1);
-                
+
                 // Ensure Maint_Auth_ID is never null - use default if empty
                 var maintAuthId = string.IsNullOrWhiteSpace(request.Maint_Auth_ID) ? "SYSTEM" : request.Maint_Auth_ID;
                 cmd.Parameters.AddWithValue("@Maint_Auth_ID", maintAuthId);
-                
+
                 cmd.Parameters.AddWithValue("@Input", request.Input ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@InputVoltA_T", request.InputVoltA_T);
                 cmd.Parameters.AddWithValue("@InputVoltA_PF", request.InputVoltA_PF ?? (object)DBNull.Value);
@@ -1253,244 +1536,25 @@ namespace Technicians.Api.Repository
                 await conn.OpenAsync();
                 var result = await cmd.ExecuteNonQueryAsync();
 
-                _logger.LogInformation("SaveUpdateaaETechUPS completed for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}", 
+                _logger.LogInformation("SaveUpdateaaETechUPS completed for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}",
                     request.CallNbr, request.EquipId, request.UpsId);
 
                 return result;
             }
             catch (SqlException ex)
             {
-                _logger.LogError(ex, "SQL error in SaveUpdateaaETechUPSAsync for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}", 
+                _logger.LogError(ex, "SQL error in SaveUpdateaaETechUPSAsync for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}",
                     request.CallNbr, request.EquipId, request.UpsId);
                 throw;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in SaveUpdateaaETechUPSAsync for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}", 
+                _logger.LogError(ex, "Unexpected error in SaveUpdateaaETechUPSAsync for CallNbr={CallNbr}, EquipId={EquipId}, UpsId={UpsId}",
                     request.CallNbr, request.EquipId, request.UpsId);
-                throw;
-            }
-        }
-
-        //29. GetJobSummarySample - Get job summary sample data based on equipment type
-        public async Task<JobSummarySampleResponseDto> GetJobSummarySampleAsync(JobSummarySampleRequestDto request)
-        {
-            try
-            {
-                await using var conn = new SqlConnection(_connectionString);
-                await using var cmd = new SqlCommand("GetJobSummarySample", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr);
-                cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
-                cmd.Parameters.AddWithValue("@EquipType", request.EquipType);
-                cmd.Parameters.AddWithValue("@Scheduled", request.Scheduled);
-
-                await conn.OpenAsync();
-
-                var response = new JobSummarySampleResponseDto
-                {
-                    EquipType = request.EquipType,
-                    HasSecondaryData = false
-                };
-
-                // Handle different equipment types and their specific data structures
-                switch (request.EquipType.ToUpper())
-                {
-                    case "BATTERY":
-                        await using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            // First result set: aaEtechBatteryString data
-                            var primaryData = new List<BatteryStringDto>();
-                            while (await reader.ReadAsync())
-                            {
-                                primaryData.Add(new BatteryStringDto
-                                {
-                                    CallNbr = reader["CALLNBR"]?.ToString(),
-                                    EquipId = Convert.ToInt32(reader["EQUIPID"]),
-                                    StringId = reader["StringId"] != DBNull.Value ? Convert.ToInt32(reader["StringId"]) : 0,
-                                    BattPerString = reader["BattPerString"] != DBNull.Value ? Convert.ToInt32(reader["BattPerString"]) : 0,
-                                    VoltageV = reader["VoltageV"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageV"]) : null,
-                                    VoltageS = reader["VoltageS"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageS"]) : null,
-                                    FloatVoltV = reader["FloatVoltV"] != DBNull.Value ? Convert.ToDecimal(reader["FloatVoltV"]) : null,
-                                    FloatVoltS = reader["FloatVoltS"] != DBNull.Value ? Convert.ToDecimal(reader["FloatVoltS"]) : null,
-                                    Discharge = reader["Discharge"]?.ToString(),
-                                    DischargeTime = reader["DischargeTime"]?.ToString(),
-                                    Condition = reader["Condition"]?.ToString(),
-                                    Notes = reader["Notes"]?.ToString(),
-                                    TargetVoltage = reader["TargetVoltage"] != DBNull.Value ? Convert.ToDecimal(reader["TargetVoltage"]) : null,
-                                    BatteryType = reader["BatteryType"]?.ToString(),
-                                    BatteryHousing = reader["BatteryHousing"]?.ToString(),
-                                    Created = reader["Created"] != DBNull.Value ? Convert.ToDateTime(reader["Created"]) : null,
-                                    MaintAuthID = reader["Maint_Auth_ID"]?.ToString()
-                                });
-                            }
-                            response.PrimaryData = primaryData;
-
-                            // Second result set: Battery details with filtering conditions
-                            if (await reader.NextResultAsync())
-                            {
-                                var secondaryData = new List<BatteryDetailsDto>();
-                                while (await reader.ReadAsync())
-                                {
-                                    secondaryData.Add(new BatteryDetailsDto
-                                    {
-                                        CallNbr = reader["CALLNBR"]?.ToString(),
-                                        EquipId = Convert.ToInt32(reader["EQUIPID"]),
-                                        StringId = reader["StringId"] != DBNull.Value ? Convert.ToInt32(reader["StringId"]) : 0,
-                                        BatteryNo = reader["BatteryNo"] != DBNull.Value ? Convert.ToInt32(reader["BatteryNo"]) : 0,
-                                        VoltageV = reader["VoltageV"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageV"]) : null,
-                                        VoltageS = reader["VoltageS"] != DBNull.Value ? Convert.ToDecimal(reader["VoltageS"]) : null,
-                                        Condition = reader["Condition"]?.ToString(),
-                                        ReplacementNeeded = reader["ReplacementNeeded"]?.ToString(),
-                                        MonitoringBattery = reader["MonitoringBattery"]?.ToString(),
-                                        Cracks = reader["Cracks"]?.ToString(),
-                                        Notes = reader["Notes"]?.ToString(),
-                                        Created = reader["Created"] != DBNull.Value ? Convert.ToDateTime(reader["Created"]) : null
-                                    });
-                                }
-                                response.SecondaryData = secondaryData;
-                                response.HasSecondaryData = secondaryData.Any();
-                            }
-                        }
-                        break;
-
-                    default:
-                        // For all other equipment types (UPS, ATS, PDU, RECTIFIER, GENERATOR, HVAC, SCC, STATIC SWITCH, STS)
-                        // Return dynamic data since each table has different schemas
-                        await using (var reader = await cmd.ExecuteReaderAsync())
-                        {
-                            var dynamicData = new List<Dictionary<string, object>>();
-                            
-                            while (await reader.ReadAsync())
-                            {
-                                var row = new Dictionary<string, object>();
-                                for (int i = 0; i < reader.FieldCount; i++)
-                                {
-                                    var columnName = reader.GetName(i);
-                                    var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                                    row[columnName] = value;
-                                }
-                                dynamicData.Add(row);
-                            }
-                            response.PrimaryData = dynamicData;
-                        }
-                        break;
-                }
-
-                _logger.LogInformation("GetJobSummarySample completed for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}", 
-                    request.CallNbr, request.EquipID, request.EquipType);
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetJobSummarySampleAsync for CallNbr={CallNbr}, EquipID={EquipID}, EquipType={EquipType}", 
-                    request.CallNbr, request.EquipID, request.EquipType);
-                throw;
-            }
-        }
-
-        //30. GetStatusDescription - Get status descriptions for equipment type (no DTO approach)
-        public async Task<List<Dictionary<string, object>>> GetStatusDescriptionAsync(string equipType)
-        {
-            const string query = "SELECT * FROM STATUSDESCRIPTION WHERE EQUIPTYPE = @EquipType ORDER BY StatusType";
-
-            try
-            {
-                await using var conn = new SqlConnection(_connectionString);
-                await conn.OpenAsync();
-
-                await using var cmd = new SqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@EquipType", equipType ?? string.Empty);
-
-                await using var reader = await cmd.ExecuteReaderAsync();
-
-                var results = new List<Dictionary<string, object>>();
-                while (await reader.ReadAsync())
-                {
-                    var row = new Dictionary<string, object>();
-                    for (int i = 0; i < reader.FieldCount; i++)
-                    {
-                        var columnName = reader.GetName(i);
-                        var value = reader.IsDBNull(i) ? null : reader.GetValue(i);
-                        row[columnName] = value;
-                    }
-                    results.Add(row);
-                }
-
-                _logger.LogInformation("GetStatusDescription completed for EquipType={EquipType}. Found {Count} records", 
-                    equipType, results.Count);
-
-                return results;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in GetStatusDescriptionAsync for EquipType={EquipType}", equipType);
-                throw;
-            }
-        }
-
-        //31. SaveUpdateEquipReconciliation - Save or update equipment reconciliation data
-        public async Task<int> SaveUpdateEquipReconciliationAsync(SaveUpdateEquipReconciliationDto request)
-        {
-            try
-            {
-                await using var conn = new SqlConnection(_connectionString);
-                await using var cmd = new SqlCommand("SaveUpdateEquipReconciliation", conn)
-                {
-                    CommandType = CommandType.StoredProcedure
-                };
-
-                // Add all parameters matching the stored procedure signature
-                cmd.Parameters.AddWithValue("@CallNbr", request.CallNbr ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
-                cmd.Parameters.AddWithValue("@Make", request.Make ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@MakeCorrect", request.MakeCorrect ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ActMake", request.ActMake ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@Model", request.Model ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ModelCorrect", request.ModelCorrect ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ActModel", request.ActModel ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@SerialNo", request.SerialNo ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@SerialNoCorrect", request.SerialNoCorrect ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ActSerialNo", request.ActSerialNo ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@KVA", request.KVA ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@KVACorrect", request.KVACorrect ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ActKVA", request.ActKVA ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ASCStringsNo", request.ASCStringsNo);
-                cmd.Parameters.AddWithValue("@ASCStringsCorrect", request.ASCStringsCorrect ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ActASCStringNo", request.ActASCStringNo);
-                cmd.Parameters.AddWithValue("@BattPerString", request.BattPerString);
-                cmd.Parameters.AddWithValue("@BattPerStringCorrect", request.BattPerStringCorrect ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ActBattPerString", request.ActBattPerString);
-                cmd.Parameters.AddWithValue("@TotalEquips", request.TotalEquips);
-                cmd.Parameters.AddWithValue("@TotalEquipsCorrect", request.TotalEquipsCorrect ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@ActTotalEquips", request.ActTotalEquips);
-                cmd.Parameters.AddWithValue("@Verified", request.Verified);
-                cmd.Parameters.AddWithValue("@ModifiedBy", request.ModifiedBy ?? "SYSTEM");
-
-                await conn.OpenAsync();
-                var result = await cmd.ExecuteNonQueryAsync();
-
-                _logger.LogInformation("SaveUpdateEquipReconciliation completed for CallNbr={CallNbr}, EquipID={EquipID}", 
-                    request.CallNbr, request.EquipID);
-
-                return result;
-            }
-            catch (SqlException ex)
-            {
-                _logger.LogError(ex, "SQL error in SaveUpdateEquipReconciliationAsync for CallNbr={CallNbr}, EquipID={EquipID}", 
-                    request.CallNbr, request.EquipID);
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error in SaveUpdateEquipReconciliationAsync for CallNbr={CallNbr}, EquipID={EquipID}", 
-                    request.CallNbr, request.EquipID);
                 throw;
             }
         }
     }
+
 }
+

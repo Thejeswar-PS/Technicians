@@ -109,6 +109,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   ];
   statusOptions = STATUS_OPTIONS;
 
+  // Getter for status options with proper fallback
+  get currentStatusOptions(): { value: string; text: string }[] {
+    return (this.equipmentStatusOptions && this.equipmentStatusOptions.length > 0) 
+      ? this.equipmentStatusOptions 
+      : this.statusOptions;
+  }
+
   // Current voltage configurations
   inputConfig: VoltageConfiguration | null = null;
   bypassConfig: VoltageConfiguration | null = null;
@@ -198,17 +205,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.visualForm.get('airFilters')?.valueChanges.subscribe(value => {
       this.showAirFilterDetails = value && value !== '';
     });
-
-    // Debug form after initialization
-    setTimeout(() => {
-      // Form initialization debug removed
-    }, 1000);
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
+
+
 
   ngAfterViewInit(): void {
     // Setup checkbox subscriptions after view initialization to ensure forms are ready
@@ -246,8 +250,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       monthName: ['', Validators.required],
       year: ['', [Validators.required, Validators.min(1900)]],
       status: ['Online', Validators.required],
-      statusNotes: [''],
-      parallelCabinet: [''],
+      parallelCabinet: ['NO'], // Default to "NO" (No)
       snmpPresent: ['PS'], // Default to "PS" (Select)
       modularUPS: [''],
       ctoPartNo: [''], // Added CTO/Part No field
@@ -467,7 +470,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.setupPhaseToNeutralCalculations();
     
     // Subscribe to equipment form changes to keep reconciliation form in sync
-    this.setupEquipmentReconciliationSync();
+    // this.setupEquipmentReconciliationSync(); // Commented out - using simple battery page approach now
     
     // Subscribe to KVA changes for dynamic end-of-life label
     this.setupKVAChangeHandlers();
@@ -626,13 +629,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (manufacturers) => {
-          
           // Always update with the API response, which includes comprehensive fallback if API fails
           if (manufacturers && manufacturers.length > 0) {
             this.manufacturers = manufacturers;
           }
         },
         error: (error) => {
+          
           // Keep the initial fallback list that was set in ngOnInit
           this.toastr.warning('Using default manufacturer list. Please check your connection.');
         }
@@ -646,7 +649,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.upsTypes = upsTypes;
         },
         error: (error) => {
-          console.error('Error loading UPS types:', error);
         }
       });
 
@@ -658,7 +660,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.maintenanceBypassTypes = bypassTypes;
         },
         error: (error) => {
-          console.error('Error loading maintenance bypass types:', error);
         }
       });
 
@@ -670,7 +671,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.multiModuleTypes = multiModuleTypes;
         },
         error: (error) => {
-          console.error('Error loading multi-module types:', error);
         }
       });
 
@@ -692,9 +692,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          console.log('UPS data loaded from server:', data);
-          this.upsData = data;
-          this.populateFormsWithData(data);
+          this.upsData = data as AAETechUPS;
+          this.populateFormsWithData(data as AAETechUPS);
           
           // Initialize any forms/fields that weren't populated with backend data with defaults
           this.initializeFormsWithDefaults();
@@ -703,9 +702,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loadReconciliationDataAfterEquipment();
           
           this.loading = false;
+          
+          // Final check - ensure parallel cabinet has a value after all data loading
+          setTimeout(() => {
+            const currentValue = this.equipmentForm.get('parallelCabinet')?.value;
+            if (!currentValue || currentValue.trim() === '') {
+              this.equipmentForm.patchValue({ parallelCabinet: 'NO' });
+            }
+          }, 100);
         },
         error: (error) => {
-          console.log('UPS readings not found, falling back to equipment info:', error);
+          
           this.loadEquipmentInfo(); // Fallback to equipment info
         }
       });
@@ -740,13 +747,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loadReconciliationDataAfterEquipment();
           
           this.loading = false;
+          
+          // Final check - ensure parallel cabinet has a value after all data loading
+          setTimeout(() => {
+            const currentValue = this.equipmentForm.get('parallelCabinet')?.value;
+            if (!currentValue || currentValue.trim() === '') {
+              this.equipmentForm.patchValue({ parallelCabinet: 'NO' });
+            }
+          }, 100);
         },
         error: (error: any) => {
           
           // Final fallback - ensure month/year are populated even when all data loading fails
-          const currentDate = new Date();
-          const defaultMonthName = currentDate.toLocaleDateString('en-US', { month: 'long' });
-          const defaultYear = currentDate.getFullYear();
+          const defaultMonthName = 'January';
+          const defaultYear = 1990;
           
           this.equipmentForm.patchValue({
             monthName: defaultMonthName,
@@ -761,6 +775,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           
           this.loading = false;
           this.toastr.error('Error loading equipment data. Using default values.');
+          
+          // Final check - ensure parallel cabinet has a value after all data loading
+          setTimeout(() => {
+            const currentValue = this.equipmentForm.get('parallelCabinet')?.value;
+            if (!currentValue || currentValue.trim() === '') {
+              this.equipmentForm.patchValue({ parallelCabinet: 'NO' });
+            }
+          }, 100);
         }
       });
   }
@@ -786,22 +808,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe(value => {
         this.enableToEdit('modularUPS', value);
-      });
-
-    // Monitor equipment status changes for status notes
-    this.equipmentForm.get('status')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(value => {
-        const statusNotesControl = this.equipmentForm.get('statusNotes');
-        if (value && value !== 'Online') {
-          statusNotesControl?.enable();
-          statusNotesControl?.setValidators([Validators.required]);
-        } else {
-          statusNotesControl?.disable();
-          statusNotesControl?.clearValidators();
-          statusNotesControl?.setValue('');
-        }
-        statusNotesControl?.updateValueAndValidity();
       });
   }
 
@@ -844,6 +850,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private initializeFormsWithDefaults(): void {
+    // Equipment form defaults - ensure parallel cabinet defaults to No
+    const currentParallelCabinet = this.equipmentForm.get('parallelCabinet')?.value;
+    
+    if (!currentParallelCabinet || currentParallelCabinet.trim() === '') {
+      this.equipmentForm.patchValue({
+        parallelCabinet: 'NO', // Ensure parallel cabinet defaults to No
+      });
+    }
+
     // Visual form defaults - including EPO switch mentioned by user
     this.visualForm.patchValue({
       epoSwitch: 'P', // EPO switch cover verification - default to Pass
@@ -858,27 +873,27 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.transferForm.patchValue({
       transMaintByPass: 'P', // Transfer to Maintenance By-Pass - default to Pass
     });
-
-    console.log('Transfer verification form fields initialized with default values');
   }
 
+  /**
+   * Load reconciliation information - simplified approach matching battery page
+   */
   private loadReconciliationDataAfterEquipment(): void {
-    // Add a small delay to ensure equipment form is fully populated
-    setTimeout(() => {
-      this.equipmentService.getEquipReconciliationInfo(this.callNbr, this.equipId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (data) => {
-            this.reconciliationData = data;
-            this.populateReconciliationForm(data);
-          },
-          error: (error) => {
-            console.error('Error loading reconciliation data:', error);
-            // Initialize form with defaults for new records when no existing data found
-            this.populateReconciliationForm(null);
-          }
-        });
-    }, 100);
+    console.log('🔄 Loading reconciliation info for UPS - callNbr:', this.callNbr, 'equipId:', this.equipId);
+    this.equipmentService.getEquipReconciliationInfo(this.callNbr, this.equipId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (data) => {
+          console.log('✅ UPS Reconciliation data received:', data);
+          this.reconciliationData = data;
+          this.populateReconciliationForm(data);
+        },
+        error: (error) => {
+          console.warn('⚠️  Warning loading reconciliation info:', error);
+          // Still populate with current equipment data even if API fails
+          this.populateReconciliationForm(null);
+        }
+      });
   }
 
   private populateFormsWithData(data: AAETechUPS): void {
@@ -923,6 +938,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       } catch (error) {
         // Could not parse date for calendar
+      }
+    } else {
+      // If no valid date from backend, set to default 01/1990 as per business logic
+      const defaultMonth = 'January';
+      const defaultYear = 1990;
+      
+      // Update form with default date if no valid date exists
+      if (!actualMonthName && !actualYear) {
+        this.equipmentForm.patchValue({
+          monthName: defaultMonth,
+          year: defaultYear
+        });
+        
+        this.selectedDate = new Date(defaultYear, 0, 1); // January = month 0
+        this.currentCalendarDate = new Date(this.selectedDate);
+        this.selectedYear = defaultYear;
       }
     }
 
@@ -1036,14 +1067,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.inputConfig = this.getVoltageConfiguration(data.input);
     this.bypassConfig = this.getVoltageConfiguration(data.bypass);
     this.outputConfig = this.getVoltageConfiguration(data.output);
+    
   }
 
   private populateEquipmentForm(data: any): void {
     if (data && data.Tables && data.Tables.length > 0) {
       const equipInfo = data.Tables[0].Rows[0];
       const capsInfo = data.Tables[1]?.Rows[0];
-      
-
 
       
       // Create temporary data object for default value calculation
@@ -1083,38 +1113,85 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  /**
+   * Clean and map backend reconciliation values to dropdown format
+   */
+  private cleanReconciliationValue(value: string | null | undefined): string {
+    if (!value) return '';
+    
+    const cleaned = value.toString().trim().toUpperCase();
+    
+    // Map backend values to dropdown values
+    switch (cleaned) {
+      case 'YS':
+      case 'YES':
+      case 'Y':
+        return 'Y';
+      case 'NS':  
+      case 'NO':
+      case 'N':
+        return 'N';
+      case 'NA':
+      case 'N/A':
+        return 'N/A';
+      default:
+        // If it's just spaces or unknown value, return empty
+        return cleaned.length === 0 ? '' : cleaned;
+    }
+  }
+
+  /**
+   * Populate reconciliation form with data - auto-populate "Is this correct?" fields from backend
+   */
   private populateReconciliationForm(data: EquipReconciliationInfo | null): void {
+    console.log('🔄 Populating UPS reconciliation form with data:', data);
+    
     if (data) {
-      this.reconciliationForm.patchValue({
-        model: data.model || '',
-        modelCorrect: this.getVerificationDefault(data.modelCorrect),
-        actModel: data.actModel || '',
-        serialNo: data.serialNo || '',
-        serialNoCorrect: this.getVerificationDefault(data.serialNoCorrect),
-        actSerialNo: data.actSerialNo || '',
-        kvaSize: data.kva || '',
-        kvaCorrect: this.getVerificationDefault(data.kvaCorrect),
-        actKVA: data.actKVA || '',
+      // Clean backend data first
+      const cleanedData = {
+        model: data.model ? data.model.trim() : '',
+        modelCorrect: this.cleanReconciliationValue(data.modelCorrect),
+        actModel: data.actModel ? data.actModel.trim() : '',
+        serialNo: data.serialNo ? data.serialNo.trim() : '',
+        serialNoCorrect: this.cleanReconciliationValue(data.serialNoCorrect),
+        actSerialNo: data.actSerialNo ? data.actSerialNo.trim() : '',
+        kvaSize: data.kva ? data.kva.trim() : '', // Fixed: Use kvaSize to match form control name
+        kvaCorrect: this.cleanReconciliationValue(data.kvaCorrect),
+        actKVA: data.actKVA ? data.actKVA.trim() : '',
         totalEquips: data.totalEquips ? data.totalEquips.toString() : '',
-        totalEquipsCorrect: this.getVerificationDefault(data.totalEquipsCorrect),
+        totalEquipsCorrect: this.cleanReconciliationValue(data.totalEquipsCorrect),
         actTotalEquips: data.actTotalEquips ? data.actTotalEquips.toString() : '',
         verified: data.verified || false
-      });
+      };
       
+      console.log('🧹 Cleaned backend reconciliation data:', cleanedData);
+      
+      // Populate with cleaned backend data
+      console.log('✅ Using cleaned backend reconciliation data with auto-populated "Is this correct?" fields');
+      this.reconciliationForm.patchValue(cleanedData);
     } else {
-      // No existing data - use default values for new records
+      // No backend data - populate with current equipment form values, leave "Is this correct?" fields empty for user selection
+      const equipmentValues = this.equipmentForm.value;
+      console.log('⚠️  No backend data, using equipment form values with empty "Is this correct?" fields for user selection:', equipmentValues);
       this.reconciliationForm.patchValue({
-        modelCorrect: this.getVerificationDefault(null),
-        serialNoCorrect: this.getVerificationDefault(null),
-        kvaCorrect: this.getVerificationDefault(null),
-        totalEquipsCorrect: this.getVerificationDefault(null)
+        model: equipmentValues.model || '',
+        modelCorrect: '', // Leave empty for user to select
+        actModel: '',
+        serialNo: equipmentValues.serialNo || '',
+        serialNoCorrect: '', // Leave empty for user to select
+        actSerialNo: '',
+        kvaSize: equipmentValues.kva || '', // Fixed: Use kvaSize to match form control name
+        kvaCorrect: '', // Leave empty for user to select
+        actKVA: '',
+        totalEquips: '1',
+        totalEquipsCorrect: '', // Leave empty for user to select
+        actTotalEquips: '',
+        verified: false
       });
-      
     }
 
-    // Set current equipment values from equipment form for comparison
-    this.populateCurrentEquipmentValues();
-    
+    console.log('✅ UPS Reconciliation form populated with auto-populated "Is this correct?" fields. Final values:', this.reconciliationForm.value);
+
     // Set up watchers for real-time verification status updates
     this.setupVerificationWatchers();
     
@@ -1199,9 +1276,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * Returns existing saved value if available, otherwise defaults to empty string (blank)
    */
   private getVerificationDefault(existingValue: string | null | undefined): string {
+    // Clean up the value first (remove spaces)
+    const cleanValue = existingValue ? existingValue.toString().trim() : '';
+    
     // If we have existing verification data, use it
-    if (existingValue && (existingValue === 'Y' || existingValue === 'N' || existingValue === 'N/A')) {
-      return existingValue;
+    if (cleanValue && (cleanValue === 'Y' || cleanValue === 'N' || cleanValue === 'N/A')) {
+      return cleanValue;
     }
   
     // For new records or missing data, default to empty string (blank dropdown)
@@ -1249,7 +1329,25 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const prefix = type === 'input' ? 'input' : type === 'bypass' ? 'bypass' : 'output';
 
-    form.patchValue({
+    // Extract raw values from data for logging
+    const rawVoltageData = {
+      [`${prefix}VoltA_T`]: data[`${prefix}VoltA_T` as keyof AAETechUPS],
+      [`${prefix}VoltA_PF`]: data[`${prefix}VoltA_PF` as keyof AAETechUPS],
+      [`${prefix}VoltB_T`]: data[`${prefix}VoltB_T` as keyof AAETechUPS],
+      [`${prefix}VoltB_PF`]: data[`${prefix}VoltB_PF` as keyof AAETechUPS],
+      [`${prefix}VoltC_T`]: data[`${prefix}VoltC_T` as keyof AAETechUPS],
+      [`${prefix}VoltC_PF`]: data[`${prefix}VoltC_PF` as keyof AAETechUPS],
+      [`${prefix}CurrA_T`]: data[`${prefix}CurrA_T` as keyof AAETechUPS],
+      [`${prefix}CurrA_PF`]: data[`${prefix}CurrA_PF` as keyof AAETechUPS],
+      [`${prefix}CurrB_T`]: data[`${prefix}CurrB_T` as keyof AAETechUPS],
+      [`${prefix}CurrB_PF`]: data[`${prefix}CurrB_PF` as keyof AAETechUPS],
+      [`${prefix}CurrC_T`]: data[`${prefix}CurrC_T` as keyof AAETechUPS],
+      [`${prefix}CurrC_PF`]: data[`${prefix}CurrC_PF` as keyof AAETechUPS],
+      [`${prefix}Freq_T`]: data[`${prefix}Freq_T` as keyof AAETechUPS],
+      [`${prefix}Freq_PF`]: data[`${prefix}Freq_PF` as keyof AAETechUPS]
+    };
+
+    const formData = {
       voltA: this.convertZeroToEmpty(data[`${prefix}VoltA_T` as keyof AAETechUPS] as number),
       voltA_PF: (data[`${prefix}VoltA_PF` as keyof AAETechUPS] as string) || 'P',
       voltB: this.convertZeroToEmpty(data[`${prefix}VoltB_T` as keyof AAETechUPS] as number),
@@ -1264,7 +1362,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       currC_PF: (data[`${prefix}CurrC_PF` as keyof AAETechUPS] as string) || 'P',
       freq: this.convertZeroToEmpty(data[`${prefix}Freq_T` as keyof AAETechUPS] as number),
       freq_PF: (data[`${prefix}Freq_PF` as keyof AAETechUPS] as string) || 'P'
-    });
+    };
+
+    form.patchValue(formData);
 
     // Populate load data for output only
     if (type === 'output') {
@@ -3086,7 +3186,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             this.upsData = data;
             // Don't repopulate forms to avoid overwriting user's current work
             // The data is just verified to be saved correctly
-            console.log('Data successfully verified as saved to server');
           }
         },
         error: (error) => {
@@ -3123,14 +3222,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    // Debug logging to track save process
-    console.log('Starting save process...', {
-      isDraft,
-      callNbr: this.callNbr,
-      equipId: this.equipId,
-      upsId: this.upsId
-    });
-
     this.saving = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -3139,7 +3230,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const upsData = this.buildUPSData(isDraft);
     console.log('Built UPS data for save:', upsData);
     const saveUpdateDto = convertToSaveUpdateDto(upsData, this.authService.currentUserValue?.username || 'SYSTEM');
-    console.log('Converted DTO for API:', saveUpdateDto);
     
     // Use the new comprehensive SaveUpdateaaETechUPS API method
     this.equipmentService.saveUpdateaaETechUPS(saveUpdateDto)
@@ -3199,6 +3289,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const actionRequired = this.actionRequiredForm.value;
 
     const dateCode = new Date(equipment.dateCode);
+    const validMonthName = equipment.monthName || dateCode.toLocaleString('default', { month: 'long' });
+    const validYear = equipment.year || dateCode.getFullYear();
     
     return {
       upsId: this.upsId,
@@ -3213,7 +3305,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       serialNo: equipment.serialNo,
       location: equipment.location,
       status: equipment.status,
-      statusReason: equipment.statusNotes,
+      statusReason: '', // Removed status notes functionality
       parallelCabinet: equipment.parallelCabinet,
       snmpPresent: equipment.snmpPresent,
       modularUPS: equipment.modularUPS,
@@ -3272,9 +3364,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       afThick1: '',
       afQty1: '',
       
-      // Date information
-      monthName: dateCode.toLocaleDateString('en-US', { month: 'long' }),
-      year: dateCode.getFullYear(),
+      // Date information - use validated values instead of parsed dateCode
+      monthName: validMonthName,
+      year: validYear,
       
       // Voltage readings - Input
       input: input.configuration,
@@ -3401,7 +3493,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       callNbr: this.callNbr,
       equipId: this.equipId,
       status: status !== 'Offline' ? status : this.equipmentForm.get('status')?.value,
-      notes: this.equipmentForm.get('statusNotes')?.value,
       tableName: 'UPS_Verification1',
       manufacturer: this.equipmentForm.get('manufacturer')?.value,
       modelNo: this.equipmentForm.get('model')?.value,
@@ -3416,14 +3507,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       vfSelection: ''
     };
 
-    console.log('Updating equipment status:', statusData);
-
     this.equipmentService.updateEquipStatus(statusData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           if (response.success) {
-            console.log('Equipment status updated successfully');
+            // Equipment status updated successfully
           } else {
             console.warn('Equipment status update failed:', response.message);
           }
@@ -3440,7 +3529,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Only attempt to save reconciliation data if the form has meaningful data
     if (!reconciliation.verified && !reconciliation.modelCorrect && !reconciliation.serialNoCorrect && !reconciliation.kvaCorrect) {
-      console.log('Skipping reconciliation save - no verification data entered');
       return;
     }
     
@@ -3473,14 +3561,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       ModifiedBy: this.authService.currentUserValue?.username || 'SYSTEM'
     };
 
-    console.log('Attempting to save reconciliation data:', reconciliationData);
-
     this.equipmentService.saveEquipReconciliationInfo(reconciliationData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           if (response.success) {
-            console.log('Reconciliation data saved successfully', response);
+            // Reconciliation data saved successfully
           } else {
             console.warn('Reconciliation save failed:', response.message);
           }
@@ -3993,7 +4079,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Determine default value for parallel cabinet based on UPS characteristics
   private determineDefaultParallelCabinet(data: AAETechUPS): string {
-    if (data.parallelCabinet) return data.parallelCabinet;
+    // Only use existing value if it's not empty/null/undefined
+    if (data.parallelCabinet && data.parallelCabinet.trim()) {
+      // Normalize legacy values: convert "N" to "NO" for consistency
+      return data.parallelCabinet.trim() === 'N' ? 'NO' : data.parallelCabinet;
+    }
     
     const kva = this.convertToDouble(data.kva);
     const manufacturer = (data.manufacturer || '').toUpperCase();
@@ -4004,7 +4094,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       return 'Y';
     }
     
-    return 'N';
+    // Default to 'NO' (No) for parallel cabinet
+    return 'NO';
   }
 
   // Determine default value for SNMP card presence based on UPS characteristics
@@ -4016,18 +4107,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const year = data.year || new Date().getFullYear();
     
     // Modern UPS systems (post-2010) typically have SNMP capabilities
-    if (year >= 2010) return 'Y';
+    if (year >= 2010) return 'YES';
     
     // Higher capacity systems are more likely to have SNMP cards
-    if (kva >= 100) return 'Y';
+    if (kva >= 100) return 'YES';
     
     // Major manufacturers typically include SNMP in their systems
     if (manufacturer.includes('APC') || manufacturer.includes('LIEBERT') || 
         manufacturer.includes('EATON') || manufacturer.includes('SCHNEIDER')) {
-      return 'Y';
+      return 'YES';
     }
     
-    return 'N';
+    return 'NO';
   }
 
   // Show a specific section (legacy showdiv equivalent)
