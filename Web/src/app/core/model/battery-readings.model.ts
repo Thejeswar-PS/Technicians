@@ -83,6 +83,48 @@ export interface BatteryStringInfo {
   readingMethod: string;
   chkGraph: boolean;
   saveAsDraft: boolean;
+  
+  // Additional fields required by backend API
+  message: string;
+  code: number | null;
+  resistance: number | null;
+  codeTorque: number | null;
+  negWrappedCheck: boolean | null;
+  negWrappedPf: string;
+  negSulfatedCheck: boolean | null;
+  negMisPosCheck: boolean | null;
+  bothActMatPf: string;
+  bothActMatCheck: boolean | null;
+  actPosMatCheck: boolean | null;
+  otherCheck: boolean | null;
+  sedimentsComments: string;
+  missingCoversCheck: boolean | null;
+  missingCoversPf: string;
+  brokenCoversCheck: boolean | null;
+  needsCleaningCoversCheck: boolean | null;
+  missingSepCheck: boolean | null;
+  missingSepPf: string;
+  quartBelowCheck: boolean | null;
+  quartBelowPf: string;
+  halfBelowCheck: boolean | null;
+  halfBelowPf: string;
+  thrbyFourBelowCheck: boolean | null;
+  thrbyFourBelowPf: string;
+  waterFillYn: string;
+  sepComments: string;
+  immedActionOpen: string;
+  upgradeNoOpenAge: string;
+  upgradeNoOpen: string;
+  positivePost: string;
+  negativePost: string;
+  postSeals: string;
+  batteryDisc: string;
+  miscHardware: string;
+  sealsComments: string;
+  hardwareComments: string;
+  manufDatePf: string;
+  manufDate: string;
+  battProActiveReplace: string;
 }
 
 export interface EquipReconciliationInfo {
@@ -110,6 +152,7 @@ export interface EquipReconciliationInfo {
   kvaCorrect: string;
   actKva: string;
   verified: boolean;
+  modifiedBy: string;
 }
 
 export interface BatteryReadingRow {
@@ -163,6 +206,9 @@ export interface UpdateEquipStatus {
   vfSelection: string;
   batteriesPerString: number;
   batteriesPerPack: number;
+  // Required fields for API
+  Notes: string;  // Same as statusNotes
+  MaintAuthID: string;  // Technician/User ID
 }
 
 export interface BatteryTypeValue {

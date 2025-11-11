@@ -5,7 +5,6 @@ import { ToastrService } from 'ngx-toastr';
 import { BatteryReadingsService } from '../../../core/services/battery-readings.service';
 import {
   BatteryStringInfo,
-  EquipReconciliationInfo,
   BatteryReadingRow,
   BatteryData,
   UpdateEquipStatus,
@@ -13,11 +12,11 @@ import {
 } from '../../../core/model/battery-readings.model';
 
 @Component({
-  selector: 'app-battery-readings',
-  templateUrl: './battery-readings.component.html',
-  styleUrls: ['./battery-readings.component.scss'],
+  selector: 'app-battery-readings-temp',
+  templateUrl: './battery-readings-temp.component.html',
+  styleUrls: ['./battery-readings-temp.component.scss'],
 })
-export class BatteryReadingsComponent implements OnInit {
+export class BatteryReadingsTempComponent implements OnInit {
   // Route Parameters
   callNbr: string = '';
   equipId: number = 0;
@@ -30,12 +29,12 @@ export class BatteryReadingsComponent implements OnInit {
 
   // Form Groups
   batteryStringForm: FormGroup;
-  reconciliationForm: FormGroup;
+  reconciliationForm: FormGroup; // Not used in Temp version but kept for compatibility
   batteryGridForm: FormGroup;
 
   // Data Models
   batteryStringInfo: BatteryStringInfo | null = null;
-  reconciliationInfo: EquipReconciliationInfo | null = null;
+  reconciliationInfo: any | null = null; // Not used in Temp version
   batteryReadings: BatteryReadingRow[] = [];
   // UI State
   loading: boolean = false;
@@ -47,13 +46,13 @@ export class BatteryReadingsComponent implements OnInit {
 
   // Collapsible Section States
   showEquipmentInfo: boolean = true;
-  showReconciliation: boolean = true;
+  showReconciliation: boolean = false; // Always false for Temp version
   showChargingVerification: boolean = true;
   showMultimeterReadings: boolean = true;
   showBatteryReadingsGrid: boolean = true;
 
   // Battery Type State
-  isBatteryTypeLithium: boolean = false;
+  isBatteryTypeLithium: boolean = false; // Not used in Temp version
 
   // Grid Row Counts
   totalReplace: number = 0;
@@ -76,7 +75,7 @@ export class BatteryReadingsComponent implements OnInit {
     private toastr: ToastrService
   ) {
     this.batteryStringForm = this.createBatteryStringForm();
-    this.reconciliationForm = this.createReconciliationForm();
+    this.reconciliationForm = this.createReconciliationForm(); // Kept for compatibility
     this.batteryGridForm = this.createBatteryGridForm();
   }
 
@@ -129,13 +128,13 @@ export class BatteryReadingsComponent implements OnInit {
    */
   private loadBatteryStringInfo(): void {
     this.batteryService
-      .getBatteryStringReadingsInfo(this.callNbr, this.equipId, this.batStrId)
+      .getBatteryStringReadingsInfoTemp(this.callNbr, this.equipId, this.batStrId)
       .subscribe(
         (data) => {
           this.batteryStringInfo = data;
           this.populateBatteryStringForm(data);
-          this.enableDisableLithium();
-          this.loadReconciliationInfo();
+          // this.enableDisableLithium(); // Removed for Temp version
+          // this.loadReconciliationInfo(); // Removed for Temp version
           this.loadBatteryGridData();
         },
         (error) => {
@@ -146,18 +145,11 @@ export class BatteryReadingsComponent implements OnInit {
   }
 
   /**
-   * Load reconciliation information
+   * Load reconciliation information (NOT USED IN TEMP VERSION)
    */
   private loadReconciliationInfo(): void {
-    this.batteryService.getEquipReconciliationInfo(this.callNbr, this.equipId).subscribe(
-      (data) => {
-        this.reconciliationInfo = data;
-        this.populateReconciliationForm(data);
-      },
-      (error) => {
-        console.warn('Warning loading reconciliation info:', error);
-      }
-    );
+    // Reconciliation not used in Temp version - method kept for compatibility
+    return;
   }
 
   /**
@@ -165,7 +157,7 @@ export class BatteryReadingsComponent implements OnInit {
    */
   private loadBatteryGridData(updateReconciliation: boolean = false): void {
     this.batteryService
-      .getBatteryInfo(this.callNbr, this.equipId, this.batStrId)
+      .getBatteryInfoTemp(this.callNbr, this.equipId, this.batStrId)
       .subscribe(
         (data) => {
           this.batteryReadings = this.mapBatteryDataToRows(data);
@@ -239,7 +231,7 @@ export class BatteryReadingsComponent implements OnInit {
       }
 
       // Step 2: Get current battery info from backend
-      this.batteryService.getBatteryInfo(this.callNbr, this.equipId, this.batStrId).subscribe(
+      this.batteryService.getBatteryInfoTemp(this.callNbr, this.equipId, this.batStrId).subscribe(
         (currentBatteries) => {
           const currentCount = currentBatteries.length;
 
@@ -415,12 +407,12 @@ export class BatteryReadingsComponent implements OnInit {
    */
   private loadBatteryStringInfoSimple(): void {
     this.batteryService
-      .getBatteryStringReadingsInfo(this.callNbr, this.equipId, this.batStrId)
+      .getBatteryStringReadingsInfoTemp(this.callNbr, this.equipId, this.batStrId)
       .subscribe(
         (data) => {
           this.batteryStringInfo = data;
           this.populateBatteryStringFormSimple(data);
-          this.enableDisableLithium();
+          // this.enableDisableLithium(); // Removed for Temp version
         },
         (error) => {
           this.handleError('Error loading battery string info: ' + error.message);
@@ -608,7 +600,7 @@ export class BatteryReadingsComponent implements OnInit {
   /**
    * Populate reconciliation form with data
    */
-  private populateReconciliationForm(data: EquipReconciliationInfo): void {
+  private populateReconciliationForm(data: any /* EquipReconciliationInfo removed for Temp */): void {
     this.reconciliationForm.patchValue({
       recMake: data.make,
       recMakeCorrect: data.makeCorrect,
@@ -791,7 +783,7 @@ export class BatteryReadingsComponent implements OnInit {
    * Handle battery type change - recalculate reference values
    */
   onBatteryTypeChange(): void {
-    this.enableDisableLithium();
+    // this.enableDisableLithium(); // Removed for Temp version
     this.loadReferenceValues();
   }
 
@@ -1529,7 +1521,7 @@ export class BatteryReadingsComponent implements OnInit {
     const batteryStringInfo = this.buildBatteryStringInfo();
     batteryStringInfo.saveAsDraft = saveType === 'SaveAsDraft';
 
-    this.batteryService.saveUpdateBatteryStringReadings(batteryStringInfo).subscribe(
+    this.batteryService.saveUpdateBatteryStringReadingsTemp(batteryStringInfo).subscribe(
       () => {
         const saveMessage = saveType === 'SaveAsDraft' 
           ? 'Battery readings saved as draft successfully!' 
@@ -1595,7 +1587,7 @@ export class BatteryReadingsComponent implements OnInit {
           // i=1: ReadingType updated - proceed to next step (reconciliation)
           this.saving = false;
           this.isSaving = false;
-          this.saveReconciliationInfoStep();
+          // this.saveReconciliationInfoStep(); // Removed for Temp version
         } else {
           console.log(`UpdateBatteryInfo(${i}) completed and equipment info refreshed`);
         }
@@ -1721,26 +1713,11 @@ export class BatteryReadingsComponent implements OnInit {
   }
 
   /**
-   * Step 4: Save reconciliation info (legacy SaveUpdateReconciliationInfo method)
+   * Step 4: Save reconciliation info (NOT USED IN TEMP VERSION)
    */
   private saveReconciliationInfoStep(): void {
-    if (this.reconciliationInfo) {
-      const reconInfo = this.buildReconciliationInfo();
-      this.batteryService.saveUpdateEquipReconciliationInfo(reconInfo).subscribe(
-        () => {
-          // Step 5: Calculate status if not Offline (legacy GetEquipStatus)
-          this.calculateAndUpdateStatus();
-        },
-        (error) => {
-          this.handleError('Error saving reconciliation info: ' + error.message);
-          this.isSaving = false;
-          this.saving = false;
-        }
-      );
-    } else {
-      // Step 5: Calculate status if not Offline
-      this.calculateAndUpdateStatus();
-    }
+    // Reconciliation not used in Temp version - skip directly to status calculation
+    this.calculateAndUpdateStatus();
   }
 
   /**
@@ -1827,7 +1804,7 @@ export class BatteryReadingsComponent implements OnInit {
     const batteryStringInfo = this.buildBatteryStringInfo();
     batteryStringInfo.saveAsDraft = true;
 
-    this.batteryService.saveUpdateBatteryStringReadings(batteryStringInfo).subscribe(
+    this.batteryService.saveUpdateBatteryStringReadingsTemp(batteryStringInfo).subscribe(
       () => {
         // Step 2: Update equipment batteries (legacy: UpdateBatteryInfo(2))
         const batteryData = {
@@ -2026,7 +2003,7 @@ export class BatteryReadingsComponent implements OnInit {
   /**
    * Build reconciliation info for saving
    */
-  private buildReconciliationInfo(): EquipReconciliationInfo {
+  private buildReconciliationInfo(): any /* EquipReconciliationInfo removed for Temp */ {
     return {
       callNbr: this.callNbr,
       equipId: this.equipId,
@@ -2543,3 +2520,6 @@ export class BatteryReadingsComponent implements OnInit {
     return true;
   }
 }
+
+
+

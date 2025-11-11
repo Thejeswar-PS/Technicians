@@ -26,10 +26,15 @@
         public string ContainerComments { get; set; }
         public string EnvironmentComments { get; set; }
         public double? BatteryVoltage { get; set; }
+        public string BatVoltage_PF { get; set; }
         public double? PlusTerminalToGround { get; set; }
+        public string PlusTerminal_PF { get; set; }
         public double? MinusTerminalToGround { get; set; }
+        public string MinusTerminal_PF { get; set; }
         public double? DCChargingCurrent { get; set; }
+        public string DCCharging_PF { get; set; }
         public double? ACRipple { get; set; }
+        public string ACRipple_PF { get; set; }
         public double? ACRippleCurrent { get; set; }
         public string VoltageStatus { get; set; }
         public string PlusTermStatus { get; set; }
@@ -85,7 +90,49 @@
         public string BattProActiveReplace { get; set; }
         public string ReadingMethod { get; set; }
         public bool? chkGraph { get; set; }
+        public int? code { get; set; }
+        public string Message { get; set; }
+        public double? Resistance { get; set; }
+        public string Resistance_PF { get; set; }
+        public double? CodeTorque { get; set; }
+        public string CodeTorque_PF { get; set; }
+        public bool? NegWrapped_Check { get; set; }
+        public string NegWrapped_PF { get; set; }
+        public bool? NegSulfated_Check { get; set; }
+        public bool? NegMisPos_Check { get; set; }
+        public string BothActMat_PF { get; set; }
+        public bool? BothActMat_Check { get; set; }
+        public bool? ActPosMat_Check { get; set; }
+        public bool? Other_Check { get; set; }
+        public string SedimentsComments { get; set; }
+        public bool? MissingCovers_Check { get; set; }
+        public string MissingCovers_PF { get; set; }
+        public bool? BrokenCovers_Check { get; set; }
+        public bool? NeedsCleaningCovers_Check { get; set; }
+        public bool? MissingSep_Check { get; set; }
+        public string MissingSep_PF { get; set; }
+        public bool? QuartBelow_Check { get; set; }
+        public string QuartBelow_PF { get; set; }
+        public bool? HalfBelow_Check { get; set; }
+        public string HalfBelow_PF { get; set; }
+        public bool? ThrbyFourBelow_Check { get; set; }
+        public string ThrbyFourBelow_PF { get; set; }
+        public string WaterFill_YN { get; set; }
+        public string SepComments { get; set; }
+        public int? Quantity_Needed { get; set; }
+        public string ImmedActionOpen { get; set; }
+        public string UpgradeNoOpenAge { get; set; }
+        public string UpgradeNoOpen { get; set; }
+        public int? RoomTemp { get; set; }
+        public string PositivePost { get; set; }
+        public string NegativePost { get; set; }
+        public string PostSeals { get; set; }
+        public string BatteryDisc { get; set; }
+        public string MiscHardware { get; set; }
+        public string SealsComments { get; set; }
+        public string HardwareComments { get; set; }
+        public string ManufDate_PF { get; set; }
+        public string ManufDate { get; set; }
     }
-
 }
 

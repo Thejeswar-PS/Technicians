@@ -21,6 +21,7 @@ import { EditPartsComponent } from './edit-parts/edit-parts.component';
 import { JobSummarySampleComponent } from './job-summary-sample/job-summary-sample.component';
 import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
+import { BatteryReadingsTempComponent } from '../equipment/battery-readings-temp/battery-readings-temp.component';
 
 
 
@@ -41,7 +42,8 @@ import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-
     JobPartsComponent,
     EditPartsComponent,
     JobSummarySampleComponent,
-    BatteryReadingsComponent
+    BatteryReadingsComponent,
+    BatteryReadingsTempComponent
   ],
   imports: [
     CommonModule,

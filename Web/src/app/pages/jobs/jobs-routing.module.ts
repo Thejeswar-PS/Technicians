@@ -14,6 +14,7 @@ import { JobSafetyComponent } from './job-safety/job-safety.component';
 import { JobPartsComponent } from './job-parts/job-parts.component';
 import { EditPartsComponent } from './edit-parts/edit-parts.component';
 import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
+import { BatteryReadingsTempComponent } from '../equipment/battery-readings-temp/battery-readings-temp.component';
 
 const routes: Routes = [
   {
@@ -80,6 +81,10 @@ const routes: Routes = [
   {
     path: 'battery-readings',
     component: BatteryReadingsComponent
+  },
+  {
+    path: 'battery-readings-temp',
+    component: BatteryReadingsTempComponent
   }
   // Job summary sample route commented out for integration-only usage
   // {

@@ -67,17 +67,60 @@ export class BatteryReadingsService {
       );
   }
 
+  getBatteryStringReadingsInfoTemp(
+    callNbr: string,
+    equipId: number,
+    batStrId: string
+  ): Observable<BatteryStringInfo> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString())
+      .set('batStrId', batStrId);
+
+    return this.http
+      .get<any>(`${this.apiUrl}/Readings/GetBatteryStringReadingsInfoTemp`, { params })
+      .pipe(
+        map((response) => this.mapBatteryStringInfo(response)),
+        catchError((error) => {
+          console.error('Error fetching battery string info:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
   /**
    * Save or update battery string readings
    */
   saveUpdateBatteryStringReadings(
     batteryInfo: BatteryStringInfo
   ): Observable<any> {
+    // Map camelCase properties to PascalCase with underscores for backend API
+    const payload = this.mapBatteryStringInfoToApi(batteryInfo);
+    
     return this.http
-      .post(`${this.apiUrl}/Readings/SaveUpdateBatteryStringReadings`, batteryInfo)
+      .post(`${this.apiUrl}/Readings/SaveUpdateBatteryStringReadings`, payload)
       .pipe(
         catchError((error) => {
           console.error('Error saving battery string readings:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Save or update battery string readings (Temp version)
+   */
+  saveUpdateBatteryStringReadingsTemp(
+    batteryInfo: BatteryStringInfo
+  ): Observable<any> {
+    // Map camelCase properties to PascalCase with underscores for backend API
+    const payload = this.mapBatteryStringInfoToApi(batteryInfo);
+    
+    return this.http
+      .post(`${this.apiUrl}/Readings/SaveUpdateBatteryStringReadingsTemp`, payload)
+      .pipe(
+        catchError((error) => {
+          console.error('Error saving battery string readings (Temp):', error);
           return throwError(() => error);
         })
       );
@@ -111,8 +154,11 @@ export class BatteryReadingsService {
   saveUpdateEquipReconciliationInfo(
     reconInfo: EquipReconciliationInfo
   ): Observable<any> {
+    // Map camelCase properties to PascalCase for backend API
+    const payload = this.mapEquipReconciliationInfoToApi(reconInfo);
+    
     return this.http
-      .post(`${this.apiUrl}/EquipmentDetails/SaveUpdateEquipReconciliationInfo`, reconInfo)
+      .post(`${this.apiUrl}/EquipmentDetails/SaveUpdateEquipReconciliation`, payload)
       .pipe(
         catchError((error) => {
           console.error('Error saving reconciliation info:', error);
@@ -145,6 +191,27 @@ export class BatteryReadingsService {
       );
   }
 
+  getBatteryInfoTemp(
+    callNbr: string,
+    equipId: number,
+    batStrId: string
+  ): Observable<BatteryData[]> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString())
+      .set('batStrId', batStrId);
+
+    return this.http
+      .get<any[]>(`${this.apiUrl}/Readings/GetBatteryInfoTemp`, { params })
+      .pipe(
+        map((response) => response.map((item) => this.mapBatteryData(item))),
+        catchError((error) => {
+          console.error('Error fetching battery info:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
   /**
    * Get battery type values for calculations
    */
@@ -161,7 +228,7 @@ export class BatteryReadingsService {
       .set('floatVoltV', floatVoltV.toString());
 
     return this.http
-      .get<any>(`${this.apiUrl}/battery/GetBatteryTypeValues`, { params })
+      .get<any>(`${this.apiUrl}/Readings/GetBatteryTypeValues`, { params })
       .pipe(
         map((response) => ({
           batteryType: response.batteryType || '',
@@ -189,7 +256,7 @@ export class BatteryReadingsService {
   ): Observable<ReferenceValue[]> {
     let params = new HttpParams()
       .set('equipId', equipId.toString())
-      .set('operation', operation);
+      .set('type', operation);
 
     if (readingMethod) params = params.set('readingMethod', readingMethod);
     if (battMakeModel) params = params.set('battMakeModel', battMakeModel);
@@ -197,16 +264,18 @@ export class BatteryReadingsService {
     if (refValue2) params = params.set('refValue2', refValue2.toString());
 
     return this.http
-      .get<any[]>(`${this.apiUrl}/battery/GetReferenceValues`, { params })
+      .get<any[]>(`${this.apiUrl}/Readings/GetReferenceValues`, { params })
       .pipe(
-        map((response) =>
-          response.map((item) => ({
-            id: item.id || '',
-            name: item.name || '',
-            value1: item.value1 || 0,
-            value2: item.value2 || 0,
-          }))
-        ),
+        map((response) => {
+          if (!Array.isArray(response)) return [];
+          return response.map((item) => ({
+            // Map from API response: Name, Value, RefValue, Resistance
+            id: (item.Value || item.value || '').toString().trim(),
+            name: (item.Name || item.name || '').toString().trim(),
+            value1: item.RefValue || item.refValue || 0,  // Reference voltage/capacity
+            value2: item.Resistance || item.resistance || 0, // Resistance value
+          }));
+        }),
         catchError((error) => {
           console.error('Error fetching reference values:', error);
           return throwError(() => error);
@@ -228,10 +297,37 @@ export class BatteryReadingsService {
       .set('batStrId', batStrId);
 
     return this.http
-      .delete(`${this.apiUrl}/battery/DeleteBattery`, { params })
+      .delete(`${this.apiUrl}/Readings/DeleteBattery`, { params })
       .pipe(
         catchError((error) => {
           console.error('Error deleting battery:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
+   * Delete battery rows above a certain count
+   * Used when reducing battery count - deletes BatteryID > batteryCount
+   * Legacy: DELETE FROM Battery WHERE BatteryID > {count}
+   */
+  deleteBatteryRowsAboveCount(
+    callNbr: string,
+    equipId: number,
+    batStrId: string,
+    batteryCount: number
+  ): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString())
+      .set('batStrId', batStrId)
+      .set('batteryCount', batteryCount.toString());
+
+    return this.http
+      .delete(`${this.apiUrl}/Readings/DeleteBatteryRowsAboveCount`, { params })
+      .pipe(
+        catchError((error) => {
+          console.error('Error deleting battery rows above count:', error);
           return throwError(() => error);
         })
       );
@@ -242,7 +338,7 @@ export class BatteryReadingsService {
    */
   saveBatteryData(batteryDataList: BatteryData[]): Observable<any> {
     return this.http
-      .post(`${this.apiUrl}/battery/SaveBatteryData`, batteryDataList)
+      .post(`${this.apiUrl}/Readings/SaveBatteryData`, batteryDataList)
       .pipe(
         catchError((error) => {
           console.error('Error saving battery data:', error);
@@ -256,7 +352,7 @@ export class BatteryReadingsService {
    */
   updateEquipStatus(statusInfo: UpdateEquipStatus): Observable<any> {
     return this.http
-      .post(`${this.apiUrl}/equipment/UpdateEquipStatus`, statusInfo)
+      .put(`${this.apiUrl}/EquipmentDetails/UpdateEquipStatus`, statusInfo)
       .pipe(
         catchError((error) => {
           console.error('Error updating equipment status:', error);
@@ -315,7 +411,7 @@ export class BatteryReadingsService {
       .set('equipId', equipId.toString());
 
     return this.http
-      .get<any>(`${this.apiUrl}/equipment/GetEquipmentInfo`, { params })
+      .get<any>(`${this.apiUrl}/Readings/GetEquipmentInfo`, { params })
       .pipe(
         catchError((error) => {
           console.error('Error fetching equipment info:', error);
@@ -324,91 +420,345 @@ export class BatteryReadingsService {
       );
   }
 
+  /**
+   * Update battery info - Generic method aligned with legacy UpdateBatteryInfo(i)
+   * Backend handles different operations based on parameter value:
+   * - i=1: Update ReadingType in ETechEquipmentInfo
+   * - i=2: Update BatteriesPerString and BatteriesPerPack, then call GetEquipInfo
+   * - i=3+: Other operations (extensible on backend)
+   * 
+   * Legacy SQL patterns:
+   * i=2: UPDATE ETechEquipmentInfo SET BatteriesPerString=..., BatteriesPerPack=... 
+   *      WHERE CallNbr=... AND EquipID=... AND EquipNo=...
+   *      THEN GetEquipInfo()
+   * 
+   * i!=2: UPDATE ETechEquipmentInfo SET ReadingType=...
+   *       WHERE CallNbr=... AND EquipID=... AND EquipNo=...
+   *       THEN GetEquipInfo()
+   */
+  updateBatteryInfo(
+    callNbr: string,
+    equipId: number,
+    batStrId: string,
+    i: number,
+    batteryInfo?: any
+  ): Observable<any> {
+    const payload = {
+      CallNbr: callNbr,
+      EquipId: equipId,
+      BatStrId: batStrId,
+      i: i,
+      ...batteryInfo,
+    };
+
+    return this.http
+      .post(`${this.apiUrl}/Readings/UpdateBatteryInfo`, payload)
+      .pipe(
+        catchError((error) => {
+          console.error(`Error updating battery info (i=${i}):`, error);
+          return throwError(() => error);
+        })
+      );
+  }
+
   // ==================== Helper Mapping Methods ====================
+
+  /**
+   * Map BatteryStringInfo from frontend (camelCase) to backend API format (PascalCase with underscores)
+   */
+  private mapBatteryStringInfoToApi(info: BatteryStringInfo): any {
+    return {
+      CallNbr: info.callNbr,
+      EquipId: info.equipId,
+      BatteryStringId: info.batStrId,
+      Manufacturer: info.manufacturer,
+      BatteryHousing: info.batteryHousing,
+      ModelNo: info.modelNo,
+      SerialNo: info.serialNo,
+      BatteryType: info.batteryType,
+      EquipStatus: info.equipStatus,
+      BatteryDateCodeMonth: info.monthName,
+      BatteryDateCodeYear: info.year,
+      Comments_Used: info.commentsUsed,
+      Bulged_Check: info.bulgedCheck,
+      Bulged_PF: info.bulgedPf,
+      Cracked_Check: info.crackedCheck,
+      Cracked_PF: info.crackedPf,
+      Debris_Check: info.debrisCheck,
+      Debris_PF: info.debrisPf,
+      Rotten: info.rotten,
+      VerifySaftey: info.verifySaftey,
+      ContainerComments: info.containerComments,
+      EnvironmentComments: info.environmentComments,
+      BatteryVoltage: info.batVoltage,
+      BatVoltage_PF: info.batVoltatePf,
+      PlusTerminalToGround: info.plusTerminal,
+      PlusTerminal_PF: info.plusTerminalPf,
+      MinusTerminalToGround: info.minusTerminal,
+      MinusTerminal_PF: info.minusTerminalPf,
+      DCChargingCurrent: info.dcCharging,
+      DCCharging_PF: info.dcChargingPf,
+      ACRipple: info.acRipple,
+      ACRipple_PF: info.acRipplePf,
+      ACRippleCurrent: info.acRippleCurrent,
+      VoltageStatus: info.batVoltatePf,
+      PlusTermStatus: info.plusTerminalPf,
+      MinusTermStatus: info.minusTerminalPf,
+      DCChargingStatus: info.dcChargingPf,
+      ACRippleStatus: info.acRipplePf,
+      ACRippleCurrentStatus: info.acRippleCurrentPf,
+      InterCellStatus: info.resistancePf,
+      TorqueStatus: info.codeTorquePf,
+      Comment: info.comment,
+      PlusWrapped_PF: info.plusWrappedPf,
+      PlusWrapped_Check: info.plusWrappedCheck,
+      PlusSulfated_Check: info.plusSulfatedCheck,
+      PlusMisPos_Check: info.plusMisPosCheck,
+      Missing_Check: info.missingCheck,
+      Missing_PF: info.missingPf,
+      Broken_Check: info.brokenCheck,
+      NeedsCleaning_Check: info.needsCleaningCheck,
+      PlatesComments: info.platesComments,
+      WaterLevel_T: info.waterLevelV,
+      WaterLevel_PF: info.waterLevelPf,
+      ElectrolytesComments: info.electrolytesComments,
+      BatteryTemp_PF: info.batteryTempPf,
+      Temp: info.roomTemp,
+      Quantity_Used: info.quantityUsed,
+      TobeMonitored: info.quantityNeeded,
+      Reason_Replace: info.reasonReplace,
+      FloatVoltS: info.floatVoltS,
+      FloatVoltV: info.floatVoltV,
+      IntercellConnector: info.intercellConnector,
+      ReplaceWholeString: info.replaceWholeString,
+      Maint_Auth_Id: info.maintAuthId,
+      RepMonCalc: info.repMonCalc,
+      BatteryPackCount: info.batteryPackCount,
+      IndBattDisconnect: info.indBattDisconnect,
+      IndBattInterConn: info.indBattInterConn,
+      RackIntegrity: info.rackIntegrity,
+      VFOperation: info.ventFanOperation,
+      Location: info.location,
+      ReadingType: info.readingType,
+      SaveAsDraft: info.saveAsDraft,
+      chkmVAC: info.chckmVac,
+      chkStrap: info.chkStrap,
+      BattTemp: info.battTemp,
+      BattTemp_PF: info.battTempPf,
+      BatteryTypeName: info.batteryTypeName,
+      StringType: info.stringType,
+      BattTerminalS: info.ddlBattTerminal,
+      BattTerminalT: info.txtBattTerminal,
+      BattTypeTerminal: info.ddlBattTypeTerminal,
+      ReadingMethod: info.readingMethod,
+      chkGraph: info.chkGraph,
+      
+      // Additional fields
+      Message: info.message,
+      code: info.code,
+      Resistance: info.resistance,
+      Resistance_PF: info.resistancePf,
+      CodeTorque: info.codeTorque,
+      CodeTorque_PF: info.codeTorquePf,
+      NegWrapped_Check: info.negWrappedCheck,
+      NegWrapped_PF: info.negWrappedPf,
+      NegSulfated_Check: info.negSulfatedCheck,
+      NegMisPos_Check: info.negMisPosCheck,
+      BothActMat_PF: info.bothActMatPf,
+      BothActMat_Check: info.bothActMatCheck,
+      ActPosMat_Check: info.actPosMatCheck,
+      Other_Check: info.otherCheck,
+      SedimentsComments: info.sedimentsComments,
+      MissingCovers_Check: info.missingCoversCheck,
+      MissingCovers_PF: info.missingCoversPf,
+      BrokenCovers_Check: info.brokenCoversCheck,
+      NeedsCleaningCovers_Check: info.needsCleaningCoversCheck,
+      MissingSep_Check: info.missingSepCheck,
+      MissingSep_PF: info.missingSepPf,
+      QuartBelow_Check: info.quartBelowCheck,
+      QuartBelow_PF: info.quartBelowPf,
+      HalfBelow_Check: info.halfBelowCheck,
+      HalfBelow_PF: info.halfBelowPf,
+      ThrbyFourBelow_Check: info.thrbyFourBelowCheck,
+      ThrbyFourBelow_PF: info.thrbyFourBelowPf,
+      WaterFill_YN: info.waterFillYn,
+      SepComments: info.sepComments,
+      Quantity_Needed: info.quantityNeeded,
+      ImmedActionOpen: info.immedActionOpen,
+      UpgradeNoOpenAge: info.upgradeNoOpenAge,
+      UpgradeNoOpen: info.upgradeNoOpen,
+      RoomTemp: info.roomTemp,
+      PositivePost: info.positivePost,
+      NegativePost: info.negativePost,
+      PostSeals: info.postSeals,
+      BatteryDisc: info.batteryDisc,
+      MiscHardware: info.miscHardware,
+      SealsComments: info.sealsComments,
+      HardwareComments: info.hardwareComments,
+      ManufDate_PF: info.manufDatePf,
+      ManufDate: info.manufDate,
+      BattProActiveReplace: info.battProActiveReplace,
+    };
+  }
 
   private mapBatteryStringInfo(response: any): BatteryStringInfo {
     // Map API response field names to BatteryStringInfo interface
-    // API uses snake_case (e.g., bulged_Check, plusTerminal_to_Ground)
+    // API primarily uses camelCase with underscores (e.g., bulged_Check, cracked_Check)
     return {
-      batStrId: response.batteryStringId || response.batStrId || '',
-      callNbr: response.callNbr || '',
-      equipId: response.equipId || 0,
-      manufacturer: response.manufacturer || '',
-      batteryHousing: response.batteryHousing || '',
-      modelNo: response.modelNo || '',
-      serialNo: response.serialNo || '',
-      location: response.location || '',
-      batteryType: response.batteryType || '',
-      batteryTypeName: response.batteryTypeName || '',
-      equipStatus: response.equipStatus || '',
-      monthName: response.batteryDateCodeMonth || response.monthName || '',
-      year: response.batteryDateCodeYear || response.year || 0,
-      commentsUsed: response.comments_Used || '',
-      bulgedCheck: response.bulged_Check || false,
-      bulgedPf: response.bulged_PF || '',
-      crackedCheck: response.cracked_Check || false,
-      crackedPf: response.cracked_PF || '',
-      debrisCheck: response.debris_Check || false,
-      debrisPf: response.debris_PF || '',
-      rotten: response.rotten || '',
-      verifySaftey: response.verifySaftey || '',
-      containerComments: response.containerComments || '',
-      environmentComments: response.environmentComments || '',
-      batVoltage: response.batteryVoltage || response.batVoltage || 0,
-      plusTerminal: response.plusTerminalToGround || response.plusTerminal || 0,
-      minusTerminal: response.minusTerminalToGround || response.minusTerminal || 0,
-      dcCharging: response.dcChargingCurrent || response.dcCharging || 0,
-      acRipple: response.acRipple || 0,
-      acRippleCurrent: response.acRippleCurrent || 0,
-      batVoltatePf: response.voltageStatus || response.batVoltatePf || '',
-      plusTerminalPf: response.plusTermStatus || response.plusTerminalPf || '',
-      minusTerminalPf: response.minusTermStatus || response.minusTerminalPf || '',
-      dcChargingPf: response.dcChargingStatus || response.dcChargingPf || '',
-      acRipplePf: response.acRippleStatus || response.acRipplePf || '',
-      acRippleCurrentPf: response.acRippleCurrentStatus || response.acRippleCurrentPf || '',
-      resistancePf: response.interCellStatus || response.resistancePf || '',
-      codeTorquePf: response.torqueStatus || response.codeTorquePf || '',
-      comment: response.comment || '',
-      plusWrappedPf: response.plusWrapped_PF || response.plusWrappedPf || '',
-      plusWrappedCheck: response.plusWrapped_Check || false,
-      plusSulfatedCheck: response.plusSulfated_Check || false,
-      plusMisPosCheck: response.plusMisPos_Check || false,
-      missingCheck: response.missing_Check || false,
-      missingPf: response.missing_PF || '',
-      brokenCheck: response.broken_Check || false,
-      needsCleaningCheck: response.needsCleaning_Check || false,
-      platesComments: response.platesComments || '',
-      waterLevelV: response.waterLevel_T || response.waterLevelV || '',
-      waterLevelPf: response.waterLevel_PF || response.waterLevelPf || '',
-      readingType: response.readingType || '',
-      stringType: response.stringType || '',
-      electrolytesComments: response.electrolytesComments || '',
-      batteryTempPf: response.batteryTemp_PF || response.batteryTempPf || '',
-      roomTemp: response.roomTemp || 0,
-      battTemp: response.battTemp || 0,
-      battTempPf: response.battTemp_PF || response.battTempPf || '',
-      quantityUsed: response.quantity_Used || response.quantityUsed || 0,
-      quantityNeeded: response.tobeMonitored || response.quantityNeeded || 0,
-      reasonReplace: response.reason_Replace || response.reasonReplace || '',
-      floatVoltS: response.floatVoltS || '',
-      floatVoltV: response.floatVoltV || '',
-      intercellConnector: response.intercellConnector || '',
-      replaceWholeString: response.replaceWholeString || false,
-      chckmVac: response.chkmVAC || response.chckmVac || false,
-      chkStrap: response.chkStrap || false,
-      maintAuthId: response.maint_Auth_Id || response.maintAuthId || '',
-      repMonCalc: response.repMonCalc || '',
-      batteryPackCount: response.batteryPackCount || 0,
-      indBattDisconnect: response.indBattDisconnect || '',
-      indBattInterConn: response.indBattInterConn || '',
-      rackIntegrity: response.rackIntegrity || '',
-      ventFanOperation: response.vfOperation || response.ventFanOperation || '',
-      ddlBattTerminal: response.battTerminalS || response.ddlBattTerminal || '',
-      ddlBattTypeTerminal: response.battTypeTerminal || response.ddlBattTypeTerminal || '',
-      txtBattTerminal: response.battTerminalT || response.txtBattTerminal || '',
-      readingMethod: response.readingMethod || '',
-      chkGraph: response.chkGraph || false,
-      saveAsDraft: response.saveAsDraft || false,
+      batStrId: response.batteryStringId || response.BatteryStringId || '',
+      callNbr: response.callNbr || response.CallNbr || '',
+      equipId: response.equipId || response.EquipId || 0,
+      manufacturer: response.manufacturer || response.Manufacturer || '',
+      batteryHousing: response.batteryHousing || response.BatteryHousing || '',
+      modelNo: response.modelNo || response.ModelNo || '',
+      serialNo: response.serialNo || response.SerialNo || '',
+      location: response.location || response.Location || '',
+      batteryType: response.batteryType || response.BatteryType || '',
+      batteryTypeName: response.batteryTypeName || response.BatteryTypeName || '',
+      equipStatus: response.equipStatus || response.EquipStatus || '',
+      monthName: response.batteryDateCodeMonth || response.BatteryDateCodeMonth || '',
+      year: response.batteryDateCodeYear || response.BatteryDateCodeYear || 0,
+      commentsUsed: response.comments_Used || response.Comments_Used || response.commentsUsed || '',
+      bulgedCheck: response.bulged_Check !== undefined ? response.bulged_Check : (response.Bulged_Check || false),
+      bulgedPf: response.bulged_PF || response.Bulged_PF || '',
+      crackedCheck: response.cracked_Check !== undefined ? response.cracked_Check : (response.Cracked_Check || false),
+      crackedPf: response.cracked_PF || response.Cracked_PF || '',
+      debrisCheck: response.debris_Check !== undefined ? response.debris_Check : (response.Debris_Check || false),
+      debrisPf: response.debris_PF || response.Debris_PF || '',
+      rotten: response.rotten || response.Rotten || '',
+      verifySaftey: response.verifySaftey || response.VerifySaftey || '',
+      containerComments: response.containerComments || response.ContainerComments || '',
+      environmentComments: response.environmentComments || response.EnvironmentComments || '',
+      batVoltage: response.batteryVoltage || response.BatteryVoltage || 0,
+      plusTerminal: response.plusTerminalToGround || response.PlusTerminalToGround || 0,
+      minusTerminal: response.minusTerminalToGround || response.MinusTerminalToGround || 0,
+      dcCharging: response.dcChargingCurrent || response.DCChargingCurrent || 0,
+      acRipple: response.acRipple || response.ACRipple || 0,
+      acRippleCurrent: response.acRippleCurrent || response.ACRippleCurrent || 0,
+      batVoltatePf: response.voltageStatus || response.VoltageStatus || response.batVoltage_PF || response.BatVoltage_PF || '',
+      plusTerminalPf: response.plusTermStatus || response.PlusTermStatus || response.plusTerminal_PF || response.PlusTerminal_PF || '',
+      minusTerminalPf: response.minusTermStatus || response.MinusTermStatus || response.minusTerminal_PF || response.MinusTerminal_PF || '',
+      dcChargingPf: response.dcChargingStatus || response.DCChargingStatus || response.dcCharging_PF || response.DCCharging_PF || '',
+      acRipplePf: response.acRippleStatus || response.ACRippleStatus || response.acRipple_PF || response.ACRipple_PF || '',
+      acRippleCurrentPf: response.acRippleCurrentStatus || response.ACRippleCurrentStatus || '',
+      resistancePf: response.interCellStatus || response.InterCellStatus || response.resistance_PF || response.Resistance_PF || '',
+      codeTorquePf: response.torqueStatus || response.TorqueStatus || response.codeTorque_PF || response.CodeTorque_PF || '',
+      comment: response.comment || response.Comment || '',
+      plusWrappedPf: response.plusWrapped_PF || response.PlusWrapped_PF || '',
+      plusWrappedCheck: response.plusWrapped_Check || response.PlusWrapped_Check || false,
+      plusSulfatedCheck: response.plusSulfated_Check || response.PlusSulfated_Check || false,
+      plusMisPosCheck: response.plusMisPos_Check || response.PlusMisPos_Check || false,
+      missingCheck: response.missing_Check || response.Missing_Check || false,
+      missingPf: response.missing_PF || response.Missing_PF || '',
+      brokenCheck: response.broken_Check || response.Broken_Check || false,
+      needsCleaningCheck: response.needsCleaning_Check || response.NeedsCleaning_Check || false,
+      platesComments: response.platesComments || response.PlatesComments || '',
+      waterLevelV: response.waterLevel_T || response.WaterLevel_T || '',
+      waterLevelPf: response.waterLevel_PF || response.WaterLevel_PF || '',
+      readingType: response.readingType || response.ReadingType || '',
+      stringType: response.stringType || response.StringType || '',
+      electrolytesComments: response.electrolytesComments || response.ElectrolytesComments || '',
+      batteryTempPf: response.batteryTemp_PF || response.BatteryTemp_PF || '',
+      roomTemp: response.roomTemp || response.RoomTemp || response.temp || response.Temp || 0,
+      battTemp: response.battTemp || response.BattTemp || 0,
+      battTempPf: response.battTemp_PF || response.BattTemp_PF || '',
+      quantityUsed: response.quantity_Used || response.Quantity_Used || 0,
+      quantityNeeded: response.tobeMonitored || response.TobeMonitored || response.quantity_Needed || response.Quantity_Needed || 0,
+      reasonReplace: response.reason_Replace || response.Reason_Replace || '',
+      floatVoltS: response.floatVoltS || response.FloatVoltS || '',
+      floatVoltV: response.floatVoltV || response.FloatVoltV || '',
+      intercellConnector: response.intercellConnector || response.IntercellConnector || '',
+      replaceWholeString: response.replaceWholeString || response.ReplaceWholeString || false,
+      chckmVac: response.chkmVAC || response.ChkmVAC || false,
+      chkStrap: response.chkStrap || response.ChkStrap || false,
+      maintAuthId: response.maint_Auth_Id || response.Maint_Auth_Id || '',
+      repMonCalc: response.repMonCalc || response.RepMonCalc || '',
+      batteryPackCount: response.batteryPackCount || response.BatteryPackCount || 0,
+      indBattDisconnect: response.indBattDisconnect || response.IndBattDisconnect || '',
+      indBattInterConn: response.indBattInterConn || response.IndBattInterConn || '',
+      rackIntegrity: response.rackIntegrity || response.RackIntegrity || '',
+      ventFanOperation: response.vfOperation || response.VFOperation || '',
+      ddlBattTerminal: (response.battTerminalS || response.BattTerminalS || '').toString().trim(),
+      ddlBattTypeTerminal: (response.battTypeTerminal || response.BattTypeTerminal || '').toString().trim(),
+      txtBattTerminal: (response.battTerminalT || response.BattTerminalT || '').toString().trim(),
+      readingMethod: response.readingMethod || response.ReadingMethod || '',
+      chkGraph: response.chkGraph || response.ChkGraph || false,
+      saveAsDraft: response.saveAsDraft || response.SaveAsDraft || false,
+      
+      // Additional fields from backend API
+      message: response.message || response.Message || '',
+      code: response.code || response.Code || null,
+      resistance: response.resistance || response.Resistance || null,
+      codeTorque: response.codeTorque || response.CodeTorque || null,
+      negWrappedCheck: response.negWrapped_Check || response.NegWrapped_Check || null,
+      negWrappedPf: response.negWrapped_PF || response.NegWrapped_PF || '',
+      negSulfatedCheck: response.negSulfated_Check || response.NegSulfated_Check || null,
+      negMisPosCheck: response.negMisPos_Check || response.NegMisPos_Check || null,
+      bothActMatPf: response.bothActMat_PF || response.BothActMat_PF || '',
+      bothActMatCheck: response.bothActMat_Check || response.BothActMat_Check || null,
+      actPosMatCheck: response.actPosMat_Check || response.ActPosMat_Check || null,
+      otherCheck: response.other_Check || response.Other_Check || null,
+      sedimentsComments: response.sedimentsComments || response.SedimentsComments || '',
+      missingCoversCheck: response.missingCovers_Check || response.MissingCovers_Check || null,
+      missingCoversPf: response.missingCovers_PF || response.MissingCovers_PF || '',
+      brokenCoversCheck: response.brokenCovers_Check || response.BrokenCovers_Check || null,
+      needsCleaningCoversCheck: response.needsCleaningCovers_Check || response.NeedsCleaningCovers_Check || null,
+      missingSepCheck: response.missingSep_Check || response.MissingSep_Check || null,
+      missingSepPf: response.missingSep_PF || response.MissingSep_PF || '',
+      quartBelowCheck: response.quartBelow_Check || response.QuartBelow_Check || null,
+      quartBelowPf: response.quartBelow_PF || response.QuartBelow_PF || '',
+      halfBelowCheck: response.halfBelow_Check || response.HalfBelow_Check || null,
+      halfBelowPf: response.halfBelow_PF || response.HalfBelow_PF || '',
+      thrbyFourBelowCheck: response.thrbyFourBelow_Check || response.ThrbyFourBelow_Check || null,
+      thrbyFourBelowPf: response.thrbyFourBelow_PF || response.ThrbyFourBelow_PF || '',
+      waterFillYn: response.waterFill_YN || response.WaterFill_YN || '',
+      sepComments: response.sepComments || response.SepComments || '',
+      immedActionOpen: response.immedActionOpen || response.ImmedActionOpen || '',
+      upgradeNoOpenAge: response.upgradeNoOpenAge || response.UpgradeNoOpenAge || '',
+      upgradeNoOpen: response.upgradeNoOpen || response.UpgradeNoOpen || '',
+      positivePost: response.positivePost || response.PositivePost || '',
+      negativePost: response.negativePost || response.NegativePost || '',
+      postSeals: response.postSeals || response.PostSeals || '',
+      batteryDisc: response.batteryDisc || response.BatteryDisc || '',
+      miscHardware: response.miscHardware || response.MiscHardware || '',
+      sealsComments: response.sealsComments || response.SealsComments || '',
+      hardwareComments: response.hardwareComments || response.HardwareComments || '',
+      manufDatePf: response.manufDate_PF || response.ManufDate_PF || '',
+      manufDate: response.manufDate || response.ManufDate || '',
+      battProActiveReplace: response.battProActiveReplace || response.BattProActiveReplace || '',
+    };
+  }
+
+  /**
+   * Map EquipReconciliationInfo from frontend (camelCase) to backend API format (PascalCase)
+   */
+  private mapEquipReconciliationInfoToApi(info: EquipReconciliationInfo): any {
+    return {
+      CallNbr: info.callNbr,
+      EquipId: info.equipId,
+      Make: info.make,
+      MakeCorrect: info.makeCorrect,
+      ActMake: info.actMake,
+      Model: info.model,
+      ModelCorrect: info.modelCorrect,
+      ActModel: info.actModel,
+      SerialNo: info.serialNo,
+      SerialNoCorrect: info.serialNoCorrect,
+      ActSerialNo: info.actSerialNo,
+      AscStringsNo: info.ascStringsNo,
+      AscStringsCorrect: info.ascStringsCorrect,
+      ActAscStringNo: info.actAscStringNo,
+      BattPerString: info.battPerString,
+      BattPerStringCorrect: info.battPerStringCorrect,
+      ActBattPerString: info.actBattPerString,
+      TotalEquips: info.totalEquips,
+      TotalEquipsCorrect: info.totalEquipsCorrect,
+      ActTotalEquips: info.actTotalEquips,
+      Kva: info.kva,
+      KvaCorrect: info.kvaCorrect,
+      ActKva: info.actKva,
+      Verified: info.verified,
+      ModifiedBy: info.modifiedBy,
     };
   }
 
@@ -438,6 +788,7 @@ export class BatteryReadingsService {
       kvaCorrect: response.kvaCorrect || '',
       actKva: response.actKva || '',
       verified: response.verified || false,
+      modifiedBy: response.modifiedBy || response.ModifiedBy || '',
     };
   }
 
