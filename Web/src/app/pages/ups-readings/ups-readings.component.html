@@ -378,8 +378,7 @@
                         formControlName="snmpPresent"
                         id="snmpPresent"
                       >
-                        <option value="">Choose option...</option>
-                        <option *ngFor="let option of yesNoOptions" [value]="option.value">
+                        <option *ngFor="let option of snmpOptions" [value]="option.value">
                           {{ option.text }}
                         </option>
                       </select>

@@ -924,7 +924,7 @@ namespace Technicians.Api.Controllers
                 if (result == null)
                 {
                     _logger.LogInformation("No equipment filter currents found for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
-                    return NotFound(new { success = false, message = "No equipment filter currents found." });
+                    return Ok(new { success = false, message = "No equipment filter currents found." });
                 }
 
                 _logger.LogInformation("Equipment filter currents retrieved successfully for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);

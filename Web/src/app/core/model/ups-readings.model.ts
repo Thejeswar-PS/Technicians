@@ -463,6 +463,12 @@ export const YES_NO_OPTIONS = [
   { value: 'NO', text: 'No' }
 ];
 
+export const SNMP_OPTIONS = [
+  { value: 'PS', text: 'Select' },
+  { value: 'NO', text: 'No' },
+  { value: 'YS', text: 'Yes' }
+];
+
 export const STATUS_OPTIONS: StatusOption[] = [
   { value: 'Online', text: 'On-Line' },
   { value: 'CriticalDeficiency', text: 'Critical Deficiency' },
