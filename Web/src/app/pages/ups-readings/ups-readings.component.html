@@ -51,7 +51,7 @@
 
   <!-- Main content -->
   <div *ngIf="!loading">
-    <div class="card shadow-sm">
+    <div class="card shadow-sm ups-main-card">
       <div class="card-header border-0 py-4">
         <div class="ups-readings-header">
           <div class="ups-readings-header__group"></div>
@@ -87,9 +87,11 @@
             <span>{{ successMessage }}</span>
           </div>
         </div>
+      </div>
 
-    <!-- Form sections -->
-    <div class="ups-readings-form">
+      <!-- Form sections within card body -->
+      <div class="card-body">
+        <div class="ups-readings-form">
       <!-- Equipment Verification Section -->
       <section class="ups-readings-section">
         <div class="ups-section-card">
@@ -968,9 +970,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">1</span>
-                    <span class="checklist-title"
-                      >UPS on-line without alarms:</span
-                    >
+                    <span class="checklist-title">UPS on-line without alarms:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="upsOnline">
@@ -987,16 +987,10 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">2</span>
-                    <span class="checklist-title"
-                      >Check all nuts, bolts, screws and connections for
-                      tightness:</span
-                    >
+                    <span class="checklist-title">Check all nuts, bolts, screws and connections for tightness:</span>
                   </div>
                   <div class="checklist-control">
-                    <select
-                      class="form-select"
-                      formControlName="checkConnections"
-                    >
+                    <select class="form-select" formControlName="checkConnections">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1010,10 +1004,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">3</span>
-                    <span class="checklist-title"
-                      >Inspect for broken, damaged, or burned components as well
-                      as cables:</span
-                    >
+                    <span class="checklist-title">Inspect for broken, damaged, or burned components as well as cables:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="inspectDamage">
@@ -1030,9 +1021,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">4</span>
-                    <span class="checklist-title"
-                      >Vacuum interior of UPS and wipe down exterior:</span
-                    >
+                    <span class="checklist-title">Vacuum interior of UPS and wipe down exterior:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="vacuumClean">
@@ -1049,9 +1038,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">5</span>
-                    <span class="checklist-title"
-                      >Verify there is a cover on the EPO switch:</span
-                    >
+                    <span class="checklist-title">Verify there is a cover on the EPO switch:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="epoSwitch">
@@ -1068,10 +1055,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">6</span>
-                    <span class="checklist-title"
-                      >Verify all cooling fans are operating without
-                      noise:</span
-                    >
+                    <span class="checklist-title">Verify all cooling fans are operating without noise:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="coolingFans">
@@ -1088,9 +1072,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">7</span>
-                    <span class="checklist-title"
-                      >Fans are less than 7 years old:</span
-                    >
+                    <span class="checklist-title">Fans are less than 7 years old:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="fansAge">
@@ -1107,9 +1089,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">8</span>
-                    <span class="checklist-title"
-                      >Inspect and clean or replace UPS air filters:</span
-                    >
+                    <span class="checklist-title">Inspect and clean or replace UPS air filters:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="airFilters">
@@ -1122,16 +1102,13 @@
                     </select>
                   </div>
                 </div>
+
               </div>
 
-              <!-- Air Filter Details (if needed) -->
-              <div *ngIf="showAirFilterDetails" class="mt-4">
-                <h6 class="fw-bold text-primary mb-3">
-                  <i class="bi bi-funnel me-2"></i>
-                  Air Filter Details
-                </h6>
-
-                <div class="row g-3">
+              <!-- Filter Information Section -->
+              <div class="filter-section mt-4">
+                <h6 class="section-title">Filter Information</h6>
+                <div class="row">
                   <div class="col-md-6">
                     <div class="filter-set-card">
                       <h6 class="card-title">Filter Set 1</h6>
@@ -1246,6 +1223,8 @@
                 </div>
               </div>
 
+
+
               <!-- Comments -->
               <div class="form-group-modern mt-4">
                 <div class="form-floating">
@@ -1294,15 +1273,10 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">1</span>
-                    <span class="checklist-title"
-                      >UPS room temperature / ventilation is acceptable:</span
-                    >
+                    <span class="checklist-title">UPS room temperature / ventilation is acceptable:</span>
                   </div>
                   <div class="checklist-control">
-                    <select
-                      class="form-select"
-                      formControlName="roomTempVentilation"
-                    >
+                    <select class="form-select" formControlName="roomTempVentilation">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1316,15 +1290,10 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">2</span>
-                    <span class="checklist-title"
-                      >Safety equipment is present:</span
-                    >
+                    <span class="checklist-title">Safety equipment is present:</span>
                   </div>
                   <div class="checklist-control">
-                    <select
-                      class="form-select"
-                      formControlName="safetyEquipment"
-                    >
+                    <select class="form-select" formControlName="safetyEquipment">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1338,16 +1307,10 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">3</span>
-                    <span class="checklist-title"
-                      >Any hostile environment (water, heat, dust, debris, burn
-                      marks, or tampering by non-DC Group employee):</span
-                    >
+                    <span class="checklist-title">Any hostile environment (water, heat, dust, debris, burn marks, or tampering):</span>
                   </div>
                   <div class="checklist-control">
-                    <select
-                      class="form-select"
-                      formControlName="hostileEnvironment"
-                    >
+                    <select class="form-select" formControlName="hostileEnvironment">
                       <option
                         *ngFor="let option of yesNoNAOptions"
                         [value]="option.value"
@@ -1361,9 +1324,7 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">4</span>
-                    <span class="checklist-title"
-                      >Adequate service space is available:</span
-                    >
+                    <span class="checklist-title">Adequate service space is available:</span>
                   </div>
                   <div class="checklist-control">
                     <select class="form-select" formControlName="serviceSpace">
@@ -1380,15 +1341,10 @@
                 <div class="checklist-item">
                   <div class="checklist-header">
                     <span class="checklist-number">5</span>
-                    <span class="checklist-title"
-                      >Circuit breakers are labeled accurately:</span
-                    >
+                    <span class="checklist-title">Circuit breakers are labeled accurately:</span>
                   </div>
                   <div class="checklist-control">
-                    <select
-                      class="form-select"
-                      formControlName="circuitBreakers"
-                    >
+                    <select class="form-select" formControlName="circuitBreakers">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -2153,6 +2109,13 @@
                           <i class="bi bi-speedometer me-1"></i>
                           Frequency Tolerance: {{ getFrequencyToleranceRange('bypass') }}
                         </small>
+                        <!-- Bypass Mode Indicator -->
+                        <div *ngIf="isBypassModeActive()" class="mt-2">
+                          <small class="text-success fw-semibold">
+                            <i class="bi bi-check-circle me-1"></i>
+                            Bypass Mode Active - Current fields are optional
+                          </small>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2349,7 +2312,7 @@
                               class="form-control modern-input"
                               formControlName="currA"
                               step="0.01"
-                              placeholder="0.00"
+                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
                             />
                           </td>
                           <td *ngIf="bypassConfig.phaseCount === 1">
@@ -2397,7 +2360,7 @@
                               class="form-control modern-input"
                               formControlName="currA"
                               step="0.01"
-                              placeholder="0.00"
+                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
                             />
                           </td>
                           <td *ngIf="bypassConfig.phaseCount === 2">
@@ -2443,7 +2406,7 @@
                               class="form-control modern-input"
                               formControlName="currB"
                               step="0.01"
-                              placeholder="0.00"
+                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
                             />
                           </td>
                           <td *ngIf="bypassConfig.phaseCount === 2">
@@ -2491,7 +2454,7 @@
                               class="form-control modern-input"
                               formControlName="currA"
                               step="0.01"
-                              placeholder="0.00"
+                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
                             />
                           </td>
                           <td *ngIf="bypassConfig.phaseCount === 3">
@@ -2537,7 +2500,7 @@
                               class="form-control modern-input"
                               formControlName="currB"
                               step="0.01"
-                              placeholder="0.00"
+                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
                             />
                           </td>
                           <td *ngIf="bypassConfig.phaseCount === 3">
@@ -2583,7 +2546,7 @@
                               class="form-control modern-input"
                               formControlName="currC"
                               step="0.01"
-                              placeholder="0.00"
+                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
                             />
                           </td>
                           <td *ngIf="bypassConfig.phaseCount === 3">
@@ -2812,13 +2775,37 @@
                       <thead class="table-header-success">
                         <tr>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 1"
+                            *ngIf="outputConfig.phaseCount === 1"
+                            class="text-center"
+                          >
+                            Voltage A
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount === 2"
+                            class="text-center"
+                          >
+                            Voltage A
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
                             class="text-center"
                           >
                             Voltage A-B
                           </th>
                           <th
-                            *ngIf="outputConfig.phaseCount >= 1"
+                            *ngIf="outputConfig.phaseCount === 1"
+                            class="text-center"
+                          >
+                            Status
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount === 2"
+                            class="text-center"
+                          >
+                            Status
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
                             class="text-center"
                           >
                             Status
@@ -2843,6 +2830,30 @@
                           </th>
                           <th
                             *ngIf="outputConfig.phaseCount >= 1"
+                            class="text-center"
+                          >
+                            Status
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount === 2"
+                            class="text-center"
+                          >
+                            Voltage B
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount === 2"
+                            class="text-center"
+                          >
+                            Status
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
+                            class="text-center"
+                          >
+                            Voltage B-C
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
                             class="text-center"
                           >
                             Status
@@ -2875,7 +2886,31 @@
                             *ngIf="outputConfig.phaseCount >= 3"
                             class="text-center"
                           >
+                            Voltage C-A
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
+                            class="text-center"
+                          >
+                            Status
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
+                            class="text-center"
+                          >
                             Current C
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
+                            class="text-center"
+                          >
+                            Status
+                          </th>
+                          <th
+                            *ngIf="outputConfig.phaseCount >= 3"
+                            class="text-center"
+                          >
+                            Load(%) C
                           </th>
                           <th
                             *ngIf="outputConfig.phaseCount >= 3"
@@ -2891,7 +2926,7 @@
                       </thead>
                       <tbody>
                         <tr>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
+                          <td *ngIf="outputConfig.phaseCount === 1">
                             <input
                               type="number"
                               class="form-control modern-input"
@@ -2900,7 +2935,53 @@
                               placeholder="0.00"
                             />
                           </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
+                          <td *ngIf="outputConfig.phaseCount === 1">
+                            <select
+                              class="form-select modern-select"
+                              formControlName="voltA_PF"
+                            >
+                              <option value="">Status</option>
+                              <option
+                                *ngFor="let option of powerVerificationOptions"
+                                [value]="option.value"
+                              >
+                                {{ option.text }}
+                              </option>
+                            </select>
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount === 2">
+                            <input
+                              type="number"
+                              class="form-control modern-input"
+                              formControlName="voltA"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount === 2">
+                            <select
+                              class="form-select modern-select"
+                              formControlName="voltA_PF"
+                            >
+                              <option value="">Status</option>
+                              <option
+                                *ngFor="let option of powerVerificationOptions"
+                                [value]="option.value"
+                              >
+                                {{ option.text }}
+                              </option>
+                            </select>
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
+                            <input
+                              type="number"
+                              class="form-control modern-input"
+                              formControlName="voltA"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
                             <select
                               class="form-select modern-select"
                               formControlName="voltA_PF"
@@ -2950,6 +3031,52 @@
                             <select
                               class="form-select modern-select"
                               formControlName="loadA_PF"
+                            >
+                              <option value="">Status</option>
+                              <option
+                                *ngFor="let option of powerVerificationOptions"
+                                [value]="option.value"
+                              >
+                                {{ option.text }}
+                              </option>
+                            </select>
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount === 2">
+                            <input
+                              type="number"
+                              class="form-control modern-input"
+                              formControlName="voltB"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount === 2">
+                            <select
+                              class="form-select modern-select"
+                              formControlName="voltB_PF"
+                            >
+                              <option value="">Status</option>
+                              <option
+                                *ngFor="let option of powerVerificationOptions"
+                                [value]="option.value"
+                              >
+                                {{ option.text }}
+                              </option>
+                            </select>
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
+                            <input
+                              type="number"
+                              class="form-control modern-input"
+                              formControlName="voltB"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
+                            <select
+                              class="form-select modern-select"
+                              formControlName="voltB_PF"
                             >
                               <option value="">Status</option>
                               <option
@@ -3010,6 +3137,29 @@
                             <input
                               type="number"
                               class="form-control modern-input"
+                              formControlName="voltC"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
+                            <select
+                              class="form-select modern-select"
+                              formControlName="voltC_PF"
+                            >
+                              <option value="">Status</option>
+                              <option
+                                *ngFor="let option of powerVerificationOptions"
+                                [value]="option.value"
+                              >
+                                {{ option.text }}
+                              </option>
+                            </select>
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
+                            <input
+                              type="number"
+                              class="form-control modern-input"
                               formControlName="currC"
                               step="0.01"
                               placeholder="0.00"
@@ -3019,6 +3169,29 @@
                             <select
                               class="form-select modern-select"
                               formControlName="currC_PF"
+                            >
+                              <option value="">Status</option>
+                              <option
+                                *ngFor="let option of powerVerificationOptions"
+                                [value]="option.value"
+                              >
+                                {{ option.text }}
+                              </option>
+                            </select>
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
+                            <input
+                              type="number"
+                              class="form-control modern-input"
+                              formControlName="loadC"
+                              step="0.01"
+                              placeholder="0.00"
+                            />
+                          </td>
+                          <td *ngIf="outputConfig.phaseCount >= 3">
+                            <select
+                              class="form-select modern-select"
+                              formControlName="loadC_PF"
                             >
                               <option value="">Status</option>
                               <option
@@ -3092,6 +3265,25 @@
                     >Verify correct float voltage settings</small
                   >
                 </h6>
+                
+                <!-- Main Rectifier Verification Dropdown -->
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">Verification Status:</label>
+                    <select
+                      class="form-select modern-select"
+                      formControlName="floatVolt_PF"
+                    >
+                      <option value="">Select Status</option>
+                      <option
+                        *ngFor="let option of passfailOptions"
+                        [value]="option.value"
+                      >
+                        {{ option.text }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
               </div>
               <form [formGroup]="rectifierForm">
                 <div class="modern-table-container">
@@ -3291,147 +3483,137 @@
               <div class="capacitor-checklist">
                 <div class="checklist-item">
                   <div class="checklist-header">
-                    <span class="checklist-title"
-                      >DC Caps Leaking/ Swelling:</span
-                    >
+                    <span class="checklist-number">1</span>
+                    <span class="checklist-title">DC Caps Leaking/Swelling:</span>
                   </div>
                   <div class="checklist-control">
-                    <select class="form-select" formControlName="dcCaps_PF">
-                      <option value="">Select status</option>
-                      <option value="P">Pass</option>
-                      <option value="F">Fail</option>
-                      <option value="A">N/A</option>
-                    </select>
-                  </div>
-                  <div class="checklist-age">
-                    <div class="form-floating">
-                      <input
-                        type="text"
-                        class="form-control"
-                        formControlName="dcCapsAge"
-                        maxlength="4"
-                        id="dcCapsAge"
-                        placeholder="2017"
-                      />
-                      <label for="dcCapsAge">DC Caps Year</label>
+                    <div class="row g-2">
+                      <div class="col-8">
+                        <select class="form-select" formControlName="dcCaps_PF">
+                          <option value="">Select status</option>
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                          <option value="A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="col-4">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="dcCapsAge"
+                          placeholder="Year"
+                          maxlength="4"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="checklist-item">
                   <div class="checklist-header">
-                    <span class="checklist-title"
-                      >AC Input Caps Leaking/Swelling:</span
-                    >
+                    <span class="checklist-number">2</span>
+                    <span class="checklist-title">AC Input Caps Leaking/Swelling:</span>
                   </div>
                   <div class="checklist-control">
-                    <select
-                      class="form-select"
-                      formControlName="acInputCaps_PF"
-                    >
-                      <option value="">Select status</option>
-                      <option value="P">Pass</option>
-                      <option value="F">Fail</option>
-                      <option value="A">N/A</option>
-                    </select>
-                  </div>
-                  <div class="checklist-age">
-                    <div class="form-floating">
-                      <input
-                        type="text"
-                        class="form-control"
-                        formControlName="acInputCapsAge"
-                        maxlength="4"
-                        id="acInputCapsAge"
-                        placeholder="2017"
-                      />
-                      <label for="acInputCapsAge">AC Input Caps Year</label>
+                    <div class="row g-2">
+                      <div class="col-8">
+                        <select class="form-select" formControlName="acInputCaps_PF">
+                          <option value="">Select status</option>
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                          <option value="A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="col-4">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="acInputCapsAge"
+                          placeholder="Year"
+                          maxlength="4"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="checklist-item">
                   <div class="checklist-header">
-                    <span class="checklist-title"
-                      >AC Output Caps Leaking/Swelling:</span
-                    >
+                    <span class="checklist-number">3</span>
+                    <span class="checklist-title">AC Output Caps Leaking/Swelling:</span>
                   </div>
                   <div class="checklist-control">
-                    <select
-                      class="form-select"
-                      formControlName="acOutputCaps_PF"
-                    >
-                      <option value="">Select status</option>
-                      <option value="P">Pass</option>
-                      <option value="F">Fail</option>
-                      <option value="A">N/A</option>
-                    </select>
-                  </div>
-                  <div class="checklist-age">
-                    <div class="form-floating">
-                      <input
-                        type="text"
-                        class="form-control"
-                        formControlName="acOutputCapsAge"
-                        maxlength="4"
-                        id="acOutputCapsAge"
-                        placeholder="2017"
-                      />
-                      <label for="acOutputCapsAge">AC O/P WYE Caps Year</label>
+                    <div class="row g-2">
+                      <div class="col-8">
+                        <select class="form-select" formControlName="acOutputCaps_PF">
+                          <option value="">Select status</option>
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                          <option value="A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="col-4">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="acOutputCapsAge"
+                          placeholder="Year"
+                          maxlength="4"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="checklist-item">
                   <div class="checklist-header">
-                    <span class="checklist-title"
-                      >Comm Caps Leaking/ Swelling:</span
-                    >
+                    <span class="checklist-number">4</span>
+                    <span class="checklist-title">Comm Caps Leaking/Swelling:</span>
                   </div>
                   <div class="checklist-control">
-                    <select class="form-select" formControlName="commCaps_PF">
-                      <option value="">Select status</option>
-                      <option value="P">Pass</option>
-                      <option value="F">Fail</option>
-                      <option value="A">N/A</option>
-                    </select>
-                  </div>
-                  <div class="checklist-age">
-                    <div class="form-floating">
-                      <input
-                        type="text"
-                        class="form-control"
-                        formControlName="commCapsAge"
-                        maxlength="4"
-                        id="commCapsAge"
-                        placeholder="2017"
-                      />
-                      <label for="commCapsAge">AC O/P Delta Caps Year</label>
+                    <div class="row g-2">
+                      <div class="col-8">
+                        <select class="form-select" formControlName="commCaps_PF">
+                          <option value="">Select status</option>
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                          <option value="A">N/A</option>
+                        </select>
+                      </div>
+                      <div class="col-4">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="commCapsAge"
+                          placeholder="Year"
+                          maxlength="4"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div class="checklist-item">
                   <div class="checklist-header">
+                    <span class="checklist-number">5</span>
                     <span class="checklist-title">Fans DateCode:</span>
                   </div>
                   <div class="checklist-control">
-                    <!-- Empty for alignment -->
-                  </div>
-                  <div class="checklist-age">
-                    <div class="form-floating">
-                      <input
-                        type="text"
-                        class="form-control"
-                        formControlName="fansYear"
-                        maxlength="4"
-                        id="fansYear"
-                        placeholder="2017"
-                      />
-                      <label for="fansYear">Fans DateCode Year</label>
-                    </div>
+                    <input
+                      type="text"
+                      class="form-control"
+                      formControlName="fansYear"
+                      placeholder="Year"
+                      maxlength="4"
+                    />
                   </div>
                 </div>
+
+
+
+
+
+
               </div>
             </form>
           </div>
@@ -3717,9 +3899,6 @@
           </div>
         </div>
       </section>
-    </div>
-  </div>
-</div>
 
 <!-- Modern Footer Section -->
 <footer class="ups-footer mt-5">

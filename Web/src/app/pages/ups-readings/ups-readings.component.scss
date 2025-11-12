@@ -1,10 +1,73 @@
 // Modern UPS Readings Component Styling
-// Enhanced with professional design patterns and improved UX
+// Enhanced with professional design patterns, improved UX, and zoom-resistant layout
+
+// Zoom-level detection and handling
+@media screen and (min-resolution: 150dpi), 
+       screen and (-webkit-min-device-pixel-ratio: 1.5),
+       screen and (min--moz-device-pixel-ratio: 1.5),
+       screen and (-o-min-device-pixel-ratio: 3/2) {
+  // High zoom / high DPI styles
+  .ups-readings-container {
+    .ups-readings-section {
+      margin: 0 0.5rem 1rem 0.5rem !important;
+      width: calc(100% - 1rem) !important;
+      
+      .ups-section-content.show {
+        padding: 1rem !important;
+      }
+    }
+    
+    .card,
+    .ups-main-card {
+      width: calc(100% - 0.75rem) !important;
+      max-width: 1000px !important; // Increased max-width at high zoom
+    }
+  }
+}
 
 .ups-readings-container {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 2rem 1rem;
+  max-width: 100vw; // Prevent horizontal overflow
+  overflow-x: hidden; // Hide any content that extends beyond viewport
+  box-sizing: border-box; // Include padding in width calculation
+  position: relative; // Establish positioning context
+  contain: layout; // Optimize rendering and prevent layout shifts
+  
+  // Center content with max-width for better layout
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  // Ensure container adapts to different zoom levels
+  @media screen and (min-zoom: 1.5) {
+    padding: 1rem 0.5rem;
+  }
+  
+  @media screen and (min-zoom: 2) {
+    padding: 0.5rem 0.25rem;
+  }
+
+  // Header container styling
+  .ups-readings-header__top {
+    max-width: 1400px; // Match increased card max-width
+    width: calc(100% - 1rem); // Match reduced container margins
+    margin: 0 auto; // Center the header
+    
+    @media (max-width: 1024px) {
+      max-width: 1200px; // Increased medium screen card width
+      width: calc(100% - 0.75rem);
+    }
+    
+    @media (max-width: 768px) {
+      width: calc(100% - 0.5rem); // Match mobile card width
+    }
+    
+    @media (max-width: 576px) {
+      width: calc(100% - 0.25rem); // Match small mobile card width
+    }
+  }
 
   // Page title styling - now inline with buttons
   .ups-page-title {
@@ -42,15 +105,22 @@
     }
   }
 
-  // Header styling
-  .card {
+  // Header styling with boundary constraints and centered layout
+  .card,
+  .ups-main-card {
     border: none;
     border-radius: 1rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
                 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    margin-bottom: 2rem;
+    margin: 0 auto 2rem auto; // Center the card horizontally
+    overflow: hidden; // Ensure content stays within card boundaries
+    max-width: 1400px; // Increased maximum width for more content space
+    width: calc(100% - 1rem); // Reduced side margins - just small white space
+    box-sizing: border-box; // Include padding and border in width calculation
+    position: relative; // Establish positioning context
+    contain: layout style; // Optimize rendering and contain layout
 
     .card-header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -58,6 +128,24 @@
       border-radius: 1rem 1rem 0 0;
       padding: 2rem;
       color: white;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden; // Prevent header content from overflowing
+    }
+
+    .card-body {
+      padding: 1rem 0; // Add some padding around form sections
+      background: transparent;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden; // Prevent body content from overflowing
+      
+      .ups-readings-form {
+        padding: 0; // Remove extra padding since card-body has padding
+        max-width: 100%;
+        box-sizing: border-box;
+        width: 100%; // Take full available width within card body
+      }
     }
   }
 
@@ -236,10 +324,36 @@
   .ups-readings-form {
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem; // Reduced gap since we added margins to sections
+    max-width: 100%; // Ensure form doesn't exceed container
+    width: 100%; // Take full available width
+    overflow-x: hidden; // Prevent horizontal overflow
+    box-sizing: border-box; // Include padding in width calculation
+    contain: layout; // Optimize rendering performance
+    
+    // Zoom resistance and viewport constraints
+    @media screen and (min-resolution: 120dpi), screen and (-webkit-min-device-pixel-ratio: 1.25) {
+      // Styles for high DPI displays / zoom levels
+      .ups-readings-section {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+    }
+    
+    // Viewport-based sizing for better zoom handling
+    @media screen and (max-width: 100vw) {
+      max-width: 100vw;
+      box-sizing: border-box;
+    }
   }
 
   .ups-readings-section {
+    margin: 0 1rem 1rem 1rem; // Reduced horizontal margins for more content space
+    width: calc(100% - 2rem); // Adjusted width calculation for smaller margins
+    max-width: calc(100% - 2rem); // Prevent expansion beyond container
+    min-width: 0; // Allow shrinking below content size if needed
+    box-sizing: border-box; // Include padding and border in width calculation
+    
     .ups-section-card {
       background: rgba(255, 255, 255, 0.95);
       border: none;
@@ -248,10 +362,16 @@
                   0 4px 6px -2px rgba(0, 0, 0, 0.05);
       overflow: hidden;
       transition: all 0.3s ease;
+      max-width: 100%; // Ensure cards don't exceed container width
+      width: 100%; // Take full available width
+      box-sizing: border-box; // Include padding and border in width calculation
+      position: relative; // Establish positioning context
+      contain: layout style; // Optimize rendering and prevent layout shifts
 
       &:hover {
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
                     0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        transform: translateY(-2px); // Add subtle lift effect
       }
     }
 
@@ -264,6 +384,14 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      max-width: 100%; // Prevent header from overflowing
+      box-sizing: border-box; // Include padding in width calculation
+      overflow: hidden; // Hide any content that might overflow
+      
+      // Zoom level adaptations
+      @media screen and (min-resolution: 120dpi) {
+        padding: 1rem 1.5rem; // Reduce padding at high zoom
+      }
 
       &:hover {
         background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
@@ -273,6 +401,9 @@
         display: flex;
         align-items: center;
         gap: 1rem;
+        flex: 1; // Take available space
+        min-width: 0; // Allow shrinking
+        overflow: hidden; // Prevent content overflow
 
         i {
           font-size: 1.5rem;
@@ -280,6 +411,7 @@
           border-radius: 0.75rem;
           background: rgba(255, 255, 255, 0.8);
           box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          flex-shrink: 0; // Don't shrink the icon
         }
 
         h5 {
@@ -287,12 +419,29 @@
           font-size: 1.4rem; // Bigger section titles
           font-weight: 700;
           color: #1e293b;
+          white-space: nowrap; // Prevent text wrapping
+          overflow: hidden; // Hide overflow text
+          text-overflow: ellipsis; // Show ellipsis for long text
+          flex-shrink: 1; // Allow shrinking if needed
+          
+          // Zoom level adaptations
+          @media screen and (min-resolution: 120dpi) {
+            font-size: 1.2rem; // Smaller font at high zoom
+          }
         }
 
         small {
           color: #64748b;
           font-size: 1rem; // Bigger description text
           margin-left: 1rem;
+          flex-shrink: 1; // Allow shrinking if needed
+          overflow: hidden; // Hide overflow text
+          text-overflow: ellipsis; // Show ellipsis for long text
+          
+          // Hide description on very small screens or high zoom
+          @media (max-width: 576px), screen and (min-resolution: 150dpi) {
+            display: none;
+          }
         }
       }
 
@@ -319,11 +468,55 @@
       overflow: hidden;
       opacity: 0;
       transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%; // Ensure content takes full available width
+      box-sizing: border-box; // Include padding in width calculation
 
       &.show {
         max-height: none;
         opacity: 1;
         padding: 2rem;
+        overflow: visible; // Allow content to be visible when expanded
+        
+        // Ensure form content is properly contained
+        .ups-form {
+          max-width: 100%;
+          overflow-x: hidden; // Prevent horizontal overflow
+          box-sizing: border-box;
+          
+          .form-group-modern {
+            max-width: 100%;
+            box-sizing: border-box;
+            
+            .row {
+              margin-left: 0;
+              margin-right: 0;
+              max-width: 100%;
+              
+              .col-md-4,
+              .col-md-6,
+              .col-md-8,
+              .col-md-12,
+              [class*="col-"] {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+                max-width: 100%;
+                box-sizing: border-box;
+                
+                // Ensure form controls don't overflow
+                .form-floating {
+                  max-width: 100%;
+                  
+                  .form-control,
+                  .form-select {
+                    max-width: 100%;
+                    width: 100%;
+                    box-sizing: border-box;
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -332,6 +525,58 @@
   .ups-form {
     .form-group-modern {
       margin-bottom: 2rem;
+      max-width: 100%;
+      box-sizing: border-box;
+      
+      // Bootstrap grid containment fixes
+      .row {
+        margin-left: -0.75rem; // Offset Bootstrap's negative margins
+        margin-right: -0.75rem;
+        max-width: calc(100% + 1.5rem); // Account for negative margins
+        box-sizing: border-box;
+        
+        // Ensure columns wrap properly and don't overflow
+        flex-wrap: wrap;
+        
+        > [class*="col-"] {
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+          max-width: 100%;
+          box-sizing: border-box;
+          
+          // Force break at certain zoom levels to prevent overflow
+          @media (max-width: 768px) {
+            flex: 0 0 100%;
+            max-width: 100%;
+          }
+        }
+        
+        // Specific column width management
+        .col-md-4 {
+          @media (max-width: 992px) {
+            flex: 0 0 50%;
+            max-width: 50%;
+          }
+          @media (max-width: 576px) {
+            flex: 0 0 100%;
+            max-width: 100%;
+          }
+        }
+        
+        .col-md-6 {
+          @media (max-width: 768px) {
+            flex: 0 0 100%;
+            max-width: 100%;
+          }
+        }
+        
+        .col-md-8 {
+          @media (max-width: 992px) {
+            flex: 0 0 100%;
+            max-width: 100%;
+          }
+        }
+      }
     }
 
     // Enhanced Configuration Boxes Styling
@@ -408,31 +653,40 @@
       }
     }
 
-    .form-floating {
-      position: relative;
+      .form-floating {
+        position: relative;
+        max-width: 100%; // Prevent floating containers from overflowing
+        box-sizing: border-box;
 
-      // Ensure proper positioning for textarea containers
-      &:has(textarea) {
-        // Add extra spacing for textarea containers
-        .form-control {
-          padding-top: 1.75rem;
-          padding-bottom: 0.75rem;
+        // Ensure proper positioning for textarea containers
+        &:has(textarea) {
+          // Add extra spacing for textarea containers
+          .form-control {
+            padding-top: 1.75rem;
+            padding-bottom: 0.75rem;
+          }
         }
-      }
 
-      .form-control,
-      .form-select {
-        border: 2px solid #e5e7eb;
-        border-radius: 0.75rem;
-        padding: 1rem 1rem 0.25rem;
-        background: rgba(255, 255, 255, 0.8);
-        transition: all 0.3s ease;
-        font-size: 1.1rem; // Bigger font size for inputs
-        height: auto;
-        min-height: 3.8rem; // Slightly taller inputs
-        font-weight: 500;
-
-        &:focus {
+        .form-control,
+        .form-select {
+          border: 2px solid #e5e7eb;
+          border-radius: 0.75rem;
+          padding: 1rem 1rem 0.25rem;
+          background: rgba(255, 255, 255, 0.8);
+          transition: all 0.3s ease;
+          font-size: 1.1rem; // Bigger font size for inputs
+          height: auto;
+          min-height: 3.8rem; // Slightly taller inputs
+          font-weight: 500;
+          max-width: 100%; // Prevent form controls from overflowing
+          width: 100%; // Take full available width
+          box-sizing: border-box; // Include padding and border in width calculation
+          
+          // Zoom level adaptations
+          @media screen and (min-resolution: 120dpi) {
+            font-size: 1rem; // Slightly smaller font at high zoom
+            min-height: 3.5rem; // Reduce height at high zoom
+          }        &:focus {
           border-color: #4f46e5;
           box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
           background: white;
@@ -1011,6 +1265,15 @@
         background-size: 16px 12px;
       }
     }
+
+    // Status indicator styling for Action Required cards
+    .status-indicator {
+      font-size: 1.2rem;
+      
+      i {
+        transition: all 0.2s ease;
+      }
+    }
   }
 
   // Visual checklist styling
@@ -1393,7 +1656,7 @@
     }
   }
 
-  // Responsive design
+  // Responsive design with zoom-level considerations
   @media (max-width: 1024px) {
     padding: 1rem 0.5rem;
 
@@ -1410,9 +1673,45 @@
     .ups-section-content.show {
       padding: 1.5rem;
     }
+
+    .ups-readings-section {
+      margin: 0 0.75rem 1rem 0.75rem; // Slightly smaller margins on medium screens
+      width: calc(100% - 1.5rem); // Adjust width calculation for smaller margins
+      max-width: calc(100% - 1.5rem);
+    }
+
+    .card,
+    .ups-main-card {
+      width: calc(100% - 0.75rem); // Minimal reduction on medium screens
+      max-width: 1200px; // Increased max-width for medium screens
+    }
+  }
+
+  // High zoom levels / small viewport handling
+  @media (max-width: 900px), (max-resolution: 96dpi) and (max-width: 1200px) {
+    .ups-readings-section {
+      .ups-section-content.show {
+        padding: 1rem; // Reduce padding at higher zoom levels
+        
+        .ups-form {
+          .form-group-modern {
+            .row {
+              .col-md-4,
+              .col-md-6 {
+                // Stack columns at higher zoom levels for better fit
+                flex: 0 0 100%;
+                max-width: 100%;
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   @media (max-width: 768px) {
+    padding: 1rem 0.25rem; // Reduce container padding on mobile
+
     .ups-overview__grid {
       grid-template-columns: 1fr;
     }
@@ -1453,10 +1752,22 @@
         }
       }
     }
+
+    .ups-readings-section {
+      margin: 0 0.75rem 1rem 0.75rem; // Maintain reasonable margins on mobile
+      width: calc(100% - 1.5rem); // Adjust width for mobile margins
+      max-width: calc(100% - 1.5rem);
+    }
+
+    .card,
+    .ups-main-card {
+      width: calc(100% - 0.5rem); // Almost full width on mobile with small margins
+      max-width: 100%; // Allow full width on mobile
+    }
   }
 
   @media (max-width: 576px) {
-    padding: 0.5rem;
+    padding: 0.5rem 0.125rem; // Minimal container padding on very small screens
 
     .card .card-header {
       padding: 1.5rem 1rem;
@@ -1472,6 +1783,74 @@
 
     .measurement-card {
       padding: 1rem;
+    }
+
+    .ups-readings-section {
+      margin: 0 0.5rem 1rem 0.5rem; // Maintain minimal but reasonable margins
+      width: calc(100% - 1rem); // Adjust width for small margins
+      max-width: calc(100% - 1rem);
+    }
+
+    .card,
+    .ups-main-card {
+      width: calc(100% - 0.25rem); // Nearly full width with tiny margins
+      margin: 0 auto 2rem auto; // Maintain centered alignment
+      border-radius: 0.75rem; // Slightly smaller border radius on mobile
+    }
+  }
+
+  // Extreme zoom level handling (200%+ zoom)
+  @media screen and (min-resolution: 200dpi), screen and (-webkit-min-device-pixel-ratio: 2) {
+    .ups-readings-section {
+      margin: 0 0.5rem 0.5rem 0.5rem !important;
+      width: calc(100% - 1rem) !important;
+      
+      .ups-section-header {
+        padding: 0.75rem 1rem !important;
+        
+        .ups-section-title {
+          gap: 0.5rem;
+          
+          h5 {
+            font-size: 1.1rem !important;
+          }
+          
+          small {
+            display: none !important; // Hide description at extreme zoom
+          }
+        }
+      }
+      
+      .ups-section-content.show {
+        padding: 0.75rem !important;
+        
+        .form-group-modern {
+          margin-bottom: 1rem !important;
+          
+          .row {
+            > [class*="col-"] {
+              flex: 0 0 100% !important;
+              max-width: 100% !important;
+              margin-bottom: 0.5rem;
+            }
+          }
+        }
+      }
+    }
+    
+    .card,
+    .ups-main-card {
+      width: calc(100% - 0.5rem) !important;
+      max-width: 800px !important; // Increased max-width at extreme zoom
+      
+      .card-header {
+        padding: 1rem !important;
+      }
+    }
+    
+    .ups-readings-header__top {
+      width: calc(100% - 0.5rem) !important;
+      max-width: 800px !important;
     }
   }
 
