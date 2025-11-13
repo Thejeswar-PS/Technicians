@@ -416,11 +416,41 @@
                           equipmentForm.get('monthName')?.touched
                         "
                         id="monthName"
-                        placeholder="Enter month (e.g., Jan, Feb, Mar...)">
+                        placeholder="Enter month (e.g., Jan, Feb, Mar...)"
+                        (focus)="toggleMonthCalendar()">
                       
                       <label for="monthName">
                         Month <span class="text-danger">*</span>
                       </label>
+                      
+                      <!-- Month calendar toggle button -->
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary calendar-toggle-btn"
+                        (click)="toggleMonthCalendar()"
+                        [title]="showMonthCalendar ? 'Hide Month Picker' : 'Show Month Picker'"
+                      >
+                        <i class="bi bi-calendar-date"></i>
+                      </button>
+                      
+                      <!-- Month Calendar Picker -->
+                      <div class="compact-calendar-dropdown" *ngIf="showMonthCalendar">
+                        <div class="calendar-header">
+                          <h6 class="mb-0">Select Month</h6>
+                        </div>
+                        <div class="month-grid-compact">
+                          <button
+                            type="button"
+                            *ngFor="let month of monthNames; let i = index"
+                            class="btn btn-sm month-btn-compact"
+                            [class.btn-primary]="isCurrentMonthSelected(i)"
+                            [class.btn-outline-primary]="!isCurrentMonthSelected(i)"
+                            (click)="onCalendarMonthSelect(i)"
+                          >
+                            {{ month.substring(0, 3) }}
+                          </button>
+                        </div>
+                      </div>
                       
                       <div
                         class="invalid-feedback"
@@ -433,8 +463,8 @@
                       </div>
                     </div>
                   </div>
-                  <div class="col-md-1">
-                    <div class="form-floating">
+                  <div class="col-md-2">
+                    <div class="form-floating position-relative">
                       <input
                         type="number"
                         class="form-control"
@@ -445,7 +475,8 @@
                         "
                         id="year"
                         placeholder="Year"
-                        min="1900">
+                        min="1990"
+                        max="2055">
                       
                       <label for="year">
                         Year <span class="text-danger">*</span>
@@ -966,13 +997,16 @@
 
           <div class="ups-section-content" [class.show]="showVisual">
             <form [formGroup]="visualForm" class="ups-form">
-              <div class="visual-checklist">
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">1</span>
-                    <span class="checklist-title">UPS on-line without alarms:</span>
+              <div class="measurements-grid">
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-power text-success"></i>
+                    <h6 class="mb-0">UPS Online Status</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >UPS on-line without alarms:</label
+                    >
                     <select class="form-select" formControlName="upsOnline">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
@@ -984,12 +1018,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">2</span>
-                    <span class="checklist-title">Check all nuts, bolts, screws and connections for tightness:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-wrench text-primary"></i>
+                    <h6 class="mb-0">Connection Tightness</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Check all nuts, bolts, screws and connections for tightness:</label
+                    >
                     <select class="form-select" formControlName="checkConnections">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
@@ -1001,12 +1038,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">3</span>
-                    <span class="checklist-title">Inspect for broken, damaged, or burned components as well as cables:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-search text-warning"></i>
+                    <h6 class="mb-0">Damage Inspection</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Inspect for broken, damaged, or burned components as well as cables:</label
+                    >
                     <select class="form-select" formControlName="inspectDamage">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
@@ -1018,12 +1058,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">4</span>
-                    <span class="checklist-title">Vacuum interior of UPS and wipe down exterior:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-brush text-info"></i>
+                    <h6 class="mb-0">Cleaning & Maintenance</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Vacuum interior of UPS and wipe down exterior:</label
+                    >
                     <select class="form-select" formControlName="vacuumClean">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
@@ -1035,12 +1078,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">5</span>
-                    <span class="checklist-title">Verify there is a cover on the EPO switch:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-shield-exclamation text-danger"></i>
+                    <h6 class="mb-0">EPO Switch Cover</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Verify there is a cover on the EPO switch:</label
+                    >
                     <select class="form-select" formControlName="epoSwitch">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
@@ -1052,12 +1098,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">6</span>
-                    <span class="checklist-title">Verify all cooling fans are operating without noise:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-fan text-secondary"></i>
+                    <h6 class="mb-0">Cooling Fan Operation</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Verify all cooling fans are operating without noise:</label
+                    >
                     <select class="form-select" formControlName="coolingFans">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
@@ -1069,12 +1118,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">7</span>
-                    <span class="checklist-title">Fans are less than 7 years old:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-calendar-check text-success"></i>
+                    <h6 class="mb-0">Fan Age Verification</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Fans are less than 7 years old:</label
+                    >
                     <select class="form-select" formControlName="fansAge">
                       <option
                         *ngFor="let option of visualMechanicalOptions"
@@ -1086,12 +1138,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">8</span>
-                    <span class="checklist-title">Inspect and clean or replace UPS air filters:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-funnel text-primary"></i>
+                    <h6 class="mb-0">Air Filter Maintenance</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Inspect and clean or replace UPS air filters:</label
+                    >
                     <select class="form-select" formControlName="airFilters">
                       <option
                         *ngFor="let option of airFilterOptions"
@@ -1107,11 +1162,14 @@
 
               <!-- Filter Information Section -->
               <div class="filter-section mt-4">
-                <h6 class="section-title">Filter Information</h6>
-                <div class="row">
-                  <div class="col-md-6">
-                    <div class="filter-set-card">
-                      <h6 class="card-title">Filter Set 1</h6>
+                <h6 class="section-title mb-3">Filter Information</h6>
+                <div class="measurements-grid">
+                  <div class="measurement-card">
+                    <div class="measurement-header">
+                      <i class="bi bi-filter-square text-primary"></i>
+                      <h6 class="mb-0">Filter Set 1</h6>
+                    </div>
+                    <div class="measurement-content">
                       <div class="row g-2">
                         <div class="col-6">
                           <div class="form-floating">
@@ -1165,9 +1223,12 @@
                     </div>
                   </div>
 
-                  <div class="col-md-6">
-                    <div class="filter-set-card">
-                      <h6 class="card-title">Filter Set 2 (Optional)</h6>
+                  <div class="measurement-card">
+                    <div class="measurement-header">
+                      <i class="bi bi-filter-square text-secondary"></i>
+                      <h6 class="mb-0">Filter Set 2 (Optional)</h6>
+                    </div>
+                    <div class="measurement-content">
                       <div class="row g-2">
                         <div class="col-6">
                           <div class="form-floating">
@@ -1269,14 +1330,18 @@
 
           <div class="ups-section-content" [class.show]="showEnvironment">
             <form [formGroup]="environmentForm" class="ups-form">
-              <div class="environment-checklist">
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">1</span>
-                    <span class="checklist-title">UPS room temperature / ventilation is acceptable:</span>
+              <div class="measurements-grid">
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-thermometer text-warning"></i>
+                    <h6 class="mb-0">Temperature Control</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >UPS room temperature / ventilation is acceptable:</label
+                    >
                     <select class="form-select" formControlName="roomTempVentilation">
+                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1287,13 +1352,17 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">2</span>
-                    <span class="checklist-title">Safety equipment is present:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <h6 class="mb-0">Safety Equipment</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Safety equipment is present:</label
+                    >
                     <select class="form-select" formControlName="safetyEquipment">
+                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1304,13 +1373,17 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">3</span>
-                    <span class="checklist-title">Any hostile environment (water, heat, dust, debris, burn marks, or tampering):</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-exclamation-triangle text-danger"></i>
+                    <h6 class="mb-0">Environmental Hazards</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Any hostile environment (water, heat, dust, debris, burn marks, or tampering):</label
+                    >
                     <select class="form-select" formControlName="hostileEnvironment">
+                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of yesNoNAOptions"
                         [value]="option.value"
@@ -1321,13 +1394,17 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">4</span>
-                    <span class="checklist-title">Adequate service space is available:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-rulers text-info"></i>
+                    <h6 class="mb-0">Service Space</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Adequate service space is available:</label
+                    >
                     <select class="form-select" formControlName="serviceSpace">
+                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1338,13 +1415,17 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">5</span>
-                    <span class="checklist-title">Circuit breakers are labeled accurately:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-toggles text-primary"></i>
+                    <h6 class="mb-0">Circuit Breaker Labels</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Circuit breakers are labeled accurately:</label
+                    >
                     <select class="form-select" formControlName="circuitBreakers">
+                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1392,8 +1473,7 @@
           </div>
         </div>
       </section>
-
-      <!-- Power Verification Section -->
+<!-- Power Verification Section -->
       <section class="ups-readings-section">
         <div class="ups-section-card">
           <div
@@ -3456,6 +3536,7 @@
         </div>
       </section>
 
+
       <!-- Capacitor Section -->
       <section class="ups-readings-section">
         <div class="ups-section-card">
@@ -3480,13 +3561,16 @@
 
           <div class="ups-section-content" [class.show]="showCapacitor">
             <form [formGroup]="capacitorForm" class="ups-form">
-              <div class="capacitor-checklist">
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">1</span>
-                    <span class="checklist-title">DC Caps Leaking/Swelling:</span>
+              <div class="measurements-grid">
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-lightning-charge text-danger"></i>
+                    <h6 class="mb-0">DC Capacitors</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >DC Caps Leaking/Swelling:</label
+                    >
                     <div class="row g-2">
                       <div class="col-8">
                         <select class="form-select" formControlName="dcCaps_PF">
@@ -3509,12 +3593,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">2</span>
-                    <span class="checklist-title">AC Input Caps Leaking/Swelling:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-plug text-primary"></i>
+                    <h6 class="mb-0">AC Input Capacitors</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >AC Input Caps Leaking/Swelling:</label
+                    >
                     <div class="row g-2">
                       <div class="col-8">
                         <select class="form-select" formControlName="acInputCaps_PF">
@@ -3537,12 +3624,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">3</span>
-                    <span class="checklist-title">AC Output Caps Leaking/Swelling:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-outlet text-success"></i>
+                    <h6 class="mb-0">AC Output Capacitors</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >AC Output Caps Leaking/Swelling:</label
+                    >
                     <div class="row g-2">
                       <div class="col-8">
                         <select class="form-select" formControlName="acOutputCaps_PF">
@@ -3565,12 +3655,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">4</span>
-                    <span class="checklist-title">Comm Caps Leaking/Swelling:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-router text-info"></i>
+                    <h6 class="mb-0">Communication Capacitors</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Comm Caps Leaking/Swelling:</label
+                    >
                     <div class="row g-2">
                       <div class="col-8">
                         <select class="form-select" formControlName="commCaps_PF">
@@ -3593,12 +3686,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">5</span>
-                    <span class="checklist-title">Fans DateCode:</span>
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-fan text-warning"></i>
+                    <h6 class="mb-0">Fan Date Code</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Fans DateCode:</label
+                    >
                     <input
                       type="text"
                       class="form-control"
@@ -3608,12 +3704,6 @@
                     />
                   </div>
                 </div>
-
-
-
-
-
-
               </div>
             </form>
           </div>
@@ -3644,15 +3734,16 @@
 
           <div class="ups-section-content" [class.show]="showTransfer">
             <form [formGroup]="transferForm" class="ups-form">
-              <div class="transfer-checklist">
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">1</span>
-                    <span class="checklist-title"
-                      >The first major inspection performed on this unit:</span
-                    >
+              <div class="measurements-grid">
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-clipboard-check text-primary"></i>
+                    <h6 class="mb-0">First Major Inspection</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >The first major inspection performed on this unit:</label
+                    >
                     <select class="form-select" formControlName="firstMajor">
                       <option value="">Select option</option>
                       <option value="Ys">Yes</option>
@@ -3662,14 +3753,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">2</span>
-                    <span class="checklist-title"
-                      >Transfer to Static By-Pass [Internal]:</span
-                    >
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-arrow-repeat text-info"></i>
+                    <h6 class="mb-0">Static Bypass Transfer</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Transfer to Static By-Pass [Internal]:</label
+                    >
                     <select class="form-select" formControlName="staticBypass">
                       <option value="">Select status</option>
                       <option value="P">Pass</option>
@@ -3679,15 +3771,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">3</span>
-                    <span class="checklist-title"
-                      >Transfer to Maintenance By-Pass [Only When
-                      Required]:</span
-                    >
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-tools text-warning"></i>
+                    <h6 class="mb-0">Maintenance Bypass</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Transfer to Maintenance By-Pass [Only When Required]:</label
+                    >
                     <select
                       class="form-select"
                       formControlName="transMaintByPass"
@@ -3699,14 +3791,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">4</span>
-                    <span class="checklist-title"
-                      >Voltage / Current Wave Form:</span
-                    >
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-activity text-success"></i>
+                    <h6 class="mb-0">Waveform Analysis</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Voltage / Current Wave Form:</label
+                    >
                     <select class="form-select" formControlName="currentWave">
                       <option value="">Select status</option>
                       <option value="P">Pass</option>
@@ -3716,14 +3809,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">5</span>
-                    <span class="checklist-title"
-                      >Transfer to Normal Mode:</span
-                    >
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-arrow-clockwise text-primary"></i>
+                    <h6 class="mb-0">Normal Mode Transfer</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Transfer to Normal Mode:</label
+                    >
                     <select class="form-select" formControlName="normalMode">
                       <option value="">Select status</option>
                       <option value="P">Pass</option>
@@ -3733,14 +3827,15 @@
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-number">6</span>
-                    <span class="checklist-title"
-                      >Verify any Active Alarm:</span
-                    >
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-bell text-danger"></i>
+                    <h6 class="mb-0">Alarm Verification</h6>
                   </div>
-                  <div class="checklist-control">
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Verify any Active Alarm:</label
+                    >
                     <select class="form-select" formControlName="verifyAlarm">
                       <option value="">Select status</option>
                       <option value="P">Pass</option>
@@ -3779,76 +3874,84 @@
 
           <div class="ups-section-content" [class.show]="showActionRequired">
             <form [formGroup]="actionRequiredForm" class="ups-form">
-              <div class="action-checklist">
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-title"
-                      >DC Group Action Required:</span
+              <div class="measurements-grid">
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-gear-wide-connected text-primary"></i>
+                    <h6 class="mb-0">DC Group Action</h6>
+                  </div>
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >DC Group Action Required:</label
                     >
-                  </div>
-                  <div class="checklist-control">
-                    <select class="form-select" formControlName="dcgAction1">
-                      <option value="">Select option</option>
-                      <option value="N">No</option>
-                      <option value="Y">Yes</option>
-                      <option value="A">N/A</option>
-                    </select>
-                  </div>
-                  <div class="checklist-indicator">
-                    <i
-                      class="bi bi-check-circle-fill text-success"
-                      *ngIf="
-                        actionRequiredForm.get('dcgAction1')?.value === 'N'
-                      "
-                    ></i>
-                    <i
-                      class="bi bi-exclamation-triangle-fill text-warning"
-                      *ngIf="
-                        actionRequiredForm.get('dcgAction1')?.value === 'Y'
-                      "
-                    ></i>
-                    <i
-                      class="bi bi-dash-circle text-muted"
-                      *ngIf="
-                        actionRequiredForm.get('dcgAction1')?.value === 'A'
-                      "
-                    ></i>
+                    <div class="d-flex align-items-center gap-2">
+                      <select class="form-select flex-grow-1" formControlName="dcgAction1">
+                        <option value="">Select option</option>
+                        <option value="N">No</option>
+                        <option value="Y">Yes</option>
+                        <option value="A">N/A</option>
+                      </select>
+                      <div class="status-indicator">
+                        <i
+                          class="bi bi-check-circle-fill text-success fs-5"
+                          *ngIf="
+                            actionRequiredForm.get('dcgAction1')?.value === 'N'
+                          "
+                        ></i>
+                        <i
+                          class="bi bi-exclamation-triangle-fill text-warning fs-5"
+                          *ngIf="
+                            actionRequiredForm.get('dcgAction1')?.value === 'Y'
+                          "
+                        ></i>
+                        <i
+                          class="bi bi-dash-circle text-muted fs-5"
+                          *ngIf="
+                            actionRequiredForm.get('dcgAction1')?.value === 'A'
+                          "
+                        ></i>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="checklist-item">
-                  <div class="checklist-header">
-                    <span class="checklist-title"
-                      >Customer Action Required:</span
+                <div class="measurement-card">
+                  <div class="measurement-header">
+                    <i class="bi bi-person-check text-info"></i>
+                    <h6 class="mb-0">Customer Action</h6>
+                  </div>
+                  <div class="measurement-content">
+                    <label class="form-label"
+                      >Customer Action Required:</label
                     >
-                  </div>
-                  <div class="checklist-control">
-                    <select class="form-select" formControlName="custAction1">
-                      <option value="">Select option</option>
-                      <option value="N">No</option>
-                      <option value="Y">Yes</option>
-                      <option value="A">N/A</option>
-                    </select>
-                  </div>
-                  <div class="checklist-indicator">
-                    <i
-                      class="bi bi-check-circle-fill text-success"
-                      *ngIf="
-                        actionRequiredForm.get('custAction1')?.value === 'N'
-                      "
-                    ></i>
-                    <i
-                      class="bi bi-exclamation-triangle-fill text-warning"
-                      *ngIf="
-                        actionRequiredForm.get('custAction1')?.value === 'Y'
-                      "
-                    ></i>
-                    <i
-                      class="bi bi-dash-circle text-muted"
-                      *ngIf="
-                        actionRequiredForm.get('custAction1')?.value === 'A'
-                      "
-                    ></i>
+                    <div class="d-flex align-items-center gap-2">
+                      <select class="form-select flex-grow-1" formControlName="custAction1">
+                        <option value="">Select option</option>
+                        <option value="N">No</option>
+                        <option value="Y">Yes</option>
+                        <option value="A">N/A</option>
+                      </select>
+                      <div class="status-indicator">
+                        <i
+                          class="bi bi-check-circle-fill text-success fs-5"
+                          *ngIf="
+                            actionRequiredForm.get('custAction1')?.value === 'N'
+                          "
+                        ></i>
+                        <i
+                          class="bi bi-exclamation-triangle-fill text-warning fs-5"
+                          *ngIf="
+                            actionRequiredForm.get('custAction1')?.value === 'Y'
+                          "
+                        ></i>
+                        <i
+                          class="bi bi-dash-circle text-muted fs-5"
+                          *ngIf="
+                            actionRequiredForm.get('custAction1')?.value === 'A'
+                          "
+                        ></i>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

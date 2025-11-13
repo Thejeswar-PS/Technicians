@@ -159,6 +159,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   selectedDate: Date | null = null;
   selectedYear = new Date().getFullYear();
 
+  // Calendar widget state
+  showCalendar = false;
+  showMonthCalendar = false;
+  calendarDate = new Date();
+  monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -195,6 +204,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    
+    // Remove click outside handler
+    document.removeEventListener('click', (event) => this.onDocumentClick(event));
   }
 
 
@@ -202,6 +214,23 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   ngAfterViewInit(): void {
     // Setup checkbox subscriptions after view initialization to ensure forms are ready
     this.setupFilterCurrentCheckboxHandlers();
+    
+    // Add click outside handler for calendars
+    document.addEventListener('click', (event) => this.onDocumentClick(event));
+  }
+
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    
+    // Check if click is outside calendar dropdowns
+    const monthCalendar = target.closest('.compact-calendar-dropdown');
+    const monthInput = target.closest('[formControlName="monthName"]');
+    const monthButton = target.closest('.calendar-toggle-btn');
+    
+    // Close month calendar if clicked outside
+    if (!monthCalendar && !monthInput && !monthButton && this.showMonthCalendar) {
+      this.showMonthCalendar = false;
+    }
   }
 
   // Set up date code display value watcher
@@ -4950,5 +4979,78 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     setTimeout(() => {
       this.successMessage = '';
     }, 3000);
+  }
+
+  // Calendar widget methods
+  private syncCalendarWithForm(): void {
+    const monthName = this.equipmentForm.get('monthName')?.value;
+    
+    if (monthName) {
+      const monthNumber = this.getMonthNumber(monthName);
+      if (monthNumber !== -1) {
+        this.calendarDate = new Date(this.calendarDate.getFullYear(), monthNumber, 1);
+      }
+    }
+  }
+
+  toggleCalendar(): void {
+    this.showCalendar = !this.showCalendar;
+    if (this.showCalendar) {
+      this.syncCalendarWithForm();
+    }
+  }
+
+  toggleMonthCalendar(): void {
+    this.showMonthCalendar = !this.showMonthCalendar;
+    if (this.showMonthCalendar) {
+      this.syncCalendarWithForm();
+    }
+  }
+
+  hideAllCalendars(): void {
+    this.showCalendar = false;
+    this.showMonthCalendar = false;
+  }
+
+  onCalendarMonthSelect(monthIndex: number): void {
+    const monthName = this.monthNames[monthIndex];
+    this.equipmentForm.patchValue({ monthName: monthName });
+    const currentYear = this.equipmentForm.get('year')?.value || new Date().getFullYear();
+    this.calendarDate = new Date(currentYear, monthIndex, 1);
+    
+    // Update the internal selectedDate for consistency with existing code
+    this.selectedDate = new Date(this.calendarDate);
+    this.currentCalendarDate = new Date(this.selectedDate);
+    
+    // Close month calendar after selection
+    this.showMonthCalendar = false;
+  }
+
+  navigateCalendarMonth(direction: 'prev' | 'next'): void {
+    const currentMonth = this.calendarDate.getMonth();
+    const currentYear = this.calendarDate.getFullYear();
+    
+    if (direction === 'prev') {
+      if (currentMonth === 0) {
+        this.calendarDate = new Date(currentYear - 1, 11, 1);
+      } else {
+        this.calendarDate = new Date(currentYear, currentMonth - 1, 1);
+      }
+    } else {
+      if (currentMonth === 11) {
+        this.calendarDate = new Date(currentYear + 1, 0, 1);
+      } else {
+        this.calendarDate = new Date(currentYear, currentMonth + 1, 1);
+      }
+    }
+  }
+
+  getCurrentMonthName(): string {
+    return this.monthNames[this.calendarDate.getMonth()];
+  }
+
+  isCurrentMonthSelected(monthIndex: number): boolean {
+    const formMonthName = this.equipmentForm.get('monthName')?.value;
+    return formMonthName === this.monthNames[monthIndex];
   }
 }
