@@ -1333,8 +1333,9 @@
         border: 1px solid #d1d5db;
         border-radius: 4px;
         padding: 0.375rem 0.75rem; // Reduced padding for proper text centering
-        font-size: 0.875rem;
-        font-weight: 400;
+        font-size: 1rem; // Increased font size for better visibility
+        font-weight: 600; // Bolder font weight for better text visibility
+        color: #111827; // Very dark color for better contrast
         background: white;
         transition: border-color 0.2s ease;
         width: 100%;
@@ -1345,8 +1346,8 @@
         justify-content: center; // Center content horizontally (for selects)
 
         &::placeholder {
-          color: #9ca3af;
-          font-weight: 400;
+          color: #6b7280; // Darker placeholder color
+          font-weight: 500; // Slightly bolder placeholder
         }
 
         &:focus {
@@ -1364,11 +1365,15 @@
       .power-input {
         text-align: left; // Keep inputs left-aligned
         justify-content: flex-start; // Align input text to left
+        color: #111827 !important; // Very dark color for input text
+        font-weight: 600 !important; // Bold font weight for input text
       }
 
       .power-select {
         text-align: center !important; // Force center select text
         text-align-last: center !important; // Force center selected option text
+        color: #111827 !important; // Very dark color for select text
+        font-weight: 700 !important; // Bolder font weight for select text
         
         // Browser-specific fixes for select centering
         &::-ms-expand {
@@ -1427,6 +1432,8 @@
           padding: 0 !important;
           line-height: 1.5 !important;
           text-align: center !important;
+          color: #111827 !important; // Very dark color for dropdown options
+          font-weight: 600 !important; // Bold font weight for dropdown options
         }
       }
 
@@ -1437,6 +1444,12 @@
 
         label {
           display: none; // Hide floating labels to match reference image
+        }
+
+        // Override any .text-muted styling within power cards
+        .text-muted {
+          color: #111827 !important; // Override muted text with dark color
+          font-weight: 600 !important; // Make labels bold and visible
         }
       }
 
@@ -1460,6 +1473,21 @@
           width: calc(30% - 0.25rem);
         }
       }
+    }
+
+    // Override any muted text styling within power cards for better visibility
+    .text-muted {
+      color: #111827 !important; // Very dark color instead of muted gray
+      font-weight: 600 !important; // Bold font weight for better visibility
+      font-size: 1rem !important; // Slightly larger font size
+    }
+
+    // Enhance label visibility specifically
+    label,
+    .form-label {
+      color: #111827 !important; // Very dark color for all labels
+      font-weight: 700 !important; // Bold font weight for labels
+      font-size: 1rem !important; // Larger font size for labels
     }
   }
 

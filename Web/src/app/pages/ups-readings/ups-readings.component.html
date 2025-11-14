@@ -1389,7 +1389,6 @@
                       >UPS room temperature / ventilation is acceptable:</label
                     >
                     <select class="form-select" formControlName="roomTempVentilation">
-                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1410,7 +1409,6 @@
                       >Safety equipment is present:</label
                     >
                     <select class="form-select" formControlName="safetyEquipment">
-                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1431,7 +1429,6 @@
                       >Any hostile environment (water, heat, dust, debris, burn marks, or tampering):</label
                     >
                     <select class="form-select" formControlName="hostileEnvironment">
-                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of yesNoNAOptions"
                         [value]="option.value"
@@ -1452,7 +1449,6 @@
                       >Adequate service space is available:</label
                     >
                     <select class="form-select" formControlName="serviceSpace">
-                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1473,7 +1469,6 @@
                       >Circuit breakers are labeled accurately:</label
                     >
                     <select class="form-select" formControlName="circuitBreakers">
-                      <option value="">Pass</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -2188,7 +2183,6 @@
                                   class="form-control power-input"
                                   formControlName="currA"
                                   step="0.01"
-                                  [placeholder]="isBypassModeActive() ? '10 (Optional)' : '10'"
                                   id="bypassCurrA"
                                 />
                                 <label for="bypassCurrA" class="text-muted">Current</label>
@@ -2284,7 +2278,6 @@
                                   class="form-control power-input"
                                   formControlName="currB"
                                   step="0.01"
-                                  [placeholder]="isBypassModeActive() ? '10 (Optional)' : '10'"
                                   id="bypassCurrB"
                                 />
                                 <label for="bypassCurrB" class="text-muted">Current</label>
@@ -2378,7 +2371,6 @@
                                   class="form-control power-input"
                                   formControlName="currC"
                                   step="0.01"
-                                  [placeholder]="isBypassModeActive() ? '10 (Optional)' : '10'"
                                   id="bypassCurrC"
                                 />
                                 <label for="bypassCurrC" class="text-muted">Current</label>
@@ -3344,7 +3336,6 @@
                                 class="form-control power-input"
                                 formControlName="acRippleVolt"
                                 step="0.01"
-                                placeholder="10"
                                 id="acRippleVolt"
                               />
                               <label for="acRippleVolt" class="text-muted">Voltage</label>
@@ -3391,7 +3382,6 @@
                                 class="form-control power-input"
                                 formControlName="dcCurrent"
                                 step="0.01"
-                                placeholder="13"
                                 id="dcCurrent"
                               />
                               <label for="dcCurrent" class="text-muted">Current</label>
@@ -3438,7 +3428,6 @@
                                 class="form-control power-input"
                                 formControlName="posToGND"
                                 step="0.01"
-                                placeholder="60"
                                 id="posToGND"
                               />
                               <label for="posToGND" class="text-muted">Value</label>
@@ -3485,7 +3474,6 @@
                                 class="form-control power-input"
                                 formControlName="negToGND"
                                 step="0.01"
-                                placeholder="0.00"
                                 id="negToGND"
                               />
                               <label for="negToGND" class="text-muted">Value</label>
@@ -3532,7 +3520,6 @@
                                 class="form-control power-input"
                                 formControlName="acRippleCurr"
                                 step="0.01"
-                                placeholder="0.00"
                                 id="acRippleCurr"
                               />
                               <label for="acRippleCurr" class="text-muted">Current</label>
