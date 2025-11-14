@@ -81,26 +81,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   voltageConfigurations = VOLTAGE_CONFIGURATIONS;
   passfailOptions = PASS_FAIL_OPTIONS;
   powerVerificationOptions = POWER_VERIFICATION_OPTIONS;
-  measurementOptions = [
-    { value: 'P', text: 'Pass' },
-    { value: 'F', text: 'Fail' },
-    { value: 'N', text: 'N/A' }
-  ];
-
-  // Visual and Mechanical options
-  visualMechanicalOptions = [
-    { value: 'P', text: 'Pass' },
-    { value: 'F', text: 'Fail' },
-    { value: 'N', text: 'N/A' }
-  ];
-
-  // Air filter options
-  airFilterOptions = [
-    { value: 'C', text: 'Cleaned' },
-    { value: 'RN', text: 'Replacement needed' },
-    { value: 'R', text: 'Replaced' },
-    { value: 'N', text: 'N/A' }
-  ];
+  measurementOptions = PASS_FAIL_OPTIONS;
+  visualMechanicalOptions = PASS_FAIL_OPTIONS;
+  
+  // Air filter options - loaded from backend
+  airFilterOptions: { value: string; text: string }[] = [];
   yesNoOptions = YES_NO_OPTIONS;
   snmpOptions = SNMP_OPTIONS;
   yesNoNAOptions = [
@@ -109,6 +94,728 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'N/A', text: 'N/A' }
   ];
   statusOptions = STATUS_OPTIONS;
+
+  // Consolidated validation helper
+  isFieldInvalid = (form: FormGroup, fieldName: string): boolean => {
+    const field = form.get(fieldName);
+    return !!(field?.invalid && field?.touched);
+  };
+
+  // Consolidated field error checker
+  getFieldError = (form: FormGroup, fieldName: string): string => {
+    const field = form.get(fieldName);
+    if (field?.errors?.['required']) return `${this.getFieldLabel(fieldName)} is required`;
+    if (field?.errors?.['min']) return `${this.getFieldLabel(fieldName)} must be at least ${field.errors['min'].min}`;
+    return '';
+  };
+
+  // Field label mapping for consistent error messages
+  private getFieldLabel = (fieldName: string): string => {
+    const labelMap: { [key: string]: string } = {
+      'manufacturer': 'Make',
+      'model': 'Model No',
+      'serialNo': 'Serial No',
+      'location': 'Location',
+      'kva': 'KVA Rating',
+      'status': 'Status',
+      'monthName': 'Month',
+      'year': 'Year'
+    };
+    return labelMap[fieldName] || fieldName;
+  };
+
+  // Helper method to create form controls with common patterns
+  private createFormControl = (defaultValue: any = '', validators: any[] = []): any => {
+    return [defaultValue, validators];
+  };
+
+  // Helper method for Pass/Fail/N/A controls with default "Pass"
+  private createPassFailControl = (defaultValue: 'P' | 'F' | 'N' = 'P'): any => {
+    return [defaultValue];
+  };
+
+  // Create multiple Pass/Fail controls at once
+  private createPassFailControls = (fields: string[], defaultValue: 'P' | 'F' | 'N' = 'P'): { [key: string]: any } => {
+    const controls: { [key: string]: any } = {};
+    fields.forEach(field => {
+      controls[field] = this.createPassFailControl(defaultValue);
+    });
+    return controls;
+  };
+
+  // Create multiple empty form controls at once
+  private createFormControls = (fields: string[], defaultValue: any = ''): { [key: string]: any } => {
+    const controls: { [key: string]: any } = {};
+    fields.forEach(field => {
+      controls[field] = [defaultValue];
+    });
+    return controls;
+  };
+
+  // TrackBy functions for better *ngFor performance
+  trackByValue = (index: number, item: any): any => item.value;
+  trackByText = (index: number, item: any): any => item.text;
+
+  // Reconciliation field configurations for reducing repetitive code
+  reconciliationFields = [
+    {
+      id: 'model',
+      currentField: 'model',
+      correctField: 'modelCorrect', 
+      actualField: 'actModel',
+      label: 'Model',
+      placeholder: 'Enter actual model if different'
+    },
+    {
+      id: 'serialNo',
+      currentField: 'serialNo',
+      correctField: 'serialNoCorrect',
+      actualField: 'actSerialNo', 
+      label: 'Serial No',
+      placeholder: 'Enter actual serial number if different'
+    },
+    {
+      id: 'kvaSize',
+      currentField: 'kvaSize',
+      correctField: 'kvaCorrect',
+      actualField: 'actKVA',
+      label: 'KVA Size', 
+      placeholder: 'Enter actual KVA if different'
+    }
+  ];
+
+  // System Measurements configuration for dynamic rendering
+  measurementCards = [
+    {
+      id: 'inputPower',
+      icon: 'bi-power',
+      iconColor: 'text-primary',
+      title: 'Power Synchronization',
+      description: 'Verifying that the UPS is properly synchronized to INPUT power and operating properly:',
+      formControl: 'inputPower',
+      options: 'measurementOptions'
+    },
+    {
+      id: 'lcd',
+      icon: 'bi-display', 
+      iconColor: 'text-info',
+      title: 'Display Functionality',
+      description: 'Verifying LCD backlight and contrast controls are functional and all display pixels are visible:',
+      formControl: 'lcd',
+      options: 'measurementOptions'
+    },
+    {
+      id: 'loadKVA',
+      icon: 'bi-speedometer',
+      iconColor: 'text-danger', 
+      title: 'Load Verification',
+      description: '% load (KVA) on UPS is not overloaded > 85%:',
+      formControl: 'loadKVA',
+      options: 'measurementOptions'
+    },
+    {
+      id: 'threePhase',
+      icon: 'bi-diagram-3',
+      iconColor: 'text-success',
+      title: 'Phase Balance', 
+      description: 'Are all 3 input currents within 20% balance?',
+      formControl: 'threePhase',
+      options: 'measurementOptions'
+    },
+    {
+      id: 'normal',
+      icon: 'bi-check-circle',
+      iconColor: 'text-success',
+      title: 'Normal Operation',
+      description: 'UPS is in normal operational mode:',
+      formControl: 'normal', 
+      options: 'measurementOptions'
+    },
+    {
+      id: 'caliberation',
+      icon: 'bi-gear',
+      iconColor: 'text-secondary',
+      title: 'Calibration',
+      description: 'Verify system calibration:',
+      formControl: 'caliberation',
+      options: 'measurementOptions'
+    },
+    {
+      id: 'endOfLife',
+      icon: 'bi-calendar-x',
+      iconColor: 'text-warning',
+      title: 'End of Life',
+      description: 'UPS date code is < 25 years (End of Life):',
+      formControl: 'endOfLife',
+      options: 'measurementOptions'
+    }
+  ];
+
+  // Visual & Mechanical verification configuration for dynamic rendering  
+  visualMechanicalCards = [
+    {
+      id: 'upsOnline',
+      icon: 'bi-power',
+      iconColor: 'text-success',
+      title: 'UPS Online Status',
+      description: 'UPS on-line without alarms:',
+      formControl: 'upsOnline',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'checkConnections',
+      icon: 'bi-wrench',
+      iconColor: 'text-primary',
+      title: 'Connection Tightness',
+      description: 'Check all nuts, bolts, screws and connections for tightness:',
+      formControl: 'checkConnections',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'inspectDamage', 
+      icon: 'bi-search',
+      iconColor: 'text-warning',
+      title: 'Damage Inspection',
+      description: 'Inspect for broken, damaged, or burned components as well as cables:',
+      formControl: 'inspectDamage',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'vacuumClean',
+      icon: 'bi-brush',
+      iconColor: 'text-info',
+      title: 'Cleaning & Maintenance',
+      description: 'Vacuum interior of UPS and wipe down exterior:',
+      formControl: 'vacuumClean',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'epoSwitch',
+      icon: 'bi-shield-exclamation',
+      iconColor: 'text-danger',
+      title: 'EPO Switch Cover',
+      description: 'Verify there is a cover on the EPO switch:',
+      formControl: 'epoSwitch', 
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'coolingFans',
+      icon: 'bi-fan',
+      iconColor: 'text-secondary',
+      title: 'Cooling Fan Operation',
+      description: 'Verify all cooling fans are operating without noise:',
+      formControl: 'coolingFans',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'fansAge',
+      icon: 'bi-calendar-check',
+      iconColor: 'text-success',
+      title: 'Fan Age Verification',
+      description: 'Fans are less than 7 years old:',
+      formControl: 'fansAge',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'airFilters',
+      icon: 'bi-funnel',
+      iconColor: 'text-primary',
+      title: 'Air Filter Maintenance',
+      description: 'Inspect and clean or replace UPS air filters:',
+      formControl: 'airFilters',
+      options: 'airFilterOptions'
+    }
+  ];
+
+  // Helper method to get verification icon class
+  getVerificationIcon = (correctValue: string): string => {
+    switch (correctValue) {
+      case 'Y': return 'bi-check-circle-fill text-success';
+      case 'N': return 'bi-x-circle-fill text-danger';
+      case 'N/A': return 'bi-dash-circle text-muted';
+      default: return '';
+    }
+  };
+
+  // Helper method to check if actual field should be readonly
+  isActualFieldReadonly = (correctField: string): boolean => {
+    return this.reconciliationForm.get(correctField)?.value !== 'N';
+  };
+
+  // Helper method to get options array by name
+  getOptionsArray = (optionsName: string): { value: string; text: string }[] => {
+    switch (optionsName) {
+      case 'measurementOptions': return this.measurementOptions;
+      case 'visualMechanicalOptions': return this.visualMechanicalOptions;
+      case 'airFilterOptions': return this.airFilterOptions;
+      case 'yesNoNAOptions': return this.yesNoNAOptions;
+      case 'capacitorStatusOptions': return this.capacitorStatusOptions;
+      case 'powerVerificationOptions': return this.powerVerificationOptions;
+      case 'passfailOptions': return this.passfailOptions;
+      case 'firstMajorInspectionOptions': return this.firstMajorInspectionOptions;
+      case 'transferPassFailOptions': return this.transferPassFailOptions;
+      default: return [];
+    }
+  };
+
+  // Helper method to get transfer status icon based on field configuration and value
+  getTransferStatusIcon = (field: any, value: string): string => {
+    if (!value || !field.statusMapping) return '';
+    
+    const statusType = field.statusMapping[value];
+    const iconMap: { [key: string]: string } = {
+      'success': 'bi-check-circle-fill text-success',
+      'danger': 'bi-x-circle-fill text-danger',
+      'warning': 'bi-exclamation-triangle-fill text-warning',
+      'muted': 'bi-dash-circle text-muted'
+    };
+    
+    return iconMap[statusType] || '';
+  };
+
+  // Get form group dynamically by name
+  getFormGroup = (formName: string): FormGroup => {
+    switch (formName) {
+      case 'inputReadingsForm': return this.inputReadingsForm;
+      case 'bypassReadingsForm': return this.bypassReadingsForm;
+      case 'outputReadingsForm': return this.outputReadingsForm;
+      default: return new FormGroup({});
+    }
+  };
+
+  // Get power configuration dynamically
+  getPowerConfig = (configName: string): any => {
+    switch (configName) {
+      case 'inputConfig': return this.inputConfig;
+      case 'bypassConfig': return this.bypassConfig;
+      case 'outputConfig': return this.outputConfig;
+      default: return null;
+    }
+  };
+
+  // Get filtered phase fields based on configuration and phase count
+  getPhaseFields = (phaseCount: number, sectionType: string = 'default'): any[] => {
+    return this.powerPhaseFields.filter(field => {
+      if (field.phase === 'A') return phaseCount >= 1;
+      if (field.phase === 'B') return phaseCount >= 2;
+      if (field.phase === 'C') return phaseCount >= 3;
+      return false;
+    });
+  };
+
+  // Get phase field label based on phase count
+  getPhaseLabel = (field: any, phaseCount: number): string => {
+    const labelIndex = phaseCount === 1 ? 0 : phaseCount === 2 ? 1 : 2;
+    return field.labels[labelIndex] || '';
+  };
+
+  // Get phase field color based on phase count
+  getPhaseColor = (field: any, phaseCount: number): string => {
+    const colorIndex = phaseCount === 1 ? 0 : phaseCount === 2 ? 1 : 2;
+    return field.colors[colorIndex] || 'text-primary';
+  };
+
+  // Get additional fields based on section type
+  getAdditionalFields = (sectionType: 'input' | 'output' | 'bypass'): any[] => {
+    return this.additionalPowerFields.filter(field => {
+      // Frequency is available for all sections
+      if (field.type === 'frequency') return true;
+      
+      // Load fields are only for output section
+      if (field.type === 'load') return sectionType === 'output';
+      
+      // THD fields are only for output section
+      if (field.type === 'thd') return sectionType === 'output';
+      
+      return false;
+    });
+  };
+
+  // Get ordered power fields: Voltage A, Current A, Voltage B, Current B, Voltage C, Current C, Frequency, Load fields
+  getOrderedPowerFields = (phaseCount: number, sectionType: 'input' | 'output' | 'bypass'): any[] => {
+    const orderedFields: any[] = [];
+    
+    // Add voltage and current pairs for each phase
+    const phases = ['A', 'B', 'C'];
+    for (let i = 0; i < phaseCount; i++) {
+      const phase = phases[i];
+      
+      // Add voltage field for this phase
+      const voltageField = this.powerPhaseFields.find(f => f.phase === phase && f.type === 'voltage');
+      if (voltageField && this.getPhaseLabel(voltageField, phaseCount)) {
+        orderedFields.push(voltageField);
+      }
+      
+      // Add current field for this phase
+      const currentField = this.powerPhaseFields.find(f => f.phase === phase && f.type === 'current');
+      if (currentField && this.getPhaseLabel(currentField, phaseCount)) {
+        orderedFields.push(currentField);
+      }
+    }
+    
+    // Add frequency (always after all voltage/current pairs)
+    const frequencyField = this.additionalPowerFields.find(f => f.type === 'frequency');
+    if (frequencyField) {
+      orderedFields.push(frequencyField);
+    }
+    
+    // Add load fields for output section only, based on phase count
+    if (sectionType === 'output') {
+      const loadFields = this.additionalPowerFields.filter(f => f.type === 'load');
+      for (let i = 0; i < phaseCount; i++) {
+        if (loadFields[i]) {
+          orderedFields.push(loadFields[i]);
+        }
+      }
+    }
+    
+    return orderedFields;
+  };
+
+  // Filter sets configuration for dynamic rendering
+  filterSets = [
+    {
+      id: 1,
+      title: 'Filter Set 1',
+      icon: 'bi-filter-square',
+      iconColor: 'text-primary',
+      fields: [
+        { control: 'filterSet1Length', label: 'Length', id: 'filter1Length' },
+        { control: 'filterSet1Width', label: 'Width', id: 'filter1Width' },
+        { control: 'filterSet1Thickness', label: 'Thickness', id: 'filter1Thickness' },
+        { control: 'filterSet1Quantity', label: 'Quantity', id: 'filter1Quantity' }
+      ]
+    },
+    {
+      id: 2,
+      title: 'Filter Set 2 (Optional)',
+      icon: 'bi-filter-square',
+      iconColor: 'text-secondary',
+      fields: [
+        { control: 'filterSet2Length', label: 'Length', id: 'filter2Length' },
+        { control: 'filterSet2Width', label: 'Width', id: 'filter2Width' },
+        { control: 'filterSet2Thickness', label: 'Thickness', id: 'filter2Thickness' },
+        { control: 'filterSet2Quantity', label: 'Quantity', id: 'filter2Quantity' }
+      ]
+    }
+  ];
+
+  // Environment verification configuration for dynamic rendering
+  environmentCards = [
+    {
+      id: 'roomTempVentilation',
+      icon: 'bi-thermometer',
+      iconColor: 'text-warning',
+      title: 'Temperature Control',
+      description: 'UPS room temperature / ventilation is acceptable:',
+      formControl: 'roomTempVentilation',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'safetyEquipment',
+      icon: 'bi-shield-check',
+      iconColor: 'text-success',
+      title: 'Safety Equipment',
+      description: 'Safety equipment is present:',
+      formControl: 'safetyEquipment',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'hostileEnvironment',
+      icon: 'bi-exclamation-triangle',
+      iconColor: 'text-danger',
+      title: 'Environmental Hazards',
+      description: 'Any hostile environment (water, heat, dust, debris, burn marks, or tampering):',
+      formControl: 'hostileEnvironment',
+      options: 'yesNoNAOptions'
+    },
+    {
+      id: 'serviceSpace',
+      icon: 'bi-rulers',
+      iconColor: 'text-info',
+      title: 'Service Space',
+      description: 'Adequate service space is available:',
+      formControl: 'serviceSpace',
+      options: 'visualMechanicalOptions'
+    },
+    {
+      id: 'circuitBreakers',
+      icon: 'bi-toggles',  
+      iconColor: 'text-primary',
+      title: 'Circuit Breaker Labels',
+      description: 'Circuit breakers are labeled accurately:',
+      formControl: 'circuitBreakers',
+      options: 'visualMechanicalOptions'
+    }
+  ];
+
+  // Capacitor readings configuration for dynamic rendering
+  capacitorCards = [
+    {
+      id: 'dcCaps',
+      icon: 'bi-lightning-charge',
+      iconColor: 'text-danger',
+      title: 'DC Capacitors',
+      description: 'DC Caps Leaking/Swelling:',
+      statusControl: 'dcCaps_PF',
+      ageControl: 'dcCapsAge',
+      hasAgeField: true
+    },
+    {
+      id: 'acInputCaps',
+      icon: 'bi-plug',
+      iconColor: 'text-primary',
+      title: 'AC Input Capacitors',
+      description: 'AC Input Caps Leaking/Swelling:',
+      statusControl: 'acInputCaps_PF',
+      ageControl: 'acInputCapsAge',
+      hasAgeField: true
+    },
+    {
+      id: 'acOutputCaps',
+      icon: 'bi-outlet',
+      iconColor: 'text-success',
+      title: 'AC Output Capacitors',
+      description: 'AC Output Caps Leaking/Swelling:',
+      statusControl: 'acOutputCaps_PF',
+      ageControl: 'acOutputCapsAge',
+      hasAgeField: true
+    },
+    {
+      id: 'commCaps',
+      icon: 'bi-router',
+      iconColor: 'text-info',
+      title: 'Communication Capacitors',
+      description: 'Comm Caps Leaking/Swelling:',
+      statusControl: 'commCaps_PF',
+      ageControl: 'commCapsAge',
+      hasAgeField: true
+    },
+    {
+      id: 'fansYear',
+      icon: 'bi-fan',
+      iconColor: 'text-warning',
+      title: 'Fan Date Code',
+      description: 'Fans DateCode:',
+      statusControl: null,
+      ageControl: 'fansYear',
+      hasAgeField: true
+    }
+  ];
+
+  // Pass/Fail/N/A options for capacitor status dropdowns
+  capacitorStatusOptions = [
+    { value: '', text: 'Select status' },
+    { value: 'P', text: 'Pass' },
+    { value: 'F', text: 'Fail' },
+    { value: 'A', text: 'N/A' }
+  ];
+
+  // First Major Inspection specific options
+  firstMajorInspectionOptions = [
+    { value: '', text: 'Select option' },
+    { value: 'Ys', text: 'Yes' },
+    { value: 'No', text: 'No' },
+    { value: 'NA', text: 'N/A' }
+  ];
+
+  // Pass/Fail/N/A options with "Select status" option
+  transferPassFailOptions = [
+    { value: '', text: 'Select status' },
+    { value: 'P', text: 'Pass' },
+    { value: 'F', text: 'Fail' },
+    { value: 'A', text: 'N/A' }
+  ];
+
+  // Transfer verification configuration for dynamic rendering
+  transferVerificationFields = [
+    {
+      id: 'firstMajor',
+      icon: 'bi-clipboard-check',
+      iconColor: 'text-primary',
+      title: 'First Major Inspection',
+      description: 'The first major inspection performed on this unit:',
+      formControl: 'firstMajor',
+      optionsArray: 'firstMajorInspectionOptions',
+      statusMapping: { 'Ys': 'success', 'No': 'muted', 'NA': 'muted' }
+    },
+    {
+      id: 'staticBypass',
+      icon: 'bi-arrow-repeat',
+      iconColor: 'text-info',
+      title: 'Static Bypass Transfer',
+      description: 'Transfer to Static By-Pass [Internal]:',
+      formControl: 'staticBypass',
+      optionsArray: 'transferPassFailOptions',
+      statusMapping: { 'P': 'success', 'F': 'danger', 'A': 'muted' }
+    },
+    {
+      id: 'transMaintByPass',
+      icon: 'bi-tools',
+      iconColor: 'text-warning',
+      title: 'Maintenance Bypass',
+      description: 'Transfer to Maintenance By-Pass [Only When Required]:',
+      formControl: 'transMaintByPass',
+      optionsArray: 'transferPassFailOptions',
+      statusMapping: { 'P': 'success', 'F': 'danger', 'A': 'muted' }
+    },
+    {
+      id: 'currentWave',
+      icon: 'bi-activity',
+      iconColor: 'text-success',
+      title: 'Waveform Analysis',
+      description: 'Voltage / Current Wave Form:',
+      formControl: 'currentWave',
+      optionsArray: 'transferPassFailOptions',
+      statusMapping: { 'P': 'success', 'F': 'danger', 'A': 'muted' }
+    },
+    {
+      id: 'normalMode',
+      icon: 'bi-arrow-clockwise',
+      iconColor: 'text-primary',  
+      title: 'Normal Mode Transfer',
+      description: 'Transfer to Normal Mode:',
+      formControl: 'normalMode',
+      optionsArray: 'transferPassFailOptions',
+      statusMapping: { 'P': 'success', 'F': 'danger', 'A': 'muted' }
+    },
+    {
+      id: 'verifyAlarm',
+      icon: 'bi-bell',
+      iconColor: 'text-danger',
+      title: 'Alarm Verification',  
+      description: 'Verify any Active Alarm:',
+      formControl: 'verifyAlarm',
+      optionsArray: 'transferPassFailOptions',
+      statusMapping: { 'P': 'success', 'F': 'danger', 'A': 'muted' }
+    }
+  ];
+
+  // Power verification phase field configurations
+  powerPhaseFields = [
+    // Voltage fields
+    { 
+      phase: 'A', type: 'voltage', 
+      valueControl: 'voltA', statusControl: 'voltA_PF',
+      icon: 'bi-lightning', colors: ['text-primary', 'text-success', 'text-danger'],
+      labels: ['Voltage A', 'Voltage A', 'Voltage A-B'], // Single, 2-phase, 3-phase labels
+      fieldLabel: 'Voltage'
+    },
+    { 
+      phase: 'B', type: 'voltage', 
+      valueControl: 'voltB', statusControl: 'voltB_PF',
+      icon: 'bi-lightning', colors: ['text-success', 'text-info', 'text-success'],
+      labels: ['', 'Voltage B', 'Voltage B-C'],
+      fieldLabel: 'Voltage'
+    },
+    { 
+      phase: 'C', type: 'voltage', 
+      valueControl: 'voltC', statusControl: 'voltC_PF',
+      icon: 'bi-lightning', colors: ['', '', 'text-danger'],
+      labels: ['', '', 'Voltage C-A'],
+      fieldLabel: 'Voltage'
+    },
+    // Current fields
+    { 
+      phase: 'A', type: 'current', 
+      valueControl: 'currA', statusControl: 'currA_PF',
+      icon: 'bi-activity', colors: ['text-warning', 'text-warning', 'text-warning'],
+      labels: ['Current A', 'Current A', 'Current A'],
+      fieldLabel: 'Current'
+    },
+    { 
+      phase: 'B', type: 'current', 
+      valueControl: 'currB', statusControl: 'currB_PF',
+      icon: 'bi-activity', colors: ['', 'text-info', 'text-info'],
+      labels: ['', 'Current B', 'Current B'],
+      fieldLabel: 'Current'
+    },
+    { 
+      phase: 'C', type: 'current', 
+      valueControl: 'currC', statusControl: 'currC_PF',
+      icon: 'bi-activity', colors: ['', '', 'text-secondary'],
+      labels: ['', '', 'Current C'],
+      fieldLabel: 'Current'
+    }
+  ];
+
+  // Additional power fields (frequency, load, THD)
+  additionalPowerFields = [
+    {
+      type: 'frequency',
+      valueControl: 'freq', statusControl: 'freq_PF',
+      icon: 'bi-speedometer2', iconColor: 'text-success',
+      title: 'Frequency', fieldLabel: 'Frequency (Hz)'
+    },
+    // Output Load fields
+    {
+      type: 'load',
+      valueControl: 'loadA', statusControl: 'loadA_PF',
+      icon: 'bi-speedometer', iconColor: 'text-primary',
+      title: 'Load A (%)', fieldLabel: 'Load %'
+    },
+    {
+      type: 'load',
+      valueControl: 'loadB', statusControl: 'loadB_PF',
+      icon: 'bi-speedometer', iconColor: 'text-success',
+      title: 'Load B (%)', fieldLabel: 'Load %'
+    },
+    {
+      type: 'load',
+      valueControl: 'loadC', statusControl: 'loadC_PF',
+      icon: 'bi-speedometer', iconColor: 'text-info',
+      title: 'Load C (%)', fieldLabel: 'Load %'
+    }
+  ];
+
+  // Power verification sections configuration
+  powerSections = [
+    {
+      id: 'input' as 'input' | 'output' | 'bypass',
+      title: 'Input Phase Measurements',
+      subtitle: 'Voltage, Current, and Frequency readings',
+      icon: 'bi-plug',
+      iconColor: 'text-success',
+      form: 'inputReadingsForm',
+      config: 'inputConfig',
+      configControl: 'configuration',
+      toleranceType: 'input' as 'input' | 'output' | 'bypass',
+      hasFilterToggle: true,
+      hasThdToggle: true,
+      filterControl: 'inputFilterCurrent',
+      thdControl: 'inputThdPercent'
+    },
+    {
+      id: 'bypass' as 'input' | 'output' | 'bypass',
+      title: 'Bypass Phase Measurements',
+      subtitle: 'Bypass voltage and current readings',
+      icon: 'bi-arrow-left-right',
+      iconColor: 'text-warning',
+      form: 'bypassReadingsForm',
+      config: 'bypassConfig',
+      configControl: 'configuration',
+      toleranceType: 'bypass' as 'input' | 'output' | 'bypass',
+      hasFilterToggle: false,
+      hasThdToggle: false,
+      filterControl: undefined,
+      thdControl: undefined
+    },
+    {
+      id: 'output' as 'input' | 'output' | 'bypass',
+      title: 'Output Phase Measurements',
+      subtitle: 'Output voltage, current, frequency and load readings',
+      icon: 'bi-outlet',
+      iconColor: 'text-info',
+      form: 'outputReadingsForm',
+      config: 'outputConfig',
+      configControl: 'configuration',
+      toleranceType: 'output' as 'input' | 'output' | 'bypass',
+      hasFilterToggle: true,
+      hasThdToggle: true,
+      filterControl: 'outputFilterCurrent',
+      thdControl: 'outputThdPercent'
+    }
+  ];
 
   // Getter for status options with proper fallback
   get currentStatusOptions(): { value: string; text: string }[] {
@@ -140,7 +847,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   showInputReadings = false;
   showBypassReadings = false;
   showOutputReadings = false;
-  showRectifier = false;
   showCapacitor = false;
   showTransfer = false;
   showActionRequired = false;
@@ -164,9 +870,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   showMonthCalendar = false;
   showYearCalendar = false;
   calendarDate = new Date();
-  monthNames = [
+  monthNames: string[] = [];
+
+  // Hard-coded values that could be made configurable
+  private readonly DEFAULT_MONTH_NAMES = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  private readonly DEFAULT_AIR_FILTER_OPTIONS = [
+    { value: 'C', text: 'Cleaned' },
+    { value: 'RN', text: 'Replacement needed' },
+    { value: 'R', text: 'Replaced' },
+    { value: 'N', text: 'N/A' }
   ];
 
   // Year calendar state
@@ -306,42 +1022,28 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     this.measurementsForm = this.fb.group({
-      inputPower: ['P'], // Default "Pass"
-      lcd: ['P'], // Default "Pass"
-      loadKVA: ['P'], // Default "Pass"
-      threePhase: ['P'], // Default "Pass"
-      normal: ['P'], // Default "Pass"
-      caliberation: ['P'], // Default "Pass"
-      endOfLife: ['P'] // Default "Pass"
+      ...this.createPassFailControls([
+        'inputPower', 'lcd', 'loadKVA', 'threePhase', 
+        'normal', 'caliberation', 'endOfLife'
+      ])
     });
 
     this.visualForm = this.fb.group({
-      upsOnline: ['P'], // Default "Pass"
-      checkConnections: ['P'], // Default "Pass"
-      inspectDamage: ['P'], // Default "Pass"
-      vacuumClean: ['P'], // Default "Pass"
-      epoSwitch: ['P'], // Default "Pass"
-      coolingFans: ['P'], // Default "Pass"
-      fansAge: ['P'], // Default "Pass"
-      airFilters: ['P'], // Default "Pass"
-      // Air filter details
-      filterSet1Length: [''],
-      filterSet1Width: [''],
-      filterSet1Thickness: [''],
-      filterSet1Quantity: [''],
-      filterSet2Length: [''],
-      filterSet2Width: [''],
-      filterSet2Thickness: [''],
-      filterSet2Quantity: [''],
-      visualComments: ['']
+      ...this.createPassFailControls([
+        'upsOnline', 'checkConnections', 'inspectDamage', 'vacuumClean',
+        'epoSwitch', 'coolingFans', 'fansAge', 'airFilters'
+      ]),
+      // Air filter details - empty by default
+      ...this.createFormControls([
+        'filterSet1Length', 'filterSet1Width', 'filterSet1Thickness', 'filterSet1Quantity',
+        'filterSet2Length', 'filterSet2Width', 'filterSet2Thickness', 'filterSet2Quantity',
+        'visualComments'
+      ])
     });
 
     this.environmentForm = this.fb.group({
-      roomTempVentilation: ['P'], // Default "Pass"
-      safetyEquipment: ['P'], // Default "Pass"
-      hostileEnvironment: ['N', { selected: true }], // Default to "No" (Selected="True")
-      serviceSpace: ['P'], // Default "Pass"
-      circuitBreakers: ['P'] // Default "Pass"
+      ...this.createPassFailControls(['roomTempVentilation', 'safetyEquipment', 'serviceSpace', 'circuitBreakers']),
+      hostileEnvironment: ['N'] // Default to "No"
     });
 
     this.inputReadingsForm = this.fb.group({
@@ -440,6 +1142,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.rectifierForm = this.fb.group({
       floatVolt_PF: ['P'], // Default "Pass"
       dcFloatVoltage: [''],
+      dcFloatVoltage_PF: ['P'], // Default "Pass"
       dcVoltage: [''],
       dcVoltage_PF: ['P'], // Default "Pass"
       acRipple: [''],
@@ -468,14 +1171,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       fansYear: ['']
     });
 
-    this.transferForm = this.fb.group({
-      firstMajor: ['N', { selected: true }], // Default to "No" (Selected="True")
-      staticBypass: ['P'], // Default "Pass"
-      transMaintByPass: ['P'], // Default "Pass"
-      currentWave: ['P'], // Default "Pass"
-      normalMode: ['P'], // Default "Pass"
-      verifyAlarm: ['P'] // Default "Pass"
+    // Create transfer form dynamically from configuration
+    const transferFormConfig: { [key: string]: any } = {};
+    this.transferVerificationFields.forEach(field => {
+      const defaultValue = field.id === 'firstMajor' ? 'No' : 'P';
+      transferFormConfig[field.formControl] = [defaultValue];
     });
+    this.transferForm = this.fb.group(transferFormConfig);
 
     this.actionRequiredForm = this.fb.group({
       dcgAction1: ['N'], // Default to "No"
@@ -659,6 +1361,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private loadData(): void {
     this.loading = true;
     
+    // Initialize with default values
+    this.initializeDefaultValues();
+    
     // Load manufacturers first to ensure dropdown is populated before form data
     this.equipmentService.getManufacturerNames()
       .pipe(takeUntil(this.destroy$))
@@ -683,6 +1388,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.loadOtherData();
         }
       });
+  }
+
+  private initializeDefaultValues(): void {
+    // Initialize month names (could be loaded from backend for internationalization)
+    this.monthNames = this.DEFAULT_MONTH_NAMES;
+    
+    // Initialize air filter options (could be loaded from backend for customization)
+    this.airFilterOptions = this.DEFAULT_AIR_FILTER_OPTIONS;
   }
 
   /**
@@ -927,6 +1640,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  // Setup transfer field validation using configuration-driven approach
+  private setupTransferFieldValidation(): void {
+    this.transferVerificationFields.forEach(field => {
+      this.transferForm.get(field.formControl)?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
+        this.validateAndUpdateStatusOnFailure(); // Trigger on any change
+      });
+    });
+  }
+
   // Setup critical field validation for immediate status changes when failures occur OR recover
   private setupCriticalFieldValidation(): void {
     // 1. CRITICAL DEFICIENCY triggers
@@ -962,10 +1684,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       this.validateAndUpdateStatusOnFailure(); // Trigger on any change
     });
     
-    // Major transfer test failures - Monitor ALL changes
-    this.transferForm.get('firstMajor')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
-      this.validateAndUpdateStatusOnFailure(); // Trigger on any change
-    });
+    // Transfer verification fields - consolidated monitoring
+    this.setupTransferFieldValidation();
     
     // DC voltage out of acceptable range - Monitor ALL changes
     this.rectifierForm.get('dcVoltage_PF')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
@@ -977,19 +1697,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       this.validateAndUpdateStatusOnFailure(); // Trigger on any change
     });
     
-    // 2. MAJOR DEFICIENCY triggers
-    
-    // Static bypass failures - Monitor ALL changes
-    this.transferForm.get('staticBypass')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
-      this.validateAndUpdateStatusOnFailure(); // Trigger on any change
-    });
-    
     // Alarm system failures - Monitor ALL changes
     this.visualForm.get('upsOnline')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
-      this.validateAndUpdateStatusOnFailure(); // Trigger on any change
-    });
-    
-    this.transferForm.get('verifyAlarm')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
       this.validateAndUpdateStatusOnFailure(); // Trigger on any change
     });
     
@@ -1074,10 +1783,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       hostileEnvironment: 'N', // Hostile environment verification - default to No
     });
 
-    // Transfer form defaults - this addresses the main issue reported by user
-    this.transferForm.patchValue({
-      transMaintByPass: 'P', // Transfer to Maintenance By-Pass - default to Pass
+    // Transfer form defaults - apply defaults from configuration
+    const transferDefaults: { [key: string]: string } = {};
+    this.transferVerificationFields.forEach(field => {
+      const defaultValue = field.id === 'firstMajor' ? 'No' : 'P';
+      transferDefaults[field.formControl] = defaultValue;
     });
+    this.transferForm.patchValue(transferDefaults);
   }
 
   /**
@@ -1237,6 +1949,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.rectifierForm.patchValue({
       floatVolt_PF: data.rectFloatVolt_PF || 'P',
       dcFloatVoltage: this.convertZeroToEmpty(data.dcVoltage_T),
+      dcFloatVoltage_PF: data.dcVoltage_PF || 'P',
       dcVoltage: this.convertZeroToEmpty(data.dcVoltage_T),
       dcVoltage_PF: data.dcVoltage_PF || 'P',
       acRipple: this.convertZeroToEmpty(data.acRipple_T),
@@ -1266,15 +1979,16 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       fansYear: this.convertZeroToEmpty(data.fansYear)
     });
 
-    // Populate transfer form
-    this.transferForm.patchValue({
-      firstMajor: data.transfer_Major || 'No', // Default to 'No' to match legacy
-      staticBypass: data.transfer_Static || 'P',
-      transMaintByPass: data.transfer_ByPass || 'P',
-      currentWave: data.transfer_Wave || 'P',
-      normalMode: data.transfer_Normal || 'P',
-      verifyAlarm: data.transfer_Alarm || 'P'
-    });
+    // Populate transfer form using configuration-driven approach
+    const transferData: { [key: string]: string } = {
+      'firstMajor': data.transfer_Major || 'No',
+      'staticBypass': data.transfer_Static || 'P',
+      'transMaintByPass': data.transfer_ByPass || 'P',
+      'currentWave': data.transfer_Wave || 'P',
+      'normalMode': data.transfer_Normal || 'P',
+      'verifyAlarm': data.transfer_Alarm || 'P'
+    };
+    this.transferForm.patchValue(transferData);
 
     this.actionRequiredForm.patchValue({
       dcgAction1: data.dcgAction1 || 'N',
@@ -1622,11 +2336,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       currB_PF: (data[`${prefix}CurrB_PF` as keyof AAETechUPS] as string) || 'P',
       currC: this.convertZeroToEmpty(data[`${prefix}CurrC_T` as keyof AAETechUPS] as number),
       currC_PF: (data[`${prefix}CurrC_PF` as keyof AAETechUPS] as string) || 'P',
-      freq: this.convertZeroToEmpty(data[`${prefix}Freq_T` as keyof AAETechUPS] as number),
+      freq: this.convertFrequencyValue(data[`${prefix}Freq_T` as keyof AAETechUPS] as number),
       freq_PF: (data[`${prefix}Freq_PF` as keyof AAETechUPS] as string) || 'P'
     };
 
     form.patchValue(formData);
+    
+    // Ensure frequency value is preserved during data loading
+    const frequencyValue = this.convertFrequencyValue(data[`${prefix}Freq_T` as keyof AAETechUPS] as number);
+    setTimeout(() => {
+      form.patchValue({ freq: frequencyValue });
+    }, 10);
     
     // Force form value verification
     setTimeout(() => {
@@ -1741,16 +2461,94 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   // Calculate total load percentage for output readings
   calculateTotalLoad(): void {
-    // Use the comprehensive legacy load calculation system
-    if (!this.calculateLoadPercent()) {
-      // If validation fails, show error and don't proceed
-      this.toastr.error('Load calculation failed. Please check your input values and try again.');
+    console.log('Calculate Total Load button clicked');
+    
+    // Check if required forms exist
+    if (!this.outputReadingsForm || !this.equipmentForm) {
+      alert('Required forms are not initialized');
       return;
     }
-
-    // Show success message
-    const totalLoad = this.convertToDouble(this.outputReadingsForm.get('totalLoad')?.value || '0');
-    this.toastr.success(`Load calculation completed successfully. Total load: ${totalLoad.toFixed(2)}%`, 'Calculation Complete');
+    
+    const totalLoadControl = this.outputReadingsForm.get('totalLoad');
+    if (!totalLoadControl) {
+      alert('Total Load form control not found');
+      return;
+    }
+    
+    // Validate required fields before calculation
+    const kvaValue = this.equipmentForm.get('kva')?.value;
+    const outputConfig = this.outputReadingsForm.get('configuration')?.value;
+    
+    if (!kvaValue || kvaValue === '') {
+      alert('KVA value is required for load calculation. Please enter the UPS KVA rating.');
+      return;
+    }
+    
+    if (!outputConfig || outputConfig === '') {
+      alert('Output voltage configuration must be selected before calculating load.');
+      return;
+    }
+    
+    // Check current fields based on configuration
+    const phaseCount = this.getPhaseCountForConfiguration(outputConfig);
+    const missingCurrents: string[] = [];
+    
+    if (phaseCount >= 1) {
+      const currentA = this.outputReadingsForm.get('currA')?.value;
+      if (!currentA || currentA === '' || this.convertToDouble(currentA) === 0) {
+        missingCurrents.push('Output Current A');
+      }
+    }
+    
+    if (phaseCount >= 2) {
+      const currentB = this.outputReadingsForm.get('currB')?.value;
+      if (!currentB || currentB === '' || this.convertToDouble(currentB) === 0) {
+        missingCurrents.push('Output Current B');
+      }
+    }
+    
+    if (phaseCount >= 3) {
+      const currentC = this.outputReadingsForm.get('currC')?.value;
+      if (!currentC || currentC === '' || this.convertToDouble(currentC) === 0) {
+        missingCurrents.push('Output Current C');
+      }
+    }
+    
+    if (missingCurrents.length > 0) {
+      const message = `Please fill in the following current values before calculating load:\n\n${missingCurrents.join('\n')}`;
+      alert(message);
+      return;
+    }
+    
+    // Enable form submission mode temporarily to allow validation alerts during calculation
+    const wasFormSubmission = this.isFormSubmission;
+    this.isFormSubmission = true;
+    
+    try {
+      // Use the comprehensive legacy load calculation system
+      const result = this.calculateLoadPercent();
+      console.log('Calculation completed, result:', result);
+      
+      if (result) {
+        const calculatedValue = totalLoadControl.value;
+        console.log('Total load calculated successfully:', calculatedValue);
+        
+        // Ensure the UI updates
+        totalLoadControl.markAsDirty();
+        totalLoadControl.updateValueAndValidity();
+        
+        // Show success message
+        alert(`Load calculation completed successfully.\nTotal Load: ${calculatedValue}%`);
+      } else {
+        console.log('Calculation validation failed');
+      }
+    } catch (error) {
+      console.error('Error during calculation:', error);
+      alert('An error occurred during calculation. Please check your input values.');
+    } finally {
+      // Restore original form submission state
+      this.isFormSubmission = wasFormSubmission;
+    }
   }
 
   /**
@@ -3309,7 +4107,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         currB_PF: 'P',
         currC: '',
         currC_PF: 'P',
-        freq: '',
+        freq: '60', // Keep default frequency as 60 Hz
         freq_PF: 'P'
       });
     }
@@ -3341,8 +4139,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    // Auto-populate standard frequency (60 Hz for most configurations)
-    form.patchValue({ freq: '60' });
+    // Auto-populate standard frequency (60 Hz) only during manual configuration changes
+    if (!this.loading) {
+      const currentFreq = form.get('freq')?.value;
+      if (!currentFreq || currentFreq === '') {
+        form.patchValue({ freq: '60' });
+      }
+    }
 
     if (type === 'output') {
       this.outputReadingsForm.patchValue({
@@ -4064,7 +4867,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       environment_Space: environment.serviceSpace,
       environment_Circuit: environment.circuitBreakers,
       
-      // Transfer
+      // Transfer - using configuration-driven mapping
       transfer_Major: transfer.firstMajor,
       transfer_Static: transfer.staticBypass,
       transfer_ByPass: transfer.transMaintByPass,
@@ -4153,8 +4956,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       
       // Rectifier
       rectFloatVolt_PF: rectifier.floatVolt_PF,
-      dcVoltage_T: this.convertToDouble(rectifier.dcVoltage),
-      dcVoltage_PF: rectifier.dcVoltage_PF,
+      dcVoltage_T: this.convertToDouble(rectifier.dcFloatVoltage || rectifier.dcVoltage),
+      dcVoltage_PF: rectifier.dcFloatVoltage_PF || rectifier.dcVoltage_PF,
       acRipple_T: this.convertToDouble(rectifier.acRipple),
       acRipple_PF: rectifier.acRipple_PF,
       dcCurrent_T: this.convertToDouble(rectifier.dcCurrent),
@@ -4377,6 +5180,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private convertZeroToEmpty(value: any): string {
     if (value === null || value === undefined || value === 0) {
       return '';
+    }
+    
+    return value.toString();
+  }
+
+  private convertFrequencyValue(value: any): string {
+    if (value === null || value === undefined || value === 0 || value === '') {
+      return '60'; // Default frequency to 60 Hz
     }
     
     return value.toString();
