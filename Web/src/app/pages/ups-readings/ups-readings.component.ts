@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
+﻿import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, ChangeDetectorRef, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -81,8 +81,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   voltageConfigurations = VOLTAGE_CONFIGURATIONS;
   passfailOptions = PASS_FAIL_OPTIONS;
   powerVerificationOptions = POWER_VERIFICATION_OPTIONS;
-  measurementOptions = PASS_FAIL_OPTIONS;
-  visualMechanicalOptions = PASS_FAIL_OPTIONS;
   
   // Air filter options - loaded from backend
   airFilterOptions: { value: string; text: string }[] = [];
@@ -124,12 +122,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return labelMap[fieldName] || fieldName;
   };
 
-  // Helper method to create form controls with common patterns
+  // Create form controls with common patterns
   private createFormControl = (defaultValue: any = '', validators: any[] = []): any => {
     return [defaultValue, validators];
   };
 
-  // Helper method for Pass/Fail/N/A controls with default "Pass"
+  // Pass/Fail/N/A controls with default "Pass"
   private createPassFailControl = (defaultValue: 'P' | 'F' | 'N' = 'P'): any => {
     return [defaultValue];
   };
@@ -156,7 +154,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   trackByValue = (index: number, item: any): any => item.value;
   trackByText = (index: number, item: any): any => item.text;
 
-  // Reconciliation field configurations for reducing repetitive code
+  // Reconciliation field configurations
   reconciliationFields = [
     {
       id: 'model',
@@ -251,7 +249,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   ];
 
-  // Visual & Mechanical verification configuration for dynamic rendering  
+  // Visual & Mechanical verification configuration
   visualMechanicalCards = [
     {
       id: 'upsOnline',
@@ -345,20 +343,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Helper method to get options array by name
   getOptionsArray = (optionsName: string): { value: string; text: string }[] => {
     switch (optionsName) {
-      case 'measurementOptions': return this.measurementOptions;
-      case 'visualMechanicalOptions': return this.visualMechanicalOptions;
+      case 'measurementOptions': 
+      case 'visualMechanicalOptions': 
+      case 'passfailOptions': 
+      case 'transferPassFailOptions': return this.passfailOptions;
       case 'airFilterOptions': return this.airFilterOptions;
       case 'yesNoNAOptions': return this.yesNoNAOptions;
       case 'capacitorStatusOptions': return this.capacitorStatusOptions;
       case 'powerVerificationOptions': return this.powerVerificationOptions;
-      case 'passfailOptions': return this.passfailOptions;
       case 'firstMajorInspectionOptions': return this.firstMajorInspectionOptions;
-      case 'transferPassFailOptions': return this.transferPassFailOptions;
       default: return [];
     }
   };
 
-  // Helper method to get transfer status icon based on field configuration and value
+  // Get transfer status icon based on field config and value
   getTransferStatusIcon = (field: any, value: string): string => {
     if (!value || !field.statusMapping) return '';
     
@@ -431,7 +429,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   };
 
-  // Get ordered power fields: Voltage A, Current A, Voltage B, Current B, Voltage C, Current C, Frequency, Load fields
+  // Get ordered power fields: V/C A, V/C B, V/C C, Freq, Load
   getOrderedPowerFields = (phaseCount: number, sectionType: 'input' | 'output' | 'bypass'): any[] => {
     const orderedFields: any[] = [];
     
@@ -620,13 +618,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   ];
 
   // Pass/Fail/N/A options with "Select status" option
-  transferPassFailOptions = [
-    { value: '', text: 'Select status' },
-    { value: 'P', text: 'Pass' },
-    { value: 'F', text: 'Fail' },
-    { value: 'A', text: 'N/A' }
-  ];
-
   // Transfer verification configuration for dynamic rendering
   transferVerificationFields = [
     {
@@ -860,39 +851,76 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Dynamic labels
   endOfLifeLabel = '7. UPS date code is < 25 years (End of Life):';
 
-  // Basic date state for existing functionality
+  // Basic date state for existing functionality - optimized to avoid repeated Date() calls
+  private readonly currentYear = new Date().getFullYear();
   currentCalendarDate = new Date();
   selectedDate: Date | null = null;
-  selectedYear = new Date().getFullYear();
+  selectedYear = this.currentYear;
 
-  // Calendar widget state
-  showCalendar = false;
-  showMonthCalendar = false;
-  showYearCalendar = false;
-  calendarDate = new Date();
+  // Consolidated calendar state management
+  private calendarState = {
+    showCalendar: false,
+    showMonthCalendar: false,
+    showYearCalendar: false,
+    calendarDate: new Date()
+  };
+
+  // Calendar data
   monthNames: string[] = [];
 
-  // Hard-coded values that could be made configurable
-  private readonly DEFAULT_MONTH_NAMES = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
+  // Computed properties for better encapsulation
+  get showCalendar(): boolean { return this.calendarState.showCalendar; }
+  set showCalendar(value: boolean) { this.calendarState.showCalendar = value; }
+  
+  get showMonthCalendar(): boolean { return this.calendarState.showMonthCalendar; }
+  set showMonthCalendar(value: boolean) { this.calendarState.showMonthCalendar = value; }
+  
+  get showYearCalendar(): boolean { return this.calendarState.showYearCalendar; }
+  set showYearCalendar(value: boolean) { this.calendarState.showYearCalendar = value; }
+  
+  get calendarDate(): Date { return this.calendarState.calendarDate; }
+  set calendarDate(value: Date) { this.calendarState.calendarDate = value; }
 
-  private readonly DEFAULT_AIR_FILTER_OPTIONS = [
-    { value: 'C', text: 'Cleaned' },
-    { value: 'RN', text: 'Replacement needed' },
-    { value: 'R', text: 'Replaced' },
-    { value: 'N', text: 'N/A' }
-  ];
+  // Consolidated calendar and UI configuration
+  private readonly CALENDAR_CONFIG = {
+    minYear: 1990,
+    maxYear: 2055,
+    yearsPerRange: 16, // 4x4 grid
+    defaultStartYear: 1990,
+    monthNames: [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ],
+    airFilterOptions: [
+      { value: 'C', text: 'Cleaned' },
+      { value: 'RN', text: 'Replacement needed' },
+      { value: 'R', text: 'Replaced' },
+      { value: 'N', text: 'N/A' }
+    ]
+  };
 
-  // Year calendar state
-  yearRangeStart = 1990;
-  yearRangeEnd = 2005; // 1990 + 16 - 1 for 4x4 grid
-  yearRangeChangeCounter = 0; // Counter to force change detection
-  currentYears: number[] = []; // Direct array to hold current years
-  readonly minYear = 1990;
-  readonly maxYear = 2055;
-  readonly yearsPerRange = 16; // 4x4 grid
+  // Year calendar state - optimized
+  yearRangeStart = this.CALENDAR_CONFIG.defaultStartYear;
+  yearRangeEnd = this.CALENDAR_CONFIG.defaultStartYear + this.CALENDAR_CONFIG.yearsPerRange - 1;
+  
+  // Optimized year generation - single method for all year arrays
+  private generateYearRange(start: number, end: number): number[] {
+    const years: number[] = [];
+    for (let year = start; year <= end; year++) {
+      years.push(year);
+    }
+    return years;
+  }
+
+  // Computed property instead of redundant array
+  get currentYears(): number[] {
+    return this.generateYearRange(this.yearRangeStart, this.yearRangeEnd);
+  }
+
+  // Remove redundant properties
+  readonly minYear = this.CALENDAR_CONFIG.minYear;
+  readonly maxYear = this.CALENDAR_CONFIG.maxYear;
+  readonly yearsPerRange = this.CALENDAR_CONFIG.yearsPerRange;
 
   constructor(
     private fb: FormBuilder,
@@ -918,9 +946,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     
     this.getRouteParams();
     this.loadData();
-    
-    // Set up date code display value watcher
-    this.setupDateCodeDisplayWatcher();
     
     // Watch for air filter dropdown changes
     this.visualForm.get('airFilters')?.valueChanges.subscribe(value => {
@@ -965,11 +990,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!yearCalendar && !yearInput && !calendarButton && this.showYearCalendar) {
       this.showYearCalendar = false;
     }
-  }
-
-  // Set up date code display value watcher
-  private setupDateCodeDisplayWatcher(): void {
-    // No custom date picker logic needed - just using simple text input
   }
 
   private getRouteParams(): void {
@@ -1203,10 +1223,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Subscribe to voltage field changes for automatic phase-to-neutral calculations
     this.setupPhaseToNeutralCalculations();
     
-    // Subscribe to equipment form changes to keep reconciliation form in sync
-    // this.setupEquipmentReconciliationSync(); // Commented out - using simple battery page approach now
-    
-    // Subscribe to KVA changes for dynamic end-of-life label
+    // Setup KVA change handlers for dynamic end-of-life label
     this.setupKVAChangeHandlers();
     
     // Setup dynamic field control (legacy EnabletoEdit functionality)
@@ -1373,12 +1390,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           if (manufacturers && manufacturers.length > 0) {
             this.manufacturers = manufacturers;
           }
+          
+          // Add "Please Select" option if manufacturer is empty (legacy behavior)
+          this.ensureManufacturerDefault();
+          
           // After manufacturers are loaded, proceed with loading other data
           this.loadOtherData();
         },
         error: (error) => {
-          console.error('Error loading manufacturers:', error);
-          // The service already handles fallback, so we should have received some manufacturers
+          // Service handles fallback, check for manufacturers
           // If we still don't have any, initialize with empty array
           if (!this.manufacturers || this.manufacturers.length === 0) {
             this.manufacturers = [];
@@ -1391,11 +1411,27 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private initializeDefaultValues(): void {
-    // Initialize month names (could be loaded from backend for internationalization)
-    this.monthNames = this.DEFAULT_MONTH_NAMES;
+    // Initialize month names from consolidated config
+    this.monthNames = this.CALENDAR_CONFIG.monthNames;
     
-    // Initialize air filter options (could be loaded from backend for customization)
-    this.airFilterOptions = this.DEFAULT_AIR_FILTER_OPTIONS;
+    // Initialize air filter options from consolidated config
+    this.airFilterOptions = this.CALENDAR_CONFIG.airFilterOptions;
+  }
+
+  /**
+   * Ensure manufacturer has "Please Select" default when empty (legacy behavior)
+   */
+  private ensureManufacturerDefault(): void {
+    const currentManufacturer = this.equipmentForm.get('manufacturer')?.value;
+    if (!currentManufacturer || currentManufacturer.trim() === '') {
+      // Add "Please Select" option to dropdown if not exists
+      const pleaseSelectExists = this.manufacturers.some(mfg => mfg.value === 'PS');
+      if (!pleaseSelectExists) {
+        this.manufacturers.unshift({ value: 'PS', text: 'Please Select' });
+      }
+      // Set form value to "PS" (legacy default)
+      this.equipmentForm.patchValue({ manufacturer: 'PS' });
+    }
   }
 
   /**
@@ -1443,7 +1479,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.equipmentStatusOptions = statusOptions;
         },
         error: (error) => {
-          console.error('Error loading equipment status options:', error);
           // Fallback to existing statusOptions if service fails
         }
       });
@@ -1466,7 +1501,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.showPowerVerification = true;
 
           
-          this.loading = false;
+          // Don't set loading to false yet - wait until after status restoration to prevent notifications
+          // this.loading = false;
           
           // Force change detection after loading is complete
           setTimeout(() => {
@@ -1558,7 +1594,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.showPowerVerification = true;
 
           
-          this.loading = false;
+          // Set loading to false after a delay to prevent status notifications during error recovery
+          setTimeout(() => {
+            this.loading = false;
+          }, 200);
           this.toastr.error('Error loading equipment data. Using default values.');
           
           // Force change detection after loading is complete
@@ -1655,6 +1694,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // EPO Switch validation (Critical Electrical Hazard) - Monitor ALL changes
     this.visualForm.get('epoSwitch')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
+      console.log('EPO Switch value changed:', value, 'loading state:', this.loading);
       this.validateAndUpdateStatusOnFailure(); // Trigger on any change
     });
     
@@ -1790,6 +1830,40 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       transferDefaults[field.formControl] = defaultValue;
     });
     this.transferForm.patchValue(transferDefaults);
+
+    // Ensure frequency defaults to 60 Hz if not set (legacy requirement)
+    this.ensureFrequencyDefaults();
+  }
+
+  /**
+   * Ensure frequency fields default to 60 Hz when empty (legacy requirement)
+   */
+  private ensureFrequencyDefaults(): void {
+    console.log('Ensuring frequency defaults...');
+    
+    // Input frequency default
+    const inputFreq = this.inputReadingsForm.get('freq')?.value;
+    console.log('Input frequency current value:', inputFreq);
+    if (!inputFreq || inputFreq === '' || inputFreq === '0') {
+      console.log('Setting input frequency to 60');
+      this.inputReadingsForm.patchValue({ freq: '60' });
+    }
+
+    // Bypass frequency default
+    const bypassFreq = this.bypassReadingsForm.get('freq')?.value;
+    console.log('Bypass frequency current value:', bypassFreq);
+    if (!bypassFreq || bypassFreq === '' || bypassFreq === '0') {
+      console.log('Setting bypass frequency to 60');
+      this.bypassReadingsForm.patchValue({ freq: '60' });
+    }
+
+    // Output frequency default
+    const outputFreq = this.outputReadingsForm.get('freq')?.value;
+    console.log('Output frequency current value:', outputFreq);
+    if (!outputFreq || outputFreq === '' || outputFreq === '0') {
+      console.log('Setting output frequency to 60');
+      this.outputReadingsForm.patchValue({ freq: '60' });
+    }
   }
 
   /**
@@ -1814,6 +1888,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private populateFormsWithData(data: AAETechUPS): void {
+    console.log('Starting form population with database status:', data.status, 'loading state:', this.loading);
+    
+    // Store the original database status to restore it if it gets overridden during form population
+    const originalDatabaseStatus = data.status;
+    
     // Use the mapped date values for form population - check multiple possible field names
     const actualMonthName = (data as any).upsDateCodeMonth || data.monthName || (data as any).UpsDateCodeMonth;
     const actualYear = (data as any).upsDateCodeYear || data.year || (data as any).UpsDateCodeYear;
@@ -1851,7 +1930,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       upsType: data.modularUPS || 'NO' // Use the actual modularUPS value from backend or default to 'NO' (Normal UPS)
     });
 
-
+    console.log('Form populated with status:', this.equipmentForm.get('status')?.value, 'loading state:', this.loading);
 
     // Log the actual form values after patching to verify what's being set
     // Update selected date for calendar only if we have valid backend date data
@@ -2030,12 +2109,28 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Force change detection after setting configurations
       this.cdr.detectChanges();
       
-      // Log power verification summary comparison
-      this.logPowerVerificationSummary();
-      
-      // Verify form values are set
-      this.verifyFormValuesAfterLoad();
+      // Ensure frequency defaults are applied after voltage configuration setup
+      setTimeout(() => {
+        this.ensureFrequencyDefaults();
+      }, 50);
     }, 100);
+    
+    // Check if status was overridden during form population and restore original database value
+    setTimeout(() => {
+      const currentStatus = this.equipmentForm.get('status')?.value;
+      if (originalDatabaseStatus && currentStatus !== originalDatabaseStatus) {
+        console.log('Status was overridden during form population. Restoring original database status:', 
+                   originalDatabaseStatus, 'was changed to:', currentStatus);
+        this.equipmentForm.patchValue({ status: originalDatabaseStatus }, { emitEvent: false });
+      }
+      
+      // Now it's safe to set loading to false - status restoration is complete
+      console.log('Form population and status restoration complete - setting loading to false');
+      this.loading = false;
+      
+      // Ensure frequency defaults are applied after all form population is complete
+      this.ensureFrequencyDefaults();
+    }, 150); // Delay slightly more than voltage config timeout
     
   }
 
@@ -2051,7 +2146,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       const tempData = {
         manufacturer: equipInfo?.Manufacturer || '',
         kva: equipInfo?.Upskva || '',
-        year: this.convertToInt(equipInfo?.EquipYear) || new Date().getFullYear(),
+        year: this.convertToInt(equipInfo?.EquipYear) || this.currentYear,
         parallelCabinet: equipInfo?.ParallelCabinet || equipInfo?.parallelCabinet || '',
         snmpPresent: equipInfo?.SnmpPresent || equipInfo?.snmpPresent || equipInfo?.SNMP || ''
       } as any;
@@ -2342,6 +2437,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     form.patchValue(formData);
     
+    // Ensure frequency shows default value if it's empty after population
+    if (!formData.freq || formData.freq === '' || formData.freq === '0') {
+      form.patchValue({ freq: '60' });
+    }
+    
     // Ensure frequency value is preserved during data loading
     const frequencyValue = this.convertFrequencyValue(data[`${prefix}Freq_T` as keyof AAETechUPS] as number);
     setTimeout(() => {
@@ -2386,9 +2486,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     if (!config || !config.showPhaseToNeutral) return;
 
-    const voltA = this.convertToDouble(form.get('voltA')?.value);
-    const voltB = this.convertToDouble(form.get('voltB')?.value);
-    const voltC = this.convertToDouble(form.get('voltC')?.value);
+    const { voltA, voltB, voltC } = this.getVoltageValues(form);
 
     // Calculate phase-to-neutral voltages (divide by √3 ≈ 1.732)
     // This matches the legacy GetPNVolt function
@@ -2435,9 +2533,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Only calculate for 3-phase configurations that show phase-to-neutral
     if (configValue === '3' || configValue === '4' || configValue === '5' || configValue === '6') {
-      const voltA = this.convertToDouble(form.get('voltA')?.value);
-      const voltB = this.convertToDouble(form.get('voltB')?.value);
-      const voltC = this.convertToDouble(form.get('voltC')?.value);
+      const { voltA, voltB, voltC } = this.getVoltageValues(form);
 
       // Legacy GetPNVolt calculation: Math.round(Voltage.value / 1.732, 0)
       if (voltA > 0) {
@@ -2461,7 +2557,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   // Calculate total load percentage for output readings
   calculateTotalLoad(): void {
-    console.log('Calculate Total Load button clicked');
     
     // Check if required forms exist
     if (!this.outputReadingsForm || !this.equipmentForm) {
@@ -2527,11 +2622,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     try {
       // Use the comprehensive legacy load calculation system
       const result = this.calculateLoadPercent();
-      console.log('Calculation completed, result:', result);
       
       if (result) {
         const calculatedValue = totalLoadControl.value;
-        console.log('Total load calculated successfully:', calculatedValue);
         
         // Ensure the UI updates
         totalLoadControl.markAsDirty();
@@ -2539,11 +2632,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         
         // Show success message
         alert(`Load calculation completed successfully.\nTotal Load: ${calculatedValue}%`);
-      } else {
-        console.log('Calculation validation failed');
       }
     } catch (error) {
-      console.error('Error during calculation:', error);
       alert('An error occurred during calculation. Please check your input values.');
     } finally {
       // Restore original form submission state
@@ -2847,6 +2937,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       } else {
         return false;
       }
+    } else if (loadPercentage < 80) {
+      // Legacy CalcLoadPercent - Automatic Pass assignment for loads under 80%
+      this.setDropdownValue(dropdownField, 'P');
     } else {
       this.setDropdownValue(dropdownField, 'P');
     }
@@ -3001,6 +3094,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       return false;
     }
 
+    // Legacy temperature validation during save (ValidateInputCurr behavior)
+    this.validateTemperatureInputCurr();
+
     // Validate reconciliation
     const verified = this.reconciliationForm.get('verified')?.value;
     if (!verified) {
@@ -3038,6 +3134,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       return false;
     }
 
+    // Validate output current readings before load calculation
+    if (!this.validateOutputCurrentReadings()) {
+      return false;
+    }
+
     // Calculate load percentages
     if (!this.calculateLoadPercent()) {
       return false;
@@ -3054,14 +3155,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Validate frequency ranges
-    if (!this.validateFrequencyRanges()) {
+    if (!this.validateFrequencyRangesLegacy()) {
       return false;
     }
 
-    // Final equipment status confirmation
+    // Final equipment status confirmation (Legacy requirement)
     const status = this.equipmentForm.get('status')?.value;
     if (status !== 'Online') {
-      if (!confirm(`Are you sure that the Equipment Status: ${status}`)) {
+      const statusDisplayText = this.getStatusDisplayText(status);
+      if (!confirm(`Are you sure that the Equipment Status: ${statusDisplayText}`)) {
         return false;
       }
     }
@@ -3096,7 +3198,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private validateFansAge(kva: number): boolean {
     const fansYear = this.convertToInt(this.capacitorForm.get('fansYear')?.value);
-    const currentYear = new Date().getFullYear();
+    const currentYear = this.currentYear;
     const modularUPS = this.equipmentForm.get('modularUPS')?.value;
 
     if (fansYear > 0) {
@@ -3123,7 +3225,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private validateEndOfLife(dateCode: string, kva: number): boolean {
     try {
       const dateCodeDate = new Date(dateCode);
-      const currentYear = new Date().getFullYear();
+      const currentYear = this.currentYear;
       const upsAge = currentYear - dateCodeDate.getFullYear();
       const endOfLifeThreshold = kva <= 50 ? 20 : 25;
 
@@ -3394,6 +3496,47 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.outputReadingsForm.get('totalLoad');
   }
 
+  private validateOutputCurrentReadings(): boolean {
+    const outputConfig = this.outputReadingsForm.get('configuration')?.value;
+    if (!outputConfig || outputConfig === '') {
+      return true; // Skip validation if no configuration selected
+    }
+
+    const phaseCount = this.getPhaseCountForConfiguration(outputConfig);
+    const currentA = this.convertToDouble(this.outputReadingsForm.get('currA')?.value);
+    const currentB = this.convertToDouble(this.outputReadingsForm.get('currB')?.value);
+    const currentC = this.convertToDouble(this.outputReadingsForm.get('currC')?.value);
+
+    // Validate based on phase count with legacy-specific error messages
+    if (phaseCount === 1) {
+      // Single-phase: "Output Current cannot be empty"
+      if (currentA === 0) {
+        this.showValidationMessage('Output Current cannot be empty', 'outputCurrentSingle', 'currA');
+        this.outputReadingsForm.get('currA')?.markAsTouched();
+        return false;
+      }
+    } else if (phaseCount === 2) {
+      // Two-phase: "Output Current A or Output Current B cannot be empty"
+      if (currentA === 0 || currentB === 0) {
+        this.showValidationMessage('Output Current A or Output Current B cannot be empty', 'outputCurrentTwoPhase', 'currA');
+        this.outputReadingsForm.get('currA')?.markAsTouched();
+        this.outputReadingsForm.get('currB')?.markAsTouched();
+        return false;
+      }
+    } else if (phaseCount >= 3) {
+      // Three-phase: "Output Current A, B, C cannot be empty"
+      if (currentA === 0 || currentB === 0 || currentC === 0) {
+        this.showValidationMessage('Output Current A, B, C cannot be empty', 'outputCurrentThreePhase', 'currA');
+        this.outputReadingsForm.get('currA')?.markAsTouched();
+        this.outputReadingsForm.get('currB')?.markAsTouched();
+        this.outputReadingsForm.get('currC')?.markAsTouched();
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   private validateAllCurrentReadings(): boolean {
     // Use legacy-compatible validation methods
     return this.validateCurrentReadingsLegacy('input') && 
@@ -3401,9 +3544,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
            this.validateCurrentReadingsLegacy('output');
   }
 
-  private validateFrequencyRanges(): boolean {
-    return this.validateFrequencyRangesLegacy();
-  }
+
 
   /**
    * Enhanced frequency validation with exact legacy behavior
@@ -3553,17 +3694,50 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Temperature validation with legacy behavior
+   * Temperature validation with legacy behavior - real-time status change
    * Acceptable range: 67°F – 78°F
-   * Values outside range trigger minor deficiency (yellow warning) but don't block submission
+   * Values outside range trigger automatic status change to MinorDeficiency
    */
   validateTemperatureRange(temperatureFahrenheit: number): 'pass' | 'warning' | 'fail' {
     if (temperatureFahrenheit >= 67 && temperatureFahrenheit <= 78) {
       return 'pass';
     } else {
-      // Outside acceptable range - minor deficiency
+      // Outside acceptable range - automatically change status to MinorDeficiency (legacy behavior)
+      if (!this.loading) {
+        const currentStatus = this.equipmentForm.get('status')?.value;
+        if (currentStatus === 'Online' || currentStatus === 'ProactiveReplacement') {
+          this.equipmentForm.patchValue({ status: 'OnLine(MinorDeficiency)' });
+        }
+      }
       return 'warning';
     }
+  }
+
+  /**
+   * Legacy ValidateInputCurr temperature validation - happens during save
+   * Automatically updates status to MinorDeficiency for temperatures outside 67-78°F range
+   */
+  private validateTemperatureInputCurr(): boolean {
+    // Get temperature from environment form (room temperature field)
+    const tempValue = this.environmentForm.get('roomTemperature')?.value;
+    
+    if (tempValue && tempValue !== '' && tempValue !== '0') {
+      const temperature = parseInt(tempValue);
+      
+      if ((temperature > 67) && (temperature < 78)) {
+        // Temperature is good - no change needed
+        return true;
+      } else {
+        // Temperature outside acceptable range - automatically change status
+        const currentStatus = this.equipmentForm.get('status')?.value;
+        if (currentStatus === 'Online' || currentStatus === 'ProactiveReplacement') {
+          this.equipmentForm.patchValue({ status: 'OnLine(MinorDeficiency)' });
+        }
+        return true; // Don't block save - just change status silently
+      }
+    }
+    
+    return true;
   }
 
   /**
@@ -3612,33 +3786,29 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /**
    * Legacy-compatible phase-to-neutral calculation for display
-   * Called automatically when line-to-line voltages are entered
+   * Called automatically when line-to-line voltages are entered (real-time field population)
    */
   updatePhaseToNeutralDisplay(type: 'input' | 'bypass' | 'output'): void {
     const form = type === 'input' ? this.inputReadingsForm : 
                   type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
     
-    const config = type === 'input' ? this.inputConfig : 
-                   type === 'bypass' ? this.bypassConfig : this.outputConfig;
-
-    if (!config || !config.showPhaseToNeutral) return;
-
-    // Convert line-to-line voltages to phase-to-neutral
-    const voltA = this.convertToDouble(form.get('voltA')?.value);
-    const voltB = this.convertToDouble(form.get('voltB')?.value);
-    const voltC = this.convertToDouble(form.get('voltC')?.value);
+    // Real-time phase-to-neutral calculation (legacy GetPNVolt function)
+    const { voltA, voltB, voltC } = this.getVoltageValues(form);
 
     if (voltA > 0) {
-      const phaseToNeutralA = this.convertLineToNeutralVoltage(voltA);
-      // Store for display purposes (could add to form or display variable)
+      const phaseToNeutralA = Math.round(voltA / 1.732); // REAL-TIME CALCULATION
+      // Update display field if available
+      form.get('voltA_PN')?.setValue(phaseToNeutralA);
     }
     
     if (voltB > 0) {
-      const phaseToNeutralB = this.convertLineToNeutralVoltage(voltB);
+      const phaseToNeutralB = Math.round(voltB / 1.732); // REAL-TIME CALCULATION
+      form.get('voltB_PN')?.setValue(phaseToNeutralB);
     }
     
     if (voltC > 0) {
-      const phaseToNeutralC = this.convertLineToNeutralVoltage(voltC);
+      const phaseToNeutralC = Math.round(voltC / 1.732); // REAL-TIME CALCULATION
+      form.get('voltC_PN')?.setValue(phaseToNeutralC);
     }
   }
 
@@ -3953,17 +4123,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * This method should be called whenever critical fields change (both F->P and P->F)
    */
   private validateAndUpdateStatusOnFailure(): void {
-    if (this.loading) return; // Don't update during initial load
+    if (this.loading) {
+      console.log('Skipping status validation during loading to preserve database status');
+      return; // Don't update during initial load - preserve database status
+    }
     
     const newStatus = this.calculateEquipStatus();
     const currentStatus = this.equipmentForm.get('status')?.value;
     
     if (newStatus !== currentStatus) {
-      // Status change detected - update immediately
+      // Status change detected - update immediately (but only after initial load)
       this.equipmentForm.patchValue({ status: newStatus });
       
-      // Show notification to user about status change
-      this.showStatusChangeNotification(currentStatus, newStatus);
+      // Show notification to user about status change (but not during initial loading)
+      if (!this.loading) {
+        this.showStatusChangeNotification(currentStatus, newStatus);
+      }
     }
   }
   
@@ -4107,9 +4282,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         currB_PF: 'P',
         currC: '',
         currC_PF: 'P',
-        freq: '60', // Keep default frequency as 60 Hz
+        freq: '60', // Always ensure frequency is set to 60 Hz
         freq_PF: 'P'
       });
+      console.log(`Cleared ${type} form and set frequency to 60 during manual config change`);
     }
 
     // Auto-populate expected voltage values based on configuration
@@ -4139,12 +4315,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    // Auto-populate standard frequency (60 Hz) only during manual configuration changes
-    if (!this.loading) {
-      const currentFreq = form.get('freq')?.value;
-      if (!currentFreq || currentFreq === '') {
-        form.patchValue({ freq: '60' });
-      }
+    // Auto-populate standard frequency (60 Hz) for all configuration changes
+    const currentFreq = form.get('freq')?.value;
+    if (!currentFreq || currentFreq === '' || currentFreq === '0') {
+      console.log(`Setting frequency to 60 for ${type} form after voltage config change`);
+      form.patchValue({ freq: '60' });
     }
 
     if (type === 'output') {
@@ -4161,6 +4336,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Trigger phase-to-neutral calculations if applicable
     this.calculatePhaseToNeutralAllSections();
+    
+    // Final check: ensure frequency is always set to 60 after all changes
+    setTimeout(() => {
+      const finalFreq = form.get('freq')?.value;
+      if (!finalFreq || finalFreq === '' || finalFreq === '0') {
+        console.log(`Final frequency check: setting ${type} frequency to 60`);
+        form.patchValue({ freq: '60' });
+      }
+    }, 10);
   }
 
   // Get expected voltage value based on configuration ID
@@ -4256,10 +4440,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       };
     }
 
-    // Legacy pattern analysis:
-    // 1. For Phase-to-Neutral (P-N) configurations: Use line voltage tolerance ranges
-    // 2. For single/two phase at certain voltages: Use specific legacy ranges
-    // 3. Different calculation rules based on voltage levels and phase configurations
+    // Legacy pattern: P-N uses line voltage tolerance, single/two phase use specific ranges
     
     if (config.showPhaseToNeutral) {
       // Three-phase P-N configurations - use line-to-line voltage tolerance calculations
@@ -4327,10 +4508,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * Now supports different ranges for Input vs Bypass
    */
   private calculateSingleTwoPhaseToleranceRange(nominalVoltage: number, configId: string, config: any, type: 'input' | 'bypass' | 'output' = 'input'): { min: number, max: number } {
-    // Legacy pattern observations:
-    // - Lower voltages (120V, some 208V, some 240V) often use 110V-130V range
-    // - Higher single phase voltages use different patterns
-    // - Some 208V configurations use 192V-224V range
+    // Legacy pattern: Lower voltages use 110V-130V, higher use different ranges
     
     // Special legacy cases that don't follow normal percentage rules
     if (nominalVoltage === 120 || 
@@ -4597,108 +4775,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private logPowerVerificationSaveData(upsData: AAETechUPS): void {
-
-
-
-    // Log current UI form values for comparison
-
+  
   }
 
-  private logPowerVerificationSummary(): void {
 
-    
-    const summary = {
-      equipment: {
-        kva: this.equipmentForm.get('kva')?.value,
-        manufacturer: this.equipmentForm.get('manufacturer')?.value,
-        model: this.equipmentForm.get('model')?.value
-      },
-      input: {
-        configuration: {
-          ui: this.inputReadingsForm.get('configuration')?.value,
-          configName: this.inputConfig?.name || 'Not selected'
-        },
-        voltages: {
-          A: this.inputReadingsForm.get('voltA')?.value,
-          B: this.inputReadingsForm.get('voltB')?.value,
-          C: this.inputReadingsForm.get('voltC')?.value
-        },
-        currents: {
-          A: this.inputReadingsForm.get('currA')?.value,
-          B: this.inputReadingsForm.get('currB')?.value,
-          C: this.inputReadingsForm.get('currC')?.value
-        },
-        passFail: {
-          voltA_PF: this.inputReadingsForm.get('voltA_PF')?.value,
-          voltB_PF: this.inputReadingsForm.get('voltB_PF')?.value,
-          voltC_PF: this.inputReadingsForm.get('voltC_PF')?.value,
-          currA_PF: this.inputReadingsForm.get('currA_PF')?.value,
-          currB_PF: this.inputReadingsForm.get('currB_PF')?.value,
-          currC_PF: this.inputReadingsForm.get('currC_PF')?.value
-        }
-      },
-      bypass: {
-        configuration: {
-          ui: this.bypassReadingsForm.get('configuration')?.value,
-          configName: this.bypassConfig?.name || 'Not selected'
-        },
-        voltages: {
-          A: this.bypassReadingsForm.get('voltA')?.value,
-          B: this.bypassReadingsForm.get('voltB')?.value,
-          C: this.bypassReadingsForm.get('voltC')?.value
-        },
-        currents: {
-          A: this.bypassReadingsForm.get('currA')?.value,
-          B: this.bypassReadingsForm.get('currB')?.value,
-          C: this.bypassReadingsForm.get('currC')?.value
-        },
-        passFail: {
-          voltA_PF: this.bypassReadingsForm.get('voltA_PF')?.value,
-          voltB_PF: this.bypassReadingsForm.get('voltB_PF')?.value,
-          voltC_PF: this.bypassReadingsForm.get('voltC_PF')?.value,
-          currA_PF: this.bypassReadingsForm.get('currA_PF')?.value,
-          currB_PF: this.bypassReadingsForm.get('currB_PF')?.value,
-          currC_PF: this.bypassReadingsForm.get('currC_PF')?.value
-        }
-      },
-      output: {
-        configuration: {
-          ui: this.outputReadingsForm.get('configuration')?.value,
-          configName: this.outputConfig?.name || 'Not selected'
-        },
-        voltages: {
-          A: this.outputReadingsForm.get('voltA')?.value,
-          B: this.outputReadingsForm.get('voltB')?.value,
-          C: this.outputReadingsForm.get('voltC')?.value
-        },
-        currents: {
-          A: this.outputReadingsForm.get('currA')?.value,
-          B: this.outputReadingsForm.get('currB')?.value,
-          C: this.outputReadingsForm.get('currC')?.value
-        },
-        loads: {
-          A: this.outputReadingsForm.get('loadA')?.value,
-          B: this.outputReadingsForm.get('loadB')?.value,
-          C: this.outputReadingsForm.get('loadC')?.value,
-          total: this.outputReadingsForm.get('totalLoad')?.value
-        },
-        passFail: {
-          voltA_PF: this.outputReadingsForm.get('voltA_PF')?.value,
-          voltB_PF: this.outputReadingsForm.get('voltB_PF')?.value,
-          voltC_PF: this.outputReadingsForm.get('voltC_PF')?.value,
-          currA_PF: this.outputReadingsForm.get('currA_PF')?.value,
-          currB_PF: this.outputReadingsForm.get('currB_PF')?.value,
-          currC_PF: this.outputReadingsForm.get('currC_PF')?.value,
-          loadA_PF: this.outputReadingsForm.get('loadA_PF')?.value,
-          loadB_PF: this.outputReadingsForm.get('loadB_PF')?.value,
-          loadC_PF: this.outputReadingsForm.get('loadC_PF')?.value
-        }
-      }
-    };
-  }
-
-  private verifyFormValuesAfterLoad(): void {
-    }
 
   private reloadDataAfterSave(): void {
     // Reload UPS data from server to ensure data persistence is verified
@@ -4713,7 +4793,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         },
         error: (error) => {
-          console.warn('Could not verify data persistence:', error);
           // Not critical error, don't show to user
         }
       });
@@ -4784,7 +4863,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             
 
           } else {
-            console.error('Save failed:', response.message);
             this.errorMessage = response.message;
             this.toastr.error(this.errorMessage);
           }
@@ -4793,7 +4871,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isFormSubmission = false; // Reset form submission flag
         },
         error: (error) => {
-          console.error('Error saving UPS readings:', error);
           this.errorMessage = 'Error saving UPS readings. Please try again.';
           this.toastr.error(this.errorMessage);
           this.saving = false;
@@ -4804,22 +4881,48 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private buildUPSData(isDraft: boolean): AAETechUPS {
-    const equipment = this.equipmentForm.value;
-    const measurements = this.measurementsForm.value;
-    const visual = this.visualForm.value;
-    const environment = this.environmentForm.value;
-    const input = this.inputReadingsForm.value;
-    const bypass = this.bypassReadingsForm.value;
-    const output = this.outputReadingsForm.value;
-    const rectifier = this.rectifierForm.value;
-    const capacitor = this.capacitorForm.value;
-    const transfer = this.transferForm.value;
-    const actionRequired = this.actionRequiredForm.value;
-
-    const dateCode = new Date(equipment.dateCode);
-    const validMonthName = equipment.monthName || dateCode.toLocaleString('default', { month: 'long' });
-    const validYear = equipment.year || dateCode.getFullYear();
+    const formData = this.gatherFormData();
+    const dateInfo = this.buildDateInfo(formData.equipment);
     
+    return {
+      // Basic info
+      ...this.buildBasicInfo(formData.equipment),
+      ...this.buildMeasurementsData(formData.measurements),
+      ...this.buildVisualData(formData.visual),
+      ...this.buildEnvironmentData(formData.environment),
+      ...this.buildTransferData(formData.transfer),
+      ...this.buildVoltageReadings(formData.input, formData.bypass, formData.output),
+      ...this.buildRectifierData(formData.rectifier),
+      ...this.buildCapacitorData(formData.capacitor),
+      ...this.buildActionData(formData.actionRequired, isDraft),
+      ...dateInfo,
+      
+      // Default/removed fields
+      comments1: '', comments2: '', comments3: '', comments4: '', comments5: '',
+      afLength: '', afWidth: '', afThick: '', afQty: '',
+      afLength1: '', afWidth1: '', afThick1: '', afQty1: '',
+      batteryStringID: 0,
+      chkDCBreak: false, chkFault: false, chkOverLoad: false, chkTransfer: false
+    };
+  }
+
+  private gatherFormData() {
+    return {
+      equipment: this.equipmentForm.value,
+      measurements: this.measurementsForm.value,
+      visual: this.visualForm.value,
+      environment: this.environmentForm.value,
+      input: this.inputReadingsForm.value,
+      bypass: this.bypassReadingsForm.value,
+      output: this.outputReadingsForm.value,
+      rectifier: this.rectifierForm.value,
+      capacitor: this.capacitorForm.value,
+      transfer: this.transferForm.value,
+      actionRequired: this.actionRequiredForm.value
+    };
+  }
+
+  private buildBasicInfo(equipment: any) {
     return {
       upsId: this.upsId,
       callNbr: this.callNbr,
@@ -4833,14 +4936,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       serialNo: equipment.serialNo,
       location: equipment.location,
       status: equipment.status,
-      statusReason: '', // Removed status notes functionality
+      statusReason: '',
       parallelCabinet: equipment.parallelCabinet,
       snmpPresent: equipment.snmpPresent,
       modularUPS: equipment.modularUPS,
-      ctoPartNo: equipment.ctoPartNo, // Include CTO/Part No
-      upsType: equipment.upsType, // Include UPS Type
-      
-      // Measurements
+      ctoPartNo: equipment.ctoPartNo,
+      upsType: equipment.upsType
+    };
+  }
+
+  private buildMeasurementsData(measurements: any) {
+    return {
       measure_Input: measurements.inputPower,
       measure_LCD: measurements.lcd,
       measure_Load: measurements.loadKVA,
@@ -4848,9 +4954,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       measure_KVA: 'P',
       measure_Normal: measurements.normal,
       measure_Caliberation: measurements.caliberation,
-      measure_EOL: measurements.endOfLife,
-      
-      // Visual
+      measure_EOL: measurements.endOfLife
+    };
+  }
+
+  private buildVisualData(visual: any) {
+    return {
       visual_NoAlarms: visual.upsOnline,
       visual_Tightness: visual.checkConnections,
       visual_Broken: visual.inspectDamage,
@@ -4858,103 +4967,71 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       visual_EPO: visual.epoSwitch,
       visual_Noise: visual.coolingFans,
       visual_FansAge: visual.fansAge,
-      visual_ReplaceFilters: visual.airFilters,
-      
-      // Environment
+      visual_ReplaceFilters: visual.airFilters
+    };
+  }
+
+  private buildEnvironmentData(environment: any) {
+    return {
       environment_RoomTemp: environment.roomTempVentilation,
       environment_Saftey: environment.safetyEquipment,
       environment_Clean: environment.hostileEnvironment,
       environment_Space: environment.serviceSpace,
-      environment_Circuit: environment.circuitBreakers,
-      
-      // Transfer - using configuration-driven mapping
+      environment_Circuit: environment.circuitBreakers
+    };
+  }
+
+  private buildTransferData(transfer: any) {
+    return {
       transfer_Major: transfer.firstMajor,
       transfer_Static: transfer.staticBypass,
       transfer_ByPass: transfer.transMaintByPass,
       transfer_Wave: transfer.currentWave,
       transfer_Normal: transfer.normalMode,
-      transfer_Alarm: transfer.verifyAlarm,
-      
-      // Comments - removed section, providing defaults
-      comments1: '',
-      comments2: '',
-      comments3: '',
-      comments4: '',
-      comments5: '',
-      
-      // Air filter data - removed from action items, providing defaults
-      afLength: '',
-      afWidth: '',
-      afThick: '',
-      afQty: '',
-      afLength1: '',
-      afWidth1: '',
-      afThick1: '',
-      afQty1: '',
-      
-      // Date information - use validated values instead of parsed dateCode
-      monthName: validMonthName,
-      year: validYear,
-      
-      // Voltage readings - Input
+      transfer_Alarm: transfer.verifyAlarm
+    };
+  }
+
+  private buildVoltageReadings(input: any, bypass: any, output: any) {
+    return {
+      // Input readings
       input: input.configuration,
-      inputVoltA_T: this.convertToDouble(input.voltA),
-      inputVoltA_PF: input.voltA_PF,
-      inputVoltB_T: this.convertToDouble(input.voltB),
-      inputVoltB_PF: input.voltB_PF,
-      inputVoltC_T: this.convertToDouble(input.voltC),
-      inputVoltC_PF: input.voltC_PF,
-      inputCurrA_T: this.convertToDouble(input.currA),
-      inputCurrA_PF: input.currA_PF,
-      inputCurrB_T: this.convertToDouble(input.currB),
-      inputCurrB_PF: input.currB_PF,
-      inputCurrC_T: this.convertToDouble(input.currC),
-      inputCurrC_PF: input.currC_PF,
-      inputFreq_T: this.convertToDouble(input.freq),
-      inputFreq_PF: input.freq_PF,
+      inputVoltA_T: this.convertToDouble(input.voltA), inputVoltA_PF: input.voltA_PF,
+      inputVoltB_T: this.convertToDouble(input.voltB), inputVoltB_PF: input.voltB_PF,
+      inputVoltC_T: this.convertToDouble(input.voltC), inputVoltC_PF: input.voltC_PF,
+      inputCurrA_T: this.convertToDouble(input.currA), inputCurrA_PF: input.currA_PF,
+      inputCurrB_T: this.convertToDouble(input.currB), inputCurrB_PF: input.currB_PF,
+      inputCurrC_T: this.convertToDouble(input.currC), inputCurrC_PF: input.currC_PF,
+      inputFreq_T: this.convertToDouble(input.freq), inputFreq_PF: input.freq_PF,
       
-      // Voltage readings - Bypass
+      // Bypass readings
       bypass: bypass.configuration,
-      bypassVoltA_T: this.convertToDouble(bypass.voltA),
-      bypassVoltA_PF: bypass.voltA_PF,
-      bypassVoltB_T: this.convertToDouble(bypass.voltB),
-      bypassVoltB_PF: bypass.voltB_PF,
-      bypassVoltC_T: this.convertToDouble(bypass.voltC),
-      bypassVoltC_PF: bypass.voltC_PF,
-      bypassCurrA_T: this.convertToDouble(bypass.currA),
-      bypassCurrA_PF: bypass.currA_PF,
-      bypassCurrB_T: this.convertToDouble(bypass.currB),
-      bypassCurrB_PF: bypass.currB_PF,
-      bypassCurrC_T: this.convertToDouble(bypass.currC),
-      bypassCurrC_PF: bypass.currC_PF,
-      bypassFreq_T: this.convertToDouble(bypass.freq),
-      bypassFreq_PF: bypass.freq_PF,
+      bypassVoltA_T: this.convertToDouble(bypass.voltA), bypassVoltA_PF: bypass.voltA_PF,
+      bypassVoltB_T: this.convertToDouble(bypass.voltB), bypassVoltB_PF: bypass.voltB_PF,
+      bypassVoltC_T: this.convertToDouble(bypass.voltC), bypassVoltC_PF: bypass.voltC_PF,
+      bypassCurrA_T: this.convertToDouble(bypass.currA), bypassCurrA_PF: bypass.currA_PF,
+      bypassCurrB_T: this.convertToDouble(bypass.currB), bypassCurrB_PF: bypass.currB_PF,
+      bypassCurrC_T: this.convertToDouble(bypass.currC), bypassCurrC_PF: bypass.currC_PF,
+      bypassFreq_T: this.convertToDouble(bypass.freq), bypassFreq_PF: bypass.freq_PF,
       
-      // Voltage readings - Output
+      // Output readings
       output: output.configuration,
-      outputVoltA_T: this.convertToDouble(output.voltA),
-      outputVoltA_PF: output.voltA_PF,
-      outputVoltB_T: this.convertToDouble(output.voltB),
-      outputVoltB_PF: output.voltB_PF,
-      outputVoltC_T: this.convertToDouble(output.voltC),
-      outputVoltC_PF: output.voltC_PF,
-      outputCurrA_T: this.convertToDouble(output.currA),
-      outputCurrA_PF: output.currA_PF,
-      outputCurrB_T: this.convertToDouble(output.currB),
-      outputCurrB_PF: output.currB_PF,
-      outputCurrC_T: this.convertToDouble(output.currC),
-      outputCurrC_PF: output.currC_PF,
-      outputFreq_T: this.convertToDouble(output.freq),
-      outputFreq_PF: output.freq_PF,
-      outputLoadA: this.convertToDouble(output.loadA),
-      outputLoadA_PF: output.loadA_PF,
-      outputLoadB: this.convertToDouble(output.loadB),
-      outputLoadB_PF: output.loadB_PF,
-      outputLoadC: this.convertToDouble(output.loadC),
-      outputLoadC_PF: output.loadC_PF,
-      totalLoad: this.convertToDouble(output.totalLoad),
-      
-      // Rectifier
+      outputVoltA_T: this.convertToDouble(output.voltA), outputVoltA_PF: output.voltA_PF,
+      outputVoltB_T: this.convertToDouble(output.voltB), outputVoltB_PF: output.voltB_PF,
+      outputVoltC_T: this.convertToDouble(output.voltC), outputVoltC_PF: output.voltC_PF,
+      outputCurrA_T: this.convertToDouble(output.currA), outputCurrA_PF: output.currA_PF,
+      outputCurrB_T: this.convertToDouble(output.currB), outputCurrB_PF: output.currB_PF,
+      outputCurrC_T: this.convertToDouble(output.currC), outputCurrC_PF: output.currC_PF,
+      outputFreq_T: this.convertToDouble(output.freq), outputFreq_PF: output.freq_PF,
+      outputLoadA: this.convertToDouble(output.loadA), outputLoadA_PF: output.loadA_PF,
+      outputLoadB: this.convertToDouble(output.loadB), outputLoadB_PF: output.loadB_PF,
+      outputLoadC: this.convertToDouble(output.loadC), outputLoadC_PF: output.loadC_PF,
+      totalLoad: this.convertToDouble(output.totalLoad)
+    };
+  }
+
+  private buildRectifierData(rectifier: any) {
+    return {
       rectFloatVolt_PF: rectifier.floatVolt_PF,
       dcVoltage_T: this.convertToDouble(rectifier.dcFloatVoltage || rectifier.dcVoltage),
       dcVoltage_PF: rectifier.dcFloatVoltage_PF || rectifier.dcVoltage_PF,
@@ -4969,46 +5046,46 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       acRippleCurr_T: this.convertToDouble(rectifier.acRippleCurr),
       acRippleCurr_PF: rectifier.acRippleCurr_PF,
       negToGND_T: this.convertToDouble(rectifier.negToGND),
-      negToGND_PF: rectifier.negToGND_PF,
-      
-      // Capacitor
+      negToGND_PF: rectifier.negToGND_PF
+    };
+  }
+
+  private buildCapacitorData(capacitor: any) {
+    return {
       dcCapsLeak_PF: capacitor.dcCaps_PF,
-      dcCapsAge_PF: 'P', // Default value for legacy compatibility
+      dcCapsAge_PF: 'P',
       dcCapsYear: this.convertToInt(capacitor.dcCapsAge),
       acInputCapsLeak_PF: capacitor.acInputCaps_PF,
-      acInputCapsAge_PF: 'P', // Default value for legacy compatibility
+      acInputCapsAge_PF: 'P',
       acInputCapsYear: this.convertToInt(capacitor.acInputCapsAge),
       acOutputCapsLeak_PF: capacitor.acOutputCaps_PF,
-      acOutputCapsAge_PF: 'P', // Default value for legacy compatibility
+      acOutputCapsAge_PF: 'P',
       acOutputCapsYear: this.convertToInt(capacitor.acOutputCapsAge),
       commCapsLeak_PF: capacitor.commCaps_PF,
-      commCapsAge_PF: 'P', // Default value for legacy compatibility
+      commCapsAge_PF: 'P',
       commCapsYear: this.convertToInt(capacitor.commCapsAge),
-      
-      // Fan information
-      fansYear: this.convertToInt(capacitor.fansYear),
-      
-      // Actions - removed action items section, providing defaults
-      // Action required fields
+      fansYear: this.convertToInt(capacitor.fansYear)
+    };
+  }
+
+  private buildActionData(actionRequired: any, isDraft: boolean) {
+    return {
       dcgAction1: actionRequired.dcgAction1 || 'N',
       custAction1: actionRequired.custAction1 || 'N',
       manufSpecification: 'P',
       dcgAction2: 'N',
       custAction2: 'N',
-      
-      // Service info
-      svcDescr: '', // Would be set based on service type
+      svcDescr: '',
       maintAuthId: this.authService.currentUserValue?.id || '',
-      saveAsDraft: isDraft,
-      
-      // Battery string info
-      batteryStringID: 0,
-      
-      // Check flags
-      chkDCBreak: false,
-      chkFault: false,
-      chkOverLoad: false,
-      chkTransfer: false
+      saveAsDraft: isDraft
+    };
+  }
+
+  private buildDateInfo(equipment: any) {
+    const dateCode = new Date(equipment.dateCode);
+    return {
+      monthName: equipment.monthName || dateCode.toLocaleString('default', { month: 'long' }),
+      year: equipment.year || dateCode.getFullYear()
     };
   }
 
@@ -5041,13 +5118,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (response) => {
           if (response.success) {
             // Equipment status updated successfully
-          } else {
-            console.warn('Equipment status update failed:', response.message);
           }
         },
         error: (error) => {
-          console.warn('Equipment status update endpoint failed:', error);
-          // This is not critical - the main UPS data is still saved successfully
+          // Status update failed - not critical, main UPS data saved
         }
       });
   }
@@ -5095,13 +5169,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (response) => {
           if (response.success) {
             // Reconciliation data saved successfully
-          } else {
-            console.warn('Reconciliation save failed:', response.message);
           }
         },
         error: (error) => {
-          console.warn('Reconciliation save failed:', error);
-          // This is not critical - the main UPS data is still saved successfully
+          // Reconciliation save failed - main UPS data still saved
         }
       });
   }
@@ -5177,6 +5248,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return isNaN(num) ? 0 : num;
   }
 
+  private getVoltageValues(form: FormGroup): { voltA: number; voltB: number; voltC: number } {
+    return {
+      voltA: this.convertToDouble(form.get('voltA')?.value),
+      voltB: this.convertToDouble(form.get('voltB')?.value),
+      voltC: this.convertToDouble(form.get('voltC')?.value)
+    };
+  }
+
   private convertZeroToEmpty(value: any): string {
     if (value === null || value === undefined || value === 0) {
       return '';
@@ -5186,10 +5265,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private convertFrequencyValue(value: any): string {
-    if (value === null || value === undefined || value === 0 || value === '') {
+    if (value === null || value === undefined || value === 0 || value === '' || value === '0') {
+      console.log('Converting frequency value to default 60Hz, original value was:', value);
       return '60'; // Default frequency to 60 Hz
     }
     
+    console.log('Using frequency value from database:', value);
     return value.toString();
   }
 
@@ -5445,6 +5526,30 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       });
     });
+
+    // Set up real-time voltage field monitoring for automatic phase-to-neutral calculations
+    const voltageFields = ['voltA', 'voltB', 'voltC'];
+    const formTypes: Array<{form: FormGroup, type: 'input' | 'bypass' | 'output'}> = [
+      { form: this.inputReadingsForm, type: 'input' },
+      { form: this.bypassReadingsForm, type: 'bypass' },
+      { form: this.outputReadingsForm, type: 'output' }
+    ];
+
+    formTypes.forEach(({form, type}) => {
+      voltageFields.forEach(fieldName => {
+        const control = form.get(fieldName);
+        if (control) {
+          control.valueChanges
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(value => {
+              if (value && !this.loading) {
+                // Real-time phase-to-neutral calculation (legacy GetPNVolt behavior)
+                this.updatePhaseToNeutralDisplay(type);
+              }
+            });
+        }
+      });
+    });
   }
 
   // Set up automatic field sanitization on value changes
@@ -5490,8 +5595,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     
     // Show maintenance details for older equipment
-    const year = this.convertToInt(this.equipmentForm.get('year')?.value || new Date().getFullYear());
-    const currentYear = new Date().getFullYear();
+    const year = this.convertToInt(this.equipmentForm.get('year')?.value || this.currentYear);
+    const currentYear = this.currentYear;
     
     if (currentYear - year > 10) {
       this.showMaintenanceDetails = true;
@@ -5523,7 +5628,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return maintByPass && maintByPass !== 'NA';
   }
 
-  // Get CSS class for equipment status display based on legacy color scheme
+  // Get CSS class for equipment status display based on legacy 
   getStatusClass(status: string): string {
     if (!status) return '';
     
@@ -5657,12 +5762,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private getMonthNumber(monthName: string): number {
     if (!monthName) return -1;
     
-    const months = [
-      'january', 'february', 'march', 'april', 'may', 'june',
-      'july', 'august', 'september', 'october', 'november', 'december'
-    ];
+    // Optimized: use existing configuration instead of hardcoded array
+    const monthIndex = this.CALENDAR_CONFIG.monthNames
+      .findIndex(month => month.toLowerCase() === monthName.toLowerCase());
     
-    const monthIndex = months.indexOf(monthName.toLowerCase());
     return monthIndex; // Returns 0-11 for months, -1 if not found
   }
 
@@ -5697,8 +5800,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return 'PS'; // Default to "Select" as per legacy code
   }
 
-
-
   // Show a specific section (legacy showdiv equivalent)
   showSection(sectionId: string): void {
     switch (sectionId) {
@@ -5718,7 +5819,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.showPowerDetails = true;
         break;
       default:
-        console.warn(`Unknown section ID: ${sectionId}`);
+        break;
     }
   }
 
@@ -5741,7 +5842,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.showPowerDetails = false;
         break;
       default:
-        console.warn(`Unknown section ID: ${sectionId}`);
+        break;
     }
   }
 
@@ -5764,7 +5865,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         this.showPowerDetails = !this.showPowerDetails;
         break;
       default:
-        console.warn(`Unknown section ID: ${sectionId}`);
+        break;
     }
   }
 
@@ -5782,7 +5883,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'powerDetails':
         return this.showPowerDetails;
       default:
-        console.warn(`Unknown section ID: ${sectionId}`);
         return false;
     }
   }
@@ -5837,15 +5937,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   hideAllCalendars(): void {
-    this.showCalendar = false;
-    this.showMonthCalendar = false;
-    this.showYearCalendar = false;
+    // Optimized: reset all calendar states at once
+    this.calendarState = {
+      ...this.calendarState,
+      showCalendar: false,
+      showMonthCalendar: false,
+      showYearCalendar: false
+    };
   }
 
   onCalendarMonthSelect(monthIndex: number): void {
     const monthName = this.monthNames[monthIndex];
     this.equipmentForm.patchValue({ monthName: monthName });
-    const currentYear = this.equipmentForm.get('year')?.value || new Date().getFullYear();
+    const currentYear = this.equipmentForm.get('year')?.value || this.currentYear;
     this.calendarDate = new Date(currentYear, monthIndex, 1);
     
     // Update the internal selectedDate for consistency with existing code
@@ -5860,18 +5964,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const currentMonth = this.calendarDate.getMonth();
     const currentYear = this.calendarDate.getFullYear();
     
-    if (direction === 'prev') {
-      if (currentMonth === 0) {
-        this.calendarDate = new Date(currentYear - 1, 11, 1);
-      } else {
-        this.calendarDate = new Date(currentYear, currentMonth - 1, 1);
-      }
+    // Optimized navigation logic with single calculation
+    const monthDelta = direction === 'prev' ? -1 : 1;
+    const newMonth = currentMonth + monthDelta;
+    
+    // Handle year boundary crossings
+    if (newMonth < 0) {
+      this.calendarDate = new Date(currentYear - 1, 11, 1);
+    } else if (newMonth > 11) {
+      this.calendarDate = new Date(currentYear + 1, 0, 1);
     } else {
-      if (currentMonth === 11) {
-        this.calendarDate = new Date(currentYear + 1, 0, 1);
-      } else {
-        this.calendarDate = new Date(currentYear, currentMonth + 1, 1);
-      }
+      this.calendarDate = new Date(currentYear, newMonth, 1);
     }
   }
 
@@ -5884,20 +5987,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return formMonthName === this.monthNames[monthIndex];
   }
 
-  // Year Calendar Methods
+  // Year Calendar Methods - optimized
   toggleYearCalendar(): void {
     this.showYearCalendar = !this.showYearCalendar;
     if (this.showYearCalendar) {
       // Initialize year range based on current form value or selected current year
-      const currentFormYear = this.equipmentForm.get('year')?.value || new Date().getFullYear();
+      const currentFormYear = this.equipmentForm.get('year')?.value || this.currentYear;
       this.setYearRangeContaining(currentFormYear);
-      
-      // Initialize the currentYears array
-      this.currentYears = [];
-      for (let year = this.yearRangeStart; year <= this.yearRangeEnd; year++) {
-        this.currentYears.push(year);
-      }
-      console.log('Initialized currentYears:', this.currentYears);
+      // currentYears is now computed automatically via getter
     }
   }
 
@@ -5918,7 +6015,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   navigateYearRange(direction: 'prev' | 'next'): void {
-    console.log(`Navigating ${direction}, current range: ${this.yearRangeStart}-${this.yearRangeEnd}`);
     
     // Ensure calendar stays open during navigation
     this.showYearCalendar = true;
@@ -5929,27 +6025,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       this.yearRangeStart = Math.max(this.minYear, this.yearRangeStart - this.yearsPerRange);
       this.yearRangeEnd = this.yearRangeStart + this.yearsPerRange - 1;
       navigationOccurred = true;
-      console.log(`After prev navigation: ${this.yearRangeStart}-${this.yearRangeEnd}`);
     } else if (direction === 'next' && this.yearRangeEnd < this.maxYear) {
       this.yearRangeStart = Math.min(this.maxYear - this.yearsPerRange + 1, this.yearRangeStart + this.yearsPerRange);
       this.yearRangeEnd = Math.min(this.maxYear, this.yearRangeStart + this.yearsPerRange - 1);
       navigationOccurred = true;
-      console.log(`After next navigation: ${this.yearRangeStart}-${this.yearRangeEnd}`);
-    } else {
-      console.log(`Navigation blocked - direction: ${direction}, start: ${this.yearRangeStart}, end: ${this.yearRangeEnd}, max: ${this.maxYear}`);
     }
     
     if (navigationOccurred) {
-      // Update the currentYears array directly
-      this.currentYears = [];
-      for (let year = this.yearRangeStart; year <= this.yearRangeEnd; year++) {
-        this.currentYears.push(year);
-      }
-      
-      this.yearRangeChangeCounter++; // Increment counter to force change detection
-      console.log('Updated currentYears:', this.currentYears);
-      
-      // Force change detection
+      // currentYears is now computed automatically via getter
+      // Force change detection to update UI
       this.cdr.detectChanges();
     }
   }
@@ -5957,22 +6041,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   getCurrentYearRange(): string {
     return `${this.yearRangeStart} – ${this.yearRangeEnd}`;
   }
-
-  getYearsInCurrentRange(): number[] {
-    const years: number[] = [];
-    const start = this.yearRangeStart;
-    const end = this.yearRangeEnd;
-    
-    for (let year = start; year <= end; year++) {
-      years.push(year);
-    }
-    
-    // Log the years being returned for debugging
-    console.log(`getYearsInCurrentRange called: ${start}-${end}`, years);
-    
-    return years;
-  }
-
   private setYearRangeContaining(year: number): void {
     // Calculate which range the year falls into
     const rangeIndex = Math.floor((year - this.minYear) / this.yearsPerRange);

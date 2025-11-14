@@ -127,7 +127,7 @@
                         [class.is-invalid]="isFieldInvalid(equipmentForm, 'manufacturer')"
                         id="manufacturer"
                       >
-                        <option value="">Choose manufacturer...</option>
+                        <option value="PS">Please Select</option>
                         <option
                           *ngFor="let mfg of manufacturers; trackBy: trackByValue"
                           [value]="mfg.value"
@@ -471,7 +471,7 @@
                             </button>
                           </div>
                         </div>
-                        <div class="year-grid-compact" [attr.data-change-counter]="yearRangeChangeCounter">
+                        <div class="year-grid-compact">
                           <button
                             type="button"
                             *ngFor="let year of currentYears; trackBy: trackByYear"
