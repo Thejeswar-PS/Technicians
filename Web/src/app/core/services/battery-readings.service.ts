@@ -227,15 +227,22 @@ export class BatteryReadingsService {
       .set('floatVoltS', floatVoltS)
       .set('floatVoltV', floatVoltV.toString());
 
+    const url = `${this.apiUrl}/Readings/GetBatteryTypeValues`;
+
     return this.http
-      .get<any>(`${this.apiUrl}/Readings/GetBatteryTypeValues`, { params })
+      .get<any>(url, { params })
       .pipe(
-        map((response) => ({
-          batteryType: response.batteryType || '',
-          monitorStart: response.monitorStart || 0,
-          monitorEnd: response.monitorEnd || 0,
-          replace: response.replace || 0,
-        })),
+        map((response) => {
+          // API returns an array, get the first element
+          const data = Array.isArray(response) && response.length > 0 ? response[0] : response;
+          
+          return {
+            batteryType: data.batteryType || '',
+            monitorStart: parseFloat(data.monitorStrt) || 0,
+            monitorEnd: parseFloat(data.monitorEnd) || 0,
+            replace: parseFloat(data.replace) || 0,
+          };
+        }),
         catchError((error) => {
           console.error('Error fetching battery type values:', error);
           return throwError(() => error);
@@ -339,6 +346,17 @@ export class BatteryReadingsService {
   saveBatteryData(batteryDataList: BatteryData[]): Observable<any> {
     return this.http
       .post(`${this.apiUrl}/Readings/SaveBatteryData`, batteryDataList)
+      .pipe(
+        catchError((error) => {
+          console.error('Error saving battery data:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  saveBatteryDataTemp(batteryDataList: BatteryData[]): Observable<any> {
+    return this.http
+      .post(`${this.apiUrl}/Readings/SaveBatteryDataTemp`, batteryDataList)
       .pipe(
         catchError((error) => {
           console.error('Error saving battery data:', error);
@@ -801,6 +819,7 @@ export class BatteryReadingsService {
       temp: item.temp || 0,
       vdc: item.vdc || 0,
       mhos: item.mhos || 0,
+      milliohms: item.milliohms || 0, // API returns milliohms
       strap1: item.strap1 || 0,
       strap2: item.strap2 || 0,
       spGravity: item.spGravity || 0,

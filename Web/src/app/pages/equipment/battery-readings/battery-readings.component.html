@@ -320,7 +320,7 @@
                 </div>
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <select class="form-select" id="recMakeCorrect" formControlName="recMakeCorrect">
+                    <select class="form-select" id="recMakeCorrect" formControlName="recMakeCorrect" (change)="onReconciliationChange()">
                       <option value="YS">Yes</option>
                       <option value="NO">No</option>
                       <option value="NA">N/A</option>
@@ -345,7 +345,7 @@
                 </div>
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <select class="form-select" id="recModelCorrect" formControlName="recModelCorrect">
+                    <select class="form-select" id="recModelCorrect" formControlName="recModelCorrect" (change)="onReconciliationChange()">
                       <option value="YS">Yes</option>
                       <option value="NO">No</option>
                       <option value="NA">N/A</option>
@@ -373,7 +373,7 @@
                 </div>
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <select class="form-select" id="recSerialNoCorrect" formControlName="recSerialNoCorrect">
+                    <select class="form-select" id="recSerialNoCorrect" formControlName="recSerialNoCorrect" (change)="onReconciliationChange()">
                       <option value="YS">Yes</option>
                       <option value="NO">No</option>
                       <option value="NA">N/A</option>
@@ -398,7 +398,7 @@
                 </div>
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <select class="form-select" id="battPerStringCorrect" formControlName="battPerStringCorrect">
+                    <select class="form-select" id="battPerStringCorrect" formControlName="battPerStringCorrect" (change)="onReconciliationChange()">
                       <option value="YS">Yes</option>
                       <option value="NO">No</option>
                       <option value="NA">N/A</option>
@@ -431,76 +431,110 @@
         </div>
         <div class="ups-section-content show">
           <div class="ups-form">
-            <!-- Two column layout for Container and Cover / Battery Environment -->
-            <div class="row">
+            <div class="row g-3">
               <!-- Container and Cover Section (Left) -->
-              <div class="col-md-5">
-                <h6 class="fw-bold mb-3">Container and Cover</h6>
-                <div class="mb-2 d-flex align-items-center gap-2">
-                  <label class="form-label small mb-0" style="min-width: 120px;">Container & cover:</label>
-                  <div class="form-check mb-0" style="min-width: 150px;">
-                    <input type="checkbox" class="form-check-input" id="bulgedCheck2" formControlName="bulgedCheck" />
-                    <label class="form-check-label" for="bulgedCheck2">Bulged</label>
+              <div class="col-md-6">
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-box-seam me-2"></i>
+                    <h6 class="mb-0">Container and Cover</h6>
                   </div>
-                  <select class="form-select form-select-sm" style="width: 90px;" formControlName="bulgedPf">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
-                </div>
-                <div class="mb-2 d-flex align-items-center gap-2">
-                  <label class="form-label small mb-0" style="min-width: 120px;">Floor :</label>
-                  <div class="form-check mb-0" style="min-width: 150px;">
-                    <input type="checkbox" class="form-check-input" id="crackedCheck2" formControlName="crackedCheck" />
-                    <label class="form-check-label" for="crackedCheck2">Cracked</label>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Container & cover:</span>
+                      </div>
+                      <div class="inspection-controls">
+                        <div class="form-check">
+                          <input type="checkbox" class="form-check-input" id="bulgedCheck2" formControlName="bulgedCheck" (change)="onSealedCheckboxChange('bulgedCheck', 'bulgedPf')" />
+                          <label class="form-check-label" for="bulgedCheck2">Bulged</label>
+                        </div>
+                        <select class="form-select form-select-sm" formControlName="bulgedPf">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Floor:</span>
+                      </div>
+                      <div class="inspection-controls">
+                        <div class="form-check">
+                          <input type="checkbox" class="form-check-input" id="crackedCheck2" formControlName="crackedCheck" (change)="onSealedCheckboxChange('crackedCheck', 'crackedPf')" />
+                          <label class="form-check-label" for="crackedCheck2">Cracked</label>
+                        </div>
+                        <select class="form-select form-select-sm" formControlName="crackedPf">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text"></span>
+                      </div>
+                      <div class="inspection-controls">
+                        <div class="form-check">
+                          <input type="checkbox" class="form-check-input" id="debrisCheck2" formControlName="debrisCheck" (change)="onSealedCheckboxChange('debrisCheck', 'debrisPf')" />
+                          <label class="form-check-label" for="debrisCheck2">Debris/Sediments</label>
+                        </div>
+                        <select class="form-select form-select-sm" formControlName="debrisPf">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
-                  <select class="form-select form-select-sm" style="width: 90px;" formControlName="crackedPf">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
-                </div>
-                <div class="mb-3 d-flex align-items-center gap-2">
-                  <label class="form-label small mb-0" style="min-width: 120px;"></label>
-                  <div class="form-check mb-0" style="min-width: 150px;">
-                    <input type="checkbox" class="form-check-input" id="debrisCheck2" formControlName="debrisCheck" />
-                    <label class="form-check-label" for="debrisCheck2">Debris/Sediments</label>
-                  </div>
-                  <select class="form-select form-select-sm" style="width: 90px;" formControlName="debrisPf">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
                 </div>
               </div>
 
               <!-- Battery Environment Section (Right) -->
-              <div class="col-md-7">
-                <h6 class="fw-bold mb-3">Battery Environment</h6>
-                <div class="mb-2 d-flex align-items-center gap-2">
-                  <label class="form-label small mb-0" style="min-width: 120px;">Inspect for sulfurous ("rotten egg") odor :</label>
-                  <!-- spacer to align with left checkbox column -->
-                  <div style="min-width: 80px;"></div>
-                  <select class="form-select form-select-sm" style="width: 90px;" formControlName="rotten">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
-                </div>
+              <div class="col-md-6">
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-wind me-2"></i>
+                    <h6 class="mb-0">Battery Environment</h6>
+                  </div>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Inspect for sulfurous ("rotten egg") odor:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="rotten">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
 
-                <div class="mb-2 d-flex align-items-center gap-2">
-                  <label class="form-label small mb-0" style="min-width: 120px;">Verify Presence of Safety Equipment :&nbsp;&nbsp;&nbsp;</label>
-                  <div style="min-width: 90px;"></div>
-                  <select class="form-select form-select-sm" style="width: 90px;" formControlName="verifySaftey">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
-                </div>
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Verify Presence of Safety Equipment:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="verifySaftey">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
 
-                <!-- Missing Intercell connector / Hardware row -->
-                <div class="mb-2 d-flex align-items-center gap-2">
-                  <label class="form-label small mb-0" style="min-width: 120px;">Missing Intercell connector / Hardware :</label>
-                  <div style="min-width: 90px;"></div>
-                  <select class="form-select form-select-sm" style="width: 90px;" id="intercellConnector" formControlName="intercellConnector">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Missing Intercell connector / Hardware:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" id="intercellConnector" formControlName="intercellConnector">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -521,78 +555,109 @@
         </div>
         <div class="ups-section-content show">
           <div class="ups-form">
-            <h6 class="fw-bold mb-3">General Appearance (Flooded Battery)</h6>
             <div class="row g-3">
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="plusWrappedCheck2" formControlName="plusWrappedCheck" />
-                  <label class="form-check-label" for="plusWrappedCheck2">Wrapped</label>
-                </div>
-                <select class="form-select" formControlName="plusWrappedVerify">
-                  <option value="P">Pass</option>
-                  <option value="F">Fail</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="plusSulfatedCheck2" formControlName="plusSulfatedCheck" />
-                  <label class="form-check-label" for="plusSulfatedCheck2">Sulfated</label>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="plusMisposCheck2" formControlName="plusMisposCheck" />
-                  <label class="form-check-label" for="plusMisposCheck2">Mis-Positioned</label>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="missingCheck2" formControlName="missingCheck" />
-                  <label class="form-check-label" for="missingCheck2">Missing</label>
-                </div>
-                <select class="form-select" formControlName="missingVerify">
-                  <option value="P">Pass</option>
-                  <option value="F">Fail</option>
-                </select>
-              </div>
-            </div>
-            <div class="row g-3 mt-2">
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="brokenCheck2" formControlName="brokenCheck" />
-                  <label class="form-check-label" for="brokenCheck2">Broken</label>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="needsCleaningCheck2" formControlName="needsCleaningCheck" />
-                  <label class="form-check-label" for="needsCleaningCheck2">Needs Cleaning</label>
-                </div>
-              </div>
+              <!-- Plates Section (Left) -->
               <div class="col-md-6">
-                <label class="form-label small" for="platesComments2">Plates/Terminal Comments</label>
-                <textarea id="platesComments2" rows="2" class="form-control" formControlName="platesComments"></textarea>
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-layers me-2"></i>
+                    <h6 class="mb-0">Plates Inspection</h6>
+                  </div>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Plates Condition:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="plusWrappedVerify">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="flooded-checkboxes">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="plusWrappedCheck2" formControlName="plusWrappedCheck" (change)="onFloodedPlatesCheckboxChange()" />
+                        <label class="form-check-label" for="plusWrappedCheck2">Wrapped</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="plusSulfatedCheck2" formControlName="plusSulfatedCheck" (change)="onFloodedPlatesCheckboxChange()" />
+                        <label class="form-check-label" for="plusSulfatedCheck2">Sulfated</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="plusMisposCheck2" formControlName="plusMisposCheck" (change)="onFloodedPlatesCheckboxChange()" />
+                        <label class="form-check-label" for="plusMisposCheck2">Mis-Positioned</label>
+                      </div>
+                    </div>
+
+                    <!-- <div class="mt-3">
+                      <label class="form-label small fw-bold" for="platesComments2">Plates/Terminal Comments</label>
+                      <textarea id="platesComments2" rows="3" class="form-control" formControlName="platesComments" placeholder="Enter any observations about plates condition..."></textarea>
+                    </div> -->
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="row g-3 mt-2">
-              <div class="col-md-4">
-                <label for="waterLevel2" class="form-label">Electrolyte Level</label>
-                <select id="waterLevel2" class="form-select" formControlName="waterLevel">
-                  <option value="Q">1/4 Below High Line</option>
-                  <option value="H">1/2 Below High Line</option>
-                  <option value="T">3/4 Below High Line</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <label for="waterLevelVerify2" class="form-label">Pass/Fail</label>
-                <select id="waterLevelVerify2" class="form-select" formControlName="waterLevelVerify">
-                  <option value="P">Pass</option>
-                  <option value="F">Fail</option>
-                </select>
-              </div>
+
+              <!-- Covers & Electrolyte Section (Right) -->
               <div class="col-md-6">
-                <label for="electrolytesComments2" class="form-label">Electrolytes Comments</label>
-                <textarea id="electrolytesComments2" rows="2" class="form-control" formControlName="electrolytesComments"></textarea>
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-shield-check me-2"></i>
+                    <h6 class="mb-0">Covers & Electrolyte</h6>
+                  </div>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Flame Arrestors / Covers:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="missingVerify">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="flooded-checkboxes">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="missingCheck2" formControlName="missingCheck" (change)="onFloodedCoversCheckboxChange()" />
+                        <label class="form-check-label" for="missingCheck2">Missing</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="brokenCheck2" formControlName="brokenCheck" (change)="onFloodedCoversCheckboxChange()" />
+                        <label class="form-check-label" for="brokenCheck2">Broken</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="needsCleaningCheck2" formControlName="needsCleaningCheck" (change)="onFloodedCoversCheckboxChange()" />
+                        <label class="form-check-label" for="needsCleaningCheck2">Needs Cleaning</label>
+                      </div>
+                    </div>
+
+                    <div class="row g-2 mt-3">
+                      <div class="col-md-7">
+                        <label for="waterLevel2" class="form-label small fw-bold">Electrolyte Level</label>
+                        <select id="waterLevel2" class="form-select form-select-sm" formControlName="waterLevel">
+                          <option value="Q">1/4 Below High Line</option>
+                          <option value="H">1/2 Below High Line</option>
+                          <option value="T">3/4 Below High Line</option>
+                        </select>
+                      </div>
+                      <div class="col-md-5">
+                        <label for="waterLevelVerify2" class="form-label small fw-bold">Pass/Fail</label>
+                        <select id="waterLevelVerify2" class="form-select form-select-sm" formControlName="waterLevelVerify">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- <div class="mt-3">
+                      <label for="electrolytesComments2" class="form-label small fw-bold">Electrolytes Comments</label>
+                      <textarea id="electrolytesComments2" rows="2" class="form-control" formControlName="electrolytesComments" placeholder="Enter electrolyte observations..."></textarea>
+                    </div> -->
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -999,11 +1064,9 @@
             <div class="form-group-modern">
               <div class="row g-3">
                 <div class="col-md-1">
-                  <div class="form-floating" style="padding-top: 8px;">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" />
-                      <label class="form-check-label fw-bold" for="replaceWholeString"></label>
-                    </div>
+                  <div class="form-check" style="padding-top: 8px;">
+                    <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" />
+                    <label class="form-check-label fw-bold" for="replaceWholeString"></label>
                   </div>
                 </div>
                 <div class="col-md-3">
@@ -1100,7 +1163,7 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <div class="form-floating">
-                    <select class="form-select" id="stringType" formControlName="stringType">
+                    <select class="form-select" id="stringType" formControlName="stringType" (change)="onStringTypeChange($event)">
                       <option value="">Please Select</option>
                       <option value="1">External</option>
                       <option value="2">Internal Single / Parallel Strings</option>
@@ -1134,7 +1197,13 @@
                 <div class="col-md-2">
                   <div class="form-floating">
                     <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="0" />
-                    <label for="batteriesNo">No of Batteries per string</label>
+                    <label for="batteriesNo">{{ batteriesNoLabel }}</label>
+                  </div>
+                </div>
+                <div class="col-md-2" *ngIf="showPackNoField">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="packNo" formControlName="packNo" placeholder="0" />
+                    <label for="packNo">{{ packNoLabel }}</label>
                   </div>
                 </div>
                 <div class="col-md-2">
@@ -1165,27 +1234,21 @@
             <div class="form-group-modern">
               <div class="row g-3">
                 <div class="col-md-2">
-                  <div class="form-floating" style="padding-top: 8px;">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="readingsGraphCheck" formControlName="readingsGraphCheck" />
-                      <label class="form-check-label fw-bold text-danger" for="readingsGraphCheck">Verified the Graph?</label>
-                    </div>
+                  <div class="form-check" style="padding-top: 8px;">
+                    <input type="checkbox" class="form-check-input" id="readingsGraphCheck" formControlName="readingsGraphCheck" />
+                    <label class="form-check-label fw-bold text-danger" for="readingsGraphCheck">Verified the Graph?</label>
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <div class="form-floating" style="padding-top: 8px;">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="mvacCheck" formControlName="mvacCheck" checked />
-                      <label class="form-check-label" for="mvacCheck">Enable mVAC?</label>
-                    </div>
+                  <div class="form-check" style="padding-top: 8px;">
+                    <input type="checkbox" class="form-check-input" id="mvacCheck" formControlName="mvacCheck" checked />
+                    <label class="form-check-label" for="mvacCheck">Enable mVAC?</label>
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <div class="form-floating" style="padding-top: 8px;">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="strapCheck" formControlName="strapCheck" checked />
-                      <label class="form-check-label" for="strapCheck">Enable Straps?</label>
-                    </div>
+                  <div class="form-check" style="padding-top: 8px;">
+                    <input type="checkbox" class="form-check-input" id="strapCheck" formControlName="strapCheck" checked />
+                    <label class="form-check-label" for="strapCheck">Enable Straps?</label>
                   </div>
                 </div>
               </div>
@@ -1226,10 +1289,10 @@
                 <th style="width:10px; text-align: left; padding: 5px; border: 1px solid #ddd;">ID.</th>
                 <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">VDC</th>
                 <th *ngIf="batteryStringForm.get('mvacCheck')?.value" style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">mVAC</th>
-                <th style="width:100px; text-align: left; padding: 5px; border: 1px solid #ddd; display: none;">Conductance / Resistance</th>
+                <th *ngIf="batteryStringForm.get('readingType')?.value === '2'" style="width:100px; text-align: left; padding: 5px; border: 1px solid #ddd;">Conductance / Resistance</th>
                 <th *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap1</th>
                 <th *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap2</th>
-                <th style="width:55px; text-align: left; padding: 5px; border: 1px solid #ddd; display: none;">Specific Gravity</th>
+                <th *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'F'" style="width:55px; text-align: left; padding: 5px; border: 1px solid #ddd;">Specific Gravity</th>
                 <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Leaking / Damaged / Corrosion</th>
                 <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Replace?</th>
                 <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Monitor?</th>
@@ -1257,7 +1320,7 @@
                     [ngModelOptions]="{ standalone: true }"
                   />
                 </td>
-                <td style="width:100px; padding: 5px; border: 1px solid #ddd; display: none;">
+                <td *ngIf="batteryStringForm.get('readingType')?.value === '2'" style="width:100px; padding: 5px; border: 1px solid #ddd;">
                   <input
                     type="number"
                     step="0.01"
@@ -1284,7 +1347,7 @@
                     [ngModelOptions]="{ standalone: true }"
                   />
                 </td>
-                <td style="width:55px; padding: 5px; border: 1px solid #ddd; display: none;">
+                <td *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'F'" style="width:55px; padding: 5px; border: 1px solid #ddd;">
                   <input
                     type="number"
                     step="0.0001"

@@ -55,6 +55,11 @@ export class BatteryReadingsComponent implements OnInit {
   // Battery Type State
   isBatteryTypeLithium: boolean = false;
 
+  // Dynamic Labels for String Type
+  batteriesNoLabel: string = 'No of Batteries per string';
+  showPackNoField: boolean = false;
+  packNoLabel: string = 'Batteries per String';
+
   // Grid Row Counts
   totalReplace: number = 0;
   totalMonitor: number = 0;
@@ -593,6 +598,12 @@ export class BatteryReadingsComponent implements OnInit {
       readingsGraphCheck: data.chkGraph,
     });
 
+    // Trigger string type change handler to update labels and field visibility
+    console.log('🔄 Calling onStringTypeChange after form population');
+    console.log('📝 stringType value:', data.stringType);
+    console.log('📝 packNo value:', data.batteryPackCount);
+    this.onStringTypeChange(null);
+
     // Load reference values after form population
     const midType = data.readingMethod;
     if (midType) {
@@ -827,6 +838,45 @@ export class BatteryReadingsComponent implements OnInit {
     const midType = event.target.value;
     this.batteryStringForm.patchValue({ midType });
     this.loadBatteryMakeModels(midType, 0);
+  }
+
+  /**
+   * Handle String Type change - updates dynamic labels and field visibility
+   * Legacy: showhidebpack()
+   */
+  onStringTypeChange(event: any): void {
+    const stringType = event?.target?.value || this.batteryStringForm.get('stringType')?.value;
+    
+    console.log('🔧 onStringTypeChange called with stringType:', stringType);
+    console.log('📋 Event object:', event);
+    
+    if (stringType === '3') {
+      // Battery Packs / Trays
+      console.log('✅ Setting labels for Battery Packs (stringType=3)');
+      this.batteriesNoLabel = 'No of Battery Packs';
+      this.packNoLabel = 'Batteries per Pack';
+      this.showPackNoField = true;
+    } else if (stringType === '2') {
+      // Internal Single / Parallel Strings
+      console.log('✅ Setting labels for Internal Strings (stringType=2)');
+      this.batteriesNoLabel = 'No of Internal Strings';
+      this.packNoLabel = 'Batteries per String';
+      this.showPackNoField = true;
+    } else {
+      // External (default)
+      console.log('✅ Setting labels for External (stringType=1 or default)');
+      this.batteriesNoLabel = 'No of Batteries per string';
+      this.packNoLabel = 'Batteries per String';
+      this.showPackNoField = false;
+      // Clear packNo value when hiding
+      this.batteryStringForm.patchValue({ packNo: '' });
+    }
+    
+    console.log('📊 Final state:', {
+      batteriesNoLabel: this.batteriesNoLabel,
+      packNoLabel: this.packNoLabel,
+      showPackNoField: this.showPackNoField
+    });
   }
 
   /**

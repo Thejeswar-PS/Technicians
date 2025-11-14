@@ -186,20 +186,24 @@ export class BatteryReadingsTempComponent implements OnInit {
    * Map battery data to grid rows
    */
   private mapBatteryDataToRows(data: BatteryData[]): BatteryReadingRow[] {
-    return data.map((item, index) => ({
-      batteryId: item.batteryId || index + 1,
-      vdc: item.vdc || 0,
-      vac: item.vac || 0,
-      mhos: item.mhos || 0,
-      strap1: item.strap1 || 0,
-      strap2: item.strap2 || 0,
-      spGravity: item.spGravity || 0,
-      cracks: item.cracks || 'N',
-      replacementNeeded: item.replacementNeeded || 'N',
-      monitoringBattery: item.monitoringBattery || 'N',
-      actionPlan: item.actionPlan || '',
-      temp: item.temp || 70,
-    }));
+    return data.map((item, index) => {
+      // API GET returns 'mhos', API POST expects 'milliohms'
+      const mhosValue = item.milliohms || item.mhos || 0;
+      return {
+        batteryId: typeof item.batteryId === 'string' ? parseInt(item.batteryId) : (item.batteryId || index + 1),
+        vdc: typeof item.vdc === 'string' ? parseFloat(item.vdc) : (item.vdc || 0),
+        vac: typeof item.vac === 'string' ? parseFloat(item.vac) : (item.vac || 0),
+        mhos: typeof mhosValue === 'string' ? parseFloat(mhosValue) : mhosValue,
+        strap1: typeof item.strap1 === 'string' ? parseFloat(item.strap1) : (item.strap1 || 0),
+        strap2: typeof item.strap2 === 'string' ? parseFloat(item.strap2) : (item.strap2 || 0),
+        spGravity: typeof item.spGravity === 'string' ? parseFloat(item.spGravity) : (item.spGravity || 0),
+        cracks: item.cracks || 'N',
+        replacementNeeded: item.replacementNeeded || 'N',
+        monitoringBattery: item.monitoringBattery || 'N',
+        actionPlan: item.actionPlan || '',
+        temp: typeof item.temp === 'string' ? parseInt(item.temp) : (item.temp || 70),
+      };
+    });
   }
 
   /**
@@ -318,7 +322,7 @@ export class BatteryReadingsTempComponent implements OnInit {
     }
 
     // Save ALL batteries together (backend does delete-then-insert)
-    this.batteryService.saveBatteryData(allBatteries).subscribe(
+    this.batteryService.saveBatteryDataTemp(allBatteries).subscribe(
       () => {
         this.finalizeDisplayBatteryInfo();
       },
@@ -370,7 +374,7 @@ export class BatteryReadingsTempComponent implements OnInit {
         }));
 
       // Save remaining batteries (backend delete-then-insert handles removal)
-      this.batteryService.saveBatteryData(remainingBatteries).subscribe(
+      this.batteryService.saveBatteryDataTemp(remainingBatteries).subscribe(
         () => {
           this.finalizeDisplayBatteryInfo();
         },
@@ -701,7 +705,6 @@ export class BatteryReadingsTempComponent implements OnInit {
       battTerminalType: [''],
       battTerminalValue: [''],
       midType: [''],
-      readingsGraphCheck: [false],
     });
   }
 
@@ -1487,7 +1490,8 @@ export class BatteryReadingsTempComponent implements OnInit {
       batteryId: row.batteryId,
       temp: row.temp,
       vdc: row.vdc,
-      mhos: row.mhos,
+      mhos: row.mhos, // Keep for backward compatibility
+      milliohms: row.mhos, // API expects milliohms field
       strap1: row.strap1,
       strap2: row.strap2,
       spGravity: row.spGravity,
@@ -1501,7 +1505,7 @@ export class BatteryReadingsTempComponent implements OnInit {
     }));
 
     // Step 1c: Insert new battery data (legacy: INSERT INTO Battery)
-    this.batteryService.saveBatteryData(batteryDataList).subscribe(
+    this.batteryService.saveBatteryDataTemp(batteryDataList).subscribe(
       () => {
         // Step 2: After battery data is saved, save battery string info
         this.saveBatteryStringInfo(saveType);
@@ -2335,7 +2339,6 @@ export class BatteryReadingsTempComponent implements OnInit {
     const batteryTypeName = this.batteryStringForm.get('batteryTypeName')?.value;
     const equipStatus = this.batteryStringForm.get('equipStatus')?.value;
     const startDate = this.batteryStringForm.get('startDate')?.value;
-    const reconciled = this.reconciliationForm.get('reconciled')?.value;
     const totalBatteryVoltage = this.batteryStringForm.get('totalBatteryVoltage')?.value;
     const plusTerminalToGnd = this.batteryStringForm.get('plusTerminalToGnd')?.value;
     const minusTerminalToGnd = this.batteryStringForm.get('minusTerminalToGnd')?.value;
@@ -2355,7 +2358,6 @@ export class BatteryReadingsTempComponent implements OnInit {
     const stringType = this.batteryStringForm.get('stringType')?.value;
     const packNo = this.batteryStringForm.get('packNo')?.value;
     const repMonCalculate = this.batteryStringForm.get('repMonCalculate')?.value;
-    const readingsGraphCheck = this.batteryStringForm.get('readingsGraphCheck')?.value;
 
     // Manufacturer validation
     if (!manufacturer || manufacturer.substring(0, 3) === 'Ple') {
@@ -2407,12 +2409,6 @@ export class BatteryReadingsTempComponent implements OnInit {
     }
     if (datecode > today) {
       this.toastr.error("DateCode cannot be higher than today's date");
-      return false;
-    }
-
-    // Reconciliation validation
-    if (!reconciled) {
-      this.toastr.error('You must verify the Reconciliation section before Saving PM form');
       return false;
     }
 
@@ -2496,12 +2492,6 @@ export class BatteryReadingsTempComponent implements OnInit {
     // Replace/Monitor calculation validation
     if (!repMonCalculate || repMonCalculate === '0' || repMonCalculate === '') {
       this.toastr.error('Please select how do you want monitor and replace values to be calculated');
-      return false;
-    }
-
-    // Graph verification validation
-    if (!readingsGraphCheck) {
-      this.toastr.error('Please check that you have verified the readings in Graph');
       return false;
     }
 
