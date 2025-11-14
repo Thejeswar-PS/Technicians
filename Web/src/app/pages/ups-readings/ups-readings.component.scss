@@ -1181,7 +1181,15 @@
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    padding-right: 2.5rem;
+    padding: 0.625rem 2.5rem 0.625rem 0.75rem; // Better padding for text alignment
+    line-height: 1.4; // Better line height
+    vertical-align: middle; // Proper vertical alignment
+    
+    // Ensure options are properly aligned
+    option {
+      padding: 0.5rem;
+      line-height: 1.4;
+    }
   }
 
   // Simple flat dropdown styling matching the design in image
@@ -1191,7 +1199,7 @@
     background: #ffffff !important; // Pure white background
     font-weight: 400 !important; // Normal font weight
     color: #374151 !important; // Dark gray text like "Pass" in image
-    padding: 0.5rem 2.5rem 0.5rem 0.75rem !important; // Padding with space for arrow
+    padding: 0.625rem 2.5rem 0.625rem 0.75rem !important; // Better padding for text alignment
     transition: border-color 0.2s ease !important; // Simple transition
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3e%3cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3e%3c/svg%3e") !important;
     background-repeat: no-repeat !important;
@@ -1202,6 +1210,8 @@
     -moz-appearance: none !important;
     box-shadow: none !important;
     font-size: 0.875rem !important; // Standard text size
+    line-height: 1.4 !important; // Better line height for text alignment
+    vertical-align: middle !important; // Proper vertical alignment
     
     &:hover {
       border-color: #9ca3af !important; // Slightly darker gray on hover
@@ -1238,12 +1248,685 @@
   // Measurements grid
   .measurements-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); // Slightly wider for better alignment
     gap: 1.25rem;
     margin-top: 1.5rem;
+    align-items: stretch; // Ensure all cards stretch to the same height
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
+    }
+  }
+
+  // Power Measurement Cards - Enhanced with darker headers
+  .power-measurement-card {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 120px;
+    
+    // Force all select elements in power cards to center properly
+    .form-select, select {
+      text-align: center !important;
+      text-align-last: center !important;
+      line-height: 34px !important;
+      padding: 0 2rem 0 0.75rem !important;
+      height: 36px !important;
+      vertical-align: middle !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      
+      option {
+        text-align: center !important;
+        padding: 8px !important;
+      }
+    }
+
+    .power-card-header {
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); // Light gray gradient header
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #d1d5db;
+      text-align: center;
+
+      .power-card-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #374151; // Dark text for light gray header
+        text-align: center;
+
+        // Show icons with enhanced styling
+        i {
+          display: inline-block;
+          font-size: 1rem;
+          color: #6b7280; // Dark gray for icons on light background
+          text-shadow: none; // Remove text shadow for light background
+          filter: none; // Remove filter for light background
+        }
+
+        span {
+          line-height: 1.2;
+          font-weight: 600;
+          color: #374151; // Dark text for light background
+          text-shadow: none; // Remove text shadow for light background
+        }
+      }
+    }
+
+    .power-card-body {
+      padding: 1rem;
+      flex: 1;
+      display: flex;
+      align-items: center;
+
+      .power-input,
+      .power-select {
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        padding: 0.375rem 0.75rem; // Reduced padding for proper text centering
+        font-size: 0.875rem;
+        font-weight: 400;
+        background: white;
+        transition: border-color 0.2s ease;
+        width: 100%;
+        height: 36px; // Standard height for proper text centering
+        line-height: 1.2; // Reduced line height for better centering
+        display: flex;
+        align-items: center; // Center content vertically
+        justify-content: center; // Center content horizontally (for selects)
+
+        &::placeholder {
+          color: #9ca3af;
+          font-weight: 400;
+        }
+
+        &:focus {
+          border-color: #3b82f6;
+          outline: none;
+          box-shadow: 0 0 0 1px #3b82f6;
+        }
+
+        &:hover {
+          border-color: #9ca3af;
+        }
+      }
+
+      // Specific adjustments for inputs vs selects
+      .power-input {
+        text-align: left; // Keep inputs left-aligned
+        justify-content: flex-start; // Align input text to left
+      }
+
+      .power-select {
+        text-align: center !important; // Force center select text
+        text-align-last: center !important; // Force center selected option text
+        
+        // Browser-specific fixes for select centering
+        &::-ms-expand {
+          display: none !important; // Hide IE expand button
+        }
+        
+        // Aggressive browser compatibility fixes
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        appearance: none !important;
+        
+        // Force proper positioning
+        position: relative !important;
+        
+        // Override any inherited padding/margin
+        margin: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        
+        // Force line height to match height
+        line-height: 34px !important; // Slightly less than height for perfect centering
+        
+        option {
+          text-align: center !important;
+          padding: 8px !important;
+          line-height: normal !important;
+        }
+      }
+
+      .power-select {
+        padding: 0 2rem 0 0.75rem !important; // Minimal padding to force centering
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3e%3cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 0.5rem center;
+        background-size: 16px 16px;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        cursor: pointer;
+        line-height: 36px !important; // Force line height to match container height
+        vertical-align: middle !important;
+        text-align: center !important;
+        height: 36px !important; // Explicit height
+        font-size: 0.875rem !important;
+        
+        // Force proper centering with CSS Grid
+        display: grid !important;
+        place-items: center !important;
+        
+        &:focus {
+          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%233b82f6'%3e%3cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3e%3c/svg%3e");
+        }
+
+        // Force option centering
+        option {
+          padding: 0 !important;
+          line-height: 1.5 !important;
+          text-align: center !important;
+        }
+      }
+
+      // Remove floating labels to match the reference image
+      .form-floating {
+        position: relative;
+        width: 100%;
+
+        label {
+          display: none; // Hide floating labels to match reference image
+        }
+      }
+
+      // Compact row layout for input and status
+      .row {
+        margin: 0;
+        width: 100%;
+        gap: 0.5rem;
+
+        .col-8,
+        .col-4 {
+          padding: 0;
+          flex: none;
+        }
+
+        .col-8 {
+          width: calc(70% - 0.25rem);
+        }
+
+        .col-4 {
+          width: calc(30% - 0.25rem);
+        }
+      }
+    }
+  }
+
+  // Calculate button in Total Load card - Green like in reference
+  .power-measurement-card {
+    .btn-primary {
+      background: #10b981;
+      border: 1px solid #10b981;
+      border-radius: 4px;
+      font-weight: 600;
+      height: 36px;
+      font-size: 0.875rem;
+
+      &:hover {
+        background: #059669;
+        border-color: #059669;
+      }
+
+      &:focus {
+        background: #059669;
+        border-color: #059669;
+        box-shadow: 0 0 0 1px #059669;
+      }
+
+      i {
+        font-size: 0.875rem;
+        margin-right: 0.25rem;
+      }
+    }
+  }
+
+  // Inline Configuration Bar Styling
+  .input-config-bar {
+    background: #5486FF !important;
+    border: 1px solid #4a75e6 !important;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 20px rgba(84, 134, 255, 0.3) !important;
+      background: #4a75e6 !important;
+    }
+
+    .config-item {
+      margin-right: 1.5rem;
+
+      &:last-child {
+        margin-right: 0;
+      }
+
+      .form-label {
+        color: white;
+        font-size: 0.875rem;
+        white-space: nowrap;
+
+        &.input-label {
+          color: white;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          
+          i {
+            color: #ffffff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            font-size: 1rem;
+            opacity: 1;
+          }
+        }
+      }
+
+      .form-select {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        transition: all 0.2s ease;
+        background: rgba(255, 255, 255, 0.9);
+        color: #374151;
+        
+        // Ensure clean appearance
+        background-clip: padding-box;
+        line-height: 1.5;
+
+        &:focus {
+          border-color: #ffffff;
+          box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+          background: white;
+          outline: 0;
+        }
+
+        &:hover {
+          background: white;
+          border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        // Remove any default browser styling that might interfere
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+      }
+
+      // Custom select with visible arrow using CSS pseudo-element
+      .custom-select {
+        // Remove browser styling
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        padding-right: 2.5rem !important;
+        position: relative;
+
+        // Remove browser-specific arrows
+        &::-ms-expand { display: none; }
+      }
+
+      // Add arrow using pseudo-element for better visibility
+      .custom-select::after {
+        content: '▼';
+        position: absolute;
+        top: 50%;
+        right: 0.75rem;
+        transform: translateY(-50%);
+        color: #374151;
+        font-size: 12px;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .custom-select:focus::after {
+        color: #5486FF;
+      }
+
+      .custom-select:hover::after {
+        color: #666666;
+      }
+
+      // Custom toggle styling
+      .custom-toggle-container {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.6rem 1.2rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.2);
+          border-color: rgba(255, 255, 255, 0.5);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .custom-toggle-input {
+          display: none;
+
+          &:checked + .custom-toggle-label {
+            .toggle-switch {
+              background: #10b981;
+              border-color: #10b981;
+              box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+
+              &::after {
+                transform: translateX(22px);
+                background: white;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+              }
+            }
+
+            .toggle-text {
+              color: white; // Keep text white instead of green
+              text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+              i {
+                color: #ffffff;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+                opacity: 1;
+                font-weight: bold;
+              }
+            }
+          }
+        }
+
+        .custom-toggle-label {
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          margin-bottom: 0;
+
+          .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            margin-right: 0.75rem;
+            transition: all 0.3s ease;
+
+            &::after {
+              content: '';
+              position: absolute;
+              top: 2px;
+              left: 2px;
+              width: 16px;
+              height: 16px;
+              background: rgba(255, 255, 255, 0.8);
+              border-radius: 50%;
+              transition: all 0.3s ease;
+            }
+
+            &:hover {
+              border-color: rgba(255, 255, 255, 0.6);
+              background: rgba(255, 255, 255, 0.3);
+            }
+          }
+
+          .toggle-text {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+
+            i {
+              font-size: 1rem;
+              color: #ffffff;
+              text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+              opacity: 1;
+              font-weight: bold;
+              margin-right: 0.5rem;
+            }
+          }
+        }
+      }
+    }
+
+    .tolerance-info {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      margin: 0 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+      small {
+        line-height: 1.4;
+        white-space: nowrap;
+        color: #374151;
+        font-weight: 600;
+
+        i {
+          font-size: 0.75rem;
+        }
+
+        &.text-primary {
+          color: #5486FF !important;
+        }
+
+        &.text-info {
+          color: #0ea5e9 !important;
+        }
+      }
+    }
+
+    .phase-indicator {
+      .badge {
+        font-size: 0.875rem !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+
+        i {
+          font-size: 1rem;
+          color: #ffffff;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          opacity: 1;
+        }
+      }
+    }
+
+
+  }
+
+  // Responsive design for inline configuration bar
+  @media (max-width: 1200px) {
+    .input-config-bar {
+      flex-wrap: wrap;
+      gap: 1rem;
+
+      .config-item {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+      }
+
+      .tolerance-info {
+        margin: 0;
+        order: -1;
+        width: 100%;
+        margin-bottom: 1rem;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .input-config-bar {
+      flex-direction: column;
+      align-items: stretch !important;
+
+      .config-item {
+        width: 100%;
+        margin-bottom: 1rem;
+
+        .form-label {
+          min-width: auto !important;
+          margin-bottom: 0.5rem;
+          display: block;
+        }
+
+        .form-select {
+          width: 100%;
+          min-width: auto !important;
+        }
+      }
+
+      .tolerance-info {
+        text-align: center;
+      }
+
+      .phase-indicator {
+        text-align: center;
+      }
+    }
+  }
+
+  // Phase Section Styling - Clean like reference image
+  .phase-section {
+    margin-bottom: 1.5rem;
+
+    .phase-label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+
+      .badge {
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.025em;
+        border-radius: 4px;
+        text-transform: uppercase;
+        padding: 0.375rem 0.75rem;
+
+        &.bg-warning {
+          background-color: #fbbf24 !important;
+          color: #92400e;
+        }
+
+        &.bg-primary {
+          background-color: #3b82f6 !important;
+          color: white;
+        }
+
+        &.bg-success {
+          background-color: #22c55e !important;
+          color: white;
+        }
+      }
+    }
+  }
+
+  // Responsive design for power cards
+  @media (max-width: 1200px) {
+    .power-measurement-card {
+      .power-card-header {
+        padding: 0.75rem;
+
+        .power-card-title {
+          font-size: 0.8125rem;
+          gap: 0.375rem;
+
+          i {
+            font-size: 0.875rem;
+          }
+        }
+      }
+
+      .power-card-body {
+        padding: 0.875rem;
+
+        .power-input,
+        .power-select {
+          font-size: 0.8125rem;
+          min-height: 2.25rem;
+          padding: 0.5rem 0.625rem;
+        }
+
+        .form-floating label {
+          font-size: 0.8125rem;
+          padding: 0.5rem 0.625rem;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .power-measurement-card {
+      .power-card-body {
+        .row {
+          .col-8,
+          .col-4 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 0.5rem;
+            padding-right: 0;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+          }
+        }
+      }
+    }
+
+    .phase-section {
+      margin-bottom: 1.5rem;
+
+      .phase-label {
+        text-align: center;
+        margin-bottom: 1rem;
+      }
+    }
+  }
+
+  // Calculate button styling in power cards
+  .power-measurement-card {
+    .btn-primary {
+      border-radius: 6px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      i {
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  // Color variations for phase badges
+  .badge {
+    &.bg-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+    }
+    
+    &.bg-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    }
+    
+    &.bg-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
     }
   }
 
@@ -1253,6 +1936,10 @@
     border-radius: 0.75rem;
     padding: 1.25rem;
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%; // Ensure all cards have the same height
+    min-height: 160px; // Set minimum height for consistency
 
     &:hover {
       transform: translateY(-2px);
@@ -1280,12 +1967,18 @@
     }
 
     .measurement-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1; // Take up remaining space
+      justify-content: space-between; // Push dropdown to bottom
+      
       .form-label {
         font-size: 1rem; // Bigger font for measurement labels
         font-weight: 600;
         color: #475569;
         margin-bottom: 0.75rem;
         line-height: 1.4;
+        flex: 1; // Allow label to take available space
       }
 
       .form-select {
@@ -3134,7 +3827,7 @@
   bottom: 100%;
   left: 0;
   right: 0;
-  width: 250px; // Set a more compact width for all calendars
+  width: 280px; // Slightly wider for 4-column year grid
   z-index: 1000;
   background: white;
   border: 1px solid #e5e7eb;
@@ -3192,22 +3885,95 @@
     }
   }
   
+  // Year navigation header
+  .year-navigation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem 0.2rem;
+    
+    .year-nav-btn {
+      padding: 0.4rem 0.7rem !important;
+      color: white !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 6px !important;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+        color: white !important;
+        transform: scale(1.05);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+      }
+      
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4) !important;
+        color: white !important;
+        outline: none !important;
+      }
+      
+      &:active {
+        transform: scale(0.98) !important;
+        background-color: rgba(255, 255, 255, 0.3) !important;
+      }
+      
+      &:disabled {
+        opacity: 0.3 !important;
+        cursor: not-allowed !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          transform: none !important;
+          box-shadow: none !important;
+        }
+      }
+      
+      i {
+        font-size: 1rem;
+        font-weight: 900;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    .year-range-display {
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      text-align: center;
+      flex: 1;
+      margin: 0 0.75rem;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      letter-spacing: 0.5px;
+      padding: 0.2rem 0;
+    }
+  }
+  
   .year-grid-compact {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.25rem;
-    padding: 0.75rem;
-    min-height: 160px; // Slightly taller than month since we have more items
+    grid-template-columns: repeat(4, 1fr); // 4x4 grid for compact square layout
+    gap: 0.15rem; // Reduced gap for more compact layout
+    padding: 0.5rem; // Reduced padding
+    min-height: 120px; // Optimized height for 4x4 grid
     
     .year-btn-compact {
-      padding: 0.4rem 0.2rem;
-      font-size: 0.8rem;
+      padding: 0.25rem 0.15rem; // Much smaller padding
+      font-size: 0.75rem; // Smaller font size
       font-weight: 500;
-      border-radius: 4px;
+      border-radius: 3px; // Smaller border radius for rounded corners
       transition: all 0.2s ease;
       white-space: nowrap;
       overflow: hidden;
       text-align: center;
+      min-height: 28px; // Fixed smaller height
+      max-height: 28px; // Fixed smaller height
       
       &.btn-outline-primary {
         border-color: #d1d5db;
@@ -3218,6 +3984,7 @@
           background-color: #f3f4f6;
           border-color: #5486ff;
           color: #5486ff;
+          transform: scale(1.02); // Subtle hover effect
         }
       }
       
@@ -3225,7 +3992,11 @@
         background-color: #5486ff;
         border-color: #5486ff;
         color: white;
-        box-shadow: 0 1px 3px rgba(84, 134, 255, 0.3);
+        box-shadow: 0 1px 2px rgba(84, 134, 255, 0.2); // Smaller shadow
+        
+        &:hover {
+          transform: scale(1.02); // Subtle hover effect
+        }
       }
     }
   }
@@ -3238,6 +4009,78 @@
     .text-muted {
       color: #6b7280 !important;
       font-size: 0.8rem;
+    }
+  }
+}
+
+// Year Calendar Dropdown Specific Styles
+.year-calendar-dropdown {
+  width: 280px !important; // Slightly wider for year display
+  
+  .calendar-header {
+    .btn-link {
+      text-decoration: none;
+      font-weight: bold;
+      
+      &:hover:not(:disabled) {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+      
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
+  
+  .year-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.3rem;
+    padding: 0.75rem;
+    max-height: 280px;
+    overflow-y: auto;
+    
+    .year-btn-compact {
+      padding: 0.5rem 0.25rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+      min-height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &.btn-outline-primary {
+        border-color: #e5e7eb;
+        color: #374151;
+        background: white;
+        
+        &:hover {
+          background-color: #f8fafc;
+          border-color: #5486ff;
+          color: #5486ff;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+      }
+      
+      &.btn-primary {
+        background-color: #5486ff;
+        border-color: #5486ff;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 2px 6px rgba(84, 134, 255, 0.4);
+        
+        &:hover {
+          background-color: #3b6df0;
+          border-color: #3b6df0;
+          transform: translateY(-1px);
+          box-shadow: 0 3px 8px rgba(84, 134, 255, 0.5);
+        }
+      }
     }
   }
 }

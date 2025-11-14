@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, HostListener, ChangeDetectorRef, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
@@ -162,11 +162,21 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Calendar widget state
   showCalendar = false;
   showMonthCalendar = false;
+  showYearCalendar = false;
   calendarDate = new Date();
   monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
+
+  // Year calendar state
+  yearRangeStart = 1990;
+  yearRangeEnd = 2005; // 1990 + 16 - 1 for 4x4 grid
+  yearRangeChangeCounter = 0; // Counter to force change detection
+  currentYears: number[] = []; // Direct array to hold current years
+  readonly minYear = 1990;
+  readonly maxYear = 2055;
+  readonly yearsPerRange = 16; // 4x4 grid
 
   constructor(
     private fb: FormBuilder,
@@ -176,7 +186,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     private authService: AuthService,
     private toastr: ToastrService,
     private elementRef: ElementRef,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {
     this.initializeForms();
   }
@@ -223,13 +234,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const target = event.target as HTMLElement;
     
     // Check if click is outside calendar dropdowns
-    const monthCalendar = target.closest('.compact-calendar-dropdown');
+    const monthCalendar = target.closest('.compact-calendar-dropdown:not(.year-calendar-dropdown)');
+    const yearCalendar = target.closest('.year-calendar-dropdown');
     const monthInput = target.closest('[formControlName="monthName"]');
-    const monthButton = target.closest('.calendar-toggle-btn');
+    const yearInput = target.closest('[formControlName="year"]');
+    const calendarButton = target.closest('.calendar-toggle-btn');
     
     // Close month calendar if clicked outside
-    if (!monthCalendar && !monthInput && !monthButton && this.showMonthCalendar) {
+    if (!monthCalendar && !monthInput && !calendarButton && this.showMonthCalendar) {
       this.showMonthCalendar = false;
+    }
+    
+    // Close year calendar if clicked outside
+    if (!yearCalendar && !yearInput && !calendarButton && this.showYearCalendar) {
+      this.showYearCalendar = false;
     }
   }
 
@@ -5010,6 +5028,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   hideAllCalendars(): void {
     this.showCalendar = false;
     this.showMonthCalendar = false;
+    this.showYearCalendar = false;
   }
 
   onCalendarMonthSelect(monthIndex: number): void {
@@ -5052,5 +5071,101 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   isCurrentMonthSelected(monthIndex: number): boolean {
     const formMonthName = this.equipmentForm.get('monthName')?.value;
     return formMonthName === this.monthNames[monthIndex];
+  }
+
+  // Year Calendar Methods
+  toggleYearCalendar(): void {
+    this.showYearCalendar = !this.showYearCalendar;
+    if (this.showYearCalendar) {
+      // Initialize year range based on current form value or selected current year
+      const currentFormYear = this.equipmentForm.get('year')?.value || new Date().getFullYear();
+      this.setYearRangeContaining(currentFormYear);
+      
+      // Initialize the currentYears array
+      this.currentYears = [];
+      for (let year = this.yearRangeStart; year <= this.yearRangeEnd; year++) {
+        this.currentYears.push(year);
+      }
+      console.log('Initialized currentYears:', this.currentYears);
+    }
+  }
+
+  onCalendarYearSelect(year: number): void {
+    this.equipmentForm.patchValue({ year: year });
+    this.selectedYear = year;
+    // Close year calendar after selection
+    this.showYearCalendar = false;
+  }
+
+  isCurrentYearSelected(year: number): boolean {
+    const formYear = this.equipmentForm.get('year')?.value;
+    return formYear === year || formYear === year.toString();
+  }
+
+  trackByYear(index: number, year: number): number {
+    return year;
+  }
+
+  navigateYearRange(direction: 'prev' | 'next'): void {
+    console.log(`Navigating ${direction}, current range: ${this.yearRangeStart}-${this.yearRangeEnd}`);
+    
+    // Ensure calendar stays open during navigation
+    this.showYearCalendar = true;
+    
+    let navigationOccurred = false;
+    
+    if (direction === 'prev' && this.yearRangeStart > this.minYear) {
+      this.yearRangeStart = Math.max(this.minYear, this.yearRangeStart - this.yearsPerRange);
+      this.yearRangeEnd = this.yearRangeStart + this.yearsPerRange - 1;
+      navigationOccurred = true;
+      console.log(`After prev navigation: ${this.yearRangeStart}-${this.yearRangeEnd}`);
+    } else if (direction === 'next' && this.yearRangeEnd < this.maxYear) {
+      this.yearRangeStart = Math.min(this.maxYear - this.yearsPerRange + 1, this.yearRangeStart + this.yearsPerRange);
+      this.yearRangeEnd = Math.min(this.maxYear, this.yearRangeStart + this.yearsPerRange - 1);
+      navigationOccurred = true;
+      console.log(`After next navigation: ${this.yearRangeStart}-${this.yearRangeEnd}`);
+    } else {
+      console.log(`Navigation blocked - direction: ${direction}, start: ${this.yearRangeStart}, end: ${this.yearRangeEnd}, max: ${this.maxYear}`);
+    }
+    
+    if (navigationOccurred) {
+      // Update the currentYears array directly
+      this.currentYears = [];
+      for (let year = this.yearRangeStart; year <= this.yearRangeEnd; year++) {
+        this.currentYears.push(year);
+      }
+      
+      this.yearRangeChangeCounter++; // Increment counter to force change detection
+      console.log('Updated currentYears:', this.currentYears);
+      
+      // Force change detection
+      this.cdr.detectChanges();
+    }
+  }
+
+  getCurrentYearRange(): string {
+    return `${this.yearRangeStart} – ${this.yearRangeEnd}`;
+  }
+
+  getYearsInCurrentRange(): number[] {
+    const years: number[] = [];
+    const start = this.yearRangeStart;
+    const end = this.yearRangeEnd;
+    
+    for (let year = start; year <= end; year++) {
+      years.push(year);
+    }
+    
+    // Log the years being returned for debugging
+    console.log(`getYearsInCurrentRange called: ${start}-${end}`, years);
+    
+    return years;
+  }
+
+  private setYearRangeContaining(year: number): void {
+    // Calculate which range the year falls into
+    const rangeIndex = Math.floor((year - this.minYear) / this.yearsPerRange);
+    this.yearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
+    this.yearRangeEnd = Math.min(this.maxYear, this.yearRangeStart + this.yearsPerRange - 1);
   }
 }

@@ -466,7 +466,7 @@
                   <div class="col-md-2">
                     <div class="form-floating position-relative">
                       <input
-                        type="number"
+                        type="text"
                         class="form-control"
                         formControlName="year"
                         [class.is-invalid]="
@@ -474,13 +474,61 @@
                           equipmentForm.get('year')?.touched
                         "
                         id="year"
-                        placeholder="Year"
-                        min="1990"
-                        max="2055">
+                        placeholder="Enter year (e.g., 2024, 2025...)"
+                        (focus)="toggleYearCalendar()">
                       
                       <label for="year">
                         Year <span class="text-danger">*</span>
                       </label>
+                      
+                      <!-- Year calendar toggle button -->
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary calendar-toggle-btn"
+                        (click)="toggleYearCalendar()"
+                        [title]="showYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
+                      >
+                        <i class="bi bi-calendar-date"></i>
+                      </button>
+                      
+                      <!-- Year Calendar Picker -->
+                      <div class="compact-calendar-dropdown" *ngIf="showYearCalendar" (click)="$event.stopPropagation()">
+                        <div class="calendar-header">
+                          <div class="year-navigation-header" (click)="$event.stopPropagation()">
+                            <button 
+                              type="button" 
+                              class="btn btn-sm btn-link text-white year-nav-btn"
+                              (click)="navigateYearRange('prev'); $event.stopPropagation()"
+                              title="Previous years"
+                              [disabled]="yearRangeStart <= minYear"
+                            >
+                              <i class="bi bi-chevron-double-left"></i>
+                            </button>
+                            <span class="year-range-display">{{ getCurrentYearRange() }}</span>
+                            <button 
+                              type="button" 
+                              class="btn btn-sm btn-link text-white year-nav-btn"
+                              (click)="navigateYearRange('next'); $event.stopPropagation()"
+                              title="Next years"
+                              [disabled]="yearRangeEnd >= maxYear"
+                            >
+                              <i class="bi bi-chevron-double-right"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="year-grid-compact" [attr.data-change-counter]="yearRangeChangeCounter">
+                          <button
+                            type="button"
+                            *ngFor="let year of currentYears; trackBy: trackByYear"
+                            class="btn btn-sm year-btn-compact"
+                            [class.btn-primary]="isCurrentYearSelected(year)"
+                            [class.btn-outline-primary]="!isCurrentYearSelected(year)"
+                            (click)="onCalendarYearSelect(year)"
+                          >
+                            {{ year }}
+                          </button>
+                        </div>
+                      </div>
                       
                       <div
                         class="invalid-feedback"
@@ -490,7 +538,7 @@
                         "
                       >
                         <span *ngIf="equipmentForm.get('year')?.errors?.['required']">Year is required</span>
-                        <span *ngIf="equipmentForm.get('year')?.errors?.['min']">Year must be at least 1900</span>
+                        <span *ngIf="equipmentForm.get('year')?.errors?.['min']">Year must be at least 1990</span>
                       </div>
                     </div>
                   </div>
@@ -1497,84 +1545,427 @@
 
           <div class="ups-section-content" [class.show]="showPowerVerification">
             <!-- Input Section -->
-            <div class="mb-4 configuration-section">
+            <div class="mb-4">
               <form [formGroup]="inputReadingsForm">
-                <div class="form-group-modern">
+                <!-- Inline Configuration Bar -->
+                <div class="input-config-bar d-flex align-items-center justify-content-between p-3 bg-light border rounded-3 shadow-sm">
+                  <!-- Input Configuration Dropdown -->
+                  <div class="config-item d-flex align-items-center">
+                    <label class="form-label mb-0 me-2 fw-semibold text-white input-label">
+                      <i class="bi bi-arrow-down-circle me-1"></i>Input Configuration:
+                    </label>
+                    <select
+                      class="form-select form-select-sm custom-select"
+                      formControlName="configuration"
+                      (change)="onVoltageConfigurationChange('input', $any($event.target).value)"
+                      id="inputConfiguration"
+                      style="min-width: 150px; max-width: 150px;"
+                    >
+                      <option value="">Select...</option>
+                      <option *ngFor="let config of voltageConfigurations" [value]="config.id">
+                        {{ config.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Tolerance Display -->
+                  <div class="tolerance-info d-flex align-items-center" *ngIf="inputConfig">
+                    <div class="d-flex flex-column">
+                      <small class="text-primary fw-semibold mb-1">
+                        <i class="bi bi-info-circle me-1"></i>
+                        V-Tolerance: {{ getVoltageToleranceRange(inputReadingsForm.get('configuration')?.value, 'input') }}
+                      </small>
+                      <small class="text-info fw-semibold">
+                        <i class="bi bi-speedometer me-1"></i>
+                        Freq: {{ getFrequencyToleranceRange('input') }}
+                      </small>
+                    </div>
+                  </div>
+
+                  <!-- Filter Current Toggle -->
+                  <div class="config-item d-flex align-items-center">
+                    <div class="custom-toggle-container">
+                      <input
+                        class="custom-toggle-input"
+                        type="checkbox"
+                        formControlName="inputFilterCurrent"
+                        id="inputFilterCurrent"
+                      />
+                      <label class="custom-toggle-label" for="inputFilterCurrent">
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-text">
+                          <i class="bi bi-funnel me-1"></i>Filter Current
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- THD % Toggle -->
+                  <div class="config-item d-flex align-items-center">
+                    <div class="custom-toggle-container">
+                      <input
+                        class="custom-toggle-input"
+                        type="checkbox"
+                        formControlName="inputThdPercent"
+                        id="inputThdPercent"
+                      />
+                      <label class="custom-toggle-label" for="inputThdPercent">
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-text">
+                          <i class="bi bi-graph-up me-1"></i>THD %
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Phase Count Display -->
+                  <div class="phase-indicator d-flex align-items-center" *ngIf="inputConfig">
+                    <span class="badge bg-primary fs-6 px-3 py-2">
+                      <i class="bi bi-diagram-3 me-1"></i>
+                      Phase {{ inputConfig.phaseCount }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Input Phase Cards -->
+                <div *ngIf="inputConfig" class="mb-4">
+                  <h6 class="fw-bold text-success mb-3">
+                    <i class="bi bi-plug me-2"></i>
+                    Input Phase Measurements
+                    <small class="text-muted ms-2">Voltage, Current, and Frequency readings</small>
+                  </h6>
+                  
                   <div class="row g-3">
-                    <div class="col-md-3">
-                      <div class="form-floating configuration-header">
-                        <select
-                          class="form-select"
-                          formControlName="configuration"
-                          (change)="
-                            onVoltageConfigurationChange(
-                              'input',
-                              $any($event.target).value
-                            )
-                          "
-                          id="inputConfiguration"
-                        >
-                          <option value="">Select configuration...</option>
-                          <option
-                            *ngFor="let config of voltageConfigurations"
-                            [value]="config.id"
-                          >
-                            {{ config.name }}
-                          </option>
-                        </select>
-                        <label for="inputConfiguration"
-                          ><strong class="text-primary"
-                            >Input Configuration</strong
-                          ></label
-                        >
+                    <!-- Phase A/Single Phase -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="inputConfig.phaseCount >= 1">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-lightning text-primary me-2"></i>
+                            <span class="fw-semibold text-dark">
+                              {{ inputConfig.phaseCount === 1 ? 'Voltage A' : (inputConfig.phaseCount === 2 ? 'Voltage A' : 'Voltage A-B') }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="voltA"
+                                  step="0.01"
+                                  placeholder="208"
+                                  id="inputVoltA"
+                                />
+                                <label for="inputVoltA" class="text-muted">Voltage</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="voltA_PF"
+                                  id="inputVoltAStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="inputVoltAStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <!-- Voltage and Frequency Tolerance Display -->
-                    <div class="col-md-5" *ngIf="inputConfig">
-                      <div class="tolerance-display p-2 bg-light border rounded">
-                        <small class="text-primary fw-semibold">
-                          <i class="bi bi-info-circle me-1"></i>
-                          V-Tolerance: {{ getVoltageToleranceRange(inputReadingsForm.get('configuration')?.value, 'input') }}
-                        </small>
-                        <br>
-                        <small class="text-info fw-semibold">
-                          <i class="bi bi-speedometer me-1"></i>
-                          Frequency Tolerance: {{ getFrequencyToleranceRange('input') }}
-                        </small>
+
+                    <!-- Current A -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="inputConfig.phaseCount >= 1">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-activity text-warning me-2"></i>
+                            <span class="fw-semibold text-dark">Current A</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="currA"
+                                  step="0.01"
+                                  placeholder="10"
+                                  id="inputCurrA"
+                                />
+                                <label for="inputCurrA" class="text-muted">Current</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="currA_PF"
+                                  id="inputCurrAStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="inputCurrAStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-md-2">
-                      <div class="form-check d-flex align-items-center h-100">
-                        <input
-                          class="form-check-input me-2"
-                          type="checkbox"
-                          formControlName="inputFilterCurrent"
-                          id="inputFilterCurrent"
-                        />
-                        <label
-                          class="form-check-label text-success fw-semibold"
-                          for="inputFilterCurrent"
-                        >
-                          <i class="bi bi-check-circle me-1"></i>
-                          Input Filter Current
-                        </label>
+
+                    <!-- Phase B (for 2 and 3 phase) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="inputConfig.phaseCount >= 2">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-lightning text-success me-2"></i>
+                            <span class="fw-semibold text-dark">
+                              {{ inputConfig.phaseCount === 2 ? 'Voltage B' : 'Voltage B-C' }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="voltB"
+                                  step="0.01"
+                                  placeholder="208"
+                                  id="inputVoltB"
+                                />
+                                <label for="inputVoltB" class="text-muted">Voltage</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="voltB_PF"
+                                  id="inputVoltBStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="inputVoltBStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-md-2">
-                      <div class="form-check d-flex align-items-center h-100">
-                        <input
-                          class="form-check-input me-2"
-                          type="checkbox"
-                          formControlName="inputThdPercent"
-                          id="inputThdPercent"
-                        />
-                        <label
-                          class="form-check-label text-success fw-semibold"
-                          for="inputThdPercent"
-                        >
-                          <i class="bi bi-check-circle me-1"></i>
-                          Input THD %
-                        </label>
+
+                    <!-- Current B (for 2 and 3 phase) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="inputConfig.phaseCount >= 2">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-activity text-info me-2"></i>
+                            <span class="fw-semibold text-dark">Current B</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="currB"
+                                  step="0.01"
+                                  placeholder="10"
+                                  id="inputCurrB"
+                                />
+                                <label for="inputCurrB" class="text-muted">Current</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="currB_PF"
+                                  id="inputCurrBStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="inputCurrBStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Phase C (for 3 phase only) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="inputConfig.phaseCount >= 3">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-lightning text-danger me-2"></i>
+                            <span class="fw-semibold text-dark">Voltage C-A</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="voltC"
+                                  step="0.01"
+                                  placeholder="208"
+                                  id="inputVoltC"
+                                />
+                                <label for="inputVoltC" class="text-muted">Voltage</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="voltC_PF"
+                                  id="inputVoltCStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="inputVoltCStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Current C (for 3 phase only) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="inputConfig.phaseCount >= 3">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-activity text-secondary me-2"></i>
+                            <span class="fw-semibold text-dark">Current C</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="currC"
+                                  step="0.01"
+                                  placeholder="10"
+                                  id="inputCurrC"
+                                />
+                                <label for="inputCurrC" class="text-muted">Current</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="currC_PF"
+                                  id="inputCurrCStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="inputCurrCStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Frequency -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-speedometer text-purple me-2"></i>
+                            <span class="fw-semibold text-dark">Frequency</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="freq"
+                                  step="0.01"
+                                  placeholder="60"
+                                  id="inputFreq"
+                                />
+                                <label for="inputFreq" class="text-muted">Frequency</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="freq_PF"
+                                  id="inputFreqStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="inputFreqStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1668,1093 +2059,1106 @@
                   </div>
                 </div>
 
-                <!-- Input voltage readings in modern table format -->
-                <div *ngIf="inputConfig" class="modern-table-container">
-                  <div class="table-responsive">
-                    <table class="table table-modern table-bordered">
-                      <thead class="table-header-primary">
-                        <tr>
-                          <!-- Single Phase Headers -->
-                          <th
-                            *ngIf="inputConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Voltage A
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Current A
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
 
-                          <!-- Two Phase Headers -->
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Voltage A
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Current A
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Voltage B
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Current B
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-
-                          <!-- Three Phase Headers -->
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Voltage A-B
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Current A
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Voltage B-C
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Current B
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Voltage C-A
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Current C
-                          </th>
-                          <th
-                            *ngIf="inputConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-
-                          <th class="text-center">Frequency</th>
-                          <th class="text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <!-- Single Phase Fields -->
-                          <td *ngIf="inputConfig?.phaseCount === 1">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 1">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 1">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 1">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-
-                          <!-- Two Phase Fields -->
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-
-                          <!-- Three Phase Fields -->
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltC"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltC_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currC"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="inputConfig?.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currC_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-
-                          <!-- Frequency (common to all) -->
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="freq"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="freq_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </form>
             </div>
 
             <!-- By-Pass Section -->
-            <div class="mb-4 configuration-section">
+            <div class="mb-4">
               <form [formGroup]="bypassReadingsForm">
-                <div class="form-group-modern">
+                <!-- Inline Configuration Bar -->
+                <div class="input-config-bar d-flex align-items-center justify-content-between p-3 bg-light border rounded-3 shadow-sm">
+                  <!-- Configuration Dropdown -->
+                  <div class="config-item d-flex align-items-center">
+                    <label class="form-label mb-0 me-2 fw-semibold text-white input-label">
+                      <i class="bi bi-arrow-left-right me-1"></i>Bypass Configuration:
+                    </label>
+                    <select
+                      class="form-select form-select-sm custom-select"
+                      formControlName="configuration"
+                      (change)="onVoltageConfigurationChange('bypass', $any($event.target).value)"
+                      id="bypassConfiguration"
+                      style="min-width: 150px; max-width: 150px;"
+                    >
+                      <option value="">Select...</option>
+                      <option *ngFor="let config of voltageConfigurations" [value]="config.id">
+                        {{ config.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Tolerance Display -->
+                  <div class="tolerance-info d-flex align-items-center" *ngIf="bypassConfig">
+                    <div class="d-flex flex-column">
+                      <small class="text-primary fw-semibold mb-1">
+                        <i class="bi bi-info-circle me-1"></i>
+                        V-Tolerance: {{ getVoltageToleranceRange(bypassReadingsForm.get('configuration')?.value, 'bypass') }}
+                      </small>
+                      <small class="text-info fw-semibold">
+                        <i class="bi bi-speedometer me-1"></i>
+                        Freq: {{ getFrequencyToleranceRange('bypass') }}
+                      </small>
+                    </div>
+                  </div>
+
+
+
+                  <!-- Phase Count Display -->
+                  <div class="phase-indicator d-flex align-items-center" *ngIf="bypassConfig">
+                    <span class="badge bg-primary fs-6 px-3 py-2">
+                      <i class="bi bi-diagram-3 me-1"></i>
+                      Phase {{ bypassConfig.phaseCount }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Bypass Phase Cards -->
+                <div *ngIf="bypassConfig" class="mb-4">
+                  <h6 class="fw-bold text-warning mb-3">
+                    <i class="bi bi-arrow-repeat me-2"></i>
+                    Bypass Phase Measurements
+                    <small class="text-muted ms-2">Voltage, Current, and Frequency readings</small>
+                  </h6>
+                  
                   <div class="row g-3">
-                    <div class="col-md-6">
-                      <div class="form-floating configuration-header">
-                        <select
-                          class="form-select"
-                          formControlName="configuration"
-                          (change)="
-                            onVoltageConfigurationChange(
-                              'bypass',
-                              $any($event.target).value
-                            )
-                          "
-                          id="bypassConfiguration"
-                        >
-                          <option value="">Select configuration...</option>
-                          <option
-                            *ngFor="let config of voltageConfigurations"
-                            [value]="config.id"
-                          >
-                            {{ config.name }}
-                          </option>
-                        </select>
-                        <label for="bypassConfiguration"
-                          ><strong class="text-primary"
-                            >By-Pass Configuration</strong
-                          ></label
-                        >
+                    <!-- Phase A/Single Phase -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="bypassConfig.phaseCount >= 1">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-lightning text-primary me-2"></i>
+                            <span class="fw-semibold text-dark">
+                              {{ bypassConfig.phaseCount === 1 ? 'Voltage A' : (bypassConfig.phaseCount === 2 ? 'Voltage A' : 'Voltage A-B') }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="voltA"
+                                  step="0.01"
+                                  placeholder="208"
+                                  id="bypassVoltA"
+                                />
+                                <label for="bypassVoltA" class="text-muted">Voltage</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="voltA_PF"
+                                  id="bypassVoltAStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="bypassVoltAStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <!-- Voltage and Frequency Tolerance Display -->
-                    <div class="col-md-6" *ngIf="bypassConfig">
-                      <div class="tolerance-display p-2 bg-light border rounded">
-                        <small class="text-primary fw-semibold">
-                          <i class="bi bi-info-circle me-1"></i>
-                          V-Tolerance: {{ getVoltageToleranceRange(bypassReadingsForm.get('configuration')?.value, 'bypass') }}
-                        </small>
-                        <br>
-                        <small class="text-info fw-semibold">
-                          <i class="bi bi-speedometer me-1"></i>
-                          Frequency Tolerance: {{ getFrequencyToleranceRange('bypass') }}
-                        </small>
-                        <!-- Bypass Mode Indicator -->
-                        <div *ngIf="isBypassModeActive()" class="mt-2">
-                          <small class="text-success fw-semibold">
-                            <i class="bi bi-check-circle me-1"></i>
-                            Bypass Mode Active - Current fields are optional
-                          </small>
+
+                    <!-- Current A -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="bypassConfig.phaseCount >= 1">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-activity text-warning me-2"></i>
+                            <span class="fw-semibold text-dark">Current A</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="currA"
+                                  step="0.01"
+                                  [placeholder]="isBypassModeActive() ? '10 (Optional)' : '10'"
+                                  id="bypassCurrA"
+                                />
+                                <label for="bypassCurrA" class="text-muted">Current</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="currA_PF"
+                                  id="bypassCurrAStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="bypassCurrAStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Phase B (for 2 and 3 phase) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="bypassConfig.phaseCount >= 2">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-lightning text-success me-2"></i>
+                            <span class="fw-semibold text-dark">
+                              {{ bypassConfig.phaseCount === 2 ? 'Voltage B' : 'Voltage B-C' }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="voltB"
+                                  step="0.01"
+                                  placeholder="208"
+                                  id="bypassVoltB"
+                                />
+                                <label for="bypassVoltB" class="text-muted">Voltage</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="voltB_PF"
+                                  id="bypassVoltBStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="bypassVoltBStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Current B (for 2 and 3 phase) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="bypassConfig.phaseCount >= 2">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-activity text-info me-2"></i>
+                            <span class="fw-semibold text-dark">Current B</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="currB"
+                                  step="0.01"
+                                  [placeholder]="isBypassModeActive() ? '10 (Optional)' : '10'"
+                                  id="bypassCurrB"
+                                />
+                                <label for="bypassCurrB" class="text-muted">Current</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="currB_PF"
+                                  id="bypassCurrBStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="bypassCurrBStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Phase C (for 3 phase only) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="bypassConfig.phaseCount >= 3">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-lightning text-danger me-2"></i>
+                            <span class="fw-semibold text-dark">Voltage C-A</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="voltC"
+                                  step="0.01"
+                                  placeholder="208"
+                                  id="bypassVoltC"
+                                />
+                                <label for="bypassVoltC" class="text-muted">Voltage</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="voltC_PF"
+                                  id="bypassVoltCStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="bypassVoltCStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Current C (for 3 phase only) -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12" *ngIf="bypassConfig.phaseCount >= 3">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-activity text-secondary me-2"></i>
+                            <span class="fw-semibold text-dark">Current C</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="currC"
+                                  step="0.01"
+                                  [placeholder]="isBypassModeActive() ? '10 (Optional)' : '10'"
+                                  id="bypassCurrC"
+                                />
+                                <label for="bypassCurrC" class="text-muted">Current</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="currC_PF"
+                                  id="bypassCurrCStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="bypassCurrCStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Frequency -->
+                    <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                      <div class="power-measurement-card">
+                        <div class="power-card-header">
+                          <div class="power-card-title">
+                            <i class="bi bi-speedometer text-purple me-2"></i>
+                            <span class="fw-semibold text-dark">Frequency</span>
+                          </div>
+                        </div>
+                        <div class="power-card-body">
+                          <div class="row g-2">
+                            <div class="col-8">
+                              <div class="form-floating">
+                                <input
+                                  type="number"
+                                  class="form-control power-input"
+                                  formControlName="freq"
+                                  step="0.01"
+                                  placeholder="60"
+                                  id="bypassFreq"
+                                />
+                                <label for="bypassFreq" class="text-muted">Frequency</label>
+                              </div>
+                            </div>
+                            <div class="col-4">
+                              <div class="form-floating">
+                                <select
+                                  class="form-select power-select"
+                                  formControlName="freq_PF"
+                                  id="bypassFreqStatus"
+                                >
+                                  <option value="">Select status...</option>
+                                  <option
+                                    *ngFor="let option of powerVerificationOptions"
+                                    [value]="option.value"
+                                  >
+                                    {{ option.text }}
+                                  </option>
+                                </select>
+                                <label for="bypassFreqStatus" class="text-muted">Status</label>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <!-- Similar table structure for bypass readings -->
-                <div *ngIf="bypassConfig" class="modern-table-container">
-                  <div class="table-responsive">
-                    <table class="table table-modern table-bordered">
-                      <thead class="table-header-warning">
-                        <tr>
-                          <!-- Single Phase Headers -->
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Voltage A
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Current A
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
 
-                          <!-- Two Phase Headers -->
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Voltage A
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Current A
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Voltage B
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Current B
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-
-                          <!-- Three Phase Headers -->
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Voltage A-B
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Current A
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Voltage B-C
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Current B
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Voltage C-A
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Current C
-                          </th>
-                          <th
-                            *ngIf="bypassConfig.phaseCount === 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-
-                          <th class="text-center">Frequency</th>
-                          <th class="text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <!-- Single Phase Fields -->
-                          <td *ngIf="bypassConfig.phaseCount === 1">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 1">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 1">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currA"
-                              step="0.01"
-                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 1">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-
-                          <!-- Two Phase Fields -->
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currA"
-                              step="0.01"
-                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currB"
-                              step="0.01"
-                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-
-                          <!-- Three Phase Fields -->
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currA"
-                              step="0.01"
-                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currB"
-                              step="0.01"
-                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltC"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltC_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currC"
-                              step="0.01"
-                              [placeholder]="isBypassModeActive() ? '0.00 (Optional)' : '0.00'"
-                            />
-                          </td>
-                          <td *ngIf="bypassConfig.phaseCount === 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currC_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-
-                          <!-- Frequency (common to all) -->
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="freq"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="freq_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </form>
             </div>
 
             <!-- Output Section -->
-            <div class="mb-4 configuration-section">
+            <div class="mb-4">
               <form [formGroup]="outputReadingsForm">
-                <div class="form-group-modern">
-                  <div class="row g-3">
-                    <div class="col-md-3">
-                      <div class="form-floating configuration-header">
-                        <select
-                          class="form-select"
-                          formControlName="configuration"
-                          (change)="
-                            onVoltageConfigurationChange(
-                              'output',
-                              $any($event.target).value
-                            )
-                          "
-                          id="outputConfiguration"
-                        >
-                          <option value="">Select configuration...</option>
-                          <option
-                            *ngFor="let config of voltageConfigurations"
-                            [value]="config.id"
-                          >
-                            {{ config.name }}
-                          </option>
-                        </select>
-                        <label for="outputConfiguration"
-                          ><strong class="text-primary"
-                            >Output Configuration</strong
-                          ></label
-                        >
+                <!-- Inline Configuration Bar -->
+                <div class="input-config-bar d-flex align-items-center justify-content-between p-3 bg-light border rounded-3 shadow-sm">
+                  <!-- Configuration Dropdown -->
+                  <div class="config-item d-flex align-items-center">
+                    <label class="form-label mb-0 me-2 fw-semibold text-white input-label">
+                      <i class="bi bi-arrow-up-circle me-1"></i>Output Configuration:
+                    </label>
+                    <select
+                      class="form-select form-select-sm custom-select"
+                      formControlName="configuration"
+                      (change)="onVoltageConfigurationChange('output', $any($event.target).value)"
+                      id="outputConfiguration"
+                      style="min-width: 150px; max-width: 150px;"
+                    >
+                      <option value="">Select...</option>
+                      <option *ngFor="let config of voltageConfigurations" [value]="config.id">
+                        {{ config.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <!-- Tolerance Display -->
+                  <div class="tolerance-info d-flex align-items-center" *ngIf="outputConfig">
+                    <div class="d-flex flex-column">
+                      <small class="text-primary fw-semibold mb-1">
+                        <i class="bi bi-info-circle me-1"></i>
+                        V-Tolerance: {{ getVoltageToleranceRange(outputReadingsForm.get('configuration')?.value, 'output') }}
+                      </small>
+                      <small class="text-info fw-semibold">
+                        <i class="bi bi-speedometer me-1"></i>
+                        Freq: {{ getFrequencyToleranceRange('output') }}
+                      </small>
+                    </div>
+                  </div>
+
+                  <!-- Filter Current Toggle -->
+                  <div class="config-item d-flex align-items-center">
+                    <div class="custom-toggle-container">
+                      <input
+                        class="custom-toggle-input"
+                        type="checkbox"
+                        formControlName="outputFilterCurrent"
+                        id="outputFilterCurrent"
+                      />
+                      <label class="custom-toggle-label" for="outputFilterCurrent">
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-text">
+                          <i class="bi bi-funnel me-1"></i>Filter Current
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- THD % Toggle -->
+                  <div class="config-item d-flex align-items-center">
+                    <div class="custom-toggle-container">
+                      <input
+                        class="custom-toggle-input"
+                        type="checkbox"
+                        formControlName="outputThdPercent"
+                        id="outputThdPercent"
+                      />
+                      <label class="custom-toggle-label" for="outputThdPercent">
+                        <span class="toggle-switch"></span>
+                        <span class="toggle-text">
+                          <i class="bi bi-graph-up me-1"></i>THD %
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Phase Count Display -->
+                  <div class="phase-indicator d-flex align-items-center" *ngIf="outputConfig">
+                    <span class="badge bg-primary fs-6 px-3 py-2">
+                      <i class="bi bi-diagram-3 me-1"></i>
+                      Phase {{ outputConfig.phaseCount }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Output Phase Cards - Phase A Row -->
+                <div *ngIf="outputConfig" class="mb-4">
+                  <h6 class="fw-bold text-success mb-3">
+                    <i class="bi bi-outlet me-2"></i>
+                    Output Phase Measurements
+                    <small class="text-muted ms-2">Voltage, Current, Load%, and Frequency readings</small>
+                  </h6>
+                  
+                  <!-- Phase A Cards Row -->
+                  <div class="phase-section mb-4">
+                    <div class="row g-3">
+                      <!-- Voltage A -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-lightning text-primary me-2"></i>
+                              <span class="fw-semibold text-dark">
+                                {{ outputConfig.phaseCount === 1 ? 'Voltage A' : (outputConfig.phaseCount === 2 ? 'Voltage A' : 'Voltage A-B') }}
+                              </span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="voltA"
+                                    step="0.01"
+                                    placeholder="208"
+                                    id="outputVoltA"
+                                  />
+                                  <label for="outputVoltA" class="text-muted">Voltage</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="voltA_PF"
+                                    id="outputVoltAStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputVoltAStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Current A -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-activity text-warning me-2"></i>
+                              <span class="fw-semibold text-dark">Current A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="currA"
+                                    step="0.01"
+                                    placeholder="10"
+                                    id="outputCurrA"
+                                  />
+                                  <label for="outputCurrA" class="text-muted">Current</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="currA_PF"
+                                    id="outputCurrAStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputCurrAStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Load A -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-speedometer2 text-info me-2"></i>
+                              <span class="fw-semibold text-dark">Load(%) A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="loadA"
+                                    step="0.01"
+                                    placeholder="13"
+                                    id="outputLoadA"
+                                  />
+                                  <label for="outputLoadA" class="text-muted">Load %</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="loadA_PF"
+                                    id="outputLoadAStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputLoadAStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Frequency (only show in Phase A row) -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-speedometer text-purple me-2"></i>
+                              <span class="fw-semibold text-dark">Frequency</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="freq"
+                                    step="0.01"
+                                    placeholder="60"
+                                    id="outputFreq"
+                                  />
+                                  <label for="outputFreq" class="text-muted">Frequency</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="freq_PF"
+                                    id="outputFreqStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputFreqStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <!-- Voltage and Frequency Tolerance Display -->
-                    <div class="col-md-5" *ngIf="outputConfig">
-                      <div class="tolerance-display p-2 bg-light border rounded">
-                        <small class="text-primary fw-semibold">
-                          <i class="bi bi-info-circle me-1"></i>
-                          V-Tolerance: {{ getVoltageToleranceRange(outputReadingsForm.get('configuration')?.value, 'output') }}
-                        </small>
-                        <br>
-                        <small class="text-info fw-semibold">
-                          <i class="bi bi-speedometer me-1"></i>
-                          Frequency Tolerance: {{ getFrequencyToleranceRange('output') }}
-                        </small>
+                  </div>
+
+                  <!-- Phase B Cards Row (for 2 and 3 phase) -->
+                  <div class="phase-section mb-4" *ngIf="outputConfig.phaseCount >= 2">
+                    <div class="row g-3">
+                      <!-- Voltage B -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-lightning text-success me-2"></i>
+                              <span class="fw-semibold text-dark">
+                                {{ outputConfig.phaseCount === 2 ? 'Voltage B' : 'Voltage B-C' }}
+                              </span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="voltB"
+                                    step="0.01"
+                                    placeholder="208"
+                                    id="outputVoltB"
+                                  />
+                                  <label for="outputVoltB" class="text-muted">Voltage</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="voltB_PF"
+                                    id="outputVoltBStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputVoltBStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Current B -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-activity text-warning me-2"></i>
+                              <span class="fw-semibold text-dark">Current B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="currB"
+                                    step="0.01"
+                                    placeholder="10"
+                                    id="outputCurrB"
+                                  />
+                                  <label for="outputCurrB" class="text-muted">Current</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="currB_PF"
+                                    id="outputCurrBStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputCurrBStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Load B -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-speedometer2 text-info me-2"></i>
+                              <span class="fw-semibold text-dark">Load(%) B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="loadB"
+                                    step="0.01"
+                                    placeholder="13"
+                                    id="outputLoadB"
+                                  />
+                                  <label for="outputLoadB" class="text-muted">Load %</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="loadB_PF"
+                                    id="outputLoadBStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputLoadBStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Empty slot or Total Load in B row -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card" *ngIf="outputConfig.phaseCount === 2">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-calculator text-dark me-2"></i>
+                              <span class="fw-semibold text-dark">Total Load</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="totalLoad"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    id="outputTotalLoad"
+                                  />
+                                  <label for="outputTotalLoad" class="text-muted">Total %</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <button
+                                  type="button"
+                                  class="btn btn-primary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                                  (click)="calculateTotalLoad()"
+                                  style="min-height: 2.5rem; gap: 2px;"
+                                >
+                                  <i class="bi bi-calculator" style="font-size: 1.2em;"></i>
+                                  <small style="font-size: 0.7em; line-height: 1;">Calculate</small>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-md-2">
-                      <div class="form-check d-flex align-items-center h-100">
-                        <input
-                          class="form-check-input me-2"
-                          type="checkbox"
-                          formControlName="outputFilterCurrent"
-                          id="outputFilterCurrent"
-                        />
-                        <label
-                          class="form-check-label text-success fw-semibold"
-                          for="outputFilterCurrent"
-                        >
-                          <i class="bi bi-check-circle me-1"></i>
-                          Output Filter Current
-                        </label>
+                  </div>
+
+                  <!-- Phase C Cards Row (for 3 phase only) -->
+                  <div class="phase-section mb-4" *ngIf="outputConfig.phaseCount >= 3">
+                    <div class="row g-3">
+                      <!-- Voltage C -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-lightning text-danger me-2"></i>
+                              <span class="fw-semibold text-dark">Voltage C-A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="voltC"
+                                    step="0.01"
+                                    placeholder="208"
+                                    id="outputVoltC"
+                                  />
+                                  <label for="outputVoltC" class="text-muted">Voltage</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="voltC_PF"
+                                    id="outputVoltCStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputVoltCStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Current C -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-activity text-warning me-2"></i>
+                              <span class="fw-semibold text-dark">Current C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="currC"
+                                    step="0.01"
+                                    placeholder="10"
+                                    id="outputCurrC"
+                                  />
+                                  <label for="outputCurrC" class="text-muted">Current</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="currC_PF"
+                                    id="outputCurrCStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputCurrCStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Load C -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-speedometer2 text-info me-2"></i>
+                              <span class="fw-semibold text-dark">Load(%) C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="loadC"
+                                    step="0.01"
+                                    placeholder="13"
+                                    id="outputLoadC"
+                                  />
+                                  <label for="outputLoadC" class="text-muted">Load %</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="loadC_PF"
+                                    id="outputLoadCStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option
+                                      *ngFor="let option of powerVerificationOptions"
+                                      [value]="option.value"
+                                    >
+                                      {{ option.text }}
+                                    </option>
+                                  </select>
+                                  <label for="outputLoadCStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Total Load for 3-phase -->
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-calculator text-dark me-2"></i>
+                              <span class="fw-semibold text-dark">Total Load</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="totalLoad"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    id="outputTotalLoad3Phase"
+                                  />
+                                  <label for="outputTotalLoad3Phase" class="text-muted">Total %</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <button
+                                  type="button"
+                                  class="btn btn-primary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                                  (click)="calculateTotalLoad()"
+                                  style="min-height: 2.5rem; gap: 2px;"
+                                >
+                                  <i class="bi bi-calculator" style="font-size: 1.2em;"></i>
+                                  <small style="font-size: 0.7em; line-height: 1;">Calculate</small>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    <div class="col-md-4">
-                      <div class="form-check d-flex align-items-center h-100">
-                        <input
-                          class="form-check-input me-2"
-                          type="checkbox"
-                          formControlName="outputThdPercent"
-                          id="outputThdPercent"
-                        />
-                        <label
-                          class="form-check-label text-success fw-semibold"
-                          for="outputThdPercent"
-                        >
-                          <i class="bi bi-check-circle me-1"></i>
-                          Output THD %
-                        </label>
+                  </div>
+
+                  <!-- Single Phase Total Load (for single phase only) -->
+                  <div class="phase-section mb-4" *ngIf="outputConfig.phaseCount === 1">
+                    <div class="row g-3">
+                      <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-calculator text-dark me-2"></i>
+                              <span class="fw-semibold text-dark">Total Load</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="number"
+                                    class="form-control power-input"
+                                    formControlName="totalLoad"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    id="outputTotalLoadSingle"
+                                  />
+                                  <label for="outputTotalLoadSingle" class="text-muted">Total %</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <button
+                                  type="button"
+                                  class="btn btn-primary btn-sm w-100 h-100 d-flex flex-column align-items-center justify-content-center"
+                                  (click)="calculateTotalLoad()"
+                                  style="min-height: 2.5rem; gap: 2px;"
+                                >
+                                  <i class="bi bi-calculator" style="font-size: 1.2em;"></i>
+                                  <small style="font-size: 0.7em; line-height: 1;">Calculate</small>
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2848,686 +3252,313 @@
                   </div>
                 </div>
 
-                <!-- Output voltage readings with Load fields -->
-                <div *ngIf="outputConfig" class="modern-table-container">
-                  <div class="table-responsive">
-                    <table class="table table-modern table-bordered">
-                      <thead class="table-header-success">
-                        <tr>
-                          <th
-                            *ngIf="outputConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Voltage A
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Voltage A
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Voltage A-B
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount === 1"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 1"
-                            class="text-center"
-                          >
-                            Current A
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 1"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 1"
-                            class="text-center"
-                          >
-                            Load(%) A
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 1"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Voltage B
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount === 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Voltage B-C
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 2"
-                            class="text-center"
-                          >
-                            Current B
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 2"
-                            class="text-center"
-                          >
-                            Load(%) B
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 2"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Voltage C-A
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Current C
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Load(%) C
-                          </th>
-                          <th
-                            *ngIf="outputConfig.phaseCount >= 3"
-                            class="text-center"
-                          >
-                            Status
-                          </th>
-                          <th class="text-center">Frequency</th>
-                          <th class="text-center">Status</th>
-                          <th class="text-center">Total</th>
-                          <th class="text-center">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td *ngIf="outputConfig.phaseCount === 1">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount === 1">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="loadA"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 1">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="loadA_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount === 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount === 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="loadB"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 2">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="loadB_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="voltC"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="voltC_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="currC"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="currC_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="loadC"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td *ngIf="outputConfig.phaseCount >= 3">
-                            <select
-                              class="form-select modern-select"
-                              formControlName="loadC_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
 
-                          <!-- Frequency (common to all) -->
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="freq"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="freq_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
-                              >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="totalLoad"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <button
-                              type="button"
-                              class="btn btn-sm btn-primary"
-                              (click)="calculateTotalLoad()"
-                            >
-                              <i class="bi bi-calculator me-1"></i>
-                              Calculate
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </form>
             </div>
 
-            <!-- Rectifier Section -->
+            <!-- Rectifier Verification Cards -->
             <div class="mb-4">
               <div class="form-group-modern">
-                <h6 class="fw-bold text-info mb-3">
-                  <i class="bi bi-gear me-2"></i>
-                  Rectifier Verification
-                  <small class="text-muted ms-2"
-                    >Verify correct float voltage settings</small
-                  >
-                </h6>
-                
-                <!-- Main Rectifier Verification Dropdown -->
-                <div class="row mb-3">
-                  <div class="col-md-4">
-                    <label class="form-label fw-bold">Verification Status:</label>
-                    <select
-                      class="form-select modern-select"
-                      formControlName="floatVolt_PF"
+                <div class="d-flex align-items-center mb-3">
+                  <h6 class="fw-bold text-info mb-0 me-3">
+                    <i class="bi bi-gear me-2"></i>
+                    Rectifier Verification
+                    <small class="text-muted ms-2"
+                      >Verify correct float voltage settings</small
                     >
-                      <option value="">Select Status</option>
-                      <option
-                        *ngFor="let option of passfailOptions"
-                        [value]="option.value"
-                      >
-                        {{ option.text }}
-                      </option>
-                    </select>
-                  </div>
+                  </h6>
+                  <select class="form-select form-select-sm" style="width: auto; min-width: 100px;" formControlName="rectifierVerificationStatus">
+                    <option value="">Select</option>
+                    <option value="Pass">Pass</option>
+                    <option value="Fail">Fail</option>
+                    <option value="N/A">N/A</option>
+                  </select>
                 </div>
               </div>
+              
               <form [formGroup]="rectifierForm">
-                <div class="modern-table-container">
-                  <div class="table-responsive">
-                    <table class="table table-modern table-bordered">
-                      <thead class="table-header-info">
-                        <tr>
-                          <th class="text-center">DC Float Voltage</th>
-                          <th class="text-center">Status</th>
-                          <th class="text-center">AC Ripple Voltage</th>
-                          <th class="text-center">Status</th>
-                          <th class="text-center">DC Current</th>
-                          <th class="text-center">Status</th>
-                          <th class="text-center">POS to GND</th>
-                          <th class="text-center">Status</th>
-                          <th class="text-center">NEG to GND</th>
-                          <th class="text-center">Status</th>
-                          <th class="text-center">AC Ripple Curr</th>
-                          <th class="text-center">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="dcFloatVoltage"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="floatVolt_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
+                <!-- Modern Card-based Layout -->
+                <div class="row g-3">
+                  <!-- DC Float Voltage Card -->
+                  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <div class="power-measurement-card">
+                      <div class="power-card-header">
+                        <div class="power-card-title">
+                          <i class="bi bi-battery-half text-success me-2"></i>
+                          <span class="fw-semibold text-dark">DC Float Voltage</span>
+                        </div>
+                      </div>
+                      <div class="power-card-body">
+                        <div class="row g-2">
+                          <div class="col-8">
+                            <div class="form-floating">
+                              <input
+                                type="number"
+                                class="form-control power-input"
+                                formControlName="dcFloatVoltage"
+                                step="0.01"
+                                placeholder="208"
+                                id="dcFloatVoltage"
+                              />
+                              <label for="dcFloatVoltage" class="text-muted">Voltage</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="form-floating">
+                              <select
+                                class="form-select power-select"
+                                formControlName="floatVolt_PF"
+                                id="dcFloatVoltageStatus"
                               >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="acRippleVolt"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="acRippleVolt_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
+                                <option value="">Select status...</option>
+                                <option
+                                  *ngFor="let option of powerVerificationOptions"
+                                  [value]="option.value"
+                                >
+                                  {{ option.text }}
+                                </option>
+                              </select>
+                              <label for="dcFloatVoltageStatus" class="text-muted">Status</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- AC Ripple Voltage Card -->
+                  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <div class="power-measurement-card">
+                      <div class="power-card-header">
+                        <div class="power-card-title">
+                          <i class="bi bi-graph-up-arrow text-warning me-2"></i>
+                          <span class="fw-semibold text-dark">AC Ripple Voltage</span>
+                        </div>
+                      </div>
+                      <div class="power-card-body">
+                        <div class="row g-2">
+                          <div class="col-8">
+                            <div class="form-floating">
+                              <input
+                                type="number"
+                                class="form-control power-input"
+                                formControlName="acRippleVolt"
+                                step="0.01"
+                                placeholder="10"
+                                id="acRippleVolt"
+                              />
+                              <label for="acRippleVolt" class="text-muted">Voltage</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="form-floating">
+                              <select
+                                class="form-select power-select"
+                                formControlName="acRippleVolt_PF"
+                                id="acRippleVoltStatus"
                               >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="dcCurrent"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="dcCurrent_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
+                                <option value="">Select status...</option>
+                                <option
+                                  *ngFor="let option of powerVerificationOptions"
+                                  [value]="option.value"
+                                >
+                                  {{ option.text }}
+                                </option>
+                              </select>
+                              <label for="acRippleVoltStatus" class="text-muted">Status</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- DC Current Card -->
+                  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <div class="power-measurement-card">
+                      <div class="power-card-header">
+                        <div class="power-card-title">
+                          <i class="bi bi-lightning-charge text-primary me-2"></i>
+                          <span class="fw-semibold text-dark">DC Current</span>
+                        </div>
+                      </div>
+                      <div class="power-card-body">
+                        <div class="row g-2">
+                          <div class="col-8">
+                            <div class="form-floating">
+                              <input
+                                type="number"
+                                class="form-control power-input"
+                                formControlName="dcCurrent"
+                                step="0.01"
+                                placeholder="13"
+                                id="dcCurrent"
+                              />
+                              <label for="dcCurrent" class="text-muted">Current</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="form-floating">
+                              <select
+                                class="form-select power-select"
+                                formControlName="dcCurrent_PF"
+                                id="dcCurrentStatus"
                               >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="posToGND"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="posToGND_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
+                                <option value="">Select status...</option>
+                                <option
+                                  *ngFor="let option of powerVerificationOptions"
+                                  [value]="option.value"
+                                >
+                                  {{ option.text }}
+                                </option>
+                              </select>
+                              <label for="dcCurrentStatus" class="text-muted">Status</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- POS to GND Card -->
+                  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <div class="power-measurement-card">
+                      <div class="power-card-header">
+                        <div class="power-card-title">
+                          <i class="bi bi-plus-circle text-success me-2"></i>
+                          <span class="fw-semibold text-dark">POS to GND</span>
+                        </div>
+                      </div>
+                      <div class="power-card-body">
+                        <div class="row g-2">
+                          <div class="col-8">
+                            <div class="form-floating">
+                              <input
+                                type="number"
+                                class="form-control power-input"
+                                formControlName="posToGND"
+                                step="0.01"
+                                placeholder="60"
+                                id="posToGND"
+                              />
+                              <label for="posToGND" class="text-muted">Value</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="form-floating">
+                              <select
+                                class="form-select power-select"
+                                formControlName="posToGND_PF"
+                                id="posToGndStatus"
                               >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="negToGND"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="negToGND_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
+                                <option value="">Select status...</option>
+                                <option
+                                  *ngFor="let option of powerVerificationOptions"
+                                  [value]="option.value"
+                                >
+                                  {{ option.text }}
+                                </option>
+                              </select>
+                              <label for="posToGndStatus" class="text-muted">Status</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- NEG to GND Card -->
+                  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <div class="power-measurement-card">
+                      <div class="power-card-header">
+                        <div class="power-card-title">
+                          <i class="bi bi-dash-circle text-danger me-2"></i>
+                          <span class="fw-semibold text-dark">NEG to GND</span>
+                        </div>
+                      </div>
+                      <div class="power-card-body">
+                        <div class="row g-2">
+                          <div class="col-8">
+                            <div class="form-floating">
+                              <input
+                                type="number"
+                                class="form-control power-input"
+                                formControlName="negToGND"
+                                step="0.01"
+                                placeholder="0.00"
+                                id="negToGND"
+                              />
+                              <label for="negToGND" class="text-muted">Value</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="form-floating">
+                              <select
+                                class="form-select power-select"
+                                formControlName="negToGND_PF"
+                                id="negToGndStatus"
                               >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              class="form-control modern-input"
-                              formControlName="acRippleCurr"
-                              step="0.01"
-                              placeholder="0.00"
-                            />
-                          </td>
-                          <td>
-                            <select
-                              class="form-select modern-select"
-                              formControlName="acRippleCurr_PF"
-                            >
-                              <option value="">Status</option>
-                              <option
-                                *ngFor="let option of powerVerificationOptions"
-                                [value]="option.value"
+                                <option value="">Select status...</option>
+                                <option
+                                  *ngFor="let option of powerVerificationOptions"
+                                  [value]="option.value"
+                                >
+                                  {{ option.text }}
+                                </option>
+                              </select>
+                              <label for="negToGndStatus" class="text-muted">Status</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- AC Ripple Current Card -->
+                  <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12">
+                    <div class="power-measurement-card">
+                      <div class="power-card-header">
+                        <div class="power-card-title">
+                          <i class="bi bi-activity text-info me-2"></i>
+                          <span class="fw-semibold text-dark">AC Ripple Current</span>
+                        </div>
+                      </div>
+                      <div class="power-card-body">
+                        <div class="row g-2">
+                          <div class="col-8">
+                            <div class="form-floating">
+                              <input
+                                type="number"
+                                class="form-control power-input"
+                                formControlName="acRippleCurr"
+                                step="0.01"
+                                placeholder="0.00"
+                                id="acRippleCurr"
+                              />
+                              <label for="acRippleCurr" class="text-muted">Current</label>
+                            </div>
+                          </div>
+                          <div class="col-4">
+                            <div class="form-floating">
+                              <select
+                                class="form-select power-select"
+                                formControlName="acRippleCurr_PF"
+                                id="acRippleCurrStatus"
                               >
-                                {{ option.text }}
-                              </option>
-                            </select>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                                <option value="">Select status...</option>
+                                <option
+                                  *ngFor="let option of powerVerificationOptions"
+                                  [value]="option.value"
+                                >
+                                  {{ option.text }}
+                                </option>
+                              </select>
+                              <label for="acRippleCurrStatus" class="text-muted">Status</label>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </form>
