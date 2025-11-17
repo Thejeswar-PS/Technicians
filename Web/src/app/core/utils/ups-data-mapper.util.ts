@@ -12,24 +12,8 @@ import { AAETechUPS, SaveUpdateaaETechUPSDto } from '../model/ups-readings.model
  * @returns SaveUpdateaaETechUPSDto object ready for API submission
  */
 export function convertToSaveUpdateDto(upsData: AAETechUPS, maintAuthId: string = 'SYSTEM'): SaveUpdateaaETechUPSDto {
-  console.log('[UPS Data Mapper] Converting UPS data for database save');
-  console.log('[UPS Data Mapper] Original data:', upsData);
-  
-  // Debug date values specifically
-  console.group('🔍 [UPS Data Mapper] Date Code Analysis');
-  console.log('Raw monthName from UPS data:', upsData.monthName);
-  console.log('Raw year from UPS data:', upsData.year);
-  console.log('monthName type:', typeof upsData.monthName);
-  console.log('year type:', typeof upsData.year);
-  console.log('monthName valid check:', upsData.monthName && upsData.monthName !== 'Invalid Date' && upsData.monthName.trim() !== '');
-  console.log('year valid check:', upsData.year && upsData.year > 0 && upsData.year !== null && upsData.year !== undefined);
-  
   const finalMonthName = (upsData.monthName && upsData.monthName !== 'Invalid Date' && upsData.monthName.trim() !== '') ? upsData.monthName : 'January';
   const finalYear = (upsData.year && upsData.year > 0 && upsData.year !== null && upsData.year !== undefined) ? Number(upsData.year) : 1990;
-  
-  console.log('Final dateCodeMonth will be:', finalMonthName);
-  console.log('Final dateCodeYear will be:', finalYear);
-  console.groupEnd();
 
   const result = {
     // Required Keys
@@ -105,11 +89,11 @@ export function convertToSaveUpdateDto(upsData: AAETechUPS, maintAuthId: string 
     BatteryStringID: upsData.batteryStringID || 0,
     AFLength: parseFloat(upsData.afLength) || 0,
     AFWidth: parseFloat(upsData.afWidth) || 0,
-    AFThickness: parseFloat(upsData.afThick) || 0, // Note: afThick -> AFThickness
+    AFThickness: parseFloat(upsData.afThickness) || 0, // Note: afThick -> AFThickness
     AFQty: parseFloat(upsData.afQty) || 0,
     AFLength1: parseFloat(upsData.afLength1) || 0,
     AFWidth1: parseFloat(upsData.afWidth1) || 0,
-    AFThickness1: parseFloat(upsData.afThick1) || 0, // Note: afThick1 -> AFThickness1
+    AFThickness1: parseFloat(upsData.afThickness1) || 0, // Note: afThick1 -> AFThickness1
     AFQty1: parseFloat(upsData.afQty1) || 0,
     
     // Required field with default - Match C# backend field name
@@ -216,7 +200,6 @@ export function convertToSaveUpdateDto(upsData: AAETechUPS, maintAuthId: string 
     modularUPS: upsData.modularUPS || undefined
   };
   
-  console.log('💾 [UPS Data Mapper] Final result created, returning to service');
   return result;
 }
 
@@ -293,11 +276,11 @@ export function convertFromSaveUpdateDto(dto: SaveUpdateaaETechUPSDto): AAETechU
     // Air filter data - convert numbers back to strings using PascalCase field names
     afLength: dto.AFLength?.toString() || '',
     afWidth: dto.AFWidth?.toString() || '',
-    afThick: dto.AFThickness?.toString() || '', // Note: AFThickness -> afThick
+    afThickness: dto.AFThickness?.toString() || '', // Note: AFThickness -> afThick
     afQty: dto.AFQty?.toString() || '',
     afLength1: dto.AFLength1?.toString() || '',
     afWidth1: dto.AFWidth1?.toString() || '',
-    afThick1: dto.AFThickness1?.toString() || '', // Note: AFThickness1 -> afThick1
+    afThickness1: dto.AFThickness1?.toString() || '', // Note: AFThickness1 -> afThick1
     afQty1: dto.AFQty1?.toString() || '',
 
     // Date information - convert back using PascalCase field names

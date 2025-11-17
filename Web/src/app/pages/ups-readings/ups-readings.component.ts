@@ -1685,14 +1685,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       coolingFans: data.visual_Noise || 'P', // Map to existing noise field
       fansAge: data.visual_FansAge || 'P',
       airFilters: data.visual_ReplaceFilters || 'P', // Map to existing replace filters field
-      filterSet1Length: '',
-      filterSet1Width: '',
-      filterSet1Thickness: '',
-      filterSet1Quantity: '',
-      filterSet2Length: '',
-      filterSet2Width: '',
-      filterSet2Thickness: '',
-      filterSet2Quantity: '',
+      filterSet1Length: data.afLength || '',
+      filterSet1Width: data.afWidth || '',
+      filterSet1Thickness: data.afThickness || '',
+      filterSet1Quantity: data.afQty || '',
+      filterSet2Length: data.afLength1 || '',
+      filterSet2Width: data.afWidth1 || '',
+      filterSet2Thickness: data.afThickness1 || '',
+      filterSet2Quantity: data.afQty1 || '',
       visualComments: ''
     }, { emitEvent: false });
 
@@ -5460,15 +5460,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       comments4: '',
       comments5: '',
 
-      // Air filter data - removed from action items, providing defaults
-      afLength: '',
-      afWidth: '',
-      afThick: '',
-      afQty: '',
-      afLength1: '',
-      afWidth1: '',
-      afThick1: '',
-      afQty1: '',
+      // Air filter data from visual form
+      afLength: visual.filterSet1Length || '',
+      afWidth: visual.filterSet1Width || '',
+      afThickness: visual.filterSet1Thickness || '',
+      afQty: visual.filterSet1Quantity || '',
+      afLength1: visual.filterSet2Length || '',
+      afWidth1: visual.filterSet2Width || '',
+      afThickness1: visual.filterSet2Thickness || '',
+      afQty1: visual.filterSet2Quantity || '',
 
       // Date information - use validated values instead of parsed dateCode
       monthName: validMonthName,

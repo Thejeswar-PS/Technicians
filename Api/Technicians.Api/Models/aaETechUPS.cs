@@ -71,11 +71,11 @@
         public int BatteryStringID { get; set; }
         public string AFLength { get; set; }
         public string AFWidth { get; set; }
-        public string AFThick { get; set; }
+        public string AFThickness { get; set; }
         public string AFQty { get; set; }
         public string AFLength1 { get; set; }
         public string AFWidth1 { get; set; }
-        public string AFThick1 { get; set; }
+        public string AFThickness1 { get; set; }
         public string AFQty1 { get; set; }
 
         // Date Code fields

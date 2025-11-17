@@ -130,11 +130,11 @@ export interface AAETechUPS {
   // Air filter data
   afLength: string;
   afWidth: string;
-  afThick: string;
+  afThickness: string;
   afQty: string;
   afLength1: string;
   afWidth1: string;
-  afThick1: string;
+  afThickness1: string;
   afQty1: string;
   
   // Date information
