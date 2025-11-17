@@ -300,6 +300,9 @@
         border-radius: 0.375rem;
         background: white;
         transition: all 0.3s ease;
+        appearance: auto;
+        -webkit-appearance: auto;
+        -moz-appearance: auto;
 
         &:checked {
           background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);

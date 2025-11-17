@@ -52,6 +52,23 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("GetBatteryInfoTemp")]
+        public async Task<IActionResult> GetBatteryInfoTemp([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string batStrId)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(batStrId))
+                return BadRequest("Call number and Battery String ID are required.");
+
+            try
+            {
+                var batteries = await _repository.GetBatteryInfoTempAsync(callNbr, equipId, batStrId);
+                return Ok(batteries);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error fetching battery info: {ex.Message}");
+            }
+        }
+
         [HttpGet("GetBatteryStringReadingsInfo")]
         public async Task<IActionResult> GetBatteryStringReadingsInfo([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string batStrId)
         {
@@ -61,6 +78,28 @@ namespace Technicians.Api.Controllers
             try
             {
                 var result = await _repository.GetBatteryStringReadingsInfoAsync(callNbr, equipId, batStrId);
+
+                if (result == null)
+                    return NotFound("No readings found.");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                // Log if desired
+                return StatusCode(500, $"Error fetching battery string readings: {ex.Message}");
+            }
+        }
+
+        [HttpGet("GetBatteryStringReadingsInfoTemp")]
+        public async Task<IActionResult> GetBatteryStringReadingsInfoTemp([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string batStrId)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(batStrId))
+                return BadRequest("Call number and Battery String ID are required.");
+
+            try
+            {
+                var result = await _repository.GetBatteryStringReadingsInfoTempAsync(callNbr, equipId, batStrId);
 
                 if (result == null)
                     return NotFound("No readings found.");
@@ -107,6 +146,23 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpPost("SaveUpdateBatteryStringReadingsTemp")]
+        public async Task<IActionResult> SaveUpdateBatteryStringReadingsTemp([FromBody] BatteryStringInfo binfo)
+        {
+            if (binfo == null)
+                return BadRequest("Invalid input");
+
+            try
+            {
+                await _repository.SaveOrUpdateBatteryStringReadingsTempAsync(binfo);
+                return Ok(new { success = true, message = "Battery string readings saved successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, error = ex.Message });
+            }
+        }
+
         [HttpPost("SaveBatteryData")]
         public async Task<IActionResult> SaveBatteryData([FromBody] List<BatteryReadingDto> batteries)
         {
@@ -116,6 +172,26 @@ namespace Technicians.Api.Controllers
             try
             {
                 bool success = await _repository.SaveBatteryDataAsync(batteries);
+                //if (success)
+                    return Ok(new { message = "Battery data saved successfully." });
+                //else
+                //    return BadRequest("No data was processed.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("SaveBatteryDataTemp")]
+        public async Task<IActionResult> SaveBatteryDataTemp([FromBody] List<BatteryReadingDto> batteries)
+        {
+            if (batteries == null || batteries.Count == 0)
+                return BadRequest("Battery data is required.");
+
+            try
+            {
+                bool success = await _repository.SaveBatteryDataTempAsync(batteries);
                 if (success)
                     return Ok(new { message = "Battery data saved successfully." });
                 else
@@ -262,44 +338,24 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        [HttpGet("GetBatteryStringReadingsInfoTemp")]
-        public async Task<IActionResult> GetBatteryStringReadingsInfoTemp([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string batStrId)
+        [HttpDelete("DeleteBatteryTemp")]
+        public IActionResult DeleteBatteryTemp([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string batStrId)
         {
-            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(batStrId))
-                return BadRequest("Call number and Battery String ID are required.");
-
             try
             {
-                var result = await _repository.GetBatteryStringReadingsInfoTempAsync(callNbr, equipId, batStrId);
+                bool result = _repository.DeleteBatteryTemp(callNbr, equipId, batStrId);
 
-                if (result == null)
-                    return NotFound("No readings found.");
-
-                return Ok(result);
+                //if (result)
+                return Ok(new { success = true, message = "Battery deleted successfully." });
+                //else
+                //return NotFound(new { success = false, message = "Battery not found or could not be deleted." });
             }
             catch (Exception ex)
             {
-                // Log if desired
-                return StatusCode(500, $"Error fetching battery string readings: {ex.Message}");
+                return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
 
-        [HttpGet("GetBatteryInfoTemp")]
-        public async Task<IActionResult> GetBatteryInfoTemp([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string batStrId)
-        {
-            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(batStrId))
-                return BadRequest("Call number and Battery String ID are required.");
-
-            try
-            {
-                var batteries = await _repository.GetBatteryInfoTempAsync(callNbr, equipId, batStrId);
-                return Ok(batteries);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error fetching battery info: {ex.Message}");
-            }
-        }
 
     }
 }

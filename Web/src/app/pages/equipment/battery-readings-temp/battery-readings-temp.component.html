@@ -271,153 +271,7 @@
       </div>
     </section>
 
-    <!-- Equipment Reconciliation Section -->
-    <section class="ups-readings-section">
-      <div class="ups-section-card">
-        <div
-          class="ups-section-header"
-          (click)="showReconciliation = !showReconciliation"
-        >
-          <div class="ups-section-title">
-            <i class="bi bi-check2-square me-2 text-success"></i>
-            <h5 class="mb-0">Equipment Reconciliation</h5>
-            <small class="text-muted"
-              >Verify equipment data matches physical observations</small
-            >
-          </div>
-          <div class="d-flex align-items-center gap-3" [formGroup]="reconciliationForm" (click)="$event.stopPropagation()">
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="reconciled"
-                formControlName="reconciled"
-              />
-              <label class="form-check-label fw-bold text-success" for="reconciled">
-                <i class="bi bi-check-circle me-1"></i>
-                Verified
-              </label>
-            </div>
-            <i
-              class="bi transition-transform"
-              [class.bi-chevron-down]="showReconciliation"
-              [class.bi-chevron-right]="!showReconciliation"
-              [class.rotate-90]="showReconciliation"
-            ></i>
-          </div>
-        </div>
-
-        <div class="ups-section-content" [class.show]="showReconciliation">
-          <div [formGroup]="reconciliationForm" class="ups-form">
-            <!-- Row 1: Make / Is Correct / Actual Make -->
-            <div class="form-group-modern">
-              <div class="row g-2">
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="text" class="form-control" id="recMake" formControlName="recMake" readonly />
-                    <label for="recMake">Make</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <select class="form-select" id="recMakeCorrect" formControlName="recMakeCorrect">
-                      <option value="YS">Yes</option>
-                      <option value="NO">No</option>
-                      <option value="NA">N/A</option>
-                    </select>
-                    <label for="recMakeCorrect">Is Correct ?</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="text" class="form-control" id="actMake" formControlName="actMake" />
-                    <label for="actMake">Actual Make</label>
-                  </div>
-                </div>
-
-            <!-- Row 2: Model / Is Correct / Actual Model -->
-            
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="text" class="form-control" id="recModel" formControlName="recModel" readonly />
-                    <label for="recModel">Model</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <select class="form-select" id="recModelCorrect" formControlName="recModelCorrect">
-                      <option value="YS">Yes</option>
-                      <option value="NO">No</option>
-                      <option value="NA">N/A</option>
-                    </select>
-                    <label for="recModelCorrect">Is Correct ?</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="text" class="form-control" id="actModel" formControlName="actModel" />
-                    <label for="actModel">Actual Model</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Row 3: Serial No / Is Correct / Actual Serial No -->
-            <div class="form-group-modern">
-              <div class="row g-3">
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="text" class="form-control" id="recSerialNo" formControlName="recSerialNo" readonly />
-                    <label for="recSerialNo">Serial No</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <select class="form-select" id="recSerialNoCorrect" formControlName="recSerialNoCorrect">
-                      <option value="YS">Yes</option>
-                      <option value="NO">No</option>
-                      <option value="NA">N/A</option>
-                    </select>
-                    <label for="recSerialNoCorrect">Is Correct ?</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="text" class="form-control" id="actSerialNo" formControlName="actSerialNo" />
-                    <label for="actSerialNo">Actual Serial No</label>
-                  </div>
-                </div>
-
-            <!-- Row 4: Batteries Per String / Is Correct / Actual Batteries -->
-            
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="number" class="form-control" id="battPerString" formControlName="battPerString" readonly />
-                    <label for="battPerString">Batteries Per String</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <select class="form-select" id="battPerStringCorrect" formControlName="battPerStringCorrect">
-                      <option value="YS">Yes</option>
-                      <option value="NO">No</option>
-                      <option value="NA">N/A</option>
-                    </select>
-                    <label for="battPerStringCorrect">Is Correct ?</label>
-                  </div>
-                </div>
-                <div class="col-md-2">
-                  <div class="form-floating">
-                    <input type="number" class="form-control" id="actBattPerString" formControlName="actBattPerString" />
-                    <label for="actBattPerString">Actual Count</label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    
 
     <!-- Sealed Battery: Container & Cover / Battery Environment (Legacy) -->
     <section class="ups-readings-section" *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'S'">
@@ -521,60 +375,93 @@
         </div>
         <div class="ups-section-content show">
           <div class="ups-form">
-            <h6 class="fw-bold mb-3">General Appearance (Flooded Battery)</h6>
-            <div class="row g-3">
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="plusWrappedCheck2" formControlName="plusWrappedCheck" />
-                  <label class="form-check-label" for="plusWrappedCheck2">Wrapped</label>
-                </div>
-                <select class="form-select" formControlName="plusWrappedVerify">
-                  <option value="P">Pass</option>
-                  <option value="F">Fail</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="plusSulfatedCheck2" formControlName="plusSulfatedCheck" />
-                  <label class="form-check-label" for="plusSulfatedCheck2">Sulfated</label>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="plusMisposCheck2" formControlName="plusMisposCheck" />
-                  <label class="form-check-label" for="plusMisposCheck2">Mis-Positioned</label>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="missingCheck2" formControlName="missingCheck" />
-                  <label class="form-check-label" for="missingCheck2">Missing</label>
-                </div>
-                <select class="form-select" formControlName="missingVerify">
-                  <option value="P">Pass</option>
-                  <option value="F">Fail</option>
-                </select>
-              </div>
-            </div>
-            <div class="row g-3 mt-2">
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="brokenCheck2" formControlName="brokenCheck" />
-                  <label class="form-check-label" for="brokenCheck2">Broken</label>
-                </div>
-              </div>
-              <div class="col-md-3">
-                <div class="form-check mb-1">
-                  <input type="checkbox" class="form-check-input" id="needsCleaningCheck2" formControlName="needsCleaningCheck" />
-                  <label class="form-check-label" for="needsCleaningCheck2">Needs Cleaning</label>
-                </div>
-              </div>
+            <!-- Two column layout for Plates / Flame Arrestors & Covers -->
+            <div class="row">
+              <!-- Plates Section (Left) -->
               <div class="col-md-6">
-                <label class="form-label small" for="platesComments2">Plates/Terminal Comments</label>
-                <textarea id="platesComments2" rows="2" class="form-control" formControlName="platesComments"></textarea>
+                <h6 class="fw-bold mb-3">Plates</h6>
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <div class="form-check mb-1">
+                      <input type="checkbox" class="form-check-input" id="plusWrappedCheck2" formControlName="plusWrappedCheck" />
+                      <label class="form-check-label" for="plusWrappedCheck2">Wrapped</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select form-select-sm" formControlName="plusWrappedVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="form-check mb-1">
+                      <input type="checkbox" class="form-check-input" id="plusSulfatedCheck2" formControlName="plusSulfatedCheck" />
+                      <label class="form-check-label" for="plusSulfatedCheck2">Sulfated</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="row g-3 mt-2">
+                  <div class="col-md-6">
+                    <div class="form-check mb-1">
+                      <input type="checkbox" class="form-check-input" id="plusMisposCheck2" formControlName="plusMisposCheck" />
+                      <label class="form-check-label" for="plusMisposCheck2">Mis-Positioned</label>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    
+                  </div>
+                </div>
+                <!-- <div class="row g-3 mt-3">
+                  <div class="col-md-12">
+                    <label class="form-label small" for="platesComments2">Plates/Terminal Comments</label>
+                    <textarea id="platesComments2" rows="2" class="form-control" formControlName="platesComments"></textarea>
+                  </div>
+                </div> -->
+              </div>
+
+              <!-- Flame Arrestors & Covers Section (Right) -->
+              <div class="col-md-6">
+                <h6 class="fw-bold mb-3">Flame Arrestors & Covers</h6>
+                <div class="row g-3">
+                  <div class="col-md-3">
+                    <div class="form-check mb-1">
+                      <input type="checkbox" class="form-check-input" id="missingCheck2" formControlName="missingCheck" />
+                      <label class="form-check-label" for="missingCheck2">Missing</label>
+                    </div>
+                  </div>
+                  <div class="col-md-3">
+                    <select class="form-select form-select-sm" formControlName="missingVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="form-check mb-1">
+                      <input type="checkbox" class="form-check-input" id="brokenCheck2" formControlName="brokenCheck" />
+                      <label class="form-check-label" for="brokenCheck2">Broken</label>
+                    </div>
+                  </div>
+                </div>
+                <div class="row g-3 mt-2">
+                  <div class="col-md-6">
+                    <div class="form-check mb-1">
+                      <input type="checkbox" class="form-check-input" id="needsCleaningCheck2" formControlName="needsCleaningCheck" />
+                      <label class="form-check-label" for="needsCleaningCheck2">Needs Cleaning</label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="row g-3 mt-2">
+
+            <!-- Electrolyte Levels Section (Bottom - Full Width) -->
+            <div class="row g-3 mt-4">
+              <div class="col-md-12">
+                <h6 class="fw-bold mb-3">Electrolyte Levels</h6>
+              </div>
               <div class="col-md-4">
                 <label for="waterLevel2" class="form-label">Electrolyte Level</label>
                 <select id="waterLevel2" class="form-select" formControlName="waterLevel">
@@ -590,10 +477,10 @@
                   <option value="F">Fail</option>
                 </select>
               </div>
-              <div class="col-md-6">
+              <!-- <div class="col-md-6">
                 <label for="electrolytesComments2" class="form-label">Electrolytes Comments</label>
                 <textarea id="electrolytesComments2" rows="2" class="form-control" formControlName="electrolytesComments"></textarea>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
@@ -999,11 +886,9 @@
             <div class="form-group-modern">
               <div class="row g-3">
                 <div class="col-md-1">
-                  <div class="form-floating" style="padding-top: 8px;">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" />
-                      <label class="form-check-label fw-bold" for="replaceWholeString"></label>
-                    </div>
+                  <div class="form-check" style="padding-top: 8px;">
+                    <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" />
+                    <label class="form-check-label fw-bold" for="replaceWholeString"></label>
                   </div>
                 </div>
                 <div class="col-md-3">
@@ -1161,17 +1046,9 @@
               </div>
             </div>
 
-            <!-- Row 13: Verified Graph / Enable mVAC / Enable Straps -->
+            <!-- Row 13: Enable mVAC / Enable Straps -->
             <div class="form-group-modern">
               <div class="row g-3">
-                <div class="col-md-2">
-                  <div class="form-floating" style="padding-top: 8px;">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="readingsGraphCheck" formControlName="readingsGraphCheck" />
-                      <label class="form-check-label fw-bold text-danger" for="readingsGraphCheck">Verified the Graph?</label>
-                    </div>
-                  </div>
-                </div>
                 <div class="col-md-2">
                   <div class="form-floating" style="padding-top: 8px;">
                     <div class="form-check">
@@ -1229,7 +1106,7 @@
                 <th style="width:100px; text-align: left; padding: 5px; border: 1px solid #ddd;">Conductance / Resistance</th>
                 <th *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap1</th>
                 <th *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap2</th>
-                <th style="width:55px; text-align: left; padding: 5px; border: 1px solid #ddd; display: none;">Specific Gravity</th>
+                <th style="width:55px; text-align: left; padding: 5px; border: 1px solid #ddd;">Specific Gravity</th>
                 <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Leaking / Damaged / Corrosion</th>
                 <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Replace?</th>
                 <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Monitor?</th>
@@ -1257,7 +1134,7 @@
                     [ngModelOptions]="{ standalone: true }"
                   />
                 </td>
-                <td style="width:100px; padding: 5px; border: 1px solid #ddd; display: none;">
+                <td style="width:100px; padding: 5px; border: 1px solid #ddd;">
                   <input
                     type="number"
                     step="0.01"
@@ -1284,7 +1161,7 @@
                     [ngModelOptions]="{ standalone: true }"
                   />
                 </td>
-                <td style="width:55px; padding: 5px; border: 1px solid #ddd; display: none;">
+                <td style="width:55px; padding: 5px; border: 1px solid #ddd;">
                   <input
                     type="number"
                     step="0.0001"

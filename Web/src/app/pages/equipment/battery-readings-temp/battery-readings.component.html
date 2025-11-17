@@ -1100,7 +1100,7 @@
               <div class="row g-3">
                 <div class="col-md-3">
                   <div class="form-floating">
-                    <select class="form-select" id="stringType" formControlName="stringType">
+                    <select class="form-select" id="stringType" formControlName="stringType" (change)="onStringTypeChange($event)">
                       <option value="">Please Select</option>
                       <option value="1">External</option>
                       <option value="2">Internal Single / Parallel Strings</option>
@@ -1134,7 +1134,13 @@
                 <div class="col-md-2">
                   <div class="form-floating">
                     <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="0" />
-                    <label for="batteriesNo">No of Batteries per string</label>
+                    <label for="batteriesNo">{{ batteriesNoLabel }}</label>
+                  </div>
+                </div>
+                <div class="col-md-2" *ngIf="showPackNoField">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="packNo" formControlName="packNo" placeholder="0" />
+                    <label for="packNo">{{ packNoLabel }}</label>
                   </div>
                 </div>
                 <div class="col-md-2">

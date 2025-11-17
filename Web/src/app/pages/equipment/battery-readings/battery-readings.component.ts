@@ -55,6 +55,11 @@ export class BatteryReadingsComponent implements OnInit {
   // Battery Type State
   isBatteryTypeLithium: boolean = false;
 
+  // Dynamic Labels for String Type
+  batteriesNoLabel: string = 'No of Batteries per string';
+  showPackNoField: boolean = false;
+  packNoLabel: string = 'Batteries per String';
+
   // Grid Row Counts
   totalReplace: number = 0;
   totalMonitor: number = 0;
@@ -194,20 +199,27 @@ export class BatteryReadingsComponent implements OnInit {
    * Map battery data to grid rows
    */
   private mapBatteryDataToRows(data: BatteryData[]): BatteryReadingRow[] {
-    return data.map((item, index) => ({
-      batteryId: item.batteryId || index + 1,
-      vdc: item.vdc || 0,
-      vac: item.vac || 0,
-      mhos: item.mhos || 0,
-      strap1: item.strap1 || 0,
-      strap2: item.strap2 || 0,
-      spGravity: item.spGravity || 0,
-      cracks: item.cracks || 'N',
-      replacementNeeded: item.replacementNeeded || 'N',
-      monitoringBattery: item.monitoringBattery || 'N',
-      actionPlan: item.actionPlan || '',
-      temp: item.temp || 70,
-    }));
+    console.log('Mapping battery data from API:', data);
+    return data.map((item, index) => {
+      // API GET returns 'mhos', API POST expects 'milliohms'
+      const mhosValue = item.milliohms || item.mhos || 0;
+      const mappedRow = {
+        batteryId: typeof item.batteryId === 'string' ? parseInt(item.batteryId) : (item.batteryId || index + 1),
+        vdc: typeof item.vdc === 'string' ? parseFloat(item.vdc) : (item.vdc || 0),
+        vac: typeof item.vac === 'string' ? parseFloat(item.vac) : (item.vac || 0),
+        mhos: typeof mhosValue === 'string' ? parseFloat(mhosValue) : mhosValue,
+        strap1: typeof item.strap1 === 'string' ? parseFloat(item.strap1) : (item.strap1 || 0),
+        strap2: typeof item.strap2 === 'string' ? parseFloat(item.strap2) : (item.strap2 || 0),
+        spGravity: typeof item.spGravity === 'string' ? parseFloat(item.spGravity) : (item.spGravity || 0),
+        cracks: item.cracks || 'N',
+        replacementNeeded: item.replacementNeeded || 'N',
+        monitoringBattery: item.monitoringBattery || 'N',
+        actionPlan: item.actionPlan || '',
+        temp: typeof item.temp === 'string' ? parseInt(item.temp) : (item.temp || 70),
+      };
+      console.log(`Battery ${mappedRow.batteryId} - Mapping: API mhos=${item.mhos}, API milliohms=${item.milliohms}, final mhos=${mappedRow.mhos}`);
+      return mappedRow;
+    });
   }
 
   /**
@@ -593,6 +605,12 @@ export class BatteryReadingsComponent implements OnInit {
       readingsGraphCheck: data.chkGraph,
     });
 
+    // Trigger string type change handler to update labels and field visibility
+    console.log('🔄 Calling onStringTypeChange after form population');
+    console.log('📝 stringType value:', data.stringType);
+    console.log('📝 packNo value:', data.batteryPackCount);
+    this.onStringTypeChange(null);
+
     // Load reference values after form population
     const midType = data.readingMethod;
     if (midType) {
@@ -627,6 +645,9 @@ export class BatteryReadingsComponent implements OnInit {
       actBattPerString: data.actBattPerString,
       reconciled: data.verified,
     });
+
+    // Set readonly state for actual fields based on "Is Correct" dropdowns (legacy: EnabletoEdit)
+    this.onReconciliationChange();
   }
 
   /**
@@ -719,20 +740,20 @@ export class BatteryReadingsComponent implements OnInit {
   private createReconciliationForm(): FormGroup {
     return this.fb.group({
       recMake: [''],
-      recMakeCorrect: [''],
-      actMake: [''],
+      recMakeCorrect: ['YS'],
+      actMake: [{ value: '', disabled: true }],
       recModel: [''],
-      recModelCorrect: [''],
-      actModel: [''],
+      recModelCorrect: ['YS'],
+      actModel: [{ value: '', disabled: true }],
       recSerialNo: [''],
-      recSerialNoCorrect: [''],
-      actSerialNo: [''],
+      recSerialNoCorrect: ['YS'],
+      actSerialNo: [{ value: '', disabled: true }],
       ascStrings: [''],
       ascStringsCorrect: [''],
       actAscStrings: [''],
       battPerString: [''],
-      battPerStringCorrect: [''],
-      actBattPerString: [''],
+      battPerStringCorrect: ['YS'],
+      actBattPerString: [{ value: '', disabled: true }],
       reconciled: [false],
     });
   }
@@ -827,6 +848,130 @@ export class BatteryReadingsComponent implements OnInit {
     const midType = event.target.value;
     this.batteryStringForm.patchValue({ midType });
     this.loadBatteryMakeModels(midType, 0);
+  }
+
+  /**
+   * Handle String Type change - updates dynamic labels and field visibility
+   * Legacy: showhidebpack()
+   */
+  onStringTypeChange(event: any): void {
+    const stringType = event?.target?.value || this.batteryStringForm.get('stringType')?.value;
+    
+    if (stringType === '3') {
+      // Battery Packs / Trays
+      // Legacy: Label31.innerHTML = "No of Battery Packs:"
+      this.batteriesNoLabel = 'No of Battery Packs:';
+      this.packNoLabel = 'Batteries per Pack:';
+      this.showPackNoField = true;
+    } else if (stringType === '2') {
+      // Internal Single / Parallel Strings
+      // Legacy: Label31.innerHTML = "No of Internal Strings:"
+      this.batteriesNoLabel = 'No of Internal Strings:';
+      this.packNoLabel = 'Batteries per String:';
+      this.showPackNoField = true;
+    } else {
+      // External (default)
+      // Legacy: Label31.innerHTML = "No of Batteries per string:"
+      this.batteriesNoLabel = 'No of Batteries per string:';
+      this.packNoLabel = 'Batteries per String';
+      this.showPackNoField = false;
+      // Clear packNo value when hiding
+      this.batteryStringForm.patchValue({ packNo: '' });
+    }
+  }
+
+  /**
+   * Handle reconciliation dropdown changes
+   * Clears "Actual" field when "Is Correct" is changed to Yes or N/A
+   * Enables/disables actual fields based on "Is Correct" value (legacy: EnabletoEdit)
+   */
+  onReconciliationChange(): void {
+    const recMakeCorrect = this.reconciliationForm.get('recMakeCorrect')?.value;
+    const recModelCorrect = this.reconciliationForm.get('recModelCorrect')?.value;
+    const recSerialNoCorrect = this.reconciliationForm.get('recSerialNoCorrect')?.value;
+    const battPerStringCorrect = this.reconciliationForm.get('battPerStringCorrect')?.value;
+
+    // Enable/disable and clear actual Make field
+    if (recMakeCorrect === 'NO') {
+      this.reconciliationForm.get('actMake')?.enable();
+    } else {
+      this.reconciliationForm.get('actMake')?.disable();
+      this.reconciliationForm.patchValue({ actMake: '' });
+    }
+
+    // Enable/disable and clear actual Model field
+    if (recModelCorrect === 'NO') {
+      this.reconciliationForm.get('actModel')?.enable();
+    } else {
+      this.reconciliationForm.get('actModel')?.disable();
+      this.reconciliationForm.patchValue({ actModel: '' });
+    }
+
+    // Enable/disable and clear actual Serial No field
+    if (recSerialNoCorrect === 'NO') {
+      this.reconciliationForm.get('actSerialNo')?.enable();
+    } else {
+      this.reconciliationForm.get('actSerialNo')?.disable();
+      this.reconciliationForm.patchValue({ actSerialNo: '' });
+    }
+
+    // Enable/disable and clear actual Batteries Per String field
+    if (battPerStringCorrect === 'NO') {
+      this.reconciliationForm.get('actBattPerString')?.enable();
+    } else {
+      this.reconciliationForm.get('actBattPerString')?.disable();
+      this.reconciliationForm.patchValue({ actBattPerString: '' });
+    }
+  }
+
+  /**
+   * Handle checkbox clicks in Sealed Battery section (Container & Cover)
+   * Legacy: CheckBoxClick for sealed battery checkboxes
+   */
+  onSealedCheckboxChange(checkboxName: string, dropdownName: string): void {
+    const isChecked = this.batteryStringForm.get(checkboxName)?.value;
+    
+    if (isChecked) {
+      // If checkbox is checked, set dropdown to Fail
+      this.batteryStringForm.patchValue({ [dropdownName]: 'F' });
+    } else {
+      // If unchecked, set to Pass
+      this.batteryStringForm.patchValue({ [dropdownName]: 'P' });
+    }
+  }
+
+  /**
+   * Handle checkbox clicks in Flooded Battery section (Plates)
+   * Legacy: CheckBoxClick with three related checkboxes
+   */
+  onFloodedPlatesCheckboxChange(): void {
+    const wrapped = this.batteryStringForm.get('plusWrappedCheck')?.value;
+    const sulfated = this.batteryStringForm.get('plusSulfatedCheck')?.value;
+    const mispositioned = this.batteryStringForm.get('plusMisposCheck')?.value;
+    
+    // If any of the three checkboxes is checked, set dropdown to Fail
+    if (wrapped || sulfated || mispositioned) {
+      this.batteryStringForm.patchValue({ plusWrappedVerify: 'F' });
+    } else {
+      this.batteryStringForm.patchValue({ plusWrappedVerify: 'P' });
+    }
+  }
+
+  /**
+   * Handle checkbox clicks in Flooded Battery section (Flame Arrestors & Covers)
+   * Legacy: CheckBoxClick with three related checkboxes
+   */
+  onFloodedCoversCheckboxChange(): void {
+    const missing = this.batteryStringForm.get('missingCheck')?.value;
+    const broken = this.batteryStringForm.get('brokenCheck')?.value;
+    const needsCleaning = this.batteryStringForm.get('needsCleaningCheck')?.value;
+    
+    // If any of the three checkboxes is checked, set dropdown to Fail
+    if (missing || broken || needsCleaning) {
+      this.batteryStringForm.patchValue({ missingVerify: 'F' });
+    } else {
+      this.batteryStringForm.patchValue({ missingVerify: 'P' });
+    }
   }
 
   /**
@@ -1090,7 +1235,13 @@ export class BatteryReadingsComponent implements OnInit {
   calculateBatteryDef(): void {
     try {
       const batteryType = this.batteryStringForm.get('batteryType')?.value;
-      if (batteryType === 'PS') return;
+      const batteryTypeName = this.batteryStringForm.get('batteryTypeName')?.value;
+      const floatVoltageStatus = this.batteryStringForm.get('floatVoltageStatus')?.value;
+      const floatVoltageValue = this.batteryStringForm.get('floatVoltageValue')?.value || 0;
+
+      if (batteryType === 'PS') {
+        return;
+      }
 
       let monitor2 = 0;
       let replace = 0;
@@ -1103,9 +1254,9 @@ export class BatteryReadingsComponent implements OnInit {
       this.batteryService
         .getBatteryTypeValues(
           batteryType,
-          this.batteryStringForm.get('batteryTypeName')?.value,
-          this.batteryStringForm.get('floatVoltageStatus')?.value,
-          this.batteryStringForm.get('floatVoltageValue')?.value || 0
+          batteryTypeName,
+          floatVoltageStatus,
+          floatVoltageValue
         )
         .subscribe(
           (typeValues) => {
@@ -1166,6 +1317,104 @@ export class BatteryReadingsComponent implements OnInit {
   }
 
   /**
+   * Calculate battery deficiency with callback (synchronous flow)
+   * This version calls a callback after the async calculation completes
+   * Used before status calculation to ensure usedQuantity is up-to-date
+   */
+  calculateBatteryDefSync(callback: () => void): void {
+    try {
+      const batteryType = this.batteryStringForm.get('batteryType')?.value;
+      const batteryTypeName = this.batteryStringForm.get('batteryTypeName')?.value;
+      const floatVoltageStatus = this.batteryStringForm.get('floatVoltageStatus')?.value;
+      const floatVoltageValue = this.batteryStringForm.get('floatVoltageValue')?.value || 0;
+
+      if (batteryType === 'PS') {
+        callback();
+        return;
+      }
+
+      let monitor2 = 0;
+      let replace = 0;
+      let monitorlow = 0;
+      let replacelow = 0;
+      let mhWarning = 0;
+      let mhError = 0;
+
+      // Load thresholds from battery type values
+      this.batteryService
+        .getBatteryTypeValues(
+          batteryType,
+          batteryTypeName,
+          floatVoltageStatus,
+          floatVoltageValue
+        )
+        .subscribe(
+          (typeValues) => {
+            monitor2 = typeValues.monitorEnd;
+            replace = typeValues.replace;
+
+            const readingType = this.batteryStringForm.get('readingType')?.value;
+            const midType = this.batteryStringForm.get('midType')?.value;
+            const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
+            const stringType = this.batteryStringForm.get('stringType')?.value;
+
+            // Calculate thresholds based on reading type
+            if (
+              readingType === '2' &&
+              midType !== '3'
+            ) {
+              const refValue = this.convertToDecimal(
+                this.batteryStringForm.get('refValue')?.value || '0'
+              );
+              if (midType === '1') {
+                mhWarning = (refValue * 70) / 100;
+                mhError = (refValue * 60) / 100;
+              } else {
+                mhWarning = (refValue * 140) / 100;
+                mhError = (refValue * 150) / 100;
+              }
+            } else if (readingType === '1' && midType === '3') {
+              monitorlow = 25.6;
+              replacelow = 24.0;
+            } else if (readingType === '1' && stringType === '3') {
+              replace = batteriesNo * replace;
+              monitor2 = batteriesNo * monitor2;
+            } else if (readingType === '3') {
+              const battTypeValue = this.getBatteryTypeValue();
+              replace = batteriesNo * battTypeValue + 0.2;
+              monitor2 = batteriesNo * battTypeValue + 0.5;
+            }
+
+            // Apply calculations to grid rows
+            this.applyBatteryDefCalculations(
+              monitor2,
+              replace,
+              monitorlow,
+              replacelow,
+              mhWarning,
+              mhError,
+              midType,
+              readingType
+            );
+
+            // Call callback after calculation completes
+            callback();
+          },
+          (error) => {
+            console.warn('Error loading battery type values:', error);
+            // Even on error, call callback to continue flow
+            callback();
+          }
+        );
+    } catch (error) {
+      console.error('Error in calculateBatteryDefSync:', error);
+      this.handleError('Error calculating battery deficiency: ' + error);
+      // Even on error, call callback to continue flow
+      callback();
+    }
+  }
+
+  /**
    * Apply deficiency calculations to grid rows
    */
   private applyBatteryDefCalculations(
@@ -1181,49 +1430,54 @@ export class BatteryReadingsComponent implements OnInit {
     let totalReplace = 0;
     let totalMonitor = 0;
 
-    this.batteryReadings.forEach((row) => {
+    // Create a new array to trigger change detection
+    this.batteryReadings = this.batteryReadings.map((row, index) => {
       const vdc = this.convertToDecimal(row.vdc.toString());
       const mhos = this.convertToDecimal(row.mhos.toString());
+      
+      let actionPlan = row.actionPlan;
+      let replacementNeeded = row.replacementNeeded;
+      let monitoringBattery = row.monitoringBattery;
 
       // VDC Analysis
       if (replacelow > 0 || monitorlow > 0) {
         if (vdc >= replace && vdc < replacelow) {
-          row.actionPlan = `Float voltage must be between ${replace} and ${replacelow}`;
-          row.replacementNeeded = 'Y';
-          row.monitoringBattery = 'N';
+          actionPlan = `Float voltage must be between ${replace} and ${replacelow}`;
+          replacementNeeded = 'Y';
+          monitoringBattery = 'N';
           totalReplace++;
         } else if (vdc >= monitor2 && vdc < monitorlow) {
-          row.actionPlan = `Float voltage between ${monitor2} and ${monitorlow}`;
-          row.monitoringBattery = 'Y';
-          row.replacementNeeded = 'N';
+          actionPlan = `Float voltage between ${monitor2} and ${monitorlow}`;
+          monitoringBattery = 'Y';
+          replacementNeeded = 'N';
           totalMonitor++;
         } else {
-          row.replacementNeeded = 'N';
-          row.monitoringBattery = 'N';
+          replacementNeeded = 'N';
+          monitoringBattery = 'N';
           if (row.cracks !== 'F') {
-            row.actionPlan = '';
+            actionPlan = '';
           } else {
-            row.actionPlan = 'Battery is leaking / damaged / corrosion';
+            actionPlan = 'Battery is leaking / damaged / corrosion';
           }
         }
       } else {
         if (vdc <= replace) {
-          row.actionPlan = `Float voltage is less than or equal to ${replace}. To be Replaced`;
-          row.replacementNeeded = 'Y';
-          row.monitoringBattery = 'N';
+          actionPlan = `Float voltage is less than or equal to ${replace}. To be Replaced`;
+          replacementNeeded = 'Y';
+          monitoringBattery = 'N';
           totalReplace++;
         } else if (vdc <= monitor2) {
-          row.actionPlan = `Float voltage is less than or equal to ${monitor2}. To be Monitored`;
-          row.monitoringBattery = 'Y';
-          row.replacementNeeded = 'N';
+          actionPlan = `Float voltage is less than or equal to ${monitor2}. To be Monitored`;
+          monitoringBattery = 'Y';
+          replacementNeeded = 'N';
           totalMonitor++;
         } else {
-          row.replacementNeeded = 'N';
-          row.monitoringBattery = 'N';
+          replacementNeeded = 'N';
+          monitoringBattery = 'N';
           if (row.cracks !== 'F') {
-            row.actionPlan = '';
+            actionPlan = '';
           } else {
-            row.actionPlan = 'Battery is leaking / damaged / corrosion';
+            actionPlan = 'Battery is leaking / damaged / corrosion';
           }
         }
       }
@@ -1232,38 +1486,46 @@ export class BatteryReadingsComponent implements OnInit {
       if (readingType === '2' && midType !== '3') {
         if (midType === '1') {
           if (mhos <= mhError) {
-            if (row.replacementNeeded === 'N') {
-              row.actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
-              row.replacementNeeded = 'Y';
-              row.monitoringBattery = 'N';
+            if (replacementNeeded === 'N') {
+              actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
+              replacementNeeded = 'Y';
+              monitoringBattery = 'N';
               totalReplace++;
             }
           } else if (mhos <= mhWarning) {
-            if (row.monitoringBattery === 'N') {
-              row.actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
-              row.monitoringBattery = 'Y';
-              row.replacementNeeded = 'N';
+            if (monitoringBattery === 'N') {
+              actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
+              monitoringBattery = 'Y';
+              replacementNeeded = 'N';
               totalMonitor++;
             }
           }
         } else if (midType === '2') {
           if (mhos > mhError) {
-            if (row.replacementNeeded === 'N') {
-              row.actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
-              row.replacementNeeded = 'Y';
-              row.monitoringBattery = 'N';
+            if (replacementNeeded === 'N') {
+              actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
+              replacementNeeded = 'Y';
+              monitoringBattery = 'N';
               totalReplace++;
             }
           } else if (mhos > mhWarning && mhos <= mhError) {
-            if (row.monitoringBattery === 'N') {
-              row.actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
-              row.monitoringBattery = 'Y';
-              row.replacementNeeded = 'N';
+            if (monitoringBattery === 'N') {
+              actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
+              monitoringBattery = 'Y';
+              replacementNeeded = 'N';
               totalMonitor++;
             }
           }
         }
       }
+
+      // Return updated row (creates new object reference)
+      return {
+        ...row,
+        actionPlan,
+        replacementNeeded,
+        monitoringBattery
+      };
     });
 
     this.batteryStringForm.patchValue({
@@ -1278,54 +1540,269 @@ export class BatteryReadingsComponent implements OnInit {
   /**
    * Get equipment status based on battery conditions
    * Legacy: GetEquipStatus()
+   * 
+   * IMPORTANT: The legacy has a BUG in the else clause:
+   * if ((ddlStatus.SelectedValue != "Offline")) { ... }
+   * else { return "CriticalDeficiency"; }  ← This is WRONG! Should not return CD for Offline
+   * 
+   * We're fixing this by having the caller check for Offline before calling this method
    */
   getEquipmentStatus(): string {
     try {
-      const status = this.batteryStringForm.get('equipStatus')?.value;
+      const currentStatus = this.batteryStringForm.get('equipStatus')?.value;
+      let resultStatus = 'Online';
 
-      if (status === 'Offline') {
-        return 'CriticalDeficiency';
-      }
+      console.log('\n=== getEquipmentStatus START ===');
+      console.log('📊 Input Status:', currentStatus);
+      console.log('📍 Battery Readings Count:', this.batteryReadings.length);
 
+      // Step 1: Check usedQuantity (batteries marked for replacement)
+      // Legacy: if(cvt2Int(txtUsedQuantity.Text)>0) return "CriticalDeficiency";
       const usedQuantity = parseInt(this.batteryStringForm.get('usedQuantity')?.value) || 0;
+      console.log('\n🔍 Step 1: Check usedQuantity');
+      console.log('   usedQuantity =', usedQuantity);
+      
+      // Log battery grid to see which batteries are marked for replacement
+      const replacementBatteries = this.batteryReadings.filter(b => b.replacementNeeded === 'Y');
+      if (replacementBatteries.length > 0) {
+        console.log('   ⚠️ Batteries marked for replacement:', 
+                    replacementBatteries.map(b => `#${b.batteryId}`).join(', '));
+      }
+      
       if (usedQuantity > 0) {
+        console.log('   ❌ RESULT: CriticalDeficiency (usedQuantity > 0)');
+        console.log('   📝 This is CORRECT legacy behavior');
+        console.log('   💡 To test other statuses: Change "Replace?" to "N" for these batteries in the grid');
+        console.log('=== getEquipmentStatus END ===\n');
         return 'CriticalDeficiency';
       }
+      console.log('   ✅ Pass: No batteries marked for replacement');
 
-      if (this.recommendToReplace() || 
-          (this.batteryStringForm.get('reasonToReplace')?.value === 'DA' &&
-            this.batteryStringForm.get('replaceWholeString')?.value)) {
-        return 'ReplacementRecommended';
+      console.log('   ✅ Pass: No batteries marked for replacement');
+
+      // Step 2: Check for replacement recommended or proactive replacement
+      // Legacy: RecommendtoReplace() || (ddlReasonToReplace.SelectedValue == "DA" && chkReplace.Checked)
+      console.log('\n🔍 Step 2: Check age-based replacement');
+      const recommendToReplaceResult = this.recommendToReplace();
+      const reasonToReplace = this.batteryStringForm.get('reasonToReplace')?.value;
+      const replaceWholeString = this.batteryStringForm.get('replaceWholeString')?.value;
+      
+      console.log('   recommendToReplace():', recommendToReplaceResult);
+      console.log('   reasonToReplace:', reasonToReplace);
+      console.log('   replaceWholeString:', replaceWholeString);
+      
+      if (recommendToReplaceResult || 
+          (reasonToReplace === 'DA' && replaceWholeString)) {
+        resultStatus = 'ReplacementRecommended';
+        console.log('   ❌ RESULT: ReplacementRecommended');
+        console.log('=== getEquipmentStatus END ===\n');
+        return resultStatus;
+      }
+      console.log('   ✅ Pass: Not due for age-based replacement');
+
+      // Step 3: Check for proactive replacement
+      // Legacy: ProactiveReplace()
+      console.log('\n🔍 Step 3: Check proactive replacement');
+      const proactiveReplaceResult = this.proactiveReplace();
+      console.log('   proactiveReplace():', proactiveReplaceResult);
+      if (proactiveReplaceResult) {
+        resultStatus = 'ProactiveReplacement';
+        console.log('   ❌ RESULT: ProactiveReplacement');
+        console.log('=== getEquipmentStatus END ===\n');
+        return resultStatus;
+      }
+      console.log('   ✅ Pass: Not due for proactive replacement');
+
+      // Step 4: Preserve non-Online status if no issues found above
+      // Legacy: if (ddlStatus.SelectedValue != "Online") resultStatus = ddlStatus.SelectedValue;
+      console.log('\n🔍 Step 4: Preserve user-selected status');
+      if (currentStatus !== 'Online') {
+        resultStatus = currentStatus;
+        console.log('   📌 Preserving non-Online status:', resultStatus);
+      } else {
+        console.log('   📌 Status is Online, will check field deficiencies');
       }
 
-      if (this.proactiveReplace()) {
-        return 'ProactiveReplacement';
+      // Step 5: Check field-level deficiencies
+      // Legacy: Loops through JobSummaryReport checking all fields against GetStatusDescription
+      console.log('\n🔍 Step 5: Check field-level deficiencies');
+      const statusFromFields = this.checkFieldLevelDeficiencies(resultStatus);
+      
+      if (statusFromFields !== resultStatus) {
+        console.log('   ❌ Field deficiencies found, status upgraded');
+        resultStatus = statusFromFields;
+      } else {
+        console.log('   ✅ No field deficiencies, status unchanged');
       }
 
-      if (status !== 'Online') {
-        return status;
-      }
+      console.log('\n🎯 FINAL RESULT:', resultStatus);
+      console.log('=== getEquipmentStatus END ===\n');
 
-      // Check for deficiencies in grid
-      let hasReplace = false;
-      let hasMonitor = false;
-
-      this.batteryReadings.forEach((row) => {
-        if (row.replacementNeeded === 'Y') hasReplace = true;
-        if (row.monitoringBattery === 'Y') hasMonitor = true;
-      });
-
-      if (hasReplace) {
-        return 'CriticalDeficiency';
-      } else if (hasMonitor) {
-        return 'OnLine(MinorDeficiency)';
-      }
-
-      return 'Online';
+      return resultStatus;
     } catch (error) {
+      console.error('❌ Error in getEquipmentStatus:', error);
       this.handleError('Error determining equipment status: ' + error);
       return 'Online';
     }
+  }
+
+  /**
+   * Check field-level deficiencies based on form values
+   * Simplified version of legacy JobSummaryReport loop
+   * Returns highest priority status found
+   */
+  private checkFieldLevelDeficiencies(currentStatus: string): string {
+    let resultStatus = currentStatus;
+    const failedFields: string[] = [];
+
+    console.log('  checkFieldLevelDeficiencies - Input status:', currentStatus);
+
+    // Define status priority (higher number = higher priority)
+    const statusPriority: { [key: string]: number } = {
+      'Online': 0,
+      'OnLine(MinorDeficiency)': 1,
+      'ProactiveReplacement': 2,
+      'OnLine(MajorDeficiency)': 3,
+      'ReplacementRecommended': 4,
+      'CriticalDeficiency': 5
+    };
+
+    // Helper to update status if new one has higher priority
+    const updateStatus = (fieldName: string, fieldValue: any, newStatus: string) => {
+      const currentPriority = statusPriority[resultStatus] || 0;
+      const newPriority = statusPriority[newStatus] || 0;
+      if (newPriority > currentPriority) {
+        console.log(`  Field "${fieldName}" = "${fieldValue}" → Upgrading status to "${newStatus}" (priority ${newPriority} > ${currentPriority})`);
+        failedFields.push(`${fieldName}=${fieldValue}`);
+        resultStatus = newStatus;
+      }
+    };
+
+    // Check Battery Charging System fields (critical failures)
+    // Legacy checks TempField == "N" || TempField == "F"
+    const batteryVoltageVerify = this.batteryStringForm.get('batteryVoltageVerify')?.value;
+    if (batteryVoltageVerify === 'F') {
+      updateStatus('batteryVoltageVerify', batteryVoltageVerify, 'CriticalDeficiency');
+    }
+    
+    const plusTerminalVerify = this.batteryStringForm.get('plusTerminalVerify')?.value;
+    if (plusTerminalVerify === 'F') {
+      updateStatus('plusTerminalVerify', plusTerminalVerify, 'OnLine(MajorDeficiency)');
+    }
+    
+    const minusTerminalVerify = this.batteryStringForm.get('minusTerminalVerify')?.value;
+    if (minusTerminalVerify === 'F') {
+      updateStatus('minusTerminalVerify', minusTerminalVerify, 'OnLine(MajorDeficiency)');
+    }
+    
+    const dcChargingVerify = this.batteryStringForm.get('dcChargingVerify')?.value;
+    if (dcChargingVerify === 'F') {
+      updateStatus('dcChargingVerify', dcChargingVerify, 'OnLine(MinorDeficiency)');
+    }
+    
+    const acRippleVoltageVerify = this.batteryStringForm.get('acRippleVoltageVerify')?.value;
+    if (acRippleVoltageVerify === 'F') {
+      updateStatus('acRippleVoltageVerify', acRippleVoltageVerify, 'OnLine(MinorDeficiency)');
+    }
+    
+    const acRippleCurrentVerify = this.batteryStringForm.get('acRippleCurrentVerify')?.value;
+    if (acRippleCurrentVerify === 'F') {
+      updateStatus('acRippleCurrentVerify', acRippleCurrentVerify, 'OnLine(MinorDeficiency)');
+    }
+    
+    const resistancePf = this.batteryStringForm.get('resistancePf')?.value;
+    if (resistancePf === 'F') {
+      updateStatus('resistancePf', resistancePf, 'OnLine(MajorDeficiency)');
+    }
+    
+    const torqueVerify = this.batteryStringForm.get('torqueVerify')?.value;
+    if (torqueVerify === 'F') {
+      updateStatus('torqueVerify', torqueVerify, 'OnLine(MinorDeficiency)');
+    }
+
+    // Check Sealed Battery Inspection fields
+    const batteryTypeName = this.batteryStringForm.get('batteryTypeName')?.value;
+    if (batteryTypeName === 'S') {
+      const bulgedPf = this.batteryStringForm.get('bulgedPf')?.value;
+      if (bulgedPf === 'F') {
+        updateStatus('bulgedPf', bulgedPf, 'CriticalDeficiency');
+      }
+      
+      const crackedPf = this.batteryStringForm.get('crackedPf')?.value;
+      if (crackedPf === 'F') {
+        updateStatus('crackedPf', crackedPf, 'CriticalDeficiency');
+      }
+      
+      const debrisPf = this.batteryStringForm.get('debrisPf')?.value;
+      if (debrisPf === 'F') {
+        updateStatus('debrisPf', debrisPf, 'OnLine(MinorDeficiency)');
+      }
+      
+      const rotten = this.batteryStringForm.get('rotten')?.value;
+      if (rotten === 'F') {
+        updateStatus('rotten', rotten, 'CriticalDeficiency');
+      }
+      
+      const verifySaftey = this.batteryStringForm.get('verifySaftey')?.value;
+      if (verifySaftey === 'F') {
+        updateStatus('verifySaftey', verifySaftey, 'OnLine(MajorDeficiency)');
+      }
+      
+      const intercellConnector = this.batteryStringForm.get('intercellConnector')?.value;
+      if (intercellConnector === 'F') {
+        updateStatus('intercellConnector', intercellConnector, 'OnLine(MajorDeficiency)');
+      }
+    }
+
+    // Check Flooded Battery Inspection fields
+    if (batteryTypeName === 'F') {
+      const plusWrappedVerify = this.batteryStringForm.get('plusWrappedVerify')?.value;
+      if (plusWrappedVerify === 'F') {
+        updateStatus('plusWrappedVerify', plusWrappedVerify, 'CriticalDeficiency');
+      }
+      
+      const missingVerify = this.batteryStringForm.get('missingVerify')?.value;
+      if (missingVerify === 'F') {
+        updateStatus('missingVerify', missingVerify, 'OnLine(MajorDeficiency)');
+      }
+      
+      const waterLevelVerify = this.batteryStringForm.get('waterLevelVerify')?.value;
+      if (waterLevelVerify === 'F') {
+        updateStatus('waterLevelVerify', waterLevelVerify, 'OnLine(MinorDeficiency)');
+      }
+    }
+
+    // Check temperature verification
+    const roomTempVerify = this.batteryStringForm.get('roomTempVerify')?.value;
+    if (roomTempVerify === 'F') {
+      updateStatus('roomTempVerify', roomTempVerify, 'OnLine(MinorDeficiency)');
+    }
+    
+    const batteryTempVerify = this.batteryStringForm.get('batteryTempVerify')?.value;
+    if (batteryTempVerify === 'F') {
+      updateStatus('batteryTempVerify', batteryTempVerify, 'OnLine(MinorDeficiency)');
+    }
+
+    // Check rack and fan
+    const rackIntegrity = this.batteryStringForm.get('rackIntegrity')?.value;
+    if (rackIntegrity === 'F') {
+      updateStatus('rackIntegrity', rackIntegrity, 'OnLine(MajorDeficiency)');
+    }
+    
+    const ventFanOperation = this.batteryStringForm.get('ventFanOperation')?.value;
+    if (ventFanOperation === 'F') {
+      updateStatus('ventFanOperation', ventFanOperation, 'OnLine(MinorDeficiency)');
+    }
+    
+    const battDisconnect = this.batteryStringForm.get('battDisconnect')?.value;
+    if (battDisconnect === 'F') {
+      updateStatus('battDisconnect', battDisconnect, 'OnLine(MinorDeficiency)');
+    }
+
+    console.log('  Failed fields:', failedFields.length > 0 ? failedFields : 'None');
+    console.log('  checkFieldLevelDeficiencies - Output status:', resultStatus);
+
+    return resultStatus;
   }
 
   /**
@@ -1334,7 +1811,7 @@ export class BatteryReadingsComponent implements OnInit {
   /**
    * Main save flow - aligned with legacy SaveData() method
    * Flow:
-   * 1. Validate() - Validate all form fields
+   * 1. Validate() - Validate all form fields (ONLY for 'Save', NOT for 'SaveAsDraft')
    * 2. BatteryData() - Calculate deficiency and save battery grid
    * 3. SaveUpdateBatteryString() - Save battery string info
    * 4. UpdateBatteryInfo(1) - Update reading type in equipment info
@@ -1343,11 +1820,21 @@ export class BatteryReadingsComponent implements OnInit {
    * 7. GetReferenceValues() - Reload reference values
    * 8. UpdateEquipStatus() - Update equipment status
    * 9. DisplayBatteryStringInfo() - Reload data
+   * 
+   * IMPORTANT: SaveAsDraft should NOT validate - allow saving incomplete data
    */
   onSaveBatteryReadings(saveType: 'Save' | 'SaveAsDraft'): void {
-    // Validate form before saving
-    if (!this.validate()) {
-      return;
+    // CRITICAL: Only validate for 'Save', NOT for 'SaveAsDraft'
+    // SaveAsDraft allows saving incomplete/partial data for later completion
+    if (saveType === 'Save') {
+      console.log('🔍 Running validation for Save...');
+      if (!this.validate()) {
+        console.log('❌ Validation failed, aborting save');
+        return;
+      }
+      console.log('✅ Validation passed');
+    } else {
+      console.log('⏭️ Skipping validation for SaveAsDraft (allow incomplete data)');
     }
 
     this.isSaving = true;
@@ -1495,7 +1982,8 @@ export class BatteryReadingsComponent implements OnInit {
       batteryId: row.batteryId,
       temp: row.temp,
       vdc: row.vdc,
-      mhos: row.mhos,
+      mhos: row.mhos, // Keep for backward compatibility
+      milliohms: row.mhos, // API expects milliohms field
       strap1: row.strap1,
       strap2: row.strap2,
       spGravity: row.spGravity,
@@ -1511,7 +1999,18 @@ export class BatteryReadingsComponent implements OnInit {
     // Step 1c: Insert new battery data (legacy: INSERT INTO Battery)
     this.batteryService.saveBatteryData(batteryDataList).subscribe(
       () => {
-        // Step 2: After battery data is saved, save battery string info
+        // CRITICAL: Legacy BatteryData() sets preliminary status AFTER saving grid
+        // This happens BEFORE GetEquipStatus() is called
+        // Legacy logic:
+        // if (ddlStatus.SelectedValue != "Offline")
+        // {
+        //     if (Majcount > 0 || ReplaceCount > 0) { ddlStatus.SelectedValue = "CriticalDeficiency"; }
+        //     else if (Mincount > 0) { ddlStatus.SelectedValue = "OnLine(MinorDeficiency)"; }
+        //     else { ddlStatus.SelectedValue = "Online"; }
+        // }
+        this.setPreliminaryStatusFromGrid();
+        
+        // Step 2: After battery data is saved and preliminary status set, save battery string info
         this.saveBatteryStringInfo(saveType);
       },
       (error) => {
@@ -1520,6 +2019,76 @@ export class BatteryReadingsComponent implements OnInit {
         this.saving = false;
       }
     );
+  }
+
+  /**
+   * Set preliminary status based on battery grid counts
+   * Legacy: Done in BatteryData() AFTER saving grid, BEFORE GetEquipStatus()
+   * 
+   * Counts from grid:
+   * - Majcount: Batteries with Cracks = "F" (leaking/damaged/corrosion)
+   * - ReplaceCount: Batteries with ReplacementNeeded = "Y"
+   * - Mincount: Batteries with MonitoringBattery = "Y"
+   * 
+   * Status logic:
+   * - If Majcount > 0 OR ReplaceCount > 0 → CriticalDeficiency
+   * - Else if Mincount > 0 → OnLine(MinorDeficiency)
+   * - Else → Online
+   */
+  private setPreliminaryStatusFromGrid(): void {
+    const currentStatus = this.batteryStringForm.get('equipStatus')?.value;
+    
+    console.log('\n🔍 === setPreliminaryStatusFromGrid START ===');
+    console.log('📊 Current Status:', currentStatus);
+    
+    // Only set preliminary status if current status is NOT Offline
+    if (currentStatus !== 'Offline') {
+      // Count batteries by condition from grid
+      let majCount = 0;      // Leaking/Damaged/Corrosion (Cracks = "F")
+      let replaceCount = 0;  // Replacement Needed = "Y"
+      let minCount = 0;       // Monitoring = "Y"
+      
+      this.batteryReadings.forEach(row => {
+        if (row.cracks === 'F') {
+          majCount++;
+        } else if (row.replacementNeeded === 'Y') {
+          replaceCount++;
+        } else if (row.monitoringBattery === 'Y') {
+          minCount++;
+        }
+      });
+      
+      console.log('📊 Grid Counts:');
+      console.log('   - Majcount (Cracks=F):', majCount);
+      console.log('   - ReplaceCount (ReplacementNeeded=Y):', replaceCount);
+      console.log('   - Mincount (MonitoringBattery=Y):', minCount);
+      
+      // Apply legacy status logic
+      let preliminaryStatus = currentStatus;
+      
+      if (majCount > 0 || replaceCount > 0) {
+        preliminaryStatus = 'CriticalDeficiency';
+        console.log('✅ Setting preliminary status to CriticalDeficiency (Majcount > 0 or ReplaceCount > 0)');
+      } else if (minCount > 0) {
+        preliminaryStatus = 'OnLine(MinorDeficiency)';
+        console.log('✅ Setting preliminary status to OnLine(MinorDeficiency) (Mincount > 0)');
+      } else {
+        preliminaryStatus = 'Online';
+        console.log('✅ Setting preliminary status to Online (all batteries healthy)');
+      }
+      
+      // Update form with preliminary status
+      if (preliminaryStatus !== currentStatus) {
+        console.log('🔄 Updating status from', currentStatus, 'to', preliminaryStatus);
+        this.batteryStringForm.patchValue({ equipStatus: preliminaryStatus });
+      } else {
+        console.log('ℹ️ Status unchanged:', preliminaryStatus);
+      }
+    } else {
+      console.log('⏭️ Status is Offline, skipping preliminary status calculation');
+    }
+    
+    console.log('=== setPreliminaryStatusFromGrid END ===\n');
   }
 
   /**
@@ -1745,17 +2314,67 @@ export class BatteryReadingsComponent implements OnInit {
 
   /**
    * Step 5 & 6: Calculate status and reload reference values (legacy GetEquipStatus & GetReferenceValues)
+   * IMPORTANT: Legacy logic - only calculate status if current status is NOT "Offline"
+   * 
+   * CRITICAL FIX: Must recalculate battery deficiencies BEFORE checking equipment status
+   * Legacy flow: The usedQuantity field is used by GetEquipStatus, but it can be:
+   * 1. Auto-calculated from grid when user clicks "Change" button
+   * 2. Manually entered by user
+   * 3. Updated from battery grid data before status check
+   * 
+   * We need to ensure usedQuantity reflects the actual battery grid state before status check
    */
   private calculateAndUpdateStatus(): void {
     const currentStatus = this.batteryStringForm.get('equipStatus')?.value;
+    const repMonCalculate = this.batteryStringForm.get('repMonCalculate')?.value;
+    
+    console.log('\n==== calculateAndUpdateStatus START ====');
+    console.log('📊 Current Status before calculation:', currentStatus);
+    console.log('📊 RepMonCalculate mode:', repMonCalculate);
+    
+    // CRITICAL: If RepMonCalculate = "1" (System), recalculate battery deficiencies from grid
+    // This ensures usedQuantity reflects actual battery grid state before status check
+    // Legacy: CalculateBatteryDef() updates txtUsedQuantity based on battery readings
+    if (repMonCalculate === '1') {
+      console.log('⚙️ RepMonCalculate = "1" (System), calling calculateBatteryDefSync()...');
+      this.calculateBatteryDefSync(() => {
+        // After battery def calculation completes, proceed with status check
+        this.proceedWithStatusCalculation(currentStatus);
+      });
+    } else {
+      console.log('✋ RepMonCalculate = "2" (Manual), skipping auto-calculation');
+      console.log('📝 Using manually entered usedQuantity:', this.batteryStringForm.get('usedQuantity')?.value);
+      // If manual mode, proceed directly with status check using manually entered values
+      this.proceedWithStatusCalculation(currentStatus);
+    }
+  }
+
+  /**
+   * Proceed with status calculation after battery deficiency calculation completes
+   */
+  private proceedWithStatusCalculation(currentStatus: string): void {
+    console.log('\n🔄 Proceeding with status calculation...');
+    console.log('📊 Final usedQuantity value:', this.batteryStringForm.get('usedQuantity')?.value);
+    console.log('📊 Final monitored value:', this.batteryStringForm.get('monitored')?.value);
     
     // Step 5: Calculate equipment status (legacy GetEquipStatus logic)
-    let newStatus = this.getEquipmentStatus();
+    // Legacy: if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
+    let newStatus = currentStatus;
+    
+    if (currentStatus !== 'Offline') {
+      console.log('✅ Status is NOT Offline, calling getEquipmentStatus()...');
+      newStatus = this.getEquipmentStatus();
+      console.log('🎯 New status from getEquipmentStatus():', newStatus);
+    } else {
+      console.log('⏭️ Status IS Offline, skipping getEquipmentStatus()');
+    }
     
     // Step 6: Reload reference values (legacy GetReferenceValues)
     this.loadReferenceValues();
     
     // Step 7: Update equipment status
+    console.log('💾 Calling updateEquipmentStatusFinal with status:', newStatus);
+    console.log('==== calculateAndUpdateStatus END ====\n');
     this.updateEquipmentStatusFinal(newStatus);
   }
 
@@ -1763,6 +2382,21 @@ export class BatteryReadingsComponent implements OnInit {
    * Step 7: Update equipment status (legacy UpdateEquipStatus method)
    */
   private updateEquipmentStatusFinal(newStatus: string): void {
+    console.log('==== updateEquipmentStatusFinal START ====');
+    console.log('Status to update:', newStatus);
+    
+    // Legacy DateCode handling from SaveData:
+    // DateTime DtDateCode = Convert.ToDateTime(txtStartDt.Text);
+    // UES.MonthName = DateTimeFormatInfo.CurrentInfo.GetMonthName(DtDateCode.Month);
+    // UES.Year = DtDateCode.Year;
+    let startDate = this.batteryStringForm.get('startDate')?.value;
+    
+    // If startDate is empty, default to 01/01/1900
+    if (!startDate || startDate === '') {
+      startDate = '1900-01-01';
+      console.log('⚠️ DateCode is empty for status update, defaulting to 1900-01-01');
+    }
+    
     const statusInfo: UpdateEquipStatus = {
       callNbr: this.callNbr,
       equipId: this.equipId,
@@ -1773,8 +2407,8 @@ export class BatteryReadingsComponent implements OnInit {
       modelNo: this.batteryStringForm.get('modelNo')?.value || '',
       serialNo: this.batteryStringForm.get('serialNo')?.value || '',
       location: this.batteryStringForm.get('location')?.value || '',
-      monthName: this.getMonthFromDate(this.batteryStringForm.get('startDate')?.value),
-      year: this.getYearFromDate(this.batteryStringForm.get('startDate')?.value),
+      monthName: this.getMonthFromDate(startDate),
+      year: this.getYearFromDate(startDate),
       readingType: this.batteryStringForm.get('readingType')?.value || '',
       vfSelection: this.batteryStringForm.get('floatVoltageStatus')?.value || '',
       batteriesPerString: parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0,
@@ -1784,8 +2418,14 @@ export class BatteryReadingsComponent implements OnInit {
       MaintAuthID: this.getUserId(),
     };
 
+    console.log('UpdateEquipStatus payload:', statusInfo);
+    console.log('   MonthName:', statusInfo.monthName);
+    console.log('   Year:', statusInfo.year);
+
     this.batteryService.updateEquipStatus(statusInfo).subscribe(
       () => {
+        console.log('updateEquipStatus API call successful');
+        console.log('==== updateEquipmentStatusFinal END ====');
         this.toastr.success(this.successMessage || 'Battery readings saved successfully!');
         this.isSaving = false;
         this.saving = false;
@@ -1794,6 +2434,8 @@ export class BatteryReadingsComponent implements OnInit {
         this.loadBatteryStringInfo();
       },
       (error) => {
+        console.error('updateEquipStatus API call failed:', error);
+        console.log('==== updateEquipmentStatusFinal END (with error) ====');
         this.handleError('Error updating equipment status: ' + error.message);
         this.isSaving = false;
         this.saving = false;
@@ -1821,6 +2463,22 @@ export class BatteryReadingsComponent implements OnInit {
    * 4. DisplayBatteryStringInfo()
    */
   onChange(): void {
+    // Validate packNo for stringType 2 and 3 (legacy: OnclickChange validation)
+    const stringType = this.batteryStringForm.get('stringType')?.value;
+    const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
+
+    if (stringType === '3') {
+      if (packNo <= 0) {
+        this.toastr.error('You must provide the No of Battery Packs');
+        return;
+      }
+    } else if (stringType === '2') {
+      if (packNo <= 0) {
+        this.toastr.error('You must provide the No of Internal Strings');
+        return;
+      }
+    }
+
     this.saving = true;
     
     // Step 1: Save battery string as draft (legacy: SaveUpdateBatteryString)
@@ -1873,8 +2531,35 @@ export class BatteryReadingsComponent implements OnInit {
    * Build battery string info for saving
    */
   private buildBatteryStringInfo(): BatteryStringInfo {
-    const startDate = this.batteryStringForm.get('startDate')?.value;
-    const dateObj = new Date(startDate);
+    // Legacy DateCode handling from SaveUpdateBatteryString:
+    // if (txtStartDt.Text == "") { txtStartDt.Text = "01/01/1900"; }
+    let startDate = this.batteryStringForm.get('startDate')?.value;
+    
+    // If startDate is empty or invalid, default to 01/01/1900
+    if (!startDate || startDate === '') {
+      startDate = '1900-01-01'; // Default date in YYYY-MM-DD format
+      console.log('⚠️ DateCode is empty, defaulting to 1900-01-01');
+    }
+    
+    // Validate the date
+    const dtDateCode = new Date(startDate);
+    if (isNaN(dtDateCode.getTime())) {
+      console.error('❌ Invalid DateCode:', startDate);
+      // If invalid, still default to 1900-01-01 for backward compatibility
+      startDate = '1900-01-01';
+    }
+    
+    // Check if date is in the future (this should be caught by validate(), but double-check)
+    const today = new Date();
+    if (dtDateCode > today) {
+      console.error('❌ DateCode is in the future:', startDate);
+      // This will be caught by validate(), but we log it here
+    }
+    
+    console.log('📅 DateCode processing:');
+    console.log('   Input:', startDate);
+    console.log('   Month:', this.getMonthFromDate(startDate));
+    console.log('   Year:', this.getYearFromDate(startDate));
     
     // Step 1: Get battery voltage validation using getBatteryFloatVoltage (legacy flow)
     const batteryVoltage = this.convertToDouble(this.batteryStringForm.get('totalBatteryVoltage')?.value) || 0;
@@ -2130,19 +2815,43 @@ export class BatteryReadingsComponent implements OnInit {
 
   private getMonthFromDate(dateString: string): string {
     try {
+      // Handle empty or invalid dates - default to January (legacy: 01/01/1900)
+      if (!dateString || dateString === '') {
+        dateString = '1900-01-01';
+      }
+      
       const date = new Date(dateString);
+      
+      // If date is invalid, default to January
+      if (isNaN(date.getTime())) {
+        return 'January';
+      }
+      
       return date.toLocaleString('default', { month: 'long' });
     } catch {
-      return '';
+      // On any error, default to January (legacy behavior for 01/01/1900)
+      return 'January';
     }
   }
 
   private getYearFromDate(dateString: string): number {
     try {
+      // Handle empty or invalid dates - default to 1900 (legacy: 01/01/1900)
+      if (!dateString || dateString === '') {
+        dateString = '1900-01-01';
+      }
+      
       const date = new Date(dateString);
+      
+      // If date is invalid, default to 1900
+      if (isNaN(date.getTime())) {
+        return 1900;
+      }
+      
       return date.getFullYear();
     } catch {
-      return 0;
+      // On any error, default to 1900 (legacy behavior for 01/01/1900)
+      return 1900;
     }
   }
 
@@ -2153,33 +2862,46 @@ export class BatteryReadingsComponent implements OnInit {
 
   /**
    * Update action plan based on dropdown changes
+   * Legacy JavaScript functions:
+   * - CountReplaceYes(id) - Updates action plan when Replace dropdown changes
+   * - CountMonitorYes(id) - Updates action plan when Monitor dropdown changes  
+   * - ddlCrackChange(id) - Updates action plan when Cracks dropdown changes
+   * 
+   * IMPORTANT: Each dropdown change is handled independently in legacy
+   * The logic priority is:
+   * 1. If Replace = "Y" → "Float voltage or Conductance value is not as per manufacturer specification"
+   * 2. Else if Monitor = "Y" → "Float voltage or Conductance value is not as per manufacturer specification"
+   * 3. Else if Cracks = "F" → "Battery is leaking / damaged / corrosion"
+   * 4. Else → "" (empty)
    */
   onRowDropdownChange(row: BatteryReadingRow): void {
-    // Update action plan based on the dropdown selections
+    console.log('🔄 onRowDropdownChange called for battery:', row.batteryId);
+    console.log('   Replace:', row.replacementNeeded, 'Monitor:', row.monitoringBattery, 'Cracks:', row.cracks);
+    
+    // Legacy logic: Check in priority order
     if (row.replacementNeeded === 'Y') {
-      if (row.cracks === 'F') {
-        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
-      } else if (!row.actionPlan || !row.actionPlan.includes('Float voltage')) {
-        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
-      }
+      // Replace = "Y" → Set specific action plan and clear Monitor
+      row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
       row.monitoringBattery = 'N';
+      console.log('   ✅ Set action plan: Replace = Y');
     } else if (row.monitoringBattery === 'Y') {
-      if (row.cracks === 'F') {
-        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
-      } else if (!row.actionPlan || !row.actionPlan.includes('Float voltage')) {
-        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
-      }
+      // Monitor = "Y" → Set specific action plan and clear Replace
+      row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
       row.replacementNeeded = 'N';
+      console.log('   ✅ Set action plan: Monitor = Y');
+    } else if (row.cracks === 'F') {
+      // Cracks = "F" → Set leaking/damaged message
+      row.actionPlan = 'Battery is leaking / damaged / corrosion';
+      console.log('   ✅ Set action plan: Cracks = F');
     } else {
-      // Both are 'N'
-      if (row.cracks === 'F') {
-        row.actionPlan = 'Battery is leaking / damaged / corrosion';
-      } else {
-        row.actionPlan = '';
-      }
+      // All are "N" or "P" → Clear action plan
+      row.actionPlan = '';
+      console.log('   ✅ Cleared action plan: All conditions false');
     }
 
-    // Update totals
+    console.log('   📝 Final action plan:', row.actionPlan);
+
+    // Update totals (this increments/decrements usedQuantity and monitored)
     this.updateTotals();
   }
 
@@ -2320,8 +3042,9 @@ export class BatteryReadingsComponent implements OnInit {
           }
 
           if (readingType === '2') {
+            console.log(`Battery ${battery.batteryId} - mhos value:`, battery.mhos, `(type: ${typeof battery.mhos})`);
             if (!this.checkZeros(battery.mhos)) {
-              this.toastr.error(`Please enter the MHOS value for Battery No: ${battery.batteryId}`);
+              this.toastr.error(`Please enter the MHOS value for Battery No: ${battery.batteryId}. Current value: ${battery.mhos}`);
               return false;
             }
           }
@@ -2439,6 +3162,36 @@ export class BatteryReadingsComponent implements OnInit {
       return false;
     }
 
+    // Reconciliation "Actual" fields validation - when "Is Correct" is "No"
+    const recMakeCorrect = this.reconciliationForm.get('recMakeCorrect')?.value;
+    const actMake = this.reconciliationForm.get('actMake')?.value;
+    const recModelCorrect = this.reconciliationForm.get('recModelCorrect')?.value;
+    const actModel = this.reconciliationForm.get('actModel')?.value;
+    const recSerialNoCorrect = this.reconciliationForm.get('recSerialNoCorrect')?.value;
+    const actSerialNo = this.reconciliationForm.get('actSerialNo')?.value;
+    const battPerStringCorrect = this.reconciliationForm.get('battPerStringCorrect')?.value;
+    const actBattPerString = this.reconciliationForm.get('actBattPerString')?.value;
+
+    if (recMakeCorrect === 'NO' && (!actMake || actMake.trim() === '')) {
+      this.toastr.error('Actual Make is required when Make is marked as incorrect');
+      return false;
+    }
+
+    if (recModelCorrect === 'NO' && (!actModel || actModel.trim() === '')) {
+      this.toastr.error('Actual Model is required when Model is marked as incorrect');
+      return false;
+    }
+
+    if (recSerialNoCorrect === 'NO' && (!actSerialNo || actSerialNo.trim() === '')) {
+      this.toastr.error('Actual Serial No is required when Serial No is marked as incorrect');
+      return false;
+    }
+
+    if (battPerStringCorrect === 'NO' && (!actBattPerString || actBattPerString <= 0)) {
+      this.toastr.error('Actual Batteries Per String count is required when Batteries Per String is marked as incorrect');
+      return false;
+    }
+
     // Battery Charging System Verification
     if (!this.checkZeros(totalBatteryVoltage) || !this.checkZeros(plusTerminalToGnd) || 
         !this.checkZeros(minusTerminalToGnd) || !this.checkZeros(dcChargeCurrent) || 
@@ -2522,8 +3275,8 @@ export class BatteryReadingsComponent implements OnInit {
       return false;
     }
 
-    // Graph verification validation
-    if (!readingsGraphCheck) {
+    // Graph verification validation - only required if there are battery readings rows
+    if (this.batteryReadings && this.batteryReadings.length > 0 && !readingsGraphCheck) {
       this.toastr.error('Please check that you have verified the readings in Graph');
       return false;
     }

@@ -177,7 +177,8 @@ export interface BatteryData {
   batteryId: number;
   temp: number;
   vdc: number;
-  mhos: number;
+  mhos?: number; // Legacy field name (for backward compatibility)
+  milliohms?: number; // API returns this field name
   strap1: number;
   strap2: number;
   spGravity: number;
