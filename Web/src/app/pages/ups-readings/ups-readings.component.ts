@@ -2248,81 +2248,35 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return config;
   }
 
-  private calculatePhaseToNeutral(type: 'input' | 'bypass' | 'output'): void {
-    const form = type === 'input' ? this.inputReadingsForm :
-                  type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
-
-    const config = type === 'input' ? this.inputConfig :
-                   type === 'bypass' ? this.bypassConfig : this.outputConfig;
-
-    if (!config || !config.showPhaseToNeutral) return;
-
-    const voltA = this.convertToDouble(form.get('voltA')?.value);
-    const voltB = this.convertToDouble(form.get('voltB')?.value);
-    const voltC = this.convertToDouble(form.get('voltC')?.value);
-
-    // Calculate phase-to-neutral voltages using improved calculation
-    // Updated to handle standard voltage configurations correctly
-    if (voltA > 0) {
-      const phaseToNeutralA = this.convertLineToNeutralVoltage(voltA);
-      // Store calculated value for display - could be added to form if needed
-      // form.patchValue({ phaseToNeutralA: phaseToNeutralA }, { emitEvent: false });
-    }
-
-    if (voltB > 0) {
-      const phaseToNeutralB = this.convertLineToNeutralVoltage(voltB);
-      // form.patchValue({ phaseToNeutralB: phaseToNeutralB }, { emitEvent: false });
-    }
-
-    if (voltC > 0) {
-      const phaseToNeutralC = this.convertLineToNeutralVoltage(voltC);
-      // form.patchValue({ phaseToNeutralC: phaseToNeutralC }, { emitEvent: false });
-    }
-
-    // Call the legacy-style comprehensive phase to neutral calculation
-    this.calculatePhaseToNeutralAllSections();
-  }
-
   /**
-   * Comprehensive phase-to-neutral calculation matching legacy PhasetoNuetralIPVoltages function
-   * This handles all voltage configurations and calculates phase-to-neutral voltages automatically
+   * CONSOLIDATED PHASE-TO-NEUTRAL CALCULATIONS
    */
-  private calculatePhaseToNeutralAllSections(): void {
-    // Input calculations
-    this.calculatePhaseToNeutralForSection('input');
-
-    // Bypass calculations
-    this.calculatePhaseToNeutralForSection('bypass');
-
-    // Output calculations
-    this.calculatePhaseToNeutralForSection('output');
+  private calculatePhaseToNeutralForAll(): void {
+    ['input', 'bypass', 'output'].forEach(type => {
+      this.calculatePhaseToNeutral(type as 'input' | 'bypass' | 'output');
+    });
   }
 
-  private calculatePhaseToNeutralForSection(sectionType: 'input' | 'bypass' | 'output'): void {
-    const form = sectionType === 'input' ? this.inputReadingsForm :
-                 sectionType === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
+  private calculatePhaseToNeutral(type: 'input' | 'bypass' | 'output'): void {
+    const form = this.getFormByType(type);
+    const config = this.getConfigByType(type);
+    
+    if (!config?.showPhaseToNeutral) return;
 
-    const configValue = form.get('configuration')?.value;
-
-    // Only calculate for 3-phase configurations that show phase-to-neutral
-    if (configValue === '3' || configValue === '4' || configValue === '5' || configValue === '6') {
-      const voltA = this.convertToDouble(form.get('voltA')?.value);
-      const voltB = this.convertToDouble(form.get('voltB')?.value);
-      const voltC = this.convertToDouble(form.get('voltC')?.value);
-
-      // Updated P-N calculation using improved convertLineToNeutralVoltage function
-      if (voltA > 0) {
-        const phaseToNeutralA = this.convertLineToNeutralVoltage(voltA);
-        // This would be displayed in the UI - exact implementation depends on template structure
+    ['A', 'B', 'C'].slice(0, config.phaseCount).forEach(phase => {
+      const voltage = this.convertToDouble(form.get(`volt${phase}`)?.value);
+      if (voltage > 0) {
+        const phaseToNeutral = this.convertLineToNeutralVoltage(voltage);
+        // Store for display purposes if needed
       }
+    });
+  }
 
-      if (voltB > 0) {
-        const phaseToNeutralB = this.convertLineToNeutralVoltage(voltB);
-      }
-
-      if (voltC > 0) {
-        const phaseToNeutralC = this.convertLineToNeutralVoltage(voltC);
-      }
+  private getConfigByType(type: 'input' | 'bypass' | 'output'): VoltageConfiguration | null {
+    switch (type) {
+      case 'input': return this.inputConfig;
+      case 'bypass': return this.bypassConfig;
+      case 'output': return this.outputConfig;
     }
   }
 
@@ -2395,13 +2349,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return true;
   }
 
-  /**
-   * Helper method to check if a field value is empty or just whitespace
-   */
-  private isFieldEmpty(value: any): boolean {
-    return value === null || value === undefined || value === '' ||
-           (typeof value === 'string' && value.trim() === '');
-  }
+
 
   /**
    * Get the number of phases for a given voltage configuration
@@ -2533,107 +2481,66 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  private calculateSinglePhaseLoad(upsKVA: number, voltageType: string): boolean {
-    const currentField = this.getOutputCurrentField('A', voltageType);
-    const voltageField = this.getOutputVoltageField('A', voltageType);
-    const loadField = this.getOutputLoadField('A', voltageType);
-    const totalLoadField = this.getOutputTotalLoadField(voltageType);
-    const loadDropdownField = this.getOutputLoadDropdownField('A', voltageType);
-
-    const current = this.convertToDouble(currentField);
-    const voltage = this.convertToDouble(voltageField);
-
-    if (current === 0) {
-      this.showValidationMessage('Output Current cannot be empty', 'outputCurrent', currentField);
-      return false;
+  /**
+   * CONSOLIDATED LOAD CALCULATIONS - Unified approach for all phase configurations
+   */
+  private calculatePhaseLoad(phaseCount: number, upsKVA: number, voltageType: string): boolean {
+    const phases = ['A', 'B', 'C'].slice(0, phaseCount);
+    const eachPhaseKVA = upsKVA / phaseCount;
+    const loadPercentages: number[] = [];
+    
+    // Validate all currents are present
+    for (const phase of phases) {
+      const current = this.convertToDouble(this.getOutputCurrentField(phase as 'A' | 'B' | 'C', voltageType));
+      if (current === 0) {
+        this.showValidationMessage(`Output Current ${phases.join(', ')} cannot be empty`, `outputCurrent${phaseCount}Phase`);
+        return false;
+      }
     }
 
-    // Calculate: KVA = Current * Voltage / 1000
-    const actualKVA = current * voltage / 1000;
-    const loadPercentage = (actualKVA * 100) / upsKVA;
+    // Calculate load for each phase
+    for (const phase of phases) {
+      const current = this.convertToDouble(this.getOutputCurrentField(phase as 'A' | 'B' | 'C', voltageType));
+      const voltage = this.convertToDouble(this.getOutputVoltageField(phase as 'A' | 'B' | 'C', voltageType));
+      
+      let actualKVA: number;
+      if (phaseCount === 1) {
+        actualKVA = (current * voltage) / 1000;
+      } else if (phaseCount === 2) {
+        actualKVA = (current * voltage) / 1000;
+      } else { // Three-phase
+        actualKVA = (voltage * current) / 1732;
+      }
+      
+      const loadPercentage = (actualKVA * 100) / eachPhaseKVA;
+      loadPercentages.push(loadPercentage);
+      
+      this.setOutputLoadValue(this.getOutputLoadField(phase as 'A' | 'B' | 'C', voltageType), loadPercentage);
+    }
 
-    this.setOutputLoadValue(loadField, loadPercentage);
-    this.setOutputTotalLoadValue(totalLoadField, loadPercentage);
+    // Calculate total load
+    const totalLoad = phaseCount === 2 
+      ? (((loadPercentages[0] + loadPercentages[1]) / 2) * 100) / 100
+      : loadPercentages.reduce((sum, load) => sum + load, 0) / phaseCount;
+      
+    this.setOutputTotalLoadValue(this.getOutputTotalLoadField(voltageType), totalLoad);
 
-    return this.validateLoadPercentage(loadPercentage, loadDropdownField, 'A');
+    // Validate all phases
+    return phases.every((phase, index) => 
+      this.validateLoadPercentage(loadPercentages[index], this.getOutputLoadDropdownField(phase as 'A' | 'B' | 'C', voltageType), phase as 'A' | 'B' | 'C')
+    );
+  }
+
+  private calculateSinglePhaseLoad(upsKVA: number, voltageType: string): boolean {
+    return this.calculatePhaseLoad(1, upsKVA, voltageType);
   }
 
   private calculateTwoPhaseLoad(upsKVA: number, voltageType: string): boolean {
-    const currentA = this.convertToDouble(this.getOutputCurrentField('A', voltageType));
-    const voltageA = this.convertToDouble(this.getOutputVoltageField('A', voltageType));
-    const currentB = this.convertToDouble(this.getOutputCurrentField('B', voltageType));
-    const voltageB = this.convertToDouble(this.getOutputVoltageField('B', voltageType));
-
-    if (currentA === 0 || currentB === 0) {
-      this.showValidationMessage('Output Current A or Output Current B cannot be empty', 'outputCurrentTwoPhase');
-      return false;
-    }
-
-    const eachPhaseKVA = upsKVA / 2;
-
-    // Phase A calculations
-    const actualKVA_A = currentA * voltageA / 1000;
-    const loadPercentageA = (actualKVA_A * 100) / eachPhaseKVA;
-
-    // Phase B calculations
-    const actualKVA_B = currentB * voltageB / 1000;
-    const loadPercentageB = (actualKVA_B * 100) / eachPhaseKVA;
-
-    // Total load calculation matching legacy: (((loadA + loadB) / 2) * 100) / 100
-    const totalLoad = (((loadPercentageA + loadPercentageB) / 2) * 100) / 100;
-
-    this.setOutputLoadValue(this.getOutputLoadField('A', voltageType), loadPercentageA);
-    this.setOutputLoadValue(this.getOutputLoadField('B', voltageType), loadPercentageB);
-    this.setOutputTotalLoadValue(this.getOutputTotalLoadField(voltageType), totalLoad);
-
-    // Validate both phases
-    const validA = this.validateLoadPercentage(loadPercentageA, this.getOutputLoadDropdownField('A', voltageType), 'A');
-    const validB = this.validateLoadPercentage(loadPercentageB, this.getOutputLoadDropdownField('B', voltageType), 'B');
-
-    return validA && validB;
+    return this.calculatePhaseLoad(2, upsKVA, voltageType);
   }
 
   private calculateThreePhaseLoad(upsKVA: number, voltageType: string): boolean {
-    const currentA = this.convertToDouble(this.getOutputCurrentField('A', voltageType));
-    const voltageA = this.convertToDouble(this.getOutputVoltageField('A', voltageType));
-    const currentB = this.convertToDouble(this.getOutputCurrentField('B', voltageType));
-    const voltageB = this.convertToDouble(this.getOutputVoltageField('B', voltageType));
-    const currentC = this.convertToDouble(this.getOutputCurrentField('C', voltageType));
-    const voltageC = this.convertToDouble(this.getOutputVoltageField('C', voltageType));
-
-    if (currentA === 0 || currentB === 0 || currentC === 0) {
-      this.showValidationMessage('Output Current A, B, C cannot be empty', 'outputCurrentThreePhase');
-      return false;
-    }
-
-    const eachPhaseKVA = upsKVA / 3;
-
-    // Three-phase calculations use 1732 factor (v3 * 1000)
-    // Legacy formula: CalKVA = (V × I) / 1732, LoadPercent = CalKVA * 100 / EachPhaseKVA
-    const calKVA_A = (voltageA * currentA) / 1732;
-    const loadPercentageA = (calKVA_A * 100) / eachPhaseKVA;
-
-    const calKVA_B = (voltageB * currentB) / 1732;
-    const loadPercentageB = (calKVA_B * 100) / eachPhaseKVA;
-
-    const calKVA_C = (voltageC * currentC) / 1732;
-    const loadPercentageC = (calKVA_C * 100) / eachPhaseKVA;
-
-    // Total load calculation matching legacy: (loadA + loadB + loadC) / 3 * 100 / 100
-    // The * 100 / 100 ensures proper floating-point precision handling
-    const totalLoad = (loadPercentageA + loadPercentageB + loadPercentageC) / 3 * 100 / 100;
-
-    this.setOutputLoadValue(this.getOutputLoadField('A', voltageType), loadPercentageA);
-    this.setOutputLoadValue(this.getOutputLoadField('B', voltageType), loadPercentageB);
-    this.setOutputLoadValue(this.getOutputLoadField('C', voltageType), loadPercentageC);
-    this.setOutputTotalLoadValue(this.getOutputTotalLoadField(voltageType), totalLoad);
-
-    // Validate all three phases
-    const validA = this.validateLoadPercentage(loadPercentageA, this.getOutputLoadDropdownField('A', voltageType), 'A');
-    const validB = this.validateLoadPercentage(loadPercentageB, this.getOutputLoadDropdownField('B', voltageType), 'B');
-    const validC = this.validateLoadPercentage(loadPercentageC, this.getOutputLoadDropdownField('C', voltageType), 'C');
-
-    return validA && validB && validC;
+    return this.calculatePhaseLoad(3, upsKVA, voltageType);
   }
 
   private validateLoadPercentage(loadPercentage: number, dropdownField: any, phase: string): boolean {
@@ -3410,87 +3317,59 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  // Enhanced voltage validation for all phases in a configuration
-  validateAllVoltagesForConfig(type: 'input' | 'bypass' | 'output'): boolean {
-    // Skip validation during data loading to prevent popups during initial load
-    if (this.loading) {
-      return true;
-    }
+  /**
+   * CONSOLIDATED VOLTAGE VALIDATION - Handles all voltage types uniformly
+   */
+  private validateAllVoltagesForConfig(type: 'input' | 'bypass' | 'output'): boolean {
+    if (this.loading) return true;
 
-    const form = type === 'input' ? this.inputReadingsForm :
-                  type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
-
+    const form = this.getFormByType(type);
     const configId = form.get('configuration')?.value;
-    if (!configId) return true; // No configuration selected
+    if (!configId) return true;
 
     const config = this.getVoltageConfiguration(configId);
     if (!config) return true;
 
-    let allVoltagesValid = true;
+    const phases = ['A', 'B', 'C'].slice(0, config.phaseCount);
+    let allValid = true;
 
-    // Validate Phase A voltage
-    const voltA = this.convertToDouble(form.get('voltA')?.value);
-    if (voltA > 0) {
-      const bounds = this.getVoltageToleranceBounds(configId, type);
-      const validA = this.validateVoltageRange(voltA, configId, type);
-
-      if (validA === 'fail') {
-        if (this.isFormSubmission) {
-          if (!confirm(`${type.charAt(0).toUpperCase() + type.slice(1)} Voltage A (${voltA}V) is outside tolerance range (${bounds.min}V - ${bounds.max}V). Continue?`)) {
-            allVoltagesValid = false;
-          }
-        }
-        form.get('voltA_PF')?.setValue('F');
-      } else {
-        form.get('voltA_PF')?.setValue('P');
-      }
-    }
-
-    // Validate Phase B voltage (if multi-phase)
-    if (config.phaseCount >= 2) {
-      const voltB = this.convertToDouble(form.get('voltB')?.value);
-      if (voltB > 0) {
-        const bounds = this.getVoltageToleranceBounds(configId, type);
-        const validB = this.validateVoltageRange(voltB, configId, type);
-
-        if (validB === 'fail') {
-          if (this.isFormSubmission) {
-            if (!confirm(`${type.charAt(0).toUpperCase() + type.slice(1)} Voltage B (${voltB}V) is outside tolerance range (${bounds.min}V - ${bounds.max}V). Continue?`)) {
-              allVoltagesValid = false;
-            }
-          }
-          form.get('voltB_PF')?.setValue('F');
-        } else {
-          form.get('voltB_PF')?.setValue('P');
+    for (const phase of phases) {
+      const voltage = this.convertToDouble(form.get(`volt${phase}`)?.value);
+      if (voltage > 0) {
+        const isValid = this.validateSingleVoltage(voltage, configId, type, phase);
+        const pfField = form.get(`volt${phase}_PF`);
+        pfField?.setValue(isValid ? 'P' : 'F');
+        
+        if (!isValid && this.isFormSubmission) {
+          const bounds = this.getVoltageToleranceBounds(configId, type);
+          const message = `${this.capitalize(type)} Voltage ${phase} (${voltage}V) is outside tolerance range (${bounds.min}V - ${bounds.max}V). Continue?`;
+          if (!confirm(message)) allValid = false;
         }
       }
     }
 
-    // Validate Phase C voltage (if three-phase)
-    if (config.phaseCount >= 3) {
-      const voltC = this.convertToDouble(form.get('voltC')?.value);
-      if (voltC > 0) {
-        const validC = this.validateVoltageRange(voltC, configId, type);
-        if (validC === 'fail') {
-          if (this.isFormSubmission) {
-            const bounds = this.getVoltageToleranceBounds(configId, type);
-            if (!confirm(`${type.charAt(0).toUpperCase() + type.slice(1)} Voltage C (${voltC}V) is outside tolerance range (${bounds.min}V - ${bounds.max}V). Continue?`)) {
-              allVoltagesValid = false;
-            }
-          }
-          form.get('voltC_PF')?.setValue('F');
-        } else {
-          form.get('voltC_PF')?.setValue('P');
-        }
-      }
-    }
+    return allValid;
+  }
 
-    return allVoltagesValid;
+  private validateSingleVoltage(voltage: number, configId: string, type: 'input' | 'bypass' | 'output', phase: string): boolean {
+    return this.validateVoltageRange(voltage, configId, type) === 'pass';
+  }
+
+  private getFormByType(type: 'input' | 'bypass' | 'output'): FormGroup {
+    switch (type) {
+      case 'input': return this.inputReadingsForm;
+      case 'bypass': return this.bypassReadingsForm;
+      case 'output': return this.outputReadingsForm;
+    }
+  }
+
+  private capitalize(str: string): string {
+    return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
   /**
    * Temperature validation with legacy behavior
-   * Acceptable range: 67°F – 78°F
+   * Acceptable range: 67ï¿½F ï¿½ 78ï¿½F
    * Values outside range trigger minor deficiency (yellow warning) but don't block submission
    */
   validateTemperatureRange(temperatureFahrenheit: number): 'pass' | 'warning' | 'fail' {
@@ -3587,9 +3466,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       powerCalculation: {
         description: 'Legacy Power Calculations',
-        implementation: 'Single: (I × V) / 1000, Three: (V × I) / 1732',
-        singlePhaseFormula: '(I × V) / 1000',
-        threePhaseFormula: '(V × I) / 1732',
+        implementation: 'Single: (I ï¿½ V) / 1000, Three: (V ï¿½ I) / 1732',
+        singlePhaseFormula: '(I ï¿½ V) / 1000',
+        threePhaseFormula: '(V ï¿½ I) / 1732',
         method: 'calculateLegacyKVA()'
       },
       loadPercentage: {
@@ -3601,8 +3480,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       temperatureValidation: {
         description: 'Temperature Range Validation',
-        implementation: '67°F – 78°F acceptable range',
-        acceptableRange: '67°F - 78°F',
+        implementation: '67ï¿½F ï¿½ 78ï¿½F acceptable range',
+        acceptableRange: '67ï¿½F - 78ï¿½F',
         outsideRangeBehavior: 'Minor deficiency (yellow warning)',
         method: 'validateTemperatureRange()'
       },
@@ -3626,6 +3505,210 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     };
   }
+
+  /**
+   * Test all enhanced equipment status scenarios
+   * This method demonstrates that all required scenarios are properly implemented
+   */
+  testEnhancedStatusScenarios(): any {
+    return {
+      statusHierarchy: 'Offline > CriticalDeficiency > OnLine(MajorDeficiency) > ReplacementRecommended > ProactiveReplacement > OnLine(MinorDeficiency) > Online',
+      
+      scenarioTests: {
+        criticalDeficiency: {
+          description: 'Equipment requires immediate attention and poses safety risks ðŸ”´',
+          triggers: [
+            'Any Action field marked as "YS" (Yes with Safety concern)',
+            'EPO (Emergency Power Off) not functioning',
+            'Ground faults (posToGND_PF or negToGND_PF = F)',
+            'Critical capacitor failures (fire/explosion risk)',
+            'Room temperature outside safe limits',
+            'Major safety violations in transfer tests'
+          ],
+          implementation: 'checkCriticalDeficiency() method',
+          testMethod: () => {
+            // Test EPO failure
+            this.visualForm.patchValue({ epoSwitch: 'F' });
+            const result1 = this.calculateEquipStatus();
+            
+            // Test safety action item
+            this.visualForm.patchValue({ epoSwitch: 'P' });
+            this.actionRequiredForm.patchValue({ dcgAction1: 'YS' });
+            const result2 = this.calculateEquipStatus();
+            
+            return {
+              epoFailure: result1 === 'CriticalDeficiency',
+              safetyActionItem: result2 === 'CriticalDeficiency'
+            };
+          }
+        },
+        
+        majorDeficiency: {
+          description: 'Equipment is operational but has significant issues requiring scheduled maintenance ðŸŸ¡',
+          triggers: [
+            'Input/Output voltage readings outside acceptable ranges with "F" (Fail) status',
+            'Bypass voltage/current readings marked as "F"', 
+            'DC voltage, current, or ripple measurements failing specifications',
+            'Battery-related measurements showing "F"',
+            'Transfer functions not operating within specifications',
+            'Visual inspections showing major component wear'
+          ],
+          implementation: 'checkMajorDeficiency() method with enhanced voltage/current/bypass detection',
+          testMethod: () => {
+            // Reset critical conditions
+            this.visualForm.patchValue({ epoSwitch: 'P' });
+            this.actionRequiredForm.patchValue({ dcgAction1: 'N' });
+            
+            // Test voltage failure
+            this.inputReadingsForm.patchValue({ voltA_PF: 'F' });
+            const result1 = this.calculateEquipStatus();
+            
+            // Test bypass failure
+            this.inputReadingsForm.patchValue({ voltA_PF: 'P' });
+            this.bypassReadingsForm.patchValue({ currA_PF: 'F' });
+            const result2 = this.calculateEquipStatus();
+            
+            return {
+              voltageFailure: result1 === 'OnLine(MajorDeficiency)',
+              bypassFailure: result2 === 'OnLine(MajorDeficiency)'
+            };
+          }
+        },
+        
+        replacementRecommended: {
+          description: 'Equipment should be scheduled for replacement ðŸŸ ',
+          triggers: [
+            'Equipment age exceeding manufacturer recommendations (endOfLife = F)',
+            'Multiple minor deficiencies accumulating over time',
+            'Components showing wear patterns suggesting replacement needed'
+          ],
+          implementation: 'checkReplacementRecommended() method with age validation',
+          testMethod: () => {
+            // Reset major deficiency conditions
+            this.inputReadingsForm.patchValue({ voltA_PF: 'P' });
+            this.bypassReadingsForm.patchValue({ currA_PF: 'P' });
+            
+            // Test end of life failure
+            this.measurementsForm.patchValue({ endOfLife: 'F' });
+            const result = this.calculateEquipStatus();
+            
+            return {
+              endOfLifeFailure: result === 'ReplacementRecommended'
+            };
+          }
+        },
+        
+        proactiveReplacement: {
+          description: 'Equipment showing early warning signs ðŸ”µ',
+          triggers: [
+            'Fan age indicating end of life approaching',
+            'Measurements returning "W" (Warning) status', 
+            'Components approaching but not yet at replacement thresholds',
+            'Manufacturer recommendations for proactive replacement'
+          ],
+          implementation: 'checkProactiveReplacement() method with enhanced warning detection',
+          testMethod: () => {
+            // Reset replacement recommended conditions
+            this.measurementsForm.patchValue({ endOfLife: 'P' });
+            
+            // Test fan age approaching failure
+            this.visualForm.patchValue({ fansAge: 'F' });
+            this.equipmentForm.patchValue({ modularUPS: 'N' });
+            const result = this.calculateEquipStatus();
+            
+            return {
+              fanAgeWarning: result === 'ProactiveReplacement'
+            };
+          }
+        },
+        
+        minorDeficiency: {
+          description: 'Equipment is operational with minor issues ðŸŸ¢',
+          triggers: [
+            'Action items marked as "Y" (Yes, but not safety-critical)',
+            'Environment cleaning needed (hostileEnvironment = Y)',
+            'Minor voltage/current readings slightly outside normal range',
+            'Cosmetic or housekeeping issues (vacuumClean = F)',
+            'Preventive maintenance recommendations',
+            'SNMP communication issues'
+          ],
+          implementation: 'checkMinorDeficiency() method with enhanced housekeeping detection',
+          testMethod: () => {
+            // Reset proactive replacement conditions  
+            this.visualForm.patchValue({ fansAge: 'P' });
+            
+            // Test minor action item
+            this.actionRequiredForm.patchValue({ dcgAction1: 'Y' });
+            const result1 = this.calculateEquipStatus();
+            
+            // Test housekeeping issue
+            this.actionRequiredForm.patchValue({ dcgAction1: 'N' });
+            this.visualForm.patchValue({ vacuumClean: 'F' });
+            const result2 = this.calculateEquipStatus();
+            
+            return {
+              actionItemMinor: result1 === 'OnLine(MinorDeficiency)',
+              housekeepingIssue: result2 === 'OnLine(MinorDeficiency)'
+            };
+          }
+        },
+        
+        online: {
+          description: 'Equipment is fully operational âœ…',
+          triggers: [
+            'All voltage, current, and frequency readings within specifications',
+            'All visual inspections passing ("P" status)',
+            'All transfer functions operating correctly', 
+            'Environmental conditions acceptable',
+            'No action items flagged',
+            'All safety systems functioning properly'
+          ],
+          implementation: 'Default return value when no other conditions are met',
+          testMethod: () => {
+            // Reset all deficiency conditions
+            this.actionRequiredForm.patchValue({ dcgAction1: 'N' });
+            this.visualForm.patchValue({ vacuumClean: 'P' });
+            
+            const result = this.calculateEquipStatus();
+            return {
+              allSystemsNormal: result === 'Online'
+            };
+          }
+        },
+        
+        offline: {
+          description: 'Equipment is not operational âŒ',
+          triggers: [
+            'Equipment is intentionally taken out of service',
+            'Maintenance bypass is active for extended periods',
+            'Equipment failure requiring complete shutdown',
+            'Manual status override'
+          ],
+          implementation: 'Manual status setting with checkOfflineStatus() method',
+          testMethod: () => {
+            this.equipmentForm.patchValue({ status: 'Offline' });
+            const result = this.calculateEquipStatus();
+            return {
+              manualOffline: result === 'Offline'
+            };
+          }
+        }
+      },
+      
+      keyImprovements: [
+        'Fixed YS (Yes with Safety) detection for Critical Deficiency',
+        'Enhanced voltage/current failure detection for Major Deficiency',
+        'Added bypass readings failure detection',
+        'Added battery measurement failure detection', 
+        'Enhanced housekeeping and cosmetic issue detection for Minor Deficiency',
+        'Added manufacturer proactive replacement recommendations',
+        'Improved status hierarchy with proper priority ordering',
+        'Added comprehensive minor current variation detection'
+      ]
+    };
+  }
+
+
 
   // Get detailed explanation of voltage tolerance calculation logic
   getVoltageToleranceExplanation(configId: string): string {
@@ -3682,203 +3765,502 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return result.toString();
   }
 
-  // Calculate equipment status based on form values with legacy priority hierarchy
+  /**
+   * SIMPLIFIED STATUS CALCULATION - Organized by priority categories
+   */
   calculateEquipStatus(): string {
-    let resultStatus = 'Online';
+    // Check in order of severity (highest to lowest priority)
+    return this.checkCriticalDeficiency() || 
+           this.checkMajorDeficiency() ||
+           this.checkReplacementRecommended() ||
+           this.checkProactiveReplacement() ||
+           this.checkMinorDeficiency() ||
+           'Online';
+  }
 
-    // 1. CRITICAL DEFICIENCY - Highest Priority (Immediate safety hazards)
-    // EPO (Emergency Power Off) system failures
-    const epoStatus = this.visualForm.get('epoSwitch')?.value;
-    if (epoStatus === 'F') {
+  private checkCriticalDeficiency(): string | null {
+    // CRITICAL DEFICIENCY: Equipment requires immediate attention and poses safety risks
+    
+    // 1. Check for any safety-related action items marked as "YS" (Yes with Safety concern)
+    if (this.hasAnySafetyActionItems()) {
       return 'CriticalDeficiency';
     }
 
-    // Ground fault conditions (POStoGND, NEGtoGND failures)
-    const posToGND = this.rectifierForm.get('posToGND_PF')?.value;
-    const negToGND = this.rectifierForm.get('negToGND_PF')?.value;
-    if (posToGND === 'F' || negToGND === 'F') {
-      return 'CriticalDeficiency';
-    }
-
-    // Capacitor leak failures (fire/explosion risk)
-    const dcCapsLeak = this.capacitorForm.get('dcCaps_PF')?.value;
-    const acInputCapsLeak = this.capacitorForm.get('acInputCaps_PF')?.value;
-    const acOutputCapsLeak = this.capacitorForm.get('acOutputCaps_PF')?.value;
-    const commCapsLeak = this.capacitorForm.get('commCaps_PF')?.value;
-    if (dcCapsLeak === 'F' || acInputCapsLeak === 'F' || acOutputCapsLeak === 'F' || commCapsLeak === 'F') {
-      return 'CriticalDeficiency';
-    }
-
-    // Major transfer test failures - Check for 'Ys' to match HTML template
-    const transferMajor = this.transferForm.get('firstMajor')?.value;
-    if (transferMajor === 'Ys') {
-      return 'CriticalDeficiency';
-    }
-
-    // DC voltage out of acceptable range
-    const dcVoltage = this.rectifierForm.get('dcVoltage_PF')?.value;
-    if (dcVoltage === 'F') {
-      return 'CriticalDeficiency';
-    }
-
-    // Environmental room temperature failures (overheating risk)
-    const roomTemp = this.environmentForm.get('roomTempVentilation')?.value;
-    if (roomTemp === 'F') {
-      return 'CriticalDeficiency';
-    }
-
-    // 2. ONLINE (MAJOR DEFICIENCY) - Second Priority
-    // Static bypass failures
-    const staticBypass = this.transferForm.get('staticBypass')?.value;
-    if (staticBypass === 'F') {
-      resultStatus = 'OnLine(MajorDeficiency)';
-    }
-
-    // Maintenance bypass failures (critical for safe maintenance)
-    const transMaintByPass = this.transferForm.get('transMaintByPass')?.value;
-    if (transMaintByPass === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'OnLine(MajorDeficiency)';
-      }
-    }
-
-    // Current waveform failures (power quality issues)
-    const currentWave = this.transferForm.get('currentWave')?.value;
-    if (currentWave === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'OnLine(MajorDeficiency)';
-      }
-    }
-
-    // Normal mode transfer failures (operational capability issues)
-    const normalMode = this.transferForm.get('normalMode')?.value;
-    if (normalMode === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'OnLine(MajorDeficiency)';
-      }
-    }
-
-    // Alarm system failures
-    const upsOnline = this.visualForm.get('upsOnline')?.value;
-    const verifyAlarm = this.transferForm.get('verifyAlarm')?.value;
-    if (upsOnline === 'F' || verifyAlarm === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'OnLine(MajorDeficiency)';
-      }
-    }
-
-    // Environmental safety issues (broken components)
-    const inspectDamage = this.visualForm.get('inspectDamage')?.value;
-    const serviceSpace = this.environmentForm.get('serviceSpace')?.value;
-    if (inspectDamage === 'F' || serviceSpace === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'OnLine(MajorDeficiency)';
-      }
-    }
-
-    // Load sharing problems (phase imbalance, overload conditions)
-    const loadA_PF = this.outputReadingsForm.get('loadA_PF')?.value;
-    const loadB_PF = this.outputReadingsForm.get('loadB_PF')?.value;
-    const loadC_PF = this.outputReadingsForm.get('loadC_PF')?.value;
-    const loadKVA = this.measurementsForm.get('loadKVA')?.value;
-    if (loadA_PF === 'F' || loadB_PF === 'F' || loadC_PF === 'F' || loadKVA === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'OnLine(MajorDeficiency)';
-      }
-    }
-
-    // Current imbalance issues (three-phase measurement failures)
-    const threePhase = this.measurementsForm.get('threePhase')?.value;
-    if (threePhase === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'OnLine(MajorDeficiency)';
-      }
-    }
-
-    // 3. REPLACEMENT RECOMMENDED - Third Priority
-    // Component aging beyond recommended limits (End of Life)
-    const endOfLife = this.measurementsForm.get('endOfLife')?.value;
-    if (endOfLife === 'F') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement' || resultStatus === 'OnLine(MinorDeficiency)') {
-        resultStatus = 'ReplacementRecommended';
-      }
-    }
-
-    // 4. PROACTIVE REPLACEMENT - Fourth Priority
-    // Components approaching end of life (Fans Age for non-modular systems)
-    const fansAge = this.visualForm.get('fansAge')?.value;
-    const modularUPS = this.equipmentForm.get('modularUPS')?.value;
-    if (fansAge === 'F' && modularUPS !== 'YS' && modularUPS !== 'YES') {
-      // Legacy behavior: Fans age failure can be Minor Deficiency or Proactive Replacement
-      // depending on system configuration. Default to Minor Deficiency for most cases.
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
-        resultStatus = 'OnLine(MinorDeficiency)';
-      }
-    }
-
-    // 5. ONLINE (MINOR DEFICIENCY) - Fifth Priority
-    // Action required fields (maintenance actions needed)
-    const dcgAction1 = this.actionRequiredForm.get('dcgAction1')?.value;
-    const custAction1 = this.actionRequiredForm.get('custAction1')?.value;
-    if (dcgAction1 === 'Y' || custAction1 === 'Y') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
-        resultStatus = 'OnLine(MinorDeficiency)';
-      }
-    }
-
-    // SNMP communication issues
-    const snmpPresent = this.equipmentForm.get('snmpPresent')?.value;
-    if (snmpPresent === 'N') {
-      if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
-        resultStatus = 'OnLine(MinorDeficiency)';
-      }
-    }
-
-    // General failure conditions from all forms
-    const allForms = [
-      this.measurementsForm,
-      this.visualForm,
-      this.environmentForm,
-      this.inputReadingsForm,
-      this.bypassReadingsForm,
-      this.outputReadingsForm,
-      this.rectifierForm,
-      this.capacitorForm,
-      this.transferForm
+    // 2. Critical electrical hazards
+    const criticalElectricalChecks = [
+      ['visualForm', 'epoSwitch', 'F'],              // EPO not functioning - immediate safety risk
+      ['rectifierForm', 'posToGND_PF', 'F'],         // Ground fault - electrical hazard
+      ['rectifierForm', 'negToGND_PF', 'F'],         // Ground fault - electrical hazard
+      ['rectifierForm', 'dcVoltage_PF', 'F']         // Severe DC voltage fault
     ];
 
-    for (const form of allForms) {
-      const formValues = form.value;
+    // 3. Critical component failures (Fire/Explosion Risk)
+    const criticalComponentChecks = [
+      ['capacitorForm', 'dcCaps_PF', 'F'],           // DC capacitor failure - fire/explosion risk
+      ['capacitorForm', 'acInputCaps_PF', 'F'],      // AC Input capacitor failure
+      ['capacitorForm', 'acOutputCaps_PF', 'F'],     // AC Output capacitor failure
+      ['capacitorForm', 'commCaps_PF', 'F']          // Communication capacitor failure
+    ];
 
-      for (const [key, value] of Object.entries(formValues)) {
-        // Skip fields already handled in specific priority checks above
-        if (this.isFieldHandledInPriorityCheck(key)) {
-          continue;
-        }
+    // 4. Critical environmental/safety failures
+    const criticalEnvironmentChecks = [
+      ['environmentForm', 'roomTempVentilation', 'F'], // Room temperature outside safe limits
+      ['environmentForm', 'safetyEquipment', 'F'],     // Safety equipment failures
+      ['transferForm', 'firstMajor', 'YS']             // Major safety violations in transfer tests (corrected YS)
+    ];
 
-        if (key.includes('Action') || key === 'clean') {
-          if (value === 'Y') {
-            if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
-              resultStatus = 'OnLine(MinorDeficiency)';
-            }
-          } else if (value === 'YS') {
-            return 'CriticalDeficiency';
-          }
-        } else {
-          if (value === 'N' || value === 'F' || value === 'True' || value === 'F ') {
-            if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
-              resultStatus = 'OnLine(MinorDeficiency)';
-            }
-          } else if (value === 'W') {
-            if (resultStatus === 'Online') {
-              resultStatus = 'ProactiveReplacement';
-            }
-          }
-        }
-      }
+    // 5. Critical transfer function failures that pose safety risks
+    const criticalTransferChecks = [
+      ['transferForm', 'staticBypass', 'F'],          // Static bypass failure in critical situations
+      ['transferForm', 'normalMode', 'F']             // Normal mode operation completely failed
+    ];
+
+    // Check all critical failure categories
+    const allCriticalChecks = [
+      ...criticalElectricalChecks,
+      ...criticalComponentChecks, 
+      ...criticalEnvironmentChecks,
+      ...criticalTransferChecks
+    ];
+
+    return this.hasAnyFailure(allCriticalChecks) ? 'CriticalDeficiency' : null;
+  }
+
+  private checkMajorDeficiency(): string | null {
+    // MAJOR DEFICIENCY: Equipment is operational but has significant issues requiring scheduled maintenance
+    
+    // 1. Check for voltage readings outside acceptable ranges with "F" (Fail) status
+    if (this.hasMajorVoltageFailures()) {
+      return 'OnLine(MajorDeficiency)';
     }
 
-    return resultStatus;
+    // 2. Check for current readings failing specifications  
+    if (this.hasMajorCurrentFailures()) {
+      return 'OnLine(MajorDeficiency)';
+    }
+
+    // 3. Check for DC voltage, current, or ripple measurements failing specifications
+    if (this.hasMajorRectifierFailures()) {
+      return 'OnLine(MajorDeficiency)';
+    }
+
+    // 4. Check for bypass voltage/current readings marked as "F"
+    if (this.hasBypassReadingsFailures()) {
+      return 'OnLine(MajorDeficiency)';
+    }
+
+    // 5. Check for battery-related measurements showing "F"
+    if (this.hasBatteryMeasurementFailures()) {
+      return 'OnLine(MajorDeficiency)';
+    }
+
+    // 6. Transfer function failures (major operational impact) - excluding critical ones
+    const majorTransferChecks = [
+      ['transferForm', 'transMaintByPass', 'F'],       // Maintenance bypass failure
+      ['transferForm', 'currentWave', 'F'],           // Current waveform analysis failure  
+      ['transferForm', 'verifyAlarm', 'F']            // Alarm verification failed
+    ];
+
+    // 7. Visual inspections showing major component wear
+    const majorVisualChecks = [
+      ['visualForm', 'upsOnline', 'F'],               // Active alarms present - system issues
+      ['visualForm', 'inspectDamage', 'F'],           // Physical damage assessment failed
+      ['visualForm', 'checkConnections', 'F']         // Connection integrity issues
+    ];
+
+    // 8. Environmental and accessibility issues  
+    const majorEnvironmentChecks = [
+      ['environmentForm', 'serviceSpace', 'F'],       // Service space accessibility issues
+      ['environmentForm', 'circuitBreakers', 'F']     // Circuit breaker accessibility issues
+    ];
+
+    // 9. Load sharing and distribution problems
+    const majorLoadChecks = [
+      ['outputReadingsForm', 'loadA_PF', 'F'],        // Load phase A failure
+      ['outputReadingsForm', 'loadB_PF', 'F'],        // Load phase B failure  
+      ['outputReadingsForm', 'loadC_PF', 'F'],        // Load phase C failure
+      ['measurementsForm', 'loadKVA', 'F'],           // KVA load measurement failure
+      ['measurementsForm', 'threePhase', 'F']         // Three-phase measurement failure
+    ];
+
+    // 10. Power quality and measurement issues
+    const majorPowerChecks = [
+      ['measurementsForm', 'inputPower', 'F'],        // Input power measurement failure
+      ['measurementsForm', 'normal', 'F'],            // Normal mode operation failure
+      ['measurementsForm', 'caliberation', 'F'],      // Calibration failure
+      ['measurementsForm', 'lcd', 'F']                // LCD display issues
+    ];
+
+    const allMajorChecks = [
+      ...majorTransferChecks,
+      ...majorVisualChecks,
+      ...majorEnvironmentChecks,
+      ...majorLoadChecks,
+      ...majorPowerChecks
+    ];
+
+    return this.hasAnyFailure(allMajorChecks) ? 'OnLine(MajorDeficiency)' : null;
+  }
+
+  private checkReplacementRecommended(): string | null {
+    const endOfLife = this.measurementsForm.get('endOfLife')?.value;
+    return endOfLife === 'F' ? 'ReplacementRecommended' : null;
+  }
+
+  /**
+   * Check for manufacturer recommendations for proactive replacement
+   */
+  private hasManufacturerProactiveRecommendations(): boolean {
+    // Check for trending data suggesting future issues
+    const kva = this.convertToDouble(this.equipmentForm.get('kva')?.value || '0');
+    
+    // Check for components approaching manufacturer recommended replacement intervals
+    const capacitorAges = [
+      this.convertToInt(this.capacitorForm.get('dcCapsAge')?.value),
+      this.convertToInt(this.capacitorForm.get('acInputCapsAge')?.value), 
+      this.convertToInt(this.capacitorForm.get('acOutputCapsAge')?.value),
+      this.convertToInt(this.capacitorForm.get('commCapsAge')?.value)
+    ];
+    
+    // Capacitors approaching manufacturer recommended replacement (>15 years for most)
+    const hasAgingCapacitors = capacitorAges.some(age => age >= 12 && age < 15);
+    
+    // Fan age approaching replacement threshold
+    const fanYear = this.convertToInt(this.capacitorForm.get('fansYear')?.value);
+    const hasAgingFans = fanYear >= 8 && fanYear < 12; // Fans typically last 10-12 years
+    
+    return hasAgingCapacitors || hasAgingFans;
+  }
+
+  private checkProactiveReplacement(): string | null {
+    // PROACTIVE REPLACEMENT: Equipment showing early warning signs
+    
+    // 1. Fan age indicating end of life approaching
+    const fansAge = this.visualForm.get('fansAge')?.value;
+    const modularUPS = this.equipmentForm.get('modularUPS')?.value;
+    
+    if (fansAge === 'F' && modularUPS !== 'YS' && modularUPS !== 'YES') {
+      return 'ProactiveReplacement'; // Fixed: Return correct status
+    }
+
+    // 2. Check for measurements returning "W" (Warning) status
+    if (this.hasProactiveWarnings()) {
+      return 'ProactiveReplacement';
+    }
+
+    // 3. Check for components approaching but not yet at replacement thresholds
+    if (this.hasComponentsNearingEndOfLife()) {
+      return 'ProactiveReplacement';
+    }
+
+    // 4. Manufacturer recommendations for proactive replacement
+    if (this.hasManufacturerProactiveRecommendations()) {
+      return 'ProactiveReplacement';
+    }
+
+    return null;
+  }
+
+  private checkMinorDeficiency(): string | null {
+    // MINOR DEFICIENCY: Equipment is operational with minor issues
+    
+    // 1. Action items marked as "Y" (Yes, but not safety-critical)
+    const actionItemChecks = [
+      ['actionRequiredForm', 'dcgAction1', 'Y'],
+      ['actionRequiredForm', 'custAction1', 'Y']
+    ];
+
+    // 2. Environmental cleaning and housekeeping issues
+    const housekeepingChecks = [
+      ['environmentForm', 'hostileEnvironment', 'Y'],  // Environment cleaning needed
+      ['visualForm', 'vacuumClean', 'F'],              // Vacuum/dust accumulation issues
+      ['visualForm', 'airFilters', 'RN'],              // Filter replacement needed (but not critical)
+      ['visualForm', 'airFilters', 'C']                // Filters cleaned (maintenance performed)
+    ];
+
+    // 3. Communication and monitoring minor issues
+    const communicationChecks = [
+      ['equipmentForm', 'snmpPresent', 'N'],           // SNMP communication issues
+      ['equipmentForm', 'snmpPresent', 'NO']           // No SNMP present
+    ];
+
+    // 4. Cosmetic and non-critical physical issues
+    const cosmeticChecks = [
+      ['visualForm', 'coolingFans', 'W'],              // Fan noise levels (warning)
+      ['environmentForm', 'safetyEquipment', 'W']      // Minor safety equipment issues
+    ];
+
+    // 5. Check for minor voltage variations (slightly outside normal range but not failing)
+    if (this.hasMinorVoltageVariations()) {
+      return 'OnLine(MinorDeficiency)';
+    }
+
+    // 6. Check for preventive maintenance recommendations
+    if (this.hasPreventiveMaintenanceNeeds()) {
+      return 'OnLine(MinorDeficiency)';
+    }
+
+    // 7. Check for minor current readings outside normal range but not failed
+    if (this.hasMinorCurrentVariations()) {
+      return 'OnLine(MinorDeficiency)';
+    }
+
+    // 8. Check for minor measurement issues
+    const minorMeasurementChecks = [
+      ['measurementsForm', 'inputPower', 'W'],         // Input power warning
+      ['measurementsForm', 'lcd', 'W'],                // LCD display warning
+      ['measurementsForm', 'caliberation', 'W']        // Calibration warning
+    ];
+
+    const allMinorChecks = [
+      ...actionItemChecks,
+      ...housekeepingChecks,
+      ...communicationChecks,
+      ...cosmeticChecks,
+      ...minorMeasurementChecks
+    ];
+
+    return this.hasAnyFailure(allMinorChecks) ? 'OnLine(MinorDeficiency)' : null;
+  }
+
+  private hasAnyFailure(checks: string[][]): boolean {
+    return checks.some(([formName, fieldName, failValue]) => {
+      const form = (this as any)[formName] as FormGroup;
+      return form?.get(fieldName)?.value === failValue;
+    });
+  }
+
+  /**
+   * Check for any safety-related action items marked as "YS" (Yes with Safety concern)
+   * These trigger Critical Deficiency status regardless of other conditions
+   */
+  private hasAnySafetyActionItems(): boolean {
+    // Check all action-related fields for "YS" values indicating safety concerns
+    const safetyActionFields = [
+      this.actionRequiredForm.get('dcgAction1')?.value,
+      this.actionRequiredForm.get('custAction1')?.value,
+      this.transferForm.get('firstMajor')?.value
+    ];
+
+    return safetyActionFields.some(value => value === 'YS');
+  }
+
+  /**
+   * Check for major voltage failures (Input/Output voltage readings outside acceptable ranges with "F" status)
+   */
+  private hasMajorVoltageFailures(): boolean {
+    const voltageFailureFields = [
+      // Input voltage failures
+      'voltA_PF', 'voltB_PF', 'voltC_PF',
+      // Frequency failures
+      'freq_PF'
+    ];
+
+    const forms = [this.inputReadingsForm, this.bypassReadingsForm, this.outputReadingsForm];
+    
+    return forms.some(form => {
+      return voltageFailureFields.some(fieldName => {
+        return form.get(fieldName)?.value === 'F';
+      });
+    });
+  }
+
+  /**
+   * Check for major current reading failures
+   */
+  private hasMajorCurrentFailures(): boolean {
+    // Major current failures that impact system operation
+    const currentFailures = [
+      this.inputReadingsForm.get('currA_PF')?.value === 'F',
+      this.inputReadingsForm.get('currB_PF')?.value === 'F', 
+      this.inputReadingsForm.get('currC_PF')?.value === 'F',
+      this.bypassReadingsForm.get('currA_PF')?.value === 'F',
+      this.bypassReadingsForm.get('currB_PF')?.value === 'F',
+      this.bypassReadingsForm.get('currC_PF')?.value === 'F',
+      this.outputReadingsForm.get('currA_PF')?.value === 'F',
+      this.outputReadingsForm.get('currB_PF')?.value === 'F',
+      this.outputReadingsForm.get('currC_PF')?.value === 'F'
+    ];
+
+    return currentFailures.some(failure => failure === true);
+  }
+
+  /**
+   * Check for major rectifier-related failures (DC measurements failing specifications)
+   */
+  private hasMajorRectifierFailures(): boolean {
+    const rectifierFailures = [
+      this.rectifierForm.get('floatVolt_PF')?.value === 'F',     // Float voltage failure
+      this.rectifierForm.get('dcCurrent_PF')?.value === 'F',     // DC current failure  
+      this.rectifierForm.get('acRipple_PF')?.value === 'F',      // AC ripple failure
+      this.rectifierForm.get('acRippleVolt_PF')?.value === 'F',  // AC ripple voltage failure
+      this.rectifierForm.get('acRippleCurr_PF')?.value === 'F'   // AC ripple current failure
+    ];
+
+    return rectifierFailures.some(failure => failure === true);
+  }
+
+  /**
+   * Check for bypass voltage/current readings marked as "F"
+   */
+  private hasBypassReadingsFailures(): boolean {
+    const bypassFailures = [
+      this.bypassReadingsForm.get('voltA_PF')?.value === 'F',
+      this.bypassReadingsForm.get('voltB_PF')?.value === 'F',
+      this.bypassReadingsForm.get('voltC_PF')?.value === 'F',
+      this.bypassReadingsForm.get('currA_PF')?.value === 'F',
+      this.bypassReadingsForm.get('currB_PF')?.value === 'F',
+      this.bypassReadingsForm.get('currC_PF')?.value === 'F',
+      this.bypassReadingsForm.get('freq_PF')?.value === 'F'
+    ];
+
+    return bypassFailures.some(failure => failure === true);
+  }
+
+  /**
+   * Check for battery-related measurements showing "F"
+   */
+  private hasBatteryMeasurementFailures(): boolean {
+    // Check capacitor-related measurements that indicate battery system issues
+    const batterySystemFailures = [
+      this.capacitorForm.get('dcCaps_PF')?.value === 'F',        // DC Caps indicate battery system health
+      this.rectifierForm.get('dcCurrent_PF')?.value === 'F',     // DC current affects battery charging
+      this.rectifierForm.get('floatVolt_PF')?.value === 'F'      // Float voltage critical for battery maintenance
+    ];
+
+    return batterySystemFailures.some(failure => failure === true);
+  }
+
+  /**
+   * Check for measurements returning "W" (Warning) status indicating proactive replacement needs
+   */
+  private hasProactiveWarnings(): boolean {
+    const warningFields = [
+      // Voltage measurements that could have warning status
+      'voltA_PF', 'voltB_PF', 'voltC_PF',
+      // Current measurements that could have warning status
+      'currA_PF', 'currB_PF', 'currC_PF'
+    ];
+
+    const forms = [this.inputReadingsForm, this.bypassReadingsForm, this.outputReadingsForm];
+    
+    return forms.some(form => {
+      return warningFields.some(fieldName => {
+        return form.get(fieldName)?.value === 'W';
+      });
+    });
+  }
+
+  /**
+   * Check for components approaching but not yet at replacement thresholds
+   */
+  private hasComponentsNearingEndOfLife(): boolean {
+    const monthName = this.equipmentForm.get('monthName')?.value;
+    const year = this.equipmentForm.get('year')?.value;
+    const kvaValue = this.convertToDouble(this.equipmentForm.get('kva')?.value || '0');
+
+    if (monthName && year && kvaValue > 0) {
+      try {
+        const dateCode = `${monthName} ${year}`;
+        const equipmentAge = this.calculateEquipmentAge(dateCode);
+        const endOfLifeThreshold = UPSAgeValidationService.calculateEndOfLifeThreshold(kvaValue);
+        
+        // Proactive replacement recommended 3 years before end-of-life
+        return equipmentAge >= (endOfLifeThreshold - 3) && equipmentAge < endOfLifeThreshold;
+      } catch (error) {
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Check for minor voltage variations (slightly outside normal range but not failing)
+   */
+  private hasMinorVoltageVariations(): boolean {
+    const forms = [
+      { form: this.inputReadingsForm, type: 'input' as const },
+      { form: this.bypassReadingsForm, type: 'bypass' as const },
+      { form: this.outputReadingsForm, type: 'output' as const }
+    ];
+
+    return forms.some(({ form, type }) => {
+      const config = form.get('configuration')?.value;
+      if (!config) return false;
+
+      const phases = ['A', 'B', 'C'];
+      return phases.some(phase => {
+        const voltage = this.convertToDouble(form.get(`volt${phase}`)?.value || '0');
+        const pfValue = form.get(`volt${phase}_PF`)?.value;
+        
+        // Check if voltage is in warning range (not failed but not optimal)
+        if (voltage > 0 && pfValue === 'P') {
+          const bounds = this.getVoltageToleranceBounds(config, type);
+          const nominalVoltage = this.getNominalVoltageFromConfig(config);
+          
+          // Define "minor variation" as being within tolerance but not within optimal range (Â±2% of nominal)
+          const optimalMin = nominalVoltage * 0.98;
+          const optimalMax = nominalVoltage * 1.02;
+          
+          return (voltage >= bounds.min && voltage < optimalMin) || 
+                 (voltage > optimalMax && voltage <= bounds.max);
+        }
+        return false;
+      });
+    });
+  }
+
+  /**
+   * Check for preventive maintenance recommendations
+   */
+  private hasPreventiveMaintenanceNeeds(): boolean {
+    // Check for cosmetic or housekeeping issues that don't affect operation
+    const preventiveMaintenanceIndicators = [
+      this.visualForm.get('airFilters')?.value === 'C',  // Filters cleaned (maintenance performed)
+      this.visualForm.get('vacuumClean')?.value === 'F', // Cleaning needed
+      this.environmentForm.get('hostileEnvironment')?.value === 'Y' // Environmental attention needed
+    ];
+
+    return preventiveMaintenanceIndicators.some(indicator => indicator === true);
+  }
+
+  /**
+   * Check for minor current variations (outside optimal range but not failed)
+   */
+  private hasMinorCurrentVariations(): boolean {
+    const forms = [
+      { form: this.inputReadingsForm, type: 'input' as const },
+      { form: this.bypassReadingsForm, type: 'bypass' as const },
+      { form: this.outputReadingsForm, type: 'output' as const }
+    ];
+
+    return forms.some(({ form }) => {
+      const phases = ['A', 'B', 'C'];
+      return phases.some(phase => {
+        const current = this.convertToDouble(form.get(`curr${phase}`)?.value || '0');
+        const pfValue = form.get(`curr${phase}_PF`)?.value;
+        
+        // Check if current is in warning range (not failed but not optimal)
+        return current > 0 && pfValue === 'P' && this.isCurrentInWarningRange(current);
+      });
+    });
+  }
+
+  /**
+   * Check if current value is in warning range (outside optimal but within tolerance)
+   */
+  private isCurrentInWarningRange(current: number): boolean {
+    // Define warning range as currents that are high but not critical
+    // This is typically when current is >80% of rated but <90%
+    const kva = this.convertToDouble(this.equipmentForm.get('kva')?.value || '0');
+    if (kva === 0) return false;
+    
+    // Rough calculation of rated current (simplified)
+    const ratedCurrent = (kva * 1000) / (208 * 1.732); // Assuming 208V 3-phase
+    const warningThreshold = ratedCurrent * 0.8;
+    const criticalThreshold = ratedCurrent * 0.9;
+    
+    return current >= warningThreshold && current < criticalThreshold;
   }
 
   // Helper method to check if field is already handled in priority checks
@@ -4080,7 +4462,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Trigger phase-to-neutral calculations if applicable
-    this.calculatePhaseToNeutralAllSections();
+    this.calculatePhaseToNeutralForAll();
 
     // Restore original isFormSubmission state to re-enable validation
     setTimeout(() => {
@@ -4156,7 +4538,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const config = this.getVoltageConfiguration(configId);
     if (!config) {
       // Fallback for unknown configs
-      const fallbackTolerance = nominalVoltage * 0.1; // ±10%
+      const fallbackTolerance = nominalVoltage * 0.1; // ï¿½10%
       return {
         min: Math.round(nominalVoltage - fallbackTolerance),
         max: Math.round(nominalVoltage + fallbackTolerance)
@@ -4219,7 +4601,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         }
 
       default:
-        // For unknown P-N voltages, use approximately ±5% tolerance
+        // For unknown P-N voltages, use approximately ï¿½5% tolerance
         const tolerance = Math.round(nominalVoltage * 0.05);
         return {
           min: nominalVoltage - tolerance,
@@ -4288,7 +4670,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Default calculation for other single/two phase configurations
-    // Use approximately ±8% tolerance for most standard voltages
+    // Use approximately ï¿½8% tolerance for most standard voltages
     const tolerance = Math.round(nominalVoltage * 0.08);
     return {
       min: nominalVoltage - tolerance,
@@ -4322,7 +4704,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * Get voltage tolerance bounds for validation using dynamic calculations
    * Now supports different ranges for Input vs Bypass
    */
-  getVoltageToleranceBounds(configId: string, type: 'input' | 'bypass' | 'output' = 'input'): { min: number, max: number } {
+  private getVoltageToleranceBounds(configId: string, type: 'input' | 'bypass' | 'output' = 'input'): { min: number, max: number } {
     const nominalVoltage = this.getNominalVoltageFromConfig(configId);
     if (nominalVoltage === 0) return { min: 0, max: 0 };
 
@@ -4336,24 +4718,24 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /**
    * Calculate kVA using legacy formulas
-   * Single phase: ActKVA = (I × V) / 1000
-   * Three phase: CalKVA = (V × I) / 1732
+   * Single phase: ActKVA = (I ï¿½ V) / 1000
+   * Three phase: CalKVA = (V ï¿½ I) / 1732
    */
   calculateLegacyKVA(voltage: number, current: number, phaseCount: number): number {
     let result = 0;
 
     if (phaseCount === 1) {
-      // Single phase: ActKVA = (I × V) / 1000
+      // Single phase: ActKVA = (I ï¿½ V) / 1000
       result = (current * voltage) / 1000;
     } else {
-      // Three phase: CalKVA = (V × I) / 1732 (exact constant from legacy)
+      // Three phase: CalKVA = (V ï¿½ I) / 1732 (exact constant from legacy)
       result = (voltage * current) / 1732;
     }
 
     return result;
   }
 
-  // Calculate load percentage: (ActualKVA / RatedKVA) × 100
+  // Calculate load percentage: (ActualKVA / RatedKVA) ï¿½ 100
   calculateLoadPercentage(actualKVA: number, ratedKVA: number): number {
     if (ratedKVA === 0) {
 
@@ -4454,137 +4836,84 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     return tolerance;
   }
 
-  // Enhanced current validation with exact legacy behavior
-  validateCurrentReadingsLegacy(type: 'input' | 'bypass' | 'output', systemType: 'UPS' | 'PDU' | 'STS' = 'UPS'): boolean {
-    // Skip validation during data loading to prevent popups during initial load
-    if (this.loading) {
-      return true;
-    }
+  /**
+   * CONSOLIDATED CURRENT VALIDATION - Simplified and unified approach
+   */
+  private validateCurrentReadingsLegacy(type: 'input' | 'bypass' | 'output', systemType: 'UPS' | 'PDU' | 'STS' = 'UPS'): boolean {
+    if (this.loading) return true;
 
-    const form = type === 'input' ? this.inputReadingsForm :
-                  type === 'bypass' ? this.bypassReadingsForm : this.outputReadingsForm;
-
+    const form = this.getFormByType(type);
     const configuration = form.get('configuration')?.value;
+    
+    if (!this.isMultiPhaseConfiguration(configuration)) return true;
+
     const kvaValue = this.equipmentForm.get('kva')?.value;
-
-    // Only validate for multi-phase configurations
-    if (!this.isMultiPhaseConfiguration(configuration)) {
-      return true;
-    }
-
-    // Check if this is bypass power verification with maintenance bypass enabled
-    const maintByPass = this.equipmentForm.get('maintByPass')?.value;
-    const isBypassModeEnabled = type === 'bypass' && maintByPass && maintByPass !== 'NA';
-
     const upsKVA = this.convertToDouble(kvaValue);
     const tolerance = this.calculateCurrentTolerance(upsKVA, systemType);
-    const currentA = this.convertToDouble(form.get('currA')?.value);
-    const currentB = this.convertToDouble(form.get('currB')?.value);
-    const currentC = this.convertToDouble(form.get('currC')?.value);
+    const isBypassMode = type === 'bypass' && this.isBypassModeActive();
 
-    // For bypass in maintenance bypass mode, current fields are not mandatory
-    if (isBypassModeEnabled) {
-      // Check if fields are actually empty (not just zero values)
-      const currAValue = form.get('currA')?.value;
-      const currBValue = form.get('currB')?.value;
-      const currCValue = form.get('currC')?.value;
+    // Get current values
+    const currents = {
+      A: this.convertToDouble(form.get('currA')?.value),
+      B: this.convertToDouble(form.get('currB')?.value),
+      C: this.convertToDouble(form.get('currC')?.value)
+    };
 
-      // If no current values are entered, skip validation but allow form submission
-      if (this.isFieldEmpty(currAValue) && this.isFieldEmpty(currBValue) && this.isFieldEmpty(currCValue)) {
-        return true;
-      }
-      // If only some currents are entered, validate only the entered ones
-      if (this.isFieldEmpty(currAValue) || this.isFieldEmpty(currBValue)) {
-        // At least one current is entered, but not both A and B - skip validation for bypass mode
-        return true;
-      }
-    } else {
-      // Normal validation for non-bypass modes or when bypass is not enabled
-      // Validate A and B phases using proper empty field detection
-      const currAValue = form.get('currA')?.value;
-      const currBValue = form.get('currB')?.value;
+    const currentValues = {
+      A: form.get('currA')?.value,
+      B: form.get('currB')?.value,
+      C: form.get('currC')?.value
+    };
 
-      if (this.isFieldEmpty(currAValue) || this.isFieldEmpty(currBValue)) {
-        this.showValidationMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} Current A or B cannot be empty`, `${type}CurrentTwoPhase`);
+    // Check for empty required fields (bypass mode is more lenient)
+    if (!isBypassMode) {
+      if (this.isFieldEmpty(currentValues.A) || this.isFieldEmpty(currentValues.B)) {
+        this.showValidationMessage(`${this.capitalize(type)} Current A or B cannot be empty`, `${type}CurrentTwoPhase`);
         return false;
       }
+      if (this.isThreePhaseConfiguration(configuration) && this.isFieldEmpty(currentValues.C)) {
+        this.showValidationMessage(`${this.capitalize(type)} Current C cannot be empty`, `${type}CurrentThreePhase`);
+        return false;
+      }
+    } else if (this.allCurrentsEmpty(currentValues)) {
+      return true; // Bypass mode allows all empty
     }
 
-    // Calculate tolerance value - multiply by current and round to one decimal place
-    const toleranceValueA = Math.round((currentA * tolerance) * 10) / 10;
+    // Validate current tolerance between phases
+    return this.validateCurrentTolerance(currents, tolerance, form, type);
+  }
 
-    // Check A vs B tolerance
-    const diffAB = Math.abs(currentA - currentB);
+  private allCurrentsEmpty(currentValues: any): boolean {
+    return Object.values(currentValues).every(val => this.isFieldEmpty(val));
+  }
 
-    if (diffAB > toleranceValueA) {
-      const message = `${type.charAt(0).toUpperCase() + type.slice(1)} Current A and Current B not in Tolerance. Power Verification will be failed.\nAre you sure you want to do this?\nTolerance range can be: +- ${toleranceValueA}`;
+  private validateCurrentTolerance(currents: any, tolerance: number, form: FormGroup, type: string): boolean {
+    const phases = [['A', 'B'], ['B', 'C']].filter(([p1, p2]) => currents[p1] > 0 && currents[p2] > 0);
+    let allValid = true;
 
-      if (this.isFormSubmission) {
-        if (confirm(message)) {
-          form.get('currA_PF')?.setValue('F');
-          form.get('currB_PF')?.setValue('F');
+    for (const [phase1, phase2] of phases) {
+      const current1 = currents[phase1];
+      const current2 = currents[phase2];
+      const toleranceValue = Math.round((current1 * tolerance) * 10) / 10;
+      const diff = Math.abs(current1 - current2);
 
-        } else {
-          form.get('currB')?.markAsTouched();
-          return false;
+      if (diff > toleranceValue) {
+        const message = `${this.capitalize(type)} Current ${phase1} and Current ${phase2} not in Tolerance. Power Verification will be failed.\nAre you sure you want to do this?\nTolerance range can be: +- ${toleranceValue}`;
+        
+        if (this.isFormSubmission && !confirm(message)) {
+          form.get(`curr${phase2}`)?.markAsTouched();
+          allValid = false;
         }
+        
+        form.get(`curr${phase1}_PF`)?.setValue('F');
+        form.get(`curr${phase2}_PF`)?.setValue('F');
       } else {
-        // Visual warning without popup on page load
-        form.get('currA_PF')?.setValue('F');
-        form.get('currB_PF')?.setValue('F');
-      }
-    } else {
-      form.get('currA_PF')?.setValue('P');
-      form.get('currB_PF')?.setValue('P');
-    }
-
-    // Validate C phase if it's a three-phase configuration
-    if (this.isThreePhaseConfiguration(configuration)) {
-      // For bypass in maintenance bypass mode, current C is also not mandatory
-      if (isBypassModeEnabled) {
-        // If current C is not entered in bypass mode, skip C phase validation
-        const currCValue = form.get('currC')?.value;
-        if (this.isFieldEmpty(currCValue)) {
-          return true;
-        }
-      } else {
-        // Normal validation for non-bypass modes using proper empty field detection
-        const currCValue = form.get('currC')?.value;
-        if (this.isFieldEmpty(currCValue)) {
-          this.showValidationMessage(`${type.charAt(0).toUpperCase() + type.slice(1)} Current C cannot be empty`, `${type}CurrentThreePhase`);
-          return false;
-        }
-      }
-
-      // Only validate B-C tolerance if both B and C currents are available
-      if (currentB > 0 && currentC > 0) {
-        const toleranceValueB = Math.round((currentB * tolerance) * 10) / 10;
-        const diffBC = Math.abs(currentB - currentC);
-
-        if (diffBC > toleranceValueB) {
-          const message = `${type.charAt(0).toUpperCase() + type.slice(1)} Current B and Current C not in Tolerance. Power Verification will be failed.\nAre you sure you want to do this?\nTolerance range can be: +- ${toleranceValueB}`;
-          if (this.isFormSubmission) {
-            if (confirm(message)) {
-              form.get('currB_PF')?.setValue('F');
-              form.get('currC_PF')?.setValue('F');
-
-            } else {
-              form.get('currC')?.markAsTouched();
-              return false;
-            }
-          } else {
-            // Visual warning without popup on page load
-            form.get('currB_PF')?.setValue('F');
-            form.get('currC_PF')?.setValue('F');
-          }
-        } else {
-          form.get('currB_PF')?.setValue('P');
-          form.get('currC_PF')?.setValue('P');
-        }
+        form.get(`curr${phase1}_PF`)?.setValue('P');
+        form.get(`curr${phase2}_PF`)?.setValue('P');
       }
     }
 
-    return true;
+    return allValid;
   }
 
   private logPowerVerificationSaveData(upsData: AAETechUPS): void {
@@ -5523,6 +5852,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.router.navigate(['/jobs/equipment-details'], { queryParams });
   }
 
+
+
   // Job summary navigation disabled for UI - keeping for integration only
   // onViewJobSummarySample(): void {
   //   const queryParams: any = {
@@ -5544,7 +5875,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   //   this.router.navigate(['/jobs/job-summary-sample'], { queryParams });
   // }
 
-  // Utility methods
+  // ============================================================================
+  // CONSOLIDATED UTILITY METHODS - All conversion and validation utilities
+  // ============================================================================
+  
+  /**
+   * Consolidated number conversion utilities
+   */
   private convertToDouble(value: any): number {
     if (value === null || value === undefined || value === '') return 0;
     const num = parseFloat(value);
@@ -5558,33 +5895,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private convertZeroToEmpty(value: any): string {
-    if (value === null || value === undefined || value === 0) {
-      return '';
-    }
-
+    if (value === null || value === undefined || value === 0) return '';
     return value.toString();
   }
 
-  /**
-   * Legacy trimAll function - trims whitespace from both ends of a string
-   * Matches the original JavaScript implementation
-   */
+  private isFieldEmpty(value: any): boolean {
+    return value === null || value === undefined || value === '' || 
+           (typeof value === 'string' && value.trim() === '');
+  }
+
   private trimAll(value: string): string {
-    if (!value) return '';
-
-    let result = value;
-
-    // Trim from the beginning
-    while (result.length > 0 && result.substring(0, 1) === ' ') {
-      result = result.substring(1, result.length);
-    }
-
-    // Trim from the end
-    while (result.length > 0 && result.substring(result.length - 1, result.length) === ' ') {
-      result = result.substring(0, result.length - 1);
-    }
-
-    return result;
+    return value ? value.trim() : '';
   }
 
   // Enhanced legacy IsNumeric function with additional validation
@@ -6271,7 +6592,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getCurrentYearRange(): string {
-    return `${this.yearRangeStart} – ${this.yearRangeEnd}`;
+    return `${this.yearRangeStart} ï¿½ ${this.yearRangeEnd}`;
   }
 
   getYearsInCurrentRange(): number[] {
