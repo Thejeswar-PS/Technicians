@@ -289,20 +289,20 @@
                 <!-- begin::Table head -->
                 <thead>
                   <tr class="text-dark fw-bolder badge-light-primary fs-6">
-                    <th class="min-w-50px" style="width: 6%">ID</th>
-                    <th class="min-w-120px" style="width: 16.5%">Equip No</th>
-                    <th class="min-w-100px" style="width: 10%">Make</th>
-                    <th class="min-w-100px" style="width: 11%">Model</th>
-                    <th class="min-w-100px" style="width: 10%">Serial No</th>
-                    <th class="min-w-70px" style="width: 8%">KVA/Batt</th>
-                    <th class="min-w-140px" style="width: 16%">Location</th>
-                    <th class="min-w-120px" style="width: 12%">Status</th>
-                    <th class="min-w-90px" style="width: 10%">Modified</th>
-                    <th class="min-w-60px" style="width: 6%">Files</th>
-                    <th class="min-w-60px" style="width: 6.5%">Images</th>
+                    <th class="min-w-50px" style="width: 5%; white-space: nowrap;">ID</th>
+                    <th class="min-w-200px" style="width: 21%; white-space: nowrap;">Equip No</th>
+                    <th class="min-w-80px" style="width: 7.5%; white-space: nowrap;">Make</th>
+                    <th class="min-w-90px" style="width: 9.5%; white-space: nowrap;">Model</th>
+                    <th class="min-w-90px" style="width: 9%; white-space: nowrap;">Serial No</th>
+                    <th class="min-w-70px" style="width: 7%; white-space: nowrap;">KVA/Batt</th>
+                    <th class="min-w-120px" style="width: 14%; padding: 0.5rem;">Location</th>
+                    <th class="min-w-120px" style="width: 13%; padding: 0.5rem;">Status</th>
+                    <th class="min-w-90px" style="width: 8%; white-space: nowrap;">Modified</th>
+                    <th class="min-w-45px" style="width: 4.5%; white-space: nowrap; text-align: center;">Files</th>
+                    <th class="min-w-50px" style="width: 5.5%; white-space: nowrap; text-align: center;">Images</th>
                     <th class="min-w-60px d-none" style="width: 6%">Summary</th>
-                    <th class="min-w-60px" style="width: 6%">Mode</th>
-                    <th class="min-w-60px" style="width: 6%">Edit</th>
+                    <th class="min-w-50px" style="width: 5.5%; white-space: nowrap; font-weight: bold; text-align: center;">Mode</th>
+                    <th class="min-w-45px" style="width: 4.5%; white-space: nowrap; text-align: center;">Edit</th>
                   </tr>
                 </thead>
                 <!-- end::Table head -->
@@ -314,43 +314,44 @@
                 >
                   <tr *ngFor="let equipment of equipmentList">
                     <!-- Equipment ID -->
-                    <td>{{ equipment.equipId }}</td>
+                    <td style="white-space: nowrap;">{{ equipment.equipId }}</td>
 
                     <!-- Equipment Number (clickable) -->
-                    <td>
+                    <td style="white-space: nowrap; min-width: 200px; overflow: visible;">
                       <a
                         href="javascript:void(0)"
                         (click)="navigateToEquipmentReadings(equipment)"
                         class="text-hover-primary fw-bold"
-                        style="cursor: pointer; color: #428bca"
+                        style="cursor: pointer; color: #428bca; white-space: nowrap; display: inline-block;"
                       >
                         {{ equipment.equipNo }}
                       </a>
                     </td>
 
                     <!-- Make -->
-                    <td>{{ equipment.vendorId }}</td>
+                    <td style="white-space: nowrap;">{{ equipment.vendorId }}</td>
 
                     <!-- Model -->
-                    <td>{{ equipment.version }}</td>
+                    <td style="white-space: nowrap;">{{ equipment.version }}</td>
 
                     <!-- Serial No -->
-                    <td>{{ equipment.serialID }}</td>
+                    <td style="white-space: nowrap;">{{ equipment.serialID }}</td>
 
                     <!-- KVA/Batt -->
-                    <td>{{ equipment.rating }}</td>
+                    <td style="white-space: nowrap;">{{ equipment.rating }}</td>
 
                     <!-- Location -->
-                    <td>{{ equipment.location }}</td>
+                    <td style="padding: 0.5rem; word-wrap: break-word; line-height: 1.3;">{{ equipment.location }}</td>
 
                     <!-- Status (with color coding) -->
-                    <td>
+                    <td style="padding: 0.5rem; word-wrap: break-word; line-height: 1.3;">
                       <span
                         [style.color]="
                           getEquipmentStatusDisplay(
                             equipment.codeEquipmentStatus
                           ).color
                         "
+                        style="font-weight: 600; line-height: 1.3;"
                       >
                         {{
                           getEquipmentStatusDisplay(
@@ -361,16 +362,16 @@
                     </td>
 
                     <!-- Modified Date -->
-                    <td>{{ equipment.last_Modifed | date : "dd-MMM-yyyy" }}</td>
+                    <td style="white-space: nowrap;">{{ equipment.last_Modifed | date : "dd-MMM-yyyy" }}</td>
 
                     <!-- Summary column removed -->
 
                     <!-- Files -->
-                    <td>
+                    <td style="text-align: center; white-space: nowrap; padding: 0.4rem; min-width: 45px;">
                       <a
                         href="javascript:void(0)"
                         (click)="openFileUploadModal(equipment)"
-                        style="font-size: 18px; color: #2563eb !important"
+                        style="font-size: 16px; color: #2563eb !important; display: inline-block;"
                         title="Files"
                       >
                         <i class="bi bi-file-earmark-text"></i>
@@ -378,11 +379,11 @@
                     </td>
 
                     <!-- Images -->
-                    <td>
+                    <td style="text-align: center; white-space: nowrap; padding: 0.4rem; min-width: 50px;">
                       <a
                         href="javascript:void(0)"
                         (click)="navigateToImageUpload(equipment)"
-                        style="font-size: 18px; color: #7c3aed !important"
+                        style="font-size: 16px; color: #7c3aed !important; display: inline-block;"
                         title="Images"
                       >
                         <i class="bi bi-image"></i>
@@ -403,14 +404,14 @@
                     </td>
 
                     <!-- Mode -->
-                    <td>{{ getModeDisplay(equipment.saveStatus) }}</td>
+                    <td style="text-align: center; white-space: nowrap; padding: 0.4rem; font-size: 0.9rem; min-width: 50px;">{{ getModeDisplay(equipment.saveStatus) }}</td>
 
                     <!-- Edit -->
-                    <td>
+                    <td style="text-align: center; white-space: nowrap; padding: 0.4rem; min-width: 45px;">
                       <a
                         href="javascript:void(0)"
                         (click)="navigateToEditEquipment(equipment)"
-                        style="font-size: 18px; color: #dc2626 !important"
+                        style="font-size: 16px; color: #dc2626 !important; display: inline-block;"
                         title="Edit Equipment"
                       >
                         <i class="bi bi-pencil"></i>
