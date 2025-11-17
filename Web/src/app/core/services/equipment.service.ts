@@ -413,7 +413,7 @@ export class EquipmentService {
           if (response) {
             const cleanedResponse = { ...response };
             const stringFields = ['make', 'model', 'serialNo', 'kva', 'actMake', 'actModel', 'actSerialNo', 'actKVA'];
-            const verificationFields = ['makeCorrect', 'modelCorrect', 'serialNoCorrect', 'kvaCorrect', 'totalEquipsCorrect'];
+            const verificationFields = ['makeCorrect', 'modelCorrect', 'serialNoCorrect', 'kvaCorrect', 'totalEquipsCorrect', 'ascStringsCorrect', 'battPerStringCorrect'];
             
             // Clean regular string fields
             stringFields.forEach(field => {

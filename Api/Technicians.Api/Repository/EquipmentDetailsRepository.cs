@@ -452,36 +452,36 @@ namespace Technicians.Api.Repository
                 {
                     CallNbr = callNbr,
                     EquipID = equipId,
-                    Make = reader["Make"].ToString(),
-                    MakeCorrect = reader["MakeCorrect"].ToString(),
-                    ActMake = reader["ActMake"].ToString(),
+                    Make = reader["Make"]?.ToString() ?? string.Empty,
+                    MakeCorrect = reader["MakeCorrect"]?.ToString() ?? string.Empty,
+                    ActMake = reader["ActMake"]?.ToString() ?? string.Empty,
 
-                    Model = reader["Model"].ToString(),
-                    ModelCorrect = reader["ModelCorrect"].ToString(),
-                    ActModel = reader["ActModel"].ToString(),
+                    Model = reader["Model"]?.ToString() ?? string.Empty,
+                    ModelCorrect = reader["ModelCorrect"]?.ToString() ?? string.Empty,
+                    ActModel = reader["ActModel"]?.ToString() ?? string.Empty,
 
-                    SerialNo = reader["SerialNo"].ToString(),
-                    SerialNoCorrect = reader["SerialNoCorrect"].ToString(),
-                    ActSerialNo = reader["ActSerialNo"].ToString(),
+                    SerialNo = reader["SerialNo"]?.ToString() ?? string.Empty,
+                    SerialNoCorrect = reader["SerialNoCorrect"]?.ToString() ?? string.Empty,
+                    ActSerialNo = reader["ActSerialNo"]?.ToString() ?? string.Empty,
 
-                    KVA = reader["KVA"].ToString(),
-                    KVACorrect = reader["KVACorrect"].ToString(),
-                    ActKVA = reader["ActKVA"].ToString(),
+                    KVA = reader["KVA"]?.ToString() ?? "0",
+                    KVACorrect = reader["KVACorrect"]?.ToString() ?? string.Empty,
+                    ActKVA = reader["ActKVA"]?.ToString() ?? "0",
 
                     ASCStringsNo = Convert.ToInt32(reader["ASCStringsNo"]),
-                    ASCStringsCorrect = reader["ASCStringsCorrect"].ToString(),
+                    ASCStringsCorrect = reader["ASCStringsCorrect"]?.ToString() ?? string.Empty,
                     ActASCStringNo = Convert.ToInt32(reader["ActASCStringNo"]),
 
                     BattPerString = Convert.ToInt32(reader["BattPerString"]),
-                    BattPerStringCorrect = reader["BattPerStringCorrect"].ToString(),
+                    BattPerStringCorrect = reader["BattPerStringCorrect"]?.ToString() ?? string.Empty,
                     ActBattPerString = Convert.ToInt32(reader["ActBattPerString"]),
 
                     TotalEquips = Convert.ToInt32(reader["TotalEquips"]),
-                    TotalEquipsCorrect = reader["TotalEquipsCorrect"].ToString(),
+                    TotalEquipsCorrect = reader["TotalEquipsCorrect"]?.ToString() ?? string.Empty,
                     ActTotalEquips = Convert.ToInt32(reader["ActTotalEquips"]),
 
-                    NewEquipment = reader["NewEquipment"].ToString(),
-                    EquipmentNotes = reader["EquipmentNotes"].ToString(),
+                    NewEquipment = reader["NewEquipment"]?.ToString() ?? string.Empty,
+                    EquipmentNotes = reader["EquipmentNotes"]?.ToString() ?? string.Empty,
                     Verified = Convert.ToBoolean(reader["Verified"])
                 };
             }
@@ -1127,8 +1127,8 @@ namespace Technicians.Api.Repository
                 await conn.OpenAsync();
                 var result = await cmd.ExecuteNonQueryAsync();
 
-                _logger.LogInformation("SaveUpdateEquipReconciliation completed for CallNbr={CallNbr}, EquipID={EquipID}",
-                    request.CallNbr, request.EquipID);
+                _logger.LogInformation("SaveUpdateEquipReconciliation completed for CallNbr={CallNbr}, EquipID={EquipID}. Rows affected: {RowsAffected}",
+                    request.CallNbr, request.EquipID, result);
 
                 return result;
             }

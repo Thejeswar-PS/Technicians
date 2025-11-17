@@ -330,15 +330,54 @@ namespace Technicians.Api.Controllers
         [HttpGet("GetEquipReconciliationInfo")]
         public async Task<IActionResult> GetEquipReconciliationInfo([FromQuery] string callNbr, [FromQuery] int equipId)
         {
-            if (string.IsNullOrWhiteSpace(callNbr))
-                return BadRequest("CallNbr is required.");
+            try
+            {
+                // Enhanced validation
+                if (string.IsNullOrWhiteSpace(callNbr))
+                    return BadRequest(new { success = false, message = "CallNbr is required." });
 
-            var result = await _repository.GetEquipReconciliationInfoAsync(callNbr, equipId);
+                if (equipId <= 0)
+                    return BadRequest(new { success = false, message = "Valid EquipId is required." });
 
-            if (result == null)
-                return NotFound("No reconciliation info found.");
+                _logger.LogInformation("GetEquipReconciliationInfo called for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
 
-            return Ok(result);
+                var result = await _repository.GetEquipReconciliationInfoAsync(callNbr, equipId);
+
+                if (result == null)
+                {
+                    _logger.LogInformation("No reconciliation info found for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+                    return NotFound(new { success = false, message = "No reconciliation info found." });
+                }
+
+                _logger.LogInformation("GetEquipReconciliationInfo completed successfully for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+
+                return Ok(new 
+                { 
+                    success = true, 
+                    message = "Reconciliation info retrieved successfully.", 
+                    data = result
+                });
+            }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "Database error in GetEquipReconciliationInfo for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "Database error occurred while retrieving reconciliation info.",
+                    error = sqlEx.Message 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error in GetEquipReconciliationInfo for CallNbr={CallNbr}, EquipId={EquipId}", callNbr, equipId);
+                return StatusCode(500, new 
+                { 
+                    success = false, 
+                    message = "An error occurred while retrieving reconciliation info.",
+                    error = ex.Message 
+                });
+            }
         }
 
 
@@ -1214,9 +1253,17 @@ namespace Technicians.Api.Controllers
         {
             try
             {
+                // Enhanced validation
                 if (request == null)
                 {
                     return BadRequest(new { success = false, message = "Request data is required" });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Invalid model state for SaveUpdateEquipReconciliation with CallNbr: {CallNbr}, EquipID: {EquipID}. Errors: {ModelStateErrors}",
+                        request?.CallNbr ?? "null", request?.EquipID ?? 0, JsonSerializer.Serialize(ModelState));
+                    return BadRequest(new { success = false, message = "Invalid request data.", errors = ModelState });
                 }
 
                 if (string.IsNullOrWhiteSpace(request.CallNbr))
@@ -1229,7 +1276,15 @@ namespace Technicians.Api.Controllers
                     return BadRequest(new { success = false, message = "Valid EquipID is required" });
                 }
 
+                // Log the request for debugging
+                _logger.LogInformation("SaveUpdateEquipReconciliation called for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request.CallNbr, request.EquipID);
+
+                // Call repository method
                 var result = await _repository.SaveUpdateEquipReconciliationAsync(request);
+
+                _logger.LogInformation("SaveUpdateEquipReconciliation completed successfully for CallNbr={CallNbr}, EquipID={EquipID}. Rows affected: {RowsAffected}",
+                    request.CallNbr, request.EquipID, result);
 
                 return Ok(new
                 {
@@ -1240,10 +1295,21 @@ namespace Technicians.Api.Controllers
                     equipId = request.EquipID
                 });
             }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "Database error in SaveUpdateEquipReconciliation for CallNbr={CallNbr}, EquipID={EquipID}",
+                    request?.CallNbr ?? "null", request?.EquipID ?? 0);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Database error occurred while saving equipment reconciliation",
+                    error = sqlEx.Message
+                });
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving equipment reconciliation for CallNbr: {CallNbr}, EquipID: {EquipID}", 
-                    request?.CallNbr, request?.EquipID);
+                _logger.LogError(ex, "Unexpected error in SaveUpdateEquipReconciliation for CallNbr={CallNbr}, EquipID={EquipID}", 
+                    request?.CallNbr ?? "null", request?.EquipID ?? 0);
 
                 return StatusCode(500, new
                 {

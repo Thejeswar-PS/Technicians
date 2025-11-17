@@ -35,6 +35,36 @@ export interface EquipReconciliationInfo {
   verified: boolean;
 }
 
+export interface SaveUpdateEquipReconciliationDto {
+  CallNbr: string;
+  EquipID: number;
+  Make: string;
+  MakeCorrect: string;
+  ActMake: string;
+  Model: string;
+  ModelCorrect: string;
+  ActModel: string;
+  SerialNo: string;
+  SerialNoCorrect: string;
+  ActSerialNo: string;
+  KVA: string;
+  KVACorrect: string;
+  ActKVA: string;
+  ASCStringsNo: number;
+  ASCStringsCorrect: string;
+  ActASCStringNo: number;
+  BattPerString: number;
+  BattPerStringCorrect: string;
+  ActBattPerString: number;
+  TotalEquips: number;
+  TotalEquipsCorrect: string;
+  ActTotalEquips: number;
+  NewEquipment: string;
+  EquipmentNotes: string;
+  Verified: boolean;
+  ModifiedBy: string;
+}
+
 export interface AAETechUPS {
   upsId: string;
   callNbr: string;
@@ -128,6 +158,24 @@ export interface AAETechUPS {
   inputFreq_T: number;
   inputFreq_PF: string;
   
+  // Input Filter Current fields
+  inputFilterCurrent?: boolean;
+  inputFilterCurrentA?: number;
+  inputFilterCurrentA_PF?: string;
+  inputFilterCurrentB?: number;
+  inputFilterCurrentB_PF?: string;
+  inputFilterCurrentC?: number;
+  inputFilterCurrentC_PF?: string;
+  
+  // Input THD fields
+  inputThdPercent?: boolean;
+  inputThdA?: number;
+  inputThdA_PF?: string;
+  inputThdB?: number;
+  inputThdB_PF?: string;
+  inputThdC?: number;
+  inputThdC_PF?: string;
+  
   // Bypass voltage configuration and readings
   bypass: string;
   bypassVoltA_T: number;
@@ -168,6 +216,24 @@ export interface AAETechUPS {
   outputLoadC: number;
   outputLoadC_PF: string;
   totalLoad: number;
+  
+  // Output Filter Current fields
+  outputFilterCurrent?: boolean;
+  outputFilterCurrentA?: number;
+  outputFilterCurrentA_PF?: string;
+  outputFilterCurrentB?: number;
+  outputFilterCurrentB_PF?: string;
+  outputFilterCurrentC?: number;
+  outputFilterCurrentC_PF?: string;
+  
+  // Output THD fields
+  outputThdPercent?: boolean;
+  outputThdA?: number;
+  outputThdA_PF?: string;
+  outputThdB?: number;
+  outputThdB_PF?: string;
+  outputThdC?: number;
+  outputThdC_PF?: string;
   
   // Rectifier readings
   rectFloatVolt_PF: string;
@@ -482,8 +548,8 @@ export const STATUS_OPTIONS: StatusOption[] = [
 export interface EquipFilterCurrents {
   callNbr: string;
   equipId: number;
-  chkIPFilter?: boolean;
-  chkIPTHD?: boolean;
+  chkIpFilter?: boolean;
+  chkIpThd?: boolean;
   
   // Input Filter Current Phase A
   ipFilterCurrA_T?: number;
@@ -509,8 +575,8 @@ export interface EquipFilterCurrents {
   ipFilterThdC_T?: number;
   ipFilterThdC_PF?: string;
   
-  chkOPFilter?: boolean;
-  chkOPTHD?: boolean;
+  chkOpFilter?: boolean;
+  chkOpThd?: boolean;
   
   // Output Filter Current Phase A
   opFilterCurrA_T?: number;
