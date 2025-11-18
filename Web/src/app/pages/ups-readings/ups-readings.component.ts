@@ -43,22 +43,35 @@ class UPSAgeValidationService {
       endOfLifeValue: 'P'
     };
 
-    // Calculate thresholds based on KVA (matching legacy logic)
+    // Calculate thresholds based on KVA and industry standards
     const endOfLifeThreshold = this.calculateEndOfLifeThreshold(kva);
     const technologyThreshold = kva > 500 ? 18 : 15;
+    const partsSupportThreshold = 30; // Fixed threshold for parts availability
 
-    // Legacy behavior: Only end-of-life threshold triggers ReplacementRecommended
-    if (equipmentAge >= endOfLifeThreshold) {
+    // Parts Support - Highest priority (manufacturing/industry standard)
+    if (equipmentAge >= partsSupportThreshold) {
+      result.status = 'CriticalDeficiency';
+      result.recommendedAction = `Equipment age (${equipmentAge} years) exceeds parts support threshold (${partsSupportThreshold} years). Immediate replacement - Parts availability risk.`;
+      result.autoChangeStatus = true;
+      result.endOfLifeValue = 'F';
+      result.comments = `WARNING: Equipment age (${equipmentAge} years) may impact parts availability and manufacturer support.`;
+    }
+    // End of Life - Technology/Performance based
+    else if (equipmentAge >= endOfLifeThreshold) {
       result.status = 'ReplacementRecommended';
       result.recommendedAction = `Equipment age (${equipmentAge} years) exceeds end-of-life threshold (${endOfLifeThreshold} years). Replacement recommended.`;
       result.autoChangeStatus = true;
       result.endOfLifeValue = 'F';
-    } else if (equipmentAge >= technologyThreshold) {
+    }
+    // Technology Obsolescence
+    else if (equipmentAge >= technologyThreshold) {
       result.status = 'OnLine(MinorDeficiency)';
       result.recommendedAction = `Equipment age (${equipmentAge} years) - Consider modernization due to technology advancement.`;
       result.autoChangeStatus = false; // Technician discretion
       result.endOfLifeValue = 'P';
-    } else if (equipmentAge >= (endOfLifeThreshold - 3)) {
+    }
+    // Proactive Planning Zone
+    else if (equipmentAge >= (endOfLifeThreshold - 3)) {
       result.status = 'ProactiveReplacement';
       result.recommendedAction = `Equipment approaching end-of-life in ${endOfLifeThreshold - equipmentAge} years. Plan replacement.`;
       result.autoChangeStatus = false;
@@ -133,10 +146,75 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Form validation state
   isFormSubmission: boolean = false;
   validationErrors: { [key: string]: string } = {};
+  
+  // Manual status override tracking
+  // When user manually selects "Off-Line", this flag prevents automatic status calculations
+  // from overriding their choice. The Off-Line status will be preserved exactly as selected.
+  manualStatusOverride: boolean = false;
+  originalCalculatedStatus: string = 'Online';
 
   // Restricted character validation
   restrictedChars = ['/', '\\', '<', '>', '&', '"', "'", ';', ','];
   restrictedCharErrors: { [key: string]: string } = {};
+
+  // Character limit validation - Based on legacy UPS readings limits
+  characterLimits: { [key: string]: number } = {
+    // Basic Information Fields
+    'callNbr': 11,
+    'upsId': 21,
+    'manufacturer': 128,
+    'kva': 10,
+    'modelNo': 50,
+    'model': 50,        // Form field name mapping
+    'serialNo': 50,
+    'status': 35,
+    'other': 50,
+    'location': 128,
+    'maintAuthId': 128,
+    'ctoPartNo': 50,
+    
+    // Single/Two Character Fields
+    'multiModule': 2,
+    'maintByPass': 2,
+    'parallelCabinet': 2,
+    'visualEPO': 2,
+    'environmentClean': 2,
+    'transferMajor': 2,
+    'transferByPass': 2,
+    'snmpPresent': 2,
+    'modularUPS': 2,
+    
+    // Most measurement, visual, environment fields are 1 character (P, F, A)
+    'measurementFields': 1,
+    'visualFields': 1,
+    'environmentFields': 1,
+    
+    // Comment Fields
+    'comments1': 500,
+    'comments2': 500,
+    'comments3': 500,
+    'comments4': 500,
+    'comments5': 500,
+    'statusReason': 500,
+    'visualComments': 500,
+    
+    // Date Fields
+    'upsDateCodeMonth': 25,
+    'dateCodeMonth': 25,
+    'monthName': 25,
+    
+    // Air filter fields
+    'filterSet1Length': 10,
+    'filterSet1Width': 10,
+    'filterSet1Thickness': 10,
+    'filterSet1Quantity': 10,
+    'filterSet2Length': 10,
+    'filterSet2Width': 10,
+    'filterSet2Thickness': 10,
+    'filterSet2Quantity': 10
+  };
+  
+  characterLimitErrors: { [key: string]: string } = {};
 
   // Fields that should NOT have restricted character validation (like legacy code)
   excludedFromCharValidation = [
@@ -261,6 +339,59 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.initializeForms();
   }
 
+  /**
+   * Get detailed client-side validation errors for better error reporting
+   */
+  private getClientValidationErrors(): string[] {
+    const errors: string[] = [];
+    
+    // Equipment form validation
+    if (this.equipmentForm.invalid) {
+      Object.keys(this.equipmentForm.controls).forEach(key => {
+        const control = this.equipmentForm.get(key);
+        if (control && control.invalid) {
+          if (key === 'kva' && control.errors) {
+            if (control.errors['required']) {
+              errors.push('KVA Rating is required');
+            } else if (control.errors['pattern']) {
+              errors.push('KVA Rating: ' + (control.errors['pattern'].message || 'Invalid format'));
+            } else if (control.errors['min']) {
+              errors.push('KVA Rating: ' + (control.errors['min'].message || 'Must be greater than 0'));
+            } else if (control.errors['max']) {
+              errors.push('KVA Rating: ' + (control.errors['max'].message || 'Value too high'));
+            }
+          } else if (key === 'manufacturer' && control.errors?.['required']) {
+            errors.push('Manufacturer is required');
+          } else if (key === 'model' && control.errors?.['required']) {
+            errors.push('Model is required');
+          } else if (key === 'serialNo' && control.errors?.['required']) {
+            errors.push('Serial Number is required');
+          } else if (key === 'location' && control.errors?.['required']) {
+            errors.push('Location is required');
+          } else if (key === 'year' && control.errors) {
+            if (control.errors['required']) {
+              errors.push('Year is required');
+            } else if (control.errors['min']) {
+              errors.push('Year must be 1900 or later');
+            }
+          }
+        }
+      });
+    }
+    
+    // Restricted character errors
+    Object.keys(this.restrictedCharErrors).forEach(field => {
+      errors.push(`${field}: ${this.restrictedCharErrors[field]}`);
+    });
+    
+    // Character limit errors
+    Object.keys(this.characterLimitErrors).forEach(field => {
+      errors.push(`${field}: ${this.characterLimitErrors[field]}`);
+    });
+    
+    return errors;
+  }
+
   ngOnInit(): void {
     // Initialize validation state for page load
     this.isFormSubmission = false;
@@ -281,6 +412,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Watch for air filter dropdown changes
     this.visualForm.get('airFilters')?.valueChanges.subscribe(value => {
       this.showAirFilterDetails = value && value !== '';
+      this.updateFilterSizeValidation(value);
     });
 
     // Debug logging will be triggered after form population
@@ -292,6 +424,50 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Remove click outside handler
     document.removeEventListener('click', (event) => this.onDocumentClick(event));
+  }
+
+  /**
+   * Custom validator for decimal KVA values
+   * Matches legacy isIntegerOrFloat pattern: /^[-+]?(\d+(\.\d*)?|\.\d+)$/
+   */
+  private decimalKvaValidator(): ValidatorFn {
+    return (control: AbstractControl): {[key: string]: any} | null => {
+      if (!control.value) {
+        return null; // Required validator handles empty values
+      }
+
+      const value = control.value.toString().trim();
+      
+      // Legacy-compatible pattern: allows integers, decimals, and floats
+      // Supports: 16, 16.5, 225.00, .5, 100.75, etc.
+      const legacyPattern = /^[+]?(\d+(\.\d*)?|\.\d+)$/;
+      
+      if (!legacyPattern.test(value)) {
+        return { 'pattern': { 
+          value: control.value, 
+          message: 'Please enter valid KVA (integers, decimals, or floats like 16.5, 225.00)' 
+        }};
+      }
+      
+      // Convert to number using legacy-style parsing
+      const numValue = parseFloat(value);
+      if (isNaN(numValue) || numValue <= 0) {
+        return { 'min': { 
+          value: control.value, 
+          message: 'KVA must be greater than 0' 
+        }};
+      }
+      
+      // Legacy systems typically handle up to 10000 KVA
+      if (numValue > 10000) {
+        return { 'max': { 
+          value: control.value, 
+          message: 'KVA value exceeds maximum limit (10000)' 
+        }};
+      }
+
+      return null; // Valid
+    };
   }
 
   /**
@@ -323,6 +499,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /**
    * Sets up real-time validation listeners for all text input fields
+   * Includes both restricted character and character limit validation
    * Excludes model, serial number, date fields and part numbers as per legacy code
    */
   private setupRestrictedCharValidation(): void {
@@ -360,6 +537,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
                 debounceTime(50) // Reduced delay for more responsive feedback
               ).subscribe(value => {
                 this.validateRestrictedChars(controlName, value, form);
+                this.validateCharacterLimit(controlName, value, form);
               });
             }
           });
@@ -380,10 +558,82 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       'configuration', // Configuration dropdowns
       'multiModule', 'maintByPass', 'modularUPS', // Equipment dropdowns
       'hostileEnvironment', 'firstMajor', 'dcgAction1', 'custAction1', // Yes/No dropdowns
-      '_PF', 'Correct' // All Pass/Fail dropdowns and correction dropdowns
+      '_PF', 'Correct', // All Pass/Fail dropdowns and correction dropdowns
+      'kva', 'year' // Number fields that should not have character validation
     ];
 
     return !skipFields.some(skip => controlName.includes(skip));
+  }
+
+  /**
+   * Validates character limits in real-time and shows immediate feedback
+   */
+  private validateCharacterLimit(controlName: string, value: any, form: FormGroup): void {
+    // Map form instances to readable names for UI
+    let formName = 'UnknownForm';
+    if (form === this.equipmentForm) formName = 'EquipmentForm';
+    else if (form === this.reconciliationForm) formName = 'ReconciliationForm';
+    else if (form === this.visualForm) formName = 'VisualForm';
+    else if (form === this.environmentForm) formName = 'EnvironmentForm';
+    else if (form === this.inputReadingsForm) formName = 'InputReadingsForm';
+    else if (form === this.bypassReadingsForm) formName = 'BypassReadingsForm';
+    else if (form === this.outputReadingsForm) formName = 'OutputReadingsForm';
+
+    const key = `${formName}_${controlName}`;
+
+    if (!value) {
+      delete this.characterLimitErrors[key];
+      return;
+    }
+
+    const stringValue = value.toString();
+    const characterLimit = this.getCharacterLimitForField(controlName);
+    
+    if (characterLimit && stringValue.length > characterLimit) {
+      this.characterLimitErrors[key] = `Exceeds ${characterLimit} character limit (current: ${stringValue.length})`;
+    } else {
+      delete this.characterLimitErrors[key];
+    }
+
+    // Trigger change detection to update UI
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Gets the character limit for a specific field based on the character limits configuration
+   */
+  private getCharacterLimitForField(controlName: string): number | null {
+    // Skip numeric fields that should not have character limits
+    const numericFields = ['kva', 'year', 'voltage', 'current', 'frequency', 'temperature', 'capacity'];
+    if (numericFields.some(field => controlName.toLowerCase().includes(field))) {
+      return null;
+    }
+
+    // Direct field mapping
+    if (this.characterLimits[controlName]) {
+      return this.characterLimits[controlName];
+    }
+
+    // Check for field patterns
+    if (controlName.includes('comments') || controlName.includes('Comments')) {
+      return 500;
+    }
+    
+    if (controlName.includes('filter') && (controlName.includes('Length') || controlName.includes('Width') || controlName.includes('Thickness') || controlName.includes('Quantity'))) {
+      return 10;
+    }
+    
+    // Pass/Fail dropdown fields (should be 1 character)
+    if (controlName.endsWith('_PF') || controlName.includes('PF')) {
+      return 1;
+    }
+    
+    // Most measurement, visual, environment dropdown fields
+    if (controlName.startsWith('measure') || controlName.startsWith('visual') || controlName.startsWith('environment')) {
+      return 1;
+    }
+    
+    return null; // No limit for this field
   }
 
   /**
@@ -461,7 +711,50 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Validates all forms for restricted characters before saving
+   * Gets the character limit error message for a specific field
+   */
+  getCharacterLimitError(formName: string, controlName: string): string | null {
+    const key = `${formName}_${controlName}`;
+    return this.characterLimitErrors[key] || null;
+  }
+
+  /**
+   * Checks if a specific field has character limit errors
+   */
+  hasCharacterLimitError(formName: string, controlName: string): boolean {
+    const key = `${formName}_${controlName}`;
+    return !!this.characterLimitErrors[key];
+  }
+
+  /**
+   * Gets the character limit for a specific field (for display purposes)
+   */
+  getCharacterLimit(controlName: string): number | null {
+    return this.getCharacterLimitForField(controlName);
+  }
+
+  /**
+   * Gets the current character count for a form field
+   */
+  getCharacterCount(formName: string, controlName: string): number {
+    let form: FormGroup;
+    switch (formName) {
+      case 'EquipmentForm': form = this.equipmentForm; break;
+      case 'ReconciliationForm': form = this.reconciliationForm; break;
+      case 'VisualForm': form = this.visualForm; break;
+      case 'EnvironmentForm': form = this.environmentForm; break;
+      case 'InputReadingsForm': form = this.inputReadingsForm; break;
+      case 'BypassReadingsForm': form = this.bypassReadingsForm; break;
+      case 'OutputReadingsForm': form = this.outputReadingsForm; break;
+      default: return 0;
+    }
+    
+    const value = form.get(controlName)?.value;
+    return value ? value.toString().length : 0;
+  }
+
+  /**
+   * Validates all forms for restricted characters and character limits before saving
    * Returns true if validation passes, false if there are errors
    */
   private validateAllRestrictedChars(): boolean {
@@ -469,6 +762,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Clear previous errors
     this.restrictedCharErrors = {};
+    this.characterLimitErrors = {};
 
     const forms = [
       this.equipmentForm,
@@ -488,9 +782,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             const control = form.get(controlName);
             if (control && control.value) {
               this.validateRestrictedChars(controlName, control.value, form);
+              this.validateCharacterLimit(controlName, control.value, form);
               // Check if this validation created an error
               const formName = this.getFormName(form);
-              if (this.hasRestrictedCharError(formName, controlName)) {
+              if (this.hasRestrictedCharError(formName, controlName) || this.hasCharacterLimitError(formName, controlName)) {
                 hasErrors = true;
               }
             }
@@ -552,7 +847,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private initializeForms(): void {
     this.equipmentForm = this.fb.group({
       manufacturer: ['', Validators.required],
-      kva: ['', [Validators.required, Validators.min(0)]],
+      kva: ['', [Validators.required, this.decimalKvaValidator()]],
       multiModule: ['Select'], // Default to "Select"
       maintByPass: ['NA'], // Default to "NA" (None)
       other: [''],
@@ -794,6 +1089,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Initialize enhanced form features
     this.initializeEnhancedFormFeatures();
+    
+    // Setup status change handler to detect manual Off-Line selections
+    this.setupStatusChangeHandler();
+    
+    // Setup direct form control subscription as backup
+    this.setupDirectStatusSubscription();
   }
 
   private setupEquipmentReconciliationSync(): void {
@@ -850,6 +1151,34 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Also validate if user enters dateCode directly (not through month/year)
       if (dateValue && /^\d{4}$/.test(dateValue.toString().trim())) {
         this.validateDirectDateCodeInput(dateValue.toString().trim());
+      }
+    });
+  }
+
+  /**
+   * Updates validation for filter size fields based on air filter selection
+   */
+  private updateFilterSizeValidation(airFilterValue: string): void {
+    const filterSizeFields = [
+      'filterSet1Length',
+      'filterSet1Width', 
+      'filterSet1Thickness',
+      'filterSet1Quantity'
+    ];
+
+    filterSizeFields.forEach(fieldName => {
+      const control = this.visualForm.get(fieldName);
+      if (control) {
+        // Clear existing validators
+        control.clearValidators();
+        
+        // Add required validator if replacement is needed
+        if (airFilterValue === 'RN') {
+          control.setValidators([Validators.required]);
+        }
+        
+        // Update validation status
+        control.updateValueAndValidity();
       }
     });
   }
@@ -1158,10 +1487,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (statusOptions) => {
-          this.equipmentStatusOptions = statusOptions;
+          this.equipmentStatusOptions = this.ensureCriticalDeficiencyOption(statusOptions);
         },
         error: (error) => {
-          // Fallback to existing statusOptions if service fails
+          // Fallback to default options including CriticalDeficiency
+          this.equipmentStatusOptions = this.getDefaultStatusOptions();
         }
       });
 
@@ -1514,15 +1844,21 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       });
     }
 
-    // Visual form defaults - including EPO switch mentioned by user
-    this.visualForm.patchValue({
-      epoSwitch: 'P', // EPO switch cover verification - default to Pass
-    });
+    // Visual form defaults - only set if not already populated from database
+    const currentEpoValue = this.visualForm.get('epoSwitch')?.value;
+    if (!currentEpoValue || currentEpoValue.trim() === '') {
+      this.visualForm.patchValue({
+        epoSwitch: 'P', // EPO switch cover verification - default to Pass (only if not set from DB)
+      });
+    }
 
-    // Environment form defaults - including hostile environment mentioned by user
-    this.environmentForm.patchValue({
-      hostileEnvironment: 'N', // Hostile environment verification - default to No
-    });
+    // Environment form defaults - only set if not already populated from database
+    const currentHostileEnv = this.environmentForm.get('hostileEnvironment')?.value;
+    if (!currentHostileEnv || currentHostileEnv.trim() === '') {
+      this.environmentForm.patchValue({
+        hostileEnvironment: 'N', // Hostile environment verification - default to No (only if not set)
+      });
+    }
 
     // Transfer form defaults - only set if not already populated
     const currentTransferValues = this.transferForm.value;
@@ -1624,7 +1960,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       location: data.location || '',
       monthName: actualMonthName || '', // Use mapped backend month only, empty if not provided
       year: actualYear || null, // Use mapped backend year only, null if not provided
-      status: data.status || 'Online',
+      status: data.status || 'Online', // Load DB status initially, will be recalculated after all forms loaded
       statusNotes: data.statusReason || '',
       parallelCabinet: data.parallelCabinet || defaultParallelCabinet, // Use backend data or intelligent default
       snmpPresent: finalSnmpValue, // Use raw SNMP value (YS, NO, PS)
@@ -1632,6 +1968,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       ctoPartNo: data.ctoPartNo || data.other || '', // Map to CTO/Part No if available in data
       upsType: data.modularUPS || 'NO' // Use the actual modularUPS value from backend or default to 'NO' (Normal UPS)
     }, { emitEvent: false });
+
+    // Check if the loaded status is Off-Line and treat it as a manual override
+    if (data.status === 'Offline') {
+      this.manualStatusOverride = true;
+      // Delay calculation until forms are fully loaded
+      setTimeout(() => {
+        this.originalCalculatedStatus = this.calculateEquipStatus();
+      }, 100);
+    }
 
     // Log the actual form values after patching to verify what's being set
     // Update selected date for calendar only if we have valid backend date data
@@ -1675,13 +2020,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       endOfLife: data.measure_EOL || 'P'
     }, { emitEvent: false });
 
+    // Clean and process EPO data from database
+    const rawEpoValue = data.visual_EPO;
+    const cleanedEpoValue = rawEpoValue ? rawEpoValue.toString().trim() : '';
+    const finalEpoValue = cleanedEpoValue || 'P'; // Only use 'P' as default if completely empty
+    
     // Populate visual form
     this.visualForm.patchValue({
       upsOnline: data.visual_NoAlarms || 'P', // Map to existing no alarms field
       checkConnections: data.visual_Tightness || 'P', // Map to existing tightness field
       inspectDamage: data.visual_Broken || 'P', // Map to existing broken field
       vacuumClean: data.visual_Vaccum || 'P', // Map to existing vacuum field
-      epoSwitch: data.visual_EPO || 'P', // Map to existing EPO field
+      epoSwitch: finalEpoValue, // Use cleaned EPO value
       coolingFans: data.visual_Noise || 'P', // Map to existing noise field
       fansAge: data.visual_FansAge || 'P',
       airFilters: data.visual_ReplaceFilters || 'P', // Map to existing replace filters field
@@ -1693,14 +2043,35 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       filterSet2Width: data.afWidth1 || '',
       filterSet2Thickness: data.afThickness1 || '',
       filterSet2Quantity: data.afQty1 || '',
-      visualComments: ''
+      visualComments: data.comments2 || data.comments1 || data.comments3 || data.comments4 || data.comments5 || ''
     }, { emitEvent: false });
 
+    // Initialize filter size validation based on current air filter value
+    const currentAirFilterValue = this.visualForm.get('airFilters')?.value;
+    if (currentAirFilterValue) {
+      this.updateFilterSizeValidation(currentAirFilterValue);
+    }
+
     // Populate environment form
+    // Proper mapping: environment_Clean (is clean?) vs hostileEnvironment (is hostile?) are opposites
+    // Handle special values: YS (Yes with Safety), Y (Yes), N (No)
+    
+    // Enhanced mapping to handle YS (Yes with Safety concerns)
+    let hostileEnvValue: string;
+    const dbValue = (data.environment_Clean || '').trim();
+    
+    if (dbValue === 'Y') {
+      hostileEnvValue = 'N'; // Clean=Y → Hostile=N (not hostile)
+    } else if (dbValue === 'N' || dbValue === 'YS') {
+      hostileEnvValue = 'Y'; // NotClean=N or YesSafety=YS → Hostile=Y (hostile)
+    } else {
+      hostileEnvValue = 'N'; // Default to not hostile
+    }
+
     this.environmentForm.patchValue({
       roomTempVentilation: data.environment_RoomTemp || 'P',
       safetyEquipment: data.environment_Saftey || 'P',
-      hostileEnvironment: data.environment_Clean || 'N', // Default to No for hostile environment
+      hostileEnvironment: hostileEnvValue, // Properly inverted mapping
       serviceSpace: data.environment_Space || 'P',
       circuitBreakers: data.environment_Circuit || 'P'
     }, { emitEvent: false });
@@ -2665,16 +3036,47 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Validate KVA
     const kvaValue = this.equipmentForm.get('kva')?.value;
-    if (!kvaValue || kvaValue.trim() === '') {
+    if (!kvaValue && kvaValue !== 0) {
+      this.showLegacyValidationAlert('KVA value cannot be empty', 'kva');
+      this.equipmentForm.get('kva')?.markAsTouched();
+      return false;
+    }
+
+    // Handle both string and number types from form control
+    const kvaString = kvaValue?.toString().trim() || '';
+    if (kvaString === '') {
       this.showLegacyValidationAlert('KVA value cannot be empty', 'kva');
       this.equipmentForm.get('kva')?.markAsTouched();
       return false;
     }
 
     const kva = this.convertToDouble(kvaValue);
-    if (kva <= 0) {
-      this.showLegacyValidationAlert('Please enter valid KVA Value', 'kva');
+    if (isNaN(kva) || kva <= 0) {
+      this.showLegacyValidationAlert('Please enter valid KVA Value (e.g., 16.5, 225.00)', 'kva');
       this.equipmentForm.get('kva')?.markAsTouched();
+      return false;
+    }
+    
+    // Additional validation for reasonable KVA range
+    if (kva > 10000) {
+      this.showLegacyValidationAlert('KVA value seems unusually high. Please verify.', 'kva');
+      this.equipmentForm.get('kva')?.markAsTouched();
+      return false;
+    }
+
+    // Check if KVA form control has validation errors from custom validator
+    const kvaControl = this.equipmentForm.get('kva');
+    if (kvaControl && kvaControl.invalid) {
+      let errorMessage = 'Please enter valid KVA Value';
+      if (kvaControl.errors?.['pattern']) {
+        errorMessage = kvaControl.errors['pattern'].message || 'Please enter valid KVA (e.g., 16.5, 225.00)';
+      } else if (kvaControl.errors?.['min']) {
+        errorMessage = kvaControl.errors['min'].message || 'KVA must be greater than 0';
+      } else if (kvaControl.errors?.['max']) {
+        errorMessage = kvaControl.errors['max'].message || 'KVA value is too high';
+      }
+      this.showLegacyValidationAlert(errorMessage, 'kva');
+      kvaControl.markAsTouched();
       return false;
     }
 
@@ -2715,6 +3117,52 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!verified) {
       this.showLegacyValidationAlert('You must verify the Reconciliation section before Saving PM form', 'reconciliation');
       return false;
+    }
+
+    // Validate reconciliation "Actual" fields when "Is Correct" is "No"
+    const modelCorrect = this.reconciliationForm.get('modelCorrect')?.value;
+    const actModel = this.reconciliationForm.get('actModel')?.value;
+    const serialNoCorrect = this.reconciliationForm.get('serialNoCorrect')?.value;
+    const actSerialNo = this.reconciliationForm.get('actSerialNo')?.value;
+    const kvaCorrect = this.reconciliationForm.get('kvaCorrect')?.value;
+    const actKVA = this.reconciliationForm.get('actKVA')?.value;
+
+    if (modelCorrect === 'N' && (!actModel || actModel.trim() === '')) {
+      this.showLegacyValidationAlert('Actual Model is required when Model is marked as incorrect', 'actModel');
+      this.reconciliationForm.get('actModel')?.markAsTouched();
+      return false;
+    }
+
+    if (serialNoCorrect === 'N' && (!actSerialNo || actSerialNo.trim() === '')) {
+      this.showLegacyValidationAlert('Actual Serial No is required when Serial No is marked as incorrect', 'actSerialNo');
+      this.reconciliationForm.get('actSerialNo')?.markAsTouched();
+      return false;
+    }
+
+    if (kvaCorrect === 'N' && (!actKVA || actKVA.trim() === '')) {
+      this.showLegacyValidationAlert('Actual KVA is required when KVA is marked as incorrect', 'actKVA');
+      this.reconciliationForm.get('actKVA')?.markAsTouched();
+      return false;
+    }
+
+    // Validate filter size fields when replacement is needed
+    const airFilterValue = this.visualForm.get('airFilters')?.value;
+    if (airFilterValue === 'RN') {
+      const filterSizeFields = [
+        { field: 'filterSet1Length', name: 'Filter Length' },
+        { field: 'filterSet1Width', name: 'Filter Width' },
+        { field: 'filterSet1Thickness', name: 'Filter Thickness' },
+        { field: 'filterSet1Quantity', name: 'Filter Quantity' }
+      ];
+
+      for (const filterField of filterSizeFields) {
+        const value = this.visualForm.get(filterField.field)?.value;
+        if (!value || value.trim() === '') {
+          this.showLegacyValidationAlert(`${filterField.name} is required when filter replacement is needed`, filterField.field);
+          this.visualForm.get(filterField.field)?.markAsTouched();
+          return false;
+        }
+      }
     }
 
     // Validate fans age
@@ -2984,6 +3432,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Clears all validation errors
   private clearAllValidationErrors(): void {
     this.validationErrors = {};
+    this.restrictedCharErrors = {};
+    this.characterLimitErrors = {};
   }
 
   /**
@@ -3974,8 +4424,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const housekeepingChecks = [
       ['environmentForm', 'hostileEnvironment', 'Y'],  // Environment cleaning needed
       ['visualForm', 'vacuumClean', 'F'],              // Vacuum/dust accumulation issues
-      ['visualForm', 'airFilters', 'RN'],              // Filter replacement needed (but not critical)
-      ['visualForm', 'airFilters', 'C']                // Filters cleaned (maintenance performed)
+      ['visualForm', 'airFilters', 'RN']               // Filter replacement needed (but not critical)
+      // NOTE: Removed 'C' (Cleaned) - cleaned filters should not be a deficiency
     ];
 
     // 3. Communication and monitoring minor issues
@@ -4216,7 +4666,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private hasPreventiveMaintenanceNeeds(): boolean {
     // Check for cosmetic or housekeeping issues that don't affect operation
     const preventiveMaintenanceIndicators = [
-      this.visualForm.get('airFilters')?.value === 'C',  // Filters cleaned (maintenance performed)
       this.visualForm.get('vacuumClean')?.value === 'F', // Cleaning needed
       this.environmentForm.get('hostileEnvironment')?.value === 'Y' // Environmental attention needed
     ];
@@ -4284,14 +4733,27 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * This method should be called whenever critical fields change (both F->P and P->F)
    */
   private validateAndUpdateStatusOnFailure(): void {
-    if (this.loading) return; // Don't update during initial load
+    if (this.loading || this.saving) return; // Don't update during initial load or save
+
+    const currentStatus = this.equipmentForm.get('status')?.value;
+    
+    // CRITICAL: Respect manual "Off-Line" override - NEVER change from Off-Line automatically
+    if (this.manualStatusOverride || currentStatus === 'Offline') {
+      // User manually selected Off-Line - do not override regardless of other conditions
+      const newStatus = this.calculateEquipStatus();
+      this.originalCalculatedStatus = newStatus; // Track what the calculated status would be
+      
+      // Ensure status stays as Offline
+      if (currentStatus !== 'Offline') {
+        this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+      }
+      return;
+    }
 
     const newStatus = this.calculateEquipStatus();
-    const currentStatus = this.equipmentForm.get('status')?.value;
-
     if (newStatus !== currentStatus) {
-      // Status change detected - update immediately
-      this.equipmentForm.patchValue({ status: newStatus });
+      // Status change detected - update immediately only if not manually overridden to Off-Line
+      this.equipmentForm.patchValue({ status: newStatus }, { emitEvent: false });
 
       // Show notification to user about status change
       this.showStatusChangeNotification(currentStatus, newStatus);
@@ -4358,28 +4820,42 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * Legacy functionality: ddlStatus.SelectedValue == "Offline"
    */
   onManualStatusChange(selectedStatus: string): void {
-    // Use legacy format for status confirmation
-    if (!confirm(`Are you sure that the Equipment Status : ${selectedStatus}`)) {
-      // Reset to previous value if user cancels
-      const calculatedStatus = this.calculateEquipStatus();
-      this.equipmentForm.patchValue({ status: calculatedStatus });
-      return;
-    }
-
-    // If confirmed, apply the status change
-    this.equipmentForm.patchValue({ status: selectedStatus });
-
     if (selectedStatus === 'Offline') {
+      // Use legacy format for status confirmation
+      if (!confirm(`Are you sure that the Equipment Status : ${selectedStatus}`)) {
+        // Reset to previous value if user cancels
+        const calculatedStatus = this.calculateEquipStatus();
+        setTimeout(() => {
+          this.equipmentForm.patchValue({ status: calculatedStatus }, { emitEvent: false });
+        }, 0);
+        return;
+      }
+
+      // IMMEDIATE Override: Set manual override flag BEFORE any other operations
+      this.manualStatusOverride = true;
+      
+      // Calculate what the status would be without manual override  
+      this.originalCalculatedStatus = this.calculateEquipStatus();
+      
+      // Force the status to Offline immediately with no events
+      this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+      
       this.toastr.warning(
-        'Equipment status manually set to "Off-Line". This overrides all automatic status calculations.',
-        'Manual Status Override',
+        'Equipment status manually set to "Off-Line". This overrides all automatic status calculations and will remain Off-Line exactly as selected.',
+        'Manual Status Override - Off-Line',
         {
-          timeOut: 10000,
+          timeOut: 12000,
           closeButton: true,
           progressBar: true
         }
       );
     } else {
+      // Clear manual override when changing away from Off-Line
+      this.manualStatusOverride = false;
+      
+      // Apply the new status  
+      this.equipmentForm.patchValue({ status: selectedStatus }, { emitEvent: false });
+      
       // Check if manual status differs from calculated status
       const calculatedStatus = this.calculateEquipStatus();
       if (selectedStatus !== calculatedStatus) {
@@ -4397,6 +4873,38 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
+   * Get default status options as fallback
+   */
+  private getDefaultStatusOptions(): { value: string; text: string }[] {
+    return [
+      { value: 'Online', text: 'On-Line' },
+      { value: 'Off-Line', text: 'Off-Line' },
+      { value: 'OnLine(MinorDeficiency)', text: 'On-Line (Minor Deficiency)' },
+      { value: 'OnLine(MajorDeficiency)', text: 'On-Line (Major Deficiency)' },
+      { value: 'ProactiveReplacement', text: 'Proactive Replacement' },
+      { value: 'ReplacementRecommended', text: 'Replacement Recommended' },
+      { value: 'CriticalDeficiency', text: 'Critical Deficiency' },
+      { value: 'Offline', text: 'Off-Line' }
+    ];
+  }
+
+  /**
+   * Ensure CriticalDeficiency option is available in status options
+   */
+  private ensureCriticalDeficiencyOption(statusOptions: { value: string; text: string }[]): { value: string; text: string }[] {
+    const hasCriticalDeficiency = statusOptions.some(option => option.value === 'CriticalDeficiency');
+    
+    if (!hasCriticalDeficiency) {
+      return [
+        ...statusOptions,
+        { value: 'CriticalDeficiency', text: 'Critical Deficiency' }
+      ];
+    }
+    
+    return statusOptions;
+  }
+
+  /**
    * Get all available status options with proper display text
    * Based on legacy status hierarchy
    */
@@ -4410,6 +4918,75 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       { value: 'CriticalDeficiency', text: 'Critical Deficiency' },
       { value: 'Offline', text: 'Off-Line' }
     ];
+  }
+
+  /**
+   * Check if manual Off-Line override is active
+   */
+  isManualOffLineOverride(): boolean {
+    return this.manualStatusOverride && this.equipmentForm.get('status')?.value === 'Offline';
+  }
+
+  /**
+   * Get the calculated status when manual override is active
+   */
+  getCalculatedStatusWhenOverridden(): string {
+    return this.originalCalculatedStatus;
+  }
+
+
+
+  /**
+   * Preserve manual Off-Line status during save operations
+   */
+  private preserveManualOffLineStatus(): void {
+    if (this.manualStatusOverride) {
+      // Force status to Offline regardless of current value
+      this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+    }
+  }
+
+  /**
+   * Test method to manually trigger Off-Line override (for debugging)
+   */
+  testOffLineOverride(): void {
+    this.manualStatusOverride = true;
+    this.originalCalculatedStatus = this.calculateEquipStatus();
+    this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+    
+    // Show user confirmation
+    this.toastr.info('Off-Line override activated for testing.', 'Test Override');
+  }
+
+  /**
+   * Debug method to log current state (for development use)
+   */
+  debugCurrentState(): void {
+    // Method kept for potential future debugging needs
+  }
+
+  /**
+   * Handle status dropdown change event (wrapper for onManualStatusChange)
+   */
+  onStatusDropdownChange(event: any): void {
+    const selectedValue = event.target.value;
+    this.onManualStatusChange(selectedValue);
+  }
+
+  /**
+   * Setup direct subscription to status form control changes
+   */
+  private setupDirectStatusSubscription(): void {
+    this.equipmentForm.get('status')?.valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(newStatus => {
+      // If status changes to something other than Offline while manual override is active, restore it
+      if (this.manualStatusOverride && newStatus !== 'Offline' && !this.loading && !this.saving) {
+        setTimeout(() => {
+          this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+        }, 0);
+      }
+    });
   }
 
   onVoltageConfigurationChange(type: 'input' | 'bypass' | 'output', configId: string): void {
@@ -5268,7 +5845,21 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private verifyFormValuesAfterLoad(): void {
+    // Recalculate status after all forms are loaded to ensure consistency
+    // This fixes any incorrect status stored in the database
+    const currentDbStatus = this.equipmentForm.get('status')?.value;
+    
+    // LEGACY LOGIC: Only recalculate if status is NOT "Offline"
+    // Legacy: if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
+    if (currentDbStatus !== 'Offline') {
+      const calculatedStatus = this.calculateEquipStatus();
+      
+      if (currentDbStatus !== calculatedStatus) {
+        this.equipmentForm.patchValue({ status: calculatedStatus }, { emitEvent: false });
+      }
     }
+    // If status IS "Offline", preserve it (don't override with automatic calculation)
+  }
 
   private reloadDataAfterSave(): void {
     // Reload UPS data from server to ensure data persistence is verified
@@ -5308,9 +5899,35 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.isFormSubmission = true;
     this.clearAllValidationErrors();
 
-    // Validate restricted characters before saving (for both draft and full saves)
+    // Ensure manual Off-Line status is preserved during save
+    this.preserveManualOffLineStatus();
+
+    // Debug: Check KVA field state before validation
+    const kvaValue = this.equipmentForm.get('kva')?.value;
+    const kvaValid = this.equipmentForm.get('kva')?.valid;
+    console.log('KVA Debug - Value:', kvaValue, 'Valid:', kvaValid, 'Type:', typeof kvaValue);
+
+    // Validate restricted characters and character limits before saving (for both draft and full saves)
     if (!this.validateAllRestrictedChars()) {
-      this.toastr.error('Please fix invalid characters in the form fields before saving.');
+      // Count different types of errors
+      const restrictedCharErrors = Object.keys(this.restrictedCharErrors).length;
+      const characterLimitErrors = Object.keys(this.characterLimitErrors).length;
+      
+      let errorMessage = 'Please fix validation errors before saving:';
+      if (restrictedCharErrors > 0) {
+        errorMessage += ` ${restrictedCharErrors} restricted character error(s).`;
+      }
+      if (characterLimitErrors > 0) {
+        errorMessage += ` ${characterLimitErrors} character limit error(s).`;
+      }
+      
+      console.log('Validation failed:', { restrictedCharErrors: this.restrictedCharErrors, characterLimitErrors: this.characterLimitErrors });
+      
+      this.toastr.error(errorMessage, 'Validation Errors', {
+        timeOut: 8000,
+        closeButton: true,
+        progressBar: true
+      });
       this.isFormSubmission = false;
       return;
     }
@@ -5337,6 +5954,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const saveUpdateDto = convertToSaveUpdateDto(upsData, this.authService.currentUserValue?.username || 'SYSTEM');
 
+    console.log('🔍 CALLING SAVE API - Final payload:', {
+      saveUpdateDtoStatus: (saveUpdateDto as any).status || 'NOT FOUND',
+      fullPayload: saveUpdateDto,
+      currentFormStatus: this.equipmentForm.get('status')?.value
+    });
+    
     // Use the new comprehensive SaveUpdateaaETechUPS API method
     this.equipmentService.saveUpdateaaETechUPS(saveUpdateDto)
       .pipe(takeUntil(this.destroy$))
@@ -5356,24 +5979,112 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             this.saveFilterCurrentsData();
 
             this.successMessage = isDraft ? 'Draft saved successfully' : 'UPS readings saved successfully';
-            this.toastr.success(this.successMessage);
+            
+            // Add special message for manual Off-Line override
+            if (this.isManualOffLineOverride() && !isDraft) {
+              this.successMessage += ' (Manual Off-Line status preserved)';
+              this.toastr.success('UPS readings saved successfully. Manual Off-Line status has been preserved exactly as selected.', 'Save Complete');
+            } else {
+              this.toastr.success(this.successMessage);
+            }
 
             // Reload data from server to ensure consistency after save
             this.reloadDataAfterSave();
 
           } else {
+            // Handle cases where response.success is false with specific error details
+            let errorMessage = 'Error saving UPS readings.';
+            
+            // Extract specific error information from response
+            if (response && (response as any).message) {
+              errorMessage += ` Server message: ${(response as any).message}`;
+            } else if (response && (response as any).errors) {
+              errorMessage += ` Validation errors: ${JSON.stringify((response as any).errors)}`;
+            }
+            
+            // Add client-side validation context
+            const clientErrors = this.getClientValidationErrors();
+            if (clientErrors.length > 0) {
+              errorMessage += ` Client validation issues: ${clientErrors.join(', ')}`;
+            }
 
-            this.errorMessage = response.message;
-            this.toastr.error(this.errorMessage);
+            this.errorMessage = errorMessage;
+            this.toastr.error(this.errorMessage, 'Save Error', {
+              timeOut: 10000,
+              closeButton: true,
+              progressBar: true
+            });
           }
           this.saving = false;
           this.saveMode = null;
           this.isFormSubmission = false; // Reset form submission flag
         },
         error: (error) => {
+          // Detailed error message based on error type
+          let errorMessage = 'Error saving UPS readings.';
+          
+          if (error.status === 400) {
+            errorMessage = 'Validation Error: ';
+            
+            // Parse specific validation errors from API response
+            if (error?.error?.errors) {
+              const validationErrors: string[] = [];
+              
+              Object.keys(error.error.errors).forEach(fieldPath => {
+                const fieldErrors = error.error.errors[fieldPath];
+                if (Array.isArray(fieldErrors)) {
+                  fieldErrors.forEach(fieldError => {
+                    // Convert API field paths to user-friendly names
+                    let fieldName = fieldPath;
+                    if (fieldPath === '$.KVA') fieldName = 'KVA';
+                    else if (fieldPath === 'request') fieldName = 'Request data';
+                    else if (fieldPath.startsWith('$.')) fieldName = fieldPath.substring(2);
+                    
+                    validationErrors.push(`${fieldName}: ${fieldError}`);
+                  });
+                }
+              });
+              
+              if (validationErrors.length > 0) {
+                errorMessage += validationErrors.join('; ');
+              } else {
+                errorMessage += error?.error?.title || 'Please check your input data.';
+              }
+            } else if (error.error && error.error.message) {
+              errorMessage += error.error.message;
+            } else {
+              errorMessage += 'Please check your input data.';
+            }
+          } else if (error.status === 401) {
+            errorMessage = 'Authentication error: Please log in again.';
+          } else if (error.status === 403) {
+            errorMessage = 'Access denied: You do not have permission to save UPS readings.';
+          } else if (error.status === 500) {
+            errorMessage = 'Server error: Please contact support or try again later.';
+          } else if (error.status === 0) {
+            errorMessage = 'Network error: Please check your internet connection.';
+          }
+          
+          // Add client-side validation context if available
+          const clientErrors = this.getClientValidationErrors();
+          if (clientErrors.length > 0) {
+            errorMessage += ` Client validation issues: ${clientErrors.join(', ')}`;
+          }
+          
+          this.errorMessage = errorMessage;
+          
+          console.error('Save error details:', {
+            status: error.status,
+            message: error.message,
+            error: error.error,
+            clientErrors: clientErrors
+          });
 
-          this.errorMessage = 'Error saving UPS readings. Please try again.';
-          this.toastr.error(this.errorMessage);
+          this.toastr.error(this.errorMessage, 'Error', {
+            timeOut: 10000,
+            closeButton: true,
+            progressBar: true
+          });
           this.saving = false;
           this.saveMode = null;
           this.isFormSubmission = false; // Reset form submission flag
@@ -5397,20 +6108,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const dateCode = new Date(equipment.dateCode);
     const validMonthName = equipment.monthName || dateCode.toLocaleString('default', { month: 'long' });
     const validYear = equipment.year || dateCode.getFullYear();
+    
+
 
     return {
       upsId: this.upsId,
       callNbr: this.callNbr,
       equipId: this.equipId,
       manufacturer: equipment.manufacturer,
-      kva: equipment.kva,
+      kva: equipment.kva ? equipment.kva.toString() : '0', // Convert to string as expected by API
       multiModule: equipment.multiModule,
       maintByPass: equipment.maintByPass,
       other: equipment.other,
       modelNo: equipment.model,
       serialNo: equipment.serialNo,
       location: equipment.location,
-      status: equipment.status,
+      status: equipment.status, // Preserves manual Off-Line override if set
       statusReason: '', // Removed status notes functionality
       parallelCabinet: equipment.parallelCabinet,
       snmpPresent: equipment.snmpPresent,
@@ -5433,7 +6146,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       visual_Tightness: visual.checkConnections,
       visual_Broken: visual.inspectDamage,
       visual_Vaccum: visual.vacuumClean,
-      visual_EPO: visual.epoSwitch,
+      visual_EPO: visual.epoSwitch, // EPO Switch mapped for API save
       visual_Noise: visual.coolingFans,
       visual_FansAge: visual.fansAge,
       visual_ReplaceFilters: visual.airFilters,
@@ -5441,7 +6154,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Environment
       environment_RoomTemp: environment.roomTempVentilation,
       environment_Saftey: environment.safetyEquipment,
-      environment_Clean: environment.hostileEnvironment,
+      environment_Clean: environment.hostileEnvironment === 'Y' ? 'N' : 'Y', // Invert: hostile=Y means clean=N
       environment_Space: environment.serviceSpace,
       environment_Circuit: environment.circuitBreakers,
 
@@ -5453,9 +6166,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       transfer_Normal: transfer.normalMode,
       transfer_Alarm: transfer.verifyAlarm,
 
-      // Comments - removed section, providing defaults
+      // Comments - map visual comments back to comments2 (primary field for visual comments)
       comments1: '',
-      comments2: '',
+      comments2: visual.visualComments || '',
       comments3: '',
       comments4: '',
       comments5: '',
@@ -5624,6 +6337,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       chkOverLoad: false,
       chkTransfer: false
     };
+    
+
   }
 
   private updateEquipmentStatus(): void {
@@ -5674,16 +6389,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const hasOutputTHD = this.outputReadingsForm.get('outputThdPercent')?.value;
 
     if (!hasInputFilterCurrent && !hasInputTHD && !hasOutputFilterCurrent && !hasOutputTHD) {
-
       return;
     }
 
-    // Build the legacy EquipFilterCurrents data structure
+    // Build the EquipFilterCurrents data structure matching backend DTO JsonPropertyNames
     const filterCurrentsData: EquipFilterCurrents = {
       callNbr: this.callNbr,
       equipId: this.equipId,
 
-      // Input Filter Current
+      // Input Filter Current - Match backend JsonPropertyName exactly
       chkIpFilter: hasInputFilterCurrent,
       ipFilterCurrA_T: this.convertToDouble(this.inputReadingsForm.get('filterCurrentA')?.value),
       ipFilterCurrA_PF: this.inputReadingsForm.get('filterCurrentA_PF')?.value || 'P',
@@ -5692,7 +6406,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       ipFilterCurrC_T: this.convertToDouble(this.inputReadingsForm.get('filterCurrentC')?.value),
       ipFilterCurrC_PF: this.inputReadingsForm.get('filterCurrentC_PF')?.value || 'P',
 
-      // Input THD
+      // Input THD - Match backend JsonPropertyName exactly
       chkIpThd: hasInputTHD,
       ipFilterThdA_T: this.convertToDouble(this.inputReadingsForm.get('inputThdA')?.value),
       ipFilterThdA_PF: this.inputReadingsForm.get('inputThdA_PF')?.value || 'P',
@@ -5701,7 +6415,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       ipFilterThdC_T: this.convertToDouble(this.inputReadingsForm.get('inputThdC')?.value),
       ipFilterThdC_PF: this.inputReadingsForm.get('inputThdC_PF')?.value || 'P',
 
-      // Output Filter Current
+      // Output Filter Current - Match backend JsonPropertyName exactly
       chkOpFilter: hasOutputFilterCurrent,
       opFilterCurrA_T: this.convertToDouble(this.outputReadingsForm.get('outputFilterCurrentA')?.value),
       opFilterCurrA_PF: this.outputReadingsForm.get('outputFilterCurrentA_PF')?.value || 'P',
@@ -5710,7 +6424,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       opFilterCurrC_T: this.convertToDouble(this.outputReadingsForm.get('outputFilterCurrentC')?.value),
       opFilterCurrC_PF: this.outputReadingsForm.get('outputFilterCurrentC_PF')?.value || 'P',
 
-      // Output THD
+      // Output THD - Match backend JsonPropertyName exactly
       chkOpThd: hasOutputTHD,
       opFilterThdA_T: this.convertToDouble(this.outputReadingsForm.get('outputThdA')?.value),
       opFilterThdA_PF: this.outputReadingsForm.get('outputThdA_PF')?.value || 'P',
@@ -5719,11 +6433,25 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       opFilterThdC_T: this.convertToDouble(this.outputReadingsForm.get('outputThdC')?.value),
       opFilterThdC_PF: this.outputReadingsForm.get('outputThdC_PF')?.value || 'P',
 
+      // Audit fields
       modifiedBy: this.authService.currentUserValue?.username || 'SYSTEM'
     };
 
-    // TODO: Implement saveEquipFilterCurrents method in EquipmentService
-    // For now, just prepare the data for save without logging
+    // Save filter currents data to backend
+    this.equipmentService.saveUpdateEquipFilterCurrents(filterCurrentsData)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            console.log('Filter currents data saved successfully:', response);
+          } else {
+            console.error('Failed to save filter currents data:', response.message);
+          }
+        },
+        error: (error) => {
+          console.error('Error saving filter currents data:', error);
+        }
+      });
   }
 
   private saveReconciliationData(): void {
@@ -6118,6 +6846,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  // Setup status change handler to track manual Off-Line selections
+  private setupStatusChangeHandler(): void {
+    // Simplified handler - main logic is in onManualStatusChange
+    // This is just for backup protection
+    this.equipmentForm.get('status')?.valueChanges.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(status => {
+      // Backup protection: if we somehow lose the Off-Line status when override is active, restore it
+      if (this.manualStatusOverride && status !== 'Offline' && !this.loading && !this.saving) {
+        setTimeout(() => {
+          this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+        }, 0);
+      }
+    });
+  }
+
   // Initialize section visibility based on equipment characteristics
   private initializeSectionVisibility(): void {
     // Show advanced settings for complex UPS systems
@@ -6428,25 +7172,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Save methods for Environment section
   saveDraft(): void {
-    // TODO: Implement save as draft functionality
-    this.successMessage = 'UPS readings saved as draft successfully';
-    this.errorMessage = '';
-
-    // Clear message after 3 seconds
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 3000);
+    this.onSaveAsDraft();
   }
 
   saveUPS(): void {
-    // TODO: Implement save UPS functionality
-    this.successMessage = 'UPS readings saved successfully';
-    this.errorMessage = '';
-
-    // Clear message after 3 seconds
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 3000);
+    this.onSaveUPS();
   }
 
   // Calendar widget methods
@@ -6592,7 +7322,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   getCurrentYearRange(): string {
-    return `${this.yearRangeStart} � ${this.yearRangeEnd}`;
+    return `${this.yearRangeStart} - ${this.yearRangeEnd}`;
   }
 
   getYearsInCurrentRange(): number[] {
@@ -6614,5 +7344,73 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const rangeIndex = Math.floor((year - this.minYear) / this.yearsPerRange);
     this.yearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
     this.yearRangeEnd = Math.min(this.maxYear, this.yearRangeStart + this.yearsPerRange - 1);
+  }
+
+  /**
+   * Gets a status indicator class for character count (green, yellow, red)
+   */
+  getCharacterCountClass(formName: string, controlName: string): string {
+    const count = this.getCharacterCount(formName, controlName);
+    const limit = this.getCharacterLimit(controlName);
+    
+    if (!limit || count === 0) return '';
+    
+    const percentage = (count / limit) * 100;
+    
+    if (percentage >= 100) return 'text-danger'; // Over limit
+    if (percentage >= 90) return 'text-warning'; // Near limit (90%+)
+    if (percentage >= 75) return 'text-info'; // Approaching limit (75%+)
+    return 'text-muted'; // Normal
+  }
+
+  /**
+   * Shows a comprehensive character limit summary for all fields (for debugging/admin)
+   */
+  showCharacterLimitSummary(): void {
+    const summary: { [key: string]: any } = {};
+    
+    Object.keys(this.characterLimits).forEach(fieldName => {
+      const limit = this.characterLimits[fieldName];
+      summary[fieldName] = {
+        limit: limit,
+        description: this.getFieldDescription(fieldName)
+      };
+    });
+    
+    console.log('UPS Readings Character Limits Summary:', summary);
+    this.toastr.info('Character limits summary logged to console', 'Character Limits');
+  }
+
+  /**
+   * Gets a human-readable description for field names
+   */
+  private getFieldDescription(fieldName: string): string {
+    const descriptions: { [key: string]: string } = {
+      'callNbr': 'Call Number',
+      'upsId': 'UPS ID',
+      'manufacturer': 'Manufacturer Name',
+      'kva': 'KVA Rating',
+      'modelNo': 'Model Number',
+      'model': 'Model Number',
+      'serialNo': 'Serial Number (⭐ Key Field)',
+      'status': 'Equipment Status',
+      'other': 'Other Information',
+      'location': 'Equipment Location',
+      'maintAuthId': 'Maintenance Authorization ID',
+      'ctoPartNo': 'CTO/Part Number',
+      'comments1': 'Comments 1 (500 chars)',
+      'comments2': 'Comments 2 (500 chars)',
+      'comments3': 'Comments 3 (500 chars)',
+      'comments4': 'Comments 4 (500 chars)',
+      'comments5': 'Comments 5 (500 chars)',
+      'statusReason': 'Status Reason (500 chars)',
+      'visualComments': 'Visual Comments (500 chars)',
+      'filterSet1Length': 'Air Filter Length',
+      'filterSet1Width': 'Air Filter Width',
+      'filterSet1Thickness': 'Air Filter Thickness',
+      'filterSet1Quantity': 'Air Filter Quantity'
+    };
+    
+    return descriptions[fieldName] || fieldName;
   }
 }

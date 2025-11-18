@@ -546,63 +546,67 @@ export const STATUS_OPTIONS: StatusOption[] = [
 ];
 
 export interface EquipFilterCurrents {
-  callNbr: string;
-  equipId: number;
-  chkIpFilter?: boolean;
-  chkIpThd?: boolean;
+  callNbr: string;  // Maps to CallNbr in DB
+  equipId: number;  // Maps to EquipID in DB
   
-  // Input Filter Current Phase A
-  ipFilterCurrA_T?: number;
-  ipFilterCurrA_PF?: string;
+  // Checkbox fields - Match backend DTO JsonPropertyName
+  chkIpFilter?: boolean;    // Maps to "chkIpFilter" JSON property
+  chkIpThd?: boolean;       // Maps to "chkIpThd" JSON property
   
-  // Input Filter Current Phase B
-  ipFilterCurrB_T?: number;
-  ipFilterCurrB_PF?: string;
+  // Input Filter Current Phase A - Match backend DTO JsonPropertyName
+  ipFilterCurrA_T?: number;  // Maps to "ipFilterCurrA_T" JSON property
+  ipFilterCurrA_PF?: string; // Maps to "ipFilterCurrA_PF" JSON property
   
-  // Input Filter Current Phase C
-  ipFilterCurrC_T?: number;
-  ipFilterCurrC_PF?: string;
+  // Input Filter Current Phase B - Match backend DTO JsonPropertyName
+  ipFilterCurrB_T?: number;  // Maps to "ipFilterCurrB_T" JSON property
+  ipFilterCurrB_PF?: string; // Maps to "ipFilterCurrB_PF" JSON property
   
-  // Input Filter THD Phase A
-  ipFilterThdA_T?: number;
-  ipFilterThdA_PF?: string;
+  // Input Filter Current Phase C - Match backend DTO JsonPropertyName
+  ipFilterCurrC_T?: number;  // Maps to "ipFilterCurrC_T" JSON property
+  ipFilterCurrC_PF?: string; // Maps to "ipFilterCurrC_PF" JSON property
   
-  // Input Filter THD Phase B
-  ipFilterThdB_T?: number;
-  ipFilterThdB_PF?: string;
+  // Input Filter THD Phase A - Match backend DTO JsonPropertyName
+  ipFilterThdA_T?: number;   // Maps to "ipFilterThdA_T" JSON property
+  ipFilterThdA_PF?: string;  // Maps to "ipFilterThdA_PF" JSON property
   
-  // Input Filter THD Phase C
-  ipFilterThdC_T?: number;
-  ipFilterThdC_PF?: string;
+  // Input Filter THD Phase B - Match backend DTO JsonPropertyName
+  ipFilterThdB_T?: number;   // Maps to "ipFilterThdB_T" JSON property
+  ipFilterThdB_PF?: string;  // Maps to "ipFilterThdB_PF" JSON property
   
-  chkOpFilter?: boolean;
-  chkOpThd?: boolean;
+  // Input Filter THD Phase C - Match backend DTO JsonPropertyName
+  ipFilterThdC_T?: number;   // Maps to "ipFilterThdC_T" JSON property
+  ipFilterThdC_PF?: string;  // Maps to "ipFilterThdC_PF" JSON property
   
-  // Output Filter Current Phase A
-  opFilterCurrA_T?: number;
-  opFilterCurrA_PF?: string;
+  // Output Filter checkboxes - Match backend DTO JsonPropertyName
+  chkOpFilter?: boolean;     // Maps to "chkOpFilter" JSON property
+  chkOpThd?: boolean;        // Maps to "chkOpThd" JSON property
   
-  // Output Filter Current Phase B
-  opFilterCurrB_T?: number;
-  opFilterCurrB_PF?: string;
+  // Output Filter Current Phase A - Match backend DTO JsonPropertyName
+  opFilterCurrA_T?: number;  // Maps to "opFilterCurrA_T" JSON property
+  opFilterCurrA_PF?: string; // Maps to "opFilterCurrA_PF" JSON property
   
-  // Output Filter Current Phase C
-  opFilterCurrC_T?: number;
-  opFilterCurrC_PF?: string;
+  // Output Filter Current Phase B - Match backend DTO JsonPropertyName
+  opFilterCurrB_T?: number;  // Maps to "opFilterCurrB_T" JSON property
+  opFilterCurrB_PF?: string; // Maps to "opFilterCurrB_PF" JSON property
   
-  // Output Filter THD Phase A
-  opFilterThdA_T?: number;
-  opFilterThdA_PF?: string;
+  // Output Filter Current Phase C - Match backend DTO JsonPropertyName
+  opFilterCurrC_T?: number;  // Maps to "opFilterCurrC_T" JSON property
+  opFilterCurrC_PF?: string; // Maps to "opFilterCurrC_PF" JSON property
   
-  // Output Filter THD Phase B
-  opFilterThdB_T?: number;
-  opFilterThdB_PF?: string;
+  // Output Filter THD Phase A - Match backend DTO JsonPropertyName
+  opFilterThdA_T?: number;   // Maps to "opFilterThdA_T" JSON property
+  opFilterThdA_PF?: string;  // Maps to "opFilterThdA_PF" JSON property
   
-  // Output Filter THD Phase C
-  opFilterThdC_T?: number;
-  opFilterThdC_PF?: string;
+  // Output Filter THD Phase B - Match backend DTO JsonPropertyName
+  opFilterThdB_T?: number;   // Maps to "opFilterThdB_T" JSON property
+  opFilterThdB_PF?: string;  // Maps to "opFilterThdB_PF" JSON property
   
-  modifiedBy?: string;
+  // Output Filter THD Phase C - Match backend DTO JsonPropertyName
+  opFilterThdC_T?: number;   // Maps to "opFilterThdC_T" JSON property
+  opFilterThdC_PF?: string;  // Maps to "opFilterThdC_PF" JSON property
+  
+  // Audit fields - Match backend DTO JsonPropertyName
+  modifiedBy?: string;       // Maps to "modifiedBy" JSON property
 }
 
 /**

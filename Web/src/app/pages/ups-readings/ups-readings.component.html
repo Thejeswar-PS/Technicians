@@ -164,6 +164,7 @@
                         "
                         id="model"
                         placeholder="e.g., 9315-225"
+                        [maxlength]="getCharacterLimit('modelNo') || null"
                       />
                       <label for="model"
                         >Model No <span class="text-danger">*</span></label
@@ -177,6 +178,14 @@
                       >
                         Model No is required
                       </div>
+                      <!-- Character Limit Warning -->
+                      <div
+                        class="text-warning small mt-1"
+                        *ngIf="hasCharacterLimitError('EquipmentForm', 'model')"
+                      >
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ getCharacterLimitError('EquipmentForm', 'model') }}
+                      </div>
                     </div>
                   </div>
                   <div class="col-md-4">
@@ -187,8 +196,18 @@
                         formControlName="ctoPartNo"
                         id="ctoPartNo"
                         placeholder="e.g., P30002167714104"
+                        [maxlength]="getCharacterLimit('ctoPartNo') || null"
                       />
                       <label for="ctoPartNo">CTO / Part No</label>
+                      <!-- Character Limit Warning -->
+                      <div
+                        class="text-warning small mt-1"
+                        *ngIf="hasCharacterLimitError('EquipmentForm', 'ctoPartNo')"
+                      >
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ getCharacterLimitError('EquipmentForm', 'ctoPartNo') }}
+                      </div>
+
                     </div>
                   </div>
                 </div>
@@ -208,6 +227,7 @@
                         "
                         id="serialNo"
                         placeholder="e.g., EB033ZBX02"
+                        [maxlength]="getCharacterLimit('serialNo') || null"
                       />
                       <label for="serialNo"
                         >Serial No <span class="text-danger">*</span></label
@@ -221,6 +241,15 @@
                       >
                         Serial No is required
                       </div>
+                      <!-- Character Limit Warning -->
+                      <div
+                        class="text-warning small mt-1"
+                        *ngIf="hasCharacterLimitError('EquipmentForm', 'serialNo')"
+                      >
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ getCharacterLimitError('EquipmentForm', 'serialNo') }}
+                      </div>
+
                     </div>
                   </div>
                   <div class="col-md-4">
@@ -235,6 +264,7 @@
                         "
                         id="location"
                         placeholder="e.g., Room A224A, 2nd Floor"
+                        [maxlength]="getCharacterLimit('location') || null"
                       />
                       <label for="location"
                         >Location <span class="text-danger">*</span></label
@@ -256,6 +286,15 @@
                         <i class="bi bi-exclamation-circle me-1"></i>
                         {{ getRestrictedCharError('EquipmentForm', 'location') }}
                       </div>
+                      <!-- Character Limit Warning -->
+                      <div
+                        class="text-warning small mt-1"
+                        *ngIf="hasCharacterLimitError('EquipmentForm', 'location')"
+                      >
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ getCharacterLimitError('EquipmentForm', 'location') }}
+                      </div>
+
                     </div>
                   </div>
                   <div class="col-md-4">
@@ -267,6 +306,7 @@
                           equipmentForm.get('status')?.invalid &&
                           equipmentForm.get('status')?.touched
                         "
+                        (change)="onStatusDropdownChange($event)"
                         id="status"
                       >
                         <option value="" disabled selected>Please select status</option>
@@ -290,6 +330,8 @@
                         Status is required
                       </div>
                     </div>
+                    
+
                   </div>
                 </div>
               </div>
@@ -326,9 +368,9 @@
                           equipmentForm.get('kva')?.touched
                         "
                         id="kva"
-                        placeholder="225.00"
-                        step="0.01"
+                        step="any"
                         min="0"
+                        max="10000"
                       />
                       <label for="kva"
                         >KVA Rating <span class="text-danger">*</span></label
@@ -340,7 +382,10 @@
                           equipmentForm.get('kva')?.touched
                         "
                       >
-                        KVA Rating is required
+                        <span *ngIf="equipmentForm.get('kva')?.errors?.['required']">KVA Rating is required</span>
+                        <span *ngIf="equipmentForm.get('kva')?.errors?.['pattern']">{{ equipmentForm.get('kva')?.errors?.['pattern']?.message || 'Please enter valid KVA (integers, decimals, or floats like 16.5, 225.00)' }}</span>
+                        <span *ngIf="equipmentForm.get('kva')?.errors?.['min']">{{ equipmentForm.get('kva')?.errors?.['min']?.message || 'KVA must be greater than 0' }}</span>
+                        <span *ngIf="equipmentForm.get('kva')?.errors?.['max']">{{ equipmentForm.get('kva')?.errors?.['max']?.message || 'KVA value is too high' }}</span>
                       </div>
                     </div>
                   </div>
@@ -1228,6 +1273,16 @@
               <!-- Filter Information Section -->
               <div class="filter-section mt-4">
                 <h6 class="section-title mb-3">Filter Information</h6>
+                
+                <!-- Requirement notice for replacement needed -->
+                <div class="alert alert-warning d-flex align-items-center mb-3" 
+                     *ngIf="visualForm.get('airFilters')?.value === 'RN'">
+                  <i class="bi bi-exclamation-triangle me-2"></i>
+                  <small>
+                    <strong>Filter dimensions required:</strong> Please enter all filter measurements when replacement is needed for parts ordering.
+                  </small>
+                </div>
+                
                 <div class="measurements-grid">
                   <div class="measurement-card">
                     <div class="measurement-header">
@@ -1241,10 +1296,15 @@
                             <input
                               type="text"
                               class="form-control"
+                              [class.is-invalid]="visualForm.get('filterSet1Length')?.invalid && visualForm.get('filterSet1Length')?.touched"
                               formControlName="filterSet1Length"
                               id="filter1Length"
+                              [maxlength]="getCharacterLimit('filterSet1Length') || null"
                             />
-                            <label for="filter1Length">Length</label>
+                            <label for="filter1Length">Length <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Length')?.invalid && visualForm.get('filterSet1Length')?.touched">
+                              Length is required when replacement is needed
+                            </div>
                           </div>
                         </div>
                         <div class="col-6">
@@ -1252,10 +1312,15 @@
                             <input
                               type="text"
                               class="form-control"
+                              [class.is-invalid]="visualForm.get('filterSet1Width')?.invalid && visualForm.get('filterSet1Width')?.touched"
                               formControlName="filterSet1Width"
                               id="filter1Width"
+                              [maxlength]="getCharacterLimit('filterSet1Width') || null"
                             />
-                            <label for="filter1Width">Width</label>
+                            <label for="filter1Width">Width <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Width')?.invalid && visualForm.get('filterSet1Width')?.touched">
+                              Width is required when replacement is needed
+                            </div>
                           </div>
                         </div>
                         <div class="col-6">
@@ -1263,10 +1328,15 @@
                             <input
                               type="text"
                               class="form-control"
+                              [class.is-invalid]="visualForm.get('filterSet1Thickness')?.invalid && visualForm.get('filterSet1Thickness')?.touched"
                               formControlName="filterSet1Thickness"
                               id="filter1Thickness"
+                              [maxlength]="getCharacterLimit('filterSet1Thickness') || null"
                             />
-                            <label for="filter1Thickness">Thickness</label>
+                            <label for="filter1Thickness">Thickness <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Thickness')?.invalid && visualForm.get('filterSet1Thickness')?.touched">
+                              Thickness is required when replacement is needed
+                            </div>
                           </div>
                         </div>
                         <div class="col-6">
@@ -1274,10 +1344,14 @@
                             <input
                               type="text"
                               class="form-control"
+                              [class.is-invalid]="visualForm.get('filterSet1Quantity')?.invalid && visualForm.get('filterSet1Quantity')?.touched"
                               formControlName="filterSet1Quantity"
                               id="filter1Quantity"
                             />
-                            <label for="filter1Quantity">Quantity</label>
+                            <label for="filter1Quantity">Quantity <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Quantity')?.invalid && visualForm.get('filterSet1Quantity')?.touched">
+                              Quantity is required when replacement is needed
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1349,10 +1423,11 @@
                   <textarea
                     class="form-control"
                     formControlName="visualComments"
-                    [class.is-invalid]="hasRestrictedCharError('VisualForm', 'visualComments')"
+                    [class.is-invalid]="hasRestrictedCharError('VisualForm', 'visualComments') || hasCharacterLimitError('VisualForm', 'visualComments')"
                     id="visualComments"
                     placeholder="Enter any additional comments or notes..."
                     style="height: 100px"
+                    [maxlength]="getCharacterLimit('visualComments') || null"
                   ></textarea>
                   <label for="visualComments"
                     >Visual and Mechanical Verification Comments</label
@@ -1364,6 +1439,19 @@
                   >
                     <i class="bi bi-exclamation-circle me-1"></i>
                     {{ getRestrictedCharError('VisualForm', 'visualComments') }}
+                  </div>
+                  <!-- Character Limit Warning -->
+                  <div
+                    class="text-warning small mt-1"
+                    *ngIf="hasCharacterLimitError('VisualForm', 'visualComments')"
+                  >
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    {{ getCharacterLimitError('VisualForm', 'visualComments') }}
+                  </div>
+                  <!-- Character Limit Info (only for large text fields) -->
+                  <div class="text-muted small" *ngIf="getCharacterLimit('visualComments')">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Maximum {{ getCharacterLimit('visualComments') }} characters allowed
                   </div>
                 </div>
               </div>
@@ -2011,90 +2099,280 @@
                   </div>
                 </div>
 
-                <!-- Input Filter Current Detail Section -->
-                <div *ngIf="showInputFilterCurrent" class="dynamic-section mt-3 p-3 border rounded bg-light">
-                  <div class="row g-3">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Filter Current A:</label>
-                      <input type="text" class="form-control" formControlName="filterCurrentA">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="filterCurrentA_PF">
-                        <option value="">Pass</option>
-                        <option value="Pass">Fail</option>
-                        <option value="Fail">N/A</option>
-                      </select>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Filter Current B:</label>
-                      <input type="text" class="form-control" formControlName="filterCurrentB">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="filterCurrentB_PF">
-                        <option value="">Pass</option>
-                        <option value="Pass">Fail</option>
-                        <option value="Fail">N/A</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="row g-3 mt-2">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Filter Current C:</label>
-                      <input type="text" class="form-control" formControlName="filterCurrentC">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="filterCurrentC_PF">
-                        <option value="">Pass</option>
-                        <option value="Pass">Fail</option>
-                        <option value="Fail">N/A</option>
-                      </select>
+                <!-- Input Filter Current Detail Section - Card Design -->
+                <div *ngIf="showInputFilterCurrent" class="dynamic-section mt-3">
+                  <div class="mb-3">
+                    <h6 class="fw-bold text-primary mb-3">
+                      <i class="bi bi-funnel me-2"></i>
+                      Input Filter Current Measurements
+                      <small class="text-muted ms-2">Filter current readings for each phase</small>
+                    </h6>
+                    
+                    <div class="row g-3">
+                      <!-- Filter Current A Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-electric-scooter text-primary me-2"></i>
+                              <span class="fw-semibold text-dark">Filter Current A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="filterCurrentA"
+                                    id="inputFilterCurrentA"
+                                  />
+                                  <label for="inputFilterCurrentA" class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="filterCurrentA_PF"
+                                    id="inputFilterCurrentAStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="inputFilterCurrentAStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Filter Current B Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-electric-scooter text-primary me-2"></i>
+                              <span class="fw-semibold text-dark">Filter Current B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="filterCurrentB"
+                                    id="inputFilterCurrentB"
+                                  />
+                                  <label for="inputFilterCurrentB" class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="filterCurrentB_PF"
+                                    id="inputFilterCurrentBStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="inputFilterCurrentBStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Filter Current C Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-electric-scooter text-primary me-2"></i>
+                              <span class="fw-semibold text-dark">Filter Current C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="filterCurrentC"
+                                    id="inputFilterCurrentC"
+                                  />
+                                  <label for="inputFilterCurrentC" class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="filterCurrentC_PF"
+                                    id="inputFilterCurrentCStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="inputFilterCurrentCStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Input THD Detail Section -->
-                <div *ngIf="showInputTHD" class="dynamic-section mt-3 p-3 border rounded bg-light">
-                  <div class="row g-3">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Input THD % A:</label>
-                      <input type="text" class="form-control" formControlName="inputThdA">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="inputThdA_PF">
-                        <option value="">Pass</option>
-                        <option value="Pass">Fail</option>
-                        <option value="Fail">N/A</option>
-                      </select>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Input THD % B:</label>
-                      <input type="text" class="form-control" formControlName="inputThdB">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="inputThdB_PF">
-                        <option value="">Pass</option>
-                        <option value="Pass">Fail</option>
-                        <option value="Fail">N/A</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="row g-3 mt-2">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Input THD % C:</label>
-                      <input type="text" class="form-control" formControlName="inputThdC">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="inputThdC_PF">
-                        <option value="">Pass</option>
-                        <option value="Pass">Fail</option>
-                        <option value="Fail">N/A</option>
-                      </select>
+                <!-- Input THD Detail Section - Card Design -->
+                <div *ngIf="showInputTHD" class="dynamic-section mt-3">
+                  <div class="mb-3">
+                    <h6 class="fw-bold text-warning mb-3">
+                      <i class="bi bi-graph-up-arrow me-2"></i>
+                      Input THD (Total Harmonic Distortion) Measurements
+                      <small class="text-muted ms-2">THD percentage readings for each phase</small>
+                    </h6>
+                    
+                    <div class="row g-3">
+                      <!-- Input THD A Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-graph-up text-warning me-2"></i>
+                              <span class="fw-semibold text-dark">Input THD % A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="inputThdA"
+                                    id="inputThdA"
+                                  />
+                                  <label for="inputThdA" class="text-muted">THD (%)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="inputThdA_PF"
+                                    id="inputThdAStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="inputThdAStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Input THD B Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-graph-up text-warning me-2"></i>
+                              <span class="fw-semibold text-dark">Input THD % B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="inputThdB"
+                                    id="inputThdB"
+                                  />
+                                  <label for="inputThdB" class="text-muted">THD (%)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="inputThdB_PF"
+                                    id="inputThdBStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="inputThdBStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Input THD C Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-graph-up text-warning me-2"></i>
+                              <span class="fw-semibold text-dark">Input THD % C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="inputThdC"
+                                    id="inputThdC"
+                                  />
+                                  <label for="inputThdC" class="text-muted">THD (%)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="inputThdC_PF"
+                                    id="inputThdCStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="inputThdCStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -3250,90 +3528,280 @@
                   </div>
                 </div>
 
-                <!-- Output Filter Current Detail Section -->
-                <div *ngIf="showOutputFilterCurrent" class="dynamic-section mt-3 p-3 border rounded bg-light">
-                  <div class="row g-3">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Filter Current A:</label>
-                      <input type="text" class="form-control" formControlName="outputFilterCurrentA">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="outputFilterCurrentA_PF">
-                        <option value="">Pass</option>
-                        <option value="Fail">Fail</option>
-                        <option value="N/A">N/A</option>
-                      </select>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Filter Current B:</label>
-                      <input type="text" class="form-control" formControlName="outputFilterCurrentB">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="outputFilterCurrentB_PF">
-                        <option value="">Pass</option>
-                        <option value="Fail">Fail</option>
-                        <option value="N/A">N/A</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="row g-3 mt-2">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Filter Current C:</label>
-                      <input type="text" class="form-control" formControlName="outputFilterCurrentC">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="outputFilterCurrentC_PF">
-                        <option value="">Pass</option>
-                        <option value="Fail">Fail</option>
-                        <option value="N/A">N/A</option>
-                      </select>
+                <!-- Output Filter Current Detail Section - Card Design -->
+                <div *ngIf="showOutputFilterCurrent" class="dynamic-section mt-3">
+                  <div class="mb-3">
+                    <h6 class="fw-bold text-success mb-3">
+                      <i class="bi bi-funnel me-2"></i>
+                      Output Filter Current Measurements
+                      <small class="text-muted ms-2">Filter current readings for each output phase</small>
+                    </h6>
+                    
+                    <div class="row g-3">
+                      <!-- Output Filter Current A Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-outlet text-success me-2"></i>
+                              <span class="fw-semibold text-dark">Filter Current A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="outputFilterCurrentA"
+                                    id="outputFilterCurrentA"
+                                  />
+                                  <label for="outputFilterCurrentA" class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="outputFilterCurrentA_PF"
+                                    id="outputFilterCurrentAStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="outputFilterCurrentAStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Output Filter Current B Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-outlet text-success me-2"></i>
+                              <span class="fw-semibold text-dark">Filter Current B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="outputFilterCurrentB"
+                                    id="outputFilterCurrentB"
+                                  />
+                                  <label for="outputFilterCurrentB" class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="outputFilterCurrentB_PF"
+                                    id="outputFilterCurrentBStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="outputFilterCurrentBStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Output Filter Current C Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-outlet text-success me-2"></i>
+                              <span class="fw-semibold text-dark">Filter Current C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="outputFilterCurrentC"
+                                    id="outputFilterCurrentC"
+                                  />
+                                  <label for="outputFilterCurrentC" class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="outputFilterCurrentC_PF"
+                                    id="outputFilterCurrentCStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="outputFilterCurrentCStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Output THD Detail Section -->
-                <div *ngIf="showOutputTHD" class="dynamic-section mt-3 p-3 border rounded bg-light">
-                  <div class="row g-3">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Output THD % A:</label>
-                      <input type="text" class="form-control" formControlName="outputThdA">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="outputThdA_PF">
-                        <option value="">Pass</option>
-                        <option value="Fail">Fail</option>
-                        <option value="N/A">N/A</option>
-                      </select>
-                    </div>
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Output THD % B:</label>
-                      <input type="text" class="form-control" formControlName="outputThdB">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="outputThdB_PF">
-                        <option value="">Pass</option>
-                        <option value="Fail">Fail</option>
-                        <option value="N/A">N/A</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div class="row g-3 mt-2">
-                    <div class="col-md-4">
-                      <label class="form-label fw-semibold">Output THD % C:</label>
-                      <input type="text" class="form-control" formControlName="outputThdC">
-                    </div>
-                    <div class="col-md-2">
-                      <label class="form-label fw-semibold">Pass:</label>
-                      <select class="form-select" formControlName="outputThdC_PF">
-                        <option value="">Pass</option>
-                        <option value="Fail">Fail</option>
-                        <option value="N/A">N/A</option>
-                      </select>
+                <!-- Output THD Detail Section - Card Design -->
+                <div *ngIf="showOutputTHD" class="dynamic-section mt-3">
+                  <div class="mb-3">
+                    <h6 class="fw-bold text-info mb-3">
+                      <i class="bi bi-graph-up-arrow me-2"></i>
+                      Output THD (Total Harmonic Distortion) Measurements
+                      <small class="text-muted ms-2">THD percentage readings for each output phase</small>
+                    </h6>
+                    
+                    <div class="row g-3">
+                      <!-- Output THD A Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-graph-down text-info me-2"></i>
+                              <span class="fw-semibold text-dark">Output THD % A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="outputThdA"
+                                    id="outputThdA"
+                                  />
+                                  <label for="outputThdA" class="text-muted">THD (%)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="outputThdA_PF"
+                                    id="outputThdAStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="outputThdAStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Output THD B Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-graph-down text-info me-2"></i>
+                              <span class="fw-semibold text-dark">Output THD % B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="outputThdB"
+                                    id="outputThdB"
+                                  />
+                                  <label for="outputThdB" class="text-muted">THD (%)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="outputThdB_PF"
+                                    id="outputThdBStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="outputThdBStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Output THD C Card -->
+                      <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <i class="bi bi-graph-down text-info me-2"></i>
+                              <span class="fw-semibold text-dark">Output THD % C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input
+                                    type="text"
+                                    class="form-control power-input"
+                                    formControlName="outputThdC"
+                                    id="outputThdC"
+                                  />
+                                  <label for="outputThdC" class="text-muted">THD (%)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select
+                                    class="form-select power-select"
+                                    formControlName="outputThdC_PF"
+                                    id="outputThdCStatus"
+                                  >
+                                    <option value="">Select status...</option>
+                                    <option value="P">Pass</option>
+                                    <option value="F">Fail</option>
+                                    <option value="A">N/A</option>
+                                  </select>
+                                  <label for="outputThdCStatus" class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
