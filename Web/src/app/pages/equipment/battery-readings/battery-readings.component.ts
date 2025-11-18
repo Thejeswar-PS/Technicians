@@ -104,9 +104,13 @@ export class BatteryReadingsComponent implements OnInit {
       this.battNum = params['BattNum'] || '40';
       this.battPack = params['BattPack'] || '';
 
+      console.log('🔵 [INIT] URL Params captured - BattNum:', this.battNum, '| BattPack:', this.battPack);
+
       if (!this.battNum || this.battNum === '' || this.battNum === '0') {
         this.battNum = '40';
       }
+      
+      console.log('🔵 [INIT] After validation - BattNum:', this.battNum, '| BattPack:', this.battPack);
     });
   }
 
@@ -174,15 +178,59 @@ export class BatteryReadingsComponent implements OnInit {
       .subscribe(
         (data) => {
           this.batteryReadings = this.mapBatteryDataToRows(data);
-          // Update batteriesNo with actual count of battery rows
-          this.batteryStringForm.patchValue({
-            batteriesNo: data.length
-          });
+          
+          // Only update batteriesNo with actual count if NOT from URL parameters
+          // URL parameters take precedence (legacy: txtBatteriesNo.Text from QueryString)
+          const currentBatteriesNo = this.batteryStringForm.get('batteriesNo')?.value;
+          const stringType = this.batteryStringForm.get('stringType')?.value;
+          
+          console.log('🔍 loadBatteryGridData - Checking URL param precedence:');
+          console.log('  stringType:', stringType, '(type:', typeof stringType, ')');
+          console.log('  currentBatteriesNo:', currentBatteriesNo);
+          console.log('  this.battNum:', this.battNum, '| this.battPack:', this.battPack);
+          console.log('  data.length (DB count):', data.length);
+          
+          // Determine if batteriesNo value is from URL param based on string type
+          // Type 1: batteriesNo comes from BattNum
+          // Type 2/3: batteriesNo comes from BattPack
+          let isFromUrlParam = false;
+          if (stringType === '1') {
+            isFromUrlParam = !!(this.battNum && this.battNum !== '40');
+          } else if (stringType === '2' || stringType === '3') {
+            isFromUrlParam = !!this.battPack;
+          }
+          
+          console.log('  isFromUrlParam:', isFromUrlParam);
+          console.log('  Will overwrite?', (!isFromUrlParam || !currentBatteriesNo));
+          
+          if (!isFromUrlParam || !currentBatteriesNo) {
+            console.log('  ❌ OVERWRITING batteriesNo with DB count:', data.length);
+            this.batteryStringForm.patchValue({
+              batteriesNo: data.length
+            });
+          } else {
+            console.log('  ✅ PRESERVING batteriesNo from URL param:', currentBatteriesNo);
+          }
           
           // Update reconciliation battPerString only after Change button (not initial load)
+          // Legacy: txtBPerString.Text = BattNum (calculated based on stringType)
           if (updateReconciliation) {
+            const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
+            const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
+            
+            let battPerStringValue = 0;
+            if (stringType === '3') {
+              // Type 3: Use batteriesNo (No of Battery Packs)
+              battPerStringValue = batteriesNo;
+            } else if (stringType === '2') {
+              battPerStringValue = packNo * batteriesNo;
+            } else {
+              battPerStringValue = batteriesNo;
+            }
+            
+            console.log('📊 Updating reconciliation battPerString:', battPerStringValue, '(Type:', stringType, ')');
             this.reconciliationForm.patchValue({
-              battPerString: data.length
+              battPerString: battPerStringValue
             });
           }
           
@@ -225,11 +273,13 @@ export class BatteryReadingsComponent implements OnInit {
   /**
    * DisplayBatteryInfo - Legacy equivalent
    * Adjusts battery grid rows based on battery count
-   * 1. Calculates expected battery count based on stringType
-   * 2. Adds rows if current count < expected
-   * 3. Deletes rows if current count > expected (with validation)
-   * 4. Saves ALL rows (delete + insert in one operation)
-   * 5. Reloads grid data
+   * 
+   * Legacy calculation logic:
+   * - Type 1 (External): BattNum = txtBatteriesNo.Text
+   * - Type 2 (Internal): BattNum = txtPackNo.Text * txtBatteriesNo.Text
+   * - Type 3 (Packs): BattNum = txtPackNo.Text
+   * 
+   * Important: Uses DISPLAY values (form field values) directly, not API values
    */
   private displayBatteryInfo(): void {
     try {
@@ -238,17 +288,27 @@ export class BatteryReadingsComponent implements OnInit {
       const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
       const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
       
+      console.log('🔢 displayBatteryInfo - Row Calculation:');
+      console.log('   String Type:', stringType);
+      console.log('   Display batteriesNo:', batteriesNo);
+      console.log('   Display packNo:', packNo);
+      
       let expectedBatteryCount = 0;
       if (stringType === '3') {
-        // Battery Packs / Trays
-        expectedBatteryCount = packNo;
-      } else if (stringType === '2') {
-        // Internal Single / Parallel Strings
-        expectedBatteryCount = packNo * batteriesNo;
-      } else {
-        // External
+        // Battery Packs / Trays: Use batteriesNo (No of Battery Packs)
         expectedBatteryCount = batteriesNo;
+        console.log('   Type 3 calculation: batteriesNo (No of Battery Packs) =', expectedBatteryCount);
+      } else if (stringType === '2') {
+        // Internal Single / Parallel Strings: packNo * batteriesNo
+        expectedBatteryCount = packNo * batteriesNo;
+        console.log('   Type 2 calculation: packNo * batteriesNo =', packNo, '*', batteriesNo, '=', expectedBatteryCount);
+      } else {
+        // External: Use batteriesNo
+        expectedBatteryCount = batteriesNo;
+        console.log('   Type 1 calculation: batteriesNo =', expectedBatteryCount);
       }
+      
+      console.log('   ✅ Expected battery rows:', expectedBatteryCount);
 
       // Step 2: Get current battery info from backend
       this.batteryService.getBatteryInfo(this.callNbr, this.equipId, this.batStrId).subscribe(
@@ -261,8 +321,9 @@ export class BatteryReadingsComponent implements OnInit {
               // Need to add batteries
               this.addMissingBatteryRows(currentBatteries, expectedBatteryCount);
             } else if (currentCount > expectedBatteryCount) {
-              // Need to delete extra batteries (with validation)
-              this.deleteExtraBatteryRows(currentBatteries, expectedBatteryCount);
+              // Need to delete extra batteries (skip validation for Change button)
+              // Change button should be able to delete rows even with VDC values
+              this.deleteExtraBatteryRows(currentBatteries, expectedBatteryCount, true);
             }
           } else {
             // Count matches - just reload grid
@@ -353,16 +414,26 @@ export class BatteryReadingsComponent implements OnInit {
    * Delete extra battery rows when count decreases
    * Legacy: DELETE FROM Battery with validation (check if VDC > 0)
    * Now: Filter array and save (delete-then-insert handles removal)
+   * 
+   * @param currentBatteries - Current battery data array
+   * @param expectedCount - Expected number of batteries
+   * @param skipValidation - Skip VDC validation (true for Change button flow)
    */
-  private deleteExtraBatteryRows(currentBatteries: BatteryData[], expectedCount: number): void {
+  private deleteExtraBatteryRows(currentBatteries: BatteryData[], expectedCount: number, skipValidation: boolean = false): void {
     // Validate that batteries to be deleted have VDC = 0 (legacy validation)
+    // Skip validation for Change button flow - allow deletion even with VDC values
     let canDelete = true;
-    for (let k = expectedCount; k < currentBatteries.length; k++) {
-      if (currentBatteries[k].vdc > 0) {
-        canDelete = false;
-        this.handleError('Cannot delete battery rows with VDC values > 0. Please clear the values first.');
-        break;
+    
+    if (!skipValidation) {
+      for (let k = expectedCount; k < currentBatteries.length; k++) {
+        if (currentBatteries[k].vdc > 0) {
+          canDelete = false;
+          this.handleError('Cannot delete battery rows with VDC values > 0. Please clear the values first.');
+          break;
+        }
       }
+    } else {
+      console.log('⚠️ Skipping VDC validation for Change button - allowing deletion of rows with values');
     }
 
     if (canDelete) {
@@ -589,12 +660,25 @@ export class BatteryReadingsComponent implements OnInit {
       floatVoltageStatus: data.floatVoltS,
       floatVoltageValue: data.floatVoltV,
       repMonCalculate: data.repMonCalc,
-      packNo: data.batteryPackCount,
+      // Map URL params based on string type:
+      // LEGACY MAPPING (from BatteryReadings.aspx with BattNum=2, BattPack=5):
+      // Type 1: batteriesNo=BattNum (2), packNo from DB
+      // Type 2: batteriesNo=BattPack (5), packNo=BattNum (2) → shows "5 2"
+      // Type 3: batteriesNo=BattPack (5), packNo=BattNum (2) → shows "5 2"
+      packNo: (() => {
+        const value = (data.stringType === '2' || data.stringType === '3') ? (this.battNum || data.batteryPackCount) : data.batteryPackCount;
+        console.log('🟢 [POPULATE] packNo set to:', value, '(StringType:', data.stringType, ', BattNum:', this.battNum, ', DB:', data.batteryPackCount, ')');
+        return value;
+      })(),
       battDisconnect: data.indBattDisconnect,
       indBattInterconnection: data.indBattInterConn,
       rackIntegrity: data.rackIntegrity,
       ventFanOperation: data.ventFanOperation,
-      batteriesNo: this.battNum,
+      batteriesNo: (() => {
+        const value = (data.stringType === '2' || data.stringType === '3') ? (this.battPack || this.batteryReadings.length || '40') : (this.battNum || this.batteryReadings.length || '40');
+        console.log('🟢 [POPULATE] batteriesNo set to:', value, '(StringType:', data.stringType, ', BattPack:', this.battPack, ', BattNum:', this.battNum, ')');
+        return value;
+      })(),
       replaceWholeString: data.replaceWholeString,
       mvacCheck: data.chckmVac,
       strapCheck: data.chkStrap,
@@ -608,7 +692,12 @@ export class BatteryReadingsComponent implements OnInit {
     // Trigger string type change handler to update labels and field visibility
     console.log('🔄 Calling onStringTypeChange after form population');
     console.log('📝 stringType value:', data.stringType);
-    console.log('📝 packNo value:', data.batteryPackCount);
+    console.log('📝 URL params - BattNum:', this.battNum, '| BattPack:', this.battPack);
+    console.log('📝 Mapping logic - Type 1: batteriesNo=BattNum | Type 2/3: batteriesNo=BattPack, packNo=BattNum');
+    console.log('📝 Form values after patchValue:', {
+      batteriesNo: this.batteryStringForm.get('batteriesNo')?.value,
+      packNo: this.batteryStringForm.get('packNo')?.value
+    });
     this.onStringTypeChange(null);
 
     // Load reference values after form population
@@ -857,29 +946,105 @@ export class BatteryReadingsComponent implements OnInit {
   onStringTypeChange(event: any): void {
     const stringType = event?.target?.value || this.batteryStringForm.get('stringType')?.value;
     
+    console.log('� [DROPDOWN] onStringTypeChange called');
+    console.log('🟡 [DROPDOWN] Event:', event);
+    console.log('🟡 [DROPDOWN] Selected stringType:', stringType);
+    console.log('� [DROPDOWN] URL params - BattNum:', this.battNum, '| BattPack:', this.battPack);
+    
+    // Get current form values BEFORE any changes
+    const currentBatteriesNo = this.batteryStringForm.get('batteriesNo')?.value;
+    const currentPackNo = this.batteryStringForm.get('packNo')?.value;
+    console.log('� [DROPDOWN] BEFORE change - batteriesNo:', currentBatteriesNo, '| packNo:', currentPackNo);
+    
+    // Determine if we're in initial load (has URL params) or user change (event exists)
+    const isUserChange = event !== null;
+    const hasUrlParams = !!(this.battNum || this.battPack);
+    console.log('🟡 [DROPDOWN] isUserChange:', isUserChange, '| hasUrlParams:', hasUrlParams);
+    
     if (stringType === '3') {
       // Battery Packs / Trays
-      // Legacy: Label31.innerHTML = "No of Battery Packs:"
+      // LEGACY: Shows BattPack (5) then BattNum (2) → "5 2"
+      // batteriesNo field shows BattPack (5), packNo field shows BattNum (2)
       this.batteriesNoLabel = 'No of Battery Packs:';
       this.packNoLabel = 'Batteries per Pack:';
       this.showPackNoField = true;
+      console.log('🟡 [DROPDOWN] Type 3 selected - Labels updated');
+      
+      // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
+      if (hasUrlParams) {
+        // Use URL params to set correct values for Type 3
+        const newBatteriesNo = this.battPack || currentBatteriesNo;
+        const newPackNo = this.battNum || currentPackNo;
+        
+        console.log('🟡 [DROPDOWN] Type 3 - Will set batteriesNo =', newBatteriesNo, '(BattPack), packNo =', newPackNo, '(BattNum)');
+        this.batteryStringForm.patchValue({
+          batteriesNo: newBatteriesNo,
+          packNo: newPackNo
+        });
+      } else if (isUserChange) {
+        // User changing dropdown but no URL params - keep current values
+        console.log('🟡 [DROPDOWN] Type 3 - Keeping current values (no URL params)');
+      } else {
+        console.log('🟡 [DROPDOWN] Type 3 - No update (loading from DB)');
+      }
     } else if (stringType === '2') {
       // Internal Single / Parallel Strings
-      // Legacy: Label31.innerHTML = "No of Internal Strings:"
+      // LEGACY: Shows BattPack (5) then BattNum (2) → "5 2"
+      // batteriesNo field shows BattPack (5), packNo field shows BattNum (2)
       this.batteriesNoLabel = 'No of Internal Strings:';
       this.packNoLabel = 'Batteries per String:';
       this.showPackNoField = true;
+      console.log('🟡 [DROPDOWN] Type 2 selected - Labels updated');
+      
+      // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
+      if (hasUrlParams) {
+        // Use URL params to set correct values for Type 2
+        const newBatteriesNo = this.battPack || currentBatteriesNo;
+        const newPackNo = this.battNum || currentPackNo;
+        
+        console.log('🟡 [DROPDOWN] Type 2 - Will set batteriesNo =', newBatteriesNo, '(BattPack), packNo =', newPackNo, '(BattNum)');
+        this.batteryStringForm.patchValue({
+          batteriesNo: newBatteriesNo,
+          packNo: newPackNo
+        });
+      } else if (isUserChange) {
+        // User changing dropdown but no URL params - keep current values
+        console.log('🟡 [DROPDOWN] Type 2 - Keeping current values (no URL params)');
+      } else {
+        console.log('🟡 [DROPDOWN] Type 2 - No update (loading from DB)');
+      }
     } else {
-      // External (default)
-      // Legacy: Label31.innerHTML = "No of Batteries per string:"
+      // External (default) - Type 1
+      // batteriesNo should show BattNum only
+      // packNo field is hidden but should preserve its value for API
       this.batteriesNoLabel = 'No of Batteries per string:';
       this.packNoLabel = 'Batteries per String';
       this.showPackNoField = false;
-      // Clear packNo value when hiding
-      this.batteryStringForm.patchValue({ packNo: '' });
+      console.log('🟡 [DROPDOWN] Type 1 selected - Labels updated, packNo field hidden');
+      
+      // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
+      if (hasUrlParams) {
+        // Use URL params to set correct value for Type 1 (only BattNum)
+        const newBatteriesNo = this.battNum || currentBatteriesNo;
+        
+        console.log('🟡 [DROPDOWN] Type 1 - Will set batteriesNo =', newBatteriesNo, '(BattNum)');
+        this.batteryStringForm.patchValue({
+          batteriesNo: newBatteriesNo
+          // NOTE: Do NOT clear packNo - it may have a value that needs to be sent to API
+          // packNo field is hidden but value is preserved
+        });
+      } else if (isUserChange) {
+        // User changing dropdown but no URL params - keep current batteriesNo value
+        console.log('🟡 [DROPDOWN] Type 1 - Keeping current batteriesNo (no URL params)');
+      } else {
+        console.log('🟡 [DROPDOWN] Type 1 - No update (loading from DB)');
+      }
+      // NOTE: Removed automatic packNo clearing for Type 1
+      // The packNo value is preserved even though the field is hidden
     }
+    
+    console.log('🟡 [DROPDOWN] AFTER change - batteriesNo:', this.batteryStringForm.get('batteriesNo')?.value, '| packNo:', this.batteryStringForm.get('packNo')?.value);
   }
-
   /**
    * Handle reconciliation dropdown changes
    * Clears "Actual" field when "Is Correct" is changed to Yes or N/A
@@ -2411,8 +2576,11 @@ export class BatteryReadingsComponent implements OnInit {
       year: this.getYearFromDate(startDate),
       readingType: this.batteryStringForm.get('readingType')?.value || '',
       vfSelection: this.batteryStringForm.get('floatVoltageStatus')?.value || '',
-      batteriesPerString: parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0,
-      batteriesPerPack: parseInt(this.batteryStringForm.get('packNo')?.value) || 0,
+      // CRITICAL: Swap values for Type 2/3 when sending to API
+      // Display: batteriesNo=5, packNo=3
+      // API expects: batteriesPerString=3, batteriesPerPack=5
+      batteriesPerString: this.getApiBatteriesPerString(),
+      batteriesPerPack: this.getApiBatteriesPerPack(),
       // Required fields for API validation
       Notes: this.batteryStringForm.get('commentsUsed')?.value || '',
       MaintAuthID: this.getUserId(),
@@ -2488,10 +2656,11 @@ export class BatteryReadingsComponent implements OnInit {
     this.batteryService.saveUpdateBatteryStringReadings(batteryStringInfo).subscribe(
       () => {
         // Step 2: Update equipment batteries (legacy: UpdateBatteryInfo(2))
+        // CRITICAL: Swap values for Type 2/3 when sending to API
         const batteryData = {
           readingType: this.batteryStringForm.get('readingType')?.value || '',
-          batteriesPerString: parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0,
-          batteriesPerPack: parseInt(this.batteryStringForm.get('packNo')?.value) || 0,
+          batteriesPerString: this.getApiBatteriesPerString(),
+          batteriesPerPack: this.getApiBatteriesPerPack(),
           stringType: this.batteryStringForm.get('stringType')?.value || '',
         };
 
@@ -2516,15 +2685,79 @@ export class BatteryReadingsComponent implements OnInit {
       batteryData
     ).subscribe(
       (response) => {
-        // After UpdateBatteryInfo(2), call DisplayBatteryInfo() to adjust rows
-        this.displayBatteryInfo();
-        this.saving = false;
+        // After successful update, calculate new URL parameters and reload page
+        const newUrlParams = this.calculateUrlParameters();
+        this.updateUrlAndReload(newUrlParams);
       },
       (error) => {
         this.handleError(`Error updating battery info: ${error.message}`);
         this.saving = false;
       }
     );
+  }
+
+  /**
+   * Calculate BattNum and BattPack URL parameters based on current form values
+   * Type 1: BattNum = batteriesNo, BattPack = packNo
+   * Type 2: BattNum = packNo, BattPack = batteriesNo
+   * Type 3: BattNum = packNo, BattPack = batteriesNo
+   */
+  private calculateUrlParameters(): { BattNum: string; BattPack: string } {
+    const stringType = this.batteryStringForm.get('stringType')?.value || '';
+    const batteriesNo = this.batteryStringForm.get('batteriesNo')?.value || '';
+    const packNo = this.batteryStringForm.get('packNo')?.value || '';
+
+    let battNum: string;
+    let battPack: string;
+
+    if (stringType === '1') {
+      // Type 1: BattNum from batteriesNo, BattPack from packNo
+      battNum = batteriesNo;
+      battPack = packNo || '';
+      console.log('🔄 [URL CALC] Type 1: BattNum=' + battNum + ' (from batteriesNo), BattPack=' + battPack + ' (from packNo)');
+    } else if (stringType === '2' || stringType === '3') {
+      // Type 2 & 3: BattNum from packNo, BattPack from batteriesNo
+      battNum = packNo;
+      battPack = batteriesNo;
+      console.log('🔄 [URL CALC] Type ' + stringType + ': BattNum=' + battNum + ' (from packNo), BattPack=' + battPack + ' (from batteriesNo)');
+    } else {
+      // Fallback
+      battNum = batteriesNo;
+      battPack = packNo || '';
+      console.log('🔄 [URL CALC] Unknown type, using default: BattNum=' + battNum + ', BattPack=' + battPack);
+    }
+
+    return { BattNum: battNum, BattPack: battPack };
+  }
+
+  /**
+   * Update URL parameters and reload the page
+   */
+  private updateUrlAndReload(params: { BattNum: string; BattPack: string }): void {
+    console.log('🔄 [URL UPDATE] Updating URL with BattNum=' + params.BattNum + ', BattPack=' + params.BattPack);
+    
+    // Build new query parameters
+    const queryParams = {
+      CallNbr: this.callNbr,
+      EquipId: this.equipId.toString(),
+      EquipNo: encodeURIComponent(this.batStrId),
+      Tech: this.techId,
+      TechName: this.techName,
+      ReadingType: this.readingType,
+      BattNum: params.BattNum,
+      BattPack: params.BattPack
+    };
+
+    // Navigate to same route with updated query parameters
+    // This will reload the page with new parameters
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: queryParams,
+      queryParamsHandling: 'merge'
+    }).then(() => {
+      // Reload the page to apply new parameters
+      window.location.reload();
+    });
   }
 
   /**
@@ -2569,10 +2802,12 @@ export class BatteryReadingsComponent implements OnInit {
     let batVoltagePf = this.batteryStringForm.get('batteryVoltageVerify')?.value || '';
     
     // Step 2: Call getBatteryFloatVoltage and validate battery voltage (legacy SaveUpdateBatteryString logic)
+    // Use getApiBatteriesPerString() for voltage calculation (gets swapped value for Type 2/3)
     if (batteryVoltage > 0 && stringType !== '3') {
       const voltageRange = this.getBatteryFloatVoltage();
-      const minVoltForString = voltageRange.lowVolt * batteriesNo;
-      const maxVoltForString = voltageRange.maxVolt * batteriesNo;
+      const apiBatteriesPerString = this.getApiBatteriesPerString();
+      const minVoltForString = voltageRange.lowVolt * apiBatteriesPerString;
+      const maxVoltForString = voltageRange.maxVolt * apiBatteriesPerString;
       
       // If voltage is within acceptable range, set to Pass
       if (batteryVoltage >= minVoltForString && batteryVoltage <= maxVoltForString) {
@@ -2652,7 +2887,8 @@ export class BatteryReadingsComponent implements OnInit {
       chkStrap: this.batteryStringForm.get('strapCheck')?.value || false,
       maintAuthId: this.getUserId(),
       repMonCalc: this.batteryStringForm.get('repMonCalculate')?.value || '',
-      batteryPackCount: parseInt(this.batteryStringForm.get('packNo')?.value) || 0,
+      // CRITICAL: Swap values for Type 2/3 when sending to API
+      batteryPackCount: this.getApiBatteriesPerPack(),
       indBattDisconnect: this.batteryStringForm.get('battDisconnect')?.value || '',
       indBattInterConn: this.batteryStringForm.get('indBattInterconnection')?.value || '',
       rackIntegrity: this.batteryStringForm.get('rackIntegrity')?.value || '',
@@ -2742,6 +2978,68 @@ export class BatteryReadingsComponent implements OnInit {
   }
 
   /**
+   * Get API batteries per string value - maps display fields to API
+   * 
+   * LEGACY BEHAVIOR (BattNum=2, BattPack=5):
+   * Type 1: batteriesPerString = 2 (from BattNum)
+   * Type 2: batteriesPerString = 2 (from BattNum, which is in packNo field)
+   * Type 3: batteriesPerString = 2 (from BattNum, which is in packNo field)
+   */
+  private getApiBatteriesPerString(): number {
+    const stringType = this.batteryStringForm.get('stringType')?.value || '';
+    const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
+    const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
+    
+    if (stringType === '3') {
+      // For Type 3: packNo field (labeled "Batteries per Pack") → batteriesPerString
+      // This matches legacy: BattNum → batteriesPerString
+      console.log('✅ getApiBatteriesPerString (Type 3): packNo field=' + packNo + ' → API batteriesPerString=' + packNo);
+      return packNo;
+    } else if (stringType === '2') {
+      // For Type 2: packNo field (labeled "Batteries per String") → batteriesPerString
+      // This matches legacy: BattNum → batteriesPerString
+      console.log('✅ getApiBatteriesPerString (Type 2): packNo field=' + packNo + ' → API batteriesPerString=' + packNo);
+      return packNo;
+    } else {
+      // For Type 1: batteriesNo field (labeled "No of Batteries per string") → batteriesPerString
+      // This matches legacy: BattNum → batteriesPerString
+      console.log('✅ getApiBatteriesPerString (Type 1): batteriesNo field=' + batteriesNo + ' → API batteriesPerString=' + batteriesNo);
+      return batteriesNo;
+    }
+  }
+
+  /**
+   * Get API batteries per pack value - maps display fields to API
+   * 
+   * LEGACY BEHAVIOR (BattNum=2, BattPack=5):
+   * Type 1: batteriesPerPack = 5 (from BattPack, which is in packNo field from DB)
+   * Type 2: batteriesPerPack = 5 (from BattPack, which is in batteriesNo field)
+   * Type 3: batteriesPerPack = 5 (from BattPack, which is in batteriesNo field)
+   */
+  private getApiBatteriesPerPack(): number {
+    const stringType = this.batteryStringForm.get('stringType')?.value || '';
+    const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
+    const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
+    
+    if (stringType === '3') {
+      // For Type 3: batteriesNo field (labeled "No of Battery Packs") → batteriesPerPack
+      // This matches legacy: BattPack → batteriesPerPack
+      console.log('✅ getApiBatteriesPerPack (Type 3): batteriesNo field=' + batteriesNo + ' → API batteriesPerPack=' + batteriesNo);
+      return batteriesNo;
+    } else if (stringType === '2') {
+      // For Type 2: batteriesNo field (labeled "No of Internal Strings") → batteriesPerPack
+      // This matches legacy: BattPack → batteriesPerPack
+      console.log('✅ getApiBatteriesPerPack (Type 2): batteriesNo field=' + batteriesNo + ' → API batteriesPerPack=' + batteriesNo);
+      return batteriesNo;
+    } else {
+      // For Type 1: packNo field (hidden but may have value) → batteriesPerPack
+      // This matches legacy: BattPack from DB
+      console.log('✅ getApiBatteriesPerPack (Type 1): packNo field=' + packNo + ' → API batteriesPerPack=' + packNo);
+      return packNo;
+    }
+  }
+
+  /**
    * Navigate back to equipment details
    */
   goBack(): void {
@@ -2827,7 +3125,10 @@ export class BatteryReadingsComponent implements OnInit {
         return 'January';
       }
       
-      return date.toLocaleString('default', { month: 'long' });
+      // Use UTC methods to avoid timezone conversion issues
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+      return monthNames[date.getUTCMonth()];
     } catch {
       // On any error, default to January (legacy behavior for 01/01/1900)
       return 'January';
@@ -2848,7 +3149,8 @@ export class BatteryReadingsComponent implements OnInit {
         return 1900;
       }
       
-      return date.getFullYear();
+      // Use UTC method to avoid timezone conversion issues
+      return date.getUTCFullYear();
     } catch {
       // On any error, default to 1900 (legacy behavior for 01/01/1900)
       return 1900;
