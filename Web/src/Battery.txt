@@ -1,104 +1,46 @@
-public void SaveUpdateBatteryStringReadings(BatteryStringInfo binfo, ref string ErrMsg)
-{
-    SqlConnection con = GetSqlConnection();
-    con.Open();
-    try
-    {
-        using (SqlCommand cmd = new SqlCommand("SaveUpdateBatteryStringReadings", con))
-        {
-            cmd.CommandType = CommandType.StoredProcedure;
-            cmd.Parameters.AddWithValue("@CallNo", binfo.CallNbr);
-            cmd.Parameters.AddWithValue("@EquipId", binfo.EquipId);
-            cmd.Parameters.AddWithValue("@BatteryStringId", binfo.BatStrId);
-            cmd.Parameters.AddWithValue("@Manufacturer", binfo.Manufacturer);
-            cmd.Parameters.AddWithValue("@BatteryHousing", binfo.BatteryHousing);
-            cmd.Parameters.AddWithValue("@ModelNo", binfo.ModelNo);
-            cmd.Parameters.AddWithValue("@SerialNo", binfo.SerialNo);
-            cmd.Parameters.AddWithValue("@BatteryType", binfo.BatteryType);
-            cmd.Parameters.AddWithValue("@Active", binfo.EquipStatus);
-            cmd.Parameters.AddWithValue("@DateCodeMonth", binfo.MonthName);
-            cmd.Parameters.AddWithValue("@DateCodeYear", binfo.Year);
-            cmd.Parameters.AddWithValue("@Comments_Used", binfo.Comments_Used);
-            cmd.Parameters.AddWithValue("@Bulged_Check", binfo.Bulged_Check);
-            cmd.Parameters.AddWithValue("@Bulged_PF", binfo.Bulged_PF);
-            cmd.Parameters.AddWithValue("@Cracked_Check", binfo.Cracked_Check);
-            cmd.Parameters.AddWithValue("@Cracked_PF", binfo.Cracked_PF);
-            cmd.Parameters.AddWithValue("@Debris_Check", binfo.Debris_Check);
-            cmd.Parameters.AddWithValue("@Debris_PF", binfo.Debris_PF);
-            cmd.Parameters.AddWithValue("@Rotten", binfo.Rotten);
-            cmd.Parameters.AddWithValue("@VerifySaftey", binfo.VerifySaftey);
-            cmd.Parameters.AddWithValue("@ContainerComments", binfo.ContainerComments);
-            cmd.Parameters.AddWithValue("@EnvironmentComments", binfo.EnvironmentComments);
-            cmd.Parameters.AddWithValue("@BatteryVoltage", binfo.BatVoltage);
-            cmd.Parameters.AddWithValue("@PlusTerminal", binfo.PlusTerminal);
-            cmd.Parameters.AddWithValue("@MinusTerminal", binfo.MinusTerminal);
-            cmd.Parameters.AddWithValue("@DCCharge", binfo.DCCharging);
-            cmd.Parameters.AddWithValue("@ACRippleCurrent", binfo.ACRippleCurrent);
-            cmd.Parameters.AddWithValue("@ACRippleVolt", binfo.ACRipple);
-            cmd.Parameters.AddWithValue("@Voltage_PF", binfo.BatVoltate_PF);
-            cmd.Parameters.AddWithValue("@PlusTerm_PF", binfo.PlusTerminal_PF);
-            cmd.Parameters.AddWithValue("@MinusTerm_PF", binfo.MinusTerminal_PF);
-            cmd.Parameters.AddWithValue("@DCCharging_PF", binfo.DCCharging_PF);
-            cmd.Parameters.AddWithValue("@ACRipple_PF", binfo.ACRipple_PF);
-            cmd.Parameters.AddWithValue("@ACRippleCurrent_PF", binfo.ACRippleCurrent_PF);
-            cmd.Parameters.AddWithValue("@InterCell_PF", binfo.Resistance_PF);
-            cmd.Parameters.AddWithValue("@Torque_PF", binfo.CodeTorque_PF);
-            cmd.Parameters.AddWithValue("@Feedback", binfo.Comment);
-            cmd.Parameters.AddWithValue("@PlusWrapped", binfo.PlusWrapped_PF);
-            cmd.Parameters.AddWithValue("@PlusWrapped_Check", binfo.PlusWrapped_Check);
-            cmd.Parameters.AddWithValue("@PlusSulfated_Check", binfo.PlusSulfated_Check);
-            cmd.Parameters.AddWithValue("@PlusMisPos_Check", binfo.PlusMisPos_Check);
-            cmd.Parameters.AddWithValue("@Missing_Check", binfo.Missing_Check);
-            cmd.Parameters.AddWithValue("@Missing_PF", binfo.Missing_PF);
-            cmd.Parameters.AddWithValue("@Broken_Check", binfo.Broken_Check);
-            cmd.Parameters.AddWithValue("@NeedsCleaning_Check", binfo.NeedsCleaning_Check);
-            cmd.Parameters.AddWithValue("@PlatesComments", binfo.PlatesComments);
-            cmd.Parameters.AddWithValue("@WaterLevel_T", binfo.WaterLevelV);
-            cmd.Parameters.AddWithValue("@WaterLevel_PF", binfo.WaterLevelPF);
-            cmd.Parameters.AddWithValue("@ElectrolytesComments", binfo.ElectrolytesComments);
-            cmd.Parameters.AddWithValue("@BatteryTemp_PF", binfo.BatteryTemp_PF);
-            cmd.Parameters.AddWithValue("@Temp", binfo.RoomTemp);
-            cmd.Parameters.AddWithValue("@Quantity_Used", binfo.Quantity_Used);
-            cmd.Parameters.AddWithValue("@TobeMonitored", binfo.TobeMonitored);
-            cmd.Parameters.AddWithValue("@Reason_Replace", binfo.Reason_Replace);
-            cmd.Parameters.AddWithValue("@FloatVoltS", binfo.FloatVoltS);
-            cmd.Parameters.AddWithValue("@FloatVoltV", binfo.FloatVoltV);
-            cmd.Parameters.AddWithValue("@IntercellConnector", binfo.IntercellConnector);
-            cmd.Parameters.AddWithValue("@ReplaceWholeString", binfo.ReplaceWholeString);
-            cmd.Parameters.AddWithValue("@MaintAuth", binfo.Maint_Auth_Id);
-            cmd.Parameters.AddWithValue("@RepMonCalc", binfo.RepMonCalc);
-            cmd.Parameters.AddWithValue("@BatteryPackCount", binfo.BatteryPackCount);
-            cmd.Parameters.AddWithValue("@IndBattDisconnect", binfo.IndBattDisconnect);
-            cmd.Parameters.AddWithValue("@IndBattInterconnect", binfo.IndBattInterConn);
-            cmd.Parameters.AddWithValue("@RackIntegrity", binfo.RackIntegrity);
-            cmd.Parameters.AddWithValue("@VFOperation", binfo.VentFanOperation);
-            cmd.Parameters.AddWithValue("@Location", binfo.Location);
-            cmd.Parameters.AddWithValue("@ReadingType", binfo.ReadingType);
-            cmd.Parameters.AddWithValue("@StringType", binfo.StringType);
-            cmd.Parameters.AddWithValue("@SaveAsDraft", binfo.SaveAsDraft);
-            cmd.Parameters.AddWithValue("@chkmVAC", binfo.chckmVAC);
-            cmd.Parameters.AddWithValue("@chkStrap", binfo.chkStrap);
-            cmd.Parameters.AddWithValue("@BattTemp", binfo.BattTemp);
-            cmd.Parameters.AddWithValue("@BattTemp_PF", binfo.BattTemp_PF);
-            cmd.Parameters.AddWithValue("@BatteryTypeName", binfo.BatteryTypeName);
-            cmd.Parameters.AddWithValue("@BatteryTerminalS", binfo.ddlBattTerminal);
-            cmd.Parameters.AddWithValue("@BatteryTerminalT", binfo.txtBattTerminal);
-            cmd.Parameters.AddWithValue("@BatteryTerminalType", binfo.ddlBattTypeTerminal);
-            cmd.Parameters.AddWithValue("@ReadingMethod", binfo.ReadingMethod);
-            cmd.Parameters.AddWithValue("@chkGraph", binfo.chkGraph);
-            cmd.ExecuteNonQuery();
-        }
-    }
+<!-- Battery Readings Page -->
+<div class="container-fluid ups-readings-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="loading"
+    class="d-flex justify-content-center align-items-center ups-readings-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
 
-    catch (Exception ex)
-    {
-        ErrMsg = ex.Message;
-    }
-
-    finally
-    {
-        con.Close();
-        //cmd = null;
-    }
-
-}
+  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__back"
+      (click)="goBack()"
+      [disabled]="saving"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="ups-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-battery-charging me-2"></i>
+        Battery Readings & Verification
+      </h2>
+    </div>
+    
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__action"
+      (click)="saveBatteryReadings()"
+      [disabled]="saving"
+    >
+      <span
+        *ngIf="saving"
+        class="spinner-border spinner-border-sm me-2"
+        role="status"
+      ></span>
+      <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
+      {{ saving ? "Saving..." : "Save Battery Data" }}
+    </button>
+  </div>

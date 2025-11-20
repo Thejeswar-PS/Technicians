@@ -27,6 +27,10 @@
         <i class="bi bi-battery-charging me-2"></i>
         Battery Readings & Verification
       </h2>
+      <!-- Job and Equipment Information -->
+      <div class="text-dark mt-2" *ngIf="!loading">
+        <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | Battery String ID: {{ batStrId || 'N/A' }}</span>
+      </div>
     </div>
     
     <button
@@ -47,19 +51,17 @@
 
   <!-- Main content -->
   <div *ngIf="!loading">
-    <div class="card shadow-sm">
-      <div class="card-header border-0 py-4">
-        <div class="ups-readings-header">
-          <div class="ups-readings-header__group"></div>
-
+    <div class="card shadow-sm ups-main-card">
+      <!-- Form sections within card body -->
+      <div class="card-body">
         <!-- Messages -->
         <div
-          class="ups-readings-messages"
+          class="ups-readings-messages mb-4"
           *ngIf="errorMessage || successMessage"
         >
           <div
             *ngIf="errorMessage"
-            class="alert alert-danger d-inline-flex align-items-center"
+            class="alert alert-danger d-flex align-items-center"
           >
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <span>{{ errorMessage }}</span>
@@ -68,7 +70,7 @@
             *ngIf="
               successMessage && successMessage.includes('No Information Found')
             "
-            class="alert alert-warning d-inline-flex align-items-center"
+            class="alert alert-warning d-flex align-items-center"
           >
             <i class="bi bi-info-circle-fill me-2"></i>
             <span>{{ successMessage }}</span>
@@ -77,15 +79,13 @@
             *ngIf="
               successMessage && !successMessage.includes('No Information Found')
             "
-            class="alert alert-success d-inline-flex align-items-center"
+            class="alert alert-success d-flex align-items-center"
           >
             <i class="bi bi-check-circle-fill me-2"></i>
             <span>{{ successMessage }}</span>
           </div>
         </div>
-
-    <!-- Form sections -->
-    <div class="ups-readings-form">
+        <div class="ups-readings-form">
   <form [formGroup]="batteryStringForm">
     <!-- Equipment Information Section -->
     <section class="ups-readings-section">
@@ -292,6 +292,7 @@
                 type="checkbox"
                 id="reconciled"
                 formControlName="reconciled"
+                style="border: 2px solid #009EF7 ; width: 20px; height: 20px;"
               />
               <label class="form-check-label fw-bold text-success" for="reconciled">
                 <i class="bi bi-check-circle me-1"></i>
@@ -576,7 +577,7 @@
                       </div>
                     </div>
 
-                    <div class="flooded-checkboxes">
+                    <div class="flooded-checkboxes d-flex flex-wrap gap-4">
                       <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="plusWrappedCheck2" formControlName="plusWrappedCheck" (change)="onFloodedPlatesCheckboxChange()" />
                         <label class="form-check-label" for="plusWrappedCheck2">Wrapped</label>
@@ -619,7 +620,7 @@
                       </div>
                     </div>
 
-                    <div class="flooded-checkboxes">
+                    <div class="flooded-checkboxes d-flex flex-wrap gap-3">
                       <div class="form-check">
                         <input type="checkbox" class="form-check-input" id="missingCheck2" formControlName="missingCheck" (change)="onFloodedCoversCheckboxChange()" />
                         <label class="form-check-label" for="missingCheck2">Missing</label>
@@ -894,7 +895,7 @@
         >
           <div class="ups-section-title">
             <i class="bi bi-graph-up me-2 text-info"></i>
-            <h5 class="mb-0">Battery Readings For Multimeter/Midtronics Section</h5>
+            <h5 class="mb-0">Battery Readings Page For Multimeter/Midtronics</h5>
             <small class="text-muted"
               >Configure reading parameters and measurement settings</small
             >
@@ -914,11 +915,11 @@
               <div class="row g-3">
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <input type="number" step="0.1" class="form-control" id="roomTemp" formControlName="roomTemp" placeholder="0.0" (change)="onRoomTempChange()" />
+                    <input type="number" step="0.1" class="form-control" id="roomTemp" formControlName="roomTemp" placeholder="72" (change)="onRoomTempChange()" />
                     <label for="roomTemp">Room Temperature</label>
                   </div>
                 </div>
-                <div class="col-md-1">
+                <div class="col-md-2">
                   <div class="form-floating">
                     <select class="form-select" id="roomTempVerify" formControlName="roomTempVerify">
                       <option value="P">Pass</option>
@@ -929,11 +930,11 @@
                 </div>
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <input type="number" step="0.1" class="form-control" id="batteryTemp" formControlName="batteryTemp" placeholder="0.0" (change)="onBatteryTempChange()" />
+                    <input type="number" step="0.1" class="form-control" id="batteryTemp" formControlName="batteryTemp" placeholder="72" (change)="onBatteryTempChange()" />
                     <label for="batteryTemp">Battery Temperature</label>
                   </div>
                 </div>
-                <div class="col-md-1">
+                <div class="col-md-2">
                   <div class="form-floating">
                     <select class="form-select" id="batteryTempVerify" formControlName="batteryTempVerify">
                       <option value="P">Pass</option>
@@ -962,7 +963,7 @@
                     <label for="battTerminalType">Battery Terminal Type</label>
                   </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-5">
                   <div class="form-floating">
                     <select class="form-select" id="battTerminal" formControlName="battTerminal">
                       <option value="">Please Select</option>
@@ -1010,14 +1011,14 @@
             <!-- Row 3: Rack Integrity / Vent Fan Operation -->
             <div class="form-group-modern">
               <div class="row g-3">
-                <div class="col-md-2">
+                <div class="col-md-3">
                   <div class="form-floating">
                     <select class="form-select" id="rackIntegrity" formControlName="rackIntegrity">
                       <option value="">Select</option>
                       <option value="P">Pass</option>
                       <option value="F">Fail</option>
                     </select>
-                    <label for="rackIntegrity">Verify Rack Integrity</label>
+                    <label for="rackIntegrity">Verify Rack Integrity/Vent Fan Operation</label>
                   </div>
                 </div>
                 <div class="col-md-2">
@@ -1037,7 +1038,7 @@
             <!-- Row 4: Battery Disconnect / Interconnection -->
             <div class="form-group-modern">
               <div class="row g-3">
-                <div class="col-md-2">
+                <div class="col-md-3">
                   <div class="form-floating">
                     <select class="form-select" id="battDisconnect" formControlName="battDisconnect">
                       <option value="">Select</option>
@@ -1062,14 +1063,14 @@
 
             <!-- Row 5: Recommend to Replace / Quantities -->
             <div class="form-group-modern">
-              <div class="row g-3">
-                <div class="col-md-1">
-                  <div class="form-check" style="padding-top: 8px;">
+              <div class="row g-3 align-items-center">
+                
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <label>Recommend to Replace Complete String?</label>
                     <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" />
-                    <label class="form-check-label fw-bold" for="replaceWholeString"></label>
+                    
                   </div>
-                </div>
-                <div class="col-md-3">
                   <div class="form-floating">
                     <select class="form-select" id="reasonToReplace" formControlName="reasonToReplace" [disabled]="!batteryStringForm.get('replaceWholeString')?.value" (change)="onReasonToReplaceChange($event)">
                       <option value="">Select</option>
@@ -1077,7 +1078,7 @@
                       <option value="DF">Due to Faulty Batteries</option>
                       <option value="BT">Due to Age and Faulty Batteries</option>
                     </select>
-                    <label for="reasonToReplace">Recommend to Replace Complete String ?</label>
+                    <label for="reasonToReplace">Reason</label>
                   </div>
                 </div>
               </div>
@@ -1088,7 +1089,7 @@
               <div class="row g-3">
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <input type="number" class="form-control" id="usedQuantity" formControlName="usedQuantity" placeholder="0" />
+                    <input type="number" class="form-control" id="usedQuantity" formControlName="usedQuantity" placeholder="30" />
                     <label for="usedQuantity">Recommend to replace</label>
                   </div>
                 </div>
@@ -1144,14 +1145,14 @@
                   <div class="form-floating">
                     <select class="form-select" id="battMakeModel" formControlName="battMakeModel" (change)="onBattMakeModelChange($event)">
                       <option value="">Select Battery Make/Model</option>
-                      <option *ngFor="let item of batteryMakeModels" [value]="item.value">{{ item.name }}</option>
+                      <option *ngFor="let item of batteryMakeModels" [value]="item.name">{{ item.name }}</option>
                     </select>
                     <label for="battMakeModel">Battery Make/Model</label>
                   </div>
                 </div>
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <input type="text" class="form-control fw-bold" id="refValue" formControlName="refValue" placeholder="0.00" />
+                    <input type="text" class="form-control fw-bold" id="refValue" formControlName="refValue" placeholder="2.25" />
                     <label for="refValue">Reference Value</label>
                   </div>
                 </div>
@@ -1172,12 +1173,6 @@
                     <label for="stringType">String Type</label>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Row 10: Reading Type -->
-            <div class="form-group-modern">
-              <div class="row g-3">
                 <div class="col-md-3">
                   <div class="form-floating">
                     <select class="form-select" id="readingType" formControlName="readingType">
@@ -1193,10 +1188,10 @@
 
             <!-- Row 11: No of Batteries per string / Change Button -->
             <div class="form-group-modern">
-              <div class="row g-3">
+              <div class="row g-3 align-items-center">
                 <div class="col-md-2">
                   <div class="form-floating">
-                    <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="0" />
+                    <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="30" />
                     <label for="batteriesNo">{{ batteriesNoLabel }}</label>
                   </div>
                 </div>
@@ -1207,7 +1202,7 @@
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <button type="button" class="btn btn-primary w-100" style="height: 58px;" (click)="onChange()">
+                  <button type="button" class="btn btn-primary w-100" style="height: 38px;" (click)="onChange()">
                     Change
                   </button>
                 </div>
@@ -1216,7 +1211,7 @@
 
             <!-- Row 12: How do you want readings to be calculated -->
             <div class="form-group-modern">
-              <div class="row g-3">
+              <div class="row g-3 align-items-center">
                 <div class="col-md-3">
                   <div class="form-floating">
                     <select class="form-select" id="repMonCalculate" formControlName="repMonCalculate" readonly>
@@ -1227,26 +1222,25 @@
                     <label for="repMonCalculate">How do you want readings to be calculated ?</label>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Row 13: Verified Graph / Enable mVAC / Enable Straps -->
-            <div class="form-group-modern">
-              <div class="row g-3">
                 <div class="col-md-2">
-                  <div class="form-check" style="padding-top: 8px;">
+                  <button type="button" class="btn btn-success w-100" style="height: 38px;">
+                    View in Graph
+                  </button>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check" style="padding-left: 30px;">
                     <input type="checkbox" class="form-check-input" id="readingsGraphCheck" formControlName="readingsGraphCheck" />
                     <label class="form-check-label fw-bold text-danger" for="readingsGraphCheck">Verified the Graph?</label>
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <div class="form-check" style="padding-top: 8px;">
+                  <div class="form-check" style="padding-left: 30px;">
                     <input type="checkbox" class="form-check-input" id="mvacCheck" formControlName="mvacCheck" checked />
                     <label class="form-check-label" for="mvacCheck">Enable mVAC?</label>
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <div class="form-check" style="padding-top: 8px;">
+                  <div class="form-check">
                     <input type="checkbox" class="form-check-input" id="strapCheck" formControlName="strapCheck" checked />
                     <label class="form-check-label" for="strapCheck">Enable Straps?</label>
                   </div>
@@ -1435,8 +1429,10 @@
       </div>
     </section>
   </form>
-    </div>
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
 

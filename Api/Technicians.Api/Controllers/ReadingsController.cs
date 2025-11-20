@@ -129,6 +129,19 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("SaveReferenceValues")]
+        public async Task<IActionResult> SaveReferenceValues(
+            [FromQuery] int equipId,
+            [FromQuery] string type,
+            [FromQuery] string readingMethod,
+            [FromQuery] string battMakeModel,
+            [FromQuery] decimal refValue1,
+            [FromQuery] decimal refValue2)
+        {
+            var result = await _repository.SaveOrGetReferenceValuesAsync(equipId, type, readingMethod, battMakeModel, refValue1, refValue2);
+            return Ok(result);
+        }
+
         [HttpPost("SaveUpdateBatteryStringReadings")]
         public async Task<IActionResult> SaveUpdateBatteryStringReadings([FromBody] BatteryStringInfo binfo)
         {

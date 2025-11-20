@@ -290,6 +290,43 @@ export class BatteryReadingsService {
       );
   }
 
+  saveReferenceValues(
+    equipId: number,
+    operation: string,
+    readingMethod?: string,
+    battMakeModel?: string,
+    refValue1?: number,
+    refValue2?: number
+  ): Observable<ReferenceValue[]> {
+    let params = new HttpParams()
+      .set('equipId', equipId.toString())
+      .set('type', operation);
+
+    if (readingMethod) params = params.set('readingMethod', readingMethod);
+    if (battMakeModel) params = params.set('battMakeModel', battMakeModel);
+    if (refValue1) params = params.set('refValue1', refValue1.toString());
+    if (refValue2) params = params.set('refValue2', refValue2.toString());
+
+    return this.http
+      .get<any[]>(`${this.apiUrl}/Readings/SaveReferenceValues`, { params })
+      .pipe(
+        map((response) => {
+          if (!Array.isArray(response)) return [];
+          return response.map((item) => ({
+            // Map from API response: Name, Value, RefValue, Resistance
+            id: (item.Value || item.value || '').toString().trim(),
+            name: (item.Name || item.name || '').toString().trim(),
+            value1: item.RefValue || item.refValue || 0,  // Reference voltage/capacity
+            value2: item.Resistance || item.resistance || 0, // Resistance value
+          }));
+        }),
+        catchError((error) => {
+          console.error('Error fetching reference values:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
   /**
    * Delete battery information
    */
