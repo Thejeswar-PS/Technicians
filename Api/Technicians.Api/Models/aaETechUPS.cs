@@ -69,14 +69,14 @@
 
         // Battery / Air Filter
         public int BatteryStringID { get; set; }
-        public string AFLength { get; set; }
-        public string AFWidth { get; set; }
-        public string AFThickness { get; set; }
-        public string AFQty { get; set; }
-        public string AFLength1 { get; set; }
-        public string AFWidth1 { get; set; }
-        public string AFThickness1 { get; set; }
-        public string AFQty1 { get; set; }
+        public double AFLength { get; set; }     // Changed to double to match SP
+        public double AFWidth { get; set; }      // Changed to double to match SP  
+        public double AFThickness { get; set; }  // Changed to double to match SP
+        public double AFQty { get; set; }        // Changed to double to match SP
+        public double AFLength1 { get; set; }    // Changed to double to match SP
+        public double AFWidth1 { get; set; }     // Changed to double to match SP
+        public double AFThickness1 { get; set; } // Changed to double to match SP
+        public double AFQty1 { get; set; }       // Changed to double to match SP
 
         // Date Code fields
         public string UpsDateCodeMonth { get; set; }

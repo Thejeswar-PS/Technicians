@@ -248,12 +248,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'R', text: 'Replaced' },
     { value: 'N', text: 'N/A' }
   ];
+
+  // Fans age options (includes Warning option)
+  fansAgeOptions = [
+    { value: 'P', text: 'Pass' },
+    { value: 'F', text: 'Fail' },
+    { value: 'W', text: 'Warning' },
+    { value: 'N', text: 'N/A' }
+  ];
   yesNoOptions = YES_NO_OPTIONS;
   snmpOptions = SNMP_OPTIONS;
   yesNoNAOptions = [
     { value: 'Y', text: 'Yes' },
     { value: 'N', text: 'No' },
-    { value: 'N/A', text: 'N/A' }
+    { value: 'NA', text: 'N/A' }
   ];
   statusOptions = STATUS_OPTIONS;
 
@@ -3334,14 +3342,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
       // Set endOfLife value based on validation result
       this.measurementsForm.get('endOfLife')?.setValue(ageValidation.endOfLifeValue, { emitEvent: false });
-
-      // Show appropriate confirmation for automatic status changes
-      if (ageValidation.autoChangeStatus && ageValidation.endOfLifeValue === 'F') {
-        const threshold = UPSAgeValidationService.calculateEndOfLifeThreshold(kva);
-        if (!confirm(`UPS age (${upsAge} years) exceeds ${threshold}-year threshold. End of Life marked as Failed. Equipment status will be updated.`)) {
-          return false;
-        }
-      }
 
       // Apply other validation results (status changes, comments)
       this.applyAgeValidationResults(ageValidation);

@@ -420,9 +420,8 @@
                         id="parallelCabinet"
                       >
                         <option value="Y">Yes</option>
-                        <option value="YS">Yes</option>
                         <option value="NO">No</option>
-                        <option value="N/A">N/A</option>
+                        <option value="NA">N/A</option>
                       </select>
                       <label for="parallelCabinet">Parallel Cabinet</label>
                     </div>
@@ -1239,7 +1238,7 @@
                     >
                     <select class="form-select" formControlName="fansAge">
                       <option
-                        *ngFor="let option of visualMechanicalOptions"
+                        *ngFor="let option of fansAgeOptions"
                         [value]="option.value"
                       >
                         {{ option.text }}
@@ -1495,7 +1494,7 @@
                       >UPS room temperature / ventilation is acceptable:</label
                     >
                     <select class="form-select" formControlName="roomTempVentilation">
-                      <option value="">Pass</option>
+                      <option value="">Select status...</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1516,7 +1515,7 @@
                       >Safety equipment is present:</label
                     >
                     <select class="form-select" formControlName="safetyEquipment">
-                      <option value="">Pass</option>
+                      <option value="">Select status...</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1537,7 +1536,7 @@
                       >Any hostile environment (water, heat, dust, debris, burn marks, or tampering):</label
                     >
                     <select class="form-select" formControlName="hostileEnvironment">
-                      <option value="">Pass</option>
+                      <option value="">Select status...</option>
                       <option
                         *ngFor="let option of yesNoNAOptions"
                         [value]="option.value"
@@ -1558,7 +1557,7 @@
                       >Adequate service space is available:</label
                     >
                     <select class="form-select" formControlName="serviceSpace">
-                      <option value="">Pass</option>
+                      <option value="">Select status...</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
@@ -1579,7 +1578,7 @@
                       >Circuit breakers are labeled accurately:</label
                     >
                     <select class="form-select" formControlName="circuitBreakers">
-                      <option value="">Pass</option>
+                      <option value="">Select status...</option>
                       <option
                         *ngFor="let option of visualMechanicalOptions"
                         [value]="option.value"
