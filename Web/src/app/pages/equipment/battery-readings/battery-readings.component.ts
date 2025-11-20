@@ -1,8 +1,9 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { BatteryReadingsService } from '../../../core/services/battery-readings.service';
+import { JobService } from '../../../core/services/job.service';
 import {
   BatteryStringInfo,
   EquipReconciliationInfo,
@@ -78,7 +79,9 @@ export class BatteryReadingsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private batteryService: BatteryReadingsService,
-    private toastr: ToastrService
+    private jobService: JobService,
+    private toastr: ToastrService,
+    private cdr: ChangeDetectorRef
   ) {
     this.batteryStringForm = this.createBatteryStringForm();
     this.reconciliationForm = this.createReconciliationForm();
@@ -142,10 +145,43 @@ export class BatteryReadingsComponent implements OnInit {
       .subscribe(
         (data) => {
           this.batteryStringInfo = data;
-          this.populateBatteryStringForm(data);
-          this.enableDisableLithium();
-          this.loadReconciliationInfo();
-          this.loadBatteryGridData();
+          
+          // Fetch equipment details to get latest batteriesPerString and batteriesPerPack
+          this.jobService.getEquipmentDetailsByCallNbr(this.callNbr).subscribe(
+            (equipmentDetails) => {
+              if (equipmentDetails && equipmentDetails.length > 0) {
+                // Find the battery equipment
+                const batteryEquipment: any = equipmentDetails.find(
+                  (equip: any) => equip.equipId === this.equipId || 
+                  (equip.equipType && equip.equipType.trim().toUpperCase().includes('BATTERY'))
+                );
+
+                if (batteryEquipment) {
+                  // Update battNum and battPack from API response (overriding URL params)
+                  this.battNum = batteryEquipment.batteriesPerString?.toString() || this.battNum;
+                  this.battPack = batteryEquipment.batteriesPerPack?.toString() || this.battPack;
+
+                  console.log('🔵 [INIT API] Fetched from GetEquipmentDetails API:');
+                  console.log('   batteriesPerString (battNum):', this.battNum);
+                  console.log('   batteriesPerPack (battPack):', this.battPack);
+                }
+              }
+
+              // Now populate form with updated values
+              this.populateBatteryStringForm(data);
+              this.enableDisableLithium();
+              this.loadReconciliationInfo();
+              this.loadBatteryGridData();
+            },
+            (error) => {
+              console.error('Error fetching equipment details on init:', error);
+              // Continue with existing values if API call fails
+              this.populateBatteryStringForm(data);
+              this.enableDisableLithium();
+              this.loadReconciliationInfo();
+              this.loadBatteryGridData();
+            }
+          );
         },
         (error) => {
           this.handleError('Error loading battery string info: ' + error.message);
@@ -213,22 +249,15 @@ export class BatteryReadingsComponent implements OnInit {
           }
           
           // Update reconciliation battPerString only after Change button (not initial load)
-          // Legacy: txtBPerString.Text = BattNum (calculated based on stringType)
+          // This should match the API's batteriesPerString value (this.battNum)
           if (updateReconciliation) {
-            const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
-            const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
+            // The reconciliation battPerString should be the actual batteriesPerString from API
+            // which is stored in this.battNum (not a calculated value)
+            const battPerStringValue = parseInt(this.battNum) || 0;
             
-            let battPerStringValue = 0;
-            if (stringType === '3') {
-              // Type 3: Use batteriesNo (No of Battery Packs)
-              battPerStringValue = batteriesNo;
-            } else if (stringType === '2') {
-              battPerStringValue = packNo * batteriesNo;
-            } else {
-              battPerStringValue = batteriesNo;
-            }
+            console.log('📊 Updating reconciliation battPerString:', battPerStringValue, '(from battNum/API batteriesPerString)');
+            console.log('   StringType:', stringType, '| battNum:', this.battNum, '| battPack:', this.battPack);
             
-            console.log('📊 Updating reconciliation battPerString:', battPerStringValue, '(Type:', stringType, ')');
             this.reconciliationForm.patchValue({
               battPerString: battPerStringValue
             });
@@ -577,12 +606,26 @@ export class BatteryReadingsComponent implements OnInit {
       floatVoltageStatus: data.floatVoltS,
       floatVoltageValue: data.floatVoltV,
       repMonCalculate: data.repMonCalc,
-      packNo: data.batteryPackCount,
+      // Use API values (battNum/battPack) instead of DB values to preserve Change button updates
+      packNo: (() => {
+        const stringType = data.stringType;
+        // Type 2/3: packNo = battNum
+        // Type 1: packNo = battPack (hidden field but needed for API batteriesPerPack)
+        const value = (stringType === '2' || stringType === '3') ? this.battNum : this.battPack;
+        console.log('🔄 [SIMPLE POPULATE] packNo set to:', value, '(StringType:', stringType, ')');
+        return value;
+      })(),
       battDisconnect: data.indBattDisconnect,
       indBattInterconnection: data.indBattInterConn,
       rackIntegrity: data.rackIntegrity,
       ventFanOperation: data.ventFanOperation,
-      batteriesNo: this.batteryReadings.length, // Use actual battery count from grid
+      // Use API values (battPack for Type 2/3, battNum for Type 1) instead of batteryReadings.length
+      batteriesNo: (() => {
+        const stringType = data.stringType;
+        const value = (stringType === '2' || stringType === '3') ? this.battPack : this.battNum;
+        console.log('🔄 [SIMPLE POPULATE] batteriesNo set to:', value, '(StringType:', stringType, ')');
+        return value;
+      })(),
       replaceWholeString: data.replaceWholeString,
       mvacCheck: data.chckmVac,
       strapCheck: data.chkStrap,
@@ -704,11 +747,12 @@ export class BatteryReadingsComponent implements OnInit {
     const midType = data.readingMethod;
     if (midType) {
       // First: Load all make/models with equipId = 0 (get all available options)
-      this.loadBatteryMakeModels(midType, 0);
-      
-      // Second: Load equipment-specific battery make/model with current equipId
-      // Pass empty string for makeModel to get the equipment's saved battery make/model
-      this.loadRefValueForMakeModel(midType, '', this.equipId);
+      // Then: After loading completes, load equipment-specific battery make/model
+      this.loadBatteryMakeModels(midType, 0, () => {
+        // Callback: After battery models are loaded, load equipment's saved battery
+        // Pass empty string for makeModel to get the equipment's saved battery make/model
+        this.loadRefValueForMakeModel(midType, '', this.equipId);
+      });
     }
   }
 
@@ -903,6 +947,24 @@ export class BatteryReadingsComponent implements OnInit {
   onBatteryTypeChange(): void {
     this.enableDisableLithium();
     this.loadReferenceValues();
+  }
+
+  /**
+   * Handle manufacturer change - ensure form control is updated
+   */
+  onManufacturerChange(event: any): void {
+    const value = event.target.value;
+    console.log('Manufacturer changed to:', value);
+    this.batteryStringForm.patchValue({ manufacturer: value });
+  }
+
+  /**
+   * Handle generic field change - ensure form control is updated
+   */
+  onFieldChange(event: any, fieldName: string): void {
+    const value = event.target.value;
+    console.log(`${fieldName} changed to:`, value);
+    this.batteryStringForm.patchValue({ [fieldName]: value });
   }
 
   /**
@@ -1144,9 +1206,37 @@ export class BatteryReadingsComponent implements OnInit {
    */
   onBattMakeModelChange(event: any): void {
     const midType = this.batteryStringForm.get('midType')?.value;
-    const makeModel = event.target.value;
-    this.batteryStringForm.patchValue({ battMakeModel: makeModel });
-    this.loadRefValueForMakeModel(midType, makeModel, this.equipId);
+    const selectedValue = event.target.value;
+    
+    // Find the selected battery in our batteryMakeModels array
+    // IMPORTANT: selectedValue is the battery NAME (display name)
+    const selectedBattery = this.batteryMakeModels.find(item => item.name === selectedValue);
+    
+    if (selectedBattery) {
+      // Use the stored reference value directly
+      // Both Fluke and BCM use refValue (value1)
+      let refValue = '';
+      if (midType === '2' || midType === '3') {
+        // Both Fluke and BCM use refValue (value1)
+        refValue = selectedBattery.refValue !== undefined ? selectedBattery.refValue.toString() : '';
+      }
+      
+      // Clear if value is "0"
+      if (refValue === '0') {
+        refValue = '';
+      }
+      
+      // Update form control
+      this.batteryStringForm.get('battMakeModel')?.setValue(selectedValue, { emitEvent: false });
+      this.batteryStringForm.patchValue({ refValue: refValue });
+      
+      // Trigger change detection
+      this.cdr.detectChanges();
+    } else {
+      // Fallback: Make API call if battery not found in array
+      this.batteryStringForm.get('battMakeModel')?.setValue(selectedValue, { emitEvent: false });
+      this.loadRefValueForMakeModel(midType, selectedValue, this.equipId);
+    }
   }
 
   /**
@@ -1158,26 +1248,61 @@ export class BatteryReadingsComponent implements OnInit {
    * 4. battMakeModel - Battery make/model name (empty for initial load to get all)
    * 5. refValue1 - Reference value 1 (Fluke value, 0 when loading)
    * 6. refValue2 - Reference value 2 (BCM value, 0 when loading)
+   * 
+   * @param midType - Reading method (2=Fluke, 3=BCM)
+   * @param equipId - Equipment ID (0 for all batteries, specific for equipment's battery)
+   * @param onComplete - Optional callback to execute after loading completes
    */
-  private loadBatteryMakeModels(midType: string, equipId: number): void {
+  private loadBatteryMakeModels(midType: string, equipId: number, onComplete?: () => void): void {
     this.batteryService.getReferenceValues(equipId, 'G', midType, '', 0, 0).subscribe(
       (data) => {
         if (data && data.length > 0) {
           // Map the response to batteryMakeModels
           // API returns: Name (display), Value (identifier), RefValue, Resistance
           // Service maps to: name, id, value1, value2
-          // Use 'name' as both display and value for dropdown binding consistency
-          this.batteryMakeModels = data.map((item: any) => ({
-            name: item.name || '', // Battery make/model name from API (for display)
-            value: item.name || '' // Use name as value for binding with second API call
-          }));
+          // item.id contains the full Value string like "BAE10 Opzs 1000|2600.00#0.00"
+          this.batteryMakeModels = data.map((item: any) => {
+            // Parse item.id to extract identifier before the pipe "|"
+            // Example: "BAE10 Opzs 1000|2600.00#0.00" → "BAE10 Opzs 1000"
+            let identifier = item.name || '';
+            
+            if (item.id && typeof item.id === 'string') {
+              // item.id from service contains the full Value field
+              const parts = item.id.split('|');
+              if (parts.length > 0 && parts[0].trim()) {
+                identifier = parts[0].trim();
+              }
+            }
+            
+            return {
+              name: item.name || '', // Battery make/model name for display
+              value: identifier,      // Use parsed identifier for dropdown value
+              refValue: item.value1,  // Store reference value (Fluke)
+              resistance: item.value2 // Store resistance value (BCM)
+            };
+          });
+          
+          // Execute callback if provided (after models are loaded)
+          if (onComplete) {
+            onComplete();
+          }
         } else {
           this.batteryMakeModels = [];
+          
+          // Execute callback even if no data (to prevent blocking)
+          if (onComplete) {
+            onComplete();
+          }
         }
       },
       (error) => {
         console.error('Error loading battery make/models:', error);
         this.batteryMakeModels = [];
+        
+        // Execute callback even on error (to prevent blocking)
+        if (onComplete) {
+          onComplete();
+        }
       }
     );
   }
@@ -1198,9 +1323,9 @@ export class BatteryReadingsComponent implements OnInit {
         if (data && data.length > 0) {
           const refData = data[0];
           
-          // Bind the battery make/model dropdown with the Name from API
-          // Second API call uses 'name' field (API's "Name") for dropdown selection
-          if (refData.name) {
+          // DON'T update battMakeModel here - it was already set by user selection
+          // Only update battMakeModel if makeModel parameter is empty (initial load)
+          if (!makeModel && refData.name) {
             this.batteryStringForm.patchValue({ battMakeModel: refData.name });
           }
           
@@ -1218,18 +1343,22 @@ export class BatteryReadingsComponent implements OnInit {
           
           this.batteryStringForm.patchValue({ refValue: refValue.toString() });
         } else {
-          this.batteryStringForm.patchValue({ 
-            battMakeModel: '',
-            refValue: '' 
-          });
+          // Only clear if this was an empty makeModel lookup (initial load)
+          if (!makeModel) {
+            this.batteryStringForm.patchValue({ 
+              battMakeModel: '',
+              refValue: '' 
+            });
+          } else {
+            // Just clear refValue if no data found for selected model
+            this.batteryStringForm.patchValue({ refValue: '' });
+          }
         }
       },
       (error) => {
         console.error('Error loading reference value:', error);
-        this.batteryStringForm.patchValue({ 
-          battMakeModel: '',
-          refValue: '' 
-        });
+        // Don't clear battMakeModel on error - keep user's selection
+        this.batteryStringForm.patchValue({ refValue: '' });
       }
     );
   }
@@ -1261,6 +1390,50 @@ export class BatteryReadingsComponent implements OnInit {
         },
         (error) => {
           console.warn('Error loading reference values:', error);
+        }
+      );
+  }
+
+  /**
+   * Update reference values in backend (legacy GetReferenceValues with 'U' operation)
+   * Called during save to persist the selected battery make/model and ref value
+   * 
+   * Legacy C# code:
+   * SqlDataReader dr = da.GetReferenceValues(
+   *   EquipID,                              // equipId
+   *   "U",                                   // operation = "U" for UPDATE
+   *   ddlMidType.SelectedValue,              // midType (2=Fluke, 3=BCM)
+   *   ddlBattMakeModel.SelectedItem.Text,    // battMakeModel (display NAME, not value!)
+   *   cvtDecimal(txtRefValue.Text),          // refValue1
+   *   cvtDecimal(txtRefValue.Text)           // refValue2
+   * );
+   */
+  updateReferenceValues(): void {
+    const midType = this.batteryStringForm.get('midType')?.value;
+    const selectedValue = this.batteryStringForm.get('battMakeModel')?.value;
+    const refValueStr = this.batteryStringForm.get('refValue')?.value;
+    const refValue = refValueStr ? parseFloat(refValueStr) : 0;
+
+    // CRITICAL: Legacy passes SelectedItem.Text (display name), not SelectedValue
+    // Find the battery in our array to get the display name
+    const selectedBattery = this.batteryMakeModels.find(item => item.value === selectedValue);
+    const battMakeModelName = selectedBattery ? selectedBattery.name : selectedValue;
+
+    // Skip if no battery selected or no reference value
+    if (!battMakeModelName || !refValue) {
+      return;
+    }
+
+    // Legacy passes same refValue for both refValue1 and refValue2
+    this.batteryService
+      .saveReferenceValues(this.equipId, 'U', midType, battMakeModelName, refValue, refValue)
+      .subscribe(
+        () => {
+          // Reference values updated successfully
+        },
+        (error) => {
+          console.error('Error updating reference values:', error);
+          // Don't block save on reference value update failure
         }
       );
   }
@@ -2324,6 +2497,9 @@ export class BatteryReadingsComponent implements OnInit {
           this.updateFormWithEquipmentInfo(equipmentInfo);
         }
 
+        // Step 4: Fetch equipment details to update battNum and battPack
+        this.fetchEquipmentDetailsForBatteryParams();
+
         // Handle post-update actions based on operation type
         if (i === 1) {
           // i=1: ReadingType updated - proceed to next step (reconciliation)
@@ -2336,6 +2512,77 @@ export class BatteryReadingsComponent implements OnInit {
       },
       (error) => {
         this.handleError(`Error fetching equipment info after update (i=${i}): ${error.message}`);
+      }
+    );
+  }
+
+  /**
+   * Fetch equipment details from GetEquipmentDetails API to get updated batteriesPerString and batteriesPerPack
+   * This is called after Change button success to set the updated values
+   */
+  private fetchEquipmentDetailsForBatteryParams(): void {
+    console.log('🔍 [FETCH EQUIPMENT] Calling GetEquipmentDetails API for callNbr:', this.callNbr);
+    
+    this.jobService.getEquipmentDetailsByCallNbr(this.callNbr).subscribe(
+      (equipmentDetails) => {
+        console.log('📦 [API RESPONSE] Received equipment details:', equipmentDetails);
+        
+        if (equipmentDetails && equipmentDetails.length > 0) {
+          // Find the battery equipment by matching equipId
+          const batteryEquipment: any = equipmentDetails.find(
+            (equip: any) => equip.equipId === this.equipId
+          );
+
+          console.log('🔍 [SEARCH] Looking for equipId:', this.equipId);
+          console.log('📌 [FOUND] Battery equipment:', batteryEquipment);
+
+          if (batteryEquipment) {
+            // Log the raw values from API
+            console.log('📊 [RAW API VALUES]:');
+            console.log('   batteriesPerString:', batteryEquipment.batteriesPerString);
+            console.log('   batteriesPerPack:', batteryEquipment.batteriesPerPack);
+            
+            // Update battNum and battPack from API response
+            this.battNum = batteryEquipment.batteriesPerString?.toString() || this.battNum;
+            this.battPack = batteryEquipment.batteriesPerPack?.toString() || this.battPack;
+
+            console.log('🔵 [API UPDATE] Updated battNum and battPack:');
+            console.log('   battNum (from batteriesPerString):', this.battNum);
+            console.log('   battPack (from batteriesPerPack):', this.battPack);
+
+            // Update the form fields with the new values based on stringType
+            const stringType = this.batteryStringForm.get('stringType')?.value;
+            console.log('🔢 [STRING TYPE]:', stringType);
+            
+            if (stringType === '2' || stringType === '3') {
+              // Type 2 & 3: batteriesNo=battPack, packNo=battNum
+              this.batteryStringForm.patchValue({
+                batteriesNo: this.battPack,
+                packNo: this.battNum
+              });
+              console.log('✅ [FORM UPDATE] Type 2/3: batteriesNo=' + this.battPack + ', packNo=' + this.battNum);
+            } else {
+              // Type 1: batteriesNo=battNum, packNo=battPack (packNo is hidden but needed for API)
+              this.batteryStringForm.patchValue({
+                batteriesNo: this.battNum,
+                packNo: this.battPack
+              });
+              console.log('✅ [FORM UPDATE] Type 1: batteriesNo=' + this.battNum + ', packNo=' + this.battPack);
+            }
+            
+            // Recalculate and display battery rows with the updated values
+            console.log('🔄 [DISPLAY] Calling displayBatteryInfo() to recalculate rows...');
+            this.displayBatteryInfo();
+          } else {
+            console.warn('⚠️ [NOT FOUND] No equipment found with equipId:', this.equipId);
+          }
+        } else {
+          console.warn('⚠️ [EMPTY RESPONSE] No equipment details returned from API');
+        }
+      },
+      (error) => {
+        console.error('❌ [API ERROR] Error fetching equipment details:', error);
+        // Don't show error to user as this is supplementary data
       }
     );
   }
@@ -2534,8 +2781,10 @@ export class BatteryReadingsComponent implements OnInit {
       console.log('⏭️ Status IS Offline, skipping getEquipmentStatus()');
     }
     
-    // Step 6: Reload reference values (legacy GetReferenceValues)
-    this.loadReferenceValues();
+    // Step 6: Update reference values (legacy GetReferenceValues with 'U' operation)
+    // Legacy: SqlDataReader dr = da.GetReferenceValues(EquipID, "U", ddlMidType.SelectedValue, 
+    //         ddlBattMakeModel.SelectedItem.Text, cvtDecimal(txtRefValue.Text), cvtDecimal(txtRefValue.Text));
+    this.updateReferenceValues();
     
     // Step 7: Update equipment status
     console.log('💾 Calling updateEquipmentStatusFinal with status:', newStatus);
@@ -2677,6 +2926,8 @@ export class BatteryReadingsComponent implements OnInit {
    * UpdateBatteryInfo(2) for Change button - simpler flow without full save cascade
    */
   private updateBatteryInfoForChange(batteryData: any): void {
+    console.log('🔄 [CHANGE BUTTON] Calling UpdateBatteryInfo(2) with data:', batteryData);
+    
     this.batteryService.updateBatteryInfo(
       this.callNbr,
       this.equipId,
@@ -2685,79 +2936,20 @@ export class BatteryReadingsComponent implements OnInit {
       batteryData
     ).subscribe(
       (response) => {
-        // After successful update, calculate new URL parameters and reload page
-        const newUrlParams = this.calculateUrlParameters();
-        this.updateUrlAndReload(newUrlParams);
+        console.log('✅ [CHANGE BUTTON] UpdateBatteryInfo(2) successful');
+        console.log('📡 [CHANGE BUTTON] Response:', response);
+        
+        // Fetch fresh equipment details to get updated batteriesPerString and batteriesPerPack
+        // This will also update the form fields and call displayBatteryInfo()
+        this.fetchEquipmentDetailsForBatteryParams();
+        
+        this.saving = false;
       },
       (error) => {
         this.handleError(`Error updating battery info: ${error.message}`);
         this.saving = false;
       }
     );
-  }
-
-  /**
-   * Calculate BattNum and BattPack URL parameters based on current form values
-   * Type 1: BattNum = batteriesNo, BattPack = packNo
-   * Type 2: BattNum = packNo, BattPack = batteriesNo
-   * Type 3: BattNum = packNo, BattPack = batteriesNo
-   */
-  private calculateUrlParameters(): { BattNum: string; BattPack: string } {
-    const stringType = this.batteryStringForm.get('stringType')?.value || '';
-    const batteriesNo = this.batteryStringForm.get('batteriesNo')?.value || '';
-    const packNo = this.batteryStringForm.get('packNo')?.value || '';
-
-    let battNum: string;
-    let battPack: string;
-
-    if (stringType === '1') {
-      // Type 1: BattNum from batteriesNo, BattPack from packNo
-      battNum = batteriesNo;
-      battPack = packNo || '';
-      console.log('🔄 [URL CALC] Type 1: BattNum=' + battNum + ' (from batteriesNo), BattPack=' + battPack + ' (from packNo)');
-    } else if (stringType === '2' || stringType === '3') {
-      // Type 2 & 3: BattNum from packNo, BattPack from batteriesNo
-      battNum = packNo;
-      battPack = batteriesNo;
-      console.log('🔄 [URL CALC] Type ' + stringType + ': BattNum=' + battNum + ' (from packNo), BattPack=' + battPack + ' (from batteriesNo)');
-    } else {
-      // Fallback
-      battNum = batteriesNo;
-      battPack = packNo || '';
-      console.log('🔄 [URL CALC] Unknown type, using default: BattNum=' + battNum + ', BattPack=' + battPack);
-    }
-
-    return { BattNum: battNum, BattPack: battPack };
-  }
-
-  /**
-   * Update URL parameters and reload the page
-   */
-  private updateUrlAndReload(params: { BattNum: string; BattPack: string }): void {
-    console.log('🔄 [URL UPDATE] Updating URL with BattNum=' + params.BattNum + ', BattPack=' + params.BattPack);
-    
-    // Build new query parameters
-    const queryParams = {
-      CallNbr: this.callNbr,
-      EquipId: this.equipId.toString(),
-      EquipNo: encodeURIComponent(this.batStrId),
-      Tech: this.techId,
-      TechName: this.techName,
-      ReadingType: this.readingType,
-      BattNum: params.BattNum,
-      BattPack: params.BattPack
-    };
-
-    // Navigate to same route with updated query parameters
-    // This will reload the page with new parameters
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: queryParams,
-      queryParamsHandling: 'merge'
-    }).then(() => {
-      // Reload the page to apply new parameters
-      window.location.reload();
-    });
   }
 
   /**

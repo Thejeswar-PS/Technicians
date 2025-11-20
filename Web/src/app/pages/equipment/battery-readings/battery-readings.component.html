@@ -27,10 +27,10 @@
         <i class="bi bi-battery-charging me-2"></i>
         Battery Readings & Verification
       </h2>
-      <!-- Job and Equipment Information
+      <!-- Job and Equipment Information -->
       <div class="text-dark mt-2" *ngIf="!loading">
         <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | Battery String ID: {{ batStrId || 'N/A' }}</span>
-      </div> -->
+      </div>
     </div>
     
     <button
@@ -52,18 +52,16 @@
   <!-- Main content -->
   <div *ngIf="!loading">
     <div class="card shadow-sm ups-main-card">
-      <div class="card-header border-0 py-4">
-        <div class="ups-readings-header">
-          <div class="ups-readings-header__group"></div>
-
+      <!-- Form sections within card body -->
+      <div class="card-body">
         <!-- Messages -->
         <div
-          class="ups-readings-messages"
+          class="ups-readings-messages mb-4"
           *ngIf="errorMessage || successMessage"
         >
           <div
             *ngIf="errorMessage"
-            class="alert alert-danger d-inline-flex align-items-center"
+            class="alert alert-danger d-flex align-items-center"
           >
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
             <span>{{ errorMessage }}</span>
@@ -72,7 +70,7 @@
             *ngIf="
               successMessage && successMessage.includes('No Information Found')
             "
-            class="alert alert-warning d-inline-flex align-items-center"
+            class="alert alert-warning d-flex align-items-center"
           >
             <i class="bi bi-info-circle-fill me-2"></i>
             <span>{{ successMessage }}</span>
@@ -81,16 +79,12 @@
             *ngIf="
               successMessage && !successMessage.includes('No Information Found')
             "
-            class="alert alert-success d-inline-flex align-items-center"
+            class="alert alert-success d-flex align-items-center"
           >
             <i class="bi bi-check-circle-fill me-2"></i>
             <span>{{ successMessage }}</span>
           </div>
         </div>
-      </div>
-
-      <!-- Form sections within card body -->
-      <div class="card-body">
         <div class="ups-readings-form">
   <form [formGroup]="batteryStringForm">
     <!-- Equipment Information Section -->
@@ -298,6 +292,7 @@
                 type="checkbox"
                 id="reconciled"
                 formControlName="reconciled"
+                style="border: 2px solid #009EF7 ; width: 20px; height: 20px;"
               />
               <label class="form-check-label fw-bold text-success" for="reconciled">
                 <i class="bi bi-check-circle me-1"></i>
@@ -914,248 +909,297 @@
         </div>
 
         <div class="ups-section-content" [class.show]="showMultimeterReadings">
-          <div class="battery-readings-form">
+          <div class="ups-form">
             <!-- Row 1: Room Temperature / Battery Temperature -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-2">
-                  <label for="roomTemp" class="form-label">Room Temperature :</label>
-                  <input type="number" step="0.1" class="form-control" id="roomTemp" formControlName="roomTemp" placeholder="72" (change)="onRoomTempChange()" />
+                  <div class="form-floating">
+                    <input type="number" step="0.1" class="form-control" id="roomTemp" formControlName="roomTemp" placeholder="72" (change)="onRoomTempChange()" />
+                    <label for="roomTemp">Room Temperature</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="roomTempVerify" class="form-label">Pass/Fail</label>
-                  <select class="form-select" id="roomTempVerify" formControlName="roomTempVerify">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="roomTempVerify" formControlName="roomTempVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="roomTempVerify">Pass/Fail</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="batteryTemp" class="form-label">Battery Temperature :</label>
-                  <input type="number" step="0.1" class="form-control" id="batteryTemp" formControlName="batteryTemp" placeholder="72" (change)="onBatteryTempChange()" />
+                  <div class="form-floating">
+                    <input type="number" step="0.1" class="form-control" id="batteryTemp" formControlName="batteryTemp" placeholder="72" (change)="onBatteryTempChange()" />
+                    <label for="batteryTemp">Battery Temperature</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="batteryTempVerify" class="form-label">Pass/Fail</label>
-                  <select class="form-select" id="batteryTempVerify" formControlName="batteryTempVerify">
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="batteryTempVerify" formControlName="batteryTempVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="batteryTempVerify">Pass/Fail</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 2: Battery Terminal Type / Battery Terminal Size -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-3">
-                  <label for="battTerminalType" class="form-label">Battery Terminal Type :</label>
-                  <select class="form-select" id="battTerminalType" formControlName="battTerminalType">
-                    <option value="">Please Select</option>
-                    <option value="LG">L(Horizontal) Post - bolt</option>
-                    <option value="FG">Flag(Vertical) Post - bolt</option>
-                    <option value="TI">Threaded Insert</option>
-                    <option value="SD">Studded</option>
-                    <option value="SP">Spade</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="battTerminalType" formControlName="battTerminalType">
+                      <option value="">Please Select</option>
+                      <option value="LG">L(Horizontal) Post - bolt</option>
+                      <option value="FG">Flag(Vertical) Post - bolt</option>
+                      <option value="TI">Threaded Insert</option>
+                      <option value="SD">Studded</option>
+                      <option value="SP">Spade</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <label for="battTerminalType">Battery Terminal Type</label>
+                  </div>
                 </div>
                 <div class="col-md-5">
-                  <label for="battTerminal" class="form-label">Battery Terminal Size :</label>
-                  <select class="form-select" id="battTerminal" formControlName="battTerminal">
-                    <option value="">Please Select</option>
-                    <option value="T1">T1 Spade - 3/16 -0.187mm</option>
-                    <option value="T2">T2 Spade - 1/4 -0.250mm</option>
-                    <option value="M4">Bolt - 4mm (M4) - Head - 7mm</option>
-                    <option value="M5">Bolt - 5mm (M5) - Head - 8mm</option>
-                    <option value="M6">Bolt - 6mm (M6)- Head - 10mm</option>
-                    <option value="M8">Bolt - 8mm (M8)- Head - 13mm</option>
-                    <option value="M10">Bolt - 10mm (M10)- Head - 16mm</option>
-                    <option value="M12">Bolt - 12mm (M12)- Head - 18mm</option>
-                    <option value="M14">Bolt - 14mm (M14)- Head - 21mm</option>
-                    <option value="M16">Bolt - 16mm (M16)- Head - 24mm</option>
-                    <option value="M20">Bolt - 20mm (M20)- Head - 30mm</option>
-                    <option value="N6">US Bolt -0.1380 (#6)- Head - 1/4inch</option>
-                    <option value="N8">US Bolt -0.1640" (#8)- Head - 1/4inch</option>
-                    <option value="N10">US Bolt -0.1900" (#10)- Head - 5/16inch</option>
-                    <option value="N12">US Bolt -0.2160" (#12)- Head - 5/16inch</option>
-                    <option value="1/4">US Bolt -1/4- Head - 7/16 or 3/8</option>
-                    <option value="5/16">US Bolt -5/16- Head - 1/2</option>
-                    <option value="3/8">US Bolt -3/8- Head - 9/16</option>
-                    <option value="7/16">US Bolt -7/16- Head - 5/8</option>
-                    <option value="1/2">US Bolt -1/2- Head - 3/4</option>
-                    <option value="9/16">US Bolt -9/16- Head - 13/16</option>
-                    <option value="5/8">US Bolt -5/8- Head - 15/16</option>
-                    <option value="3/4">US Bolt -3/4- Head - 1-1/8</option>
-                    <option value="7/8">US Bolt -7/8 Head - 1-5/16</option>
-                    <option value="1">US Bolt -1- Head - 1-1/2</option>
-                    <option value="118">US Bolt -1-1/8- Head - 1-11/16</option>
-                    <option value="114">US Bolt -1-1/4- Head - 1-7/8</option>
-                    <option value="Other">Other</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="battTerminal" formControlName="battTerminal">
+                      <option value="">Please Select</option>
+                      <option value="T1">T1 Spade - 3/16 -0.187mm</option>
+                      <option value="T2">T2 Spade - 1/4 -0.250mm</option>
+                      <option value="M4">Bolt - 4mm (M4) - Head - 7mm</option>
+                      <option value="M5">Bolt - 5mm (M5) - Head - 8mm</option>
+                      <option value="M6">Bolt - 6mm (M6)- Head - 10mm</option>
+                      <option value="M8">Bolt - 8mm (M8)- Head - 13mm</option>
+                      <option value="M10">Bolt - 10mm (M10)- Head - 16mm</option>
+                      <option value="M12">Bolt - 12mm (M12)- Head - 18mm</option>
+                      <option value="M14">Bolt - 14mm (M14)- Head - 21mm</option>
+                      <option value="M16">Bolt - 16mm (M16)- Head - 24mm</option>
+                      <option value="M20">Bolt - 20mm (M20)- Head - 30mm</option>
+                      <option value="N6">US Bolt -0.1380 (#6)- Head - 1/4inch</option>
+                      <option value="N8">US Bolt -0.1640" (#8)- Head - 1/4inch</option>
+                      <option value="N10">US Bolt -0.1900" (#10)- Head - 5/16inch</option>
+                      <option value="N12">US Bolt -0.2160" (#12)- Head - 5/16inch</option>
+                      <option value="1/4">US Bolt -1/4- Head - 7/16 or 3/8</option>
+                      <option value="5/16">US Bolt -5/16- Head - 1/2</option>
+                      <option value="3/8">US Bolt -3/8- Head - 9/16</option>
+                      <option value="7/16">US Bolt -7/16- Head - 5/8</option>
+                      <option value="1/2">US Bolt -1/2- Head - 3/4</option>
+                      <option value="9/16">US Bolt -9/16- Head - 13/16</option>
+                      <option value="5/8">US Bolt -5/8- Head - 15/16</option>
+                      <option value="3/4">US Bolt -3/4- Head - 1-1/8</option>
+                      <option value="7/8">US Bolt -7/8 Head - 1-5/16</option>
+                      <option value="1">US Bolt -1- Head - 1-1/2</option>
+                      <option value="118">US Bolt -1-1/8- Head - 1-11/16</option>
+                      <option value="114">US Bolt -1-1/4- Head - 1-7/8</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <label for="battTerminal">Battery Terminal Size</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="battTerminalValue" class="form-label">Other Size</label>
-                  <input type="text" class="form-control" id="battTerminalValue" formControlName="battTerminalValue" placeholder="If other" />
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="battTerminalValue" formControlName="battTerminalValue" placeholder="If other" />
+                    <label for="battTerminalValue">Other Size</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 3: Rack Integrity / Vent Fan Operation -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-3">
-                  <label for="rackIntegrity" class="form-label">Verify Rack Integrity/Vent Fan Operation :</label>
-                  <select class="form-select" id="rackIntegrity" formControlName="rackIntegrity">
-                    <option value="">Select</option>
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="rackIntegrity" formControlName="rackIntegrity">
+                      <option value="">Select</option>
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="rackIntegrity">Verify Rack Integrity/Vent Fan Operation</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="ventFanOperation" class="form-label">Vent Fan Operation :</label>
-                  <select class="form-select" id="ventFanOperation" formControlName="ventFanOperation">
-                    <option value="">Select</option>
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                    <option value="A">N/A</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="ventFanOperation" formControlName="ventFanOperation">
+                      <option value="">Select</option>
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                    <label for="ventFanOperation">Vent Fan Operation</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 4: Battery Disconnect / Interconnection -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-3">
-                  <label for="battDisconnect" class="form-label">Individual Battery Disconnect :</label>
-                  <select class="form-select" id="battDisconnect" formControlName="battDisconnect">
-                    <option value="">Select</option>
-                    <option value="P">Pass</option>
-                    <option value="F">Fail</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="battDisconnect" formControlName="battDisconnect">
+                      <option value="">Select</option>
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="battDisconnect">Individual Battery Disconnect</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="indBattInterconnection" class="form-label">Interconnections :</label>
-                  <select class="form-select" id="indBattInterconnection" formControlName="indBattInterconnection">
-                    <option value="">Select</option>
-                    <option value="Cables">Cables</option>
-                    <option value="Busbar">Busbar</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="indBattInterconnection" formControlName="indBattInterconnection">
+                      <option value="">Select</option>
+                      <option value="Cables">Cables</option>
+                      <option value="Busbar">Busbar</option>
+                    </select>
+                    <label for="indBattInterconnection">Interconnections</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 5: Recommend to Replace / Quantities -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
-                <div class="col-md-5">
-                  <label for="reasonToReplace" class="form-label">
-                    <input type="checkbox" class="form-check-input me-2" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" style="vertical-align: middle;" />
-                    Recommend to Replace Complete String ? :
-                  </label>
-                  <select class="form-select" id="reasonToReplace" formControlName="reasonToReplace" [disabled]="!batteryStringForm.get('replaceWholeString')?.value" (change)="onReasonToReplaceChange($event)">
-                    <option value="">Select</option>
-                    <option value="DA">Due to Age</option>
-                    <option value="DF">Due to Faulty Batteries</option>
-                    <option value="BT">Due to Age and Faulty Batteries</option>
-                  </select>
+              <div class="row g-3 align-items-center">
+                
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <label>Recommend to Replace Complete String?</label>
+                    <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" />
+                    
+                  </div>
+                  <div class="form-floating">
+                    <select class="form-select" id="reasonToReplace" formControlName="reasonToReplace" [disabled]="!batteryStringForm.get('replaceWholeString')?.value" (change)="onReasonToReplaceChange($event)">
+                      <option value="">Select</option>
+                      <option value="DA">Due to Age</option>
+                      <option value="DF">Due to Faulty Batteries</option>
+                      <option value="BT">Due to Age and Faulty Batteries</option>
+                    </select>
+                    <label for="reasonToReplace">Reason</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 6: Replace/Monitor Quantities -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-2">
-                  <label for="usedQuantity" class="form-label">Recommend to replace :</label>
-                  <input type="number" class="form-control" id="usedQuantity" formControlName="usedQuantity" placeholder="30" />
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="usedQuantity" formControlName="usedQuantity" placeholder="30" />
+                    <label for="usedQuantity">Recommend to replace</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="monitored" class="form-label">monitor :</label>
-                  <input type="number" class="form-control" id="monitored" formControlName="monitored" placeholder="0" />
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="monitored" formControlName="monitored" placeholder="0" />
+                    <label for="monitored">monitor</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 7: Float Voltage Selection / Value -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-3">
-                  <label for="floatVoltageStatus" class="form-label">Float Voltage Selection :</label>
-                  <select class="form-select" id="floatVoltageStatus" formControlName="floatVoltageStatus">
-                    <option value="">Please Select</option>
-                    <option value="OF">Breaker Open</option>
-                    <option value="ON">Breaker Closed</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="floatVoltageStatus" formControlName="floatVoltageStatus">
+                      <option value="">Please Select</option>
+                      <option value="OF">Breaker Open</option>
+                      <option value="ON">Breaker Closed</option>
+                    </select>
+                    <label for="floatVoltageStatus">Float Voltage Selection</label>
+                  </div>
                 </div>
                 <div class="col-md-3">
-                  <label for="floatVoltageValue" class="form-label">Value :</label>
-                  <select class="form-select" id="floatVoltageValue" formControlName="floatVoltageValue">
-                    <option value="">Please Select</option>
-                    <option value="1">Normal Float</option>
-                    <option value="2">ABM Charger</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="floatVoltageValue" formControlName="floatVoltageValue">
+                      <option value="">Please Select</option>
+                      <option value="1">Normal Float</option>
+                      <option value="2">ABM Charger</option>
+                    </select>
+                    <label for="floatVoltageValue">Value</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 8: Readings Taken By / Make Model / Ref Value -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-2">
-                  <label for="midType" class="form-label">Readings Taken By :</label>
-                  <select class="form-select" id="midType" formControlName="midType" (change)="onMidTypeChange($event)">
-                    <option value="">Select</option>
-                    <option value="2">Fluke</option>
-                    <option value="3">BCM</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="midType" formControlName="midType" (change)="onMidTypeChange($event)">
+                      <option value="">Select</option>
+                      <option value="2">Fluke</option>
+                      <option value="3">BCM</option>
+                    </select>
+                    <label for="midType">Readings Taken By</label>
+                  </div>
                 </div>
                 <div class="col-md-4">
-                  <label for="battMakeModel" class="form-label">Battery Make/Model :</label>
-                  <select class="form-select" id="battMakeModel" formControlName="battMakeModel" (change)="onBattMakeModelChange($event)">
-                    <option value="">Select Battery Make/Model</option>
-                    <option *ngFor="let item of batteryMakeModels" [value]="item.value">{{ item.name }}</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="battMakeModel" formControlName="battMakeModel" (change)="onBattMakeModelChange($event)">
+                      <option value="">Select Battery Make/Model</option>
+                      <option *ngFor="let item of batteryMakeModels" [value]="item.name">{{ item.name }}</option>
+                    </select>
+                    <label for="battMakeModel">Battery Make/Model</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
-                  <label for="refValue" class="form-label">Reference Value :</label>
-                  <input type="text" class="form-control fw-bold" id="refValue" formControlName="refValue" placeholder="2.25" />
+                  <div class="form-floating">
+                    <input type="text" class="form-control fw-bold" id="refValue" formControlName="refValue" placeholder="2.25" />
+                    <label for="refValue">Reference Value</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 9: String Type -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3">
                 <div class="col-md-3">
-                  <label for="stringType" class="form-label">String Type :</label>
-                  <select class="form-select" id="stringType" formControlName="stringType" (change)="onStringTypeChange($event)">
-                    <option value="">Please Select</option>
-                    <option value="1">External</option>
-                    <option value="2">Internal Single / Parallel Strings</option>
-                    <option value="3">Battery Packs / Trays</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="stringType" formControlName="stringType" (change)="onStringTypeChange($event)">
+                      <option value="">Please Select</option>
+                      <option value="1">External</option>
+                      <option value="2">Internal Single / Parallel Strings</option>
+                      <option value="3">Battery Packs / Trays</option>
+                    </select>
+                    <label for="stringType">String Type</label>
+                  </div>
                 </div>
                 <div class="col-md-3">
-                  <label for="readingType" class="form-label">Reading Type :</label>
-                  <select class="form-select" id="readingType" formControlName="readingType">
-                    <option value="">Please Select</option>
-                    <option value="1">Voltage Only</option>
-                    <option value="2">Voltage & Conductance / Resistance</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="readingType" formControlName="readingType">
+                      <option value="">Please Select</option>
+                      <option value="1">Voltage Only</option>
+                      <option value="2">Voltage & Conductance / Resistance</option>
+                    </select>
+                    <label for="readingType">Reading Type</label>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- Row 11: No of Batteries per string / Change Button -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3 align-items-center">
                 <div class="col-md-2">
-                  <label for="batteriesNo" class="form-label">{{ batteriesNoLabel }}</label>
-                  <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="30" />
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="30" />
+                    <label for="batteriesNo">{{ batteriesNoLabel }}</label>
+                  </div>
                 </div>
                 <div class="col-md-2" *ngIf="showPackNoField">
-                  <label for="packNo" class="form-label">{{ packNoLabel }}</label>
-                  <input type="number" class="form-control" id="packNo" formControlName="packNo" placeholder="0" />
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="packNo" formControlName="packNo" placeholder="0" />
+                    <label for="packNo">{{ packNoLabel }}</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
                   <button type="button" class="btn btn-primary w-100" style="height: 38px;" (click)="onChange()">
@@ -1167,14 +1211,16 @@
 
             <!-- Row 12: How do you want readings to be calculated -->
             <div class="form-group-modern">
-              <div class="row g-3 align-items-end">
+              <div class="row g-3 align-items-center">
                 <div class="col-md-3">
-                  <label for="repMonCalculate" class="form-label">How do you want readings to be calculated ? :</label>
-                  <select class="form-select" id="repMonCalculate" formControlName="repMonCalculate" readonly>
-                    <option value="">Select</option>
-                    <option value="1">System</option>
-                    <option value="2">Manual</option>
-                  </select>
+                  <div class="form-floating">
+                    <select class="form-select" id="repMonCalculate" formControlName="repMonCalculate" readonly>
+                      <option value="">Select</option>
+                      <option value="1">System</option>
+                      <option value="2">Manual</option>
+                    </select>
+                    <label for="repMonCalculate">How do you want readings to be calculated ?</label>
+                  </div>
                 </div>
                 <div class="col-md-2">
                   <button type="button" class="btn btn-success w-100" style="height: 38px;">
