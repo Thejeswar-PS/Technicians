@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms'
 import { ToastrService } from 'ngx-toastr';
 import { BatteryReadingsService } from '../../../core/services/battery-readings.service';
 import { JobService } from '../../../core/services/job.service';
+import { CommonService } from '../../../core/services/common.service';
 import {
   BatteryStringInfo,
   EquipReconciliationInfo,
@@ -60,6 +61,7 @@ export class BatteryReadingsComponent implements OnInit {
   batteriesNoLabel: string = 'No of Batteries per string';
   showPackNoField: boolean = false;
   packNoLabel: string = 'Batteries per String';
+  reconciliationBattPerStringLabel: string = 'Batteries Per String';
 
   // Grid Row Counts
   totalReplace: number = 0;
@@ -72,6 +74,10 @@ export class BatteryReadingsComponent implements OnInit {
   batteryTypes: any[] = [];
   statuses: any[] = [];
 
+  // User Status
+  userEmployeeStatus: string = '';
+  isRepMonCalculateDisabled: boolean = false;
+
   @ViewChild('errMsg') errMsgElement!: ElementRef;
 
   constructor(
@@ -80,6 +86,7 @@ export class BatteryReadingsComponent implements OnInit {
     private router: Router,
     private batteryService: BatteryReadingsService,
     private jobService: JobService,
+    private commonService: CommonService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef
   ) {
@@ -90,6 +97,7 @@ export class BatteryReadingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeFromRoute();
+    this.getEmployeeStatus();
     this.loadInitialData();
   }
 
@@ -115,6 +123,41 @@ export class BatteryReadingsComponent implements OnInit {
       
       console.log('🔵 [INIT] After validation - BattNum:', this.battNum, '| BattPack:', this.battPack);
     });
+  }
+
+  /**
+   * Get employee status to determine if repMonCalculate dropdown should be disabled
+   * Legacy: GetEmpStatus() - If status is "Technician", disable dropdown and set to "System" (1)
+   */
+  private getEmployeeStatus(): void {
+    this.commonService.getEmployeeStatusForJobList(this.getUserId()).subscribe(
+      (response: any) => {
+        if (response && response.length > 0) {
+          const status = response[0].status || response[0].Status;
+          this.userEmployeeStatus = status;
+          
+          if (status === 'Technician') {
+            this.isRepMonCalculateDisabled = true;
+            
+            // Set the value to "1" (System) and disable the control
+            this.batteryStringForm.patchValue({ repMonCalculate: '1' });
+            this.batteryStringForm.get('repMonCalculate')?.disable();
+            
+          } else if (status === 'Manager' || status === 'Other') {
+            this.isRepMonCalculateDisabled = false;
+            // Keep control enabled (default state)
+          } else {
+            // Default to enabled for unknown statuses
+            this.isRepMonCalculateDisabled = false;
+          }
+        } else {
+          this.isRepMonCalculateDisabled = false;
+        }
+      },
+      (error) => {
+        this.isRepMonCalculateDisabled = false;
+      }
+    );
   }
 
   /**
@@ -276,7 +319,7 @@ export class BatteryReadingsComponent implements OnInit {
    * Map battery data to grid rows
    */
   private mapBatteryDataToRows(data: BatteryData[]): BatteryReadingRow[] {
-    console.log('Mapping battery data from API:', data);
+    
     return data.map((item, index) => {
       // API GET returns 'mhos', API POST expects 'milliohms'
       const mhosValue = item.milliohms || item.mhos || 0;
@@ -294,7 +337,6 @@ export class BatteryReadingsComponent implements OnInit {
         actionPlan: item.actionPlan || '',
         temp: typeof item.temp === 'string' ? parseInt(item.temp) : (item.temp || 70),
       };
-      console.log(`Battery ${mappedRow.batteryId} - Mapping: API mhos=${item.mhos}, API milliohms=${item.milliohms}, final mhos=${mappedRow.mhos}`);
       return mappedRow;
     });
   }
@@ -322,6 +364,40 @@ export class BatteryReadingsComponent implements OnInit {
       console.log('   Display batteriesNo:', batteriesNo);
       console.log('   Display packNo:', packNo);
       
+      // Update reconciliation label based on stringType (legacy: lblRecBatt.Text)
+      // Also update reconciliation battPerString value (legacy: txtBPerString.Text = BattNum.ToString())
+      // Type 3: batteriesNo = BattPack (No of Packs), packNo = BattNum (Batteries per Pack)
+      // Type 2: batteriesNo = BattPack (No of Strings), packNo = BattNum (Batteries per String)
+      // Type 1: batteriesNo = BattNum (No of Batteries per string)
+      let battPerStringValue = 0;
+      
+      if (stringType === '3') {
+        // Type 3: Show "No of Battery Packs" = batteriesNo (BattPack)
+        this.reconciliationBattPerStringLabel = 'No of Battery Packs';
+        battPerStringValue = batteriesNo;
+      } else if (stringType === '2') {
+        // Type 2: Show "Batteries per String" = packNo (BattNum)
+        this.reconciliationBattPerStringLabel = 'Batteries per String';
+        battPerStringValue = packNo;
+      } else {
+        // Type 1: Show "No of Batteries per string" = batteriesNo (BattNum)
+        this.reconciliationBattPerStringLabel = 'No of Batteries per string';
+        battPerStringValue = batteriesNo;
+      }
+      
+      // Update the reconciliation form battPerString field (legacy: txtBPerString.Text = BattNum.ToString())
+      this.reconciliationForm.patchValue({
+        battPerString: battPerStringValue
+      });
+      
+      console.log('✅ Updated reconciliation battPerString:');
+      console.log('   Label:', this.reconciliationBattPerStringLabel);
+      console.log('   Value:', battPerStringValue);
+      console.log('   Calculation: Type', stringType,
+        stringType === '3' ? `= batteriesNo (${batteriesNo})` :
+        stringType === '2' ? `= packNo (${packNo})` :
+        `= batteriesNo (${batteriesNo})`);
+      
       let expectedBatteryCount = 0;
       if (stringType === '3') {
         // Battery Packs / Trays: Use batteriesNo (No of Battery Packs)
@@ -338,6 +414,7 @@ export class BatteryReadingsComponent implements OnInit {
       }
       
       console.log('   ✅ Expected battery rows:', expectedBatteryCount);
+      console.log('   ✅ Updated reconciliation battPerString to:', battPerStringValue);
 
       // Step 2: Get current battery info from backend
       this.batteryService.getBatteryInfo(this.callNbr, this.equipId, this.batStrId).subscribe(
@@ -778,8 +855,7 @@ export class BatteryReadingsComponent implements OnInit {
       actBattPerString: data.actBattPerString,
       reconciled: data.verified,
     });
-
-    // Set readonly state for actual fields based on "Is Correct" dropdowns (legacy: EnabletoEdit)
+    
     this.onReconciliationChange();
   }
 
@@ -871,7 +947,7 @@ export class BatteryReadingsComponent implements OnInit {
    * Create reconciliation form
    */
   private createReconciliationForm(): FormGroup {
-    return this.fb.group({
+    const form = this.fb.group({
       recMake: [''],
       recMakeCorrect: ['YS'],
       actMake: [{ value: '', disabled: true }],
@@ -889,6 +965,14 @@ export class BatteryReadingsComponent implements OnInit {
       actBattPerString: [{ value: '', disabled: true }],
       reconciled: [false],
     });
+    
+    // Add value change listener to reconciled checkbox
+    form.get('reconciled')?.valueChanges.subscribe(value => {
+      console.log('🔔 Reconciled checkbox value changed:', value, typeof value);
+    });
+    
+    console.log('✅ Reconciliation form created with reconciled initial value:', form.get('reconciled')?.value);
+    return form;
   }
 
   /**
@@ -954,7 +1038,6 @@ export class BatteryReadingsComponent implements OnInit {
    */
   onManufacturerChange(event: any): void {
     const value = event.target.value;
-    console.log('Manufacturer changed to:', value);
     this.batteryStringForm.patchValue({ manufacturer: value });
   }
 
@@ -963,7 +1046,6 @@ export class BatteryReadingsComponent implements OnInit {
    */
   onFieldChange(event: any, fieldName: string): void {
     const value = event.target.value;
-    console.log(`${fieldName} changed to:`, value);
     this.batteryStringForm.patchValue({ [fieldName]: value });
   }
 
@@ -1008,20 +1090,14 @@ export class BatteryReadingsComponent implements OnInit {
   onStringTypeChange(event: any): void {
     const stringType = event?.target?.value || this.batteryStringForm.get('stringType')?.value;
     
-    console.log('� [DROPDOWN] onStringTypeChange called');
-    console.log('🟡 [DROPDOWN] Event:', event);
-    console.log('🟡 [DROPDOWN] Selected stringType:', stringType);
-    console.log('� [DROPDOWN] URL params - BattNum:', this.battNum, '| BattPack:', this.battPack);
     
     // Get current form values BEFORE any changes
     const currentBatteriesNo = this.batteryStringForm.get('batteriesNo')?.value;
     const currentPackNo = this.batteryStringForm.get('packNo')?.value;
-    console.log('� [DROPDOWN] BEFORE change - batteriesNo:', currentBatteriesNo, '| packNo:', currentPackNo);
-    
+   
     // Determine if we're in initial load (has URL params) or user change (event exists)
     const isUserChange = event !== null;
     const hasUrlParams = !!(this.battNum || this.battPack);
-    console.log('🟡 [DROPDOWN] isUserChange:', isUserChange, '| hasUrlParams:', hasUrlParams);
     
     if (stringType === '3') {
       // Battery Packs / Trays
@@ -1029,8 +1105,8 @@ export class BatteryReadingsComponent implements OnInit {
       // batteriesNo field shows BattPack (5), packNo field shows BattNum (2)
       this.batteriesNoLabel = 'No of Battery Packs:';
       this.packNoLabel = 'Batteries per Pack:';
+      this.reconciliationBattPerStringLabel = 'No of Battery Packs';
       this.showPackNoField = true;
-      console.log('🟡 [DROPDOWN] Type 3 selected - Labels updated');
       
       // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
       if (hasUrlParams) {
@@ -1038,16 +1114,10 @@ export class BatteryReadingsComponent implements OnInit {
         const newBatteriesNo = this.battPack || currentBatteriesNo;
         const newPackNo = this.battNum || currentPackNo;
         
-        console.log('🟡 [DROPDOWN] Type 3 - Will set batteriesNo =', newBatteriesNo, '(BattPack), packNo =', newPackNo, '(BattNum)');
         this.batteryStringForm.patchValue({
           batteriesNo: newBatteriesNo,
           packNo: newPackNo
         });
-      } else if (isUserChange) {
-        // User changing dropdown but no URL params - keep current values
-        console.log('🟡 [DROPDOWN] Type 3 - Keeping current values (no URL params)');
-      } else {
-        console.log('🟡 [DROPDOWN] Type 3 - No update (loading from DB)');
       }
     } else if (stringType === '2') {
       // Internal Single / Parallel Strings
@@ -1055,8 +1125,8 @@ export class BatteryReadingsComponent implements OnInit {
       // batteriesNo field shows BattPack (5), packNo field shows BattNum (2)
       this.batteriesNoLabel = 'No of Internal Strings:';
       this.packNoLabel = 'Batteries per String:';
+      this.reconciliationBattPerStringLabel = 'Batteries per String';
       this.showPackNoField = true;
-      console.log('🟡 [DROPDOWN] Type 2 selected - Labels updated');
       
       // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
       if (hasUrlParams) {
@@ -1064,16 +1134,10 @@ export class BatteryReadingsComponent implements OnInit {
         const newBatteriesNo = this.battPack || currentBatteriesNo;
         const newPackNo = this.battNum || currentPackNo;
         
-        console.log('🟡 [DROPDOWN] Type 2 - Will set batteriesNo =', newBatteriesNo, '(BattPack), packNo =', newPackNo, '(BattNum)');
         this.batteryStringForm.patchValue({
           batteriesNo: newBatteriesNo,
           packNo: newPackNo
         });
-      } else if (isUserChange) {
-        // User changing dropdown but no URL params - keep current values
-        console.log('🟡 [DROPDOWN] Type 2 - Keeping current values (no URL params)');
-      } else {
-        console.log('🟡 [DROPDOWN] Type 2 - No update (loading from DB)');
       }
     } else {
       // External (default) - Type 1
@@ -1081,31 +1145,24 @@ export class BatteryReadingsComponent implements OnInit {
       // packNo field is hidden but should preserve its value for API
       this.batteriesNoLabel = 'No of Batteries per string:';
       this.packNoLabel = 'Batteries per String';
+      this.reconciliationBattPerStringLabel = 'No of Batteries per string';
       this.showPackNoField = false;
-      console.log('🟡 [DROPDOWN] Type 1 selected - Labels updated, packNo field hidden');
       
       // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
       if (hasUrlParams) {
         // Use URL params to set correct value for Type 1 (only BattNum)
         const newBatteriesNo = this.battNum || currentBatteriesNo;
         
-        console.log('🟡 [DROPDOWN] Type 1 - Will set batteriesNo =', newBatteriesNo, '(BattNum)');
         this.batteryStringForm.patchValue({
           batteriesNo: newBatteriesNo
           // NOTE: Do NOT clear packNo - it may have a value that needs to be sent to API
           // packNo field is hidden but value is preserved
         });
-      } else if (isUserChange) {
-        // User changing dropdown but no URL params - keep current batteriesNo value
-        console.log('🟡 [DROPDOWN] Type 1 - Keeping current batteriesNo (no URL params)');
-      } else {
-        console.log('🟡 [DROPDOWN] Type 1 - No update (loading from DB)');
       }
       // NOTE: Removed automatic packNo clearing for Type 1
       // The packNo value is preserved even though the field is hidden
     }
     
-    console.log('🟡 [DROPDOWN] AFTER change - batteriesNo:', this.batteryStringForm.get('batteriesNo')?.value, '| packNo:', this.batteryStringForm.get('packNo')?.value);
   }
   /**
    * Handle reconciliation dropdown changes
@@ -1890,95 +1947,57 @@ export class BatteryReadingsComponent implements OnInit {
       const currentStatus = this.batteryStringForm.get('equipStatus')?.value;
       let resultStatus = 'Online';
 
-      console.log('\n=== getEquipmentStatus START ===');
-      console.log('📊 Input Status:', currentStatus);
-      console.log('📍 Battery Readings Count:', this.batteryReadings.length);
+      // Get critical form values for status determination
+      const usedQuantity = parseInt(this.batteryStringForm.get('usedQuantity')?.value) || 0;
+      const reasonToReplace = this.batteryStringForm.get('reasonToReplace')?.value;
+      const replaceWholeString = this.batteryStringForm.get('replaceWholeString')?.value;
 
       // Step 1: Check usedQuantity (batteries marked for replacement)
       // Legacy: if(cvt2Int(txtUsedQuantity.Text)>0) return "CriticalDeficiency";
-      const usedQuantity = parseInt(this.batteryStringForm.get('usedQuantity')?.value) || 0;
-      console.log('\n🔍 Step 1: Check usedQuantity');
-      console.log('   usedQuantity =', usedQuantity);
-      
-      // Log battery grid to see which batteries are marked for replacement
-      const replacementBatteries = this.batteryReadings.filter(b => b.replacementNeeded === 'Y');
-      if (replacementBatteries.length > 0) {
-        console.log('   ⚠️ Batteries marked for replacement:', 
-                    replacementBatteries.map(b => `#${b.batteryId}`).join(', '));
-      }
-      
       if (usedQuantity > 0) {
-        console.log('   ❌ RESULT: CriticalDeficiency (usedQuantity > 0)');
-        console.log('   📝 This is CORRECT legacy behavior');
-        console.log('   💡 To test other statuses: Change "Replace?" to "N" for these batteries in the grid');
-        console.log('=== getEquipmentStatus END ===\n');
         return 'CriticalDeficiency';
       }
-      console.log('   ✅ Pass: No batteries marked for replacement');
-
-      console.log('   ✅ Pass: No batteries marked for replacement');
-
+      
       // Step 2: Check for replacement recommended or proactive replacement
       // Legacy: RecommendtoReplace() || (ddlReasonToReplace.SelectedValue == "DA" && chkReplace.Checked)
-      console.log('\n🔍 Step 2: Check age-based replacement');
       const recommendToReplaceResult = this.recommendToReplace();
-      const reasonToReplace = this.batteryStringForm.get('reasonToReplace')?.value;
-      const replaceWholeString = this.batteryStringForm.get('replaceWholeString')?.value;
-      
-      console.log('   recommendToReplace():', recommendToReplaceResult);
-      console.log('   reasonToReplace:', reasonToReplace);
-      console.log('   replaceWholeString:', replaceWholeString);
       
       if (recommendToReplaceResult || 
           (reasonToReplace === 'DA' && replaceWholeString)) {
         resultStatus = 'ReplacementRecommended';
-        console.log('   ❌ RESULT: ReplacementRecommended');
-        console.log('=== getEquipmentStatus END ===\n');
         return resultStatus;
       }
-      console.log('   ✅ Pass: Not due for age-based replacement');
-
+      
+      // Check if checkbox is checked with other reasons (DF or BT)
+      if (replaceWholeString && (reasonToReplace === 'DF' || reasonToReplace === 'BT')) {
+        resultStatus = 'ReplacementRecommended';
+        return resultStatus;
+      }
+      
       // Step 3: Check for proactive replacement
       // Legacy: ProactiveReplace()
-      console.log('\n🔍 Step 3: Check proactive replacement');
       const proactiveReplaceResult = this.proactiveReplace();
-      console.log('   proactiveReplace():', proactiveReplaceResult);
       if (proactiveReplaceResult) {
         resultStatus = 'ProactiveReplacement';
-        console.log('   ❌ RESULT: ProactiveReplacement');
-        console.log('=== getEquipmentStatus END ===\n');
         return resultStatus;
       }
-      console.log('   ✅ Pass: Not due for proactive replacement');
 
       // Step 4: Preserve non-Online status if no issues found above
       // Legacy: if (ddlStatus.SelectedValue != "Online") resultStatus = ddlStatus.SelectedValue;
-      console.log('\n🔍 Step 4: Preserve user-selected status');
       if (currentStatus !== 'Online') {
         resultStatus = currentStatus;
-        console.log('   📌 Preserving non-Online status:', resultStatus);
-      } else {
-        console.log('   📌 Status is Online, will check field deficiencies');
       }
 
       // Step 5: Check field-level deficiencies
       // Legacy: Loops through JobSummaryReport checking all fields against GetStatusDescription
-      console.log('\n🔍 Step 5: Check field-level deficiencies');
       const statusFromFields = this.checkFieldLevelDeficiencies(resultStatus);
       
       if (statusFromFields !== resultStatus) {
-        console.log('   ❌ Field deficiencies found, status upgraded');
         resultStatus = statusFromFields;
-      } else {
-        console.log('   ✅ No field deficiencies, status unchanged');
       }
-
-      console.log('\n🎯 FINAL RESULT:', resultStatus);
-      console.log('=== getEquipmentStatus END ===\n');
 
       return resultStatus;
     } catch (error) {
-      console.error('❌ Error in getEquipmentStatus:', error);
       this.handleError('Error determining equipment status: ' + error);
       return 'Online';
     }
@@ -1993,7 +2012,6 @@ export class BatteryReadingsComponent implements OnInit {
     let resultStatus = currentStatus;
     const failedFields: string[] = [];
 
-    console.log('  checkFieldLevelDeficiencies - Input status:', currentStatus);
 
     // Define status priority (higher number = higher priority)
     const statusPriority: { [key: string]: number } = {
@@ -3140,33 +3158,55 @@ export class BatteryReadingsComponent implements OnInit {
    * Build reconciliation info for saving
    */
   private buildReconciliationInfo(): EquipReconciliationInfo {
-    return {
+    // Log individual form values
+    const reconciled = this.reconciliationForm.get('reconciled')?.value;
+    const recMake = this.reconciliationForm.get('recMake')?.value;
+    const recMakeCorrect = this.reconciliationForm.get('recMakeCorrect')?.value;
+    const actMake = this.reconciliationForm.get('actMake')?.value;
+    const recModel = this.reconciliationForm.get('recModel')?.value;
+    const recModelCorrect = this.reconciliationForm.get('recModelCorrect')?.value;
+    const actModel = this.reconciliationForm.get('actModel')?.value;
+    const recSerialNo = this.reconciliationForm.get('recSerialNo')?.value;
+    const recSerialNoCorrect = this.reconciliationForm.get('recSerialNoCorrect')?.value;
+    const actSerialNo = this.reconciliationForm.get('actSerialNo')?.value;
+    const ascStrings = this.reconciliationForm.get('ascStrings')?.value;
+    const ascStringsCorrect = this.reconciliationForm.get('ascStringsCorrect')?.value;
+    const actAscStrings = this.reconciliationForm.get('actAscStrings')?.value;
+    const battPerString = this.reconciliationForm.get('battPerString')?.value;
+    const battPerStringCorrect = this.reconciliationForm.get('battPerStringCorrect')?.value;
+    const actBattPerString = this.reconciliationForm.get('actBattPerString')?.value;
+    
+    
+    const reconInfo: EquipReconciliationInfo = {
       callNbr: this.callNbr,
       equipId: this.equipId,
-      make: this.reconciliationForm.get('recMake')?.value || '',
-      makeCorrect: this.reconciliationForm.get('recMakeCorrect')?.value || '',
-      actMake: this.reconciliationForm.get('actMake')?.value || '',
-      model: this.reconciliationForm.get('recModel')?.value || '',
-      modelCorrect: this.reconciliationForm.get('recModelCorrect')?.value || '',
-      actModel: this.reconciliationForm.get('actModel')?.value || '',
-      serialNo: this.reconciliationForm.get('recSerialNo')?.value || '',
-      serialNoCorrect: this.reconciliationForm.get('recSerialNoCorrect')?.value || '',
-      actSerialNo: this.reconciliationForm.get('actSerialNo')?.value || '',
-      ascStringsNo: parseInt(this.reconciliationForm.get('ascStrings')?.value) || 0,
-      ascStringsCorrect: this.reconciliationForm.get('ascStringsCorrect')?.value || '',
-      actAscStringNo: parseInt(this.reconciliationForm.get('actAscStrings')?.value) || 0,
-      battPerString: parseInt(this.reconciliationForm.get('battPerString')?.value) || 0,
-      battPerStringCorrect: this.reconciliationForm.get('battPerStringCorrect')?.value || '',
-      actBattPerString: parseInt(this.reconciliationForm.get('actBattPerString')?.value) || 0,
+      make: recMake || '',
+      makeCorrect: recMakeCorrect || '',
+      actMake: actMake || '',
+      model: recModel || '',
+      modelCorrect: recModelCorrect || '',
+      actModel: actModel || '',
+      serialNo: recSerialNo || '',
+      serialNoCorrect: recSerialNoCorrect || '',
+      actSerialNo: actSerialNo || '',
+      ascStringsNo: parseInt(ascStrings) || 0,
+      ascStringsCorrect: ascStringsCorrect || '',
+      actAscStringNo: parseInt(actAscStrings) || 0,
+      battPerString: parseInt(battPerString) || 0,
+      battPerStringCorrect: battPerStringCorrect || '',
+      actBattPerString: parseInt(actBattPerString) || 0,
       totalEquips: 0,
       totalEquipsCorrect: '',
       actTotalEquips: 0,
       kva: '',
       kvaCorrect: '',
       actKva: '',
-      verified: this.reconciliationForm.get('reconciled')?.value || false,
+      verified: reconciled || false,
       modifiedBy: this.getUserId(),
     };
+    
+    
+    return reconInfo;
   }
 
   /**

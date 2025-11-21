@@ -179,8 +179,6 @@ namespace Technicians.Api.Controllers
         [HttpPost("SaveBatteryData")]
         public async Task<IActionResult> SaveBatteryData([FromBody] List<BatteryReadingDto> batteries)
         {
-            if (batteries == null || batteries.Count == 0)
-                return BadRequest("Battery data is required.");
 
             try
             {

@@ -591,7 +591,8 @@
                         "
                       >
                         <span *ngIf="equipmentForm.get('year')?.errors?.['required']">Year is required</span>
-                        <span *ngIf="equipmentForm.get('year')?.errors?.['min']">Year must be at least 1990</span>
+                        <span *ngIf="equipmentForm.get('year')?.errors?.['min']">Year must be at least 1753</span>
+                        <span *ngIf="equipmentForm.get('year')?.errors?.['max']">Year cannot exceed 9999</span>
                       </div>
                     </div>
                   </div>
@@ -1275,7 +1276,7 @@
                 
                 <!-- Requirement notice for replacement needed -->
                 <div class="alert alert-warning d-flex align-items-center mb-3" 
-                     *ngIf="visualForm.get('airFilters')?.value === 'RN'">
+                     *ngIf="visualForm.get('airFilters')?.value === 'W'">
                   <i class="bi bi-exclamation-triangle me-2"></i>
                   <small>
                     <strong>Filter dimensions required:</strong> Please enter all filter measurements when replacement is needed for parts ordering.
@@ -1299,8 +1300,9 @@
                               formControlName="filterSet1Length"
                               id="filter1Length"
                               [maxlength]="getCharacterLimit('filterSet1Length') || null"
+                              (blur)="formatFilterDimension('filterSet1Length')"
                             />
-                            <label for="filter1Length">Length <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <label for="filter1Length">Length <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Length')?.invalid && visualForm.get('filterSet1Length')?.touched">
                               Length is required when replacement is needed
                             </div>
@@ -1315,8 +1317,9 @@
                               formControlName="filterSet1Width"
                               id="filter1Width"
                               [maxlength]="getCharacterLimit('filterSet1Width') || null"
+                              (blur)="formatFilterDimension('filterSet1Width')"
                             />
-                            <label for="filter1Width">Width <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <label for="filter1Width">Width <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Width')?.invalid && visualForm.get('filterSet1Width')?.touched">
                               Width is required when replacement is needed
                             </div>
@@ -1332,7 +1335,7 @@
                               id="filter1Thickness"
                               [maxlength]="getCharacterLimit('filterSet1Thickness') || null"
                             />
-                            <label for="filter1Thickness">Thickness <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <label for="filter1Thickness">Thickness <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Thickness')?.invalid && visualForm.get('filterSet1Thickness')?.touched">
                               Thickness is required when replacement is needed
                             </div>
@@ -1347,7 +1350,7 @@
                               formControlName="filterSet1Quantity"
                               id="filter1Quantity"
                             />
-                            <label for="filter1Quantity">Quantity <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'RN'">*</span></label>
+                            <label for="filter1Quantity">Quantity <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Quantity')?.invalid && visualForm.get('filterSet1Quantity')?.touched">
                               Quantity is required when replacement is needed
                             </div>
@@ -1371,6 +1374,7 @@
                               class="form-control"
                               formControlName="filterSet2Length"
                               id="filter2Length"
+                              (blur)="formatFilterDimension('filterSet2Length')"
                             />
                             <label for="filter2Length">Length</label>
                           </div>
@@ -1382,6 +1386,7 @@
                               class="form-control"
                               formControlName="filterSet2Width"
                               id="filter2Width"
+                              (blur)="formatFilterDimension('filterSet2Width')"
                             />
                             <label for="filter2Width">Width</label>
                           </div>
@@ -4273,13 +4278,65 @@
                     <label class="form-label"
                       >Fans DateCode:</label
                     >
-                    <input
-                      type="text"
-                      class="form-control"
-                      formControlName="fansYear"
-                      placeholder="Year"
-                      maxlength="4"
-                    />
+                    <div class="position-relative">
+                      <input
+                        type="text"
+                        class="form-control"
+                        formControlName="fansYear"
+                        placeholder="Enter year (e.g., 2024, 2025...)"
+                        maxlength="4"
+                        (focus)="toggleFansYearCalendar()"
+                      />
+                      
+                      <!-- Year calendar toggle button -->
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-primary calendar-toggle-btn"
+                        (click)="toggleFansYearCalendar()"
+                        [title]="showFansYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
+                      >
+                        <i class="bi bi-calendar-date"></i>
+                      </button>
+                      
+                      <!-- Year Calendar Picker -->
+                      <div class="compact-calendar-dropdown" *ngIf="showFansYearCalendar" (click)="$event.stopPropagation()">
+                        <div class="calendar-header">
+                          <div class="year-navigation-header" (click)="$event.stopPropagation()">
+                            <button 
+                              type="button" 
+                              class="btn btn-sm btn-link text-white year-nav-btn"
+                              (click)="navigateFansYearRange('prev'); $event.stopPropagation()"
+                              title="Previous years"
+                              [disabled]="fansYearRangeStart <= minYear"
+                            >
+                              <i class="bi bi-chevron-double-left"></i>
+                            </button>
+                            <span class="year-range-display">{{ getFansYearRange() }}</span>
+                            <button 
+                              type="button" 
+                              class="btn btn-sm btn-link text-white year-nav-btn"
+                              (click)="navigateFansYearRange('next'); $event.stopPropagation()"
+                              title="Next years"
+                              [disabled]="fansYearRangeEnd >= maxYear"
+                            >
+                              <i class="bi bi-chevron-double-right"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="year-grid-compact" [attr.data-change-counter]="fansYearRangeChangeCounter">
+                          <button
+                            type="button"
+                            *ngFor="let year of currentFansYears; trackBy: trackByYear"
+                            class="btn btn-sm year-btn-compact"
+                            [class.btn-primary]="isFansYearSelected(year)"
+                            [class.btn-outline-primary]="!isFansYearSelected(year)"
+                            (click)="onFansYearSelect(year)"
+                          >
+                            {{ year }}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

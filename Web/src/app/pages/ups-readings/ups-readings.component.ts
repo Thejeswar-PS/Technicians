@@ -244,7 +244,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // Air filter options
   airFilterOptions = [
     { value: 'C', text: 'Cleaned' },
-    { value: 'RN', text: 'Replacement needed' },
+    { value: 'W', text: 'Replacement needed' }, // Changed from 'RN' to 'W' to match backend 1-char limit
     { value: 'R', text: 'Replaced' },
     { value: 'N', text: 'N/A' }
   ];
@@ -329,9 +329,16 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   yearRangeEnd = 2005; // 1990 + 16 - 1 for 4x4 grid
   yearRangeChangeCounter = 0; // Counter to force change detection
   currentYears: number[] = []; // Direct array to hold current years
-  readonly minYear = 1990;
-  readonly maxYear = 2055;
+  readonly minYear = 1753;
+  readonly maxYear = 9999;
   readonly yearsPerRange = 16; // 4x4 grid
+
+  // Fans year calendar state
+  showFansYearCalendar = false;
+  fansYearRangeStart = 1990;
+  fansYearRangeEnd = 2005;
+  fansYearRangeChangeCounter = 0;
+  currentFansYears: number[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -863,7 +870,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       serialNo: ['', Validators.required],
       location: ['', Validators.required],
       monthName: ['', Validators.required],
-      year: ['', [Validators.required, Validators.min(1900)]],
+      year: ['', [Validators.required, Validators.min(1753), Validators.max(9999)]],
       status: ['Online', Validators.required],
       parallelCabinet: ['NO'], // Default to "NO" (No)
       snmpPresent: ['PS'], // Default to "PS" (Select)
@@ -1180,8 +1187,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         // Clear existing validators
         control.clearValidators();
         
-        // Add required validator if replacement is needed
-        if (airFilterValue === 'RN') {
+        // Add required validator if replacement is needed (changed from 'RN' to 'W')
+        if (airFilterValue === 'W') {
           control.setValidators([Validators.required]);
         }
         
@@ -1189,6 +1196,21 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         control.updateValueAndValidity();
       }
     });
+  }
+
+  /**
+   * Format filter dimension fields (Length, Width) to 2 decimal places on blur
+   * Rounds up to ensure accurate parts ordering
+   */
+  formatFilterDimension(fieldName: string): void {
+    const control = this.visualForm.get(fieldName);
+    if (control) {
+      const value = control.value;
+      if (value !== null && value !== undefined && value !== '') {
+        const formatted = this.formatDecimal(value, 2);
+        control.setValue(formatted, { emitEvent: false });
+      }
+    }
   }
 
   private updateEndOfLifeLabel(kvaValue: any): void {
@@ -1508,6 +1530,16 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
+          console.log('🔍 Backend data received:', data);
+          console.log('🔍 Input voltage fields:', {
+            inputVoltA_T: data.inputVoltA_T,
+            InputVoltA_T: (data as any).InputVoltA_T,
+            inputCurrA_T: data.inputCurrA_T,
+            InputCurrA_T: (data as any).InputCurrA_T,
+            inputFreq_T: data.inputFreq_T,
+            InputFreq_T: (data as any).InputFreq_T
+          });
+          
           this.upsData = data as AAETechUPS;
 
           // Detect Major PM service
@@ -1957,12 +1989,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     );
 
     // Populate equipment form (following legacy logic - use backend data only)
+    // Map CTO/Part No from either field (backward compatibility)
+    const ctoPartNoValue = data.ctoPartNo || data.other || '';
     this.equipmentForm.patchValue({
       manufacturer: data.manufacturer || '',
       kva: data.kva || '',
       multiModule: data.multiModule || '',
       maintByPass: data.maintByPass || '',
-      other: data.other || '',
+      other: ctoPartNoValue, // Sync with ctoPartNo for backward compatibility
       model: data.modelNo || '',
       serialNo: data.serialNo || '',
       location: data.location || '',
@@ -1973,7 +2007,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       parallelCabinet: data.parallelCabinet || defaultParallelCabinet, // Use backend data or intelligent default
       snmpPresent: finalSnmpValue, // Use raw SNMP value (YS, NO, PS)
       modularUPS: data.modularUPS || '',
-      ctoPartNo: data.ctoPartNo || data.other || '', // Map to CTO/Part No if available in data
+      ctoPartNo: ctoPartNoValue, // Map to CTO/Part No if available in data (synced with 'other' field)
       upsType: data.modularUPS || 'NO' // Use the actual modularUPS value from backend or default to 'NO' (Normal UPS)
     }, { emitEvent: false });
 
@@ -2043,12 +2077,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       coolingFans: data.visual_Noise || 'P', // Map to existing noise field
       fansAge: data.visual_FansAge || 'P',
       airFilters: data.visual_ReplaceFilters || 'P', // Map to existing replace filters field
-      filterSet1Length: data.afLength || '',
-      filterSet1Width: data.afWidth || '',
+      filterSet1Length: this.formatDecimal(data.afLength, 2),
+      filterSet1Width: this.formatDecimal(data.afWidth, 2),
       filterSet1Thickness: data.afThickness || '',
       filterSet1Quantity: data.afQty || '',
-      filterSet2Length: data.afLength1 || '',
-      filterSet2Width: data.afWidth1 || '',
+      filterSet2Length: this.formatDecimal(data.afLength1, 2),
+      filterSet2Width: this.formatDecimal(data.afWidth1, 2),
       filterSet2Thickness: data.afThickness1 || '',
       filterSet2Quantity: data.afQty1 || '',
       visualComments: data.comments2 || data.comments1 || data.comments3 || data.comments4 || data.comments5 || ''
@@ -2062,9 +2096,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Populate environment form
     // Proper mapping: environment_Clean (is clean?) vs hostileEnvironment (is hostile?) are opposites
-    // Handle special values: YS (Yes with Safety), Y (Yes), N (No)
+    // Handle special values: YS (Yes with Safety), Y (Yes), N (No), NA (N/A)
     
-    // Enhanced mapping to handle YS (Yes with Safety concerns)
+    // Enhanced mapping to handle YS (Yes with Safety concerns) and NA
     let hostileEnvValue: string;
     const dbValue = (data.environment_Clean || '').trim();
     
@@ -2072,6 +2106,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       hostileEnvValue = 'N'; // Clean=Y → Hostile=N (not hostile)
     } else if (dbValue === 'N' || dbValue === 'YS') {
       hostileEnvValue = 'Y'; // NotClean=N or YesSafety=YS → Hostile=Y (hostile)
+    } else if (dbValue === 'NA') {
+      hostileEnvValue = 'NA'; // NA stays NA
     } else {
       hostileEnvValue = 'N'; // Default to not hostile
     }
@@ -2529,6 +2565,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       freq_PF: (data[`${prefix}Freq_PF` as keyof AAETechUPS] as string) || 'P'
     };
 
+    console.log(`🔍 ${type} formData to be patched:`, formData);
     form.patchValue(formData, { emitEvent: false });
 
     // Populate filter current and THD data for input and output forms
@@ -3155,7 +3192,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Validate filter size fields when replacement is needed
     const airFilterValue = this.visualForm.get('airFilters')?.value;
-    if (airFilterValue === 'RN') {
+    if (airFilterValue === 'W') { // Changed from 'RN' to 'W'
       const filterSizeFields = [
         { field: 'filterSet1Length', name: 'Filter Length' },
         { field: 'filterSet1Width', name: 'Filter Width' },
@@ -4424,7 +4461,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const housekeepingChecks = [
       ['environmentForm', 'hostileEnvironment', 'Y'],  // Environment cleaning needed
       ['visualForm', 'vacuumClean', 'F'],              // Vacuum/dust accumulation issues
-      ['visualForm', 'airFilters', 'RN']               // Filter replacement needed (but not critical)
+      ['visualForm', 'airFilters', 'W']                // Filter replacement needed (changed from 'RN' to 'W')
       // NOTE: Removed 'C' (Cleaned) - cleaned filters should not be a deficiency
     ];
 
@@ -6119,7 +6156,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       kva: equipment.kva ? equipment.kva.toString() : '0', // Convert to string as expected by API
       multiModule: equipment.multiModule,
       maintByPass: equipment.maintByPass,
-      other: equipment.other,
+      other: equipment.ctoPartNo || equipment.other || '', // Map ctoPartNo to other field for backward compatibility
       modelNo: equipment.model,
       serialNo: equipment.serialNo,
       location: equipment.location,
@@ -6128,7 +6165,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       parallelCabinet: equipment.parallelCabinet,
       snmpPresent: equipment.snmpPresent,
       modularUPS: equipment.modularUPS,
-      ctoPartNo: equipment.ctoPartNo, // Include CTO/Part No
+      ctoPartNo: equipment.ctoPartNo || equipment.other || '', // Include CTO/Part No (ensure both fields are synced)
       upsType: equipment.upsType, // Include UPS Type
 
       // Measurements
@@ -6154,7 +6191,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Environment
       environment_RoomTemp: environment.roomTempVentilation,
       environment_Saftey: environment.safetyEquipment,
-      environment_Clean: environment.hostileEnvironment === 'Y' ? 'N' : 'Y', // Invert: hostile=Y means clean=N
+      environment_Clean: this.mapHostileToClean(environment.hostileEnvironment), // Invert: hostile=Y means clean=N, preserve NA
       environment_Space: environment.serviceSpace,
       environment_Circuit: environment.circuitBreakers,
 
@@ -6625,6 +6662,35 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private convertZeroToEmpty(value: any): string {
     if (value === null || value === undefined || value === 0) return '';
     return value.toString();
+  }
+
+  /**
+   * Map hostile environment value to clean environment value (inverted)
+   * Y (hostile) -> N (not clean)
+   * N (not hostile) -> Y (clean)
+   * NA -> NA (not applicable stays not applicable)
+   */
+  private mapHostileToClean(hostileValue: string): string {
+    if (hostileValue === 'Y') return 'N'; // Hostile environment means not clean
+    if (hostileValue === 'N') return 'Y'; // No hostile environment means clean
+    if (hostileValue === 'NA') return 'NA'; // N/A stays N/A
+    return 'Y'; // Default to clean
+  }
+
+  /**
+   * Format a decimal number to a specific number of decimal places
+   * Returns empty string if value is null/undefined/empty
+   * Uses Math.ceil to round up to the specified decimal places
+   */
+  private formatDecimal(value: any, decimalPlaces: number = 2): string {
+    if (value === null || value === undefined || value === '') return '';
+    const num = parseFloat(value);
+    if (isNaN(num)) return '';
+    
+    // Round up to specified decimal places
+    const multiplier = Math.pow(10, decimalPlaces);
+    const rounded = Math.ceil(num * multiplier) / multiplier;
+    return rounded.toFixed(decimalPlaces);
   }
 
   private isFieldEmpty(value: any): boolean {
@@ -7344,6 +7410,70 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const rangeIndex = Math.floor((year - this.minYear) / this.yearsPerRange);
     this.yearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
     this.yearRangeEnd = Math.min(this.maxYear, this.yearRangeStart + this.yearsPerRange - 1);
+  }
+
+  // Fans Year Calendar Methods
+  toggleFansYearCalendar(): void {
+    this.showFansYearCalendar = !this.showFansYearCalendar;
+    if (this.showFansYearCalendar) {
+      const currentFansYear = this.capacitorForm.get('fansYear')?.value || new Date().getFullYear();
+      this.setFansYearRangeContaining(currentFansYear);
+
+      this.currentFansYears = [];
+      for (let year = this.fansYearRangeStart; year <= this.fansYearRangeEnd; year++) {
+        this.currentFansYears.push(year);
+      }
+    }
+  }
+
+  onFansYearSelect(year: number): void {
+    this.capacitorForm.patchValue({ fansYear: year.toString() });
+    this.showFansYearCalendar = false;
+  }
+
+  isFansYearSelected(year: number): boolean {
+    const formYear = this.capacitorForm.get('fansYear')?.value;
+    return formYear === year.toString() || parseInt(formYear) === year;
+  }
+
+  navigateFansYearRange(direction: 'prev' | 'next'): void {
+    this.showFansYearCalendar = true;
+    let navigationOccurred = false;
+
+    if (direction === 'prev' && this.fansYearRangeStart > this.minYear) {
+      this.fansYearRangeStart = Math.max(this.minYear, this.fansYearRangeStart - this.yearsPerRange);
+      this.fansYearRangeEnd = this.fansYearRangeStart + this.yearsPerRange - 1;
+      navigationOccurred = true;
+    } else if (direction === 'next' && this.fansYearRangeEnd < this.maxYear) {
+      this.fansYearRangeStart = Math.min(this.maxYear - this.yearsPerRange + 1, this.fansYearRangeStart + this.yearsPerRange);
+      this.fansYearRangeEnd = Math.min(this.maxYear, this.fansYearRangeStart + this.yearsPerRange - 1);
+      navigationOccurred = true;
+    }
+
+    if (navigationOccurred) {
+      this.currentFansYears = [];
+      for (let year = this.fansYearRangeStart; year <= this.fansYearRangeEnd; year++) {
+        this.currentFansYears.push(year);
+      }
+      this.fansYearRangeChangeCounter++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  getFansYearRange(): string {
+    return `${this.fansYearRangeStart} - ${this.fansYearRangeEnd}`;
+  }
+
+  private setFansYearRangeContaining(year: number | string): void {
+    const yearNum = typeof year === 'string' ? parseInt(year) : year;
+    if (isNaN(yearNum)) {
+      this.fansYearRangeStart = this.minYear;
+      this.fansYearRangeEnd = this.minYear + this.yearsPerRange - 1;
+      return;
+    }
+    const rangeIndex = Math.floor((yearNum - this.minYear) / this.yearsPerRange);
+    this.fansYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
+    this.fansYearRangeEnd = Math.min(this.maxYear, this.fansYearRangeStart + this.yearsPerRange - 1);
   }
 
   /**

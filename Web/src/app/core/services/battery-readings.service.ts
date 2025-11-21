@@ -140,9 +140,19 @@ export class BatteryReadingsService {
     return this.http
       .get<any>(`${this.apiUrl}/EquipmentDetails/GetEquipReconciliationInfo`, { params })
       .pipe(
-        map((response) => this.mapEquipReconciliationInfo(response)),
+        map((response) => {
+          
+          // Backend returns: { success: true, message: "...", data: { verified: true, ... } }
+          // We need to extract from response.data, not response directly
+          const dataObject = response.data || response;
+          
+          
+          const mappedData = this.mapEquipReconciliationInfo(dataObject);
+          console.log('✅ Mapped to frontend model:');
+          console.log('   verified field:', mappedData.verified, typeof mappedData.verified);
+          return mappedData;
+        }),
         catchError((error) => {
-          console.error('Error fetching reconciliation info:', error);
           return throwError(() => error);
         })
       );
