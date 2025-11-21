@@ -110,7 +110,7 @@ namespace Technicians.Api.Repository
             }
         }
 
-        public async Task<decimal> HowMuchCanTechAddFoodExpensesAsync(
+        public async Task<string> CanTechAddFoodExpensesAsync(
             string callNbr,
             string techName,
             decimal expAmount,
@@ -121,7 +121,8 @@ namespace Technicians.Api.Repository
             using var conn = new SqlConnection(_connectionString);
             await conn.OpenAsync();
 
-            var query = "SELECT dbo.HowMuchCanTechAddFoodExpenses(@CallNbr, @TechName, @ExpAmount, @CurrentAmount, @Type, @Date)";
+            // Build query exactly like legacy (you can also parameterize if you want extra safety)
+            var query = "SELECT dbo.CheckValidFoodExpenses(@CallNbr, @TechName, @ExpAmount, @CurrentAmount, @Type, @Date)";
             using var cmd = new SqlCommand(query, conn);
 
             cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
@@ -132,7 +133,33 @@ namespace Technicians.Api.Repository
             cmd.Parameters.AddWithValue("@Date", date);
 
             var result = await cmd.ExecuteScalarAsync();
-            return result != null && result != DBNull.Value ? Convert.ToDecimal(result) : 0;
+            return result?.ToString() ?? string.Empty;
+        }
+
+        public string AllowedAmountForFoodExpenses(string callNbr, string techName)
+        {
+            string result = string.Empty;
+
+            try
+            {
+                using (SqlConnection con = new SqlConnection(_connectionString))
+                {
+                    con.Open();
+                    string query = $"select dbo.AllowedAmountForFoodExpenses('{callNbr}', '{techName}')";
+                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    {
+                        var dbResult = cmd.ExecuteScalar();
+                        result = dbResult != null ? dbResult.ToString() : string.Empty;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Optional: Log exception
+                result = string.Empty;
+            }
+
+            return result;
         }
 
 

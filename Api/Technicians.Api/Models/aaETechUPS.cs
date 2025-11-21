@@ -69,14 +69,26 @@
 
         // Battery / Air Filter
         public int BatteryStringID { get; set; }
-        public string AFLength { get; set; }
-        public string AFWidth { get; set; }
-        public string AFThick { get; set; }
-        public string AFQty { get; set; }
-        public string AFLength1 { get; set; }
-        public string AFWidth1 { get; set; }
-        public string AFThick1 { get; set; }
-        public string AFQty1 { get; set; }
+        public double AFLength { get; set; }     // Changed to double to match SP
+        public double AFWidth { get; set; }      // Changed to double to match SP  
+        public double AFThickness { get; set; }  // Changed to double to match SP
+        public double AFQty { get; set; }        // Changed to double to match SP
+        public double AFLength1 { get; set; }    // Changed to double to match SP
+        public double AFWidth1 { get; set; }     // Changed to double to match SP
+        public double AFThickness1 { get; set; } // Changed to double to match SP
+        public double AFQty1 { get; set; }       // Changed to double to match SP
+
+        // Date Code fields
+        public string UpsDateCodeMonth { get; set; }
+        public int UpsDateCodeYear { get; set; }
+        public string monthName { get; set; }  // 
+        public int year { get; set; }          //        // Year for date code
+
+        // Maintenance fields
+        public DateTime Create_Date { get; set; }
+        public DateTime LastModified { get; set; }  // Enhanced field for tracking modifications
+        public string Maint_Auth_ID { get; set; }
+        public string maintAuthId { get; set; }  // Maintenance authorization ID (alternative naming)
 
         // Input/Output readings
         public string Input { get; set; }
@@ -135,6 +147,11 @@
         public double OutputLoadC { get; set; }
         public double TotalLoad { get; set; }
 
+        // Output Load Pass/Fail fields - Enhanced functionality for load validation
+        public string OutputLoadA_PF { get; set; }
+        public string OutputLoadB_PF { get; set; }
+        public string OutputLoadC_PF { get; set; }
+
         // Capacitors / DC/AC
         public string RectFloatVolt_PF { get; set; }
         public double DCVoltage_T { get; set; }
@@ -144,6 +161,16 @@
         public double NEGtoGND_T { get; set; }
         public string NEGtoGND_PF { get; set; }
 
+        // Enhanced Rectifier fields for comprehensive UPS analysis
+        public double ACRipple_T { get; set; }
+        public string ACRipple_PF { get; set; }
+        public double DCCurrent_T { get; set; }
+        public string DCCurrent_PF { get; set; }
+        public double ACRippleVolt_T { get; set; }
+        public string ACRippleVolt_PF { get; set; }
+        public double ACRippleCurr_T { get; set; }
+        public string ACRippleCurr_PF { get; set; }
+
         public string DCCapsLeak_PF { get; set; }
         public string DCCapsAge_PF { get; set; }
         public string ACInputCapsLeak_PF { get; set; }
@@ -151,6 +178,7 @@
         public string ACOutputCapsLeak_PF { get; set; }
         public string ACOutputCapsAge_PF { get; set; }
         public string CommCapsLeak_PF { get; set; }
+        public string CommCapsAge_PF { get; set; }
 
         public string DCGAction1 { get; set; }
         public string CustAction1 { get; set; }
@@ -169,7 +197,14 @@
         public bool SaveAsDraft { get; set; }
         public string ModularUPS { get; set; }
 
+        // Air Filter Email field (from stored procedure)
+        public bool AFEmailSent { get; set; }
+
         public string SvcDescr { get; set; }
+
+        // Additional fields for enhanced compatibility
+        public string ctoPartNo { get; set; }   // CTO/Part number
+        public string upsType { get; set; }     // UPS Type classification
     }
 
 

@@ -1,0 +1,46 @@
+<!-- Battery Readings Page -->
+<div class="container-fluid ups-readings-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="loading"
+    class="d-flex justify-content-center align-items-center ups-readings-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__back"
+      (click)="goBack()"
+      [disabled]="saving"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="ups-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-battery-charging me-2"></i>
+        Battery Readings & Verification
+      </h2>
+    </div>
+    
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__action"
+      (click)="saveBatteryReadings()"
+      [disabled]="saving"
+    >
+      <span
+        *ngIf="saving"
+        class="spinner-border spinner-border-sm me-2"
+        role="status"
+      ></span>
+      <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
+      {{ saving ? "Saving..." : "Save Battery Data" }}
+    </button>
+  </div>

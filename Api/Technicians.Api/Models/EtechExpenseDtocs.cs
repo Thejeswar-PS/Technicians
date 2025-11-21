@@ -19,5 +19,6 @@
         public string CallNbr { get; set; }
         public string TravelBy { get; set; }
         public decimal FoodLimit { get; set; }
+        public string Notes { get; set; }
     }
 }

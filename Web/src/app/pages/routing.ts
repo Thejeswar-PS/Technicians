@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { JobEditComponent } from './jobs/job-edit/job-edit.component';
+import { EditEquipmentComponent } from './jobs/edit-equipment/edit-equipment.component';
 import { AuthGuard } from '../modules/auth/services/auth.guard';
 
 const Routing: Routes = [
@@ -97,6 +98,19 @@ const Routing: Routes = [
   },
   {
     path: 'jobs',
+    canActivate: [AuthGuard],
+    loadChildren: () =>
+      import('./jobs/jobs.module').then((m) => m.JobsModule),
+    data: { layout: 'light-sidebar' },
+  },
+  {
+    path: 'equipment/edit-equipment',
+    canActivate: [AuthGuard],
+    component: EditEquipmentComponent,
+    data: { layout: 'light-sidebar' },
+  },
+  {
+    path: 'equipment',
     canActivate: [AuthGuard],
     loadChildren: () =>
       import('./jobs/jobs.module').then((m) => m.JobsModule),

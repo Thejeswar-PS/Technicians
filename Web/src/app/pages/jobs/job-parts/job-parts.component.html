@@ -95,7 +95,7 @@
             </div>
 
             <div class="d-flex justify-content-end">
-              <button type="button" class="btn btn-primary" (click)="onUpdateTechInfo()">
+              <button type="button" class="btn btn-primary" (click)="onUpdateTechInfo()" [disabled]="isTechnician">
                 <i class="bi bi-save"></i> Update Info
               </button>
             </div>
@@ -139,7 +139,13 @@
                     <label class="form-label fw-bold mb-0">Contact Ph</label>
                   </div>
                   <div class="col-sm-8">
-                    <input type="text" class="form-control" formControlName="contactPh" maxlength="20">
+                    <input type="text" class="form-control" formControlName="contactPh" maxlength="20"
+                           [class.is-invalid]="siteInfoForm.get('contactPh')?.invalid && siteInfoForm.get('contactPh')?.touched"
+                           placeholder="e.g., 123-456-7890">
+                    <div class="invalid-feedback" *ngIf="siteInfoForm.get('contactPh')?.invalid && siteInfoForm.get('contactPh')?.touched">
+                      <span *ngIf="siteInfoForm.get('contactPh')?.errors?.['required']">Phone number is required</span>
+                      <span *ngIf="siteInfoForm.get('contactPh')?.errors?.['pattern']">Please enter only numbers and dashes (e.g., 123-456-7890)</span>
+                    </div>
                   </div>
                 </div>
 
@@ -255,7 +261,8 @@
                 </div>
 
                 <div class="d-flex justify-content-end">
-                  <button type="button" class="btn btn-primary" (click)="onUpdateSiteInfo()">
+                  <button type="button" class="btn btn-primary" (click)="onUpdateSiteInfo()" 
+                          [disabled]="siteInfoForm.invalid || isTechnician">
                     <i class="bi bi-save"></i> Update Info
                   </button>
                 </div>
@@ -448,7 +455,7 @@
       <section class="mb-5" id="parts-request-info">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
           <h4 class="fw-bold mb-0">Parts Request Info</h4>
-          <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddPartRequest()">
+          <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddPartRequest()" [disabled]="isTechnician">
             <i class="bi bi-plus-circle"></i>
             <span class="ms-2">Add Part</span>
           </button>
@@ -482,10 +489,18 @@
                 <td>{{ part.destination || '—' }}</td>
                 <td>{{ part.requiredDate | date:'dd-MMM-yyyy' }}</td>
                 <td>{{ part.shippingMethod || '—' }}</td>
-                <td class="text-center">{{ part.urgent ? 'Yes' : 'No' }}</td>
-                <td class="text-center">{{ part.backOrder ? 'Yes' : 'No' }}</td>
                 <td class="text-center">
-                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 1, part.scidInc)" title="Edit Part">
+                  <span [ngClass]="part.urgent ? 'badge bg-danger text-white' : ''">
+                    {{ part.urgent ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span [ngClass]="part.backOrder ? 'badge bg-warning text-dark' : ''">
+                    {{ part.backOrder ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 1, part.scidInc)" title="Edit Part" [disabled]="isTechnician">
                     <i class="bi bi-pencil-square fs-5"></i>
                   </button>
                 </td>
@@ -503,7 +518,7 @@
       <section class="mb-5" id="shipping-info">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
           <h4 class="fw-bold mb-0">Shipping Info</h4>
-          <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddShipment()">
+          <button type="button" class="btn btn-primary btn-sm" (click)="navigateToAddShipment()" [disabled]="isTechnician">
             <i class="bi bi-plus-circle"></i>
             <span class="ms-2">Add Shipment</span>
           </button>
@@ -524,7 +539,8 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let ship of shippingParts">
+              <ng-container *ngFor="let ship of shippingParts">
+                <tr *ngIf="!ship.backOrder">
                 <td class="text-nowrap manuf-part-col">
                   {{ ship.partNum || '—' }}
                   <span class="visually-hidden">{{ ship.shippingCompany }}</span>
@@ -545,7 +561,7 @@
                 <td>{{ ship.shipDate ? (ship.shipDate | date:'dd-MMM-yyyy') : '—' }}</td>
                 <td>{{ ship.eta ? (ship.eta | date:'dd-MMM-yyyy') : '—' }}</td>
                 <td class="text-center">
-                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 2, ship.scidInc)" title="Edit Shipment">
+                  <button type="button" class="btn btn-link p-0" (click)="navigateToEditParts('edit', 2, ship.scidInc)" title="Edit Shipment" [disabled]="isTechnician">
                     <i class="bi bi-pencil-square fs-5"></i>
                   </button>
                 </td>
@@ -554,7 +570,8 @@
                   <span class="visually-hidden">{{ ship.lastModified }}</span>
                   <span class="visually-hidden">{{ ship.maintAuthID }}</span>
                 </ng-container>
-              </tr>
+                </tr>
+              </ng-container>
               <tr *ngIf="shippingParts.length === 0">
                 <td colspan="8" class="text-center text-muted py-5">No shipping parts found</td>
               </tr>
@@ -615,10 +632,10 @@
                 <td>{{ tech.faultyDesc || '—' }}</td>
                 <td class="text-center">
                   <div class="form-check justify-content-center d-flex">
-                    <input class="form-check-input" type="checkbox"
-                           [checked]="tech.isReceived"
-                           (change)="onReceivedCheckChange(tech, $event)"
-            [disabled]="!isTechnician || originallyReceivedParts.has(tech.scidInc)">
+          <input class="form-check-input" type="checkbox"
+            [checked]="tech.isReceived"
+            (change)="onReceivedCheckChange(tech, $event)"
+            [disabled]="isTechnician || originallyReceivedParts.has(tech.scidInc)">
                   </div>
                 </td>
                 <td class="text-center">
@@ -639,7 +656,7 @@
           </table>
         </div>
 
-        <div class="mt-3 d-flex justify-content-end" *ngIf="techParts.length > 0 && showProcessButton && isTechnician">
+        <div class="mt-3 d-flex justify-content-end" *ngIf="techParts.length > 0 && showProcessButton && !isTechnician">
           <button type="button" class="btn btn-primary" (click)="onProcessReceivedParts()">
             <i class="bi bi-check-circle"></i> Update
           </button>
@@ -659,66 +676,55 @@
               <div>{{ techReturnMessage }}</div>
             </div>
             <form [formGroup]="techReturnForm">
+
               <div class="row mb-5">
-                <div class="col-md-12">
-                  <div class="alert alert-info d-flex align-items-center">
-                    <i class="bi bi-info-circle fs-2 me-3"></i>
-                    <div>
-                      <strong>Unused Parts to Send Back:</strong> {{ unusedSent }}<br>
-                      <strong>Faulty Parts to Send Back:</strong> {{ faultySent }}
+                <!-- Left: numeric/status fields inline (three across) -->
+                <div class="col-md-5">
+                  <div class="row g-3">
+                    <div class="col-4">
+                      <label class="form-label fw-bold">Unused Sent Back</label>
+                      <input type="number" class="form-control" formControlName="unusedSent" min="0">
+                    </div>
+                    <div class="col-4">
+                      <label class="form-label fw-bold">Faulty Sent Back</label>
+                      <input type="number" class="form-control" formControlName="faultySent" min="0">
+                    </div>
+                    <div class="col-4">
+                      <label class="form-label fw-bold">Tech Return Status</label>
+                      <select class="form-select" formControlName="returnStatus">
+                        <option *ngFor="let option of techReturnStatusOptions" [value]="option.value">{{ option.text }}</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-text text-muted mt-2">
+                    Note: You can only set status to "Returned" if all parts have been received by warehouse.
+                  </div>
+                  <div class="row mt-3">
+                    <div class="col-6">
+                      <label class="form-label fw-bold">Processed By</label>
+                      <br>{{ techReturnInfo?.maintAuthId || '—' }}
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label fw-bold">Last Updated</label>
+                      <br>{{ techReturnInfo?.lastModified ? (techReturnInfo?.lastModified | date:'medium') : '—' }}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="row mb-5">
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Unused Parts Sent</label>
-                  <input type="number" class="form-control" formControlName="unusedSent" min="0">
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Faulty Parts Sent</label>
-                  <input type="number" class="form-control" formControlName="faultySent" min="0">
-                </div>
-              </div>
-
-              <div class="row mb-5">
-                <div class="col-md-12">
-                  <label class="form-label fw-bold">Return Status</label>
-                  <select class="form-select" formControlName="returnStatus">
-                    <option *ngFor="let option of techReturnStatusOptions" [value]="option.value">{{ option.text }}</option>
-                  </select>
-                  <div class="form-text text-muted">
-                    Note: You can only set status to "Returned" if all parts have been received by warehouse.
+                <!-- Right: Notes -->
+                <div class="col-md-7">
+                  <div class="row g-3">
+                  <label class="form-label fw-bold">Tech Return Notes</label>
+                  <textarea class="form-control h-100" formControlName="returnNotes" rows="8" maxlength="2000"></textarea>
                   </div>
-                </div>
-              </div>
-
-              <div class="row mb-5">
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Processed By</label>
-                  <div class="form-control-plaintext">{{ techReturnInfo?.maintAuthId || '—' }}</div>
-                </div>
-                <div class="col-md-6">
-                  <label class="form-label fw-bold">Last Updated</label>
-                  <div class="form-control-plaintext">
-                    {{ techReturnInfo?.lastModified ? (techReturnInfo?.lastModified | date:'medium') : '—' }}
-                  </div>
-                </div>
-              </div>
-
-              <div class="row mb-5">
-                <div class="col-md-12">
-                  <label class="form-label fw-bold">Return Notes</label>
-                  <textarea class="form-control" formControlName="returnNotes" rows="3" maxlength="2000"></textarea>
                 </div>
               </div>
 
               <div class="d-flex justify-content-end flex-wrap gap-3">
-                <button type="button" class="btn btn-primary" (click)="onUpdateTechReturn()">
-                  <i class="bi bi-save"></i> Update Return Info
+                <button type="button" class="btn btn-primary" (click)="onUpdateTechReturn()" [disabled]="isTechnician">
+                  <i class="bi bi-save"></i> Update Status
                 </button>
-                <button type="button" class="btn btn-warning" (click)="onReUploadJob()">
+                <button type="button" class="btn btn-warning" (click)="onReUploadJob()" [disabled]="isTechnician">
                   <i class="bi bi-cloud-upload"></i> Re-Upload Job
                 </button>
               </div>
@@ -739,7 +745,8 @@
             </div>
           </div>
           <div class="d-flex justify-content-end">
-            <button type="button" class="btn btn-primary" (click)="onUpdateTechNotes()">
+            <button type="button" class="btn btn-primary" (click)="onUpdateTechNotes()" 
+                    [disabled]="!techNotesForm.get('emgNotes')?.value?.trim()">
               <i class="bi bi-save"></i> Save Notes
             </button>
           </div>
@@ -751,9 +758,6 @@
       <div class="d-flex justify-content-between">
         <button type="button" class="btn btn-sm btn-primary me-3" (click)="goBack()">
           <i class="bi bi-arrow-left"></i> Back to Job List
-        </button>
-        <button type="button" class="btn btn-warning" (click)="onReUploadToGP()" *ngIf="!isTechnician">
-          <i class="bi bi-arrow-repeat"></i> Re-Upload to GP
         </button>
       </div>
     </div>

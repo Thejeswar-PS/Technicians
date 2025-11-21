@@ -2,9 +2,9 @@
 <div class="modal-header bg-primary text-white border-0">
   <h4 class="modal-title fw-bold d-flex align-items-center">
     <span class="svg-icon svg-icon-2 me-3">
-      <i class="bi bi-{{ isEditMode ? 'pencil-square' : 'plus-circle' }} fs-3"></i>
+      <i class="bi bi-{{ isEditMode ? 'pencil-square' : 'plus-circle' }} fs-3 text-white"></i>
     </span>
-    <span>{{ isEditMode ? 'Modify Expense' : 'Add New Expense' }}</span>
+    <span class="text-white">{{ isEditMode ? 'Modify Expense' : 'Add New Expense' }}</span>
   </h4>
   <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="activeModal.dismiss('cancel')"></button>
 </div>
@@ -169,7 +169,6 @@
           </div>
 
           <!-- Date and Time Section -->
-          <div class="separator separator-dashed border-gray-300 my-7"></div>
           
           <div class="mb-6">
             <h5 class="fw-bold text-gray-800 mb-4">
@@ -186,20 +185,22 @@
                   type="datetime-local" 
                   class="form-control form-control-solid" 
                   formControlName="startDateTime"
-                  required>
+                  required
+                  [max]="maxDateTimeForInput">
               </div>
               <div class="col-md-6" *ngIf="isFieldVisible('endDateTime')">
                 <label class="form-label fw-bold text-gray-700 mb-2">End Date & Time</label>
                 <input 
                   type="datetime-local" 
                   class="form-control form-control-solid" 
-                  formControlName="endDateTime">
+                  formControlName="endDateTime"
+                  [max]="maxDateTimeForInput">
               </div>
             </div>
           </div>
 
           <!-- Additional Notes Section -->
-          <div class="separator separator-dashed border-gray-300 my-7" *ngIf="isFieldVisible('notes') || isFieldVisible('otherReason')"></div>
+          <div class=" border-gray-300 my-7" *ngIf="isFieldVisible('notes') || isFieldVisible('otherReason')"></div>
           
           <div class="mb-6" *ngIf="isFieldVisible('notes') || isFieldVisible('otherReason')">
             <h5 class="fw-bold text-gray-800 mb-4">
@@ -255,7 +256,7 @@
   <button 
     type="button" 
     class="btn btn-danger" 
-    *ngIf="canDelete"
+    *ngIf="showDeleteButton && canDelete"
     (click)="onDelete()">
     <i class="bi bi-trash me-2"></i>
     Delete
@@ -263,6 +264,7 @@
   <button 
     type="button" 
     class="btn btn-primary" 
+    *ngIf="showSaveButton"
     [disabled]="!canSave || isLoading"
     (click)="onSave()">
     <span *ngIf="!isLoading">

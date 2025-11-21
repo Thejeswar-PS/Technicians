@@ -23,12 +23,17 @@ import { NotesViewComponent } from '../modal/notes-view/notes-view.component';
   styleUrls: ['./job-list.component.scss']
 })
 export class JobListComponent implements OnInit {
+  employeeStatus: string = '';
+  pendingInitialLoad: boolean = false;
   selectedJobId:string | null = null;
   isOpenEquipementDetailModel: { [key: string]: boolean } = {};
   jobList : Job[] = [] ;
   jobListRequest : JobListRequest | any= {};
   accountManagers : any = [];
   technicians: any = [];
+  // When an incoming CallNbr is present we hold it until filters are loaded
+  private pendingIncomingCall: string | null = null;
+  private currentUserData: any = null;
   quoteOwner: any;
   jobStatus: any[];
   quoteStatus : any = [];
@@ -57,19 +62,19 @@ export class JobListComponent implements OnInit {
   empName: string = '';
 
   months : any[] = [
-     {Text : 'January',value:'1' }
-    ,{Text : 'February',value:'2' }
-    ,{Text : 'March',value:'3' }
-    ,{Text : 'April',value:'4' }
-    ,{Text : 'May',value:'5' }
-    ,{Text : 'June',value:'6' }
-    ,{Text : 'July',value:'7' }
-    ,{Text : 'August',value:'8' }
-    ,{Text : 'September',value:'9' }
-    ,{Text : 'October',value:'10'}
-    ,{Text : 'November',value:'11'}
-    ,{Text : 'December',value:'12'}
-    ,{Text : 'All',value:'0'}
+     {Text : 'January',value:1 }
+    ,{Text : 'February',value:2 }
+    ,{Text : 'March',value:3 }
+    ,{Text : 'April',value:4 }
+    ,{Text : 'May',value:5 }
+    ,{Text : 'June',value:6 }
+    ,{Text : 'July',value:7 }
+    ,{Text : 'August',value:8 }
+    ,{Text : 'September',value:9 }
+    ,{Text : 'October',value:10}
+    ,{Text : 'November',value:11}
+    ,{Text : 'December',value:12}
+    ,{Text : 'All',value:0}
   ];
   sortedColumn: string = '';
   sortDirection: number = 1;
@@ -141,12 +146,10 @@ export class JobListComponent implements OnInit {
     this.subscribeSharedServiceData();
 
     this.route.queryParamMap.subscribe((params) => {
-      if(params.has('jobId'))
+      if(params.has('jobId') || params.has('CallNbr'))
       {
-        // this.jobFilterForm.patchValue({
-        //   jobId: params.get('jobId')
-        // });
-        //this.Load(false);
+        // If the URL contains a jobId or CallNbr we should avoid the default Load
+        // and instead let handleQueryParameters perform the search after filters are loaded
         loadDefault = false;
       }
 
@@ -193,9 +196,15 @@ export class JobListComponent implements OnInit {
     
     if (this.userRole === 'Technician' || this.userRole === 'TechManager') {
       techId = this.empID;
+      currentMonth = 0; // Set to 'All' when tech is selected
     } else if (this.userRole === 'Manager' || this.userRole === 'Other') {
       mgrId = this.empID;
+      currentMonth = 0; // Set to 'All' when manager is selected
     }
+    
+    // Initialize previous values for change detection
+    this.previousTechId = techId;
+    this.previousMgrId = mgrId;
     
     this.jobFilterForm = this.fb.group({
       empId: [this.empID],
@@ -206,6 +215,11 @@ export class JobListComponent implements OnInit {
       month: [currentMonth],
       jobId: [''],
     });
+    // Track initial previous values for change detection
+    this.previousMonth = this.jobFilterForm.get('month')?.value;
+    this.previousYear = this.jobFilterForm.get('currentYear')?.value;
+    this.previousRbButton = this.jobFilterForm.get('rbButton')?.value;
+    this.previousEmpId = this.jobFilterForm.get('empId')?.value;
     
     console.log('Form initialized with empId:', this.jobFilterForm.get('empId')?.value);
     console.log('Form values:', this.jobFilterForm.value);
@@ -240,19 +254,62 @@ export class JobListComponent implements OnInit {
 
 public Load(initialLoad: boolean = false)
 {
-  if(initialLoad)
-  {
-    // Only include filter parameters, not jobId
-    this.jobListRequest = {
-      empId: this.jobFilterForm.value.empId,
-      techId: this.jobFilterForm.value.techId,
-      mgrId: this.jobFilterForm.value.mgrId,
-      rbButton: this.jobFilterForm.value.rbButton,
-      currentYear: this.jobFilterForm.value.currentYear,
-      month: this.jobFilterForm.value.month
-      // Exclude jobId - that's only for search
-    };
+  // If this is the initial load but we don't yet have employeeStatus, technicians, or account managers, defer it
+  if (initialLoad && (
+      !this.employeeStatus ||
+      (Array.isArray(this.technicians) && this.technicians.length === 0) ||
+      (Array.isArray(this.accountManagers) && this.accountManagers.length === 0)
+    )) {
+    console.log('Deferring initial Load until employeeStatus and technicians are available');
+    this.pendingInitialLoad = true;
+    return;
   }
+
+  // Always set jobListRequest with correct values before API call
+  // Use get() to include disabled controls (disabled controls are omitted from form.value)
+  const empId = this.jobFilterForm.get('empId')?.value ?? '';
+  let techId = this.jobFilterForm.get('techId')?.value ?? '';
+  let mgrId = this.jobFilterForm.get('mgrId')?.value ?? '';
+  const rbButton = this.jobFilterForm.get('rbButton')?.value ?? 0;
+  const currentYear = this.jobFilterForm.get('currentYear')?.value ?? new Date().getFullYear();
+  const month = this.jobFilterForm.get('month')?.value ?? 0;
+
+  const status = this.employeeStatus || this.userRole;
+  if (status === 'Technician' || status === 'TechManager') {
+    // Force techId to empId and mgrId to 'All'
+    techId = empId;
+    mgrId = 'All';
+    // Ensure form controls reflect this state (without emitting change events)
+    if (this.jobFilterForm.get('techId')?.value !== empId) {
+      this.jobFilterForm.patchValue({ techId: empId }, { emitEvent: false });
+    }
+    if (this.jobFilterForm.get('mgrId')?.value !== 'All') {
+      this.jobFilterForm.patchValue({ mgrId: 'All' }, { emitEvent: false });
+    }
+  }
+
+  this.jobListRequest = {
+    empId: empId,
+    techId: techId,
+    mgrId: mgrId,
+    rbButton: rbButton,
+    currentYear: currentYear,
+    month: month
+    // Exclude jobId - that's only for search
+  };
+  // Debugging: show the values that will be sent to the API
+  console.log('Load pre-request values:', {
+    empId: empId,
+    techId: techId,
+    mgrId: mgrId,
+    rbButton: rbButton,
+    currentYear: currentYear,
+    month: month,
+    userRole: this.userRole,
+    employeeStatus: this.employeeStatus,
+    techniciansLength: Array.isArray(this.technicians) ? this.technicians.length : 0,
+    techniciansSample: Array.isArray(this.technicians) ? this.technicians.slice(0,3) : []
+  });
   console.log('Load method - jobListRequest:', this.jobListRequest);
   console.log('Load method - form values:', this.jobFilterForm.value);
   this._jobService.getJobs(this.jobListRequest).pipe(
@@ -273,33 +330,68 @@ public Load(initialLoad: boolean = false)
     localStorage.setItem("joblist", JSON.stringify(data))
   })
 }
+  private previousTechId: string = '';
+  private previousMgrId: string = '';
+  private previousMonth: any = null;
+  private previousYear: any = null;
+  private previousRbButton: any = null;
+  private previousEmpId: any = null;
+
   public onFilterChanges()
   {
     this.jobFilterForm.valueChanges.subscribe(selectedValue  => {
       console.log('Filter changed - selectedValue:', selectedValue);
+
+      // Determine whether any non-jobId filter changed (tech, mgr, month, year, rbButton, empId)
+      const techChanged = this.previousTechId !== selectedValue.techId;
+      const mgrChanged = this.previousMgrId !== selectedValue.mgrId;
+      const monthChanged = this.previousMonth !== selectedValue.month;
+      const yearChanged = this.previousYear !== selectedValue.currentYear;
+      const rbChanged = this.previousRbButton !== selectedValue.rbButton;
+      const empChanged = this.previousEmpId !== selectedValue.empId;
+
+      let effectiveMonth = parseInt(selectedValue.month);
+      
+      // Only auto-adjust month when tech or manager changes, not when month is manually selected
+      if (techChanged || mgrChanged) {
+        if (selectedValue.mgrId !== 'All' || selectedValue.techId !== 'All') {
+          // Set month to 0 when either manager or tech is selected
+          effectiveMonth = 0;
+          this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
+        } else if (selectedValue.mgrId === 'All' && selectedValue.techId === 'All') {
+          // Reset to current month when both are set back to 'All'
+          const currentMonth = new Date().getMonth() + 1;
+          effectiveMonth = currentMonth;
+          this.jobFilterForm.patchValue({ month: currentMonth }, { emitEvent: false });
+        }
+      }
+      
+  // Update previous values for next change detection
+  this.previousTechId = selectedValue.techId;
+  this.previousMgrId = selectedValue.mgrId;
+  this.previousMonth = selectedValue.month;
+  this.previousYear = selectedValue.currentYear;
+  this.previousRbButton = selectedValue.rbButton;
+  this.previousEmpId = selectedValue.empId;
+
+      // Now set the request values with the effective month
       this.jobListRequest.empId = selectedValue.empId;
       this.jobListRequest.techId = selectedValue.techId;
       this.jobListRequest.mgrId = selectedValue.mgrId;
       this.jobListRequest.rbButton = parseInt(selectedValue.rbButton!);
       this.jobListRequest.currentYear = selectedValue.currentYear;
-      this.jobListRequest.month = selectedValue.month;
-      // Remove jobId from regular filter request - it's only for search
+      this.jobListRequest.month = effectiveMonth; // Use the effective month
       
       console.log('Job request object:', this.jobListRequest);
 
-      // Apply legacy month logic
-      if (selectedValue.mgrId !== 'All' || selectedValue.techId !== 'All') {
-        // Set month to 0 when either manager or tech is selected
-        this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
-      } else if (selectedValue.mgrId === 'All' && selectedValue.techId === 'All') {
-        // Reset to current month when both are set back to 'All'
-        const currentMonth = new Date().getMonth() + 1;
-        this.jobFilterForm.patchValue({ month: currentMonth }, { emitEvent: false });
-      }
-
-      // Only load regular job list when jobId is empty (filter changes)
-      if(selectedValue.jobId === '' || selectedValue.jobId == null)
-      {
+      // If any non-jobId filter changed, clear the jobId search (if present) and reload
+      if (techChanged || mgrChanged || monthChanged || yearChanged || rbChanged || empChanged) {
+        if (this.jobFilterForm.get('jobId')?.value) {
+          this.jobFilterForm.patchValue({ jobId: '' }, { emitEvent: false });
+          this.jobList = [];
+          this.errorMessage = '';
+          console.log('Cleared jobId search because other filters changed');
+        }
         this.Load(false);
       }
       // Don't automatically search when jobId changes - only on button click
@@ -354,6 +446,7 @@ public Load(initialLoad: boolean = false)
   public LoadFilters()
   {
     let userData = JSON.parse(localStorage.getItem("userData")!);
+    this.currentUserData = userData;
     console.log('LoadFilters - User data from localStorage:', userData);
     this.empID = (userData.empID || '').trim();
     this.userRole = userData.role || '';
@@ -362,7 +455,7 @@ public Load(initialLoad: boolean = false)
 
     // Update the form with the correct empID
     if (this.jobFilterForm) {
-      this.jobFilterForm.patchValue({ empId: this.empID });
+      this.jobFilterForm.patchValue({ empId: this.empID }, { emitEvent: false });
       console.log('Updated form empId to:', this.jobFilterForm.get('empId')?.value);
     }
 
@@ -414,6 +507,8 @@ public Load(initialLoad: boolean = false)
       
       // Step 2: After Account Managers are loaded, get Employee Status
       this.getEmployeeStatus(userData);
+      // If a CallNbr came in earlier, try running the pending search now
+      this.attemptRunPendingQuery();
     });
   }
 
@@ -439,7 +534,8 @@ public Load(initialLoad: boolean = false)
       } else {
         console.log('No status data found, using default:', employeeStatus);
       }
-      
+      // Store employeeStatus for later use
+      this.employeeStatus = employeeStatus;
       // Step 3: Load Technicians with EmpID and Status
       this.loadTechnicians(userData, employeeStatus);
     });
@@ -469,24 +565,89 @@ public Load(initialLoad: boolean = false)
       this.setUserRoleBasedDefaults(userData);
       
       // Handle query parameters for specific job search
-      this.handleQueryParameters();
+  this.handleQueryParameters();
+  // After technicians and managers are loaded, attempt any pending CallNbr search
+  this.attemptRunPendingQuery();
+      
+      // If an initial load was deferred earlier because employeeStatus/technicians weren't ready, run it now
+      if (this.pendingInitialLoad) {
+        this.pendingInitialLoad = false;
+        console.log('Running deferred initial Load now that technicians and employeeStatus are available');
+        this.Load(true);
+      }
     });
   }
 
+  private attemptRunPendingQuery(): void {
+    if (!this.pendingIncomingCall) return;
+
+    // Ensure filters are ready
+    if (!this.employeeStatus || (Array.isArray(this.technicians) && this.technicians.length === 0) || (Array.isArray(this.accountManagers) && this.accountManagers.length === 0)) {
+      // Not ready yet
+      return;
+    }
+
+    // Decide sensible defaults for techId/mgrId similar to handleQueryParameters
+    const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
+    const defaultTech = isTech ? (this.empID || 'All') : 'All';
+    // Default to 'All' for manager unless the current user is actually present in accountManagers
+    let defaultMgr = 'All';
+    if (this.employeeStatus === 'Manager' || this.userRole === 'Manager') {
+      const userManager = this.accountManagers.find((mgr: any) => mgr.offid === this.empID || (mgr.offname && mgr.offname.trim() === this.empID));
+      if (userManager) {
+        defaultMgr = (userManager.offname || '').toUpperCase();
+      } else {
+        // If the logged-in manager is not present in accountManagers, fall back to 'All'
+        defaultMgr = 'All';
+      }
+    }
+
+    // Patch the form and run search
+    this.jobFilterForm.patchValue({ jobId: this.pendingIncomingCall, techId: defaultTech, mgrId: defaultMgr }, { emitEvent: false });
+    // Clear pending call and execute search
+    const callToSearch = this.pendingIncomingCall;
+    this.pendingIncomingCall = null;
+    setTimeout(() => this.SearchJobs(), 50);
+  }
+
   private setUserRoleBasedDefaults(userData: any) {
-    // Set user role based selection logic
-    if (this.userRole === 'Technician' || this.userRole === 'TechManager') {
-      this.jobFilterForm.patchValue({ techId: this.empID });
-      // Disable MgrId dropdown for technicians
-    } else if (this.userRole === 'Manager' || this.userRole === 'Other') {
+    // Set user role based selection logic using employeeStatus
+    // Fallback to this.userRole if employeeStatus is not set
+    const status = this.employeeStatus || this.userRole;
+    if (status === 'Technician' || status === 'TechManager') {
+      // Set techId to empID and restrict tech dropdown to only this tech
+      this.jobFilterForm.patchValue({ techId: this.empID }, { emitEvent: false });
+      // Remove 'All' and keep only the logged-in tech in technicians array
+      if (Array.isArray(this.technicians)) {
+        this.technicians = this.technicians.filter((t: any) => t.TechID === this.empID);
+      }
+      // Set mgrId to 'All' and disable AM dropdown
+      this.jobFilterForm.patchValue({ mgrId: 'All' }, { emitEvent: false });
+      if (this.jobFilterForm.get('mgrId')) {
+        this.jobFilterForm.get('mgrId')?.disable({ emitEvent: false });
+      }
+      // Ensure month is 'All' (0) for technicians/managers
+      if (this.jobFilterForm.get('month')?.value !== 0) {
+        this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
+      }
+    } else if (status === 'Manager' || status === 'Other') {
       // Check if current user exists in account managers list
       const userManager = this.accountManagers.find((mgr: any) => 
-        mgr.offid === this.empID || mgr.offname.trim() === this.empID
+        mgr.offid === this.empID || (mgr.offname && mgr.offname.trim() === this.empID)
       );
       if (userManager) {
-        this.jobFilterForm.patchValue({ mgrId: userManager.offid });
+        // The template sets option [value] to mgr.offname?.toUpperCase(), so set the form value to match
+        const mgrValue = (userManager.offname || '').toUpperCase();
+        this.jobFilterForm.patchValue({ mgrId: mgrValue }, { emitEvent: false });
       } else {
-        this.jobFilterForm.patchValue({ mgrId: 'All' });
+        this.jobFilterForm.patchValue({ mgrId: 'All' }, { emitEvent: false });
+      }
+      // Enable AM dropdown for managers/others
+      if (this.jobFilterForm.get('mgrId')) {
+        this.jobFilterForm.get('mgrId')?.enable({ emitEvent: false });
+      }
+      if (this.jobFilterForm.get('month')?.value !== 0) {
+        this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
       }
     }
   }
@@ -494,15 +655,22 @@ public Load(initialLoad: boolean = false)
   private handleQueryParameters() {
     // Handle query parameters for specific job search
     this.route.queryParamMap.subscribe((params) => {
-      if(params.has('jobId'))
-      {
-        this.jobFilterForm.patchValue({
-          jobId: params.get('jobId'),
-          techId: 'All',
-          mgrId: 'All'
-        });
-        // Trigger search when jobId is provided via URL
-        this.SearchJobs();
+      // Support both legacy 'jobId' and 'CallNbr' query params
+      const incomingCall = params.get('jobId') || params.get('CallNbr');
+      if (incomingCall) {
+        // Patch the search field with the provided call number (trimmed)
+        const callValue = (incomingCall || '').toString().trim();
+        // If the incoming value looks like a numeric ID shorter than 10, let SearchJobs add leading zeros
+        const normalized = this.addPrefixToCallNbr(callValue);
+
+        // Save pending incoming call and attempt to run the search when filters are ready
+        this.pendingIncomingCall = normalized;
+        // Patch jobId and techId now (mgrId will be set when filters are ready)
+        const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
+        const defaultTech = isTech ? (this.empID || 'All') : 'All';
+        this.jobFilterForm.patchValue({ jobId: normalized, techId: defaultTech }, { emitEvent: false });
+        // Attempt to run pending query immediately if filters are already loaded
+        this.attemptRunPendingQuery();
       }
     });
   }
@@ -544,7 +712,7 @@ public Load(initialLoad: boolean = false)
       case 'C': return { icon: '', tooltip: 'On-Line(Minor Deficiency)', color: '#ffc107', symbol: '🟡' }; // Yellow
       case 'E': return { icon: '', tooltip: 'Critical Deficiency', color: '#dc3545', symbol: '🔴' }; // Red
       case 'F': return { icon: '', tooltip: 'Replacement Recommended', color: '#fd7e14', symbol: '🟠' }; // Orange
-      case 'G': return { icon: '', tooltip: 'Proactive Replacement', color: '#6610f2', symbol: '🟣' }; // Purple
+      case 'G': return { icon: '', tooltip: 'Proactive Replacement', color: '#00cdcd', symbol: '🔵' }; // Blue
       default: return { icon: '', tooltip: 'On-Line', color: '#198754', symbol: '🟢' }; // Green
     }
   }

@@ -11,13 +11,17 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { SharedModule } from 'src/app/components/shared/shared.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
 import { EquipmentDetailsComponent } from './equipment-details/equipment-details.component';
+import { EditEquipmentComponent } from './edit-equipment/edit-equipment.component';
 import { NotesViewComponent } from './modal/notes-view/notes-view.component';
-import { FileUploadComponent } from './file-upload/file-upload.component';
-import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
+import { EquipmentImagesComponent } from './equipment-images/equipment-images.component';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
 import { JobPartsComponent } from './job-parts/job-parts.component';
 import { EditPartsComponent } from './edit-parts/edit-parts.component';
+import { JobSummarySampleComponent } from './job-summary-sample/job-summary-sample.component';
+import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
+import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
+import { BatteryReadingsTempComponent } from '../equipment/battery-readings-temp/battery-readings-temp.component';
 
 
 
@@ -30,12 +34,16 @@ import { EditPartsComponent } from './edit-parts/edit-parts.component';
     EditExpenseComponent,
     JobStatusModalComponent,
     EquipmentDetailsComponent,
+    EditEquipmentComponent,
     NotesViewComponent,
-    FileUploadComponent,
+    EquipmentImagesComponent,
     JobNotesInfoComponent,
     JobSafetyComponent,
     JobPartsComponent,
-    EditPartsComponent
+    EditPartsComponent,
+    JobSummarySampleComponent,
+    BatteryReadingsComponent,
+    BatteryReadingsTempComponent
   ],
   imports: [
     CommonModule,

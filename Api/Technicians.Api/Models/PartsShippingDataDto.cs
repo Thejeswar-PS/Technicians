@@ -21,7 +21,8 @@
         public DateTime? Create_Date { get; set; }
         public DateTime? LastModified { get; set; }
         public string Maint_Auth_ID { get; set; }
-        public bool? BackOrder { get; set; }            // matches table bit
+        public bool BackOrder { get; set; }
+
     }
 
 }

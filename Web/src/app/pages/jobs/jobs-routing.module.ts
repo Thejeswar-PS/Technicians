@@ -6,12 +6,15 @@ import { JobExpensesComponent } from './job-expenses/job-expenses.component';
 import { MobileReceiptsComponent } from './mobile-receipts/mobile-receipts.component';
 import { EditExpenseComponent } from './edit-expense/edit-expense.component';
 import { EquipmentDetailsComponent } from './equipment-details/equipment-details.component';
-import { FileUploadComponent } from './file-upload/file-upload.component';
+import { EditEquipmentComponent } from './edit-equipment/edit-equipment.component';
+import { EquipmentImagesComponent } from './equipment-images/equipment-images.component';
 import { UpsReadingsComponent } from '../ups-readings/ups-readings.component';
 import { JobNotesInfoComponent } from './job-notes-info/job-notes-info.component';
 import { JobSafetyComponent } from './job-safety/job-safety.component';
 import { JobPartsComponent } from './job-parts/job-parts.component';
 import { EditPartsComponent } from './edit-parts/edit-parts.component';
+import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
+import { BatteryReadingsTempComponent } from '../equipment/battery-readings-temp/battery-readings-temp.component';
 
 const routes: Routes = [
   {
@@ -48,8 +51,12 @@ const routes: Routes = [
     component: EquipmentDetailsComponent
   },
   {
-    path: 'file-upload',
-    component: FileUploadComponent
+    path: 'edit-equipment',
+    component: EditEquipmentComponent
+  },
+  {
+    path: 'images',
+    component: EquipmentImagesComponent
   },
   {
     path: 'ups-readings',
@@ -70,7 +77,20 @@ const routes: Routes = [
   {
     path: 'edit-parts',
     component: EditPartsComponent
+  },
+  {
+    path: 'battery-readings',
+    component: BatteryReadingsComponent
+  },
+  {
+    path: 'battery-readings-temp',
+    component: BatteryReadingsTempComponent
   }
+  // Job summary sample route commented out for integration-only usage
+  // {
+  //   path: 'job-summary-sample',
+  //   component: JobSummarySampleComponent
+  // }
 ];
 
 @NgModule({

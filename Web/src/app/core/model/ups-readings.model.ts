@@ -35,6 +35,36 @@ export interface EquipReconciliationInfo {
   verified: boolean;
 }
 
+export interface SaveUpdateEquipReconciliationDto {
+  CallNbr: string;
+  EquipID: number;
+  Make: string;
+  MakeCorrect: string;
+  ActMake: string;
+  Model: string;
+  ModelCorrect: string;
+  ActModel: string;
+  SerialNo: string;
+  SerialNoCorrect: string;
+  ActSerialNo: string;
+  KVA: string;
+  KVACorrect: string;
+  ActKVA: string;
+  ASCStringsNo: number;
+  ASCStringsCorrect: string;
+  ActASCStringNo: number;
+  BattPerString: number;
+  BattPerStringCorrect: string;
+  ActBattPerString: number;
+  TotalEquips: number;
+  TotalEquipsCorrect: string;
+  ActTotalEquips: number;
+  NewEquipment: string;
+  EquipmentNotes: string;
+  Verified: boolean;
+  ModifiedBy: string;
+}
+
 export interface AAETechUPS {
   upsId: string;
   callNbr: string;
@@ -52,6 +82,8 @@ export interface AAETechUPS {
   parallelCabinet: string;
   snmpPresent: string;
   modularUPS: string;
+  ctoPartNo?: string; // Added CTO/Part No field
+  upsType?: string; // Added UPS Type field
   
   // Measurement flags
   measure_Input: string;
@@ -98,11 +130,11 @@ export interface AAETechUPS {
   // Air filter data
   afLength: string;
   afWidth: string;
-  afThick: string;
+  afThickness: string;
   afQty: string;
   afLength1: string;
   afWidth1: string;
-  afThick1: string;
+  afThickness1: string;
   afQty1: string;
   
   // Date information
@@ -125,6 +157,24 @@ export interface AAETechUPS {
   inputCurrC_PF: string;
   inputFreq_T: number;
   inputFreq_PF: string;
+  
+  // Input Filter Current fields
+  inputFilterCurrent?: boolean;
+  inputFilterCurrentA?: number;
+  inputFilterCurrentA_PF?: string;
+  inputFilterCurrentB?: number;
+  inputFilterCurrentB_PF?: string;
+  inputFilterCurrentC?: number;
+  inputFilterCurrentC_PF?: string;
+  
+  // Input THD fields
+  inputThdPercent?: boolean;
+  inputThdA?: number;
+  inputThdA_PF?: string;
+  inputThdB?: number;
+  inputThdB_PF?: string;
+  inputThdC?: number;
+  inputThdC_PF?: string;
   
   // Bypass voltage configuration and readings
   bypass: string;
@@ -166,6 +216,24 @@ export interface AAETechUPS {
   outputLoadC: number;
   outputLoadC_PF: string;
   totalLoad: number;
+  
+  // Output Filter Current fields
+  outputFilterCurrent?: boolean;
+  outputFilterCurrentA?: number;
+  outputFilterCurrentA_PF?: string;
+  outputFilterCurrentB?: number;
+  outputFilterCurrentB_PF?: string;
+  outputFilterCurrentC?: number;
+  outputFilterCurrentC_PF?: string;
+  
+  // Output THD fields
+  outputThdPercent?: boolean;
+  outputThdA?: number;
+  outputThdA_PF?: string;
+  outputThdB?: number;
+  outputThdB_PF?: string;
+  outputThdC?: number;
+  outputThdC_PF?: string;
   
   // Rectifier readings
   rectFloatVolt_PF: string;
@@ -242,17 +310,19 @@ export interface UpdateEquipStatus {
   callNbr: string;
   equipId: number;
   status: string;
-  statusNotes: string;
+  notes?: string;
   tableName: string;
-  manufacturer: string;
-  modelNo: string;
-  serialNo: string;
-  location: string;
-  monthName: string;
+  manufacturer?: string;
+  modelNo?: string;
+  serialNo?: string;
+  location?: string;
+  maintAuthID?: string;
+  monthName?: string;
   year: number;
-  readingType: string;
+  readingType?: string;
   batteriesPerString: number;
-  vfSelection: string;
+  batteriesPerPack: number;
+  vfSelection?: string;
 }
 
 export interface StatusOption {
@@ -292,9 +362,10 @@ export interface UPSReadingsFormData {
 
 // Voltage configuration constants
 export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
+  // Single Phase (Phase I)
   {
     id: '1',
-    name: '120V Single Phase',
+    name: '120 I Phase',
     phaseCount: 1,
     showPhaseToNeutral: false,
     fields: [
@@ -304,8 +375,42 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
     ]
   },
   {
+    id: '7',
+    name: '208 I Phase',
+    phaseCount: 1,
+    showPhaseToNeutral: false,
+    fields: [
+      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  {
+    id: '10',
+    name: '277 I Phase',
+    phaseCount: 1,
+    showPhaseToNeutral: false,
+    fields: [
+      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  {
+    id: '9',
+    name: '480 I Phase',
+    phaseCount: 1,
+    showPhaseToNeutral: false,
+    fields: [
+      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  // Two Phase (Phase II)
+  {
     id: '2',
-    name: '240V Two Phase',
+    name: '240 II Phase',
     phaseCount: 2,
     showPhaseToNeutral: false,
     fields: [
@@ -317,8 +422,22 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
     ]
   },
   {
+    id: '8',
+    name: '208 II Phase',
+    phaseCount: 2,
+    showPhaseToNeutral: false,
+    fields: [
+      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'voltB', label: 'Voltage B', type: 'voltage', required: true },
+      { id: 'currB', label: 'Current B', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  // Three Phase (Phase III)
+  {
     id: '3',
-    name: '208V Three Phase',
+    name: '208 III Phase',
     phaseCount: 3,
     showPhaseToNeutral: true,
     fields: [
@@ -332,8 +451,38 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
     ]
   },
   {
+    id: '11',
+    name: '400 III Phase',
+    phaseCount: 3,
+    showPhaseToNeutral: true,
+    fields: [
+      { id: 'voltAtoB', label: 'Voltage A to B', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'voltBtoC', label: 'Voltage B to C', type: 'voltage', required: true },
+      { id: 'currB', label: 'Current B', type: 'current', required: true },
+      { id: 'voltCtoA', label: 'Voltage C to A', type: 'voltage', required: true },
+      { id: 'currC', label: 'Current C', type: 'current', required: true },
+      { id: 'freq', label:'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  {
     id: '4',
-    name: '480V Three Phase',
+    name: '480 III Phase',
+    phaseCount: 3,
+    showPhaseToNeutral: true,
+    fields: [
+      { id: 'voltAtoB', label: 'Voltage A to B', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'voltBtoC', label: 'Voltage B to C', type: 'voltage', required: true },
+      { id: 'currB', label: 'Current B', type: 'current', required: true },
+      { id: 'voltCtoA', label: 'Voltage C to A', type: 'voltage', required: true },
+      { id: 'currC', label: 'Current C', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  {
+    id: '6',
+    name: '575 III Phase',
     phaseCount: 3,
     showPhaseToNeutral: true,
     fields: [
@@ -348,83 +497,7 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
   },
   {
     id: '5',
-    name: '600V Three Phase',
-    phaseCount: 3,
-    showPhaseToNeutral: true,
-    fields: [
-      { id: 'voltAtoB', label: 'Voltage A to B', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'voltBtoC', label: 'Voltage B to C', type: 'voltage', required: true },
-      { id: 'currB', label: 'Current B', type: 'current', required: true },
-      { id: 'voltCtoA', label: 'Voltage C to A', type: 'voltage', required: true },
-      { id: 'currC', label: 'Current C', type: 'current', required: true },
-      { id: 'freq', label:'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '6',
-    name: '575V Three Phase',
-    phaseCount: 3,
-    showPhaseToNeutral: true,
-    fields: [
-      { id: 'voltAtoB', label: 'Voltage A to B', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'voltBtoC', label: 'Voltage B to C', type: 'voltage', required: true },
-      { id: 'currB', label: 'Current B', type: 'current', required: true },
-      { id: 'voltCtoA', label: 'Voltage C to A', type: 'voltage', required: true },
-      { id: 'currC', label: 'Current C', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '7',
-    name: '208V Single Phase',
-    phaseCount: 1,
-    showPhaseToNeutral: false,
-    fields: [
-      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '8',
-    name: '208V Two Phase',
-    phaseCount: 2,
-    showPhaseToNeutral: false,
-    fields: [
-      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'voltB', label: 'Voltage B', type: 'voltage', required: true },
-      { id: 'currB', label: 'Current B', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '9',
-    name: '480V Single Phase',
-    phaseCount: 1,
-    showPhaseToNeutral: false,
-    fields: [
-      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '10',
-    name: '277V Single Phase',
-    phaseCount: 1,
-    showPhaseToNeutral: false,
-    fields: [
-      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '11',
-    name: '400V Three Phase',
+    name: '600 III Phase',
     phaseCount: 3,
     showPhaseToNeutral: true,
     fields: [
@@ -442,21 +515,297 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
 export const PASS_FAIL_OPTIONS: PassFailOption[] = [
   { value: 'P', text: 'Pass' },
   { value: 'F', text: 'Fail' },
-  { value: 'W', text: 'Warning' },
+  { value: 'N', text: 'N/A' }
+];
+
+export const POWER_VERIFICATION_OPTIONS: PassFailOption[] = [
+  { value: 'P', text: 'Pass' },
+  { value: 'F', text: 'Fail' },
   { value: 'N', text: 'N/A' }
 ];
 
 export const YES_NO_OPTIONS = [
-  { value: 'Y', text: 'Yes' },
-  { value: 'N', text: 'No' }
+  { value: 'YES', text: 'Yes' },
+  { value: 'NO', text: 'No' }
+];
+
+export const SNMP_OPTIONS = [
+  { value: 'PS', text: 'Select' },
+  { value: 'NO', text: 'No' },
+  { value: 'YS', text: 'Yes' }
 ];
 
 export const STATUS_OPTIONS: StatusOption[] = [
-  { value: 'Online', text: 'Online' },
-  { value: 'OnLine(MinorDeficiency)', text: 'OnLine(Minor Deficiency)' },
-  { value: 'OnLine(MajorDeficiency)', text: 'OnLine(Major Deficiency)' },
+  { value: 'Online', text: 'On-Line' },
   { value: 'CriticalDeficiency', text: 'Critical Deficiency' },
   { value: 'ReplacementRecommended', text: 'Replacement Recommended' },
   { value: 'ProactiveReplacement', text: 'Proactive Replacement' },
-  { value: 'Offline', text: 'Offline' }
+  { value: 'OnLine(MajorDeficiency)', text: 'On-Line(Major Deficiency)' },
+  { value: 'OnLine(MinorDeficiency)', text: 'On-Line(Minor Deficiency)' },
+  { value: 'Offline', text: 'Off-Line' }
 ];
+
+export interface EquipFilterCurrents {
+  callNbr: string;  // Maps to CallNbr in DB
+  equipId: number;  // Maps to EquipID in DB
+  
+  // Checkbox fields - Match backend DTO JsonPropertyName
+  chkIpFilter?: boolean;    // Maps to "chkIpFilter" JSON property
+  chkIpThd?: boolean;       // Maps to "chkIpThd" JSON property
+  
+  // Input Filter Current Phase A - Match backend DTO JsonPropertyName
+  ipFilterCurrA_T?: number;  // Maps to "ipFilterCurrA_T" JSON property
+  ipFilterCurrA_PF?: string; // Maps to "ipFilterCurrA_PF" JSON property
+  
+  // Input Filter Current Phase B - Match backend DTO JsonPropertyName
+  ipFilterCurrB_T?: number;  // Maps to "ipFilterCurrB_T" JSON property
+  ipFilterCurrB_PF?: string; // Maps to "ipFilterCurrB_PF" JSON property
+  
+  // Input Filter Current Phase C - Match backend DTO JsonPropertyName
+  ipFilterCurrC_T?: number;  // Maps to "ipFilterCurrC_T" JSON property
+  ipFilterCurrC_PF?: string; // Maps to "ipFilterCurrC_PF" JSON property
+  
+  // Input Filter THD Phase A - Match backend DTO JsonPropertyName
+  ipFilterThdA_T?: number;   // Maps to "ipFilterThdA_T" JSON property
+  ipFilterThdA_PF?: string;  // Maps to "ipFilterThdA_PF" JSON property
+  
+  // Input Filter THD Phase B - Match backend DTO JsonPropertyName
+  ipFilterThdB_T?: number;   // Maps to "ipFilterThdB_T" JSON property
+  ipFilterThdB_PF?: string;  // Maps to "ipFilterThdB_PF" JSON property
+  
+  // Input Filter THD Phase C - Match backend DTO JsonPropertyName
+  ipFilterThdC_T?: number;   // Maps to "ipFilterThdC_T" JSON property
+  ipFilterThdC_PF?: string;  // Maps to "ipFilterThdC_PF" JSON property
+  
+  // Output Filter checkboxes - Match backend DTO JsonPropertyName
+  chkOpFilter?: boolean;     // Maps to "chkOpFilter" JSON property
+  chkOpThd?: boolean;        // Maps to "chkOpThd" JSON property
+  
+  // Output Filter Current Phase A - Match backend DTO JsonPropertyName
+  opFilterCurrA_T?: number;  // Maps to "opFilterCurrA_T" JSON property
+  opFilterCurrA_PF?: string; // Maps to "opFilterCurrA_PF" JSON property
+  
+  // Output Filter Current Phase B - Match backend DTO JsonPropertyName
+  opFilterCurrB_T?: number;  // Maps to "opFilterCurrB_T" JSON property
+  opFilterCurrB_PF?: string; // Maps to "opFilterCurrB_PF" JSON property
+  
+  // Output Filter Current Phase C - Match backend DTO JsonPropertyName
+  opFilterCurrC_T?: number;  // Maps to "opFilterCurrC_T" JSON property
+  opFilterCurrC_PF?: string; // Maps to "opFilterCurrC_PF" JSON property
+  
+  // Output Filter THD Phase A - Match backend DTO JsonPropertyName
+  opFilterThdA_T?: number;   // Maps to "opFilterThdA_T" JSON property
+  opFilterThdA_PF?: string;  // Maps to "opFilterThdA_PF" JSON property
+  
+  // Output Filter THD Phase B - Match backend DTO JsonPropertyName
+  opFilterThdB_T?: number;   // Maps to "opFilterThdB_T" JSON property
+  opFilterThdB_PF?: string;  // Maps to "opFilterThdB_PF" JSON property
+  
+  // Output Filter THD Phase C - Match backend DTO JsonPropertyName
+  opFilterThdC_T?: number;   // Maps to "opFilterThdC_T" JSON property
+  opFilterThdC_PF?: string;  // Maps to "opFilterThdC_PF" JSON property
+  
+  // Audit fields - Match backend DTO JsonPropertyName
+  modifiedBy?: string;       // Maps to "modifiedBy" JSON property
+}
+
+/**
+ * SaveUpdateaaETechUPS DTO - Comprehensive UPS data for save/update operations
+ * Maps to the C# SaveUpdateaaETechUPSDto model and stored procedure parameters
+ */
+export interface SaveUpdateaaETechUPSDto {
+  // Required Keys
+  callNbr: string;
+  equipId: number;
+  upsId: string;
+
+  // Basic info - Match C# backend field names (PascalCase)
+  Manufacturer?: string;
+  KVA?: string;
+  MultiModule?: string;
+  MaintByPass?: string;
+  Other?: string;
+  ModelNo?: string;
+  SerialNo?: string;
+  Status?: string;
+  ParallelCabinet?: string;
+
+  // Measurement info - Match C# backend field names (PascalCase)
+  Measure_Input?: string;
+  Measure_LCD?: string;
+  Measure_Load?: string;
+  Measure_3Phase?: string;
+  Measure_KVA?: string;
+  Measure_Normal?: string;
+  Measure_Caliberation?: string;
+  Measure_EOL?: string;
+
+  // Visual info - Match C# backend field names (PascalCase)
+  Visual_NoAlarms?: string;
+  Visual_Tightness?: string;
+  Visual_Broken?: string;
+  Visual_Vaccum?: string;
+  Visual_EPO?: string;
+  Visual_Noise?: string;
+  Visual_FansAge?: string;
+  Visual_ReplaceFilters?: string;
+
+  // Environment info - Match C# backend field names (PascalCase)
+  Environment_RoomTemp?: string;
+  Environment_Saftey?: string;
+  Environment_Clean?: string;
+  Environment_Space?: string;
+  Environment_Circuit?: string;
+
+  // Transfer info - Match C# backend field names (PascalCase)
+  Transfer_Major?: string;
+  Transfer_Static?: string;
+  Transfer_ByPass?: string;
+  Transfer_Wave?: string;
+  Transfer_Normal?: string;
+  Transfer_Alarm?: string;
+
+  // Comments - Match C# backend field names (PascalCase)
+  Comments1?: string;
+  Comments2?: string;
+  Comments3?: string;
+  Comments4?: string;
+  Comments5?: string;
+
+  // Date Code - Match C# backend field names (PascalCase)
+  DateCodeMonth?: string;
+  DateCodeYear: number;
+  StatusReason?: string;
+
+  // Checkboxes
+  chkDCBreak: boolean;
+  chkOverLoad: boolean;
+  chkTransfer: boolean;
+  chkFault: boolean;
+
+  // Battery / Air Filter - Match C# backend field names (PascalCase)
+  BatteryStringID: number;
+  AFLength: number;
+  AFWidth: number;
+  AFThickness: number;
+  AFQty: number;
+  AFLength1: number;
+  AFWidth1: number;
+  AFThickness1: number;
+  AFQty1: number;
+  
+  // Required field with default - Match C# backend field name
+  Maint_Auth_ID: string;
+
+  // Input/Output readings - Match C# backend field names (PascalCase)
+  Input?: string;
+  InputVoltA_T: number;
+  InputVoltA_PF?: string;
+  InputVoltB_T: number;
+  InputVoltB_PF?: string;
+  InputVoltC_T: number;
+  InputVoltC_PF?: string;
+  InputCurrA_T: number;
+  InputCurrA_PF?: string;
+  InputCurrB_T: number;
+  InputCurrB_PF?: string;
+  InputCurrC_T: number;
+  InputCurrC_PF?: string;
+  InputFreq_T: number;
+  InputFreq_PF?: string;
+
+  // Bypass - Match C# backend field names (PascalCase)
+  Bypass?: string;
+  BypassVoltA_T: number;
+  BypassVoltA_PF?: string;
+  BypassVoltB_T: number;
+  BypassVoltB_PF?: string;
+  BypassVoltC_T: number;
+  BypassVoltC_PF?: string;
+  BypassCurrA_T: number;
+  BypassCurrA_PF?: string;
+  BypassCurrB_T: number;
+  BypassCurrB_PF?: string;
+  BypassCurrC_T: number;
+  BypassCurrC_PF?: string;
+  BypassFreq_T: number;
+  BypassFreq_PF?: string;
+
+  // Output - Match C# backend field names (PascalCase)
+  Output?: string;
+  OutputVoltA_T: number;
+  OutputVoltA_PF?: string;
+  OutputVoltB_T: number;
+  OutputVoltB_PF?: string;
+  OutputVoltC_T: number;
+  OutputVoltC_PF?: string;
+  OutputCurrA_T: number;
+  OutputCurrA_PF?: string;
+  OutputCurrB_T: number;
+  OutputCurrB_PF?: string;
+  OutputCurrC_T: number;
+  OutputCurrC_PF?: string;
+  OutputFreq_T: number;
+  OutputFreq_PF?: string;
+  OutputLoadA: number;
+  OutputLoadB: number;
+  OutputLoadC: number;
+  TotalLoad: number;
+
+  // Capacitors / DC/AC - Match C# backend field names (PascalCase)
+  RectFloatVolt_PF?: string;
+  DCVoltage_T: number;
+  DCVoltage_PF?: string;
+  ACRipple_T: number;
+  ACRipple_PF?: string;
+  DCCurrent_T: number;
+  DCCurrent_PF?: string;
+  ACRippleVolt_T: number;
+  ACRippleVolt_PF?: string;
+  POStoGND_T: number;
+  POStoGND_PF?: string;
+  ACRippleCurr_T: number;
+  ACRippleCurr_PF?: string;
+  NEGtoGND_T: number;
+  NEGtoGND_PF?: string;
+  OutputLoadA_PF?: string;
+  OutputLoadB_PF?: string;
+  OutputLoadC_PF?: string;
+
+  DCCapsLeak_PF?: string;
+  DCCapsAge_PF?: string;
+  ACInputCapsLeak_PF?: string;
+  ACInputCapsAge_PF?: string;
+  ACOutputCapsLeak_PF?: string;
+  ACOutputCapsAge_PF?: string;
+  CommCapsLeak_PF?: string;
+  CommCapsAge_PF?: string;
+  DCGAction1?: string;
+  CustAction1?: string;
+  ManufSpecification?: string;
+  DCGAction2?: string;
+  CustAction2?: string;
+
+  DCCapsYear: number;
+  ACInputCapsYear: number;
+  ACOutputCapsYear: number;
+  CommCapsYear: number;
+  FansYear: number;
+
+  Location?: string;
+  SNMPPresent?: string;
+  SaveAsDraft: boolean;
+  ModularUPS?: string;
+}
+
+/**
+ * Response interface for SaveUpdateaaETechUPS API
+ */
+export interface SaveUpdateUPSResponse {
+  success: boolean;
+  message: string;
+  rowsAffected?: number;
+  callNbr?: string;
+  equipId?: number;
+  upsId?: string;
+}

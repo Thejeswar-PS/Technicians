@@ -91,6 +91,7 @@ namespace Technicians.Api.Repository
                     Shipped_from = Get<string>(dict, "Shipped_from"),
                     Create_Date = Get<DateTime?>(dict, "Create_Date"),
                     LastModified = Get<DateTime?>(dict, "LastModified"),
+                    BackOrder = Get<bool>(dict, "BackOrder"),
                     Maint_Auth_ID = Get<string>(dict, "Maint_Auth_ID")
                 };
             }).ToList();
@@ -271,26 +272,29 @@ namespace Technicians.Api.Repository
         }
 
         //10. IsUPSTaskedForJob
-        public async Task<bool> IsUPSTaskedForJobAsync(string callNbr)
+        public async Task<int> IsUPSTaskedForJobAsync(string callNbr)
         {
             try
             {
                 using (var connection = new SqlConnection(_connectionString))
                 using (var command = new SqlCommand("SELECT dbo.IsUPSTaskedForJob(@CallNbr)", connection))
                 {
-                    command.Parameters.AddWithValue("@CallNbr", callNbr);
+                    command.Parameters.AddWithValue("@CallNbr", callNbr?.Trim() ?? (object)DBNull.Value);
 
                     await connection.OpenAsync();
                     var result = await command.ExecuteScalarAsync();
 
-                    return Convert.ToInt32(result) == 1;
+                    // Ensure proper int conversion (like legacy Convert.ToInt32)
+                    return result != null && int.TryParse(result.ToString(), out int val) ? val : 0;
                 }
             }
             catch
             {
-                return false;
+                // Return 0 on any failure (consistent with legacy)
+                return 0;
             }
         }
+
 
         //11. Check Inventory Item and return it's description
         public async Task<InventoryItemCheckDto> CheckInventoryItemAsync(string itemNbr)
@@ -384,7 +388,7 @@ namespace Technicians.Api.Repository
         public async Task SaveOrUpdatePartsRequestAsync(PartsRequestDto request, String empId)
         {
             using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand("dbo.SaveUpdatePartsReq", connection))
+            using (var command = new SqlCommand("SaveUpdatePartsReq", connection))
             {
                 command.CommandType = CommandType.StoredProcedure;
 
@@ -406,6 +410,16 @@ namespace Technicians.Api.Repository
 
                 await connection.OpenAsync();
                 await command.ExecuteNonQueryAsync();
+
+                //using (var updateCommand = new SqlCommand(@"UPDATE Parts_Ship_Log_Part SET BackOrder = @BackOrder 
+                //        WHERE Service_Call_ID = @Service_Call_ID AND SCID_Inc = @RowID", connection))
+                //{
+                //    updateCommand.Parameters.AddWithValue("@BackOrder", request.BackOrder ? 1 : 0);
+                //    updateCommand.Parameters.AddWithValue("@Service_Call_ID", request.ServiceCallID?.Trim() ?? (object)DBNull.Value);
+                //    updateCommand.Parameters.AddWithValue("@RowID", request.ScidInc);
+
+                //    await updateCommand.ExecuteNonQueryAsync();
+                //}
             }
         }
 
@@ -501,7 +515,6 @@ namespace Technicians.Api.Repository
             }
         }
 
-
         //18. Delete Part
         public string DeletePart(DeletePartRequest request)
         {
@@ -531,6 +544,74 @@ namespace Technicians.Api.Repository
 
             return errMsg;
         }
+
+        //19. Update Tech Return Info
+        public bool SaveUpdateReturnedPartsByTech(TechReturnUpdateDto dto, string empId, out string errorMsg)
+        {
+            errorMsg = string.Empty;
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (var cmd = new SqlCommand("SaveUpdateTechReturnedParts", connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@Service_Call_ID", dto.CallNbr?.Trim());
+                        cmd.Parameters.AddWithValue("@UnusedSentBack", dto.UnusedSent);
+                        cmd.Parameters.AddWithValue("@FaultySentBack", dto.FaultySent);
+                        cmd.Parameters.AddWithValue("@ReturnStatus", dto.ReturnStatus ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@ReturnNotes", dto.ReturnNotes ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@TruckStock", dto.TrunkStock);
+                        cmd.Parameters.AddWithValue("@TechName", dto.TechName ?? (object)DBNull.Value);
+                        cmd.Parameters.AddWithValue("@Maint_Auth_ID", empId ?? "system");
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMsg = ex.Message;
+                return false;
+            }
+        }
+
+        //20. Re-Upload job to GP
+        public bool ReUploadJobToGP(string callNbr, string techID, out string errorMsg)
+        {
+            errorMsg = string.Empty;
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    using (SqlCommand cmd = new SqlCommand("UploadJobToGP_Wow", connection))
+                    {
+                        cmd.CommandType = CommandType.StoredProcedure;
+
+                        cmd.Parameters.AddWithValue("@CallNbr", callNbr?.Trim());
+                        cmd.Parameters.AddWithValue("@strUser", techID?.Trim());
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMsg = ex.Message;
+                return false;
+            }
+        }
+
+
+
+
 
 
 

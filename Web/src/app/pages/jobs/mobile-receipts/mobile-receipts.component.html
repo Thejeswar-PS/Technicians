@@ -1,102 +1,82 @@
 <!-- Mobile Receipts Page -->
-<div class="container-fluid">
+<div class="container py-4 mobile-receipts">
+
   <!-- Header -->
-  <div class="card">
-    <div class="card-header border-0 py-4">
-      <div class="job-header">
-        <div class="job-header__group">
-          <button 
-            type="button"
-            class="btn btn-sm btn-primary job-header__back"
-            (click)="goBack()"
-            [disabled]="loading">
-            <i class="bi bi-arrow-left me-2"></i>
-            Back
-          </button>
-        </div>
-        <div class="job-header__title">
-          <h3 class="text-primary mb-0 fw-bold">
-            Service Call No: {{ callNbr }} -- Tech Name: {{ techName }}
-          </h3>
-        </div>
-        <div class="job-header__group">
-          <!-- Placeholder for symmetry -->
-        </div>
-      </div>
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap">
+      <button 
+        type="button"
+        class="btn btn-outline-primary btn-sm mb-2 mb-md-0"
+        (click)="goBack()"
+        [disabled]="loading">
+        <i class="bi bi-arrow-left me-2"></i> Back
+      </button>
+
+      <h4 class="fw-bold text-primary text-center flex-grow-1 mb-0">
+        Service Call: <span class="text-dark">{{ callNbr }}</span> 
+        &nbsp;&nbsp; Tech: <span class="text-dark">{{ techName }}</span>
+      </h4>
+
+      <span class="invisible">Placeholder</span>
     </div>
   </div>
 
-  <!-- Error Message -->
-  <div *ngIf="errorMessage" class="alert alert-danger mt-3">
-    {{ errorMessage }}
+  <!-- Loading -->
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border text-primary mb-3"></div>
+    <p class="fw-semibold text-secondary">Loading mobile receipts...</p>
   </div>
 
-  <!-- Loading Indicator -->
-  <div *ngIf="loading" class="text-center mt-4">
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
+  <!-- Error -->
+  <div *ngIf="errorMessage" class="alert alert-danger shadow-sm">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading && !errorMessage">
+
+    <!-- Title -->
+    <div class="text-center mb-4">
+      <h3 class="fw-bolder text-dark">📱 Uploaded Receipts from mobile app</h3>
     </div>
-    <p class="mt-2">Loading mobile receipts...</p>
-  </div>
 
-  <!-- Main Content -->
-  <div *ngIf="!loading" class="mt-3 mobile-receipts-content">
-    <!-- Title Section -->
-    <div class="card">
-      <div class="card-body text-center bg-light">
-        <h3 class="mb-0 fw-bolder">Uploaded Receipts from Mobile Phone App</h3>
-      </div>
+    <!-- No Data -->
+    <div *ngIf="receipts.length === 0" class="alert alert-info shadow-sm text-center">
+      <i class="fa fa-info-circle me-2"></i> No mobile receipts found for this job.
     </div>
 
     <!-- Receipts Grid -->
-    <div class="card mt-3">
-      <div class="card-body p-0">
-        <div class="table-responsive">
-          <table class="table table-striped mb-0" style="font-family: Arial; font-size: 9pt;">
-            <tbody>
-              <tr *ngFor="let receipt of receipts; trackBy: trackByIndex" 
-                  class="align-middle"
-                  style="background-color: #F6F5F0;">
-                <!-- Description Column -->
-                <td class="p-3" style="width: 60%; vertical-align: middle;">
-                  <div class="fw-bold" style="font-size: 12pt;" 
-                       [innerHTML]="formatReceiptDescription(receipt)">
-                  </div>
-                </td>
-                
-                <!-- Image Column -->
-                <td class="text-center p-3" style="width: 40%; vertical-align: middle;">
-                  <div class="receipt-image-container">
-                    <img 
-                      [src]="getReceiptImageUrl(receipt)"
-                      [alt]="'Receipt for ' + receipt.codeDesc"
-                      class="receipt-thumbnail cursor-pointer border"
-                      (click)="onImageClick(receipt)"
-                      (error)="onImageError($event)"
-                      style="max-width: 200px; max-height: 150px; border: 1px solid #dedede;"
-                    />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+    <div class="row g-4" *ngIf="receipts.length > 0">
+      <div 
+        class="col-sm-6 col-md-4 col-lg-3" 
+        *ngFor="let receipt of receipts; trackBy: trackByIndex"
+        (click)="onImageClick(receipt)"
+        style="cursor: pointer;"
+      >
+        <div class="card h-100 shadow-sm border-0 receipt-card">
+          <div class="receipt-image-wrapper">
+            <img 
+              [src]="getReceiptImageUrl(receipt)"
+              [alt]="'Receipt for ' + receipt.codeDesc"
+              class="card-img-top receipt-image"
+              (error)="onImageError($event)"
+            />
+          </div>
+          <div class="card-body">
+            <div class="receipt-description" [innerHTML]="formatReceiptDescription(receipt)"></div>
+          </div>
         </div>
       </div>
-    </div>
-
-    <!-- No Data Message -->
-    <div *ngIf="receipts.length === 0 && !errorMessage" class="alert alert-info mt-3">
-      <i class="fa fa-info-circle me-2"></i>
-      No mobile receipts found for this job.
     </div>
   </div>
 
   <!-- Zoomed Image Modal -->
   <div 
     *ngIf="showZoomedImage" 
-    class="zoomed-image-overlay"
-    (click)="closeZoomedImage()">
-    <div class="zoomed-image-container">
+    class="zoomed-image-overlay d-flex justify-content-center align-items-center"
+    (click)="closeZoomedImage()"
+  >
+    <div class="position-relative">
       <img 
         [src]="zoomedImageUrl"
         alt="Zoomed Receipt"
@@ -105,7 +85,7 @@
       />
       <button 
         type="button" 
-        class="btn btn-light btn-sm close-btn"
+        class="btn btn-light btn-sm close-btn shadow"
         (click)="closeZoomedImage()">
         <i class="fa fa-times"></i>
       </button>

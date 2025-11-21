@@ -671,6 +671,16 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
   }
 
   async onSave(): Promise<void> {
+    console.log('onSave called - form state:', {
+      quotePriority: this.jobNotesForm.get('quotePriority')?.value,
+      quotePriorityDirty: this.jobNotesForm.get('quotePriority')?.dirty,
+      quotePriorityTouched: this.jobNotesForm.get('quotePriority')?.touched,
+      reconciliationNewEquip: this.jobNotesForm.get('reconciliationNewEquip')?.value,
+      reconciliationDirty: this.jobNotesForm.get('reconciliationNewEquip')?.dirty,
+      reconciliationTouched: this.jobNotesForm.get('reconciliationNewEquip')?.touched,
+      deficiencyNotesVerified: this.jobNotesForm.get('deficiencyNotesVerified')?.value
+    });
+
     if (!this.validateForm()) {
       return;
     }
@@ -683,14 +693,34 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
       // Build tech notes HTML
       const techNotesHtml = this.buildTechNotesHtml();
 
+      // Normalize values and log for debugging
+      const rawQuote = this.jobNotesForm.get('quotePriority')?.value;
+      const rawRecon = this.jobNotesForm.get('reconciliationNewEquip')?.value;
+      const rawChk = this.jobNotesForm.get('deficiencyNotesVerified')?.value;
+
+      // Coerce to expected shapes: empty string when not selected, strict boolean for checkbox
+      const qtePriority = rawQuote || '';
+      const chkNotes = rawChk === true;
+
+      console.log('Saving JobNotes - normalized values:', {
+        qtePriority,
+        reconciliationNewEquip: rawRecon || '',
+        chkNotes,
+        types: {
+          qtePriority: typeof qtePriority,
+          reconciliationNewEquip: typeof rawRecon,
+          chkNotes: typeof chkNotes
+        }
+      });
+
       // Update job information
       const updateRequest: UpdateJobRequest = {
         callNbr: this.callNbr,
         svcDescr: this.jobInfo?.svcDescr || '',
         pmVisualNotes: techNotesHtml,
         techName: this.techName,
-        qtePriority: this.jobNotesForm.get('quotePriority')?.value,
-        chkNotes: this.jobNotesForm.get('deficiencyNotesVerified')?.value,
+        qtePriority,
+        chkNotes,
         changeby: this.empId?.trim() || ''
       };
 
@@ -744,15 +774,11 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
     let isValid = true;
     let errorMsg = '';
 
-    // Check if at least one quote priority is selected
-    if (!this.jobNotesForm.get('quotePriority')?.value) {
-      errorMsg += 'At least one Quote Priority must be selected\n';
-      isValid = false;
-    }
-
-    // Check reconciliation selection
-    if (!this.jobNotesForm.get('reconciliationNewEquip')?.value) {
-      errorMsg += 'At least one checkbox value must be selected\n';
+    // Require at least one of the two radio groups (Quote Priority OR Reconciliation)
+    const quoteVal = this.jobNotesForm.get('quotePriority')?.value;
+    const reconVal = this.jobNotesForm.get('reconciliationNewEquip')?.value;
+    if (!quoteVal && !reconVal) {
+      errorMsg += 'At least one of Quote Priority or Equipment Reconciliation must be selected\n';
       isValid = false;
     }
 
@@ -847,6 +873,21 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
 
   get otherTechsDisplay(): string {
     return this.otherTechs.length > 0 ? this.otherTechs.join(', ') : 'None';
+  }
+
+  /**
+   * Returns true when both radio groups have a non-empty (trimmed) value.
+   * This is used by the template to enable Save/Update when both options are selected
+   * even if they were prefilled by server data (no need to be "touched").
+   */
+  get bothRadiosSelected(): boolean {
+    try {
+      const q = (this.jobNotesForm.get('quotePriority')?.value || '').toString().trim();
+      const r = (this.jobNotesForm.get('reconciliationNewEquip')?.value || '').toString().trim();
+      return q.length > 0 && r.length > 0;
+    } catch (e) {
+      return false;
+    }
   }
 
   getSiteHistoryUrl(): string {

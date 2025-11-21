@@ -1,0 +1,1443 @@
+<!-- Battery Readings Page -->
+<div class="container-fluid ups-readings-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="loading"
+    class="d-flex justify-content-center align-items-center ups-readings-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__back"
+      (click)="goBack()"
+      [disabled]="saving"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="ups-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-battery-charging me-2"></i>
+        Battery Readings & Verification
+      </h2>
+      <!-- Job and Equipment Information -->
+      <div class="text-dark mt-2" *ngIf="!loading">
+        <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | Battery String ID: {{ batStrId || 'N/A' }}</span>
+      </div>
+    </div>
+    
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__action"
+      (click)="saveBatteryReadings()"
+      [disabled]="saving"
+    >
+      <span
+        *ngIf="saving"
+        class="spinner-border spinner-border-sm me-2"
+        role="status"
+      ></span>
+      <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
+      {{ saving ? "Saving..." : "Save Battery Data" }}
+    </button>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!loading">
+    <div class="card shadow-sm ups-main-card">
+      <!-- Form sections within card body -->
+      <div class="card-body">
+        <!-- Messages -->
+        <div
+          class="ups-readings-messages mb-4"
+          *ngIf="errorMessage || successMessage"
+        >
+          <div
+            *ngIf="errorMessage"
+            class="alert alert-danger d-flex align-items-center"
+          >
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+          <div
+            *ngIf="
+              successMessage && successMessage.includes('No Information Found')
+            "
+            class="alert alert-warning d-flex align-items-center"
+          >
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+          <div
+            *ngIf="
+              successMessage && !successMessage.includes('No Information Found')
+            "
+            class="alert alert-success d-flex align-items-center"
+          >
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+        </div>
+        <div class="ups-readings-form">
+  <form [formGroup]="batteryStringForm">
+    <!-- Equipment Information Section -->
+    <section class="ups-readings-section">
+      <div class="ups-section-card">
+        <div
+          class="ups-section-header"
+          (click)="showEquipmentInfo = !showEquipmentInfo"
+        >
+          <div class="ups-section-title">
+            <i class="bi bi-battery-charging me-2 text-primary"></i>
+            <h5 class="mb-0">Equipment Information</h5>
+            <small class="text-muted"
+              >Battery equipment details and specifications</small
+            >
+          </div>
+          <i
+            class="bi transition-transform"
+            [class.bi-chevron-down]="showEquipmentInfo"
+            [class.bi-chevron-right]="!showEquipmentInfo"
+            [class.rotate-90]="showEquipmentInfo"
+          ></i>
+        </div>
+
+        <div class="ups-section-content" [class.show]="showEquipmentInfo">
+          <div class="ups-form">
+            <!-- Row 1: Manufacturer / Battery Housing / Model / Serial -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="manufacturer" formControlName="manufacturer">
+                      <option value="">Choose manufacturer...</option>
+                      <option *ngFor="let mfg of manufacturers" [value]="mfg.id">{{ mfg.name }}</option>
+                    </select>
+                    <label for="manufacturer">Manufacturer</label>
+                  </div>
+                </div>
+
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="batteryHousing" formControlName="batteryHousing">
+                      <option value="PS">Choose housing...</option>
+                      <option value="Cabinet">Cabinet</option>
+                      <option value="Rack">Rack</option>
+                      <option value="Encapsulated Tray">Encapsulated Tray</option>
+                      <option value="Internal">Internal</option>
+                    </select>
+                    <label for="batteryHousing">Battery Housing</label>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="modelNo"
+                      formControlName="modelNo"
+                      placeholder="e.g., LC-R127R2PG"
+                    />
+                    <label for="modelNo">Model No</label>
+                  </div>
+                </div>
+
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="serialNo"
+                      formControlName="serialNo"
+                      placeholder="e.g., SN123456789"
+                    />
+                    <label for="serialNo">Serial / Identification No</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 2: Location / Battery Voltage Type / Battery Type Category / Status / Date Code -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="location"
+                      formControlName="location"
+                      placeholder="e.g., Room A224A, 2nd Floor"
+                    />
+                    <label for="location">Location</label>
+                  </div>
+                </div>
+
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select
+                      class="form-select"
+                      id="batteryType"
+                      formControlName="batteryType"
+                      (change)="onBatteryTypeChange()"
+                    >
+                      <option value="PS">Choose voltage...</option>
+                      <option value="SV">16 V</option>
+                      <option value="FV">14 V</option>
+                      <option value="V">12 V</option>
+                      <option value="TV">10 V</option>
+                      <option value="8V">8 V</option>
+                      <option value="6V">6 V</option>
+                      <option value="4V">4 V</option>
+                      <option value="4L">4L-Long Life</option>
+                      <option value="2V">2 V</option>
+                      <option value="1V">1.2 V</option>
+                    </select>
+                    <label for="batteryType">Battery Type (Voltage)</label>
+                  </div>
+                </div>
+
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select
+                      class="form-select"
+                      id="batteryTypeName"
+                      formControlName="batteryTypeName"
+                      (change)="onBatteryTypeChange()"
+                    >
+                      <option value="">Choose type...</option>
+                      <option value="S">Sealed</option>
+                      <option value="L">Long Life</option>
+                      <option value="F">Flooded</option>
+                      <option value="I">Li-Ion</option>
+                    </select>
+                    <label for="batteryTypeName">Battery Type (Category)</label>
+                  </div>
+                </div>
+
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="equipStatus" formControlName="equipStatus">
+                      <option value="Online">On-Line</option>
+                      <option value="CriticalDeficiency">Critical Deficiency</option>
+                      <option value="ReplacementRecommended">Replacement Recommended</option>
+                      <option value="ProactiveReplacement">Proactive Replacement</option>
+                      <option value="OnLine(MajorDeficiency)">On-Line(Major Deficiency)</option>
+                      <option value="OnLine(MinorDeficiency)">On-Line(Minor Deficiency)</option>
+                      <option value="Offline">Off-Line</option>
+                    </select>
+                    <label for="equipStatus">Status</label>
+                  </div>
+                </div>
+
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="startDate"
+                      formControlName="startDate"
+                      placeholder="MM/DD/YYYY"
+                    />
+                    <label for="startDate">Date Code</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Reason for Status conditional -->
+            <!-- <div class="form-group-modern" *ngIf="batteryStringForm.get('equipStatus')?.value && batteryStringForm.get('equipStatus')?.value !== 'Online'">
+              <div class="form-floating">
+                <textarea
+                  class="form-control"
+                  id="commentsUsed"
+                  formControlName="commentsUsed"
+                  placeholder="Enter reason for status"
+                  style="height: 80px"
+                ></textarea>
+                <label for="commentsUsed">Reason for Status</label>
+              </div>
+            </div> -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Equipment Reconciliation Section -->
+    <section class="ups-readings-section">
+      <div class="ups-section-card">
+        <div
+          class="ups-section-header"
+          (click)="showReconciliation = !showReconciliation"
+        >
+          <div class="ups-section-title">
+            <i class="bi bi-check2-square me-2 text-success"></i>
+            <h5 class="mb-0">Equipment Reconciliation</h5>
+            <small class="text-muted"
+              >Verify equipment data matches physical observations</small
+            >
+          </div>
+          <div class="d-flex align-items-center gap-3" [formGroup]="reconciliationForm" (click)="$event.stopPropagation()">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="reconciled"
+                formControlName="reconciled"
+                style="border: 2px solid #009EF7 ; width: 20px; height: 20px;"
+              />
+              <label class="form-check-label fw-bold text-success" for="reconciled">
+                <i class="bi bi-check-circle me-1"></i>
+                Verified
+              </label>
+            </div>
+            <i
+              class="bi transition-transform"
+              [class.bi-chevron-down]="showReconciliation"
+              [class.bi-chevron-right]="!showReconciliation"
+              [class.rotate-90]="showReconciliation"
+            ></i>
+          </div>
+        </div>
+
+        <div class="ups-section-content" [class.show]="showReconciliation">
+          <div [formGroup]="reconciliationForm" class="ups-form">
+            <!-- Row 1: Make / Is Correct / Actual Make -->
+            <div class="form-group-modern">
+              <div class="row g-2">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="recMake" formControlName="recMake" readonly />
+                    <label for="recMake">Make</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="recMakeCorrect" formControlName="recMakeCorrect" (change)="onReconciliationChange()">
+                      <option value="YS">Yes</option>
+                      <option value="NO">No</option>
+                      <option value="NA">N/A</option>
+                    </select>
+                    <label for="recMakeCorrect">Is Correct ?</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="actMake" formControlName="actMake" />
+                    <label for="actMake">Actual Make</label>
+                  </div>
+                </div>
+
+            <!-- Row 2: Model / Is Correct / Actual Model -->
+            
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="recModel" formControlName="recModel" readonly />
+                    <label for="recModel">Model</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="recModelCorrect" formControlName="recModelCorrect" (change)="onReconciliationChange()">
+                      <option value="YS">Yes</option>
+                      <option value="NO">No</option>
+                      <option value="NA">N/A</option>
+                    </select>
+                    <label for="recModelCorrect">Is Correct ?</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="actModel" formControlName="actModel" />
+                    <label for="actModel">Actual Model</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Serial No / Is Correct / Actual Serial No -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="recSerialNo" formControlName="recSerialNo" readonly />
+                    <label for="recSerialNo">Serial No</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="recSerialNoCorrect" formControlName="recSerialNoCorrect" (change)="onReconciliationChange()">
+                      <option value="YS">Yes</option>
+                      <option value="NO">No</option>
+                      <option value="NA">N/A</option>
+                    </select>
+                    <label for="recSerialNoCorrect">Is Correct ?</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="actSerialNo" formControlName="actSerialNo" />
+                    <label for="actSerialNo">Actual Serial No</label>
+                  </div>
+                </div>
+
+            <!-- Row 4: Batteries Per String / Is Correct / Actual Batteries -->
+            
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="battPerString" formControlName="battPerString" readonly />
+                    <label for="battPerString">{{ reconciliationBattPerStringLabel }}</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="battPerStringCorrect" formControlName="battPerStringCorrect" (change)="onReconciliationChange()">
+                      <option value="YS">Yes</option>
+                      <option value="NO">No</option>
+                      <option value="NA">N/A</option>
+                    </select>
+                    <label for="battPerStringCorrect">Is Correct ?</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="actBattPerString" formControlName="actBattPerString" />
+                    <label for="actBattPerString">Actual Count</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sealed Battery: Container & Cover / Battery Environment (Legacy) -->
+    <section class="ups-readings-section" *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'S'">
+      <div class="ups-section-card">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-battery-half me-2 text-info"></i>
+            <h5 class="mb-0">Sealed Battery Inspection</h5>
+            <small class="text-muted">Container, cover, and battery environment inspection</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="ups-form">
+            <div class="row g-3">
+              <!-- Container and Cover Section (Left) -->
+              <div class="col-md-6">
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-box-seam me-2"></i>
+                    <h6 class="mb-0">Container and Cover</h6>
+                  </div>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Container & cover:</span>
+                      </div>
+                      <div class="inspection-controls">
+                        <div class="form-check">
+                          <input type="checkbox" class="form-check-input" id="bulgedCheck2" formControlName="bulgedCheck" (change)="onSealedCheckboxChange('bulgedCheck', 'bulgedPf')" />
+                          <label class="form-check-label" for="bulgedCheck2">Bulged</label>
+                        </div>
+                        <select class="form-select form-select-sm" formControlName="bulgedPf">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Floor:</span>
+                      </div>
+                      <div class="inspection-controls">
+                        <div class="form-check">
+                          <input type="checkbox" class="form-check-input" id="crackedCheck2" formControlName="crackedCheck" (change)="onSealedCheckboxChange('crackedCheck', 'crackedPf')" />
+                          <label class="form-check-label" for="crackedCheck2">Cracked</label>
+                        </div>
+                        <select class="form-select form-select-sm" formControlName="crackedPf">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text"></span>
+                      </div>
+                      <div class="inspection-controls">
+                        <div class="form-check">
+                          <input type="checkbox" class="form-check-input" id="debrisCheck2" formControlName="debrisCheck" (change)="onSealedCheckboxChange('debrisCheck', 'debrisPf')" />
+                          <label class="form-check-label" for="debrisCheck2">Debris/Sediments</label>
+                        </div>
+                        <select class="form-select form-select-sm" formControlName="debrisPf">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Battery Environment Section (Right) -->
+              <div class="col-md-6">
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-wind me-2"></i>
+                    <h6 class="mb-0">Battery Environment</h6>
+                  </div>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Inspect for sulfurous ("rotten egg") odor:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="rotten">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Verify Presence of Safety Equipment:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="verifySaftey">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Missing Intercell connector / Hardware:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" id="intercellConnector" formControlName="intercellConnector">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Flooded Battery: Plates / Flame Arrestors & Covers / Electrolyte Levels (Legacy) -->
+    <section class="ups-readings-section" *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'F'">
+      <div class="ups-section-card">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-battery-charging me-2 text-info"></i>
+            <h5 class="mb-0">Flooded Battery Inspection</h5>
+            <small class="text-muted">Plates, flame arrestors, covers, and electrolyte levels</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="ups-form">
+            <div class="row g-3">
+              <!-- Plates Section (Left) -->
+              <div class="col-md-6">
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-layers me-2"></i>
+                    <h6 class="mb-0">Plates Inspection</h6>
+                  </div>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Plates Condition:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="plusWrappedVerify">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="flooded-checkboxes d-flex flex-wrap gap-4">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="plusWrappedCheck2" formControlName="plusWrappedCheck" (change)="onFloodedPlatesCheckboxChange()" />
+                        <label class="form-check-label" for="plusWrappedCheck2">Wrapped</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="plusSulfatedCheck2" formControlName="plusSulfatedCheck" (change)="onFloodedPlatesCheckboxChange()" />
+                        <label class="form-check-label" for="plusSulfatedCheck2">Sulfated</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="plusMisposCheck2" formControlName="plusMisposCheck" (change)="onFloodedPlatesCheckboxChange()" />
+                        <label class="form-check-label" for="plusMisposCheck2">Mis-Positioned</label>
+                      </div>
+                    </div>
+
+                    <!-- <div class="mt-3">
+                      <label class="form-label small fw-bold" for="platesComments2">Plates/Terminal Comments</label>
+                      <textarea id="platesComments2" rows="3" class="form-control" formControlName="platesComments" placeholder="Enter any observations about plates condition..."></textarea>
+                    </div> -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- Covers & Electrolyte Section (Right) -->
+              <div class="col-md-6">
+                <div class="inspection-subsection">
+                  <div class="subsection-header">
+                    <i class="bi bi-shield-check me-2"></i>
+                    <h6 class="mb-0">Covers & Electrolyte</h6>
+                  </div>
+                  <div class="subsection-content">
+                    <div class="inspection-row">
+                      <div class="inspection-label">
+                        <span class="label-text">Flame Arrestors / Covers:</span>
+                      </div>
+                      <div class="inspection-controls justify-content-end">
+                        <select class="form-select form-select-sm" formControlName="missingVerify">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="flooded-checkboxes d-flex flex-wrap gap-3">
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="missingCheck2" formControlName="missingCheck" (change)="onFloodedCoversCheckboxChange()" />
+                        <label class="form-check-label" for="missingCheck2">Missing</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="brokenCheck2" formControlName="brokenCheck" (change)="onFloodedCoversCheckboxChange()" />
+                        <label class="form-check-label" for="brokenCheck2">Broken</label>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="needsCleaningCheck2" formControlName="needsCleaningCheck" (change)="onFloodedCoversCheckboxChange()" />
+                        <label class="form-check-label" for="needsCleaningCheck2">Needs Cleaning</label>
+                      </div>
+                    </div>
+
+                    <div class="row g-2 mt-3">
+                      <div class="col-md-7">
+                        <label for="waterLevel2" class="form-label small fw-bold">Electrolyte Level</label>
+                        <select id="waterLevel2" class="form-select form-select-sm" formControlName="waterLevel">
+                          <option value="Q">1/4 Below High Line</option>
+                          <option value="H">1/2 Below High Line</option>
+                          <option value="T">3/4 Below High Line</option>
+                        </select>
+                      </div>
+                      <div class="col-md-5">
+                        <label for="waterLevelVerify2" class="form-label small fw-bold">Pass/Fail</label>
+                        <select id="waterLevelVerify2" class="form-select form-select-sm" formControlName="waterLevelVerify">
+                          <option value="P">Pass</option>
+                          <option value="F">Fail</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- <div class="mt-3">
+                      <label for="electrolytesComments2" class="form-label small fw-bold">Electrolytes Comments</label>
+                      <textarea id="electrolytesComments2" rows="2" class="form-control" formControlName="electrolytesComments" placeholder="Enter electrolyte observations..."></textarea>
+                    </div> -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Battery Charging System Verification Section -->
+    <section class="ups-readings-section">
+      <div class="ups-section-card">
+        <div
+          class="ups-section-header"
+          (click)="showChargingVerification = !showChargingVerification"
+        >
+          <div class="ups-section-title">
+            <i class="bi bi-lightning-charge me-2 text-warning"></i>
+            <h5 class="mb-0">Battery Charging System Verification</h5>
+            <small class="text-muted"
+              >Verify charging system voltage and current readings</small
+            >
+          </div>
+          <i
+            class="bi transition-transform"
+            [class.bi-chevron-down]="showChargingVerification"
+            [class.bi-chevron-right]="!showChargingVerification"
+            [class.rotate-90]="showChargingVerification"
+          ></i>
+        </div>
+
+        <div class="ups-section-content" [class.show]="showChargingVerification">
+          <div class="ups-form">
+            <!-- Row 1: Total Float Voltage / Pass-Fail / Positive Terminal / Pass-Fail -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      step="0.01"
+                      class="form-control"
+                      id="totalBatteryVoltage"
+                      formControlName="totalBatteryVoltage"
+                      placeholder="0.00"
+                    />
+                    <label for="totalBatteryVoltage">Total Float Voltage</label>
+                  </div>
+                </div>
+                <div class="col-md-1">
+                  <div class="form-floating">
+                    <select class="form-select" id="batteryVoltageVerify" formControlName="batteryVoltageVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="batteryVoltageVerify">Pass/Fail</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      step="0.01"
+                      class="form-control"
+                      id="plusTerminalToGnd"
+                      formControlName="plusTerminalToGnd"
+                      placeholder="0.00"
+                    />
+                    <label for="plusTerminalToGnd">Positive Terminal to Ground</label>
+                  </div>
+                </div>
+                <div class="col-md-1">
+                  <div class="form-floating">
+                    <select class="form-select" id="plusTerminalVerify" formControlName="plusTerminalVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">NA</option>
+                    </select>
+                    <label for="plusTerminalVerify">Pass/Fail</label>
+                  </div>
+                </div>
+
+            <!-- Row 2: Negative Terminal / Pass-Fail / DC Charging Current / Pass-Fail -->
+            
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      step="0.01"
+                      class="form-control"
+                      id="minusTerminalToGnd"
+                      formControlName="minusTerminalToGnd"
+                      placeholder="0.00"
+                    />
+                    <label for="minusTerminalToGnd">Negative Terminal to Ground</label>
+                  </div>
+                </div>
+                <div class="col-md-1">
+                  <div class="form-floating">
+                    <select class="form-select" id="minusTerminalVerify" formControlName="minusTerminalVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">NA</option>
+                    </select>
+                    <label for="minusTerminalVerify">Pass/Fail</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      step="0.01"
+                      class="form-control"
+                      id="dcChargeCurrent"
+                      formControlName="dcChargeCurrent"
+                      placeholder="0.00"
+                    />
+                    <label for="dcChargeCurrent">DC Charging Current</label>
+                  </div>
+                </div>
+                <div class="col-md-1">
+                  <div class="form-floating">
+                    <select class="form-select" id="dcChargingVerify" formControlName="dcChargingVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">NA</option>
+                    </select>
+                    <label for="dcChargingVerify">Pass/Fail</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: A/C Ripple Voltage / Pass-Fail / A/C Ripple Current / Pass-Fail -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      step="0.01"
+                      class="form-control"
+                      id="acRippleVoltage"
+                      formControlName="acRippleVoltage"
+                      placeholder="0.00"
+                    />
+                    <label for="acRippleVoltage">A/C Ripple Voltage</label>
+                  </div>
+                </div>
+                <div class="col-md-1">
+                  <div class="form-floating">
+                    <select class="form-select" id="acRippleVoltageVerify" formControlName="acRippleVoltageVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">NA</option>
+                    </select>
+                    <label for="acRippleVoltageVerify">Pass/Fail</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input
+                      type="number"
+                      step="0.01"
+                      class="form-control"
+                      id="acRippleCurrent"
+                      formControlName="acRippleCurrent"
+                      placeholder="0.00"
+                    />
+                    <label for="acRippleCurrent">A/C Ripple Current</label>
+                  </div>
+                </div>
+                <div class="col-md-1">
+                  <div class="form-floating">
+                    <select class="form-select" id="acRippleCurrentVerify" formControlName="acRippleCurrentVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">NA</option>
+                    </select>
+                    <label for="acRippleCurrentVerify">Pass/Fail</label>
+                  </div>
+                </div>
+
+            <!-- Row 4: Intercell Resistance / Strap Torque -->
+            
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="resistancePf" formControlName="resistancePf">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="resistancePf">Intercell Resistance Acceptable</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <select class="form-select" id="torqueVerify" formControlName="torqueVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                    <label for="torqueVerify">For 2 volt Sealed Battery, Check strap torque</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 5: Comments -->
+            <!-- <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-12">
+                  <div class="form-floating">
+                    <textarea
+                      class="form-control"
+                      id="chargingComments"
+                      formControlName="chargingComments"
+                      placeholder="Enter charging system comments"
+                      style="height: 80px"
+                    ></textarea>
+                    <label for="chargingComments">Charging System Comments</label>
+                  </div>
+                </div>
+              </div>
+            </div> -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Battery Readings Page For Multimeter/Midtronics Section -->
+    <section class="ups-readings-section">
+      <div class="ups-section-card">
+        <div
+          class="ups-section-header"
+          (click)="showMultimeterReadings = !showMultimeterReadings"
+        >
+          <div class="ups-section-title">
+            <i class="bi bi-graph-up me-2 text-info"></i>
+            <h5 class="mb-0">Battery Readings Page For Multimeter/Midtronics</h5>
+            <small class="text-muted"
+              >Configure reading parameters and measurement settings</small
+            >
+          </div>
+          <i
+            class="bi transition-transform"
+            [class.bi-chevron-down]="showMultimeterReadings"
+            [class.bi-chevron-right]="!showMultimeterReadings"
+            [class.rotate-90]="showMultimeterReadings"
+          ></i>
+        </div>
+
+        <div class="ups-section-content" [class.show]="showMultimeterReadings">
+          <div class="ups-form">
+            <!-- Row 1: Room Temperature / Battery Temperature -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="number" step="0.1" class="form-control" id="roomTemp" formControlName="roomTemp" placeholder="72" (change)="onRoomTempChange()" />
+                    <label for="roomTemp">Room Temperature</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="roomTempVerify" formControlName="roomTempVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="roomTempVerify">Pass/Fail</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="number" step="0.1" class="form-control" id="batteryTemp" formControlName="batteryTemp" placeholder="72" (change)="onBatteryTempChange()" />
+                    <label for="batteryTemp">Battery Temperature</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="batteryTempVerify" formControlName="batteryTempVerify">
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="batteryTempVerify">Pass/Fail</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 2: Battery Terminal Type / Battery Terminal Size -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="battTerminalType" formControlName="battTerminalType">
+                      <option value="">Please Select</option>
+                      <option value="LG">L(Horizontal) Post - bolt</option>
+                      <option value="FG">Flag(Vertical) Post - bolt</option>
+                      <option value="TI">Threaded Insert</option>
+                      <option value="SD">Studded</option>
+                      <option value="SP">Spade</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <label for="battTerminalType">Battery Terminal Type</label>
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="form-floating">
+                    <select class="form-select" id="battTerminal" formControlName="battTerminal">
+                      <option value="">Please Select</option>
+                      <option value="T1">T1 Spade - 3/16 -0.187mm</option>
+                      <option value="T2">T2 Spade - 1/4 -0.250mm</option>
+                      <option value="M4">Bolt - 4mm (M4) - Head - 7mm</option>
+                      <option value="M5">Bolt - 5mm (M5) - Head - 8mm</option>
+                      <option value="M6">Bolt - 6mm (M6)- Head - 10mm</option>
+                      <option value="M8">Bolt - 8mm (M8)- Head - 13mm</option>
+                      <option value="M10">Bolt - 10mm (M10)- Head - 16mm</option>
+                      <option value="M12">Bolt - 12mm (M12)- Head - 18mm</option>
+                      <option value="M14">Bolt - 14mm (M14)- Head - 21mm</option>
+                      <option value="M16">Bolt - 16mm (M16)- Head - 24mm</option>
+                      <option value="M20">Bolt - 20mm (M20)- Head - 30mm</option>
+                      <option value="N6">US Bolt -0.1380 (#6)- Head - 1/4inch</option>
+                      <option value="N8">US Bolt -0.1640" (#8)- Head - 1/4inch</option>
+                      <option value="N10">US Bolt -0.1900" (#10)- Head - 5/16inch</option>
+                      <option value="N12">US Bolt -0.2160" (#12)- Head - 5/16inch</option>
+                      <option value="1/4">US Bolt -1/4- Head - 7/16 or 3/8</option>
+                      <option value="5/16">US Bolt -5/16- Head - 1/2</option>
+                      <option value="3/8">US Bolt -3/8- Head - 9/16</option>
+                      <option value="7/16">US Bolt -7/16- Head - 5/8</option>
+                      <option value="1/2">US Bolt -1/2- Head - 3/4</option>
+                      <option value="9/16">US Bolt -9/16- Head - 13/16</option>
+                      <option value="5/8">US Bolt -5/8- Head - 15/16</option>
+                      <option value="3/4">US Bolt -3/4- Head - 1-1/8</option>
+                      <option value="7/8">US Bolt -7/8 Head - 1-5/16</option>
+                      <option value="1">US Bolt -1- Head - 1-1/2</option>
+                      <option value="118">US Bolt -1-1/8- Head - 1-11/16</option>
+                      <option value="114">US Bolt -1-1/4- Head - 1-7/8</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <label for="battTerminal">Battery Terminal Size</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control" id="battTerminalValue" formControlName="battTerminalValue" placeholder="If other" />
+                    <label for="battTerminalValue">Other Size</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 3: Rack Integrity / Vent Fan Operation -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="rackIntegrity" formControlName="rackIntegrity">
+                      <option value="">Select</option>
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="rackIntegrity">Verify Rack Integrity/Vent Fan Operation</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="ventFanOperation" formControlName="ventFanOperation">
+                      <option value="">Select</option>
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                      <option value="A">N/A</option>
+                    </select>
+                    <label for="ventFanOperation">Vent Fan Operation</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 4: Battery Disconnect / Interconnection -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="battDisconnect" formControlName="battDisconnect">
+                      <option value="">Select</option>
+                      <option value="P">Pass</option>
+                      <option value="F">Fail</option>
+                    </select>
+                    <label for="battDisconnect">Individual Battery Disconnect</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="indBattInterconnection" formControlName="indBattInterconnection">
+                      <option value="">Select</option>
+                      <option value="Cables">Cables</option>
+                      <option value="Busbar">Busbar</option>
+                    </select>
+                    <label for="indBattInterconnection">Interconnections</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 5: Recommend to Replace / Quantities -->
+            <div class="form-group-modern">
+              <div class="row g-3 align-items-center">
+                
+                <div class="col-md-4">
+                  <div class="form-check">
+                    <label>Recommend to Replace Complete String?</label>
+                    <input type="checkbox" class="form-check-input" id="replaceWholeString" formControlName="replaceWholeString" (change)="onReplaceStringChange($event)" />
+                    
+                  </div>
+                  <div class="form-floating">
+                    <select class="form-select" id="reasonToReplace" formControlName="reasonToReplace" [disabled]="!batteryStringForm.get('replaceWholeString')?.value" (change)="onReasonToReplaceChange($event)">
+                      <option value="">Select</option>
+                      <option value="DA">Due to Age</option>
+                      <option value="DF">Due to Faulty Batteries</option>
+                      <option value="BT">Due to Age and Faulty Batteries</option>
+                    </select>
+                    <label for="reasonToReplace">Reason</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 6: Replace/Monitor Quantities -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="usedQuantity" formControlName="usedQuantity" placeholder="30" />
+                    <label for="usedQuantity">Recommend to replace</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="monitored" formControlName="monitored" placeholder="0" />
+                    <label for="monitored">monitor</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 7: Float Voltage Selection / Value -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="floatVoltageStatus" formControlName="floatVoltageStatus">
+                      <option value="">Please Select</option>
+                      <option value="OF">Breaker Open</option>
+                      <option value="ON">Breaker Closed</option>
+                    </select>
+                    <label for="floatVoltageStatus">Float Voltage Selection</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="floatVoltageValue" formControlName="floatVoltageValue">
+                      <option value="">Please Select</option>
+                      <option value="1">Normal Float</option>
+                      <option value="2">ABM Charger</option>
+                    </select>
+                    <label for="floatVoltageValue">Value</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 8: Readings Taken By / Make Model / Ref Value -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <select class="form-select" id="midType" formControlName="midType" (change)="onMidTypeChange($event)">
+                      <option value="">Select</option>
+                      <option value="2">Fluke</option>
+                      <option value="3">BCM</option>
+                    </select>
+                    <label for="midType">Readings Taken By</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-floating">
+                    <select class="form-select" id="battMakeModel" formControlName="battMakeModel" (change)="onBattMakeModelChange($event)">
+                      <option value="">Select Battery Make/Model</option>
+                      <option *ngFor="let item of batteryMakeModels" [value]="item.name">{{ item.name }}</option>
+                    </select>
+                    <label for="battMakeModel">Battery Make/Model</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="text" class="form-control fw-bold" id="refValue" formControlName="refValue" placeholder="2.25" />
+                    <label for="refValue">Reference Value</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 9: String Type -->
+            <div class="form-group-modern">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="stringType" formControlName="stringType" (change)="onStringTypeChange($event)">
+                      <option value="">Please Select</option>
+                      <option value="1">External</option>
+                      <option value="2">Internal Single / Parallel Strings</option>
+                      <option value="3">Battery Packs / Trays</option>
+                    </select>
+                    <label for="stringType">String Type</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select class="form-select" id="readingType" formControlName="readingType">
+                      <option value="">Please Select</option>
+                      <option value="1">Voltage Only</option>
+                      <option value="2">Voltage & Conductance / Resistance</option>
+                    </select>
+                    <label for="readingType">Reading Type</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 11: No of Batteries per string / Change Button -->
+            <div class="form-group-modern">
+              <div class="row g-3 align-items-center">
+                <div class="col-md-2">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="batteriesNo" formControlName="batteriesNo" placeholder="30" />
+                    <label for="batteriesNo">{{ batteriesNoLabel }}</label>
+                  </div>
+                </div>
+                <div class="col-md-2" *ngIf="showPackNoField">
+                  <div class="form-floating">
+                    <input type="number" class="form-control" id="packNo" formControlName="packNo" placeholder="0" />
+                    <label for="packNo">{{ packNoLabel }}</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-primary w-100" style="height: 38px;" (click)="onChange()">
+                    Change
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 12: How do you want readings to be calculated -->
+            <div class="form-group-modern">
+              <div class="row g-3 align-items-center">
+                <div class="col-md-3">
+                  <div class="form-floating">
+                    <select 
+                      class="form-select" 
+                      id="repMonCalculate" 
+                      formControlName="repMonCalculate"
+                      [title]="isRepMonCalculateDisabled ? 'Technicians can only use System calculation' : 'Select calculation method'"
+                      [attr.disabled]="isRepMonCalculateDisabled ? true : null">
+                      <option value="">Select</option>
+                      <option value="1">System</option>
+                      <option value="2">Manual</option>
+                    </select>
+                    <label for="repMonCalculate">How do you want readings to be calculated ?</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <button type="button" class="btn btn-success w-100" style="height: 38px;">
+                    View in Graph
+                  </button>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check" style="padding-left: 30px;">
+                    <input type="checkbox" class="form-check-input" id="readingsGraphCheck" formControlName="readingsGraphCheck" />
+                    <label class="form-check-label fw-bold text-danger" for="readingsGraphCheck">Verified the Graph?</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check" style="padding-left: 30px;">
+                    <input type="checkbox" class="form-check-input" id="mvacCheck" formControlName="mvacCheck" checked />
+                    <label class="form-check-label" for="mvacCheck">Enable mVAC?</label>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="strapCheck" formControlName="strapCheck" checked />
+                    <label class="form-check-label" for="strapCheck">Enable Straps?</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Battery Readings Grid Section -->
+    <section class="ups-readings-section">
+      <div class="ups-section-card">
+        <div
+          class="ups-section-header"
+          (click)="showBatteryReadingsGrid = !showBatteryReadingsGrid"
+        >
+          <div class="ups-section-title">
+            <i class="bi bi-table me-2 text-primary"></i>
+            <h5 class="mb-0">Battery Readings Data</h5>
+            <small class="text-muted"
+              >Individual battery voltage, conductance, and condition data</small
+            >
+          </div>
+          <i
+            class="bi transition-transform"
+            [class.bi-chevron-down]="showBatteryReadingsGrid"
+            [class.bi-chevron-right]="!showBatteryReadingsGrid"
+            [class.rotate-90]="showBatteryReadingsGrid"
+          ></i>
+        </div>
+
+        <div class="ups-section-content" [class.show]="showBatteryReadingsGrid">
+        <!-- Battery Readings Table -->
+        <div class="table-responsive">
+          <table class="table" style="width:100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background-color: #f0f0f0; font-weight: bold; font-size: 10pt;">
+                <th style="width:10px; text-align: left; padding: 5px; border: 1px solid #ddd;">ID.</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">VDC</th>
+                <th *ngIf="batteryStringForm.get('mvacCheck')?.value" style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">mVAC</th>
+                <th *ngIf="batteryStringForm.get('readingType')?.value === '2'" style="width:100px; text-align: left; padding: 5px; border: 1px solid #ddd;">Conductance / Resistance</th>
+                <th *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap1</th>
+                <th *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; text-align: left; padding: 5px; border: 1px solid #ddd;">Strap2</th>
+                <th *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'F'" style="width:55px; text-align: left; padding: 5px; border: 1px solid #ddd;">Specific Gravity</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Leaking / Damaged / Corrosion</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Replace?</th>
+                <th style="width:50px; text-align: left; padding: 5px; border: 1px solid #ddd;">Monitor?</th>
+                <th style="text-align: left; padding: 5px; border: 1px solid #ddd;">Action Plan</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of batteryReadings; let i = index" style="font-size: 10pt;">
+                <td style="width:10px; padding: 5px; border: 1px solid #ddd;">{{ row.batteryId }}</td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 50px; padding: 2px;"
+                    [(ngModel)]="row.vdc"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td *ngIf="batteryStringForm.get('mvacCheck')?.value" style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 50px; padding: 2px;"
+                    [(ngModel)]="row.vac"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td *ngIf="batteryStringForm.get('readingType')?.value === '2'" style="width:100px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 60px; padding: 2px;"
+                    [(ngModel)]="row.mhos"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 45px; padding: 2px;"
+                    [(ngModel)]="row.strap1"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td *ngIf="batteryStringForm.get('strapCheck')?.value" style="width:35px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.01"
+                    style="border-width: 0px; width: 55px; padding: 2px;"
+                    [(ngModel)]="row.strap2"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td *ngIf="batteryStringForm.get('batteryTypeName')?.value === 'F'" style="width:55px; padding: 5px; border: 1px solid #ddd;">
+                  <input
+                    type="number"
+                    step="0.0001"
+                    style="border-width: 0px; width: 55px; padding: 2px;"
+                    [(ngModel)]="row.spGravity"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <select style="border-width: 1px; width: 100%; padding: 2px;" [(ngModel)]="row.cracks" [ngModelOptions]="{ standalone: true }" (change)="onRowDropdownChange(row)">
+                    <option value="P">Pass</option>
+                    <option value="F">Fail</option>
+                  </select>
+                </td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <select style="border-width: 1px; width: 100%; padding: 2px;" [(ngModel)]="row.replacementNeeded" [ngModelOptions]="{ standalone: true }" (change)="onRowDropdownChange(row)">
+                    <option value="N">No</option>
+                    <option value="Y">Yes</option>
+                  </select>
+                </td>
+                <td style="width:50px; padding: 5px; border: 1px solid #ddd;">
+                  <select style="border-width: 1px; width: 100%; padding: 2px;" [(ngModel)]="row.monitoringBattery" [ngModelOptions]="{ standalone: true }" (change)="onRowDropdownChange(row)">
+                    <option value="N">No</option>
+                    <option value="Y">Yes</option>
+                  </select>
+                </td>
+                <td style="width:210px; padding: 5px; border: 1px solid #ddd; vertical-align: top;">
+                  <input
+                    type="text"
+                    style="border-width: 0px; width: 280px; color: red; font-size: 10pt; padding: 2px;"
+                    [(ngModel)]="row.actionPlan"
+                    [ngModelOptions]="{ standalone: true }"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Action Buttons Section -->
+    <section class="ups-readings-section">
+      <div class="ups-section-card">
+        <div class="ups-section-content show">
+          <div class="battery-actions">
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+              <button
+                type="button"
+                class="btn btn-primary btn-lg px-4 save-ups-btn"
+                [disabled]="saving"
+                (click)="saveBatteryReadings()"
+              >
+                <span
+                  *ngIf="saving"
+                  class="spinner-border spinner-border-sm me-2"
+                  role="status"
+                ></span>
+                <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
+                {{ saving ? "Saving..." : "Save Battery Data" }}
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-primary btn-lg px-4 save-draft-btn"
+                [disabled]="saving"
+                (click)="saveAsDraft()"
+              >
+                <i class="bi bi-file-earmark me-2"></i>
+                Save as Draft
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-secondary btn-lg px-4"
+                (click)="goBack()"
+              >
+                <i class="bi bi-x-circle me-2"></i>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

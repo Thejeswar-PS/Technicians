@@ -2,6 +2,8 @@ import { Component, OnInit, Input } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { JobService } from 'src/app/core/services/job.service';
+import { EquipmentService } from 'src/app/core/services/equipment.service';
+import { CommonService } from 'src/app/core/services/common.service';
 import { ToastrService } from 'ngx-toastr';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { firstValueFrom } from 'rxjs';
@@ -80,6 +82,10 @@ export class EditExpenseComponent implements OnInit {
   showNotesDropdown: boolean = true;
   showOtherReason: boolean = false;
 
+  // Controls visibility of Save/Delete based on uploaded info and user role
+  showSaveButton: boolean = true;
+  showDeleteButton: boolean = true;
+
   // File upload state
   selectedFile: File | null = null;
   selectedFileBase64: string | null = null;
@@ -147,6 +153,8 @@ export class EditExpenseComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private jobService: JobService,
+    private equipmentService: EquipmentService,
+    private _commonService: CommonService,
     private toastr: ToastrService,
     public activeModal: NgbActiveModal
   ) {
@@ -190,6 +198,9 @@ export class EditExpenseComponent implements OnInit {
         console.log('Setting up for new expense...');
         this.onExpenseTypeChange();
       }
+      // Decide visibility of Save/Delete based on uploaded info and employee role
+      // Run after inputs are known
+      this.protectUploadingJobAndExpenses();
     } else {
       // Route mode - use query params (for backward compatibility)
       console.log('Router URL:', this.router.url);
@@ -231,12 +242,22 @@ export class EditExpenseComponent implements OnInit {
           // Set default values for new expense
           this.onExpenseTypeChange();
         }
+        // Decide visibility of Save/Delete based on uploaded info and employee role
+        this.protectUploadingJobAndExpenses();
       });
     }
     
     // Subscribe to form changes for dynamic behavior
     console.log('Setting up form subscriptions...');
     this.setupFormSubscriptions();
+    // Set max allowed datetime value for datetime-local inputs (no future dates)
+    try {
+      this.maxDateTimeForInput = this.getNowForInput();
+    } catch (e) {
+      console.warn('Unable to compute maxDateTimeForInput, defaulting to empty string', e);
+      this.maxDateTimeForInput = '';
+    }
+
     console.log('=== EDIT EXPENSE COMPONENT INIT END ===');
   }
 
@@ -338,6 +359,95 @@ export class EditExpenseComponent implements OnInit {
     });
   }
 
+  /**
+   * Mirror legacy ProtectUploadingJobandExpenses behavior.
+   * Query uploaded-info for the job/tech and employee status to decide
+   * whether Save/Delete should be visible.
+   */
+  private protectUploadingJobAndExpenses(): void {
+    try {
+      // default to visible
+      this.showSaveButton = true;
+      this.showDeleteButton = true;
+
+      if (!this.callNbr) {
+        // nothing to check yet
+        return;
+      }
+
+      const techIdToUse = (this.techID || this.empId || '').toString().trim();
+
+      // Check uploaded info for this job and tech
+      this.equipmentService.getUploadInfo(this.callNbr, techIdToUse).subscribe({
+        next: (items: any[]) => {
+          const hasExpenseUpload = Array.isArray(items) && items.some(i => (i?.Type || '').toString().trim().toLowerCase() === 'expense');
+
+          if (hasExpenseUpload) {
+            // If any expense has been uploaded, hide save/delete by default
+            this.showSaveButton = false;
+            this.showDeleteButton = false;
+          } else {
+            this.showSaveButton = true;
+            this.showDeleteButton = true;
+          }
+
+          // Now consult employee status for the current user to apply role rules
+          const stored = localStorage.getItem('userData');
+          const windowsID = stored ? (JSON.parse(stored)?.windowsID || JSON.parse(stored)?.WindowsID) : null;
+          if (!windowsID) {
+            return;
+          }
+
+          this._commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+            next: (statusData: any) => {
+              try {
+                if (!statusData || !Array.isArray(statusData) || statusData.length === 0) {
+                  return;
+                }
+
+                // Determine final visibility according to legacy rules.
+                // If any rule grants visibility, we'll allow Save/Delete.
+                let finalVisible = false;
+
+                for (const dr of statusData) {
+                  const status = (dr?.Status || dr?.status || '').toString().trim();
+                  const rowEmpId = (dr?.EmpID || dr?.empID || dr?.empId || '').toString().trim();
+
+                  if (status === 'Technician' || status === 'TechManager') {
+                    if (techIdToUse && techIdToUse === rowEmpId) {
+                      finalVisible = !hasExpenseUpload;
+                    } else {
+                      finalVisible = false;
+                    }
+                  } else if (status === 'Manager') {
+                    finalVisible = !hasExpenseUpload;
+                  } else {
+                    finalVisible = false;
+                  }
+
+                  if (finalVisible) break;
+                }
+
+                this.showSaveButton = finalVisible;
+                this.showDeleteButton = finalVisible;
+              } catch (inner) {
+                console.error('Error applying employee status logic:', inner);
+              }
+            },
+            error: (err: any) => {
+              console.error('Error getting employee status for expense protection:', err);
+            }
+          });
+        },
+        error: (err: any) => {
+          console.error('Error getting uploaded info for expense protection:', err);
+        }
+      });
+    } catch (ex) {
+      console.error('protectUploadingJobAndExpenses error:', ex);
+    }
+  }
+
   private populateForm(data: any): void {
     console.log('=== POPULATE FORM START ===');
     console.log('Raw data received:', data);
@@ -382,9 +492,6 @@ export class EditExpenseComponent implements OnInit {
     const notesData = data.description || data.Description || data.notes || data.Notes || '';
     let notes = 'PS';
     let otherReason = '';
-    
-    console.log('Notes/Description data from any field:', notesData);
-    console.log('ExpType:', data.expType, 'Purpose:', data.purpose);
     
     if (notesData) {
       console.log('NotesData is truthy, processing...');
@@ -803,7 +910,7 @@ export class EditExpenseComponent implements OnInit {
         );
 
         if (resultMsg && resultMsg.length > 0) {
-          this.errorMessage = 'Error: ' + resultMsg;
+          this.errorMessage = resultMsg;
           this.isLoading = false;
           return;
         }
@@ -896,6 +1003,18 @@ export class EditExpenseComponent implements OnInit {
       return false;
     }
 
+    // Prevent future start datetime
+    try {
+      const now = new Date();
+      const startDt = new Date(formValue.startDateTime);
+      if (this.isValidDate(startDt) && startDt.getTime() > now.getTime()) {
+        this.toastr.error('Start date and time cannot be in the future.');
+        return false;
+      }
+    } catch (err) {
+      // fall through - other validations will catch invalid date values
+    }
+
     if (expType !== '22') {
       if (!formValue.endDateTime) {
         this.toastr.error('Please enter the End date and Time.');
@@ -904,6 +1023,17 @@ export class EditExpenseComponent implements OnInit {
 
       const startDate = new Date(formValue.startDateTime);
       const endDate = new Date(formValue.endDateTime);
+
+      // Prevent future end datetime
+      try {
+        const now = new Date();
+        if (this.isValidDate(endDate) && endDate.getTime() > now.getTime()) {
+          this.toastr.error('End date and time cannot be in the future.');
+          return false;
+        }
+      } catch (err) {
+        // ignore
+      }
 
       if (startDate >= endDate) {
         this.toastr.error('Start date and time should be less than End date and time.');
@@ -1247,5 +1377,16 @@ export class EditExpenseComponent implements OnInit {
 
   get canSave(): boolean {
     return !this.isLoading;
+  }
+
+  // Maximum allowed datetime for inputs (formatted for datetime-local: YYYY-MM-DDTHH:mm)
+  maxDateTimeForInput: string = '';
+
+  private getNowForInput(): string {
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${dateStr}T${hours}:${minutes}`;
   }
 }

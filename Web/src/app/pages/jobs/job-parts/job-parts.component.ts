@@ -14,6 +14,7 @@ import {
   mapJobPartsInfo
 } from 'src/app/core/model/job-parts.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { CommonService } from 'src/app/core/services/common.service';
 import { EditPartsComponent } from '../edit-parts/edit-parts.component';
 
 @Component({
@@ -76,6 +77,8 @@ export class JobPartsComponent implements OnInit {
   canAddParts: boolean = true;
   canEditParts: boolean = true;
   showProcessButton: boolean = false;
+  // Role flag
+  isTechnicianFlag: boolean = false;
 
   // Dropdown options
   shippingStatusOptions = [
@@ -106,6 +109,7 @@ export class JobPartsComponent implements OnInit {
     private jobPartsService: JobPartsService,
     private toastr: ToastrService,
     private modalService: NgbModal
+    , private _commonService: CommonService
   ) {
     this.techInfoForm = this.createTechInfoForm();
     this.siteInfoForm = this.createSiteInfoForm();
@@ -116,6 +120,8 @@ export class JobPartsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCurrentUserEmpId();
+    // Determine employee status (Technician or not) early
+    this.determineEmployeeStatus();
     this.route.queryParams.subscribe(params => {
       this.callNbr = params['CallNbr'] || '';
       this.techName = params['TechName'] || '';
@@ -125,6 +131,41 @@ export class JobPartsComponent implements OnInit {
         this.loadAllData();
       }
     });
+  }
+
+  private determineEmployeeStatus(): void {
+    try {
+      const userDataRaw = localStorage.getItem('userData');
+      if (!userDataRaw) return;
+      const userData = JSON.parse(userDataRaw);
+      const windowsID = userData?.windowsID || userData?.WindowsID || null;
+      if (!windowsID) return;
+
+      this._commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+        next: (statusData: any) => {
+          if (statusData && Array.isArray(statusData) && statusData.length > 0) {
+            const status = statusData[0].Status || '';
+            this.isTechnicianFlag = (status === 'Technician' || status === 'TechManager');
+          }
+          // If technician, enforce UI restrictions
+          if (this.isTechnicianFlag) {
+            this.canEditShipping = false;
+            this.canAddParts = false;
+            this.canEditParts = false;
+            this.canEditTechInfo = false;
+            // hide process button for technicians
+            this.showProcessButton = false;
+            // hide tech return panel
+            this.showTechReturnPanel = false;
+          }
+        },
+        error: (err) => {
+          console.error('Error getting employee status for job parts:', err);
+        }
+      });
+    } catch (err) {
+      console.error('Error determining employee status:', err);
+    }
   }
 
   private createTechInfoForm(): FormGroup {
@@ -138,7 +179,10 @@ export class JobPartsComponent implements OnInit {
   private createSiteInfoForm(): FormGroup {
     return this.fb.group({
       contactName: ['', Validators.required],
-      contactPh: ['', Validators.required],
+      contactPh: ['', [
+        Validators.required,
+        Validators.pattern(/^[0-9-]+$/)  // Only numbers and dashes
+      ]],
       verifyPh: [false, Validators.requiredTrue],
       shippingStatus: ['Initiated'],
       shippingNotes: ['']
@@ -211,7 +255,8 @@ export class JobPartsComponent implements OnInit {
     // Load shipping parts
     this.jobPartsService.getShippingParts(this.callNbr).subscribe({
       next: (data) => {
-        this.shippingParts = data.filter(p => !p.backOrder);
+        // Show all shipping parts, including backorders. Previously we filtered out backOrder items.
+        this.shippingParts = data;
       },
       error: (error) => {
         console.error('Error loading shipping parts:', error);
@@ -333,6 +378,10 @@ export class JobPartsComponent implements OnInit {
     });
 
     this.showTechReturnPanel = (this.unusedSent + this.faultySent) > 0;
+    // Ensure technicians never see the Tech Return panel (legacy behavior)
+    if (this.isTechnicianFlag) {
+      this.showTechReturnPanel = false;
+    }
     
     this.techReturnForm.patchValue({
       unusedSent: this.unusedSent,
@@ -491,12 +540,12 @@ export class JobPartsComponent implements OnInit {
 
     this.jobPartsService.updatePartsEquipInfo(data, this.currentEmpId).subscribe({
       next: () => {
-        this.toastr.success('Equipment information updated successfully');
-        this.successMessage = 'Equipment information updated successfully';
+        this.toastr.success('Updated successfully');
+        this.successMessage = 'Updated successfully';
         this.errorMessage = '';
       },
       error: (error) => {
-        const message = 'Error updating equipment information: ' + (error.error?.message || error.message);
+        const message = 'Error updating information: ' + (error.error?.message || error.message);
         this.toastr.error(message);
         this.errorMessage = message;
         this.successMessage = '';
@@ -513,9 +562,18 @@ export class JobPartsComponent implements OnInit {
     if (!this.validateTechReturn()) return;
 
     const formValue = this.techReturnForm.value;
+    
+    // Calculate TrunkStock by summing unusedParts where unusedDesc is "Trunk Stock"
+    // This matches legacy logic: if (args.Row.Cells[7].Text == "Trunk Stock") { TrunkStock += ... }
+    const trunkStock = this.techParts
+      .filter(part => part.unusedDesc === 'Trunk Stock')
+      .reduce((sum, part) => sum + (part.unusedParts || 0), 0);
+
     const data = {
       callNbr: this.callNbr,
       techName: this.techInfoForm.value.technician,
+      techID: this.techInfoForm.value.techID,
+      trunkStock: trunkStock, // Calculated value matching legacy
       unusedSent: Number(formValue.unusedSent || 0),
       faultySent: Number(formValue.faultySent || 0),
       returnStatus: formValue.returnStatus,
@@ -542,7 +600,7 @@ export class JobPartsComponent implements OnInit {
   }
 
   private updateTechReturn(data: any): void {
-    this.jobPartsService.updateTechReturnInfo(data).subscribe({
+    this.jobPartsService.updateTechReturnInfo(data, this.currentEmpId).subscribe({
       next: () => {
         this.toastr.success('Tech return information updated successfully');
         this.techReturnMessage = '';
@@ -617,6 +675,10 @@ export class JobPartsComponent implements OnInit {
               } else {
                 this.navigateToEditParts('add', 1);
               }
+            },
+            error: (err) => {
+              console.error('Error checking equipment info:', err);
+              this.toastr.error('Error checking equipment info');
             }
           });
         } else {
@@ -657,9 +719,10 @@ export class JobPartsComponent implements OnInit {
     modalRef.componentInstance.callNbr = this.callNbr;
     modalRef.componentInstance.displayMode = display;
     modalRef.componentInstance.mode = mode;
-  modalRef.componentInstance.source = this.source;
-  modalRef.componentInstance.empId = this.currentEmpId;
-  modalRef.componentInstance.techName = this.techName;
+    modalRef.componentInstance.source = this.source;
+    modalRef.componentInstance.empId = this.currentEmpId;
+    modalRef.componentInstance.techName = this.techName;
+    modalRef.componentInstance.isTechnician = this.isTechnicianFlag;
     if (scidInc !== undefined) {
       modalRef.componentInstance.scidInc = scidInc;
     }
@@ -761,6 +824,23 @@ export class JobPartsComponent implements OnInit {
   }
 
   private validateSiteInfo(): boolean {
+    // Check if form is valid (including phone pattern validation)
+    if (this.siteInfoForm.invalid) {
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.siteInfoForm.controls).forEach(key => {
+        this.siteInfoForm.get(key)?.markAsTouched();
+      });
+      
+      if (this.siteInfoForm.get('contactPh')?.errors?.['pattern']) {
+        this.toastr.error('Please enter a valid phone number (only numbers and dashes)');
+      } else if (this.siteInfoForm.get('contactPh')?.errors?.['required']) {
+        this.toastr.error('Contact phone number is required');
+      } else {
+        this.toastr.error('Please fix all validation errors before updating');
+      }
+      return false;
+    }
+
     const formValue = this.siteInfoForm.value;
 
     if (formValue.shippingNotes && formValue.shippingNotes.includes("'")) {
@@ -868,9 +948,7 @@ export class JobPartsComponent implements OnInit {
 
   // Permission check - isTechnician
   get isTechnician(): boolean {
-    // This should check user role from AuthService
-    // For now, returning true as placeholder
-    return true;
+    return this.isTechnicianFlag;
   }
 
   // Handle received checkbox change

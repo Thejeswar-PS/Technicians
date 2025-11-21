@@ -5,6 +5,8 @@ import { ToastrService } from 'ngx-toastr';
 import { JobPartsService } from 'src/app/core/services/job-parts.service';
 import { PartsRequest, ShippingPart, TechPart } from 'src/app/core/model/job-parts.model';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { EquipmentService } from 'src/app/core/services/equipment.service';
+import { CommonService } from 'src/app/core/services/common.service';
 
 @Component({
   selector: 'app-edit-parts',
@@ -21,6 +23,7 @@ export class EditPartsComponent implements OnInit {
   @Input() source: string = '';
   @Input() empId: string = '';
   @Input() techName: string = '';
+  @Input() isTechnician: boolean = false;
   isLoading: boolean = false;
   isSaving: boolean = false;
   isCheckingInventory: boolean = false;
@@ -28,6 +31,13 @@ export class EditPartsComponent implements OnInit {
   showAddAnother: boolean = false;
   lastModifiedBy: string = '';
   lastModifiedOn: string = '';
+  
+  // Controls visibility of Save/Delete based on uploaded info and user role
+  showSaveButton: boolean = true;
+  showDeleteButton: boolean = true;
+  
+  // Tracks whether any successful save occurred while modal is open so parent can refresh
+  private needsRefresh: boolean = false;
   private faultyEditedByUser: boolean = false;
   private lastInventoryLookup: string | null = null;
 
@@ -75,6 +85,8 @@ export class EditPartsComponent implements OnInit {
     private router: Router,
     private jobPartsService: JobPartsService,
     private toastr: ToastrService,
+    private equipmentService: EquipmentService,
+    private commonService: CommonService,
     @Optional() public activeModal?: NgbActiveModal
   ) {}
 
@@ -87,6 +99,8 @@ export class EditPartsComponent implements OnInit {
       if (this.mode === 'edit' && this.scidInc) {
         this.loadPartData();
       }
+      // Check upload protection for parts
+      this.protectUploadingJobAndParts();
       return;
     }
 
@@ -105,6 +119,9 @@ export class EditPartsComponent implements OnInit {
       if (this.mode === 'edit' && this.scidInc) {
         this.loadPartData();
       }
+      
+      // Check upload protection for parts
+      this.protectUploadingJobAndParts();
     });
   }
 
@@ -272,23 +289,102 @@ export class EditPartsComponent implements OnInit {
       this.editForm.get('unusedDesc')?.setValue('None', { emitEvent: false });
     }
   }
+
+  /**
+   * Mirror legacy ProtectUploadingJobandExpenses behavior for parts.
+   * Query uploaded-info for the job/tech and employee status to decide
+   * whether Save/Delete should be visible.
+   */
+  private protectUploadingJobAndParts(): void {
+    try {
+      // default to visible
+      this.showSaveButton = true;
+      this.showDeleteButton = true;
+
+      if (!this.callNbr) {
+        // nothing to check yet
+        return;
+      }
+
+      const techIdToUse = (this.techName || this.empId || '').toString().trim();
+
+      // Check uploaded info for this job and tech
+      this.equipmentService.getUploadInfo(this.callNbr, techIdToUse).subscribe({
+        next: (items: any[]) => {
+          const hasExpenseUpload = Array.isArray(items) && items.some(i => (i?.Type || '').toString().trim().toLowerCase() === 'expense');
+
+          if (hasExpenseUpload) {
+            // If any expense has been uploaded, hide save/delete by default
+            this.showSaveButton = false;
+            this.showDeleteButton = false;
+          } else {
+            this.showSaveButton = true;
+            this.showDeleteButton = true;
+          }
+
+          // Now consult employee status for the current user to apply role rules
+          const stored = localStorage.getItem('userData');
+          const windowsID = stored ? (JSON.parse(stored)?.windowsID || JSON.parse(stored)?.WindowsID) : null;
+          if (!windowsID) {
+            return;
+          }
+
+          this.commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+            next: (statusData: any) => {
+              try {
+                if (!statusData || !Array.isArray(statusData) || statusData.length === 0) {
+                  return;
+                }
+
+                // Determine final visibility according to legacy rules.
+                // If any rule grants visibility, we'll allow Save/Delete.
+                let finalVisible = false;
+
+                for (const dr of statusData) {
+                  const status = (dr?.Status || dr?.status || '').toString().trim();
+                  const rowEmpId = (dr?.EmpID || dr?.empID || dr?.empId || '').toString().trim();
+
+                  if (status === 'Technician' || status === 'TechManager') {
+                    if (techIdToUse && techIdToUse === rowEmpId) {
+                      finalVisible = !hasExpenseUpload;
+                    } else {
+                      finalVisible = false;
+                    }
+                  } else if (status === 'Manager') {
+                    finalVisible = !hasExpenseUpload;
+                  } else {
+                    finalVisible = false;
+                  }
+
+                  if (finalVisible) break;
+                }
+
+                this.showSaveButton = finalVisible;
+                this.showDeleteButton = finalVisible;
+              } catch (inner) {
+                console.error('Error applying employee status logic:', inner);
+              }
+            },
+            error: (err: any) => {
+              console.error('Error getting employee status for parts protection:', err);
+            }
+          });
+        },
+        error: (err: any) => {
+          console.error('Error getting uploaded info for parts protection:', err);
+        }
+      });
+    } catch (ex) {
+      console.error('protectUploadingJobAndParts error:', ex);
+    }
+  }
   
-  private toDateTimeLocal(value: string | null | undefined): string {
+  private toDateOnly(value: string | null | undefined): string {
     if (!value) {
       return '';
     }
-
-    const date = new Date(value);
-    if (isNaN(date.getTime())) {
-      return value;
-    }
-
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, '0');
-    const day = `${date.getDate()}`.padStart(2, '0');
-    const hours = `${date.getHours()}`.padStart(2, '0');
-    const minutes = `${date.getMinutes()}`.padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    // Handles both 'YYYY-MM-DDTHH:mm:ss' and 'YYYY-MM-DD' formats
+    return value.split('T')[0];
   }
   
   private formatDisplayDate(value: string | null | undefined): string {
@@ -329,7 +425,7 @@ export class EditPartsComponent implements OnInit {
         if (part) {
           this.editForm.patchValue({
             ...part,
-            requiredDate: this.toDateTimeLocal(part.requiredDate)
+            requiredDate: this.toDateOnly(part.requiredDate)
           });
           if (this.mode === 'edit') {
             this.editForm.get('qty')?.disable({ emitEvent: false });
@@ -362,8 +458,8 @@ export class EditPartsComponent implements OnInit {
             trackingNum: part.trackingNum,
             shipmentType: part.shipmentType,
             shippingCost: part.shippingCost,
-            shipDate: this.toDateTimeLocal(part.shipDate),
-            eta: this.toDateTimeLocal(part.eta),
+            shipDate: this.toDateOnly(part.shipDate),
+            eta: this.toDateOnly(part.eta),
             shippedFrom: part.shippedFrom
           });
           if (this.mode === 'edit') {
@@ -923,7 +1019,7 @@ export class EditPartsComponent implements OnInit {
 
     // Validation: If not brand new, Total must equal Faulty + Unused
     if (!brandNew && total !== faulty + unused) {
-      this.toastr.error('Total quantity must equal Faulty + Unused (when not brand new)');
+      this.toastr.error('Total quantity must equal Defective + Unused (when not brand new)');
       return false;
     }
 
@@ -939,14 +1035,14 @@ export class EditPartsComponent implements OnInit {
       return false;
     }
 
-    // Validation: Faulty parts cannot exceed total
+    // Validation: Defective parts cannot exceed total
     if (faulty > total) {
-      this.toastr.error('Faulty parts cannot exceed total quantity');
+      this.toastr.error('Defective parts cannot exceed total quantity');
       return false;
     }
 
     if (faulty > 0 && (!data.faultyDesc || data.faultyDesc === 'None')) {
-      this.toastr.error('Please select a Faulty Parts info value');
+      this.toastr.error('Please select a Defective Parts info value');
       return false;
     }
 
@@ -973,7 +1069,12 @@ export class EditPartsComponent implements OnInit {
 
   goBack(): void {
     if (this.modalContext && this.activeModal) {
-      this.activeModal.dismiss('cancel');
+      // If we saved any changes while modal was open, notify parent to refresh.
+      if (this.needsRefresh) {
+        this.activeModal.close({ refresh: true });
+      } else {
+        this.activeModal.dismiss('cancel');
+      }
       return;
     }
 
@@ -1004,11 +1105,28 @@ export class EditPartsComponent implements OnInit {
     this.toastr.success(message);
     this.isSaving = false;
 
+    // Mark that we've changed data so the parent can refresh when the modal finally closes
+    this.needsRefresh = true;
+
+    // If running inside a modal and we're adding a new part, keep the modal open so the
+    // user can continue adding parts. For edits, close the modal and notify the parent.
     if (this.modalContext && this.activeModal) {
-      this.activeModal.close({ refresh: true });
-      return;
+      if (this.mode === 'add') {
+        // Prepare form for another add (preserves legacy 'Add Another' behaviour while
+        // keeping the modal open). Do not close the modal here.
+        const normalizedSource = (this.source || '').trim().toLowerCase();
+        this.showAddAnother = normalizedSource !== 'pen';
+        // Reset form for next add
+        this.onAddAnother();
+        return;
+      } else {
+        // For non-add modes (edits), close and request parent refresh
+        this.activeModal.close({ refresh: true });
+        return;
+      }
     }
 
+    // Non-modal flow: show Add Another button for adds, or navigate back for edits
     if (this.mode === 'add') {
       const normalizedSource = (this.source || '').trim().toLowerCase();
       this.showAddAnother = normalizedSource !== 'pen';
@@ -1107,7 +1225,7 @@ export class EditPartsComponent implements OnInit {
 
   private buildPartsRequestPayload(data: any): any {
     return {
-      scidInc: data.scidInc ?? 0,
+      scidInc: data.scidInc ?? 999999999,
       callNbr: this.callNbr,
       serviceCallID: data.serviceCallID || this.callNbr,
       partNum: this.normalizeString(data.partNum),
@@ -1126,7 +1244,7 @@ export class EditPartsComponent implements OnInit {
 
   private buildShippingPartPayload(data: any): any {
     return {
-      scidInc: data.scidInc ?? 0,
+      scidInc: data.scidInc ?? 999999999,
       callNbr: this.callNbr,
       serviceCallID: data.serviceCallID || this.callNbr,
       partNum: this.normalizeString(data.partNum),
@@ -1173,7 +1291,7 @@ export class EditPartsComponent implements OnInit {
   }
 
   private buildAutoShippingPayloadFromRequest(partsPayload: any): any {
-    const scidInc = Number(partsPayload.scidInc ?? this.scidInc ?? 0) || 0;
+    const scidInc = Number(partsPayload.scidInc ?? this.scidInc ?? 999999999) || 999999999;
 
     const autoShippingData = {
       scidInc,
@@ -1198,7 +1316,7 @@ export class EditPartsComponent implements OnInit {
   }
 
   private buildTechPartPayloadFromShipping(shippingPayload: any, existingTechPart?: TechPart | null): any {
-    const resolvedScidInc = Number(shippingPayload.scidInc ?? existingTechPart?.scidInc ?? this.scidInc ?? 0) || 0;
+    const resolvedScidInc = Number(shippingPayload.scidInc ?? existingTechPart?.scidInc ?? this.scidInc ?? 999999999) || 999999999;
     const existingTotalQty = existingTechPart ? this.toNumber(existingTechPart.totalQty, 0) : 0;
     const totalQtyFromShipping = this.toNumber(shippingPayload.qty, existingTotalQty);
     const hasExisting = !!existingTechPart;
@@ -1257,7 +1375,7 @@ export class EditPartsComponent implements OnInit {
     const receivedStatus: 'Yes' | 'No' | 'NA' = data.receivedStatus || (data.isReceived ? 'Yes' : 'No');
 
     return {
-      scidInc: data.scidInc ?? 0,
+      scidInc: data.scidInc ?? 999999999,
       callNbr: this.callNbr,
       serviceCallID: data.serviceCallID || this.callNbr,
       partNum: this.normalizeString(data.partNum),
