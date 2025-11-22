@@ -417,9 +417,7 @@ export class JobPartsComponent implements OnInit {
 
   // Navigation
   goBack(): void {
-    if (this.source === 'RequestReport') {
-      this.router.navigate(['/reports/part-request-status']);
-    } else if (this.source === 'ReturnReport') {
+    if (this.source === 'ReturnReport') {
       this.router.navigate(['/part-return-status']);
     } else {
       this.router.navigate(['/jobs'], {

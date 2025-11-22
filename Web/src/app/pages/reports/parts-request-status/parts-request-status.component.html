@@ -1,0 +1,385 @@
+<!-- Parts Request Status Page -->
+<div class="container-fluid parts-request-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center parts-request-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="parts-request-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary parts-request-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="parts-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-boxes me-2"></i>
+        Parts Requisitions Status
+      </h2>
+      <!-- Filter Information -->
+      <div class="text-dark mt-2" *ngIf="!isLoading && showHeaderName">
+        <span class="fw-semibold">Filtered by: {{ partsFilterForm.get('inventoryUser')?.value }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+
+
+    <!-- Filter & Data Section -->
+    <div class="card shadow-sm parts-main-card">
+      <!-- Filter Header -->
+      <div class="card-header border-0 py-4">
+        <div class="parts-filter-header">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-funnel me-2 text-primary"></i>
+                Filters & Search
+                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
+                  {{partsRequestList.length}} Result{{partsRequestList.length === 1 ? '' : 's'}}
+                </span>
+              </h5>
+              <small class="text-muted">Customize your view with filters below</small>
+
+          <!-- Filter Controls -->
+          <div class="filter-controls-section mt-3">
+            <form [formGroup]="partsFilterForm" class="parts-filter-form">
+              <div class="row g-3">
+                <!-- Assigned To Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-person-check me-1"></i>
+                      Assigned To
+                    </label>
+                    <div class="position-relative">
+                      <select class="form-select modern-select" formControlName="inventoryUser" [disabled]="isLoadingInventoryUsers">
+                        <option *ngFor="let user of inventoryUsers" [value]="getInventoryUserValue(user)">
+                          {{getInventoryUserDisplayName(user)}}
+                        </option>
+                      </select>
+                      <span *ngIf="isLoadingInventoryUsers" class="loading-indicator">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Account Manager Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-person-gear me-1"></i>
+                      Account Manager
+                    </label>
+                    <select class="form-select modern-select" formControlName="accountManager">
+                      <option value="All">All Managers</option>
+                      <option *ngFor="let manager of accountManagers" [value]="getManagerValue(manager)">
+                        {{getManagerDisplayName(manager)}}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-tag me-1"></i>
+                      Status
+                    </label>
+                    <select class="form-select modern-select" formControlName="status">
+                      <option *ngFor="let status of statusOptions" [value]="status.value">
+                        {{status.label}}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+
+
+      <!-- Data Display Section -->
+      <div class="card-body py-4">
+        
+        <!-- Messages -->
+        <div class="parts-messages" *ngIf="errorMessage">
+          <div class="alert alert-danger d-inline-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+        </div>
+
+
+
+        <!-- Loading indicator for data processing -->
+        <div *ngIf="isProcessingData" class="text-center py-4">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+          <span class="text-muted">Processing data...</span>
+        </div>
+
+        <!-- Data Table Section -->
+        <div class="table-section" *ngIf="!isProcessingData">
+          <div class="table-responsive">
+            <table class="table modern-table">
+              <thead class="table-header">
+                <tr>
+                  <th class="sortable header-cell" (click)="sortTable('callNumber')">
+                    <div class="header-content">
+                      <span class="header-text">Call No</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('customerNumber')">
+                    <div class="header-content">
+                      <span class="header-text">Customer No.</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('technician')">
+                    <div class="header-content">
+                      <span class="header-text">Technician</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('city')">
+                    <div class="header-content">
+                      <span class="header-text">City</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('state')">
+                    <div class="header-content">
+                      <span class="header-text">State</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('status')">
+                    <div class="header-content">
+                      <span class="header-text">Status</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('age')">
+                    <div class="header-content">
+                      <span class="header-text">Age</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('shipDate')">
+                    <div class="header-content">
+                      <span class="header-text">Ship Date</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('reqDate')">
+                    <div class="header-content">
+                      <span class="header-text">Required Date</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('urgent')">
+                    <div class="header-content">
+                      <span class="header-text">Urgent?</span>
+                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                    </div>
+                  </th>
+                  <th *ngIf="canApproveRejects()" class="actions-column header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Actions</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="table-body">
+                <tr *ngFor="let request of displayedData; let i = index" 
+                    class="table-row"
+                    [ngStyle]="getStatusRowStyle(request.status)"
+                    [ngClass]="getStatusRowClass(request.status)">
+                  
+                  <td class="call-number-cell">
+                    <a class="call-link" (click)="navigateToJobParts(request.callNumber)" 
+                       [title]="'View parts for call ' + request.callNumber">
+                      {{request.callNumber}}
+                    </a>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="cell-content">{{request.customerNumber}}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <div class="technician-info">
+                      <i class="bi bi-person-badge me-1 text-muted"></i>
+                      <span class="cell-content">{{request.technician}}</span>
+                    </div>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="cell-content">{{request.city}}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="state-badge">{{request.state}}</span>
+                  </td>
+                  
+                  <td class="status-cell">
+                    <span class="status-badge" [ngClass]="getStatusBadgeClass(request.status)">{{request.status}}</span>
+                  </td>
+                  
+                  <td class="age-cell">
+                    <span class="age-indicator" [class.age-warning]="request.age > 30" [class.age-critical]="request.age > 60">
+                      <i class="bi bi-clock me-1"></i>
+                      {{request.age}} days
+                    </span>
+                  </td>
+                  
+                  <td class="date-cell">
+                    <span class="date-content">{{request.shipDate | date:'dd-MMM-yyyy'}}</span>
+                  </td>
+                  
+                  <td class="date-cell">
+                    <span class="date-content">{{request.reqDate | date:'dd-MMM-yyyy'}}</span>
+                  </td>
+                  
+                  <td class="urgent-cell">
+                    <div class="urgent-display">
+                      <span class="urgent-text">{{request.urgent}}</span>
+                    </div>
+                  </td>
+                  
+                  <td *ngIf="canApproveRejects()" class="actions-cell">
+                    <div *ngIf="showApprovalActions(request)" class="action-buttons">
+                      <button class="btn btn-success btn-sm action-btn" 
+                              (click)="approveRequest(request)"
+                              [disabled]="isLoading">
+                        <i class="bi bi-check-lg me-1"></i>Approve
+                      </button>
+                      <button class="btn btn-danger btn-sm action-btn" 
+                              (click)="rejectRequest(request)"
+                              [disabled]="isLoading">
+                        <i class="bi bi-x-lg me-1"></i>Reject
+                      </button>
+                    </div>
+                    <div *ngIf="!showApprovalActions(request)" class="no-actions">
+                      <span class="text-muted">—</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Enhanced Pagination Controls - Below Table -->
+        <div class="enhanced-pagination-wrapper" *ngIf="totalRecords > 0">
+          <div class="enhanced-pagination-controls">
+            <div class="row align-items-center g-3">
+              <!-- Left side - Page size and record info -->
+              <div class="col-md-6">
+                <div class="pagination-info">
+                  <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="page-size-selector">
+                      <label class="form-label mb-0 fw-semibold">Records per page:</label>
+                      <select class="form-select form-select-lg" 
+                              [value]="pageSize" #pageSizeSelect (change)="onPageSizeChange(+pageSizeSelect.value)">
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                      </select>
+                    </div>
+                    <div class="record-info">
+                      <span class="badge badge-info-custom">
+                        <i class="bi bi-list-ol me-1"></i>
+                        Showing {{startRecord}}-{{endRecord}} of {{totalRecords}} records
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Right side - Navigation controls -->
+              <div class="col-md-6">
+                <div class="pagination-navigation">
+                  <div class="d-flex justify-content-end align-items-center gap-2">
+                    <!-- First page -->
+                    <button class="btn btn-pagination btn-first" 
+                            [disabled]="currentPage === 1" 
+                            (click)="onPageChange(1)"
+                            title="First page">
+                      <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    
+                    <!-- Previous page -->
+                    <button class="btn btn-pagination btn-prev" 
+                            [disabled]="currentPage === 1" 
+                            (click)="onPageChange(currentPage - 1)"
+                            title="Previous page">
+                      <i class="bi bi-chevron-left"></i>
+                      <span class="d-none d-sm-inline">Previous</span>
+                    </button>
+                    
+                    <!-- Current page indicator -->
+                    <div class="current-page-indicator">
+                      <span class="page-display">
+                        Page <strong>{{currentPage}}</strong> of <strong>{{totalPages}}</strong>
+                      </span>
+                    </div>
+                    
+                    <!-- Next page -->
+                    <button class="btn btn-pagination btn-next" 
+                            [disabled]="currentPage === totalPages" 
+                            (click)="onPageChange(currentPage + 1)"
+                            title="Next page">
+                      <span class="d-none d-sm-inline">Next</span>
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                    
+                    <!-- Last page -->
+                    <button class="btn btn-pagination btn-last" 
+                            [disabled]="currentPage === totalPages" 
+                            (click)="onPageChange(totalPages)"
+                            title="Last page">
+                      <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="totalRecords === 0 && !isProcessingData" class="empty-state">
+          <div class="empty-state-content">
+            <i class="bi bi-inbox empty-icon"></i>
+            <h4 class="empty-title">No Parts Requests Found</h4>
+            <p class="empty-text">There are no parts requests matching your current filters.</p>
+            <button class="btn btn-primary" (click)="clearFilters()">
+              <i class="bi bi-funnel-fill me-2"></i>Clear Filters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

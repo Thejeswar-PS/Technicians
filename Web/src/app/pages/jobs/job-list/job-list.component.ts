@@ -8,6 +8,7 @@ import { Job } from 'src/app/core/model/job-model';
 import { JobListRequest } from 'src/app/core/request-model/job-list-req';
 import { CommonService } from 'src/app/core/services/common.service';
 import { JobService } from 'src/app/core/services/job.service';
+import { ReportService } from 'src/app/core/services/report.service';
 import { QuotesService } from 'src/app/core/services/quotes.service';
 import { DashboardFilterSharedService } from 'src/app/core/services/shared-service/dashboard-filter-shared.service';
 import { AuthService } from 'src/app/modules/auth';
@@ -123,7 +124,8 @@ export class JobListComponent implements OnInit {
     private filterDashboardService: DashboardFilterSharedService,
     private _jobService: JobService,
     private _toastrService: ToastrService,
-    private _commonService: CommonService
+    private _commonService: CommonService,
+    private _reportService: ReportService
 
     ) {
 
@@ -135,6 +137,7 @@ export class JobListComponent implements OnInit {
     }
 
   ngOnInit(): void {
+    console.log('🚀 JobList ngOnInit started');
     let loadDefault = true;
     
     this.initializeFilterForm();
@@ -146,17 +149,21 @@ export class JobListComponent implements OnInit {
     this.subscribeSharedServiceData();
 
     this.route.queryParamMap.subscribe((params) => {
+      console.log('📍 Route params:', params);
       if(params.has('jobId') || params.has('CallNbr'))
       {
         // If the URL contains a jobId or CallNbr we should avoid the default Load
         // and instead let handleQueryParameters perform the search after filters are loaded
         loadDefault = false;
+        console.log('📍 Found jobId/CallNbr in URL, skipping default load');
       }
 
     }
     );
+    console.log('📍 loadDefault decision:', loadDefault);
     if(loadDefault)
     {
+      console.log('📍 Calling Load(true) from ngOnInit');
       this.Load(true);
     }
   }
@@ -254,13 +261,21 @@ export class JobListComponent implements OnInit {
 
 public Load(initialLoad: boolean = false)
 {
+  console.log('🔄 Load method called with initialLoad:', initialLoad);
+  console.log('🔄 Current state:', {
+    employeeStatus: this.employeeStatus,
+    techniciansLength: Array.isArray(this.technicians) ? this.technicians.length : 'not array',
+    accountManagersLength: Array.isArray(this.accountManagers) ? this.accountManagers.length : 'not array',
+    pendingInitialLoad: this.pendingInitialLoad
+  });
+  
   // If this is the initial load but we don't yet have employeeStatus, technicians, or account managers, defer it
   if (initialLoad && (
       !this.employeeStatus ||
       (Array.isArray(this.technicians) && this.technicians.length === 0) ||
       (Array.isArray(this.accountManagers) && this.accountManagers.length === 0)
     )) {
-    console.log('Deferring initial Load until employeeStatus and technicians are available');
+    console.log('⏳ Deferring initial Load until employeeStatus and technicians are available');
     this.pendingInitialLoad = true;
     return;
   }
@@ -312,20 +327,38 @@ public Load(initialLoad: boolean = false)
   });
   console.log('Load method - jobListRequest:', this.jobListRequest);
   console.log('Load method - form values:', this.jobFilterForm.value);
+  console.log('🚀 Making API call to:', `${this._jobService['API']}/Jobs/GetJobs`);
+  console.log('🚀 Request parameters:', this.jobListRequest);
+  
   this._jobService.getJobs(this.jobListRequest).pipe(
     catchError((err: any) => {
+      console.error('❌ Jobs API Error:', err);
+      console.error('❌ Error status:', err.status);
+      console.error('❌ Error message:', err.message);
+      console.error('❌ Full error object:', err);
+      
       let getList = localStorage.getItem('joblist');
-      if(getList) this.jobList = JSON.parse(getList);
-      this.errorMessage = 'Error loading jobs: ' + (err.message || 'Unknown error');
+      if(getList) {
+        this.jobList = JSON.parse(getList);
+        console.log('📦 Using cached job list:', this.jobList.length, 'jobs');
+      }
+      this.errorMessage = `Error loading jobs: ${err.status} - ${err.message || err.statusText || 'Unknown error'}`;
       return EMPTY;
     }
   )).subscribe((data: any)=> {
+    console.log('✅ Jobs API Response:', data);
+    console.log('✅ Response type:', typeof data);
+    console.log('✅ Is Array:', Array.isArray(data));
+    console.log('✅ Data length:', data?.length);
+    
     if (data && data.length > 0) {
       this.jobList = data;
       this.errorMessage = '';
+      console.log('✅ Successfully loaded', data.length, 'jobs');
     } else {
       this.jobList = [];
       this.errorMessage = 'No results found';
+      console.warn('⚠️ API returned empty or no data');
     }
     localStorage.setItem("joblist", JSON.stringify(data))
   })
@@ -448,6 +481,10 @@ public Load(initialLoad: boolean = false)
     let userData = JSON.parse(localStorage.getItem("userData")!);
     this.currentUserData = userData;
     console.log('LoadFilters - User data from localStorage:', userData);
+    console.log('LoadFilters - userData.windowsID:', userData.windowsID);
+    console.log('LoadFilters - userData.empID:', userData.empID);
+    console.log('LoadFilters - userData.role:', userData.role);
+    
     this.empID = (userData.empID || '').trim();
     this.userRole = userData.role || '';
     console.log('LoadFilters - Set empID to:', this.empID);
@@ -514,13 +551,36 @@ public Load(initialLoad: boolean = false)
 
   private getEmployeeStatus(userData: any) {
     console.log('Step 2: Getting employee status for windowsID:', userData.windowsID);
+    console.log('🔍 Calling API:', `/api/PartReqStatus/GetEmployeeStatusForJobList?adUserID=${userData.windowsID}`);
     
-    // Call GetEmployeeStatusForJobList with windowsID
-    this._commonService.getEmployeeStatusForJobList(userData.windowsID).pipe(
+    // Quick bypass for testing - skip API if windowsID is missing
+    if (!userData.windowsID) {
+      console.warn('⚠️ No windowsID found, skipping employee status API');
+      this.employeeStatus = userData.role || 'Active';
+      this.loadTechnicians(userData, this.employeeStatus);
+      return;
+    }
+    
+    // Call GetEmployeeStatusForJobList with windowsID - use ReportService like parts-request-status
+    this._reportService.getEmployeeStatusForJobListByParam(userData.windowsID).pipe(
       catchError((error) => {
-        console.error('Error getting employee status:', error);
-        // If error, proceed with default status or fallback
-        this.loadTechnicians(userData, 'Active'); // Default status
+        console.error('❌ Employee status API failed:', error);
+        console.error('❌ Error status:', error.status);
+        console.error('❌ Error message:', error.message);
+        
+        // Fallback: use role from userData if available
+        let fallbackStatus = 'Active';
+        if (userData.role) {
+          if (userData.role.toLowerCase().includes('manager')) {
+            fallbackStatus = 'Manager';
+          } else if (userData.role.toLowerCase().includes('tech')) {
+            fallbackStatus = 'Technician';
+          }
+          console.log('📋 Fallback status from userData.role:', fallbackStatus);
+        }
+        
+        this.employeeStatus = fallbackStatus;
+        this.loadTechnicians(userData, fallbackStatus);
         return EMPTY;
       })
     ).subscribe((statusData: any) => {
