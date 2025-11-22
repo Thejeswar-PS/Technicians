@@ -488,25 +488,48 @@ export class PartsRequestStatusComponent implements OnInit {
     }
 
     this.partsRequestList.sort((a: any, b: any) => {
-      const aValue = a[column];
-      const bValue = b[column];
+      let aValue = a[column];
+      let bValue = b[column];
 
       // Handle null or undefined
       if (aValue == null && bValue == null) return 0;
       if (aValue == null) return 1 * this.sortDirection;
       if (bValue == null) return -1 * this.sortDirection;
 
+      // Handle different data types for better sorting
+      if (column === 'age') {
+        aValue = parseInt(aValue) || 0;
+        bValue = parseInt(bValue) || 0;
+      } else if (column === 'reqDate' || column === 'shipDate') {
+        aValue = aValue ? new Date(aValue).getTime() : 0;
+        bValue = bValue ? new Date(bValue).getTime() : 0;
+      } else if (typeof aValue === 'string' && typeof bValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+      }
+
       if (aValue < bValue) return -1 * this.sortDirection;
       if (aValue > bValue) return 1 * this.sortDirection;
       return 0;
     });
+
+    // Reset to first page and update displayed data after sorting
+    this.currentPage = 1;
+    this.updateDisplayedData();
   }
 
   sortIcon(column: string): string {
     if (this.sortedColumn === column) {
-      return this.sortDirection === 1 ? 'fa-sort-up' : 'fa-sort-down';
+      return this.sortDirection === 1 ? 'bi-arrow-up' : 'bi-arrow-down';
     }
-    return 'fa-sort';
+    return 'bi-arrow-down-up';
+  }
+
+  getSortClass(column: string): string {
+    if (this.sortedColumn === column) {
+      return this.sortDirection === 1 ? 'sorted-asc' : 'sorted-desc';
+    }
+    return '';
   }
 
   getColorByStatus(status: string | null): string {
