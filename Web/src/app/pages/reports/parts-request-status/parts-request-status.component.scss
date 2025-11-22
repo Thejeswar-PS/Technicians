@@ -13,6 +13,12 @@
   flex-direction: column;
   align-items: center;
   
+  // Prevent layout shifts during loading
+  > * {
+    width: 100%;
+    max-width: 1400px;
+  }
+  
   // Loading overlay
   .parts-request-loading {
     position: fixed;
@@ -177,7 +183,7 @@
   }
 }
 
-// Main card
+// Main card - Fixed layout to prevent shifting
 .parts-main-card {
   max-width: 1400px;
   width: calc(100% - 1rem);
@@ -189,21 +195,41 @@
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   
+  // Fixed dimensions to prevent layout shifts
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  
   .card-header {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding: 2rem;
+    padding: 2rem 2rem 1rem 2rem; // Reduced bottom padding
+    
+    // Reduced height for tighter layout
+    min-height: 200px; // Accommodates filters + headers
     
     h5 {
       color: #1f2937;
       font-weight: 700;
     }
   }
+  
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; // Allow flexbox to work properly
+    padding-top: 1rem; // Reduced top padding for tighter spacing
+  }
 }
 
-// Filter controls
+// Filter controls - Optimized height for better spacing
 .filter-controls-section {
+  // Reduced minimum height for tighter layout
+  min-height: 80px;
+  margin-bottom: 0; // Remove bottom margin
+  
   .parts-filter-form {
     .filter-group {
       .filter-label {
@@ -214,6 +240,9 @@
         margin-bottom: 0.5rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        // Fixed height for labels
+        line-height: 1.2;
+        min-height: 20px;
         
         i {
           color: #5486ff;
@@ -224,17 +253,24 @@
         border: 2px solid rgba(84, 134, 255, 0.1);
         border-radius: 12px;
         padding: 12px 16px;
+        padding-right: 40px;
         font-family: "Inter", system-ui, sans-serif;
         background: rgba(255, 255, 255, 0.8);
         backdrop-filter: blur(10px);
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
         
         &:focus {
           border-color: #5486ff;
           box-shadow: 0 0 0 3px rgba(84, 134, 255, 0.1);
           transform: translateY(-1px);
           outline: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235486ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
         }
         
         &:hover {
@@ -433,8 +469,22 @@
   transform: rotate(0deg);
 }
 
-// Modern table styling
+// Modern table styling - Optimized layout
 .table-section {
+  // Reduced minimum height for better spacing
+  min-height: 300px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0; // Ensure no top margin
+  
+  .table-responsive {
+    flex: 1;
+    overflow-x: auto;
+    // Prevent horizontal scrolling from affecting layout
+    width: 100%;
+  }
+  
   .modern-table {
     width: 100%;
     border-collapse: separate;
@@ -490,6 +540,16 @@
             
             .sort-icon {
               opacity: 1;
+            }
+          }
+
+          &.sorted-asc,
+          &.sorted-desc {
+            background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%);
+            
+            .sort-icon {
+              opacity: 1;
+              color: #fff;
             }
           }
         }
@@ -902,10 +962,22 @@
   box-shadow: 0 2px 8px rgba(128, 255, 0, 0.3);
 }
 
-// Responsive design
+// Responsive design - Enhanced layout stability
 @media (max-width: 1200px) {
   .parts-request-container {
     padding: 1.5rem 0.75rem;
+    
+    // Maintain consistent spacing
+    > * {
+      max-width: 100%;
+    }
+  }
+  
+  .parts-main-card {
+    .card-header {
+      min-height: 220px; // Optimized for medium screens
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+    }
   }
   
   .stats-card .stats-card-body {
@@ -938,19 +1010,39 @@
     }
   }
   
+  .parts-main-card {
+    .card-header {
+      min-height: 320px; // Optimized for mobile stacked filters
+      padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+    }
+    
+    .card-body {
+      padding-top: 0.5rem; // Tighter spacing on mobile
+    }
+  }
+  
+  .filter-controls-section {
+    min-height: 160px; // Optimized for stacked mobile layout
+    
+    .parts-filter-form .row {
+      --bs-gutter-x: 0.75rem;
+      
+      .col-md-4 {
+        margin-bottom: 1rem;
+        
+        // Ensure consistent filter group heights on mobile
+        .filter-group {
+          min-height: 80px;
+        }
+      }
+    }
+  }
+  
   .stats-card .stats-card-body {
     padding: 1rem;
     flex-direction: column;
     text-align: center;
     gap: 1rem;
-  }
-  
-  .filter-controls-section .parts-filter-form .row {
-    --bs-gutter-x: 0.75rem;
-    
-    .col-md-4 {
-      margin-bottom: 1rem;
-    }
   }
   
   .modern-table {
@@ -960,11 +1052,30 @@
       padding: 0.75rem 0.5rem;
     }
   }
+  
+  .table-section {
+    min-height: 350px; // Adjusted for mobile
+  }
 }
 
 @media (max-width: 576px) {
   .parts-request-container {
     padding: 0.5rem 0.25rem;
+  }
+  
+  .parts-main-card {
+    .card-header {
+      min-height: 360px; // Optimized for small mobile screens
+      padding: 1rem 1rem 0.25rem 1rem;
+    }
+    
+    .card-body {
+      padding-top: 0.25rem; // Minimal spacing on small screens
+    }
+  }
+  
+  .filter-controls-section {
+    min-height: 200px; // Optimized for small screens
   }
   
   .modern-table {
@@ -975,14 +1086,24 @@
       font-size: 0.65rem;
     }
   }
+  
+  .table-section {
+    min-height: 300px; // Smaller for very small screens
+  }
 }
 
 
 
-// Enhanced Pagination Controls
+// Enhanced Pagination Controls - Fixed position
 .enhanced-pagination-wrapper {
   margin-top: 2rem;
   margin-bottom: 1rem;
+  // Fixed height to prevent layout shifts
+  min-height: 120px;
+  
+  // Ensure pagination stays at bottom
+  margin-top: auto;
+  padding-top: 1rem;
 }
 
 .enhanced-pagination-controls {
@@ -1023,12 +1144,19 @@
         font-weight: 600;
         font-size: 0.95rem;
         padding: 0.75rem 1rem;
+        padding-right: 40px;
         transition: all 0.3s ease;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
         
         &:focus {
           border-color: #5486ff;
           box-shadow: 0 0 0 4px rgba(84, 134, 255, 0.1);
           transform: translateY(-1px);
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235486ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
         }
         
         &:hover {
@@ -1151,8 +1279,12 @@
   }
 }
 
-// Responsive adjustments for pagination
+// Responsive adjustments for pagination - Enhanced stability
 @media (max-width: 768px) {
+  .enhanced-pagination-wrapper {
+    min-height: 180px; // Increased for mobile stacked layout
+  }
+  
   .enhanced-pagination-controls {
     padding: 1rem;
     
@@ -1193,6 +1325,12 @@
   }
 }
 
+@media (max-width: 576px) {
+  .enhanced-pagination-wrapper {
+    min-height: 200px; // Maximum height for very small screens
+  }
+}
+
 // Loading state for data processing
 .spinner-border-sm {
   width: 1rem;
@@ -1204,6 +1342,79 @@
   // Improve rendering performance for large datasets
   will-change: transform;
   transform: translateZ(0);
+}
+
+// Additional layout stabilization rules
+.parts-filter-header {
+  .row {
+    // Optimized height for filter header row
+    min-height: 50px;
+    align-items: flex-start;
+  }
+  
+  .col-md-8 {
+    // Reduced height for tighter layout
+    min-height: 60px;
+  }
+}
+
+// Tighten spacing between filter section and table
+.card-header + .card-body {
+  padding-top: 0.5rem !important;
+}
+
+// Ensure messages and loading states don't add excessive space
+.parts-messages {
+  margin-bottom: 0.5rem; // Reduced from default
+}
+
+// Optimize data processing loading indicator spacing
+.text-center.py-4 {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
+}
+
+// Prevent content jumping during data loading
+.parts-messages,
+.empty-state {
+  // Fixed minimum height for message areas
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Stabilize dropdown loading states
+.filter-group {
+  position: relative;
+  
+  .modern-select {
+    // Fixed height to prevent jumping during loading
+    min-height: 48px;
+    
+    &:disabled {
+      opacity: 0.6;
+    }
+  }
+  
+  .loading-indicator {
+    // Ensure loading indicator doesn't affect layout
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    pointer-events: none;
+  }
+}
+
+// Data processing loading state
+.text-center.py-4 {
+  // Fixed height for processing indicator
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 // Print styles

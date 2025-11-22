@@ -54,6 +54,8 @@
                 </span>
               </h5>
               <small class="text-muted">Customize your view with filters below</small>
+            </div>
+          </div>
 
           <!-- Filter Controls -->
           <div class="filter-controls-section mt-3">
@@ -142,64 +144,64 @@
             <table class="table modern-table">
               <thead class="table-header">
                 <tr>
-                  <th class="sortable header-cell" (click)="sortTable('callNumber')">
+                  <th class="sortable header-cell" (click)="sortTable('callNumber')" [ngClass]="getSortClass('callNumber')">
                     <div class="header-content">
                       <span class="header-text">Call No</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('callNumber')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('customerNumber')">
+                  <th class="sortable header-cell" (click)="sortTable('customerNumber')" [ngClass]="getSortClass('customerNumber')">
                     <div class="header-content">
                       <span class="header-text">Customer No.</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('customerNumber')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('technician')">
+                  <th class="sortable header-cell" (click)="sortTable('technician')" [ngClass]="getSortClass('technician')">
                     <div class="header-content">
                       <span class="header-text">Technician</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('technician')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('city')">
+                  <th class="sortable header-cell" (click)="sortTable('city')" [ngClass]="getSortClass('city')">
                     <div class="header-content">
                       <span class="header-text">City</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('city')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('state')">
+                  <th class="sortable header-cell" (click)="sortTable('state')" [ngClass]="getSortClass('state')">
                     <div class="header-content">
                       <span class="header-text">State</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('state')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('status')">
+                  <th class="sortable header-cell" (click)="sortTable('status')" [ngClass]="getSortClass('status')">
                     <div class="header-content">
                       <span class="header-text">Status</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('status')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('age')">
+                  <th class="sortable header-cell" (click)="sortTable('age')" [ngClass]="getSortClass('age')">
                     <div class="header-content">
                       <span class="header-text">Age</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('age')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('shipDate')">
+                  <th class="sortable header-cell" (click)="sortTable('shipDate')" [ngClass]="getSortClass('shipDate')">
                     <div class="header-content">
                       <span class="header-text">Ship Date</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('shipDate')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('reqDate')">
+                  <th class="sortable header-cell" (click)="sortTable('reqDate')" [ngClass]="getSortClass('reqDate')">
                     <div class="header-content">
                       <span class="header-text">Required Date</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('reqDate')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('urgent')">
+                  <th class="sortable header-cell" (click)="sortTable('urgent')" [ngClass]="getSortClass('urgent')">
                     <div class="header-content">
                       <span class="header-text">Urgent?</span>
-                      <i class="bi bi-arrow-down-up sort-icon"></i>
+                      <i [class]="'sort-icon ' + sortIcon('urgent')"></i>
                     </div>
                   </th>
                   <th *ngIf="canApproveRejects()" class="actions-column header-cell">
