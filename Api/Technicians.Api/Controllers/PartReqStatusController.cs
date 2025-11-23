@@ -17,9 +17,8 @@ namespace Technicians.Api.Controllers
             _commonRepository = commonRepository;
         }
 
-        /// <summary>
-        /// Get part request status with complete response including counts
-        /// </summary>
+        //1. GetPartReqStatus
+
         [HttpPost("GetPartReqStatus")]
         public async Task<IActionResult> GetPartReqStatus([FromBody] PartReqStatusRequestDto request)
         {
@@ -37,9 +36,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get part request status by query parameters
-        /// </summary>
+        //2. GetPartReqStatusByKey
+
         [HttpGet("GetPartReqStatusByKey")]
         public async Task<IActionResult> GetPartReqStatusByKey(
             [FromQuery] int key,
@@ -64,9 +62,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get only the part request list without counts
-        /// </summary>
+        //3. GetPartReqList
+
         [HttpGet("GetPartReqList")]
         public async Task<IActionResult> GetPartReqList(
             [FromQuery] int key,
@@ -88,9 +85,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get part counts (crash kit and load bank) only
-        /// </summary>
+        //4.GetPartCounts
+
         [HttpGet("GetPartCounts")]
         public async Task<IActionResult> GetPartCounts([FromQuery] string? invUserID = "All")
         {
@@ -105,10 +101,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get all parts with status 'All'
-        /// Key = 0: All parts except delivered, canceled, returned, tracked
-        /// </summary>
+        //5. GetAllParts
+
         [HttpGet("GetAllParts")]
         public async Task<IActionResult> GetAllParts(
             [FromQuery] string? invUserID = "All",
@@ -117,10 +111,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(0, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get parts with status 'Staging'
-        /// Key = 1: Parts with status 'Staging'
-        /// </summary>
+        //6. GetStagingParts
+
         [HttpGet("GetStagingParts")]
         public async Task<IActionResult> GetStagingParts(
             [FromQuery] string? invUserID = "All",
@@ -129,10 +121,9 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(1, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get parts with status 'Submitted'
-        /// Key = 2: Parts with status 'Submitted'
-        /// </summary>
+
+        //7.GetSubmittedParts
+
         [HttpGet("GetSubmittedParts")]
         public async Task<IActionResult> GetSubmittedParts(
             [FromQuery] string? invUserID = "All",
@@ -141,10 +132,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(2, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get urgent parts
-        /// Key = 3: Parts marked as urgent
-        /// </summary>
+        //8. GetUrgentParts
+
         [HttpGet("GetUrgentParts")]
         public async Task<IActionResult> GetUrgentParts(
             [FromQuery] string? invUserID = "All",
@@ -153,10 +142,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(3, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get parts that need attention
-        /// Key = 4: Parts with status 'Needs Attention'
-        /// </summary>
+        //9. GetPartsNeedingAttention
+
         [HttpGet("GetPartsNeedingAttention")]
         public async Task<IActionResult> GetPartsNeedingAttention(
             [FromQuery] string? invUserID = "All",
@@ -165,10 +152,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(4, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get parts with tracking required
-        /// Key = 5: Parts with status 'OrderedTrackingReq'
-        /// </summary>
+        //10. GetPartsOrderedTrackingRequired
+
         [HttpGet("GetPartsOrderedTrackingRequired")]
         public async Task<IActionResult> GetPartsOrderedTrackingRequired(
             [FromQuery] string? invUserID = "All",
@@ -177,10 +162,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(5, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get shipped parts
-        /// Key = 6: Parts with status 'Shipped'
-        /// </summary>
+        //11. GetShippedParts
+
         [HttpGet("GetShippedParts")]
         public async Task<IActionResult> GetShippedParts(
             [FromQuery] string? invUserID = "All",
@@ -189,10 +172,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(6, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get delivered parts
-        /// Key = 7: Parts with status 'Delivered'
-        /// </summary>
+        //12. GetDeliveredParts
+
         [HttpGet("GetDeliveredParts")]
         public async Task<IActionResult> GetDeliveredParts(
             [FromQuery] string? invUserID = "All",
@@ -201,10 +182,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(7, invUserID, offName);
         }
 
-        /// <summary>
-        /// Get initiated parts
-        /// Key = 8: Parts with status 'Initiated'
-        /// </summary>
+        //13. GetInitiatedParts
+
         [HttpGet("GetInitiatedParts")]
         public async Task<IActionResult> GetInitiatedParts(
             [FromQuery] string? invUserID = "All",
@@ -213,9 +192,8 @@ namespace Technicians.Api.Controllers
             return await GetPartReqList(8, invUserID, offName);
         }
 
-        /// <summary>
-        /// POST employee status for job list based on AD User ID
-        /// </summary>
+        //14.GetEmployeeStatusForJobList
+
         [HttpPost("GetEmployeeStatusForJobList")]
         public async Task<IActionResult> GetEmployeeStatusForJobList([FromBody] EmployeeStatusRequestDto request)
         {
@@ -236,9 +214,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get employee status for job list using query parameter
-        /// </summary>
+        //15. GetEmployeeStatusForJobList
+
         [HttpGet("GetEmployeeStatusForJobList")]
         public async Task<IActionResult> GetEmployeeStatusForJobList([FromQuery] string adUserID)
         {
@@ -256,10 +233,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get account manager names for UI binding (dropdown lists)
-        /// Replaces legacy AccountManagerNames method
-        /// </summary>
+        //16. GetAccountManagerNames
+
         [HttpGet("GetAccountManagerNames")]
         public async Task<IActionResult> GetAccountManagerNames()
         {
@@ -278,9 +253,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get inventory user names for dropdown binding
-        /// </summary>
+        //17.GetInventoryUserNames
+
         [HttpGet("GetInventoryUserNames")]
         public async Task<IActionResult> GetInventoryUserNames()
         {
@@ -296,6 +270,373 @@ namespace Technicians.Api.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = $"Error retrieving inventory user names: {ex.Message}" });
+            }
+        }
+
+        //18. GetPartsReceivedByWH
+
+        [HttpPost("GetPartsReceivedByWH")]
+        public async Task<IActionResult> GetPartsReceivedByWH([FromBody] PartsReceivedByWHRequestDto request)
+        {
+            if (request == null)
+                return BadRequest("Invalid request payload.");
+
+            if (request.Year <= 0)
+                return BadRequest("Year must be a positive integer.");
+
+            try
+            {
+                var result = await _repository.GetPartsReceivedByWHAsync(request.Year);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts received by warehouse: {ex.Message}" });
+            }
+        }
+
+        //19. GetPartsReceivedByWH
+
+        [HttpGet("GetPartsReceivedByWH")]
+        public async Task<IActionResult> GetPartsReceivedByWH([FromQuery] int year)
+        {
+            if (year <= 0)
+                return BadRequest("Year must be a positive integer.");
+
+            try
+            {
+                var result = await _repository.GetPartsReceivedByWHAsync(year);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts received by warehouse: {ex.Message}" });
+            }
+        }
+
+        //20. GetPartsTobeReceivedByWH
+
+        [HttpPost("GetPartsTobeReceivedByWH")]
+        public async Task<IActionResult> GetPartsTobeReceivedByWH([FromBody] PartsTobeReceivedByWHRequestDto request)
+        {
+            if (request == null)
+                return BadRequest("Invalid request payload.");
+
+            if (request.Year <= 0)
+                return BadRequest("Year must be a positive integer.");
+
+            try
+            {
+                var result = await _repository.GetPartsTobeReceivedByWHAsync(request.Year);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts to be received by warehouse: {ex.Message}" });
+            }
+        }
+
+        //21. GetPartsTobeReceivedByWH
+
+        [HttpGet("GetPartsTobeReceivedByWH")]
+        public async Task<IActionResult> GetPartsTobeReceivedByWH([FromQuery] int year)
+        {
+            if (year <= 0)
+                return BadRequest("Year must be a positive integer.");
+
+            try
+            {
+                var result = await _repository.GetPartsTobeReceivedByWHAsync(year);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts to be received by warehouse: {ex.Message}" });
+            }
+        }
+
+
+        //22. GetWeeklyPartsReturnedCount
+
+        [HttpGet("GetWeeklyPartsReturnedCount")]
+        public async Task<IActionResult> GetWeeklyPartsReturnedCount()
+        {
+            try
+            {
+                var result = await _repository.GetWeeklyPartsReturnedCountAsync();
+
+                if (result?.WeeklyData == null || !result.WeeklyData.Any())
+                    return NotFound("No weekly parts returned data found.");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving weekly parts returned count: {ex.Message}" });
+            }
+        }
+
+        //23. GetPartReturnStatus
+
+        [HttpPost("GetPartReturnStatus")]
+        public async Task<IActionResult> GetPartReturnStatus([FromBody] PartReturnStatusRequestDto request)
+        {
+            if (request == null)
+                return BadRequest("Invalid request payload.");
+
+            try
+            {
+                var result = await _repository.GetPartReturnStatusAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving part return status: {ex.Message}" });
+            }
+        }
+
+        //24. GetPartReturnStatus
+
+        [HttpGet("GetPartReturnStatus")]
+        public async Task<IActionResult> GetPartReturnStatus(
+            [FromQuery] int key,
+            [FromQuery] string? source = "Web",
+            [FromQuery] string? invUserID = "All",
+            [FromQuery] int year = 0)
+        {
+            if (year == 0) year = DateTime.Now.Year;
+
+            try
+            {
+                var request = new PartReturnStatusRequestDto
+                {
+                    Key = key,
+                    Source = source ?? "Web",
+                    InvUserID = invUserID ?? "All",
+                    Year = year
+                };
+
+                var result = await _repository.GetPartReturnStatusAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving part return status: {ex.Message}" });
+            }
+        }
+
+
+        //25. GetPartsPendingReturn
+
+        [HttpGet("GetPartsPendingReturn")]
+        public async Task<IActionResult> GetPartsPendingReturn(
+            [FromQuery] string? invUserID = "All",
+            [FromQuery] int year = 0)
+        {
+            if (year == 0) year = DateTime.Now.Year;
+
+            try
+            {
+                var result = await _repository.GetPartReturnStatusListAsync(0, "Web", invUserID ?? "All", year);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No parts pending return found for user: {invUserID}, year: {year}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts pending return: {ex.Message}" });
+            }
+        }
+
+        //26. GetPartsReturnInProgress
+
+        [HttpGet("GetPartsReturnInProgress")]
+        public async Task<IActionResult> GetPartsReturnInProgress(
+            [FromQuery] string? invUserID = "All",
+            [FromQuery] int year = 0)
+        {
+            if (year == 0) year = DateTime.Now.Year;
+
+            try
+            {
+                var result = await _repository.GetPartReturnStatusListAsync(1, "Web", invUserID ?? "All", year);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No parts return in progress found for user: {invUserID}, year: {year}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts return in progress: {ex.Message}" });
+            }
+        }
+
+        //27. GetPartsReturnPending
+
+        [HttpGet("GetPartsReturnPending")]
+        public async Task<IActionResult> GetPartsReturnPending(
+            [FromQuery] string? invUserID = "All",
+            [FromQuery] int year = 0)
+        {
+            if (year == 0) year = DateTime.Now.Year;
+
+            try
+            {
+                var result = await _repository.GetPartReturnStatusListAsync(2, "Web", invUserID ?? "All", year);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No parts return pending found for user: {invUserID}, year: {year}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts return pending: {ex.Message}" });
+            }
+        }
+
+        //28. GetPartsReturned
+
+        [HttpGet("GetPartsReturned")]
+        public async Task<IActionResult> GetPartsReturned(
+            [FromQuery] string? invUserID = "All",
+            [FromQuery] int year = 0)
+        {
+            if (year == 0) year = DateTime.Now.Year;
+
+            try
+            {
+                var result = await _repository.GetPartReturnStatusListAsync(3, "Web", invUserID ?? "All", year);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No returned parts found for user: {invUserID}, year: {year}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving returned parts: {ex.Message}" });
+            }
+        }
+
+        //29. GetPartReturnStatusForGraph
+
+        [HttpGet("GetPartReturnStatusForGraph")]
+        public async Task<IActionResult> GetPartReturnStatusForGraph(
+            [FromQuery] string? invUserID = "All",
+            [FromQuery] int year = 0)
+        {
+            if (year == 0) year = DateTime.Now.Year;
+
+            try
+            {
+                var result = await _repository.GetPartReturnStatusForGraphAsync(invUserID ?? "All", year);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No part return data found for graphs for user: {invUserID}, year: {year}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving part return status for graph: {ex.Message}" });
+            }
+        }
+
+        //30. GetPartsReturnDataByWeek
+
+        [HttpPost("GetPartsReturnDataByWeek")]
+        public async Task<IActionResult> GetPartsReturnDataByWeek([FromBody] PartsReturnDataByWeekRequestDto request)
+        {
+            if (request == null)
+                return BadRequest("Invalid request payload.");
+
+            if (request.WeekNo <= 0 || request.WeekNo > 53)
+                return BadRequest("Week number must be between 1 and 53.");
+
+            try
+            {
+                var result = await _repository.GetPartsReturnDataByWeekAsync(request.WeekNo);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts return data by week: {ex.Message}" });
+            }
+        }
+
+        //31. GetPartsReturnDataByWeek
+
+        [HttpGet("GetPartsReturnDataByWeek")]
+        public async Task<IActionResult> GetPartsReturnDataByWeek([FromQuery] int weekNo)
+        {
+            if (weekNo <= 0 || weekNo > 53)
+                return BadRequest("Week number must be between 1 and 53.");
+
+            try
+            {
+                var result = await _repository.GetPartsReturnDataByWeekAsync(weekNo);
+
+                if (result?.PartsReturnData == null || !result.PartsReturnData.Any())
+                    return NotFound($"No parts return data found for week: {weekNo}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts return data by week: {ex.Message}" });
+            }
+        }
+
+        //32. GetPartsReturnDataByWeekList
+
+        [HttpGet("GetPartsReturnDataByWeekList")]
+        public async Task<IActionResult> GetPartsReturnDataByWeekList([FromQuery] int weekNo)
+        {
+            if (weekNo <= 0 || weekNo > 53)
+                return BadRequest("Week number must be between 1 and 53.");
+
+            try
+            {
+                var result = await _repository.GetPartsReturnDataByWeekListAsync(weekNo);
+
+                if (result == null || !result.Any())
+                    return NotFound($"No parts return data found for week: {weekNo}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving parts return data list by week: {ex.Message}" });
+            }
+        }
+
+        //33. GetPartsReturnDataCurrentWeek
+
+        [HttpGet("GetPartsReturnDataCurrentWeek")]
+        public async Task<IActionResult> GetPartsReturnDataCurrentWeek()
+        {
+            try
+            {
+                // Calculate current week number
+                var currentDate = DateTime.Now;
+                var yearStart = new DateTime(currentDate.Year, 1, 1);
+                var daysSinceYearStart = (currentDate - yearStart).Days;
+                var currentWeek = (daysSinceYearStart / 7) + 1;
+
+                var result = await _repository.GetPartsReturnDataByWeekAsync(currentWeek);
+
+                if (result?.PartsReturnData == null || !result.PartsReturnData.Any())
+                    return NotFound($"No parts return data found for current week: {currentWeek}");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error retrieving current week parts return data: {ex.Message}" });
             }
         }
     }
