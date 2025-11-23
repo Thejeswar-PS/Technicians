@@ -316,7 +316,7 @@ export class EquipmentService {
    */
   getEquipmentStatusOptions(): Observable<{ value: string; text: string }[]> {
     const params = new HttpParams().set('equipType', 'UPS');
-    const upsApiUrl = `${this.apiUrl}/UPSReadings/GetStatusDescription`;
+    const upsApiUrl = `${this.apiUrl}/EquipmentDetails/GetStatusDescription`;
     
     return this.http.get<any[]>(upsApiUrl, { params }).pipe(
       map(response => {
@@ -466,9 +466,9 @@ export class EquipmentService {
       .set('callNbr', callNbr)
       .set('equipId', equipId.toString())
       .set('equipType', equipType)
-      .set('flag', 'Y');
+      .set('scheduled', 'Y');
     
-    return this.http.get<any>(`${this.apiUrl}/UPSReadings/GetJobSummaryReport`, { params });
+    return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/GetJobSummarySample`, { params });
   }
 
   /**
@@ -476,7 +476,7 @@ export class EquipmentService {
    * Equivalent to da.GetStatusDescription("UPS") in legacy code
    */
   getStatusDescription(equipType: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/UPSReadings/GetStatusDescription?equipType=${equipType}`);
+    return this.http.get<any[]>(`${this.apiUrl}/EquipmentDetails/GetStatusDescription?equipType=${equipType}`);
   }
 
 
