@@ -2,8 +2,8 @@ import { Component, OnInit, OnDestroy, AfterViewInit, ElementRef, HostListener, 
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidatorFn } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
-import { Subject } from 'rxjs';
-import { takeUntil, debounceTime } from 'rxjs/operators';
+import { Subject, Observable, forkJoin, of } from 'rxjs';
+import { takeUntil, debounceTime, map, catchError, switchMap } from 'rxjs/operators';
 import { EquipmentService } from '../../core/services/equipment.service';
 import { AuthService } from '../../modules/auth/services/auth.service';
 import {
@@ -339,6 +339,34 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   fansYearRangeEnd = 2005;
   fansYearRangeChangeCounter = 0;
   currentFansYears: number[] = [];
+
+  // DC Caps year calendar state
+  showDcCapsYearCalendar = false;
+  dcCapsYearRangeStart = 1990;
+  dcCapsYearRangeEnd = 2005;
+  dcCapsYearRangeChangeCounter = 0;
+  currentDcCapsYears: number[] = [];
+
+  // AC Input Caps year calendar state
+  showAcInputCapsYearCalendar = false;
+  acInputCapsYearRangeStart = 1990;
+  acInputCapsYearRangeEnd = 2005;
+  acInputCapsYearRangeChangeCounter = 0;
+  currentAcInputCapsYears: number[] = [];
+
+  // AC Output Caps year calendar state
+  showAcOutputCapsYearCalendar = false;
+  acOutputCapsYearRangeStart = 1990;
+  acOutputCapsYearRangeEnd = 2005;
+  acOutputCapsYearRangeChangeCounter = 0;
+  currentAcOutputCapsYears: number[] = [];
+
+  // Comm Caps year calendar state
+  showCommCapsYearCalendar = false;
+  commCapsYearRangeStart = 1990;
+  commCapsYearRangeEnd = 2005;
+  commCapsYearRangeChangeCounter = 0;
+  currentCommCapsYears: number[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -872,6 +900,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       monthName: ['', Validators.required],
       year: ['', [Validators.required, Validators.min(1753), Validators.max(9999)]],
       status: ['Online', Validators.required],
+      statusNotes: [''], // Status notes/reason (legacy: txtStatusNotes)
       parallelCabinet: ['NO'], // Default to "NO" (No)
       snmpPresent: ['PS'], // Default to "PS" (Select)
       modularUPS: [''],
@@ -1517,7 +1546,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (statusOptions) => {
-          this.equipmentStatusOptions = this.ensureCriticalDeficiencyOption(statusOptions);
+          const ensured = this.ensureCriticalDeficiencyOption(statusOptions || []);
+          const normalized = this.normalizeStatusOptions(ensured);
+          this.equipmentStatusOptions = normalized;
         },
         error: (error) => {
           // Fallback to default options including CriticalDeficiency
@@ -1991,6 +2022,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Populate equipment form (following legacy logic - use backend data only)
     // Map CTO/Part No from either field (backward compatibility)
     const ctoPartNoValue = data.ctoPartNo || data.other || '';
+    
     this.equipmentForm.patchValue({
       manufacturer: data.manufacturer || '',
       kva: data.kva || '',
@@ -4255,8 +4287,149 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   /**
    * SIMPLIFIED STATUS CALCULATION - Organized by priority categories
    */
+  /**
+   * SYNCHRONOUS Status Calculation (for real-time display and validation)
+   * 
+   * This method provides immediate status calculation using hardcoded checks.
+   * It's used for:
+   * - Real-time status updates as user fills out forms
+   * - Form validation that requires immediate feedback
+   * - Fallback when API-based calculation fails
+   * 
+   * For SAVE operations, use calculateEquipStatusFromAPI() instead, which:
+   * - Calls backend APIs to get all field values dynamically
+   * - Uses StatusDescription table for severity determination
+   * - Matches legacy GetEquipStatus() logic exactly
+   * 
+   * Note: This synchronous version approximates legacy behavior but may not
+   * catch all edge cases that require database lookup.
+   */
   calculateEquipStatus(): string {
     // Check in order of severity (highest to lowest priority)
+    return this.checkCriticalDeficiency() || 
+           this.checkMajorDeficiency() ||
+           this.checkReplacementRecommended() ||
+           this.checkProactiveReplacement() ||
+           this.checkMinorDeficiency() ||
+           'Online';
+  }
+
+  /**
+   * LEGACY-ALIGNED: Calculate equipment status using dynamic API calls
+   * This matches the EXACT flow of GetEquipStatus() in legacy code
+   * 
+   * Legacy Flow:
+   * 1. Set ResultStatus = "Online" (default)
+   * 2. Call da.JobSummaryReport(CallNbr, EquipID, "UPS", "Y") - Gets all field values from DB
+   * 3. Call da.GetStatusDescription("UPS") - Gets severity mapping for each field
+   * 4. Loop through all columns dynamically:
+   *    - For Action/Environment_Clean fields: Y=MinorDeficiency, YS=CriticalDeficiency
+   *    - For other fields: N/F/True/"F "=Check StatusDescription table for severity
+   *    - For W values: ProactiveReplacement (if currently Online)
+   * 
+   * Key Differences from Previous Implementation:
+   * - OLD: Used hardcoded checks for specific fields
+   * - NEW: Dynamic lookup from database, matches any field changes automatically
+   * - OLD: Hardcoded severity levels
+   * - NEW: Uses StatusDescription table lookup for severity determination
+   * 
+   * NOTE: This is an ASYNC operation and should be called during save, not in real-time
+   */
+  private calculateEquipStatusFromAPI(): Observable<string> {
+    let resultStatus = 'Online';
+
+    // Step 1: Get job summary report data (all field values from DB)
+    return forkJoin({
+      jobSummary: this.equipmentService.getJobSummaryReport(this.callNbr, this.equipId, 'UPS'),
+      statusDesc: this.equipmentService.getStatusDescription('UPS')
+    }).pipe(
+      map(({ jobSummary, statusDesc }) => {
+        // Legacy: if (dsDetails != null && dsDetails.Tables[0].Rows.Count > 0)
+        if (!jobSummary || !jobSummary.length || jobSummary.length === 0) {
+          return 'Online';
+        }
+
+        const rowData = jobSummary[0]; // First row of data
+        const statusDescMap = new Map<string, string>();
+
+        // Build status description lookup map: ColumnName -> StatusType
+        if (statusDesc && statusDesc.length > 0) {
+          statusDesc.forEach((row: any) => {
+            const columnName = (row.columnName || '').trim();
+            const statusType = (row.statusType || '').trim();
+            if (columnName && statusType) {
+              statusDescMap.set(columnName, statusType);
+            }
+          });
+        }
+
+        // Legacy: Loop through all columns
+        // for (int z = 0; z < dsDetails.Tables[0].Columns.Count - 1; z++)
+        const columns = Object.keys(rowData);
+        
+        for (const columnName of columns) {
+          const fieldValue = (rowData[columnName] || '').toString().trim();
+
+          // Legacy: Special handling for Action fields and Environment_Clean
+          // if (TempColumn.Contains("Action") || TempColumn.Contains("Environment_Clean"))
+          if (columnName.includes('Action') || columnName.includes('Environment_Clean')) {
+            if (fieldValue === 'Y') {
+              // Legacy: if (ResultStatus == "Online" || ResultStatus == "ProactiveReplacement")
+              if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
+                resultStatus = 'OnLine(MinorDeficiency)';
+              }
+            } else if (fieldValue === 'YS') {
+              // Legacy: Immediate return for safety issues
+              return 'CriticalDeficiency';
+            }
+          } else {
+            // Legacy: Check for failure values
+            // if (TempField == "N" || TempField == "F" || TempField == "True" || TempField == "F ")
+            if (fieldValue === 'N' || fieldValue === 'F' || fieldValue === 'True' || fieldValue === 'F ') {
+              // Legacy: First set to MinorDeficiency if currently Online or ProactiveReplacement
+              if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
+                resultStatus = 'OnLine(MinorDeficiency)';
+              }
+
+              // Legacy: Then check StatusDescription table for severity escalation
+              // foreach (DataRow dr in dsStatus.Tables[0].Rows)
+              const statusType = statusDescMap.get(columnName);
+              
+              if (statusType) {
+                if (statusType === 'CriticalDeficiency') {
+                  // Legacy: Immediate return for critical issues
+                  return 'CriticalDeficiency';
+                } else if (statusType === 'OnLine(MajorDeficiency)') {
+                  resultStatus = 'OnLine(MajorDeficiency)';
+                } else if (statusType === 'ReplacementRecommended') {
+                  resultStatus = 'ReplacementRecommended';
+                }
+              }
+            } else if (fieldValue === 'W') {
+              // Legacy: Warning status triggers ProactiveReplacement only if currently Online
+              // if (TempField == "W") { if(ResultStatus == "Online") ResultStatus = "ProactiveReplacement"; }
+              if (resultStatus === 'Online') {
+                resultStatus = 'ProactiveReplacement';
+              }
+            }
+          }
+        }
+
+        return resultStatus;
+      }),
+      catchError(error => {
+        console.error('Error calculating equipment status from API:', error);
+        // Fallback to hardcoded logic on error
+        return of(this.calculateEquipStatusFallback());
+      })
+    );
+  }
+
+  /**
+   * Fallback method using hardcoded logic (current implementation)
+   * Used when API calls fail or for real-time status display
+   */
+  private calculateEquipStatusFallback(): string {
     return this.checkCriticalDeficiency() || 
            this.checkMajorDeficiency() ||
            this.checkReplacementRecommended() ||
@@ -4808,48 +4981,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     let title = 'Status Changed';
 
     // Customize message and alert level based on new status severity
-    if (newStatus === 'CriticalDeficiency') {
-      message += ' due to CRITICAL SAFETY FAILURE!';
-      title = 'CRITICAL SAFETY FAILURE';
-      this.toastr.error(message, title, {
-        timeOut: 15000,
-        closeButton: true,
-        progressBar: true,
-        positionClass: 'toast-top-center'
-      });
-    } else if (newStatus === 'OnLine(MajorDeficiency)') {
-      message += ' due to major system deficiency.';
-      title = 'Major Deficiency Detected';
-      this.toastr.error(message, title, {
-        timeOut: 12000,
-        closeButton: true,
-        progressBar: true
-      });
-    } else if (newStatus === 'ReplacementRecommended') {
-      message += ' due to component end-of-life.';
-      title = 'Replacement Required';
-      this.toastr.warning(message, title, {
-        timeOut: 10000,
-        closeButton: true,
-        progressBar: true
-      });
-    } else if (newStatus === 'ProactiveReplacement') {
-      message += ' - components approaching end of life.';
-      title = 'Proactive Replacement';
-      this.toastr.info(message, title, {
-        timeOut: 8000,
-        closeButton: true,
-        progressBar: true
-      });
-    } else if (newStatus === 'OnLine(MinorDeficiency)') {
-      message += ' due to minor issues requiring attention.';
-      title = 'Minor Deficiency';
-      this.toastr.warning(message, title, {
-        timeOut: 6000,
-        closeButton: true,
-        progressBar: true
-      });
-    }
+    
   }
 
   /**
@@ -4877,15 +5009,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Force the status to Offline immediately with no events
       this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
       
-      this.toastr.warning(
-        'Equipment status manually set to "Off-Line". This overrides all automatic status calculations and will remain Off-Line exactly as selected.',
-        'Manual Status Override - Off-Line',
-        {
-          timeOut: 12000,
-          closeButton: true,
-          progressBar: true
-        }
-      );
+      
     } else {
       // Clear manual override when changing away from Off-Line
       this.manualStatusOverride = false;
@@ -4896,15 +5020,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Check if manual status differs from calculated status
       const calculatedStatus = this.calculateEquipStatus();
       if (selectedStatus !== calculatedStatus) {
-        this.toastr.info(
-          `Manual status override: "${this.getStatusDisplayText(selectedStatus)}" (calculated: "${this.getStatusDisplayText(calculatedStatus)}")`,
-          'Manual Status Override',
-          {
-            timeOut: 8000,
-            closeButton: true,
-            progressBar: true
-          }
-        );
       }
     }
   }
@@ -4939,6 +5054,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     
     return statusOptions;
+  }
+
+  /**
+   * Normalize status options by enforcing canonical display text for known values.
+   * This prevents server-provided text from accidentally swapping labels.
+   */
+  private normalizeStatusOptions(options: { value: string; text: string }[]): { value: string; text: string }[] {
+    const canonical = STATUS_OPTIONS.reduce((acc, o) => {
+      acc[o.value] = o.text;
+      return acc;
+    }, {} as Record<string, string>);
+
+    return (options || []).map(opt => {
+      const canon = canonical[opt.value];
+      return canon ? { value: opt.value, text: canon } : opt;
+    });
   }
 
   /**
@@ -5042,12 +5173,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Don't clear existing readings during data loading - only clear during manual config changes
     if (!this.loading) {
+      // LEGACY ALIGNMENT: Pre-populate with nominal voltage values as visual hints
+      // Legacy HTML had default values like: <asp:TextBox>120</asp:TextBox>
+      // These serve as hints for expected nominal voltage but can be overridden by technician
+      const nominalVoltage = this.getNominalVoltageFromConfig(configId);
+      const phaseToNeutralVoltage = this.getDefaultPhaseToNeutralVoltage(configId);
+      
       form.patchValue({
-        voltA: '',
+        voltA: nominalVoltage > 0 ? nominalVoltage.toString() : '',
         voltA_PF: 'P',
-        voltB: '',
+        voltB: nominalVoltage > 0 ? nominalVoltage.toString() : '',
         voltB_PF: 'P',
-        voltC: '',
+        voltC: nominalVoltage > 0 ? nominalVoltage.toString() : '',
         voltC_PF: 'P',
         currA: '',
         currA_PF: 'P',
@@ -5055,24 +5192,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         currB_PF: 'P',
         currC: '',
         currC_PF: 'P',
-        freq: '',
+        freq: '60', // Default frequency to 60 Hz
         freq_PF: 'P'
       });
-    }
 
-    // Auto-populate standard frequency (60 Hz for most configurations)
-    form.patchValue({ freq: '60' });
-
-    if (type === 'output') {
-      this.outputReadingsForm.patchValue({
-        loadA: '',
-        loadA_PF: 'P',
-        loadB: '',
-        loadB_PF: 'P',
-        loadC: '',
-        loadC_PF: 'P',
-        totalLoad: ''
-      });
+      // For output section, also clear load percentages
+      if (type === 'output') {
+        this.outputReadingsForm.patchValue({
+          loadA: '',
+          loadA_PF: 'P',
+          loadB: '',
+          loadB_PF: 'P',
+          loadC: '',
+          loadC_PF: 'P',
+          totalLoad: ''
+        });
+      }
     }
 
     // Trigger phase-to-neutral calculations if applicable
@@ -5128,19 +5263,35 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private getNominalVoltageFromConfig(configId: string): number {
     const voltageMap: { [key: string]: number } = {
       '1': 120,   // 120V Single Phase
-      '2': 240,   // 240V Two Phase
+      '2': 120,   // 240V Two Phase (displays 120V per phase in legacy)
       '3': 208,   // 208V Three Phase
       '4': 480,   // 480V Three Phase
       '5': 600,   // 600V Three Phase
       '6': 575,   // 575V Three Phase
       '7': 208,   // 208V Single Phase
-      '8': 208,   // 208V Two Phase
+      '8': 208,   // 208V Two Phase (displays 208V per phase in legacy)
       '9': 480,   // 480V Single Phase
       '10': 277,  // 277V Single Phase
       '11': 400   // 400V Three Phase
     };
 
     return voltageMap[configId] || 0;
+  }
+
+  /**
+   * Get phase-to-neutral voltage for three-phase configurations
+   * Used to pre-populate the P-N textboxes in legacy UI
+   */
+  private getDefaultPhaseToNeutralVoltage(configId: string): number {
+    const pnVoltageMap: { [key: string]: number } = {
+      '3': 120,   // 208V Three Phase → 120V P-N
+      '4': 277,   // 480V Three Phase → 277V P-N
+      '5': 346,   // 600V Three Phase → 346V P-N
+      '6': 346,   // 575V Three Phase → 346V P-N (shown as 346 in legacy)
+      '11': 230   // 400V Three Phase → 230V P-N
+    };
+
+    return pnVoltageMap[configId] || 0;
   }
 
   /**
@@ -5882,36 +6033,61 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private verifyFormValuesAfterLoad(): void {
-    // Recalculate status after all forms are loaded to ensure consistency
-    // This fixes any incorrect status stored in the database
-    const currentDbStatus = this.equipmentForm.get('status')?.value;
+    // DON'T recalculate status during initial load - trust the database value
+    // The status was already set by GetUPSReadings response and should be preserved
+    // Status recalculation should only happen:
+    // 1. When user manually changes fields (via field valueChanges subscriptions)
+    // 2. When saving (via calculateEquipStatusFromAPI which uses legacy dynamic logic)
     
-    // LEGACY LOGIC: Only recalculate if status is NOT "Offline"
-    // Legacy: if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
-    if (currentDbStatus !== 'Offline') {
-      const calculatedStatus = this.calculateEquipStatus();
-      
-      if (currentDbStatus !== calculatedStatus) {
-        this.equipmentForm.patchValue({ status: calculatedStatus }, { emitEvent: false });
-      }
-    }
-    // If status IS "Offline", preserve it (don't override with automatic calculation)
+    // Legacy comment for reference:
+    // LEGACY LOGIC: if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
+    // However, this legacy recalculation should happen on SAVE, not on LOAD
+    // During load, we should display the status exactly as stored in the database
   }
 
+
   private reloadDataAfterSave(): void {
-    // Reload UPS data from server to ensure data persistence is verified
+    // Reload UPS data from server and display it to ensure consistency
+    // NOTE: loading flag is set to prevent validateAndUpdateStatusOnFailure from running during reload
+    this.loading = true;
+    
     this.equipmentService.getUPSReadings(this.callNbr, this.equipId, this.upsId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
           if (data) {
             this.upsData = data;
-            // Don't repopulate forms to avoid overwriting user's current work
-            // The data is just verified to be saved correctly
+            
+            // Repopulate all forms with fresh data using the comprehensive populate method
+            this.populateFormsWithData(data);
+            
+            // Reload reconciliation data
+            this.loadReconciliationDataAfterEquipment();
+            
+            // Recalculate any dynamic values
+            this.calculatePhaseToNeutralForAll();
+            
+            // Force change detection
+            this.cdr.detectChanges();
+            
+            // Delay resetting flags to ensure all change detection cycles complete
+            // This prevents validateAndUpdateStatusOnFailure from triggering prematurely
+            setTimeout(() => {
+              // Reset flags in correct order: loading first, then saving
+              this.loading = false;
+              this.saving = false;
+              this.saveMode = null;
+              this.isFormSubmission = false;
+            }, 100);
           }
         },
         error: (error) => {
-          // Not critical error, don't show to user
+          console.error('Error reloading UPS data after save:', error);
+          // Reset flags even on error
+          this.loading = false;
+          this.saving = false;
+          this.saveMode = null;
+          this.isFormSubmission = false;
         }
       });
   }
@@ -5942,8 +6118,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Debug: Check KVA field state before validation
     const kvaValue = this.equipmentForm.get('kva')?.value;
     const kvaValid = this.equipmentForm.get('kva')?.valid;
-    console.log('KVA Debug - Value:', kvaValue, 'Valid:', kvaValid, 'Type:', typeof kvaValue);
-
+    
     // Validate restricted characters and character limits before saving (for both draft and full saves)
     if (!this.validateAllRestrictedChars()) {
       // Count different types of errors
@@ -5958,7 +6133,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         errorMessage += ` ${characterLimitErrors} character limit error(s).`;
       }
       
-      console.log('Validation failed:', { restrictedCharErrors: this.restrictedCharErrors, characterLimitErrors: this.characterLimitErrors });
       
       this.toastr.error(errorMessage, 'Validation Errors', {
         timeOut: 8000,
@@ -5991,11 +6165,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const saveUpdateDto = convertToSaveUpdateDto(upsData, this.authService.currentUserValue?.username || 'SYSTEM');
 
-    console.log('🔍 CALLING SAVE API - Final payload:', {
-      saveUpdateDtoStatus: (saveUpdateDto as any).status || 'NOT FOUND',
-      fullPayload: saveUpdateDto,
-      currentFormStatus: this.equipmentForm.get('status')?.value
-    });
     
     // Use the new comprehensive SaveUpdateaaETechUPS API method
     this.equipmentService.saveUpdateaaETechUPS(saveUpdateDto)
@@ -6004,29 +6173,55 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         next: (response: SaveUpdateUPSResponse) => {
 
           if (response.success) {
-            // Update equipment status if not draft
-            if (!isDraft) {
-              this.updateEquipmentStatus();
-            }
-
-            // Save reconciliation data (non-blocking - don't let this prevent main save success)
-            this.saveReconciliationData();
-
-            // Save filter currents data to legacy format (non-blocking)
-            this.saveFilterCurrentsData();
-
             this.successMessage = isDraft ? 'Draft saved successfully' : 'UPS readings saved successfully';
-            
-            // Add special message for manual Off-Line override
-            if (this.isManualOffLineOverride() && !isDraft) {
-              this.successMessage += ' (Manual Off-Line status preserved)';
-              this.toastr.success('UPS readings saved successfully. Manual Off-Line status has been preserved exactly as selected.', 'Save Complete');
-            } else {
-              this.toastr.success(this.successMessage);
-            }
+            this.toastr.success(this.successMessage);
 
-            // Reload data from server to ensure consistency after save
-            this.reloadDataAfterSave();
+            if (isDraft) {
+              // DRAFT SAVE: Only SaveUpdateaaETechUPS (no status updates, no reconciliation, no reload)
+              // Reset flags immediately for draft saves
+              this.saving = false;
+              this.saveMode = null;
+              this.isFormSubmission = false;
+            } else {
+              // FULL SAVE: Follow complete legacy flow
+              // Add special message for manual Off-Line override
+              if (this.isManualOffLineOverride()) {
+                this.toastr.success('Manual Off-Line status has been preserved exactly as selected.', 'Save Complete', {
+                  timeOut: 3000
+                });
+              }
+
+              // LEGACY FLOW (in exact order):
+              // 1. SaveUpdateaaETechUPS (already completed above)
+              // 2. Update status dropdown and call UpdateEquipStatus API
+              // 3. SaveUpdateReconciliationInfo
+              // 4. SaveFilterCurrents (legacy doesn't have this, but we include it)
+              // 5. DisplayaaETechUPS (reload from DB)
+              
+              // Step 2: Update equipment status - WAIT for it to complete
+              this.updateEquipmentStatus()
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                  next: () => {
+                    // Step 3: Save reconciliation data (non-blocking)
+                    this.saveReconciliationData();
+
+                    // Step 4: Save filter currents data to legacy format (non-blocking)
+                    this.saveFilterCurrentsData();
+
+                    // Step 5: Reload data from server to ensure consistency (DisplayaaETechUPS)
+                    // NOTE: Don't reset saving/loading flags until reload completes
+                    this.reloadDataAfterSave();
+                  },
+                  error: (error) => {
+                    console.error('Error in updateEquipmentStatus, proceeding with reload:', error);
+                    // Even if status update fails, continue with reconciliation and reload
+                    this.saveReconciliationData();
+                    this.saveFilterCurrentsData();
+                    this.reloadDataAfterSave();
+                  }
+                });
+            }
 
           } else {
             // Handle cases where response.success is false with specific error details
@@ -6051,10 +6246,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
               closeButton: true,
               progressBar: true
             });
+            
+            // Reset flags on validation error (no reload happens in this case)
+            this.saving = false;
+            this.saveMode = null;
+            this.isFormSubmission = false;
           }
-          this.saving = false;
-          this.saveMode = null;
-          this.isFormSubmission = false; // Reset form submission flag
         },
         error: (error) => {
           // Detailed error message based on error type
@@ -6161,7 +6358,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       serialNo: equipment.serialNo,
       location: equipment.location,
       status: equipment.status, // Preserves manual Off-Line override if set
-      statusReason: '', // Removed status notes functionality
+      statusReason: equipment.statusReason || '', // Status notes/reason from form
       parallelCabinet: equipment.parallelCabinet,
       snmpPresent: equipment.snmpPresent,
       modularUPS: equipment.modularUPS,
@@ -6378,15 +6575,58 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   }
 
-  private updateEquipmentStatus(): void {
-    const status = this.calculateEquipStatus();
+  private updateEquipmentStatus(): Observable<void> {
+    // LEGACY LOGIC: 
+    // if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
+    // da.UpdateEquipStatus(UES);
+    
+    const currentStatus = this.equipmentForm.get('status')?.value;
+    
+    if (currentStatus !== 'Offline') {
+      // Step 1: Calculate the status using API (matching legacy GetEquipStatus())
+      return this.calculateEquipStatusFromAPI()
+        .pipe(
+          takeUntil(this.destroy$),
+          switchMap((calculatedStatus) => {
+            // Step 2: Update the dropdown/form with calculated status (BEFORE API call)
+            // This matches legacy: ddlStatus.SelectedValue = GetEquipStatus();
+            this.equipmentForm.patchValue({ status: calculatedStatus }, { emitEvent: false });
+            
+            // Step 3: Call API to save the calculated status to database
+            return this.executeUpdateEquipmentStatus(calculatedStatus);
+          }),
+          catchError((error) => {
+            console.error('Error calculating status from API, using fallback:', error);
+            // Fallback to hardcoded logic
+            const fallbackStatus = this.calculateEquipStatusFallback();
+            
+            // Update dropdown with fallback status
+            this.equipmentForm.patchValue({ status: fallbackStatus }, { emitEvent: false });
+            
+            // Call API with fallback status
+            return this.executeUpdateEquipmentStatus(fallbackStatus);
+          })
+        );
+    } else {
+      // If current status IS "Offline", preserve it (don't recalculate)
+      // Dropdown already shows "Offline", just call API
+      return this.executeUpdateEquipmentStatus(currentStatus);
+    }
+  }
+
+  /**
+   * Execute the actual equipment status update API call
+   */
+  private executeUpdateEquipmentStatus(finalStatus: string): Observable<void> {
     const monthName = this.equipmentForm.get('monthName')?.value;
     const year = this.equipmentForm.get('year')?.value;
+    const statusNotes = this.equipmentForm.get('statusReason')?.value || ''; // Legacy: txtStatusNotes.Text
 
     const statusData: UpdateEquipStatus = {
       callNbr: this.callNbr,
       equipId: this.equipId,
-      status: status !== 'Offline' ? status : this.equipmentForm.get('status')?.value,
+      status: finalStatus,
+      notes: statusNotes, // Legacy: StatusNotes = txtStatusNotes.Text
       tableName: 'UPS_Verification1',
       manufacturer: this.equipmentForm.get('manufacturer')?.value,
       modelNo: this.equipmentForm.get('model')?.value,
@@ -6401,21 +6641,22 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       vfSelection: ''
     };
 
-    this.equipmentService.updateEquipStatus(statusData)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
+    return this.equipmentService.updateEquipStatus(statusData)
+      .pipe(
+        takeUntil(this.destroy$),
+        map((response) => {
           if (response.success) {
             // Equipment status updated successfully
           } else {
-
+            console.warn('UpdateEquipStatus returned success=false');
           }
-        },
-        error: (error) => {
-
+        }),
+        catchError((error) => {
+          console.error('Error updating equipment status:', error);
           // This is not critical - the main UPS data is still saved successfully
-        }
-      });
+          return of(void 0);
+        })
+      );
   }
 
   private saveFilterCurrentsData(): void {
@@ -7474,6 +7715,262 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const rangeIndex = Math.floor((yearNum - this.minYear) / this.yearsPerRange);
     this.fansYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
     this.fansYearRangeEnd = Math.min(this.maxYear, this.fansYearRangeStart + this.yearsPerRange - 1);
+  }
+
+  // DC Caps Year Calendar Methods
+  toggleDcCapsYearCalendar(): void {
+    this.showDcCapsYearCalendar = !this.showDcCapsYearCalendar;
+    if (this.showDcCapsYearCalendar) {
+      const currentYear = this.capacitorForm.get('dcCapsAge_Year')?.value || new Date().getFullYear();
+      this.setDcCapsYearRangeContaining(currentYear);
+
+      this.currentDcCapsYears = [];
+      for (let year = this.dcCapsYearRangeStart; year <= this.dcCapsYearRangeEnd; year++) {
+        this.currentDcCapsYears.push(year);
+      }
+    }
+  }
+
+  onDcCapsYearSelect(year: number): void {
+    this.capacitorForm.patchValue({ dcCapsAge_Year: year.toString() });
+    this.showDcCapsYearCalendar = false;
+  }
+
+  isDcCapsYearSelected(year: number): boolean {
+    const formYear = this.capacitorForm.get('dcCapsAge_Year')?.value;
+    return formYear === year.toString() || parseInt(formYear) === year;
+  }
+
+  navigateDcCapsYearRange(direction: 'prev' | 'next'): void {
+    this.showDcCapsYearCalendar = true;
+    let navigationOccurred = false;
+
+    if (direction === 'prev' && this.dcCapsYearRangeStart > this.minYear) {
+      this.dcCapsYearRangeStart = Math.max(this.minYear, this.dcCapsYearRangeStart - this.yearsPerRange);
+      this.dcCapsYearRangeEnd = this.dcCapsYearRangeStart + this.yearsPerRange - 1;
+      navigationOccurred = true;
+    } else if (direction === 'next' && this.dcCapsYearRangeEnd < this.maxYear) {
+      this.dcCapsYearRangeStart = Math.min(this.maxYear - this.yearsPerRange + 1, this.dcCapsYearRangeStart + this.yearsPerRange);
+      this.dcCapsYearRangeEnd = Math.min(this.maxYear, this.dcCapsYearRangeStart + this.yearsPerRange - 1);
+      navigationOccurred = true;
+    }
+
+    if (navigationOccurred) {
+      this.currentDcCapsYears = [];
+      for (let year = this.dcCapsYearRangeStart; year <= this.dcCapsYearRangeEnd; year++) {
+        this.currentDcCapsYears.push(year);
+      }
+      this.dcCapsYearRangeChangeCounter++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  getDcCapsYearRange(): string {
+    return `${this.dcCapsYearRangeStart} - ${this.dcCapsYearRangeEnd}`;
+  }
+
+  private setDcCapsYearRangeContaining(year: number | string): void {
+    const yearNum = typeof year === 'string' ? parseInt(year) : year;
+    if (isNaN(yearNum)) {
+      this.dcCapsYearRangeStart = this.minYear;
+      this.dcCapsYearRangeEnd = this.minYear + this.yearsPerRange - 1;
+      return;
+    }
+    const rangeIndex = Math.floor((yearNum - this.minYear) / this.yearsPerRange);
+    this.dcCapsYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
+    this.dcCapsYearRangeEnd = Math.min(this.maxYear, this.dcCapsYearRangeStart + this.yearsPerRange - 1);
+  }
+
+  // AC Input Caps Year Calendar Methods
+  toggleAcInputCapsYearCalendar(): void {
+    this.showAcInputCapsYearCalendar = !this.showAcInputCapsYearCalendar;
+    if (this.showAcInputCapsYearCalendar) {
+      const currentYear = this.capacitorForm.get('acInputCapsAge_Year')?.value || new Date().getFullYear();
+      this.setAcInputCapsYearRangeContaining(currentYear);
+
+      this.currentAcInputCapsYears = [];
+      for (let year = this.acInputCapsYearRangeStart; year <= this.acInputCapsYearRangeEnd; year++) {
+        this.currentAcInputCapsYears.push(year);
+      }
+    }
+  }
+
+  onAcInputCapsYearSelect(year: number): void {
+    this.capacitorForm.patchValue({ acInputCapsAge_Year: year.toString() });
+    this.showAcInputCapsYearCalendar = false;
+  }
+
+  isAcInputCapsYearSelected(year: number): boolean {
+    const formYear = this.capacitorForm.get('acInputCapsAge_Year')?.value;
+    return formYear === year.toString() || parseInt(formYear) === year;
+  }
+
+  navigateAcInputCapsYearRange(direction: 'prev' | 'next'): void {
+    this.showAcInputCapsYearCalendar = true;
+    let navigationOccurred = false;
+
+    if (direction === 'prev' && this.acInputCapsYearRangeStart > this.minYear) {
+      this.acInputCapsYearRangeStart = Math.max(this.minYear, this.acInputCapsYearRangeStart - this.yearsPerRange);
+      this.acInputCapsYearRangeEnd = this.acInputCapsYearRangeStart + this.yearsPerRange - 1;
+      navigationOccurred = true;
+    } else if (direction === 'next' && this.acInputCapsYearRangeEnd < this.maxYear) {
+      this.acInputCapsYearRangeStart = Math.min(this.maxYear - this.yearsPerRange + 1, this.acInputCapsYearRangeStart + this.yearsPerRange);
+      this.acInputCapsYearRangeEnd = Math.min(this.maxYear, this.acInputCapsYearRangeStart + this.yearsPerRange - 1);
+      navigationOccurred = true;
+    }
+
+    if (navigationOccurred) {
+      this.currentAcInputCapsYears = [];
+      for (let year = this.acInputCapsYearRangeStart; year <= this.acInputCapsYearRangeEnd; year++) {
+        this.currentAcInputCapsYears.push(year);
+      }
+      this.acInputCapsYearRangeChangeCounter++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  getAcInputCapsYearRange(): string {
+    return `${this.acInputCapsYearRangeStart} - ${this.acInputCapsYearRangeEnd}`;
+  }
+
+  private setAcInputCapsYearRangeContaining(year: number | string): void {
+    const yearNum = typeof year === 'string' ? parseInt(year) : year;
+    if (isNaN(yearNum)) {
+      this.acInputCapsYearRangeStart = this.minYear;
+      this.acInputCapsYearRangeEnd = this.minYear + this.yearsPerRange - 1;
+      return;
+    }
+    const rangeIndex = Math.floor((yearNum - this.minYear) / this.yearsPerRange);
+    this.acInputCapsYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
+    this.acInputCapsYearRangeEnd = Math.min(this.maxYear, this.acInputCapsYearRangeStart + this.yearsPerRange - 1);
+  }
+
+  // AC Output Caps Year Calendar Methods
+  toggleAcOutputCapsYearCalendar(): void {
+    this.showAcOutputCapsYearCalendar = !this.showAcOutputCapsYearCalendar;
+    if (this.showAcOutputCapsYearCalendar) {
+      const currentYear = this.capacitorForm.get('acOutputCapsAge_Year')?.value || new Date().getFullYear();
+      this.setAcOutputCapsYearRangeContaining(currentYear);
+
+      this.currentAcOutputCapsYears = [];
+      for (let year = this.acOutputCapsYearRangeStart; year <= this.acOutputCapsYearRangeEnd; year++) {
+        this.currentAcOutputCapsYears.push(year);
+      }
+    }
+  }
+
+  onAcOutputCapsYearSelect(year: number): void {
+    this.capacitorForm.patchValue({ acOutputCapsAge_Year: year.toString() });
+    this.showAcOutputCapsYearCalendar = false;
+  }
+
+  isAcOutputCapsYearSelected(year: number): boolean {
+    const formYear = this.capacitorForm.get('acOutputCapsAge_Year')?.value;
+    return formYear === year.toString() || parseInt(formYear) === year;
+  }
+
+  navigateAcOutputCapsYearRange(direction: 'prev' | 'next'): void {
+    this.showAcOutputCapsYearCalendar = true;
+    let navigationOccurred = false;
+
+    if (direction === 'prev' && this.acOutputCapsYearRangeStart > this.minYear) {
+      this.acOutputCapsYearRangeStart = Math.max(this.minYear, this.acOutputCapsYearRangeStart - this.yearsPerRange);
+      this.acOutputCapsYearRangeEnd = this.acOutputCapsYearRangeStart + this.yearsPerRange - 1;
+      navigationOccurred = true;
+    } else if (direction === 'next' && this.acOutputCapsYearRangeEnd < this.maxYear) {
+      this.acOutputCapsYearRangeStart = Math.min(this.maxYear - this.yearsPerRange + 1, this.acOutputCapsYearRangeStart + this.yearsPerRange);
+      this.acOutputCapsYearRangeEnd = Math.min(this.maxYear, this.acOutputCapsYearRangeStart + this.yearsPerRange - 1);
+      navigationOccurred = true;
+    }
+
+    if (navigationOccurred) {
+      this.currentAcOutputCapsYears = [];
+      for (let year = this.acOutputCapsYearRangeStart; year <= this.acOutputCapsYearRangeEnd; year++) {
+        this.currentAcOutputCapsYears.push(year);
+      }
+      this.acOutputCapsYearRangeChangeCounter++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  getAcOutputCapsYearRange(): string {
+    return `${this.acOutputCapsYearRangeStart} - ${this.acOutputCapsYearRangeEnd}`;
+  }
+
+  private setAcOutputCapsYearRangeContaining(year: number | string): void {
+    const yearNum = typeof year === 'string' ? parseInt(year) : year;
+    if (isNaN(yearNum)) {
+      this.acOutputCapsYearRangeStart = this.minYear;
+      this.acOutputCapsYearRangeEnd = this.minYear + this.yearsPerRange - 1;
+      return;
+    }
+    const rangeIndex = Math.floor((yearNum - this.minYear) / this.yearsPerRange);
+    this.acOutputCapsYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
+    this.acOutputCapsYearRangeEnd = Math.min(this.maxYear, this.acOutputCapsYearRangeStart + this.yearsPerRange - 1);
+  }
+
+  // Comm Caps Year Calendar Methods
+  toggleCommCapsYearCalendar(): void {
+    this.showCommCapsYearCalendar = !this.showCommCapsYearCalendar;
+    if (this.showCommCapsYearCalendar) {
+      const currentYear = this.capacitorForm.get('commCapsAge_Year')?.value || new Date().getFullYear();
+      this.setCommCapsYearRangeContaining(currentYear);
+
+      this.currentCommCapsYears = [];
+      for (let year = this.commCapsYearRangeStart; year <= this.commCapsYearRangeEnd; year++) {
+        this.currentCommCapsYears.push(year);
+      }
+    }
+  }
+
+  onCommCapsYearSelect(year: number): void {
+    this.capacitorForm.patchValue({ commCapsAge_Year: year.toString() });
+    this.showCommCapsYearCalendar = false;
+  }
+
+  isCommCapsYearSelected(year: number): boolean {
+    const formYear = this.capacitorForm.get('commCapsAge_Year')?.value;
+    return formYear === year.toString() || parseInt(formYear) === year;
+  }
+
+  navigateCommCapsYearRange(direction: 'prev' | 'next'): void {
+    this.showCommCapsYearCalendar = true;
+    let navigationOccurred = false;
+
+    if (direction === 'prev' && this.commCapsYearRangeStart > this.minYear) {
+      this.commCapsYearRangeStart = Math.max(this.minYear, this.commCapsYearRangeStart - this.yearsPerRange);
+      this.commCapsYearRangeEnd = this.commCapsYearRangeStart + this.yearsPerRange - 1;
+      navigationOccurred = true;
+    } else if (direction === 'next' && this.commCapsYearRangeEnd < this.maxYear) {
+      this.commCapsYearRangeStart = Math.min(this.maxYear - this.yearsPerRange + 1, this.commCapsYearRangeStart + this.yearsPerRange);
+      this.commCapsYearRangeEnd = Math.min(this.maxYear, this.commCapsYearRangeStart + this.yearsPerRange - 1);
+      navigationOccurred = true;
+    }
+
+    if (navigationOccurred) {
+      this.currentCommCapsYears = [];
+      for (let year = this.commCapsYearRangeStart; year <= this.commCapsYearRangeEnd; year++) {
+        this.currentCommCapsYears.push(year);
+      }
+      this.commCapsYearRangeChangeCounter++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  getCommCapsYearRange(): string {
+    return `${this.commCapsYearRangeStart} - ${this.commCapsYearRangeEnd}`;
+  }
+
+  private setCommCapsYearRangeContaining(year: number | string): void {
+    const yearNum = typeof year === 'string' ? parseInt(year) : year;
+    if (isNaN(yearNum)) {
+      this.commCapsYearRangeStart = this.minYear;
+      this.commCapsYearRangeEnd = this.minYear + this.yearsPerRange - 1;
+      return;
+    }
+    const rangeIndex = Math.floor((yearNum - this.minYear) / this.yearsPerRange);
+    this.commCapsYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
+    this.commCapsYearRangeEnd = Math.min(this.maxYear, this.commCapsYearRangeStart + this.yearsPerRange - 1);
   }
 
   /**
