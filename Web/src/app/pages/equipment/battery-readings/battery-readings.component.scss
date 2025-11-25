@@ -44,22 +44,19 @@
     }
   }
 
-  // Header styling
-  .card {
+  // Header styling with boundary constraints and centered layout
+  .card,
+  .ups-main-card {
     border: none;
     border-radius: 1rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
                 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
-    margin-bottom: 2rem;
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-
-    * {
-      box-sizing: border-box;
-    }
+    margin: 0 auto 2rem auto; // Center the card horizontally
+    box-sizing: border-box; // Include padding and border in width calculation
+    position: relative; // Establish positioning context
+    contain: layout style; // Optimize rendering and contain layout
 
     .card-header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -67,6 +64,21 @@
       border-radius: 1rem 1rem 0 0;
       padding: 2rem;
       color: white;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden; // Prevent header content from overflowing
+    }
+
+    .card-body {
+      background: transparent;
+      max-width: 100%;
+      
+      .ups-readings-form {
+        padding: 0; // Remove extra padding since card-body has padding
+        max-width: 100%;
+        box-sizing: border-box;
+        width: 100%; // Take full available width within card body
+      }
     }
   }
 

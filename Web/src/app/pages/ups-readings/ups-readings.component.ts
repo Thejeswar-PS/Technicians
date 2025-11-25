@@ -1561,16 +1561,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
-          console.log('🔍 Backend data received:', data);
-          console.log('🔍 Input voltage fields:', {
-            inputVoltA_T: data.inputVoltA_T,
-            InputVoltA_T: (data as any).InputVoltA_T,
-            inputCurrA_T: data.inputCurrA_T,
-            InputCurrA_T: (data as any).InputCurrA_T,
-            inputFreq_T: data.inputFreq_T,
-            InputFreq_T: (data as any).InputFreq_T
-          });
-          
           this.upsData = data as AAETechUPS;
 
           // Detect Major PM service
@@ -2597,7 +2587,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       freq_PF: (data[`${prefix}Freq_PF` as keyof AAETechUPS] as string) || 'P'
     };
 
-    console.log(`🔍 ${type} formData to be patched:`, formData);
     form.patchValue(formData, { emitEvent: false });
 
     // Populate filter current and THD data for input and output forms
@@ -3297,6 +3286,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Final equipment status confirmation
     const status = this.equipmentForm.get('status')?.value;
+    
     if (status !== 'Online') {
       if (!confirm(`Are you sure that the Equipment Status : ${status}`)) {
         return false;
@@ -4336,34 +4326,46 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * NOTE: This is an ASYNC operation and should be called during save, not in real-time
    */
   private calculateEquipStatusFromAPI(): Observable<string> {
-    let resultStatus = 'Online';
-
-    // Step 1: Get job summary report data (all field values from DB)
+    // Step 1: Get job summary report data (with "Y" parameter to get all field values from DB)
+    // Step 2: Get status description mapping
     return forkJoin({
       jobSummary: this.equipmentService.getJobSummaryReport(this.callNbr, this.equipId, 'UPS'),
       statusDesc: this.equipmentService.getStatusDescription('UPS')
     }).pipe(
       map(({ jobSummary, statusDesc }) => {
+        let resultStatus = 'Online';
+
+        // Extract data from API response wrapper
+        // API returns: { success: true, data: { primaryData: [...] } }
+        const jobSummaryData = jobSummary?.data?.primaryData || jobSummary;
+        // API returns: { success: true, data: [...] }
+        const statusDescData = (statusDesc as any)?.data || statusDesc;
+
         // Legacy: if (dsDetails != null && dsDetails.Tables[0].Rows.Count > 0)
-        if (!jobSummary || !jobSummary.length || jobSummary.length === 0) {
+        if (!jobSummaryData || !Array.isArray(jobSummaryData) || jobSummaryData.length === 0) {
+          console.log('No job summary data, returning Online');
           return 'Online';
         }
 
-        const rowData = jobSummary[0]; // First row of data
+        const rowData = jobSummaryData[0]; // First row of data (primaryData[0])
         const statusDescMap = new Map<string, string>();
 
         // Build status description lookup map: ColumnName -> StatusType
-        if (statusDesc && statusDesc.length > 0) {
-          statusDesc.forEach((row: any) => {
-            const columnName = (row.columnName || '').trim();
-            const statusType = (row.statusType || '').trim();
+        // Legacy: dsStatus.Tables[0].Rows
+        if (statusDescData && Array.isArray(statusDescData) && statusDescData.length > 0) {
+          statusDescData.forEach((row: any) => {
+            const columnName = (row.columnName || row.ColumnName || '').trim();
+            const statusType = (row.statusType || row.StatusType || '').trim();
             if (columnName && statusType) {
               statusDescMap.set(columnName, statusType);
             }
           });
         }
 
-        // Legacy: Loop through all columns
+        console.log('Status Description Map:', statusDescMap);
+        console.log('Row Data columns:', Object.keys(rowData));
+
+        // Legacy: Loop through all columns (fields in the row)
         // for (int z = 0; z < dsDetails.Tables[0].Columns.Count - 1; z++)
         const columns = Object.keys(rowData);
         
@@ -4376,10 +4378,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             if (fieldValue === 'Y') {
               // Legacy: if (ResultStatus == "Online" || ResultStatus == "ProactiveReplacement")
               if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
+                console.log(`Setting OnLine(MinorDeficiency) due to ${columnName} = Y`);
                 resultStatus = 'OnLine(MinorDeficiency)';
               }
             } else if (fieldValue === 'YS') {
               // Legacy: Immediate return for safety issues
+              console.log(`Returning CriticalDeficiency due to ${columnName} = YS`);
               return 'CriticalDeficiency';
             }
           } else {
@@ -4388,6 +4392,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             if (fieldValue === 'N' || fieldValue === 'F' || fieldValue === 'True' || fieldValue === 'F ') {
               // Legacy: First set to MinorDeficiency if currently Online or ProactiveReplacement
               if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
+                console.log(`Setting OnLine(MinorDeficiency) due to ${columnName} = ${fieldValue}`);
                 resultStatus = 'OnLine(MinorDeficiency)';
               }
 
@@ -4396,12 +4401,16 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
               const statusType = statusDescMap.get(columnName);
               
               if (statusType) {
+                console.log(`Checking ${columnName}: statusType = ${statusType}`);
                 if (statusType === 'CriticalDeficiency') {
                   // Legacy: Immediate return for critical issues
+                  console.log(`Returning CriticalDeficiency due to ${columnName} statusType`);
                   return 'CriticalDeficiency';
                 } else if (statusType === 'OnLine(MajorDeficiency)') {
+                  console.log(`Setting OnLine(MajorDeficiency) due to ${columnName}`);
                   resultStatus = 'OnLine(MajorDeficiency)';
                 } else if (statusType === 'ReplacementRecommended') {
+                  console.log(`Setting ReplacementRecommended due to ${columnName}`);
                   resultStatus = 'ReplacementRecommended';
                 }
               }
@@ -4409,12 +4418,14 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
               // Legacy: Warning status triggers ProactiveReplacement only if currently Online
               // if (TempField == "W") { if(ResultStatus == "Online") ResultStatus = "ProactiveReplacement"; }
               if (resultStatus === 'Online') {
+                console.log(`Setting ProactiveReplacement due to ${columnName} = W`);
                 resultStatus = 'ProactiveReplacement';
               }
             }
           }
         }
 
+        console.log('Final calculated status:', resultStatus);
         return resultStatus;
       }),
       catchError(error => {
@@ -5008,19 +5019,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       
       // Force the status to Offline immediately with no events
       this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
-      
-      
     } else {
       // Clear manual override when changing away from Off-Line
       this.manualStatusOverride = false;
       
       // Apply the new status  
       this.equipmentForm.patchValue({ status: selectedStatus }, { emitEvent: false });
-      
-      // Check if manual status differs from calculated status
-      const calculatedStatus = this.calculateEquipStatus();
-      if (selectedStatus !== calculatedStatus) {
-      }
     }
   }
 
@@ -6110,6 +6114,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private save(isDraft: boolean): void {
     // Set form submission flag for validation
     this.isFormSubmission = true;
+    this.saving = true; // Prevent status recalculation during save/validation
     this.clearAllValidationErrors();
 
     // Ensure manual Off-Line status is preserved during save
@@ -6140,20 +6145,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         progressBar: true
       });
       this.isFormSubmission = false;
+      this.saving = false; // Reset saving flag
       return;
     }
 
     // Only validate for full saves, not drafts
     if (!isDraft) {
-
       if (!this.validateComprehensiveInputs()) {
         this.toastr.error('Please correct validation errors before saving UPS data');
         this.isFormSubmission = false; // Reset flag after validation
+        this.saving = false; // Reset saving flag
         return;
       }
     }
 
-    this.saving = true;
     this.errorMessage = '';
     this.successMessage = '';
 

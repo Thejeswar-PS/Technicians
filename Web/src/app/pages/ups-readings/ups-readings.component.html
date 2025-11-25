@@ -419,7 +419,7 @@
                         formControlName="parallelCabinet"
                         id="parallelCabinet"
                       >
-                        <option value="Y">Yes</option>
+                        <option value="YS">Yes</option>
                         <option value="NO">No</option>
                         <option value="NA">N/A</option>
                       </select>
@@ -1278,7 +1278,7 @@
                 <div class="alert alert-warning d-flex align-items-center mb-3" 
                      *ngIf="visualForm.get('airFilters')?.value === 'W'">
                   <i class="bi bi-exclamation-triangle me-2"></i>
-                  <small>
+                  <small style="color: black;">
                     <strong>Filter dimensions required:</strong> Please enter all filter measurements when replacement is needed for parts ordering.
                   </small>
                 </div>
