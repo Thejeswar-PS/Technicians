@@ -1,0 +1,72 @@
+// Parts Received by Warehouse Chart Component Styles
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  
+  apx-chart {
+    width: 100%;
+  }
+}
+
+// Statistics Cards
+.card {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 2rem 0 rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Loading States
+.spinner-border {
+  &.text-primary {
+    color: var(--kt-primary) !important;
+  }
+}
+
+// Year Selector
+.form-select {
+  &.form-select-sm {
+    min-width: 80px;
+  }
+}
+
+// Legend
+.legend-item {
+  .legend-color {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+  }
+}
+
+// Refresh Button
+.btn-icon {
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    transform: rotate(180deg);
+  }
+  
+  &:disabled {
+    opacity: 0.65;
+  }
+}
+
+// Alert styles
+.alert {
+  border-radius: 0.5rem;
+  
+  &.alert-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+  }
+  
+  &.alert-success {
+    background-color: rgba(40, 167, 69, 0.1);
+    border-color: rgba(40, 167, 69, 0.3);
+  }
+}
