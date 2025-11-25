@@ -2592,4 +2592,78 @@ export class BatteryReadingsComponent implements OnInit {
 
     return true;
   }
+
+  /**
+   * Handle reconciliation field changes
+   */
+  onReconciliationChange(): void {
+    // Update reconciliation state when fields change
+    // This can be used to enable/disable save button or show warnings
+  }
+
+  /**
+   * Get reconciliation label for batteries per string field
+   */
+  get reconciliationBattPerStringLabel(): string {
+    const stringType = this.batteryStringForm.get('stringType')?.value;
+    if (stringType === '2') {
+      return 'Batteries per Internal String';
+    }
+    return 'Batteries per String';
+  }
+
+  /**
+   * Handle sealed battery checkbox changes
+   */
+  onSealedCheckboxChange(checkboxField: string, pfField: string): void {
+    const checkboxValue = this.batteryStringForm.get(checkboxField)?.value;
+    if (checkboxValue) {
+      this.batteryStringForm.get(pfField)?.setValue('F');
+    } else {
+      this.batteryStringForm.get(pfField)?.setValue('P');
+    }
+  }
+
+  /**
+   * Handle flooded battery plates checkbox changes
+   */
+  onFloodedPlatesCheckboxChange(): void {
+    // Check if any plates checkboxes are checked
+    const plusWrapped = this.batteryStringForm.get('plusWrappedCheck')?.value;
+    const plusSulfated = this.batteryStringForm.get('plusSulfatedCheck')?.value;
+    const plusMispos = this.batteryStringForm.get('plusMisposCheck')?.value;
+
+    // Set the PF field based on checkbox states
+    if (plusWrapped || plusSulfated || plusMispos) {
+      this.batteryStringForm.get('plusPlatesPf')?.setValue('F');
+    } else {
+      this.batteryStringForm.get('plusPlatesPf')?.setValue('P');
+    }
+  }
+
+  /**
+   * Handle flooded battery covers checkbox changes
+   */
+  onFloodedCoversCheckboxChange(): void {
+    // Check if any covers checkboxes are checked
+    const missing = this.batteryStringForm.get('missingCheck')?.value;
+    const broken = this.batteryStringForm.get('brokenCheck')?.value;
+    const needsCleaning = this.batteryStringForm.get('needsCleaningCheck')?.value;
+
+    // Set the PF field based on checkbox states
+    if (missing || broken || needsCleaning) {
+      this.batteryStringForm.get('coversPf')?.setValue('F');
+    } else {
+      this.batteryStringForm.get('coversPf')?.setValue('P');
+    }
+  }
+
+  /**
+   * Check if replace/monitor calculation dropdown should be disabled
+   */
+  get isRepMonCalculateDisabled(): boolean {
+    // Technicians can only use System calculation
+    // This would typically check user role
+    return false; // Set to true if user is technician
+  }
 }
