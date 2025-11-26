@@ -360,9 +360,9 @@ export interface UPSReadingsFormData {
   isValid: boolean;
 }
 
-// Voltage configuration constants
+// Voltage configuration constants - Order matches legacy dropdown
 export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
-  // Single Phase (Phase I)
+  // 120 I Phase (Value 1)
   {
     id: '1',
     name: '120 I Phase',
@@ -374,40 +374,7 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
       { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
     ]
   },
-  {
-    id: '7',
-    name: '208 I Phase',
-    phaseCount: 1,
-    showPhaseToNeutral: false,
-    fields: [
-      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '10',
-    name: '277 I Phase',
-    phaseCount: 1,
-    showPhaseToNeutral: false,
-    fields: [
-      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  {
-    id: '9',
-    name: '480 I Phase',
-    phaseCount: 1,
-    showPhaseToNeutral: false,
-    fields: [
-      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
-      { id: 'currA', label: 'Current A', type: 'current', required: true },
-      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
-    ]
-  },
-  // Two Phase (Phase II)
+  // 240 II Phase (Value 2)
   {
     id: '2',
     name: '240 II Phase',
@@ -421,6 +388,19 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
       { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
     ]
   },
+  // 208 I Phase (Value 7)
+  {
+    id: '7',
+    name: '208 I Phase',
+    phaseCount: 1,
+    showPhaseToNeutral: false,
+    fields: [
+      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  // 208 II Phase (Value 8)
   {
     id: '8',
     name: '208 II Phase',
@@ -434,7 +414,7 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
       { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
     ]
   },
-  // Three Phase (Phase III)
+  // 208 III Phase (Value 3)
   {
     id: '3',
     name: '208 III Phase',
@@ -450,6 +430,19 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
       { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
     ]
   },
+  // 277 I Phase (Value 10)
+  {
+    id: '10',
+    name: '277 I Phase',
+    phaseCount: 1,
+    showPhaseToNeutral: false,
+    fields: [
+      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  // 400 III Phase (Value 11)
   {
     id: '11',
     name: '400 III Phase',
@@ -462,9 +455,22 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
       { id: 'currB', label: 'Current B', type: 'current', required: true },
       { id: 'voltCtoA', label: 'Voltage C to A', type: 'voltage', required: true },
       { id: 'currC', label: 'Current C', type: 'current', required: true },
-      { id: 'freq', label:'Frequency', type: 'frequency', required: true }
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
     ]
   },
+  // 480 I Phase (Value 9)
+  {
+    id: '9',
+    name: '480 I Phase',
+    phaseCount: 1,
+    showPhaseToNeutral: false,
+    fields: [
+      { id: 'voltA', label: 'Voltage A', type: 'voltage', required: true },
+      { id: 'currA', label: 'Current A', type: 'current', required: true },
+      { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
+    ]
+  },
+  // 480 III Phase (Value 4)
   {
     id: '4',
     name: '480 III Phase',
@@ -480,6 +486,7 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
       { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
     ]
   },
+  // 575 III Phase (Value 6)
   {
     id: '6',
     name: '575 III Phase',
@@ -495,6 +502,7 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
       { id: 'freq', label: 'Frequency', type: 'frequency', required: true }
     ]
   },
+  // 600 III Phase (Value 5)
   {
     id: '5',
     name: '600 III Phase',
@@ -515,13 +523,13 @@ export const VOLTAGE_CONFIGURATIONS: VoltageConfiguration[] = [
 export const PASS_FAIL_OPTIONS: PassFailOption[] = [
   { value: 'P', text: 'Pass' },
   { value: 'F', text: 'Fail' },
-  { value: 'N', text: 'N/A' }
+  { value: 'A', text: 'N/A' }
 ];
 
 export const POWER_VERIFICATION_OPTIONS: PassFailOption[] = [
   { value: 'P', text: 'Pass' },
   { value: 'F', text: 'Fail' },
-  { value: 'N', text: 'N/A' }
+  { value: 'A', text: 'N/A' }
 ];
 
 export const YES_NO_OPTIONS = [

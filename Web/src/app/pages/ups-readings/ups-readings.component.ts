@@ -313,6 +313,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Dynamic labels
   endOfLifeLabel = '7. UPS date code is < 25 years (End of Life):';
+  // Track the last user-selected status from the dropdown so confirm uses the user's selection
+  lastUserSelectedStatus: string | null = null;
 
   // Basic date state for existing functionality
   currentCalendarDate = new Date();
@@ -1299,7 +1301,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
         // Update equipment status if auto-change is required
         if (ageValidation.autoChangeStatus) {
+          console.debug('[DEBUG] performAutomaticAgeValidation -> autoChangeStatus true. setting equipment status to', ageValidation.status, 'endOfLifeValue:', ageValidation.endOfLifeValue);
           this.equipmentForm.get('status')?.setValue(ageValidation.status, { emitEvent: false });
+          console.debug('[DEBUG] performAutomaticAgeValidation -> form.status after setValue:', this.equipmentForm?.get('status')?.value);
           this.updateEquipmentComments(ageValidation.recommendedAction);
         } else if (ageValidation.recommendedAction) {
           // Add recommendation to comments even if not auto-changing status
@@ -1429,7 +1433,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
       // Update status if auto-change is required
       if (ageValidation.autoChangeStatus) {
+        console.debug('[DEBUG] validateDirectDateCodeInput -> autoChangeStatus true. setting equipment status to', ageValidation.status, 'endOfLifeValue:', ageValidation.endOfLifeValue);
         this.equipmentForm.get('status')?.setValue(ageValidation.status, { emitEvent: false });
+        console.debug('[DEBUG] validateDirectDateCodeInput -> form.status after setValue:', this.equipmentForm?.get('status')?.value);
         this.updateEquipmentComments(ageValidation.recommendedAction);
 
         // Show notification for status changes
@@ -3376,9 +3382,35 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Final equipment status confirmation
     const status = this.equipmentForm.get('status')?.value;
-    
-    if (status !== 'Online') {
-      if (!confirm(`Are you sure that the Equipment Status : ${status}`)) {
+
+    // Decide which status to use for the final confirmation popup.
+    // Prefer the last user-chosen dropdown value (this.lastUserSelectedStatus) to avoid showing a status
+    // that was programmatically changed after the user made their selection.
+    let selectedForPopup: string | null = null;
+
+    // 1) Use last selection captured during onStatusDropdownChange
+    if (this.lastUserSelectedStatus) {
+      selectedForPopup = this.lastUserSelectedStatus;
+    } else {
+      // 2) Fallback to reading the actual select element value (DOM) if available
+      try {
+        const dropdownEl = document.querySelector('select[formControlName="status"]') as HTMLSelectElement | null;
+        selectedForPopup = dropdownEl?.value || null;
+      } catch (err) {
+        // ignore - we'll fallback to form status next
+        selectedForPopup = null;
+      }
+    }
+
+    // 3) Ultimate fallback to the form value
+    if (!selectedForPopup) {
+      selectedForPopup = status || 'Online';
+    }
+
+    console.debug('[DEBUG] validateComprehensiveInputs -> final status used for popup. selectedForPopup:', selectedForPopup, 'formStatus:', status, 'lastUserSelectedStatus:', this.lastUserSelectedStatus, 'manualStatusOverride:', this.manualStatusOverride);
+
+    if (selectedForPopup !== 'Online') {
+      if (!confirm(`Are you sure that the Equipment Status : ${selectedForPopup}`)) {
         return false;
       }
     }
@@ -3528,7 +3560,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   private applyAgeValidationResults(ageValidation: AgeValidationResult): void {
     // Update equipment status if automatic change is required
     if (ageValidation.autoChangeStatus) {
+      console.debug('[DEBUG] applyAgeValidationResults -> autoChangeStatus true. setting equipment status to', ageValidation.status, 'endOfLifeValue:', ageValidation.endOfLifeValue);
       this.equipmentForm.get('status')?.setValue(ageValidation.status, { emitEvent: false });
+      console.debug('[DEBUG] applyAgeValidationResults -> form.status after setValue:', this.equipmentForm?.get('status')?.value);
     }
 
     // Add recommended action to comments if available
@@ -3885,12 +3919,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    // Bypass frequency: 55-65 Hz
+    // Bypass frequency: 58-62 Hz
     const bypassFreq = this.convertToDouble(this.bypassReadingsForm.get('freq')?.value);
     if (bypassFreq > 0) { // Only validate if value is entered
-      if (bypassFreq < 55 || bypassFreq > 65) {
+      if (bypassFreq < 58 || bypassFreq > 62) {
         if (this.isFormSubmission) {
-          if (!confirm('Are you sure that Bypass Frequency not within specified tolerance (55-65 Hz)?')) {
+          if (!confirm('Are you sure that Bypass Frequency not within specified tolerance (58-62 Hz)?')) {
             validationPassed = false;
           }
         }
@@ -4078,7 +4112,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       frequencyValidation: {
         description: 'Frequency Validation Ranges',
-        implementation: 'Input/Bypass: 55-65 Hz, Output: 58-62 Hz',
+        implementation: 'Input: 55-65 Hz, Bypass/Output: 58-62 Hz',
         inputRange: this.getFrequencyToleranceRange('input'),
         bypassRange: this.getFrequencyToleranceRange('bypass'),
         outputRange: this.getFrequencyToleranceRange('output'),
@@ -4307,6 +4341,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           implementation: 'Manual status setting with checkOfflineStatus() method',
           testMethod: () => {
             this.equipmentForm.patchValue({ status: 'Offline' });
+              console.debug('[DEBUG] testMethod -> set status to Offline for testMethod');
             const result = this.calculateEquipStatus();
             return {
               manualOffline: result === 'Offline'
@@ -4369,7 +4404,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'input':
         return '55 Hz - 65 Hz'; // Input frequency tolerance
       case 'bypass':
-        return '55 Hz - 62 Hz'; // Bypass frequency tolerance (updated per user specs)
+        return '58 Hz - 62 Hz'; // Bypass frequency tolerance (updated per user specs)
       case 'output':
         return '58 Hz - 62 Hz'; // Output frequency tolerance
       default:
@@ -5098,7 +5133,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       
       // Ensure status stays as Offline
       if (currentStatus !== 'Offline') {
+        console.debug('[DEBUG] validateAndUpdateStatusOnFailure -> restoring Offline due to manualStatusOverride. currentStatus:', currentStatus);
         this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+        console.debug('[DEBUG] validateAndUpdateStatusOnFailure -> form.status after restore:', this.equipmentForm?.get('status')?.value);
       }
       return;
     }
@@ -5106,7 +5143,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const newStatus = this.calculateEquipStatus();
     if (newStatus !== currentStatus) {
       // Status change detected - update immediately only if not manually overridden to Off-Line
+      console.debug('[DEBUG] validateAndUpdateStatusOnFailure -> status change detected. currentStatus:', currentStatus, 'newStatus:', newStatus);
       this.equipmentForm.patchValue({ status: newStatus }, { emitEvent: false });
+      console.debug('[DEBUG] validateAndUpdateStatusOnFailure -> form.status after patch:', this.equipmentForm?.get('status')?.value);
 
       // Show notification to user about status change
       this.showStatusChangeNotification(currentStatus, newStatus);
@@ -5132,11 +5171,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * Legacy functionality: ddlStatus.SelectedValue == "Offline"
    */
   onManualStatusChange(selectedStatus: string): void {
+    // Debug: log incoming selected status and current form status
+    console.log('[DEBUG] onManualStatusChange called. selectedStatus:', selectedStatus, 'formStatusBefore:', this.equipmentForm?.get('status')?.value, 'manualStatusOverride:', this.manualStatusOverride);
+
+    // Capture the user's explicit selection so confirmation and subsequent logic can prefer this value
+    this.lastUserSelectedStatus = selectedStatus;
+
     if (selectedStatus === 'Offline') {
       // Use legacy format for status confirmation
       if (!confirm(`Are you sure that the Equipment Status : ${selectedStatus}`)) {
         // Reset to previous value if user cancels
         const calculatedStatus = this.calculateEquipStatus();
+        console.log('[DEBUG] onManualStatusChange -> Offline confirmation canceled by user. calculatedStatus:', calculatedStatus);
         setTimeout(() => {
           this.equipmentForm.patchValue({ status: calculatedStatus }, { emitEvent: false });
         }, 0);
@@ -5151,12 +5197,16 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       
       // Force the status to Offline immediately with no events
       this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
+      // Debug: log form status after applying Offline override
+      console.log('[DEBUG] onManualStatusChange -> status set to Offline (manual override). formStatusAfter:', this.equipmentForm?.get('status')?.value);
     } else {
       // Clear manual override when changing away from Off-Line
       this.manualStatusOverride = false;
       
       // Apply the new status  
       this.equipmentForm.patchValue({ status: selectedStatus }, { emitEvent: false });
+      // Debug: log form status after applying selected status
+      console.log('[DEBUG] onManualStatusChange -> manual override cleared or not Offline. selectedStatus applied. formStatusAfter:', this.equipmentForm?.get('status')?.value);
     }
   }
 
@@ -5274,7 +5324,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   onStatusDropdownChange(event: any): void {
     const selectedValue = event.target.value;
+    // Keep a record of the last value the technician explicitly chose in the UI
+    this.lastUserSelectedStatus = selectedValue;
+    // Debug: log the raw event value and current equipment form status
+    console.log('[DEBUG] onStatusDropdownChange event. event.target.value:', selectedValue, 'formStatusBefore:', this.equipmentForm?.get('status')?.value);
     this.onManualStatusChange(selectedValue);
+    console.log('[DEBUG] onStatusDropdownChange after calling onManualStatusChange. formStatusNow:', this.equipmentForm?.get('status')?.value);
   }
 
   /**
@@ -5284,6 +5339,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.equipmentForm.get('status')?.valueChanges.pipe(
       takeUntil(this.destroy$)
     ).subscribe(newStatus => {
+      // Debug: log every status change from the form control
+      console.log('[DEBUG] equipmentForm.status valueChanges -> newStatus:', newStatus, 'manualStatusOverride:', this.manualStatusOverride);
       // If status changes to something other than Offline while manual override is active, restore it
       if (this.manualStatusOverride && newStatus !== 'Offline' && !this.loading && !this.saving) {
         setTimeout(() => {
@@ -5537,9 +5594,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (nominalVoltage === 208 && config.phaseCount === 2) {
       // 208V Two Phase uses 208V-specific tolerance ranges
       if (type === 'output') {
-        return { min: 197, max: 219 }; // Output specific values for 208V
+        return { min: 114, max: 126 }; // Output section: 114V - 126V as per user request
+      } else if (type === 'input') {
+        return { min: 110, max: 130 }; // Input section: 110V - 130V as per user request
+      } else if (type === 'bypass') {
+        return { min: 110, max: 130 }; // Bypass values for 208V (legacy default)
       } else {
-        return { min: 192, max: 224 }; // Input/Bypass values for 208V
+        return { min: 192, max: 224 }; // fallback
       }
     }
 
@@ -6210,6 +6271,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             // This prevents validateAndUpdateStatusOnFailure from triggering prematurely
             setTimeout(() => {
               // Reset flags in correct order: loading first, then saving
+              // Also clear any captured user selection for status to avoid stale state
+              this.lastUserSelectedStatus = null;
               this.loading = false;
               this.saving = false;
               this.saveMode = null;
@@ -6319,6 +6382,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             if (isDraft) {
               // DRAFT SAVE: Only SaveUpdateaaETechUPS (no status updates, no reconciliation, no reload)
               // Reset flags immediately for draft saves
+              // Clear any transient user-selection capture after a draft save
+              this.lastUserSelectedStatus = null;
               this.saving = false;
               this.saveMode = null;
               this.isFormSubmission = false;
@@ -6730,7 +6795,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           switchMap((calculatedStatus) => {
             // Step 2: Update the dropdown/form with calculated status (BEFORE API call)
             // This matches legacy: ddlStatus.SelectedValue = GetEquipStatus();
+            console.debug('[DEBUG] updateEquipmentStatus -> calculatedStatus from API:', calculatedStatus, 'currentFormStatus:', this.equipmentForm?.get('status')?.value);
             this.equipmentForm.patchValue({ status: calculatedStatus }, { emitEvent: false });
+            console.debug('[DEBUG] updateEquipmentStatus -> form.status after patch calculatedStatus:', this.equipmentForm?.get('status')?.value);
             
             // Step 3: Call API to save the calculated status to database
             return this.executeUpdateEquipmentStatus(calculatedStatus);
@@ -6741,7 +6808,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             const fallbackStatus = this.calculateEquipStatusFallback();
             
             // Update dropdown with fallback status
+            console.debug('[DEBUG] updateEquipmentStatus -> fallback used. fallbackStatus:', fallbackStatus, 'currentFormStatus:', this.equipmentForm?.get('status')?.value);
             this.equipmentForm.patchValue({ status: fallbackStatus }, { emitEvent: false });
+            console.debug('[DEBUG] updateEquipmentStatus -> form.status after patch fallbackStatus:', this.equipmentForm?.get('status')?.value);
             
             // Call API with fallback status
             return this.executeUpdateEquipmentStatus(fallbackStatus);
