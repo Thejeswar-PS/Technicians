@@ -6,7 +6,7 @@ import { JobReportDetailsComponent } from './job-report-details/job-report-detai
 import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-report.component';
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
-import { PartsReceivedWHChartComponent } from './parts-received-wh-chart/parts-received-wh-chart.component';
+
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
 import { NgApexchartsModule } from 'ng-apexcharts';
@@ -17,7 +17,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
     JobScheduleReportComponent,
     PartsRequestStatusComponent,
     PartReturnStatusComponent,
-    PartsReceivedWHChartComponent,
+
   ],
   imports: [
     CommonModule,

@@ -6,26 +6,14 @@
     <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
       Parts Return Status Report
     </h1>
-    <ul class="breadcrumb breadcrumb-separatorless fw-semibold fs-7 my-0 pt-1">
-      <li class="breadcrumb-item text-muted">
-        <a routerLink="/dashboard" class="text-muted text-hover-primary">Home</a>
-      </li>
-      <li class="breadcrumb-item">
-        <span class="bullet bg-gray-400 w-5px h-2px"></span>
-      </li>
-      <li class="breadcrumb-item text-muted">Reports</li>
-      <li class="breadcrumb-item">
-        <span class="bullet bg-gray-400 w-5px h-2px"></span>
-      </li>
-      <li class="breadcrumb-item text-dark">Parts Return Status</li>
-    </ul>
+
   </div>
   <!--end::Page title-->
 
   <!--begin::Charts Row-->
   <div class="row g-5 mb-5">
     <!--begin::Parts to be Received Chart Column-->
-    <div class="col-xl-6">
+    <div class="col-xl-4">
       <!--begin::Parts to be Received Chart-->
       <div class="card h-100 chart-section" *ngIf="showChart || isLoadingChart || chartErrorMessage">
     <!--begin::Card header-->
@@ -260,7 +248,7 @@
     <!--end::Parts to be Received Chart Column-->
 
     <!--begin::Weekly Parts Returned Count Chart Column-->
-    <div class="col-xl-6">
+    <div class="col-xl-4">
       <!--begin::Weekly Parts Returned Count Chart-->
         <div class="card h-100 chart-section" *ngIf="showWeeklyChart || isLoadingWeeklyChart || weeklyChartErrorMessage">
         <!--begin::Card header-->
@@ -521,242 +509,225 @@
       <!--end::Weekly Parts Returned Count Chart-->
     </div>
     <!--end::Weekly Parts Returned Count Chart Column-->
+
+    <!--begin::Parts Received by Warehouse Chart Column-->
+    <div class="col-xl-4">
+      <!--begin::Parts Received by Warehouse Chart-->
+      <div class="card h-100 chart-section" *ngIf="showReceivedChart || isLoadingReceivedChart || receivedChartErrorMessage">
+        <!--begin::Card header-->
+        <div class="card-header border-0 pt-5">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="card-label fw-bold fs-3 mb-1">Parts Received by Warehouse</span>
+            <span class="text-muted fs-7">Monthly breakdown of received parts for {{ partReturnFilterForm.get('year')?.value }}</span>
+          </h3>
+        </div>
+        <!--end::Card header-->
+
+        <!--begin::Card body-->
+        <div class="card-body" *ngIf="showReceivedChart">
+          
+          <!--begin::Chart loading indicator-->
+          <div *ngIf="isLoadingReceivedChart" class="d-flex justify-content-center py-10 chart-loading">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading received chart...</span>
+            </div>
+          </div>
+          <!--end::Chart loading indicator-->
+
+          <!--begin::Chart error message-->
+          <div *ngIf="receivedChartErrorMessage && !isLoadingReceivedChart" class="alert alert-warning d-flex align-items-center p-5 mb-10">
+            <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4">
+              <span class="path1"></span>
+              <span class="path2"></span>
+              <span class="path3"></span>
+            </i>
+            <div class="d-flex flex-column">
+              <h4 class="mb-1 text-warning">Chart Data Unavailable</h4>
+              <span>{{ receivedChartErrorMessage }}</span>
+            </div>
+          </div>
+          <!--end::Chart error message-->
+
+          <!--begin::Chart content-->
+          <div *ngIf="!isLoadingReceivedChart && receivedChartData.length > 0">
+            
+            <!--begin::Chart totals-->
+            <div class="row g-6 g-xl-9 mb-6 chart-totals">
+              <div class="col-lg-6 col-xxl-6">
+                <div class="card bg-light-success border-success">
+                  <div class="card-body">
+                    <div class="d-flex align-items-center">
+                      <div class="symbol symbol-40px me-3">
+                        <span class="symbol-label bg-success">
+                          <i class="ki-duotone ki-check-circle fs-2 text-white">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                          </i>
+                        </span>
+                      </div>
+                      <div class="d-flex flex-column">
+                        <span class="fw-bold fs-6 text-gray-800">Total Jobs Count</span>
+                        <span class="fw-bold fs-3 text-success">{{ receivedChartTotals.unUsedReceived }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6 col-xxl-6">
+                <div class="card bg-light-warning border-warning">
+                  <div class="card-body">
+                    <div class="d-flex align-items-center">
+                      <div class="symbol symbol-40px me-3">
+                        <span class="symbol-label bg-warning">
+                          <i class="ki-duotone ki-information fs-2 text-white">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                            <span class="path3"></span>
+                          </i>
+                        </span>
+                      </div>
+                      <div class="d-flex flex-column">
+                        <span class="fw-bold fs-6 text-gray-800">Total Faulty Parts</span>
+                        <span class="fw-bold fs-3 text-warning">{{ receivedChartTotals.faultyReceived }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!--end::Chart totals-->
+
+            <!--begin::Chart visualization-->
+            <div class="chart-container">
+              <!-- Chart Type Selector -->
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="text-gray-800 fw-bold mb-0">Data Visualization</h4>
+                <div class="btn-group" role="group">
+                  <input type="radio" class="btn-check" name="receivedChartType" id="receivedBarChart" checked (change)="setReceivedChartType('bar')">
+                  <label class="btn btn-outline-primary btn-sm" for="receivedBarChart">
+                    <i class="ki-duotone ki-chart-simple fs-3">
+                      <span class="path1"></span>
+                      <span class="path2"></span>
+                      <span class="path3"></span>
+                      <span class="path4"></span>
+                    </i>
+                    Bar Chart
+                  </label>
+                  
+                  <input type="radio" class="btn-check" name="receivedChartType" id="receivedPieChart" (change)="setReceivedChartType('pie')">
+                  <label class="btn btn-outline-primary btn-sm" for="receivedPieChart">
+                    <i class="ki-duotone ki-chart-pie-simple fs-3">
+                      <span class="path1"></span>
+                      <span class="path2"></span>
+                    </i>
+                    Pie Chart
+                  </label>
+                  
+                  <input type="radio" class="btn-check" name="receivedChartType" id="receivedDataTable" (change)="setReceivedChartType('table')">
+                  <label class="btn btn-outline-primary btn-sm" for="receivedDataTable">
+                    <i class="ki-duotone ki-row-horizontal fs-3">
+                      <span class="path1"></span>
+                      <span class="path2"></span>
+                    </i>
+                    Table
+                  </label>
+                </div>
+              </div>
+
+              <!-- Bar Chart -->
+              <div *ngIf="currentReceivedChartType === 'bar'" class="chart-wrapper">
+                <div class="bar-chart">
+                  <div class="chart-grid">
+                    <canvas #receivedBarChartCanvas 
+                            class="chart-canvas" 
+                            width="800" 
+                            height="400">
+                    </canvas>
+                    <div class="chart-legend mt-4">
+                      <div class="d-flex justify-content-center flex-wrap gap-4">
+                        <div class="d-flex align-items-center">
+                          <div class="w-15px h-15px rounded-1 me-2" style="background-color: #1bc5bd;"></div>
+                          <span class="fs-7 text-muted">Jobs Count</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                          <div class="w-15px h-15px rounded-1 me-2" style="background-color: #ffa800;"></div>
+                          <span class="fs-7 text-muted">Faulty Parts</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pie Chart -->
+              <div *ngIf="currentReceivedChartType === 'pie'" class="chart-wrapper">
+                <div class="pie-chart">
+                  <div class="chart-grid">
+                    <canvas #receivedPieChartCanvas 
+                            class="chart-canvas" 
+                            width="400" 
+                            height="400">
+                    </canvas>
+                    <div class="chart-legend mt-4">
+                      <div class="d-flex justify-content-center flex-wrap gap-4">
+                        <div *ngFor="let item of receivedChartData; let i = index" class="d-flex align-items-center">
+                          <div class="w-15px h-15px rounded-1 me-2" [style.background-color]="getChartColor(i)"></div>
+                          <span class="fs-7 text-muted">{{ item.name }} ({{ getReceivedChartItemPercentage(item) }}%)</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Data Table -->
+              <div *ngIf="currentReceivedChartType === 'table'" class="chart-wrapper">
+                <div class="table-responsive">
+                  <table class="table table-hover border-0">
+                    <thead class="bg-light">
+                      <tr class="fw-bold fs-6 text-gray-800">
+                        <th class="min-w-150px">Month</th>
+                        <th class="min-w-100px text-center">Jobs Count</th>
+                        <th class="min-w-100px text-center">Faulty Parts</th>
+                        <th class="min-w-100px text-center">Total</th>
+                        <th class="min-w-100px text-center">Percentage</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of receivedChartData; let i = index">
+                        <td class="fw-bold text-gray-800">{{ item.name }}</td>
+                        <td class="text-center text-success fw-semibold">{{ item.jobsCount || 0 }}</td>
+                        <td class="text-center text-warning fw-semibold">{{ item.faulty || 0 }}</td>
+                        <td class="text-center fw-bold">{{ (item.jobsCount || 0) + (item.faulty || 0) }}</td>
+                        <td class="text-center">
+                          <span class="badge badge-light-primary">{{ getReceivedChartItemPercentage(item) }}%</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <!--end::Chart visualization-->
+          </div>
+          <!--end::Chart content-->
+        </div>
+        <!--end::Card body-->
+      </div>
+      <!--end::Parts Received by Warehouse Chart-->
+    </div>
+    <!--end::Parts Received by Warehouse Chart Column-->
   </div>
   <!--end::Charts Row-->
 
-  <!--begin::Parts Received by Warehouse Chart-->
-  <div class="card mb-5">
-    <app-parts-received-wh-chart
-      chartHeight="280px">
-    </app-parts-received-wh-chart>
-  </div>
-  <!--end::Parts Received by Warehouse Chart-->
 
-  <!--begin::Parts Return Data by Week Number Section-->
-  <div class="card mb-5" *ngIf="showWeeklyData || isLoadingWeeklyData || weeklyDataErrorMessage">
-    <!--begin::Card header-->
-    <div class="card-header border-0 pt-5">
-      <h3 class="card-title align-items-start flex-column">
-        <span class="card-label fw-bold fs-3 mb-1">Parts Return Data - Week {{ partReturnFilterForm.get('weekNo')?.value }}</span>
-        <span class="text-muted fs-7">Detailed return data for selected week</span>
-      </h3>
 
-    </div>
-    <!--end::Card header-->
-
-    <!--begin::Card body-->
-    <div class="card-body" *ngIf="showWeeklyData">
-      
-      <!--begin::Weekly data loading indicator-->
-      <div *ngIf="isLoadingWeeklyData" class="d-flex justify-content-center py-10">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading weekly data...</span>
-        </div>
-      </div>
-      <!--end::Weekly data loading indicator-->
-
-      <!--begin::Weekly data error message-->
-      <div *ngIf="weeklyDataErrorMessage && !isLoadingWeeklyData" class="alert alert-warning d-flex align-items-center p-5 mb-10">
-        <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4">
-          <span class="path1"></span>
-          <span class="path2"></span>
-          <span class="path3"></span>
-        </i>
-        <div class="d-flex flex-column">
-          <h4 class="mb-1 text-warning">Weekly Data Unavailable</h4>
-          <span>{{ weeklyDataErrorMessage }}</span>
-        </div>
-      </div>
-      <!--end::Weekly data error message-->
-
-      <!--begin::Weekly data content-->
-      <div *ngIf="!isLoadingWeeklyData && partsReturnDataByWeekNo.length > 0">
-        
-        <!--begin::Weekly data summary-->
-        <div class="row g-6 g-xl-9 mb-6">
-          <div class="col-lg-3 col-xxl-3">
-            <div class="card bg-light-primary border-primary">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-primary">
-                      <i class="ki-duotone ki-package fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                        <span class="path3"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <div class="fw-semibold fs-6 text-gray-800 d-block lh-1">Total Returns</div>
-                    <div class="fw-semibold fs-3 text-primary">{{ getTotalReturnsByWeek() }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-lg-3 col-xxl-3">
-            <div class="card bg-light-success border-success">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-success">
-                      <i class="ki-duotone ki-check-circle fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <div class="fw-semibold fs-6 text-gray-800 d-block lh-1">Unused Parts</div>
-                    <div class="fw-semibold fs-3 text-success">{{ getTotalUnusedByWeek() }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-lg-3 col-xxl-3">
-            <div class="card bg-light-danger border-danger">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-danger">
-                      <i class="ki-duotone ki-cross-circle fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <div class="fw-semibold fs-6 text-gray-800 d-block lh-1">Faulty Parts</div>
-                    <div class="fw-semibold fs-3 text-danger">{{ getTotalFaultyByWeek() }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="col-lg-3 col-xxl-3">
-            <div class="card bg-light-warning border-warning">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-warning">
-                      <i class="ki-duotone ki-truck fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                        <span class="path3"></span>
-                        <span class="path4"></span>
-                        <span class="path5"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <div class="fw-semibold fs-6 text-gray-800 d-block lh-1">Total Truck Stock</div>
-                    <div class="fw-semibold fs-3 text-warning">{{ getTotalTruckStockByWeek() }}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!--end::Weekly data summary-->
-
-        <!--begin::Weekly data table-->
-        <div class="table-responsive">
-          <table class="table table-rounded table-striped border gy-7 gs-7">
-            <thead>
-              <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                <th class="min-w-150px">Service Call ID</th>
-                <th class="min-w-100px text-center">Unused Sent Back</th>
-                <th class="min-w-100px text-center">Faulty Sent Back</th>
-                <th class="min-w-120px text-center">Return Status</th>
-                <th class="min-w-100px text-center">Truck Stock</th>
-                <th class="min-w-150px">Technician</th>
-                <th class="min-w-120px">Maint Auth ID</th>
-                <th class="min-w-200px">Return Notes</th>
-                <th class="min-w-120px text-center">Last Modified</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of partsReturnDataByWeekNo; trackBy: trackByWeeklyServiceCallId" class="align-middle">
-                <td>
-                  <a class="text-primary fw-bold text-hover-primary cursor-pointer" 
-                     (click)="navigateToServiceCall(item.serviceCallId)">
-                    {{ item.serviceCallId }}
-                  </a>
-                </td>
-                <td class="text-center">
-                  <span class="badge badge-light-success fs-7 fw-semibold">{{ item.unusedSentBack }}</span>
-                </td>
-                <td class="text-center">
-                  <span class="badge badge-light-danger fs-7 fw-semibold" 
-                        [class.badge-danger]="item.faultySentBack > 0">
-                    {{ item.faultySentBack }}
-                  </span>
-                </td>
-                <td class="text-center">
-                  <span [class]="getReturnStatusBadgeClass(item.returnStatus)">{{ item.returnStatus }}</span>
-                </td>
-                <td class="text-center">
-                  <span class="badge badge-light-warning fs-7 fw-semibold">{{ item.truckStock }}</span>
-                </td>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <div class="symbol symbol-circle symbol-50px overflow-hidden me-3">
-                      <div class="symbol-label fs-3 bg-light-primary text-primary">{{ getInitials(item.techName) }}</div>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <span class="text-gray-800 fw-bold text-hover-primary fs-6">{{ item.techName }}</span>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <span class="text-muted fw-semibold">{{ item.maintAuthId }}</span>
-                </td>
-                <td>
-                  <div class="text-muted fw-semibold" [title]="item.returnNotes">
-                    {{ item.returnNotes | slice:0:50 }}{{ item.returnNotes && item.returnNotes.length > 50 ? '...' : '' }}
-                  </div>
-                </td>
-                <td class="text-center">
-                  <span class="text-muted fw-semibold">
-                    {{ item.lastModified | date:'short' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <!--end::Weekly data table-->
-        
-      </div>
-      <!--end::Weekly data content-->
-      
-    </div>
-    <!--end::Card body-->
-  </div>
-  <!--end::Parts Return Data by Week Number Section-->
 
   <!--begin::Card-->
   <div class="card">
     <!--begin::Card header-->
     <div class="card-header border-0 pt-6">
-      <div class="card-title">
-        <div class="d-flex align-items-center position-relative my-1">
-          <i class="ki-duotone ki-magnifier fs-1 position-absolute ms-6">
-            <span class="path1"></span>
-            <span class="path2"></span>
-          </i>
-          <input type="text" 
-                 class="form-control form-control-solid w-250px ps-14" 
-                 placeholder="Search parts..." 
-                 #searchInput
-                 (keyup)="applyFilter(searchInput.value)">
-        </div>
-      </div>
+
       
       <!--begin::Card toolbar-->
       <div class="card-toolbar">
@@ -800,17 +771,7 @@
             </select>
           </div>
           
-          <!--begin::Week Number Filter-->
-          <div class="form-group">
-            <label class="form-label fw-semibold fs-7 text-gray-600">Week Number:</label>
-            <select class="form-select form-select-solid" 
-                    formControlName="weekNo"
-                    (change)="onWeekNumberChange()">
-              <option *ngFor="let week of getAvailableWeeks()" [value]="week">
-                Week {{ week }}
-              </option>
-            </select>
-          </div>
+
           
 
         </form>
@@ -820,103 +781,7 @@
     </div>
     <!--end::Card header-->
 
-    <!--begin::Summary Cards-->
-    <div class="card-body pt-0">
-      <div class="row g-6 g-xl-9 mb-6">
-        <!--begin::Col-->
-        <div class="col-lg-3 col-xxl-3">
-          <div class="card bg-light-success border-success">
-            <div class="card-body">
-              <div class="d-flex align-items-center">
-                <div class="symbol symbol-40px me-3">
-                  <span class="symbol-label bg-success">
-                    <i class="ki-duotone ki-check-circle fs-2 text-white">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                    </i>
-                  </span>
-                </div>
-                <div class="d-flex flex-column">
-                  <span class="fw-bold fs-6 text-gray-800">Returned</span>
-                  <span class="fw-bold fs-3 text-success">{{ getStatusCount('returned') }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!--end::Col-->
 
-        <!--begin::Col-->
-        <div class="col-lg-3 col-xxl-3">
-          <div class="card bg-light-secondary border-secondary">
-            <div class="card-body">
-              <div class="d-flex align-items-center">
-                <div class="symbol symbol-40px me-3">
-                  <span class="symbol-label bg-secondary">
-                    <i class="ki-duotone ki-cross-circle fs-2 text-white">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                    </i>
-                  </span>
-                </div>
-                <div class="d-flex flex-column">
-                  <span class="fw-bold fs-6 text-gray-800">Not Returned</span>
-                  <span class="fw-bold fs-3 text-secondary">{{ getStatusCount('not-returned') }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!--end::Col-->
-
-        <!--begin::Col-->
-        <div class="col-lg-3 col-xxl-3">
-          <div class="card bg-light-warning border-warning">
-            <div class="card-body">
-              <div class="d-flex align-items-center">
-                <div class="symbol symbol-40px me-3">
-                  <span class="symbol-label bg-warning">
-                    <i class="ki-duotone ki-time fs-2 text-white">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                    </i>
-                  </span>
-                </div>
-                <div class="d-flex flex-column">
-                  <span class="fw-bold fs-6 text-gray-800">In Progress</span>
-                  <span class="fw-bold fs-3 text-warning">{{ getStatusCount('in-progress') }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!--end::Col-->
-
-        <!--begin::Col-->
-        <div class="col-lg-3 col-xxl-3">
-          <div class="card bg-light-danger border-danger">
-            <div class="card-body">
-              <div class="d-flex align-items-center">
-                <div class="symbol symbol-40px me-3">
-                  <span class="symbol-label bg-danger">
-                    <i class="ki-duotone ki-clock fs-2 text-white">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                    </i>
-                  </span>
-                </div>
-                <div class="d-flex flex-column">
-                  <span class="fw-bold fs-6 text-gray-800">Pending</span>
-                  <span class="fw-bold fs-3 text-danger">{{ getStatusCount('pending') }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!--end::Col-->
-      </div>
-    </div>
-    <!--end::Summary Cards-->
 
     <!--begin::Card body-->
     <div class="card-body py-4">
@@ -962,111 +827,111 @@
       </div>
       <!--end::Filter Badge-->
 
-      <!--begin::Table-->
-      <div *ngIf="!isLoading && partReturnStatusList.length > 0" class="table-responsive">
-        <table class="table table-rounded table-striped border gy-7 gs-7">
-          <thead>
-            <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
-              <th class="min-w-150px cursor-pointer" (click)="sortTable('serviceCallId')">
+      <!--begin::Table Card-->
+      <div *ngIf="!isLoading && partReturnStatusList.length > 0" class="card shadow-sm">
+        <div class="table-responsive">
+          <table class="table table-hover border-0 mb-0">
+            <thead class="bg-primary" style="background-color: #1e40af !important;">
+              <tr class="fw-bold fs-6 text-white" style="background-color: #1e40af !important;">
+              <th class="min-w-150px cursor-pointer py-4 px-4" (click)="sortTable('serviceCallId')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   Service Call ID
-                  <i [class]="'ki-duotone ' + sortIcon('serviceCallId') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('serviceCallId') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-125px cursor-pointer" (click)="sortTable('partNum')">
+              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('partNum')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   Part Number
-                  <i [class]="'ki-duotone ' + sortIcon('partNum') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('partNum') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-125px cursor-pointer" (click)="sortTable('dcPartNum')">
+              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('dcPartNum')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   DC Part Number
-                  <i [class]="'ki-duotone ' + sortIcon('dcPartNum') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('dcPartNum') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-200px cursor-pointer" (click)="sortTable('description')">
+              <th class="min-w-200px cursor-pointer py-4 px-4" (click)="sortTable('description')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   Description
-                  <i [class]="'ki-duotone ' + sortIcon('description') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('description') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-100px cursor-pointer text-center" (click)="sortTable('totalQty')">
+              <th class="min-w-100px cursor-pointer text-center py-4 px-4" (click)="sortTable('totalQty')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center justify-content-center">
                   Total Qty
-                  <i [class]="'ki-duotone ' + sortIcon('totalQty') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('totalQty') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-100px cursor-pointer text-center" (click)="sortTable('faultyParts')">
+              <th class="min-w-100px cursor-pointer text-center py-4 px-4" (click)="sortTable('faultyParts')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center justify-content-center">
                   Faulty
-                  <i [class]="'ki-duotone ' + sortIcon('faultyParts') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('faultyParts') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-100px cursor-pointer text-center" (click)="sortTable('unusedParts')">
+              <th class="min-w-100px cursor-pointer text-center py-4 px-4" (click)="sortTable('unusedParts')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center justify-content-center">
                   Unused
-                  <i [class]="'ki-duotone ' + sortIcon('unusedParts') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('unusedParts') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-150px cursor-pointer" (click)="sortTable('technician')">
+              <th class="min-w-150px cursor-pointer py-4 px-4" (click)="sortTable('technician')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   Technician
-                  <i [class]="'ki-duotone ' + sortIcon('technician') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('technician') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-125px cursor-pointer" (click)="sortTable('invUserID')">
+              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('invUserID')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   Inv User
-                  <i [class]="'ki-duotone ' + sortIcon('invUserID') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('invUserID') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-125px cursor-pointer" (click)="sortTable('status')">
+              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('status')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   Status
-                  <i [class]="'ki-duotone ' + sortIcon('status') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('status') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-150px cursor-pointer" (click)="sortTable('lastModified')">
+              <th class="min-w-150px cursor-pointer py-4 px-4" (click)="sortTable('lastModified')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
                 <div class="d-flex align-items-center">
                   Last Modified
-                  <i [class]="'ki-duotone ' + sortIcon('lastModified') + ' fs-5 ms-1 text-gray-400'">
+                  <i [class]="'ki-duotone ' + sortIcon('lastModified') + ' fs-5 ms-1'" style="color: white !important;">
                     <span class="path1"></span>
                     <span class="path2"></span>
                   </i>
                 </div>
               </th>
-              <th class="min-w-100px text-end">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -1130,24 +995,12 @@
                   {{ item.lastModified | date:'MM/dd/yyyy HH:mm' }}
                 </span>
               </td>
-              <td class="text-end">
-                <button type="button" 
-                        class="btn btn-icon btn-bg-light btn-active-color-primary btn-sm me-1"
-                        (click)="navigateToServiceCall(item.serviceCallId)"
-                        data-bs-toggle="tooltip"
-                        title="View Service Call">
-                  <i class="ki-duotone ki-eye fs-3">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                    <span class="path3"></span>
-                  </i>
-                </button>
-              </td>
             </tr>
           </tbody>
         </table>
+        </div>
       </div>
-      <!--end::Table-->
+      <!--end::Table Card-->
 
       <!--begin::No Data-->
       <div *ngIf="!isLoading && partReturnStatusList.length === 0" class="d-flex flex-column flex-center">

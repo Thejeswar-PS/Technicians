@@ -86,11 +86,15 @@ export interface PartsReceivedByWHChartDto {
   name: string;
   jobsCount: number;
   faulty: number;
+  unusedReceived?: number;
+  faultyReceived?: number;
 }
 
 export interface PartsReceivedByWHTotalsDto {
   unUsedR: number;
   faultyR: number;
+  unUsedReceived?: number;
+  faultyReceived?: number;
 }
 
 export interface PartsReceivedByWHResponseDto {

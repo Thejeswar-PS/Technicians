@@ -15,6 +15,10 @@ import {
   PartsToBeReceivedTotalsDto,
   PartsToBeReceivedResponseDto,
   PartsToBeReceivedApiResponseDto,
+  PartsReceivedByWHChartDto,
+  PartsReceivedByWHTotalsDto,
+  PartsReceivedByWHResponseDto,
+  PartsReceivedByWHApiResponseDto,
   WeeklyPartsReturnedCountDto,
   WeeklyPartsReturnedCountApiResponseDto,
   PartsReturnDataByWeekNoDto,
@@ -60,6 +64,16 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
   currentWeeklyChartType: 'bar' | 'line' | 'table' = 'bar';
   @ViewChild('weeklyBarChartCanvas', { static: false }) weeklyBarChartCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('weeklyLineChartCanvas', { static: false }) weeklyLineChartCanvas!: ElementRef<HTMLCanvasElement>;
+
+  // Parts Received by Warehouse Chart properties
+  receivedChartData: PartsReceivedByWHChartDto[] = [];
+  receivedChartTotals: PartsReceivedByWHTotalsDto = { unUsedR: 0, faultyR: 0, unUsedReceived: 0, faultyReceived: 0 };
+  isLoadingReceivedChart: boolean = false;
+  receivedChartErrorMessage: string = '';
+  showReceivedChart: boolean = true;
+  currentReceivedChartType: 'bar' | 'pie' | 'table' = 'bar';
+  @ViewChild('receivedBarChartCanvas', { static: false }) receivedBarChartCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('receivedPieChartCanvas', { static: false }) receivedPieChartCanvas!: ElementRef<HTMLCanvasElement>;
 
   // Parts Return Data by Week Number properties
   partsReturnDataByWeekNo: PartsReturnDataByWeekNoItem[] = [];
@@ -116,6 +130,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     this.loadFilters();
     this.loadPartsToBeReceivedChart();
     this.loadWeeklyPartsReturnedCount();
+    this.loadPartsReceivedByWarehouseChart();
     this.loadPartsReturnDataByWeekNo();
   }
 
@@ -490,10 +505,11 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     this.partReturnFilterForm.valueChanges.subscribe((selectedValue: any) => {
       this.getPartReturnStatusReport();
       
-      // Reload chart when year changes
+      // Reload charts when year changes
       if (selectedValue.year !== previousYear) {
         previousYear = selectedValue.year;
         this.loadPartsToBeReceivedChart();
+        this.loadPartsReceivedByWarehouseChart();
       }
     });
   }
@@ -615,6 +631,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     this.getPartReturnStatusReport();
     this.loadPartsToBeReceivedChart();
     this.loadWeeklyPartsReturnedCount();
+    this.loadPartsReceivedByWarehouseChart();
     this.loadPartsReturnDataByWeekNo();
   }
 
@@ -628,6 +645,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     
     this.currentPage = 1;
     this.loadPartsToBeReceivedChart();
+    this.loadPartsReceivedByWarehouseChart();
     this.loadPartsReturnDataByWeekNo();
   }
 
@@ -758,6 +776,9 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       if (this.chartData.length > 0) {
         this.renderCharts();
       }
+      if (this.receivedChartData.length > 0) {
+        this.renderReceivedCharts();
+      }
     }, 100);
   }
 
@@ -844,11 +865,27 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       // Value labels on bars
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 10px Arial';
-      if (jobsHeight > 20) {
+      ctx.textAlign = 'center';
+      
+      // Always show labels, adjust position based on bar height
+      if (jobsHeight > 15) {
+        // Label inside bar if there's space
         ctx.fillText(item.jobsCount.toString(), x + (barWidth * 0.4), jobsY + 15);
+      } else if (item.jobsCount > 0) {
+        // Label above bar if bar is too small
+        ctx.fillStyle = '#6c757d';
+        ctx.fillText(item.jobsCount.toString(), x + (barWidth * 0.4), jobsY - 5);
+        ctx.fillStyle = '#ffffff';
       }
-      if (faultyHeight > 20) {
+      
+      if (faultyHeight > 15) {
+        // Label inside bar if there's space
         ctx.fillText(item.faulty.toString(), x + barWidth + (barWidth * 0.4), faultyY + 15);
+      } else if (item.faulty > 0) {
+        // Label above bar if bar is too small
+        ctx.fillStyle = '#6c757d';
+        ctx.fillText(item.faulty.toString(), x + barWidth + (barWidth * 0.4), faultyY - 5);
+        ctx.fillStyle = '#ffffff';
       }
     });
     
@@ -1219,11 +1256,27 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       // Value labels on bars
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 9px Arial';
-      if (unusedHeight > 15) {
+      ctx.textAlign = 'center';
+      
+      // Always show labels, adjust position based on bar height
+      if (unusedHeight > 12) {
+        // Label inside bar if there's space
         ctx.fillText(item.unUsed.toString(), x + (barWidth * 0.5), unusedY + 12);
+      } else if (item.unUsed > 0) {
+        // Label above bar if bar is too small
+        ctx.fillStyle = '#6c757d';
+        ctx.fillText(item.unUsed.toString(), x + (barWidth * 0.5), unusedY - 5);
+        ctx.fillStyle = '#ffffff';
       }
-      if (faultyHeight > 15) {
+      
+      if (faultyHeight > 12) {
+        // Label inside bar if there's space
         ctx.fillText(item.faulty.toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY + 12);
+      } else if (item.faulty > 0) {
+        // Label above bar if bar is too small
+        ctx.fillStyle = '#6c757d';
+        ctx.fillText(item.faulty.toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY - 5);
+        ctx.fillStyle = '#ffffff';
       }
     });
     
@@ -1567,5 +1620,269 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
 
   trackByWeeklyServiceCallId(index: number, item: PartsReturnDataByWeekNoItem): string {
     return item.serviceCallId;
+  }
+
+  // Parts Received by Warehouse Chart methods
+  loadPartsReceivedByWarehouseChart(): void {
+    this.isLoadingReceivedChart = true;
+    this.receivedChartErrorMessage = '';
+    const currentYear = this.partReturnFilterForm.get('year')?.value || new Date().getFullYear();
+
+    this._reportService.getPartsReceivedByWHChart(currentYear).subscribe({
+      next: (response: PartsReceivedByWHApiResponseDto) => {
+        this.isLoadingReceivedChart = false;
+        
+        if (response.success && response.data) {
+          this.receivedChartData = response.data.chartData || [];
+          
+          // Calculate totals from the chart data
+          const totalJobs = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0), 0);
+          const totalFaulty = this.receivedChartData.reduce((sum, item) => sum + (item.faulty || 0), 0);
+          
+          this.receivedChartTotals = {
+            unUsedR: 0,
+            faultyR: 0,
+            unUsedReceived: totalJobs,
+            faultyReceived: totalFaulty
+          };
+          
+          this.showReceivedChart = this.receivedChartData.length > 0;
+          
+          // Render charts after data is loaded
+          setTimeout(() => this.renderReceivedCharts(), 100);
+        } else {
+          this.receivedChartErrorMessage = response.message || 'No received chart data available';
+          this.receivedChartData = [];
+          this.receivedChartTotals = { unUsedR: 0, faultyR: 0, unUsedReceived: 0, faultyReceived: 0 };
+          this.showReceivedChart = false;
+        }
+      },
+      error: (error) => {
+        this.isLoadingReceivedChart = false;
+        this.receivedChartErrorMessage = `Error loading received chart data: ${error.message}`;
+        this.loadMockReceivedChartData();
+      }
+    });
+  }
+
+  private loadMockReceivedChartData(): void {
+    // Mock received chart data for development/testing
+    this.receivedChartData = [
+      { name: 'January', jobsCount: 35, faulty: 8, unusedReceived: 25, faultyReceived: 6 },
+      { name: 'February', jobsCount: 28, faulty: 6, unusedReceived: 20, faultyReceived: 4 },
+      { name: 'March', jobsCount: 42, faulty: 12, unusedReceived: 32, faultyReceived: 8 },
+      { name: 'April', jobsCount: 31, faulty: 7, unusedReceived: 24, faultyReceived: 5 },
+      { name: 'May', jobsCount: 38, faulty: 9, unusedReceived: 28, faultyReceived: 7 },
+      { name: 'June', jobsCount: 45, faulty: 11, unusedReceived: 35, faultyReceived: 9 }
+    ];
+    this.receivedChartTotals = { unUsedR: 0, faultyR: 0, unUsedReceived: 164, faultyReceived: 39 };
+    this.showReceivedChart = true;
+    this.isLoadingReceivedChart = false;
+    
+    // Render charts after data is loaded
+    setTimeout(() => this.renderReceivedCharts(), 100);
+  }
+
+  setReceivedChartType(type: 'bar' | 'pie' | 'table'): void {
+    this.currentReceivedChartType = type;
+    if (type !== 'table') {
+      setTimeout(() => this.renderReceivedCharts(), 100);
+    }
+  }
+
+  renderReceivedCharts(): void {
+    if (this.currentReceivedChartType === 'bar') {
+      this.renderReceivedBarChart();
+    } else if (this.currentReceivedChartType === 'pie') {
+      this.renderReceivedPieChart();
+    }
+  }
+
+  private renderReceivedBarChart(): void {
+    if (!this.receivedBarChartCanvas?.nativeElement || this.receivedChartData.length === 0) return;
+    
+    const canvas = this.receivedBarChartCanvas.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const padding = 60;
+    const chartWidth = canvas.width - (padding * 2);
+    const chartHeight = canvas.height - (padding * 2);
+    const barWidth = chartWidth / (this.receivedChartData.length * 2);
+    const maxValue = Math.max(...this.receivedChartData.map(d => Math.max(d.jobsCount || 0, d.faulty || 0)));
+    
+    // Draw background
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw grid lines
+    ctx.strokeStyle = '#e9ecef';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight * i / 5);
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(canvas.width - padding, y);
+      ctx.stroke();
+      
+      // Y-axis labels
+      ctx.fillStyle = '#6c757d';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'right';
+      const value = Math.round(maxValue * (5 - i) / 5);
+      ctx.fillText(value.toString(), padding - 10, y + 4);
+    }
+    
+    // Draw bars
+    this.receivedChartData.forEach((item, index) => {
+      const x = padding + (index * 2 * barWidth) + (barWidth * 0.1);
+      
+      // Jobs count bar (green)
+      const jobsHeight = ((item.jobsCount || 0) / maxValue) * chartHeight;
+      const jobsY = padding + chartHeight - jobsHeight;
+      ctx.fillStyle = '#1bc5bd';
+      ctx.fillRect(x, jobsY, barWidth * 0.8, jobsHeight);
+      
+      // Faulty parts bar (orange)
+      const faultyHeight = ((item.faulty || 0) / maxValue) * chartHeight;
+      const faultyY = padding + chartHeight - faultyHeight;
+      ctx.fillStyle = '#ffa800';
+      ctx.fillRect(x + barWidth, faultyY, barWidth * 0.8, faultyHeight);
+      
+      // X-axis labels
+      ctx.fillStyle = '#6c757d';
+      ctx.font = '11px Arial';
+      ctx.textAlign = 'center';
+      const labelX = x + barWidth;
+      ctx.fillText(item.name, labelX, canvas.height - padding + 20);
+      
+      // Value labels on bars
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 10px Arial';
+      ctx.textAlign = 'center';
+      
+      // Always show labels, adjust position based on bar height
+      if (jobsHeight > 15) {
+        // Label inside bar if there's space
+        ctx.fillText((item.jobsCount || 0).toString(), x + (barWidth * 0.4), jobsY + 15);
+      } else if ((item.jobsCount || 0) > 0) {
+        // Label above bar if bar is too small
+        ctx.fillStyle = '#6c757d';
+        ctx.fillText((item.jobsCount || 0).toString(), x + (barWidth * 0.4), jobsY - 5);
+        ctx.fillStyle = '#ffffff';
+      }
+      
+      if (faultyHeight > 15) {
+        // Label inside bar if there's space
+        ctx.fillText((item.faulty || 0).toString(), x + barWidth + (barWidth * 0.4), faultyY + 15);
+      } else if ((item.faulty || 0) > 0) {
+        // Label above bar if bar is too small
+        ctx.fillStyle = '#6c757d';
+        ctx.fillText((item.faulty || 0).toString(), x + barWidth + (barWidth * 0.4), faultyY - 5);
+        ctx.fillStyle = '#ffffff';
+      }
+    });
+    
+    // Draw axes
+    ctx.strokeStyle = '#6c757d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, canvas.height - padding);
+    ctx.lineTo(canvas.width - padding, canvas.height - padding);
+    ctx.stroke();
+  }
+
+  private renderReceivedPieChart(): void {
+    if (!this.receivedPieChartCanvas?.nativeElement || this.receivedChartData.length === 0) return;
+    
+    const canvas = this.receivedPieChartCanvas.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(centerX, centerY) - 40;
+    
+    const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+    let currentAngle = -Math.PI / 2; // Start from top
+    
+    // Draw background circle
+    ctx.fillStyle = '#f8f9fa';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius + 10, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Draw pie slices
+    this.receivedChartData.forEach((item, index) => {
+      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+      const sliceAngle = (itemTotal / total) * 2 * Math.PI;
+      
+      // Draw slice
+      ctx.fillStyle = this.getChartColor(index);
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw slice border
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw percentage label
+      const percentage = Math.round((itemTotal / total) * 100);
+      if (percentage > 5) { // Only show label if slice is large enough
+        const labelAngle = currentAngle + sliceAngle / 2;
+        const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
+        const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${percentage}%`, labelX, labelY);
+      }
+      
+      currentAngle += sliceAngle;
+    });
+    
+    // Draw center circle
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 0.4, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Draw total in center
+    ctx.fillStyle = '#6c757d';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Total', centerX, centerY - 5);
+    ctx.fillText(total.toString(), centerX, centerY + 15);
+  }
+
+  // Helper methods for received chart
+  getTotalReceivedUnused(): number {
+    return this.receivedChartData.reduce((total, item) => total + (item.jobsCount || 0), 0);
+  }
+
+  getTotalReceivedFaulty(): number {
+    return this.receivedChartData.reduce((total, item) => total + (item.faulty || 0), 0);
+  }
+
+  getReceivedChartItemPercentage(item: any): number {
+    const totalReceived = this.getTotalReceivedUnused() + this.getTotalReceivedFaulty();
+    const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+    return totalReceived > 0 ? Math.round((itemTotal / totalReceived) * 100) : 0;
+  }
+
+  toggleReceivedChartVisibility(): void {
+    this.showReceivedChart = !this.showReceivedChart;
   }
 }
