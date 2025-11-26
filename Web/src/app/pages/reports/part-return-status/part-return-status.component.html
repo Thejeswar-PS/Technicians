@@ -1,1059 +1,1129 @@
-<!--begin::Content-->
-<div class="container-fluid" id="kt_content_container">
-  
-  <!--begin::Page title-->
-  <div class="page-title d-flex flex-column justify-content-center flex-wrap me-3">
-    <h1 class="page-heading d-flex text-dark fw-bold fs-3 flex-column justify-content-center my-0">
-      Parts Return Status Report
-    </h1>
-
+<!-- Parts Return Status Page -->
+<div class="container-fluid parts-request-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center parts-request-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
   </div>
-  <!--end::Page title-->
 
-  <!--begin::Charts Row-->
-  <div class="row g-5 mb-5">
-    <!--begin::Parts to be Received Chart Column-->
-    <div class="col-xl-4">
-      <!--begin::Parts to be Received Chart-->
-      <div class="card h-100 chart-section" *ngIf="showChart || isLoadingChart || chartErrorMessage">
-    <!--begin::Card header-->
-    <div class="card-header border-0 pt-5">
-      <h3 class="card-title align-items-start flex-column">
-        <span class="card-label fw-bold fs-3 mb-1">Parts to be Received by Warehouse</span>
-        <span class="text-muted fs-7">Monthly breakdown for {{ partReturnFilterForm.get('year')?.value }}</span>
-      </h3>
-
+  <!-- Header Section -->
+  <div class="parts-request-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary parts-request-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="parts-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-arrow-clockwise me-2"></i>
+        Parts Return Status Report
+      </h2>
+      <!-- Filter Information -->
+      <div class="text-dark mt-2" *ngIf="!isLoading">
+        <span class="fw-semibold">Filtered by: {{ partReturnFilterForm.get('inventoryUser')?.value }}</span>
+      </div>
     </div>
-    <!--end::Card header-->
+  </div>
 
-    <!--begin::Card body-->
-    <div class="card-body" *ngIf="showChart">
-      
-      <!--begin::Chart loading indicator-->
-      <div *ngIf="isLoadingChart" class="d-flex justify-content-center py-10 chart-loading">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading chart...</span>
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+
+    <!--begin::Charts Section with Tabs-->
+    <div class="card shadow-sm parts-main-card mb-4">
+      <!-- Charts Header -->
+      <div class="card-header border-0 py-4">
+        <div class="parts-filter-header">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-bar-chart me-2 text-primary"></i>
+                Parts Return Analytics
+                <span class="badge ms-2 bg-primary">
+                  Interactive Charts
+                </span>
+              </h5>
+              <small class="text-muted">Analyze parts return data with visual representations</small>
+            </div>
+          </div>
         </div>
       </div>
-      <!--end::Chart loading indicator-->
 
-      <!--begin::Chart error message-->
-      <div *ngIf="chartErrorMessage && !isLoadingChart" class="alert alert-warning d-flex align-items-center p-5 mb-10">
-        <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4">
-          <span class="path1"></span>
-          <span class="path2"></span>
-          <span class="path3"></span>
-        </i>
-        <div class="d-flex flex-column">
-          <h4 class="mb-1 text-warning">Chart Data Unavailable</h4>
-          <span>{{ chartErrorMessage }}</span>
+      <!--begin::Card body-->
+      <div class="card-body py-4">
+
+        <!--begin::Tabs Navigation-->
+        <div class="chart-tabs-wrapper mb-4">
+          <ul class="nav nav-tabs modern-tabs">
+            <li class="nav-item">
+              <a class="nav-link" 
+                 [class.active]="activeGraphTab === 'graph1'" 
+                 (click)="setActiveGraphTab('graph1')">
+                <i class="bi bi-bar-chart me-2"></i>
+                Parts to be Received
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" 
+                 [class.active]="activeGraphTab === 'graph2'" 
+                 (click)="setActiveGraphTab('graph2')">
+                <i class="bi bi-graph-up me-2"></i>
+                Weekly Parts Returned
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a class="nav-link" 
+                 [class.active]="activeGraphTab === 'graph3'" 
+                 (click)="setActiveGraphTab('graph3')">
+                <i class="bi bi-pie-chart me-2"></i>
+                Parts Received by Warehouse
+              </a>
+            </li>
+          </ul>
         </div>
-      </div>
-      <!--end::Chart error message-->
+        <!--end::Tabs Navigation-->
 
-      <!--begin::Chart content-->
-      <div *ngIf="!isLoadingChart && chartData.length > 0">
-        
-        <!--begin::Chart totals-->
-        <div class="row g-6 g-xl-9 mb-6 chart-totals">
-          <div class="col-lg-6 col-xxl-6">
-            <div class="card bg-light-primary border-primary">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-primary">
-                      <i class="ki-duotone ki-package fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                        <span class="path3"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <span class="fw-bold fs-6 text-gray-800">Total Unused Parts</span>
-                    <span class="fw-bold fs-3 text-primary">{{ chartTotals.unUsedTR }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-6 col-xxl-6">
-            <div class="card bg-light-danger border-danger">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-danger">
-                      <i class="ki-duotone ki-cross-circle fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <span class="fw-bold fs-6 text-gray-800">Total Faulty Parts</span>
-                    <span class="fw-bold fs-3 text-danger">{{ chartTotals.faultyTR }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!--end::Chart totals-->
+          <!--begin::Tab Content-->
+          <div class="tab-content">
 
-        <!--begin::Chart visualization-->
-        <div class="chart-container">
-          <!-- Chart Type Selector -->
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="text-gray-800 fw-bold mb-0">Data Visualization</h4>
-            <div class="btn-group" role="group">
-              <input type="radio" class="btn-check" name="chartType" id="barChart" checked (change)="setChartType('bar')">
-              <label class="btn btn-outline-primary btn-sm" for="barChart">
-                <i class="ki-duotone ki-chart-simple fs-3">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                  <span class="path3"></span>
-                  <span class="path4"></span>
-                </i>
-                Bar Chart
-              </label>
-              
-              <input type="radio" class="btn-check" name="chartType" id="pieChart" (change)="setChartType('pie')">
-              <label class="btn btn-outline-primary btn-sm" for="pieChart">
-                <i class="ki-duotone ki-chart-pie-simple fs-3">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                </i>
-                Pie Chart
-              </label>
-              
-              <input type="radio" class="btn-check" name="chartType" id="dataTable" (change)="setChartType('table')">
-              <label class="btn btn-outline-primary btn-sm" for="dataTable">
-                <i class="ki-duotone ki-row-horizontal fs-3">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                </i>
-                Table
-              </label>
-            </div>
-          </div>
+            <!--begin::Graph 1 Tab-->
+            <div class="tab-pane fade"
+                 [class.show]="activeGraphTab === 'graph1'"
+                 [class.active]="activeGraphTab === 'graph1'">
 
-          <!-- Bar Chart -->
-          <div *ngIf="currentChartType === 'bar'" class="chart-wrapper">
-            <div class="bar-chart">
-              <div class="chart-grid">
-                <canvas #barChartCanvas 
-                        class="chart-canvas" 
-                        width="800" 
-                        height="400">
-                </canvas>
-                <div class="chart-legend mt-4">
-                  <div class="d-flex justify-content-center flex-wrap gap-4">
-                    <div class="legend-item d-flex align-items-center">
-                      <div class="legend-color bg-primary me-2"></div>
-                      <span class="fs-7 text-muted">Jobs Count</span>
+              <div class="row g-5">
+                <div class="col-12">
+
+                  <!--begin::Graph Section-->
+                  <div class="chart-section" 
+                      *ngIf="showChart || isLoadingChart || chartErrorMessage">
+
+                    <!--begin::Card header-->
+                    <div class="card-header border-0 pt-5">
+                      <h3 class="card-title align-items-start flex-column">
+                        <span class="card-label fw-bold fs-3 mb-1">
+                          Parts to be Received by Warehouse
+                        </span>
+                        <span class="text-muted fs-7">
+                          Monthly breakdown for {{ partReturnFilterForm.get('year')?.value }}
+                        </span>
+                      </h3>
                     </div>
-                    <div class="legend-item d-flex align-items-center">
-                      <div class="legend-color bg-danger me-2"></div>
-                      <span class="fs-7 text-muted">Faulty Parts</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                    <!--end::Card header-->
 
-          <!-- Pie Chart -->
-          <div *ngIf="currentChartType === 'pie'" class="chart-wrapper">
-            <div class="pie-chart d-flex justify-content-center">
-              <div class="pie-container">
-                <canvas #pieChartCanvas 
-                        class="chart-canvas" 
-                        width="400" 
-                        height="400">
-                </canvas>
-                <div class="chart-legend mt-4">
-                  <div class="row">
-                    <div class="col-md-6" *ngFor="let item of chartData; let i = index">
-                      <div class="legend-item d-flex align-items-center mb-2">
-                        <div class="legend-color me-2" [style.background-color]="getChartColor(i)"></div>
-                        <span class="fs-7 text-gray-800 fw-semibold">{{ item.name }}</span>
-                        <span class="ms-auto fs-7 text-muted">({{ item.jobsCount }} jobs)</span>
+                    <!--begin::Card body-->
+                    <div class="card-body" *ngIf="showChart">
+
+                      <!-- Loading -->
+                      <div *ngIf="isLoadingChart" 
+                           class="d-flex justify-content-center py-10 chart-loading">
+                        <div class="spinner-border text-primary"></div>
                       </div>
+
+                      <!-- Error -->
+                      <div *ngIf="chartErrorMessage && !isLoadingChart"
+                           class="alert alert-warning d-flex align-items-center p-5 mb-10">
+                        <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
+                        <div class="d-flex flex-column">
+                          <h4 class="mb-1 text-warning">Chart Data Unavailable</h4>
+                          <span>{{ chartErrorMessage }}</span>
+                        </div>
+                      </div>
+
+                      <!-- Content -->
+                      <div *ngIf="!isLoadingChart && chartData.length > 0">
+
+                        <!-- Comprehensive Totals for Year {{ partReturnFilterForm.get('year')?.value }} -->
+                        <div class="parts-return-totals-section mb-6">
+                          <div class="totals-header mb-4">
+                            <h4 class="totals-title">
+                              <i class="bi bi-graph-up-arrow me-2"></i>
+                              Parts Return Summary for {{ partReturnFilterForm.get('year')?.value }}
+                            </h4>
+                            <p class="totals-subtitle">Complete breakdown of parts return status</p>
+                          </div>
+
+                          <div class="row g-4">
+                            <!-- UnUsed To Be Returned -->
+                            <div class="col-lg-3 col-md-6">
+                              <div class="totals-card unused-to-return">
+                                <div class="card-body">
+                                  <div class="totals-icon">
+                                    <i class="bi bi-clock-history"></i>
+                                  </div>
+                                  <div class="totals-content">
+                                    <h6 class="totals-label">UnUsed To Be Returned</h6>
+                                    <div class="totals-value">{{ chartTotals.unUsedTR || 0 }}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Faulty To Be Returned -->
+                            <div class="col-lg-3 col-md-6">
+                              <div class="totals-card faulty-to-return">
+                                <div class="card-body">
+                                  <div class="totals-icon">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                  </div>
+                                  <div class="totals-content">
+                                    <h6 class="totals-label">Faulty To Be Returned</h6>
+                                    <div class="totals-value">{{ chartTotals.faultyTR || 0 }}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- UnUsed Returned -->
+                            <div class="col-lg-3 col-md-6">
+                              <div class="totals-card unused-returned">
+                                <div class="card-body">
+                                  <div class="totals-icon">
+                                    <i class="bi bi-check-circle"></i>
+                                  </div>
+                                  <div class="totals-content">
+                                    <h6 class="totals-label">UnUsed Returned</h6>
+                                    <div class="totals-value">{{ getUnusedReturnedTotal() }}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Faulty Returned -->
+                            <div class="col-lg-3 col-md-6">
+                              <div class="totals-card faulty-returned">
+                                <div class="card-body">
+                                  <div class="totals-icon">
+                                    <i class="bi bi-x-circle"></i>
+                                  </div>
+                                  <div class="totals-content">
+                                    <h6 class="totals-label">Faulty Returned</h6>
+                                    <div class="totals-value">{{ getFaultyReturnedTotal() }}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Additional Summary Stats -->
+                          <div class="row g-4 mt-3">
+                            <div class="col-lg-6">
+                              <div class="summary-stat">
+                                <span class="stat-label">Total Pending Returns:</span>
+                                <span class="stat-value pending">{{ (chartTotals.unUsedTR || 0) + (chartTotals.faultyTR || 0) }}</span>
+                              </div>
+                            </div>
+                            <div class="col-lg-6">
+                              <div class="summary-stat">
+                                <span class="stat-label">Total Completed Returns:</span>
+                                <span class="stat-value completed">{{ getUnusedReturnedTotal() + getFaultyReturnedTotal() }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--end::Totals-->
+
+                        <!-- Chart Selection + Charts -->
+                        <div class="chart-container">
+
+                          <!-- Chart Type Selector -->
+                          <div class="chart-selector-section">
+                            <h4 class="chart-selector-title">Data Visualization</h4>
+
+                            <div class="chart-type-controls">
+                              <input type="radio" class="btn-check" 
+                                     name="chartType" id="barChart"
+                                     checked (change)="setChartType('bar')">
+                              <label class="chart-type-btn" for="barChart">
+                                <i class="bi bi-bar-chart"></i>
+                                Bar Chart
+                              </label>
+
+                              <input type="radio" class="btn-check" 
+                                     name="chartType" id="pieChart"
+                                     (change)="setChartType('pie')">
+                              <label class="chart-type-btn" for="pieChart">
+                                <i class="bi bi-pie-chart"></i>
+                                Pie Chart
+                              </label>
+
+                              <input type="radio" class="btn-check" 
+                                     name="chartType" id="dataTable"
+                                     (change)="setChartType('table')">
+                              <label class="chart-type-btn" for="dataTable">
+                                <i class="bi bi-table"></i>
+                                Table
+                              </label>
+                            </div>
+                          </div>
+
+                          <!-- Bar Chart -->
+                          <div *ngIf="currentChartType === 'bar'" class="chart-wrapper">
+                            <canvas #barChartCanvas class="chart-canvas" width="800" height="400"></canvas>
+                          </div>
+
+                          <!-- Pie Chart -->
+                          <div *ngIf="currentChartType === 'pie'" class="chart-wrapper d-flex justify-content-center">
+                            <canvas #pieChartCanvas class="chart-canvas" width="400" height="400"></canvas>
+                          </div>
+
+                          <!-- Data Table -->
+                          <div *ngIf="currentChartType === 'table'" class="table-responsive chart-table">
+                            <table class="table table-rounded table-striped border gy-7 gs-7">
+                              <thead>
+                                <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
+                                  <th>Period</th>
+                                  <th class="text-center">Jobs Count</th>
+                                  <th class="text-center">Faulty Parts</th>
+                                  <th class="text-center">Job %</th>
+                                  <th>Progress Bar</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr *ngFor="let item of chartData" class="align-middle">
+                                  <td>{{ item.name }}</td>
+                                  <td class="text-center">
+                                    <span class="badge badge-light-primary">{{ item.jobsCount }}</span>
+                                  </td>
+                                  <td class="text-center">
+                                    <span class="badge badge-light-danger">{{ item.faulty }}</span>
+                                  </td>
+                                  <td class="text-center">
+                                    {{ getChartItemPercentage(item) }}%
+                                  </td>
+                                  <td>
+                                    <div class="progress h-6px w-100">
+                                      <div class="progress-bar bg-primary"
+                                           [style.width.%]="getChartItemPercentage(item)">
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                        </div>
+                        <!--end::Chart Container-->
+
+                      </div>
+                      <!--end::Content-->
+
                     </div>
+                    <!--end::Card body-->
+
                   </div>
+                  <!--end::Graph Section-->
+
                 </div>
               </div>
+
             </div>
-          </div>
+            <!--end::Graph 1 Tab-->
+<!--begin::Graph 2 Tab-->
+<div class="tab-pane fade"
+     [class.show]="activeGraphTab === 'graph2'"
+     [class.active]="activeGraphTab === 'graph2'">
 
-          <!-- Data Table -->
-          <div *ngIf="currentChartType === 'table'" class="table-responsive chart-table">
-            <table class="table table-rounded table-striped border gy-7 gs-7">
-              <thead>
-                <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                  <th class="min-w-200px">Period</th>
-                  <th class="min-w-100px text-center">Jobs Count</th>
-                  <th class="min-w-100px text-center">Faulty Parts</th>
-                  <th class="min-w-100px text-center">Job %</th>
-                  <th class="min-w-200px">Progress Bar</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of chartData" class="align-middle">
-                  <td>
-                    <span class="text-gray-800 fw-bold d-block fs-6">{{ item.name }}</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge badge-light-primary fs-7 fw-semibold">{{ item.jobsCount }}</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge badge-light-danger fs-7 fw-semibold" 
-                          [class.badge-danger]="item.faulty > 0">
-                      {{ item.faulty }}
-                    </span>
-                  </td>
-                  <td class="text-center">
-                    <span class="text-muted fw-semibold">{{ getChartItemPercentage(item) }}%</span>
-                  </td>
-                  <td>
-                    <div class="progress h-6px w-100">
-                      <div class="progress-bar bg-primary" 
-                           role="progressbar" 
-                           [style.width.%]="getChartItemPercentage(item)"
-                           [attr.aria-valuenow]="item.jobsCount"
-                           [attr.aria-valuemin]="0"
-                           [attr.aria-valuemax]="getTotalChartJobs()">
-                      </div>
-                    </div>
-                    <div class="d-flex justify-content-between mt-2">
-                      <span class="fs-8 text-muted">{{ item.jobsCount }} jobs</span>
-                      <span class="fs-8 text-danger" *ngIf="item.faulty > 0">{{ item.faulty }} faulty</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <!--end::Chart visualization-->
+  <div class="row g-5">
+    <div class="col-12">
 
-      </div>
-      <!--end::Chart content-->
+      <!--begin::Weekly Chart Section-->
+      <div class="chart-section"
+           *ngIf="showWeeklyChart || isLoadingWeeklyChart || weeklyChartErrorMessage">
 
-      </div>
-      <!--end::Card body-->
-      </div>
-      <!--end::Parts to be Received Chart-->
-    </div>
-    <!--end::Parts to be Received Chart Column-->
-
-    <!--begin::Weekly Parts Returned Count Chart Column-->
-    <div class="col-xl-4">
-      <!--begin::Weekly Parts Returned Count Chart-->
-        <div class="card h-100 chart-section" *ngIf="showWeeklyChart || isLoadingWeeklyChart || weeklyChartErrorMessage">
         <!--begin::Card header-->
-    <div class="card-header border-0 pt-5">
-      <h3 class="card-title align-items-start flex-column">
-        <span class="card-label fw-bold fs-3 mb-1">Weekly Parts Returned Count</span>
-        <span class="text-muted fs-7">Weekly breakdown of unused and faulty parts returned</span>
-      </h3>
-    </div>
-    <!--end::Card header-->
-
-    <!--begin::Card body-->
-    <div class="card-body" *ngIf="showWeeklyChart">
-      
-      <!--begin::Chart loading indicator-->
-      <div *ngIf="isLoadingWeeklyChart" class="d-flex justify-content-center py-10 chart-loading">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading weekly chart...</span>
+        <div class="card-header border-0 pt-5">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="card-label fw-bold fs-3 mb-1">
+              Weekly Parts Returned Count
+            </span>
+            <span class="text-muted fs-7">
+              Weekly breakdown of unused and faulty parts returned
+            </span>
+          </h3>
         </div>
-      </div>
-      <!--end::Chart loading indicator-->
+        <!--end::Card header-->
 
-      <!--begin::Chart error message-->
-      <div *ngIf="weeklyChartErrorMessage && !isLoadingWeeklyChart" class="alert alert-warning d-flex align-items-center p-5 mb-10">
-        <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4">
-          <span class="path1"></span>
-          <span class="path2"></span>
-          <span class="path3"></span>
-        </i>
-        <div class="d-flex flex-column">
-          <h4 class="mb-1 text-warning">Weekly Chart Data Unavailable</h4>
-          <span>{{ weeklyChartErrorMessage }}</span>
+        <!--begin::Card body-->
+        <div class="card-body" *ngIf="showWeeklyChart">
+
+          <!--begin::Loading-->
+          <div *ngIf="isLoadingWeeklyChart"
+               class="d-flex justify-content-center py-10 chart-loading">
+            <div class="spinner-border text-primary"></div>
+          </div>
+          <!--end::Loading-->
+
+          <!--begin::Error-->
+          <div *ngIf="weeklyChartErrorMessage && !isLoadingWeeklyChart"
+               class="alert alert-warning d-flex align-items-center p-5 mb-10">
+            <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
+            <div class="d-flex flex-column">
+              <h4 class="mb-1 text-warning">Weekly Chart Data Unavailable</h4>
+              <span>{{ weeklyChartErrorMessage }}</span>
+            </div>
+          </div>
+          <!--end::Error-->
+
+          <!--begin::Chart Content-->
+          <div *ngIf="!isLoadingWeeklyChart && weeklyPartsData.length > 0">
+
+            <!--begin::Totals-->
+            <div class="row g-6 g-xl-9 mb-6 chart-totals">
+
+              <!-- Total Unused -->
+              <div class="col-lg-4 col-xxl-4">
+                <div class="card bg-light-primary border-primary">
+                  <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-40px me-3">
+                      <span class="symbol-label bg-primary">
+                        <i class="ki-duotone ki-package fs-2 text-white"></i>
+                      </span>
+                    </div>
+                    <div class="d-flex flex-column">
+                      <span class="fw-bold fs-6 text-gray-800">Total Unused</span>
+                      <span class="fw-bold fs-3 text-primary">
+                        {{ getTotalWeeklyUnused() }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total Faulty -->
+              <div class="col-lg-4 col-xxl-4">
+                <div class="card bg-light-danger border-danger">
+                  <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-40px me-3">
+                      <span class="symbol-label bg-danger">
+                        <i class="ki-duotone ki-cross-circle fs-2 text-white"></i>
+                      </span>
+                    </div>
+                    <div class="d-flex flex-column">
+                      <span class="fw-bold fs-6 text-gray-800">Total Faulty</span>
+                      <span class="fw-bold fs-3 text-danger">
+                        {{ getTotalWeeklyFaulty() }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Total Returned -->
+              <div class="col-lg-4 col-xxl-4">
+                <div class="card bg-light-success border-success">
+                  <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-40px me-3">
+                      <span class="symbol-label bg-success">
+                        <i class="ki-duotone ki-abstract-27 fs-2 text-white"></i>
+                      </span>
+                    </div>
+                    <div class="d-flex flex-column">
+                      <span class="fw-bold fs-6 text-gray-800">Total Returned</span>
+                      <span class="fw-bold fs-3 text-success">
+                        {{ getTotalWeeklyParts() }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <!--end::Totals-->
+
+            <!--begin::Chart Container-->
+            <div class="chart-container">
+
+              <!--begin::Chart Selector-->
+              <div class="chart-selector-section">
+                <h4 class="chart-selector-title">Weekly Parts Data Visualization</h4>
+
+                <div class="chart-type-controls">
+
+                  <!-- Bar -->
+                  <input type="radio" class="btn-check"
+                         name="weeklyChartType" id="weeklyBarChart"
+                         checked (change)="setWeeklyChartType('bar')">
+                  <label class="chart-type-btn" for="weeklyBarChart">
+                    <i class="bi bi-bar-chart"></i>
+                    Bar Chart
+                  </label>
+
+                  <!-- Line -->
+                  <input type="radio" class="btn-check"
+                         name="weeklyChartType" id="weeklyLineChart"
+                         (change)="setWeeklyChartType('line')">
+                  <label class="chart-type-btn" for="weeklyLineChart">
+                    <i class="bi bi-graph-up"></i>
+                    Line Chart
+                  </label>
+
+                  <!-- Table -->
+                  <input type="radio" class="btn-check"
+                         name="weeklyChartType" id="weeklyDataTable"
+                         (change)="setWeeklyChartType('table')">
+                  <label class="chart-type-btn" for="weeklyDataTable">
+                    <i class="bi bi-table"></i>
+                    Table
+                  </label>
+
+                </div>
+              </div>
+              <!--end::Chart Selector-->
+
+              <!--begin::Bar Chart-->
+              <div *ngIf="currentWeeklyChartType === 'bar'" class="chart-wrapper">
+                <canvas #weeklyBarChartCanvas class="chart-canvas" width="800" height="400"></canvas>
+              </div>
+              <!--end::Bar Chart-->
+
+              <!--begin::Line Chart-->
+              <div *ngIf="currentWeeklyChartType === 'line'" class="chart-wrapper">
+                <canvas #weeklyLineChartCanvas class="chart-canvas" width="800" height="400"></canvas>
+              </div>
+              <!--end::Line Chart-->
+
+              <!--begin::Data Table-->
+              <div *ngIf="currentWeeklyChartType === 'table'"
+                   class="table-responsive chart-table">
+
+                <table class="table table-rounded table-striped border gy-7 gs-7">
+
+                  <thead>
+                    <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
+                      <th>Week End</th>
+                      <th class="text-center">Week No</th>
+                      <th class="text-center">Unused Parts</th>
+                      <th class="text-center">Faulty Parts</th>
+                      <th class="text-center">Total</th>
+                      <th class="text-center">Week %</th>
+                      <th>Progress Bar</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr *ngFor="let item of weeklyPartsData" class="align-middle">
+
+                      <td>{{ item.wkEnd }}</td>
+
+                      <td class="text-center">
+                        <span class="badge badge-light-info">{{ item.weekNo }}</span>
+                      </td>
+
+                      <td class="text-center">
+                        <span class="badge badge-light-primary">{{ item.unUsed }}</span>
+                      </td>
+
+                      <td class="text-center">
+                        <span class="badge badge-light-danger">{{ item.faulty }}</span>
+                      </td>
+
+                      <td class="text-center">
+                        <span class="badge badge-light-success">
+                          {{ item.unUsed + item.faulty }}
+                        </span>
+                      </td>
+
+                      <td class="text-center">
+                        {{ getWeeklyItemPercentage(item) }}%
+                      </td>
+
+                      <td>
+                        <div class="progress h-6px w-100">
+                          <div class="progress-bar bg-primary"
+                               [style.width.%]="(item.unUsed / getTotalWeeklyUnused()) * 100">
+                          </div>
+                        </div>
+                      </td>
+
+                    </tr>
+                  </tbody>
+
+                </table>
+
+              </div>
+              <!--end::Data Table-->
+
+            </div>
+            <!--end::Chart Container-->
+
+          </div>
+          <!--end::Chart Content-->
+
         </div>
-      </div>
-      <!--end::Chart error message-->
-
-      <!--begin::Chart content-->
-      <div *ngIf="!isLoadingWeeklyChart && weeklyPartsData.length > 0">
-        
-        <!--begin::Chart totals-->
-        <div class="row g-6 g-xl-9 mb-6 chart-totals">
-          <div class="col-lg-4 col-xxl-4">
-            <div class="card bg-light-primary border-primary">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-primary">
-                      <i class="ki-duotone ki-package fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                        <span class="path3"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <span class="fw-bold fs-6 text-gray-800">Total Unused</span>
-                    <span class="fw-bold fs-3 text-primary">{{ getTotalWeeklyUnused() }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-4 col-xxl-4">
-            <div class="card bg-light-danger border-danger">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-danger">
-                      <i class="ki-duotone ki-cross-circle fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <span class="fw-bold fs-6 text-gray-800">Total Faulty</span>
-                    <span class="fw-bold fs-3 text-danger">{{ getTotalWeeklyFaulty() }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-lg-4 col-xxl-4">
-            <div class="card bg-light-success border-success">
-              <div class="card-body">
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-40px me-3">
-                    <span class="symbol-label bg-success">
-                      <i class="ki-duotone ki-abstract-27 fs-2 text-white">
-                        <span class="path1"></span>
-                        <span class="path2"></span>
-                      </i>
-                    </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <span class="fw-bold fs-6 text-gray-800">Total Returned</span>
-                    <span class="fw-bold fs-3 text-success">{{ getTotalWeeklyParts() }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!--end::Chart totals-->
-
-        <!--begin::Chart visualization-->
-        <div class="chart-container">
-          <!-- Chart Type Selector -->
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="text-gray-800 fw-bold mb-0">Weekly Parts Data Visualization</h4>
-            <div class="btn-group" role="group">
-              <input type="radio" class="btn-check" name="weeklyChartType" id="weeklyBarChart" checked (change)="setWeeklyChartType('bar')">
-              <label class="btn btn-outline-primary btn-sm" for="weeklyBarChart">
-                <i class="ki-duotone ki-chart-simple fs-3">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                  <span class="path3"></span>
-                  <span class="path4"></span>
-                </i>
-                Bar Chart
-              </label>
-              
-              <input type="radio" class="btn-check" name="weeklyChartType" id="weeklyLineChart" (change)="setWeeklyChartType('line')">
-              <label class="btn btn-outline-primary btn-sm" for="weeklyLineChart">
-                <i class="ki-duotone ki-chart-line-up fs-3">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                </i>
-                Line Chart
-              </label>
-              
-              <input type="radio" class="btn-check" name="weeklyChartType" id="weeklyDataTable" (change)="setWeeklyChartType('table')">
-              <label class="btn btn-outline-primary btn-sm" for="weeklyDataTable">
-                <i class="ki-duotone ki-row-horizontal fs-3">
-                  <span class="path1"></span>
-                  <span class="path2"></span>
-                </i>
-                Table
-              </label>
-            </div>
-          </div>
-
-          <!-- Bar Chart -->
-          <div *ngIf="currentWeeklyChartType === 'bar'" class="chart-wrapper">
-            <div class="bar-chart">
-              <div class="chart-grid">
-                <canvas #weeklyBarChartCanvas 
-                        class="chart-canvas" 
-                        width="800" 
-                        height="400">
-                </canvas>
-                <div class="chart-legend mt-4">
-                  <div class="d-flex justify-content-center flex-wrap gap-4">
-                    <div class="legend-item d-flex align-items-center">
-                      <div class="legend-color bg-primary me-2"></div>
-                      <span class="fs-7 text-muted">Unused Parts</span>
-                    </div>
-                    <div class="legend-item d-flex align-items-center">
-                      <div class="legend-color bg-danger me-2"></div>
-                      <span class="fs-7 text-muted">Faulty Parts</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Line Chart -->
-          <div *ngIf="currentWeeklyChartType === 'line'" class="chart-wrapper">
-            <div class="line-chart d-flex justify-content-center">
-              <div class="line-container">
-                <canvas #weeklyLineChartCanvas 
-                        class="chart-canvas" 
-                        width="800" 
-                        height="400">
-                </canvas>
-                <div class="chart-legend mt-4">
-                  <div class="d-flex justify-content-center flex-wrap gap-4">
-                    <div class="legend-item d-flex align-items-center">
-                      <div class="legend-color bg-primary me-2"></div>
-                      <span class="fs-7 text-muted">Unused Parts Trend</span>
-                    </div>
-                    <div class="legend-item d-flex align-items-center">
-                      <div class="legend-color bg-danger me-2"></div>
-                      <span class="fs-7 text-muted">Faulty Parts Trend</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Data Table -->
-          <div *ngIf="currentWeeklyChartType === 'table'" class="table-responsive chart-table">
-            <table class="table table-rounded table-striped border gy-7 gs-7">
-              <thead>
-                <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                  <th class="min-w-100px">Week End</th>
-                  <th class="min-w-80px text-center">Week No</th>
-                  <th class="min-w-100px text-center">Unused Parts</th>
-                  <th class="min-w-100px text-center">Faulty Parts</th>
-                  <th class="min-w-100px text-center">Total</th>
-                  <th class="min-w-100px text-center">Week %</th>
-                  <th class="min-w-200px">Progress Bar</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of weeklyPartsData" class="align-middle">
-                  <td>
-                    <span class="text-gray-800 fw-bold d-block fs-6">{{ item.wkEnd }}</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge badge-light-info fs-7 fw-semibold">{{ item.weekNo }}</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge badge-light-primary fs-7 fw-semibold">{{ item.unUsed }}</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge badge-light-danger fs-7 fw-semibold" 
-                          [class.badge-danger]="item.faulty > 0">
-                      {{ item.faulty }}
-                    </span>
-                  </td>
-                  <td class="text-center">
-                    <span class="badge badge-light-success fs-7 fw-semibold">{{ item.unUsed + item.faulty }}</span>
-                  </td>
-                  <td class="text-center">
-                    <span class="text-muted fw-semibold">{{ getWeeklyItemPercentage(item) }}%</span>
-                  </td>
-                  <td>
-                    <div class="progress h-6px w-100">
-                      <div class="progress-bar bg-primary" 
-                           role="progressbar" 
-                           [style.width.%]="(item.unUsed / getTotalWeeklyUnused()) * 100"
-                           [attr.aria-valuenow]="item.unUsed"
-                           [attr.aria-valuemin]="0"
-                           [attr.aria-valuemax]="getTotalWeeklyUnused()">
-                      </div>
-                    </div>
-                    <div class="d-flex justify-content-between mt-2">
-                      <span class="fs-8 text-muted">{{ item.unUsed }} unused</span>
-                      <span class="fs-8 text-danger" *ngIf="item.faulty > 0">{{ item.faulty }} faulty</span>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <!--end::Chart visualization-->
+        <!--end::Card body-->
 
       </div>
-      <!--end::Chart content-->
+      <!--end::Weekly Chart Section-->
 
     </div>
-    <!--end::Card body-->
-      </div>
-      <!--end::Weekly Parts Returned Count Chart-->
-    </div>
-    <!--end::Weekly Parts Returned Count Chart Column-->
+  </div>
 
-    <!--begin::Parts Received by Warehouse Chart Column-->
-    <div class="col-xl-4">
-      <!--begin::Parts Received by Warehouse Chart-->
-      <div class="card h-100 chart-section" *ngIf="showReceivedChart || isLoadingReceivedChart || receivedChartErrorMessage">
+</div>
+<!--end::Graph 2 Tab-->
+<!--begin::Graph 3 Tab-->
+<div class="tab-pane fade"
+     [class.show]="activeGraphTab === 'graph3'"
+     [class.active]="activeGraphTab === 'graph3'">
+
+  <div class="row g-5">
+    <div class="col-12">
+
+      <!--begin::Received Chart Section-->
+      <div class="chart-section"
+           *ngIf="showReceivedChart || isLoadingReceivedChart || receivedChartErrorMessage">
+
         <!--begin::Card header-->
         <div class="card-header border-0 pt-5">
           <h3 class="card-title align-items-start flex-column">
             <span class="card-label fw-bold fs-3 mb-1">Parts Received by Warehouse</span>
-            <span class="text-muted fs-7">Monthly breakdown of received parts for {{ partReturnFilterForm.get('year')?.value }}</span>
+            <span class="text-muted fs-7">
+              Monthly breakdown of received parts for {{ partReturnFilterForm.get('year')?.value }}
+            </span>
           </h3>
         </div>
         <!--end::Card header-->
 
         <!--begin::Card body-->
         <div class="card-body" *ngIf="showReceivedChart">
-          
-          <!--begin::Chart loading indicator-->
-          <div *ngIf="isLoadingReceivedChart" class="d-flex justify-content-center py-10 chart-loading">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading received chart...</span>
-            </div>
-          </div>
-          <!--end::Chart loading indicator-->
 
-          <!--begin::Chart error message-->
-          <div *ngIf="receivedChartErrorMessage && !isLoadingReceivedChart" class="alert alert-warning d-flex align-items-center p-5 mb-10">
-            <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4">
-              <span class="path1"></span>
-              <span class="path2"></span>
-              <span class="path3"></span>
-            </i>
+          <!--begin::Loading-->
+          <div *ngIf="isLoadingReceivedChart"
+               class="d-flex justify-content-center py-10 chart-loading">
+            <div class="spinner-border text-primary"></div>
+          </div>
+          <!--end::Loading-->
+
+          <!--begin::Error Message-->
+          <div *ngIf="receivedChartErrorMessage && !isLoadingReceivedChart"
+               class="alert alert-warning d-flex align-items-center p-5 mb-10">
+            <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
             <div class="d-flex flex-column">
               <h4 class="mb-1 text-warning">Chart Data Unavailable</h4>
               <span>{{ receivedChartErrorMessage }}</span>
             </div>
           </div>
-          <!--end::Chart error message-->
+          <!--end::Error Message-->
 
-          <!--begin::Chart content-->
+          <!--begin::Chart Content-->
           <div *ngIf="!isLoadingReceivedChart && receivedChartData.length > 0">
-            
-            <!--begin::Chart totals-->
+
+            <!--begin::Totals-->
             <div class="row g-6 g-xl-9 mb-6 chart-totals">
+
+              <!-- Total Jobs Count -->
               <div class="col-lg-6 col-xxl-6">
                 <div class="card bg-light-success border-success">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center">
-                      <div class="symbol symbol-40px me-3">
-                        <span class="symbol-label bg-success">
-                          <i class="ki-duotone ki-check-circle fs-2 text-white">
-                            <span class="path1"></span>
-                            <span class="path2"></span>
-                          </i>
-                        </span>
-                      </div>
-                      <div class="d-flex flex-column">
-                        <span class="fw-bold fs-6 text-gray-800">Total Jobs Count</span>
-                        <span class="fw-bold fs-3 text-success">{{ receivedChartTotals.unUsedReceived }}</span>
-                      </div>
+                  <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-40px me-3">
+                      <span class="symbol-label bg-success">
+                        <i class="ki-duotone ki-check-circle fs-2 text-white"></i>
+                      </span>
+                    </div>
+                    <div class="d-flex flex-column">
+                      <span class="fw-bold fs-6 text-gray-800">Total Jobs Count</span>
+                      <span class="fw-bold fs-3 text-success">
+                        {{ receivedChartTotals.unUsedReceived }}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <!-- Total Faulty Parts -->
               <div class="col-lg-6 col-xxl-6">
                 <div class="card bg-light-warning border-warning">
-                  <div class="card-body">
-                    <div class="d-flex align-items-center">
-                      <div class="symbol symbol-40px me-3">
-                        <span class="symbol-label bg-warning">
-                          <i class="ki-duotone ki-information fs-2 text-white">
-                            <span class="path1"></span>
-                            <span class="path2"></span>
-                            <span class="path3"></span>
-                          </i>
-                        </span>
-                      </div>
-                      <div class="d-flex flex-column">
-                        <span class="fw-bold fs-6 text-gray-800">Total Faulty Parts</span>
-                        <span class="fw-bold fs-3 text-warning">{{ receivedChartTotals.faultyReceived }}</span>
-                      </div>
+                  <div class="card-body d-flex align-items-center">
+                    <div class="symbol symbol-40px me-3">
+                      <span class="symbol-label bg-warning">
+                        <i class="ki-duotone ki-information fs-2 text-white"></i>
+                      </span>
+                    </div>
+                    <div class="d-flex flex-column">
+                      <span class="fw-bold fs-6 text-gray-800">Total Faulty Parts</span>
+                      <span class="fw-bold fs-3 text-warning">
+                        {{ receivedChartTotals.faultyReceived }}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <!--end::Chart totals-->
 
-            <!--begin::Chart visualization-->
+            </div>
+            <!--end::Totals-->
+
+            <!--begin::Chart Container-->
             <div class="chart-container">
-              <!-- Chart Type Selector -->
-              <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="text-gray-800 fw-bold mb-0">Data Visualization</h4>
-                <div class="btn-group" role="group">
-                  <input type="radio" class="btn-check" name="receivedChartType" id="receivedBarChart" checked (change)="setReceivedChartType('bar')">
-                  <label class="btn btn-outline-primary btn-sm" for="receivedBarChart">
-                    <i class="ki-duotone ki-chart-simple fs-3">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                      <span class="path3"></span>
-                      <span class="path4"></span>
-                    </i>
+
+              <!--begin::Chart Selector-->
+              <div class="chart-selector-section">
+                <h4 class="chart-selector-title">Data Visualization</h4>
+
+                <div class="chart-type-controls">
+
+                  <!-- Bar -->
+                  <input type="radio" class="btn-check"
+                         name="receivedChartType" id="receivedBarChart"
+                         checked (change)="setReceivedChartType('bar')">
+                  <label class="chart-type-btn" for="receivedBarChart">
+                    <i class="bi bi-bar-chart"></i>
                     Bar Chart
                   </label>
-                  
-                  <input type="radio" class="btn-check" name="receivedChartType" id="receivedPieChart" (change)="setReceivedChartType('pie')">
-                  <label class="btn btn-outline-primary btn-sm" for="receivedPieChart">
-                    <i class="ki-duotone ki-chart-pie-simple fs-3">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                    </i>
+
+                  <!-- Pie -->
+                  <input type="radio" class="btn-check"
+                         name="receivedChartType" id="receivedPieChart"
+                         (change)="setReceivedChartType('pie')">
+                  <label class="chart-type-btn" for="receivedPieChart">
+                    <i class="bi bi-pie-chart"></i>
                     Pie Chart
                   </label>
-                  
-                  <input type="radio" class="btn-check" name="receivedChartType" id="receivedDataTable" (change)="setReceivedChartType('table')">
-                  <label class="btn btn-outline-primary btn-sm" for="receivedDataTable">
-                    <i class="ki-duotone ki-row-horizontal fs-3">
-                      <span class="path1"></span>
-                      <span class="path2"></span>
-                    </i>
+
+                  <!-- Table -->
+                  <input type="radio" class="btn-check"
+                         name="receivedChartType" id="receivedDataTable"
+                         (change)="setReceivedChartType('table')">
+                  <label class="chart-type-btn" for="receivedDataTable">
+                    <i class="bi bi-table"></i>
                     Table
                   </label>
+
                 </div>
               </div>
+              <!--end::Chart Selector-->
 
-              <!-- Bar Chart -->
+              <!--begin::Bar Chart-->
               <div *ngIf="currentReceivedChartType === 'bar'" class="chart-wrapper">
-                <div class="bar-chart">
-                  <div class="chart-grid">
-                    <canvas #receivedBarChartCanvas 
-                            class="chart-canvas" 
-                            width="800" 
-                            height="400">
-                    </canvas>
-                    <div class="chart-legend mt-4">
-                      <div class="d-flex justify-content-center flex-wrap gap-4">
-                        <div class="d-flex align-items-center">
-                          <div class="w-15px h-15px rounded-1 me-2" style="background-color: #1bc5bd;"></div>
-                          <span class="fs-7 text-muted">Jobs Count</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                          <div class="w-15px h-15px rounded-1 me-2" style="background-color: #ffa800;"></div>
-                          <span class="fs-7 text-muted">Faulty Parts</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <canvas #receivedBarChartCanvas
+                        class="chart-canvas"
+                        width="800" height="400">
+                </canvas>
               </div>
+              <!--end::Bar Chart-->
 
-              <!-- Pie Chart -->
-              <div *ngIf="currentReceivedChartType === 'pie'" class="chart-wrapper">
-                <div class="pie-chart">
-                  <div class="chart-grid">
-                    <canvas #receivedPieChartCanvas 
-                            class="chart-canvas" 
-                            width="400" 
-                            height="400">
-                    </canvas>
-                    <div class="chart-legend mt-4">
-                      <div class="d-flex justify-content-center flex-wrap gap-4">
-                        <div *ngFor="let item of receivedChartData; let i = index" class="d-flex align-items-center">
-                          <div class="w-15px h-15px rounded-1 me-2" [style.background-color]="getChartColor(i)"></div>
-                          <span class="fs-7 text-muted">{{ item.name }} ({{ getReceivedChartItemPercentage(item) }}%)</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!--begin::Pie Chart-->
+              <div *ngIf="currentReceivedChartType === 'pie'" class="chart-wrapper d-flex justify-content-center">
+                <canvas #receivedPieChartCanvas
+                        class="chart-canvas"
+                        width="400" height="400">
+                </canvas>
               </div>
+              <!--end::Pie Chart-->
 
-              <!-- Data Table -->
-              <div *ngIf="currentReceivedChartType === 'table'" class="chart-wrapper">
-                <div class="table-responsive">
-                  <table class="table table-hover border-0">
-                    <thead class="bg-light">
-                      <tr class="fw-bold fs-6 text-gray-800">
-                        <th class="min-w-150px">Month</th>
-                        <th class="min-w-100px text-center">Jobs Count</th>
-                        <th class="min-w-100px text-center">Faulty Parts</th>
-                        <th class="min-w-100px text-center">Total</th>
-                        <th class="min-w-100px text-center">Percentage</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let item of receivedChartData; let i = index">
-                        <td class="fw-bold text-gray-800">{{ item.name }}</td>
-                        <td class="text-center text-success fw-semibold">{{ item.jobsCount || 0 }}</td>
-                        <td class="text-center text-warning fw-semibold">{{ item.faulty || 0 }}</td>
-                        <td class="text-center fw-bold">{{ (item.jobsCount || 0) + (item.faulty || 0) }}</td>
-                        <td class="text-center">
-                          <span class="badge badge-light-primary">{{ getReceivedChartItemPercentage(item) }}%</span>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+              <!--begin::Data Table-->
+              <div *ngIf="currentReceivedChartType === 'table'" class="table-responsive">
+                <table class="table table-hover border-0">
+                  <thead class="bg-light">
+                    <tr class="fw-bold fs-6 text-gray-800">
+                      <th>Month</th>
+                      <th class="text-center">Jobs Count</th>
+                      <th class="text-center">Faulty Parts</th>
+                      <th class="text-center">Total</th>
+                      <th class="text-center">Percentage</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    <tr *ngFor="let item of receivedChartData; let i = index">
+
+                      <td class="fw-bold text-gray-800">{{ item.name }}</td>
+
+                      <td class="text-center text-success fw-semibold">
+                        {{ item.jobsCount || 0 }}
+                      </td>
+
+                      <td class="text-center text-warning fw-semibold">
+                        {{ item.faulty || 0 }}
+                      </td>
+
+                      <td class="text-center fw-bold">
+                        {{ (item.jobsCount || 0) + (item.faulty || 0) }}
+                      </td>
+
+                      <td class="text-center">
+                        <span class="badge badge-light-primary">
+                          {{ getReceivedChartItemPercentage(item) }}%
+                        </span>
+                      </td>
+
+                    </tr>
+                  </tbody>
+                </table>
               </div>
+              <!--end::Data Table-->
+
             </div>
-            <!--end::Chart visualization-->
+            <!--end::Chart Container-->
+
           </div>
-          <!--end::Chart content-->
+          <!--end::Chart Content-->
+
         </div>
         <!--end::Card body-->
+
       </div>
-      <!--end::Parts Received by Warehouse Chart-->
+      <!--end::Received Chart Section-->
+
     </div>
-    <!--end::Parts Received by Warehouse Chart Column-->
   </div>
-  <!--end::Charts Row-->
 
+</div>
+<!--end::Graph 3 Tab-->
 
-
-
-  <!--begin::Card-->
-  <div class="card">
-    <!--begin::Card header-->
-    <div class="card-header border-0 pt-6">
-
-      
-      <!--begin::Card toolbar-->
-      <div class="card-toolbar">
-        <!--begin::Filters-->
-        <form [formGroup]="partReturnFilterForm" class="d-flex align-items-center gap-3 flex-wrap">
-          
-          <!--begin::Inventory User Filter-->
-          <div class="form-group">
-            <label class="form-label fw-semibold fs-7 text-gray-600">Inventory User:</label>
-            <select class="form-select form-select-solid" 
-                    formControlName="inventoryUser"
-                    [disabled]="isLoadingInventoryUsers"
-                    (change)="onInventoryUserChange($event)">
-              <option *ngFor="let user of inventoryUsers; trackBy: trackByUserId" 
-                      [value]="getInventoryUserValue(user)">
-                {{ getInventoryUserDisplayName(user) }}
-              </option>
-            </select>
-            <div *ngIf="isLoadingInventoryUsers" class="spinner-border spinner-border-sm ms-2" role="status">
-              <span class="visually-hidden">Loading...</span>
+    <!-- Filter & Data Section -->
+    <div class="card shadow-sm parts-main-card">
+      <!-- Filter Header -->
+      <div class="card-header border-0 py-4">
+        <div class="parts-filter-header">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-funnel me-2 text-primary"></i>
+                Filters & Search
+                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
+                  {{totalRecords}} Result{{totalRecords === 1 ? '' : 's'}}
+                </span>
+              </h5>
+              <small class="text-muted">Customize your view with filters below</small>
             </div>
           </div>
-          
-          <!--begin::Status Filter-->
-          <div class="form-group">
-            <label class="form-label fw-semibold fs-7 text-gray-600">Status:</label>
-            <select class="form-select form-select-solid" formControlName="status">
-              <option *ngFor="let option of statusOptions" [value]="option.key">
-                {{ option.label }}
-              </option>
-            </select>
+
+          <!-- Filter Controls -->
+          <div class="filter-controls-section mt-3">
+            <form [formGroup]="partReturnFilterForm" class="parts-filter-form">
+              <div class="row g-3">
+                <!-- Inventory User Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-person-check me-1"></i>
+                      Inventory User
+                    </label>
+                    <div class="position-relative">
+                      <select class="form-select modern-select" 
+                              formControlName="inventoryUser" 
+                              [disabled]="isLoadingInventoryUsers"
+                              (change)="onInventoryUserChange($event)">
+                        <option *ngFor="let user of inventoryUsers; trackBy: trackByUserId"
+                                [value]="getInventoryUserValue(user)">
+                          {{ getInventoryUserDisplayName(user) }}
+                        </option>
+                      </select>
+                      <span *ngIf="isLoadingInventoryUsers" class="loading-indicator">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-tag me-1"></i>
+                      Status
+                    </label>
+                    <select class="form-select modern-select" formControlName="status">
+                      <option *ngFor="let option of statusOptions"
+                              [value]="option.key">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Year Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-calendar me-1"></i>
+                      Year
+                    </label>
+                    <select class="form-select modern-select" formControlName="year">
+                      <option *ngFor="let year of availableYears"
+                              [value]="year">
+                        {{ year }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </form>
           </div>
-          
-          <!--begin::Year Filter-->
-          <div class="form-group">
-            <label class="form-label fw-semibold fs-7 text-gray-600">Year:</label>
-            <select class="form-select form-select-solid" formControlName="year">
-              <option *ngFor="let year of availableYears" [value]="year">
-                {{ year }}
-              </option>
-            </select>
-          </div>
-          
-
-          
-
-        </form>
-        <!--end::Filters-->
-      </div>
-      <!--end::Card toolbar-->
-    </div>
-    <!--end::Card header-->
-
-
-
-    <!--begin::Card body-->
-    <div class="card-body py-4">
-      
-      <!--begin::Loading indicator-->
-      <div *ngIf="isLoading" class="d-flex justify-content-center py-10">
-        <div class="spinner-border text-primary" role="status">
-          <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-      <!--end::Loading indicator-->
 
-      <!--begin::Error message-->
-      <div *ngIf="errorMessage && !isLoading" class="alert alert-danger d-flex align-items-center p-5 mb-10">
-        <i class="ki-duotone ki-shield-tick fs-2hx text-danger me-4">
-          <span class="path1"></span>
-          <span class="path2"></span>
-        </i>
-        <div class="d-flex flex-column">
-          <h4 class="mb-1 text-danger">Error</h4>
-          <span>{{ errorMessage }}</span>
-        </div>
-      </div>
-      <!--end::Error message-->
 
-      <!--begin::Filter Badge-->
-      <div *ngIf="!isLoading && partReturnStatusList.length > 0" class="d-flex justify-content-between align-items-center mb-5">
-        <div class="d-flex align-items-center gap-3">
-          <span class="fw-bold fs-6 text-gray-800">Current Filter:</span>
-          <span [class]="getFilterBadgeClass()">{{ getSelectedStatusLabel() }}</span>
-          <span class="text-muted fs-7">({{ totalRecords }} records)</span>
-        </div>
+      <!-- Data Display Section -->
+      <div class="card-body py-4">
         
-        <div class="d-flex align-items-center gap-3">
-          <span class="text-muted fs-7">Showing {{ startRecord }} - {{ endRecord }} of {{ totalRecords }} records</span>
-          <select class="form-select form-select-sm w-auto" (change)="onPageSizeChange($any($event.target).value)">
-            <option value="25" [selected]="pageSize === 25">25 per page</option>
-            <option value="50" [selected]="pageSize === 50">50 per page</option>
-            <option value="100" [selected]="pageSize === 100">100 per page</option>
-            <option value="200" [selected]="pageSize === 200">200 per page</option>
-          </select>
+        <!-- Messages -->
+        <div class="parts-messages" *ngIf="errorMessage">
+          <div class="alert alert-danger d-inline-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
         </div>
-      </div>
-      <!--end::Filter Badge-->
 
-      <!--begin::Table Card-->
-      <div *ngIf="!isLoading && partReturnStatusList.length > 0" class="card shadow-sm">
-        <div class="table-responsive">
-          <table class="table table-hover border-0 mb-0">
-            <thead class="bg-primary" style="background-color: #1e40af !important;">
-              <tr class="fw-bold fs-6 text-white" style="background-color: #1e40af !important;">
-              <th class="min-w-150px cursor-pointer py-4 px-4" (click)="sortTable('serviceCallId')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  Service Call ID
-                  <i [class]="'ki-duotone ' + sortIcon('serviceCallId') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('partNum')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  Part Number
-                  <i [class]="'ki-duotone ' + sortIcon('partNum') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('dcPartNum')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  DC Part Number
-                  <i [class]="'ki-duotone ' + sortIcon('dcPartNum') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-200px cursor-pointer py-4 px-4" (click)="sortTable('description')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  Description
-                  <i [class]="'ki-duotone ' + sortIcon('description') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-100px cursor-pointer text-center py-4 px-4" (click)="sortTable('totalQty')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center justify-content-center">
-                  Total Qty
-                  <i [class]="'ki-duotone ' + sortIcon('totalQty') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-100px cursor-pointer text-center py-4 px-4" (click)="sortTable('faultyParts')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center justify-content-center">
-                  Faulty
-                  <i [class]="'ki-duotone ' + sortIcon('faultyParts') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-100px cursor-pointer text-center py-4 px-4" (click)="sortTable('unusedParts')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center justify-content-center">
-                  Unused
-                  <i [class]="'ki-duotone ' + sortIcon('unusedParts') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-150px cursor-pointer py-4 px-4" (click)="sortTable('technician')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  Technician
-                  <i [class]="'ki-duotone ' + sortIcon('technician') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('invUserID')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  Inv User
-                  <i [class]="'ki-duotone ' + sortIcon('invUserID') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-125px cursor-pointer py-4 px-4" (click)="sortTable('status')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  Status
-                  <i [class]="'ki-duotone ' + sortIcon('status') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-              <th class="min-w-150px cursor-pointer py-4 px-4" (click)="sortTable('lastModified')" style="background-color: #1e40af !important; color: white !important; border: none !important;">
-                <div class="d-flex align-items-center">
-                  Last Modified
-                  <i [class]="'ki-duotone ' + sortIcon('lastModified') + ' fs-5 ms-1'" style="color: white !important;">
-                    <span class="path1"></span>
-                    <span class="path2"></span>
-                  </i>
-                </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of displayedData; trackBy: trackByServiceCallId" 
-                class="align-middle">
-              <td>
-                <a href="javascript:void(0)" 
-                   class="text-dark fw-bold text-hover-primary d-block mb-1 fs-6"
-                   (click)="navigateToServiceCall(item.serviceCallId)">
-                  {{ item.serviceCallId }}
-                </a>
-              </td>
-              <td>
-                <span class="text-gray-800 fw-bold d-block fs-6">{{ item.partNum }}</span>
-              </td>
-              <td>
-                <span class="text-gray-600 fw-semibold d-block fs-7">{{ item.dcPartNum }}</span>
-              </td>
-              <td>
-                <div class="d-flex flex-column">
-                  <span class="text-gray-800 fw-bold mb-1">{{ item.description }}</span>
-                </div>
-              </td>
-              <td class="text-center">
-                <span class="badge badge-light-primary fs-7 fw-semibold">{{ item.totalQty }}</span>
-              </td>
-              <td class="text-center">
-                <span class="badge badge-light-danger fs-7 fw-semibold" 
-                      [class.badge-danger]="item.faultyParts > 0">
-                  {{ item.faultyParts }}
-                </span>
-              </td>
-              <td class="text-center">
-                <span class="badge badge-light-warning fs-7 fw-semibold"
-                      [class.badge-warning]="item.unusedParts > 0">
-                  {{ item.unusedParts }}
-                </span>
-              </td>
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="symbol symbol-35px symbol-circle me-3">
-                    <span class="symbol-label bg-light-info text-info fw-bold">
-                      {{ getInitials(item.technician) }}
+        <!-- Loading indicator for data processing -->
+        <div *ngIf="isLoading" class="text-center py-4">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+          <span class="text-muted">Processing data...</span>
+        </div>
+
+
+        <!-- Data Table Section -->
+        <div class="table-section" *ngIf="!isLoading">
+          <div class="table-responsive">
+            <table class="table modern-table">
+              <thead class="table-header">
+                <tr>
+                  <th class="sortable header-cell" (click)="sortTable('serviceCallId')" [ngClass]="getSortClass('serviceCallId')">
+                    <div class="header-content">
+                      <span class="header-text">Service Call ID</span>
+                      <i [class]="'sort-icon ' + sortIcon('serviceCallId')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('partNum')" [ngClass]="getSortClass('partNum')">
+                    <div class="header-content">
+                      <span class="header-text">Part Number</span>
+                      <i [class]="'sort-icon ' + sortIcon('partNum')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('dcPartNum')" [ngClass]="getSortClass('dcPartNum')">
+                    <div class="header-content">
+                      <span class="header-text">DC Part Number</span>
+                      <i [class]="'sort-icon ' + sortIcon('dcPartNum')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('description')" [ngClass]="getSortClass('description')">
+                    <div class="header-content">
+                      <span class="header-text">Description</span>
+                      <i [class]="'sort-icon ' + sortIcon('description')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('totalQty')" [ngClass]="getSortClass('totalQty')">
+                    <div class="header-content">
+                      <span class="header-text">Total Qty</span>
+                      <i [class]="'sort-icon ' + sortIcon('totalQty')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('faultyParts')" [ngClass]="getSortClass('faultyParts')">
+                    <div class="header-content">
+                      <span class="header-text">Faulty</span>
+                      <i [class]="'sort-icon ' + sortIcon('faultyParts')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('unusedParts')" [ngClass]="getSortClass('unusedParts')">
+                    <div class="header-content">
+                      <span class="header-text">Unused</span>
+                      <i [class]="'sort-icon ' + sortIcon('unusedParts')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('technician')" [ngClass]="getSortClass('technician')">
+                    <div class="header-content">
+                      <span class="header-text">Technician</span>
+                      <i [class]="'sort-icon ' + sortIcon('technician')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('invUserID')" [ngClass]="getSortClass('invUserID')">
+                    <div class="header-content">
+                      <span class="header-text">Inv User</span>
+                      <i [class]="'sort-icon ' + sortIcon('invUserID')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('status')" [ngClass]="getSortClass('status')">
+                    <div class="header-content">
+                      <span class="header-text">Status</span>
+                      <i [class]="'sort-icon ' + sortIcon('status')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('lastModified')" [ngClass]="getSortClass('lastModified')">
+                    <div class="header-content">
+                      <span class="header-text">Last Modified</span>
+                      <i [class]="'sort-icon ' + sortIcon('lastModified')"></i>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+
+
+              <tbody class="table-body">
+                <tr *ngFor="let item of displayedData; trackBy: trackByServiceCallId" 
+                    class="table-row">
+                  
+                  <td class="call-number-cell">
+                    <a class="call-link" (click)="navigateToServiceCall(item.serviceCallId, item.technician)" 
+                       [title]="'View parts for service call ' + item.serviceCallId + ' - Technician: ' + item.technician"
+                       role="button">
+                      {{ item.serviceCallId }}
+                      <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                    </a>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="cell-content">{{ item.partNum }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="cell-content">{{ item.dcPartNum }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="cell-content">{{ item.description }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-primary">{{ item.totalQty }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-danger">{{ item.faultyParts }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-warning">{{ item.unusedParts }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <div class="technician-info">
+                      <i class="bi bi-person-badge me-1 text-muted"></i>
+                      <a class="technician-link" (click)="navigateToTechnicianJobs(item.serviceCallId, item.technician)"
+                         [title]="'View parts for technician ' + item.technician + ' - Call: ' + item.serviceCallId"
+                         role="button">
+                        {{ item.technician }}
+                        <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                      </a>
+                    </div>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-info">{{ item.invUserID }}</span>
+                  </td>
+                  
+                  <td class="status-cell">
+                    <span class="status-badge" [ngClass]="getStatusBadgeClass(item.status)">
+                      {{ getStatusDisplayName(item.status) }}
                     </span>
-                  </div>
-                  <div class="d-flex flex-column">
-                    <span class="text-gray-800 fw-bold lh-1">{{ item.technician }}</span>
+                  </td>
+                  
+                  <td class="date-cell">
+                    <span class="date-content">{{ item.lastModified | date:'dd-MMM-yyyy HH:mm' }}</span>
+                  </td>
+
+                </tr>
+              </tbody>
+
+            </table>
+          </div>
+        </div>
+
+
+        <!-- Enhanced Pagination Controls - Below Table -->
+        <div class="enhanced-pagination-wrapper" *ngIf="totalRecords > 0">
+          <div class="enhanced-pagination-controls">
+            <div class="row align-items-center g-3">
+              <!-- Left side - Page size and record info -->
+              <div class="col-md-6">
+                <div class="pagination-info">
+                  <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div class="page-size-selector">
+                      <label class="form-label mb-0 fw-semibold">Records per page:</label>
+                      <select class="form-select form-select-lg" 
+                              [value]="pageSize" #pageSizeSelect (change)="onPageSizeChange(+pageSizeSelect.value)">
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                        <option value="200">200</option>
+                      </select>
+                    </div>
+                    <div class="record-info">
+                      <span class="badge badge-info-custom">
+                        <i class="bi bi-list-ol me-1"></i>
+                        Showing {{startRecord}}-{{endRecord}} of {{totalRecords}} records
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </td>
-              <td>
-                <span class="badge badge-light-info fs-7 fw-semibold">{{ item.invUserID }}</span>
-              </td>
-              <td>
-                <span class="badge fs-7 fw-semibold" [ngClass]="getStatusBadgeClass(item.status)">
-                  {{ getStatusDisplayName(item.status) }}
-                </span>
-              </td>
-              <td>
-                <span class="text-muted fw-semibold text-muted d-block fs-7">
-                  {{ item.lastModified | date:'MM/dd/yyyy HH:mm' }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+              
+              <!-- Right side - Navigation controls -->
+              <div class="col-md-6">
+                <div class="pagination-navigation">
+                  <div class="d-flex justify-content-end align-items-center gap-2">
+                    <!-- First page -->
+                    <button class="btn btn-pagination btn-first" 
+                            [disabled]="currentPage === 1" 
+                            (click)="onPageChange(1)"
+                            title="First page">
+                      <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                    
+                    <!-- Previous page -->
+                    <button class="btn btn-pagination btn-prev" 
+                            [disabled]="currentPage === 1" 
+                            (click)="onPageChange(currentPage - 1)"
+                            title="Previous page">
+                      <i class="bi bi-chevron-left"></i>
+                      <span class="d-none d-sm-inline">Previous</span>
+                    </button>
+                    
+                    <!-- Current page indicator -->
+                    <div class="current-page-indicator">
+                      <span class="page-display">
+                        Page <strong>{{currentPage}}</strong> of <strong>{{totalPages}}</strong>
+                      </span>
+                    </div>
+                    
+                    <!-- Next page -->
+                    <button class="btn btn-pagination btn-next" 
+                            [disabled]="currentPage === totalPages" 
+                            (click)="onPageChange(currentPage + 1)"
+                            title="Next page">
+                      <span class="d-none d-sm-inline">Next</span>
+                      <i class="bi bi-chevron-right"></i>
+                    </button>
+                    
+                    <!-- Last page -->
+                    <button class="btn btn-pagination btn-last" 
+                            [disabled]="currentPage === totalPages" 
+                            (click)="onPageChange(totalPages)"
+                            title="Last page">
+                      <i class="bi bi-chevron-double-right"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <!--end::Table Card-->
 
-      <!--begin::No Data-->
-      <div *ngIf="!isLoading && partReturnStatusList.length === 0" class="d-flex flex-column flex-center">
-        <img src="assets/media/illustrations/sketchy-1/5.png" alt="" class="mw-300px">
-        <div class="fs-1 fw-bolder text-dark mb-4">No Data Found.</div>
-        <div class="fs-6">No part return status records match your current filters.
-          <br>Try adjusting your search criteria or clearing the filters.
+        <!-- Empty State -->
+        <div *ngIf="totalRecords === 0 && !isLoading" class="empty-state">
+          <div class="empty-state-content">
+            <i class="bi bi-inbox empty-icon"></i>
+            <h4 class="empty-title">No Parts Return Data Found</h4>
+            <p class="empty-text">There are no parts return records matching your current filters.</p>
+            <button class="btn btn-primary" (click)="clearFilters()">
+              <i class="bi bi-funnel-fill me-2"></i>Clear Filters
+            </button>
+          </div>
         </div>
-        <div class="text-center py-5">
-          <button type="button" class="btn btn-primary" (click)="clearFilters()">
-            Clear Filters
-          </button>
-        </div>
-      </div>
-      <!--end::No Data-->
 
-      <!--begin::Pagination-->
-      <div *ngIf="!isLoading && partReturnStatusList.length > 0 && totalPages > 1" 
-           class="d-flex flex-stack flex-wrap pt-10">
-        <div class="fs-6 fw-semibold text-gray-700">
-          Showing {{ startRecord }} to {{ endRecord }} of {{ totalRecords }} entries
-        </div>
-        
-        <ul class="pagination">
-          <li class="page-item" [class.disabled]="currentPage === 1">
-            <a class="page-link" href="javascript:void(0)" (click)="onPageChange(currentPage - 1)">
-              <i class="previous"></i>
-            </a>
-          </li>
-          
-          <li *ngFor="let page of getPaginationPages()" 
-              class="page-item" 
-              [class.active]="page === currentPage"
-              [class.disabled]="page === null">
-            <a class="page-link" 
-               href="javascript:void(0)" 
-               (click)="page !== null && onPageChange(page)">
-              {{ page === null ? '...' : page }}
-            </a>
-          </li>
-          
-          <li class="page-item" [class.disabled]="currentPage === totalPages">
-            <a class="page-link" href="javascript:void(0)" (click)="onPageChange(currentPage + 1)">
-              <i class="next"></i>
-            </a>
-          </li>
-        </ul>
-      </div>
-      <!--end::Pagination-->
 
+      </div>
     </div>
-    <!--end::Card body-->
   </div>
-  <!--end::Card-->
 </div>
-<!--end::Content-->

@@ -73,6 +73,9 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
   showReceivedChart: boolean = true;
   currentReceivedChartType: 'bar' | 'pie' | 'table' = 'bar';
   @ViewChild('receivedBarChartCanvas', { static: false }) receivedBarChartCanvas!: ElementRef<HTMLCanvasElement>;
+  
+  // Graph tabs
+  activeGraphTab: 'graph1' | 'graph2' | 'graph3' = 'graph1';
   @ViewChild('receivedPieChartCanvas', { static: false }) receivedPieChartCanvas!: ElementRef<HTMLCanvasElement>;
 
   // Parts Return Data by Week Number properties
@@ -718,11 +721,25 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/reports']);
   }
 
-  navigateToServiceCall(serviceCallId: string): void {
+  navigateToServiceCall(serviceCallId: string, technician?: string): void {
     if (serviceCallId && serviceCallId.trim() !== '') {
-      this.router.navigate(['/jobs'], { 
-        queryParams: { callNumber: serviceCallId.trim() }
-      });
+      const callNumber = serviceCallId.trim();
+      const technicianParam = technician && technician.trim() ? `&technician=${encodeURIComponent(technician.trim())}` : '';
+      const targetUrl = `${window.location.origin}${window.location.pathname}#/jobs/parts?callNumber=${callNumber}${technicianParam}`;
+      
+      console.log('Navigating to call:', targetUrl);
+      window.open(targetUrl, '_blank');
+    }
+  }
+
+  navigateToTechnicianJobs(serviceCallId: string, technician: string): void {
+    if (serviceCallId && serviceCallId.trim() !== '') {
+      const callNumber = serviceCallId.trim();
+      const technicianParam = technician && technician.trim() ? `&technician=${encodeURIComponent(technician.trim())}` : '';
+      const targetUrl = `${window.location.origin}${window.location.pathname}#/jobs/parts?callNumber=${callNumber}${technicianParam}`;
+      
+      console.log('Navigating to technician jobs:', targetUrl, 'for technician:', technician);
+      window.open(targetUrl, '_blank');
     }
   }
 
@@ -1884,5 +1901,19 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
 
   toggleReceivedChartVisibility(): void {
     this.showReceivedChart = !this.showReceivedChart;
+  }
+
+  // Graph tab management
+  setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3'): void {
+    this.activeGraphTab = tab;
+  }
+
+  // Helper methods for totals display
+  getUnusedReturnedTotal(): number {
+    return this.receivedChartTotals?.unUsedReceived || 0;
+  }
+
+  getFaultyReturnedTotal(): number {
+    return this.receivedChartTotals?.faultyReceived || 0;
   }
 }
