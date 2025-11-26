@@ -1,6 +1,6 @@
 // Modern Parts Return Status Component - Matching Parts Request Status Design
 .parts-request-container {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: #4f8bf9;
   min-height: 100vh;
   padding: 2rem 1rem;
   max-width: 100%;
@@ -57,12 +57,12 @@
     }
     
     .parts-request-header__back {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #1e40af;
       border-color: transparent;
     }
     
     .parts-request-header__action {
-      background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+      background: #059669;
       border-color: transparent;
     }
   }
@@ -108,10 +108,10 @@
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding: 2rem 2rem 1rem 2rem;
+    padding: 1.5rem 2rem 1rem 2rem;
     
     // Reduced height for tighter layout
-    min-height: 200px;
+    min-height: 120px;
     
     h5 {
       color: #1f2937;
@@ -130,6 +130,8 @@
 
 // Chart tabs styling
 .chart-tabs-wrapper {
+  margin-bottom: 1rem;
+  
   .modern-tabs {
     border: none;
     background: rgba(255, 255, 255, 0.9);
@@ -558,13 +560,15 @@
     
     .table-header {
       th {
-        background: linear-gradient(135deg, #5486ff 0%, #667eea 100%);
+        background: #3b82f6;
         color: white;
         border: none;
         position: relative;
-        padding: 0;
-        height: 60px;
+        padding: 1rem;
+        height: auto;
         vertical-align: middle;
+        font-weight: 600;
+        text-align: center;
         
         &.header-cell {
           .header-content {
@@ -610,9 +614,9 @@
           font-size: 0.8rem;
           
           &.jobs-badge {
-            background: linear-gradient(135deg, rgba(84, 134, 255, 0.15) 0%, rgba(102, 126, 234, 0.15) 100%);
-            color: #5486ff;
-            border: 1px solid rgba(84, 134, 255, 0.2);
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
           }
           
           &.faulty-badge {
@@ -640,7 +644,7 @@
             overflow: hidden;
             
             .modern-progress-bar {
-              background: linear-gradient(90deg, #5486ff 0%, #667eea 100%);
+              background: #3b82f6;
               transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             }
           }
@@ -944,7 +948,7 @@
 
 .tab-content {
   .tab-pane {
-    padding-top: 1rem;
+    padding-top: 0.5rem;
     
     &.fade:not(.show) {
       opacity: 0;
@@ -964,13 +968,13 @@
   border: 1px solid #e4e6ea;
   border-radius: 0.75rem;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  padding: 1.5rem;
+  padding: 1rem;
   margin-bottom: 0;
   
   .card-header {
     background: transparent;
     border: none;
-    padding-bottom: 1rem;
+    padding-bottom: 0.5rem;
     
     .card-title {
       margin-bottom: 0;
@@ -1826,5 +1830,1031 @@
   &.faulty-returned-card .totals-icon {
     background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.15) 100%);
     i { color: #8b5cf6; }
+  }
+}
+
+// Clickable Chart Rows Styling
+.clickable-row {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  
+  &:hover {
+    background: linear-gradient(135deg, rgba(84, 134, 255, 0.05) 0%, rgba(102, 126, 234, 0.05) 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(84, 134, 255, 0.15);
+    border-radius: 8px;
+    
+    td {
+      background: transparent !important;
+      border-bottom-color: transparent !important;
+    }
+    
+    // Add pointer cursor to all child elements
+    * {
+      cursor: pointer;
+    }
+  }
+  
+  &:active {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(84, 134, 255, 0.2);
+  }
+  
+  // Add visual indicator for clickability
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(180deg, #5486ff 0%, #667eea 100%);
+    transition: width 0.3s ease;
+  }
+  
+  &:hover::before {
+    width: 3px;
+  }
+  
+  // Clickable chart table specific styling
+  .chart-table & {
+    &:hover {
+      background: linear-gradient(90deg, rgba(84, 134, 255, 0.03) 0%, rgba(102, 126, 234, 0.05) 100%) !important;
+      
+      .badge {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+      
+      .progress-bar {
+        animation: pulse-progress 1.5s ease-in-out infinite;
+      }
+    }
+  }
+}
+
+// Enhanced Chart Canvas Animations
+.chart-canvas {
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  display: block;
+  background: white;
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: scale(1.005);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  }
+  
+  &:active {
+    transform: scale(0.995);
+    transition: transform 0.1s ease;
+  }
+  
+  &.animating {
+    animation: chartPulse 2s ease-in-out;
+  }
+}
+
+// Interactive pie chart tooltip
+.pie-chart-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transform: scale(0.8) translateY(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  
+  &.visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  
+  .tooltip-content {
+    min-width: 120px;
+  }
+  
+  .tooltip-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    
+    .tooltip-color-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    
+    .tooltip-name {
+      font-weight: 600;
+      color: #ffffff;
+    }
+  }
+  
+  .tooltip-data {
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+    
+    .tooltip-label {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 11px;
+    }
+    
+    .tooltip-value {
+      font-weight: 600;
+      color: #ffffff;
+      
+      &.text-danger {
+        color: #ff6b6b;
+      }
+    }
+  }
+}
+
+// Chart Animation Keyframes
+@keyframes chartPulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(84, 134, 255, 0.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+}
+
+@keyframes sliceGlow {
+  0% {
+    filter: drop-shadow(0 0 5px rgba(79, 70, 229, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(79, 70, 229, 0.8));
+  }
+  100% {
+    filter: drop-shadow(0 0 5px rgba(79, 70, 229, 0.4));
+  }
+}
+
+@keyframes pieChartInteractive {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    transform: scale(1.01) rotate(0.5deg);
+  }
+}
+
+@keyframes slideInFromBottom {
+  0% {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInScale {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+// Chart Container Animations
+.chart-wrapper {
+  position: relative;
+  animation: slideInFromBottom 0.6s ease-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 500px;
+  
+  &::after {
+    content: 'Click on chart elements to drill down';
+    position: absolute;
+    bottom: -35px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-style: italic;
+    opacity: 0.7;
+    pointer-events: none;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Progress bar animation for chart tables
+@keyframes pulse-progress {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleX(1.02);
+  }
+}
+
+// Enhanced table hover effects for chart data removed to prevent color changes
+
+// Tooltip styling for chart interactions
+[title] {
+  position: relative;
+}
+
+// Chart interaction feedback
+.chart-wrapper {
+  position: relative;
+  
+  &::after {
+    content: 'Click on chart elements to drill down';
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-style: italic;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  
+  &:hover::after {
+    opacity: 1;
+  }
+}
+
+// Chart navigation breadcrumb (for showing current drill-down path)
+.chart-navigation-breadcrumb {
+  background: rgba(84, 134, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #5486ff;
+  animation: slideInFromBottom 0.5s ease-out;
+  
+  .breadcrumb-item {
+    display: inline;
+    
+    &:not(:last-child)::after {
+      content: ' › ';
+      margin: 0 0.5rem;
+      opacity: 0.6;
+    }
+    
+    &.active {
+      font-weight: 600;
+    }
+  }
+}
+
+// Enhanced Chart Section Animations
+.chart-section {
+  animation: fadeInScale 0.8s ease-out;
+  transform-origin: top center;
+  
+  .card-header {
+    .card-title {
+      animation: slideInFromBottom 0.6s ease-out 0.2s both;
+    }
+  }
+  
+  .card-body {
+    animation: slideInFromBottom 0.6s ease-out 0.4s both;
+  }
+}
+
+// Totals Cards Enhanced Animation
+.totals-card {
+  animation: slideInFromBottom 0.6s ease-out both;
+  
+  &:nth-child(1) { animation-delay: 0.1s; }
+  &:nth-child(2) { animation-delay: 0.2s; }
+  &:nth-child(3) { animation-delay: 0.3s; }
+  &:nth-child(4) { animation-delay: 0.4s; }
+  
+  .totals-icon {
+    animation: fadeInScale 0.5s ease-out 0.6s both;
+  }
+  
+  .totals-value {
+    animation: slideInFromBottom 0.5s ease-out 0.8s both;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.4), 
+        transparent
+      );
+      background-size: 200% 100%;
+      animation: shimmer 2s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+  }
+  
+  &:hover .totals-value::after {
+    opacity: 1;
+  }
+}
+
+// Chart Type Selector Enhanced Animations
+.chart-type-controls {
+  .chart-type-btn {
+    animation: slideInFromBottom 0.4s ease-out both;
+    
+    &:nth-child(1) { animation-delay: 0.1s; }
+    &:nth-child(2) { animation-delay: 0.15s; }
+    &:nth-child(3) { animation-delay: 0.2s; }
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, 
+        rgba(84, 134, 255, 0.1) 0%, 
+        rgba(102, 126, 234, 0.1) 100%
+      );
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: -1;
+    }
+    
+    &:hover::before {
+      opacity: 1;
+    }
+    
+    i {
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    
+    &:hover i {
+      transform: scale(1.2) rotate(5deg);
+    }
+  }
+}
+
+// Loading Spinner Enhanced Animation
+.spinner-border {
+  animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+// Tab Navigation Enhanced Animations
+.nav-tabs {
+  .nav-link {
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.4), 
+        transparent
+      );
+      transition: left 0.5s ease;
+    }
+    
+    &:hover::before {
+      left: 100%;
+    }
+    
+    &.active {
+      animation: tabActivate 0.3s ease-out;
+    }
+  }
+}
+
+@keyframes tabActivate {
+  0% {
+    transform: translateY(2px);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+// Enhanced Table Row Animations
+.clickable-row {
+  animation: slideInFromBottom 0.4s ease-out both;
+  
+  &:nth-child(odd) { animation-delay: 0.05s; }
+  &:nth-child(even) { animation-delay: 0.1s; }
+  
+  &:hover {
+    animation: rowHover 0.3s ease-out;
+  }
+}
+
+@keyframes rowHover {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.01);
+  }
+  100% {
+    transform: translateY(-2px) scale(1.005);
+  }
+}
+
+// Chart Legend Animations
+.modern-chart-legend,
+.modern-pie-legend {
+  .legend-item,
+  .pie-legend-item {
+    animation: slideInFromBottom 0.5s ease-out both;
+    
+    &:nth-child(1) { animation-delay: 0.1s; }
+    &:nth-child(2) { animation-delay: 0.2s; }
+    &:nth-child(3) { animation-delay: 0.3s; }
+    
+    .legend-indicator {
+      animation: fadeInScale 0.4s ease-out 0.5s both;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: inherit;
+        border-radius: inherit;
+        opacity: 0;
+        transform: scale(1.5);
+        transition: all 0.3s ease;
+        z-index: -1;
+      }
+    }
+    
+    &:hover .legend-indicator::after {
+      opacity: 0.3;
+      transform: scale(1.2);
+    }
+  }
+}
+
+// Sidebar Summary Styling
+.parts-return-summary-sidebar {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(226, 232, 240, 0.3);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+  
+  .summary-header {
+    text-align: center;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.3);
+    margin-bottom: 1.5rem;
+    
+    .summary-title {
+      color: #1f2937;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin: 0 0 0.5rem 0;
+      
+      i {
+        color: #5486ff;
+      }
+    }
+    
+    .summary-subtitle {
+      color: #6b7280;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+  }
+}
+
+.summary-cards {
+  .summary-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%);
+    }
+    
+    &.unused-to-return::before {
+      background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+    }
+    
+    &.faulty-to-return::before {
+      background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    }
+    
+    &.unused-returned::before {
+      background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    }
+    
+    &.faulty-returned::before {
+      background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%);
+    }
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .summary-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(29, 78, 216, 0.15) 100%);
+      
+      i {
+        font-size: 1.125rem;
+        color: #3b82f6;
+      }
+    }
+    
+    .summary-content {
+      .summary-label {
+        font-size: 0.8rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin: 0;
+        line-height: 1.2;
+      }
+      
+      .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin: 0;
+        line-height: 1;
+      }
+    }
+    
+    // Specific card type styling
+    &.unused-to-return .summary-icon {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.15) 100%);
+      i { color: #f59e0b; }
+    }
+    
+    &.faulty-to-return .summary-icon {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.15) 100%);
+      i { color: #ef4444; }
+    }
+    
+    &.unused-returned .summary-icon {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.15) 100%);
+      i { color: #10b981; }
+    }
+    
+    &.faulty-returned .summary-icon {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.15) 100%);
+      i { color: #8b5cf6; }
+    }
+  }
+}
+
+.summary-totals {
+  padding-top: 1rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.3);
+  
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    
+    .total-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    
+    .total-value {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    
+    &.pending .total-value {
+      color: #f59e0b;
+    }
+    
+    &.completed .total-value {
+      color: #10b981;
+    }
+  }
+}
+
+// Modern Interactive Chart Table Styling
+.modern-table-container {
+  margin: 1rem 0;
+  animation: slideInUp 0.6s ease-out;
+  
+  .table-wrapper {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid rgba(59, 130, 246, 0.1);
+  }
+}
+
+.interactive-chart-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  // Modern Header Styling
+  thead {
+    tr {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      
+      th {
+        padding: 1.25rem 1rem;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+        position: relative;
+        
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          width: 0;
+          height: 2px;
+          background: rgba(255, 255, 255, 0.5);
+          transition: all 0.3s ease;
+          transform: translateX(-50%);
+        }
+        
+        &:hover::after {
+          width: 80%;
+        }
+        
+        .header-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          i {
+            font-size: 1rem;
+            opacity: 0.9;
+          }
+        }
+        
+        &.user-col {
+          width: 25%;
+          .header-content {
+            justify-content: flex-start;
+          }
+        }
+        
+        &.jobs-col,
+        &.faulty-col {
+          width: 20%;
+        }
+        
+        &.percentage-col {
+          width: 15%;
+        }
+        
+        &.progress-col {
+          width: 25%; // Increased width to accommodate progress bar and text
+          min-width: 150px; // Ensure minimum width
+        }
+      }
+    }
+  }
+  
+  // Interactive Body Styling
+  tbody {
+    tr.table-row {
+      animation: fadeInRow 0.5s ease-out both;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      
+      &:nth-child(even) {
+        background: rgba(248, 250, 252, 0.5);
+      }
+      
+      &:hover {
+        background: linear-gradient(90deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+        
+        .user-avatar {
+          transform: scale(1.1);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .metric-badge {
+          transform: scale(1.05);
+        }
+        
+        .progress-fill {
+          box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+      
+      td {
+        padding: 1rem;
+        vertical-align: middle;
+        border: none;
+        
+        // User Cell Styling
+        &.user-cell {
+          .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            
+            .user-avatar {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 0.875rem;
+              color: #374151;
+              transition: all 0.3s ease;
+              border: 2px solid rgba(59, 130, 246, 0.1);
+            }
+            
+            .user-name {
+              font-weight: 600;
+              color: #1f2937;
+              font-size: 0.95rem;
+            }
+          }
+        }
+        
+        // Metric Badges
+        &.jobs-cell,
+        &.faulty-cell {
+          text-align: center;
+          
+          .metric-badge {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            min-width: 80px;
+            
+            .metric-value {
+              font-size: 1.25rem;
+              font-weight: 700;
+              line-height: 1;
+              margin-bottom: 0.25rem;
+            }
+            
+            .metric-label {
+              font-size: 0.75rem;
+              opacity: 0.8;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+          }
+          
+          .jobs-metric {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+          }
+          
+          .faulty-metric {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.05) 100%);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+          }
+        }
+        
+        // Percentage Display
+        &.percentage-cell {
+          text-align: center;
+          
+          .percentage-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            
+            .percentage-value {
+              font-size: 1.125rem;
+              font-weight: 700;
+              color: #374151;
+            }
+            
+            .percentage-ring {
+              svg {
+                transform: rotate(-90deg);
+                
+                circle:last-child {
+                  transition: stroke-dashoffset 0.5s ease;
+                }
+              }
+            }
+          }
+        }
+        
+        // Animated Progress
+        &.progress-cell {
+          padding-right: 2rem; // Add extra padding to accommodate progress text
+          
+          .animated-progress {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            
+            .progress-track {
+              flex: 1;
+              height: 12px;
+              background: rgba(229, 231, 235, 0.8);
+              border-radius: 6px;
+              overflow: hidden;
+              position: relative;
+              min-width: 80px; // Ensure minimum width for progress bar
+              
+              .progress-fill {
+                height: 100%;
+                background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+                border-radius: 6px;
+                transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+                animation: progressGrow 1s ease-out both;
+                
+                .progress-glow {
+                  position: absolute;
+                  top: 0;
+                  right: 0;
+                  width: 10px;
+                  height: 100%;
+                  background: rgba(255, 255, 255, 0.3);
+                  border-radius: 0 6px 6px 0;
+                  animation: progressShimmer 2s ease-in-out infinite;
+                }
+              }
+            }
+            
+            .progress-text {
+              font-size: 0.75rem;
+              font-weight: 600;
+              color: #6b7280;
+              min-width: 35px;
+              text-align: right;
+              flex-shrink: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRow {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes progressGrow {
+  from {
+    width: 0 !important;
+  }
+}
+
+@keyframes progressShimmer {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
   }
 }

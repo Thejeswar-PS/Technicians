@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonService } from 'src/app/core/services/common.service';
@@ -33,7 +33,7 @@ import { EmployeeStatusDto } from 'src/app/core/model/employee-status.model';
   templateUrl: './part-return-status.component.html',
   styleUrls: ['./part-return-status.component.scss']
 })
-export class PartReturnStatusComponent implements OnInit, AfterViewInit {
+export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestroy {
 
   partReturnStatusList: PartReturnStatusItem[] = [];
   inventoryUsers: InventoryUser[] = [];
@@ -77,6 +77,26 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
   // Graph tabs
   activeGraphTab: 'graph1' | 'graph2' | 'graph3' = 'graph1';
   @ViewChild('receivedPieChartCanvas', { static: false }) receivedPieChartCanvas!: ElementRef<HTMLCanvasElement>;
+
+  // Chart click handling properties
+  private chartClickListeners: Map<string, any> = new Map();
+  private hoveredChartItem: any = null;
+  
+  // Animation properties
+  private animationFrameId: number | null = null;
+  private chartAnimations: Map<string, any> = new Map();
+  private isAnimating: boolean = false;
+  
+  // Interactive chart properties
+  private hoveredBarIndex: number = -1;
+  public hoveredSliceIndex: number = -1;
+  private animationProgress: number = 0;
+  public tooltipPosition = { x: 0, y: 0 };
+  private isHovering = false;
+  private hoverAnimationId: number | null = null;
+  private sliceHoverScale: number[] = [];
+  private clickAnimationProgress = 0;
+  private clickedSliceIndex = -1;
 
   // Parts Return Data by Week Number properties
   partsReturnDataByWeekNo: PartsReturnDataByWeekNoItem[] = [];
@@ -238,6 +258,11 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
         this.partReturnFilterForm.controls['status'].setValue(status || '0');
       }
 
+      // Handle chart navigation parameters like legacy
+      if (params.has('Source')) {
+        this.handleChartNavigation(params);
+      }
+
       this.getPartReturnStatusReport();
     });
   }
@@ -338,10 +363,14 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
           this.currentPage = 1;
           this.updateDisplayedData();
           this.isLoading = false;
+          // Ensure charts remain visible after data load
+          setTimeout(() => this.ensureChartsVisible(), 100);
         } else {
           this.errorMessage = response.message || 'No data found';
           this.partReturnStatusList = [];
           this.isLoading = false;
+          // Keep charts visible even if main data is empty
+          setTimeout(() => this.ensureChartsVisible(), 100);
         }
       },
       error: (error) => {
@@ -506,7 +535,12 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     let previousYear = this.partReturnFilterForm.get('year')?.value;
     
     this.partReturnFilterForm.valueChanges.subscribe((selectedValue: any) => {
-      this.getPartReturnStatusReport();
+      console.log('Form values changed:', selectedValue);
+      
+      // Only reload data if this isn't a programmatic update
+      if (this.partReturnFilterForm.dirty) {
+        this.getPartReturnStatusReport();
+      }
       
       // Reload charts when year changes
       if (selectedValue.year !== previousYear) {
@@ -636,6 +670,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     this.loadWeeklyPartsReturnedCount();
     this.loadPartsReceivedByWarehouseChart();
     this.loadPartsReturnDataByWeekNo();
+    // Ensure charts remain visible after refresh
+    setTimeout(() => this.ensureChartsVisible(), 200);
   }
 
   clearFilters(): void {
@@ -659,7 +695,9 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
   getInventoryUserValue(user: InventoryUser): string {
     // Backend expects full names like "Adam Keith", "Anton Johnson"
     // Use username field which contains full names, not invUserID which has abbreviated names
-    return (user.username || user.invUserID || '').trim();
+    const value = (user.username || user.invUserID || '').trim();
+    console.log('getInventoryUserValue - User:', user, 'Returning value:', value);
+    return value;
   }
 
   getSelectedStatusLabel(): string {
@@ -790,13 +828,24 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     // Initialize charts after view is ready
     setTimeout(() => {
-      if (this.chartData.length > 0) {
-        this.renderCharts();
-      }
-      if (this.receivedChartData.length > 0) {
-        this.renderReceivedCharts();
-      }
+      this.ensureChartsVisible();
     }, 100);
+  }
+
+  private ensureChartsVisible(): void {
+    // Ensure all charts remain visible and properly rendered
+    if (this.chartData.length > 0) {
+      this.showChart = true;
+      setTimeout(() => this.renderCharts(), 50);
+    }
+    if (this.weeklyPartsData.length > 0) {
+      this.showWeeklyChart = true;
+      setTimeout(() => this.renderWeeklyCharts(), 50);
+    }
+    if (this.receivedChartData.length > 0) {
+      this.showReceivedChart = true;
+      setTimeout(() => this.renderReceivedCharts(), 50);
+    }
   }
 
   setChartType(type: 'bar' | 'pie' | 'table'): void {
@@ -811,11 +860,41 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
   }
 
   renderCharts(): void {
-    if (this.currentChartType === 'bar') {
-      this.renderBarChart();
-    } else if (this.currentChartType === 'pie') {
-      this.renderPieChart();
+    // Ensure we have data and canvas elements before rendering
+    if (!this.chartData || this.chartData.length === 0) {
+      console.log('No chart data available for rendering');
+      return;
     }
+    
+    // Ensure chart visibility is maintained
+    this.showChart = true;
+    
+    // Add animation class to trigger CSS animations
+    this.addChartAnimationClass();
+    
+    // Use setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      try {
+        if (this.currentChartType === 'bar' && this.barChartCanvas?.nativeElement) {
+          this.renderBarChart();
+        } else if (this.currentChartType === 'pie' && this.pieChartCanvas?.nativeElement) {
+          this.renderPieChart();
+        }
+        console.log('Charts rendered successfully, type:', this.currentChartType, 'Chart visible:', this.showChart);
+      } catch (error) {
+        console.error('Error rendering charts:', error);
+      }
+    }, 50);
+  }
+  
+  private addChartAnimationClass(): void {
+    const chartWrappers = document.querySelectorAll('.chart-wrapper');
+    chartWrappers.forEach((wrapper, index) => {
+      wrapper.classList.add('animating');
+      setTimeout(() => {
+        wrapper.classList.remove('animating');
+      }, 2000 + (index * 200));
+    });
   }
 
   private renderBarChart(): void {
@@ -827,6 +906,20 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Remove existing listeners
+    const existingListener = this.chartClickListeners.get('barChart');
+    if (existingListener) {
+      canvas.removeEventListener('click', existingListener);
+      this.chartClickListeners.delete('barChart');
+    }
+    
+    // Start animation if not already animating
+    if (!this.isAnimating) {
+      this.animateBarChart(ctx, canvas);
+    } else {
+      this.drawBars(ctx, canvas, 1); // Draw without animation
+    }
     
     const padding = 60;
     const chartWidth = canvas.width - (padding * 2);
@@ -879,30 +972,19 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       const labelX = x + barWidth;
       ctx.fillText(item.name, labelX, canvas.height - padding + 20);
       
-      // Value labels on bars
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 10px Arial';
+      // Value labels on bars - always display outside bars in black
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 11px Arial';
       ctx.textAlign = 'center';
       
-      // Always show labels, adjust position based on bar height
-      if (jobsHeight > 15) {
-        // Label inside bar if there's space
-        ctx.fillText(item.jobsCount.toString(), x + (barWidth * 0.4), jobsY + 15);
-      } else if (item.jobsCount > 0) {
-        // Label above bar if bar is too small
-        ctx.fillStyle = '#6c757d';
-        ctx.fillText(item.jobsCount.toString(), x + (barWidth * 0.4), jobsY - 5);
-        ctx.fillStyle = '#ffffff';
+      // Jobs count bar label - always show above bar if value > 0
+      if (item.jobsCount > 0) {
+        ctx.fillText(item.jobsCount.toString(), x + (barWidth * 0.4), jobsY - 8);
       }
       
-      if (faultyHeight > 15) {
-        // Label inside bar if there's space
-        ctx.fillText(item.faulty.toString(), x + barWidth + (barWidth * 0.4), faultyY + 15);
-      } else if (item.faulty > 0) {
-        // Label above bar if bar is too small
-        ctx.fillStyle = '#6c757d';
-        ctx.fillText(item.faulty.toString(), x + barWidth + (barWidth * 0.4), faultyY - 5);
-        ctx.fillStyle = '#ffffff';
+      // Faulty parts bar label - always show above bar if value > 0
+      if (item.faulty > 0) {
+        ctx.fillText(item.faulty.toString(), x + barWidth + (barWidth * 0.4), faultyY - 8);
       }
     });
     
@@ -914,37 +996,454 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     ctx.lineTo(padding, canvas.height - padding);
     ctx.lineTo(canvas.width - padding, canvas.height - padding);
     ctx.stroke();
+    
+    // Add click event listener for bar chart
+    const clickHandler = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      
+      // Check if click is within chart area
+      if (clickX >= padding && clickX <= canvas.width - padding && 
+          clickY >= padding && clickY <= canvas.height - padding) {
+        
+        // Determine which bar was clicked
+        const barWidth = chartWidth / (this.chartData.length * 2);
+        
+        for (let i = 0; i < this.chartData.length; i++) {
+          const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
+          
+          // Check if click is within either bar for this data item
+          if (clickX >= x && clickX <= x + (barWidth * 1.8)) {
+            console.log('Bar chart clicked:', this.chartData[i]);
+            this.onChartItemClick(this.chartData[i], 'parts-to-receive');
+            break;
+          }
+        }
+      }
+    };
+    
+    canvas.addEventListener('click', clickHandler);
+    this.chartClickListeners.set('barChart', clickHandler);
+    
+    // Add enhanced hover effect with animation updates
+    const hoverHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      
+      canvas.style.cursor = 'default';
+      let newHoveredIndex = -1;
+      
+      if (mouseX >= padding && mouseX <= canvas.width - padding && 
+          mouseY >= padding && mouseY <= canvas.height - padding) {
+        
+        const barWidth = chartWidth / (this.chartData.length * 2);
+        
+        for (let i = 0; i < this.chartData.length; i++) {
+          const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
+          
+          if (mouseX >= x && mouseX <= x + (barWidth * 1.8)) {
+            canvas.style.cursor = 'pointer';
+            newHoveredIndex = i;
+            break;
+          }
+        }
+      }
+      
+      // Only update cursor, no visual changes
+      this.hoveredBarIndex = newHoveredIndex;
+    };
+    
+    canvas.addEventListener('mousemove', hoverHandler);
+    this.chartClickListeners.set('barChartHover', hoverHandler);
   }
 
+  private animateBarChart(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): void {
+    this.isAnimating = true;
+    this.animationProgress = 0;
+    
+    const animate = () => {
+      this.animationProgress += 0.02;
+      
+      if (this.animationProgress >= 1) {
+        this.animationProgress = 1;
+        this.isAnimating = false;
+      }
+      
+      // Easing function for smooth animation
+      const easeProgress = this.easeOutCubic(this.animationProgress);
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      this.drawBars(ctx, canvas, easeProgress);
+      
+      if (this.isAnimating) {
+        this.animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+    
+    animate();
+  }
+  
+  private easeOutCubic(t: number): number {
+    return 1 - Math.pow(1 - t, 3);
+  }
+  
+  private easeOutElastic(t: number): number {
+    const c4 = (2 * Math.PI) / 3;
+    return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+  }
+  
+  private drawBars(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
+    const padding = 60;
+    const chartWidth = canvas.width - (padding * 2);
+    const chartHeight = canvas.height - (padding * 2);
+    const barWidth = chartWidth / (this.chartData.length * 2);
+    const maxValue = Math.max(...this.chartData.map(d => Math.max(d.jobsCount, d.faulty)));
+    
+    // Draw gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, 'rgba(84, 134, 255, 0.02)');
+    gradient.addColorStop(1, 'rgba(102, 126, 234, 0.05)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw animated grid lines
+    ctx.strokeStyle = 'rgba(233, 236, 239, 0.8)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight * i / 5);
+      const gridProgress = Math.max(0, Math.min(1, (progress * 1.2) - (i * 0.1)));
+      
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(padding + (chartWidth * gridProgress), y);
+      ctx.stroke();
+      
+      // Y-axis labels with fade-in
+      if (progress > 0.5) {
+        ctx.fillStyle = `rgba(108, 117, 125, ${(progress - 0.5) * 2})`;
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.textAlign = 'right';
+        const value = Math.round(maxValue * (5 - i) / 5);
+        ctx.fillText(value.toString(), padding - 10, y + 4);
+      }
+    }
+    
+    // Draw animated bars
+    this.chartData.forEach((item, index) => {
+      const x = padding + (index * 2 * barWidth) + (barWidth * 0.1);
+      
+      // Jobs count bar with gradient and animation (no hover effects)
+      const jobsHeight = ((item.jobsCount / maxValue) * chartHeight * progress);
+      const jobsY = padding + chartHeight - jobsHeight;
+      
+      // Create gradient for jobs bar (consistent colors)
+      const jobsGradient = ctx.createLinearGradient(0, jobsY, 0, jobsY + jobsHeight);
+      jobsGradient.addColorStop(0, '#3699ff');
+      jobsGradient.addColorStop(1, '#1d4ed8');
+      
+      ctx.fillStyle = jobsGradient;
+      ctx.shadowColor = 'rgba(54, 153, 255, 0.2)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 5;
+      
+      const barWidthScaled = barWidth * 0.8;
+      
+      this.drawRoundedRect(ctx, x, jobsY, barWidthScaled, jobsHeight, 4);
+      
+      // Faulty parts bar (consistent colors)
+      const faultyHeight = ((item.faulty / maxValue) * chartHeight * progress);
+      const faultyY = padding + chartHeight - faultyHeight;
+      
+      const faultyGradient = ctx.createLinearGradient(0, faultyY, 0, faultyY + faultyHeight);
+      faultyGradient.addColorStop(0, '#f64e60');
+      faultyGradient.addColorStop(1, '#e53e3e');
+      
+      ctx.fillStyle = faultyGradient;
+      ctx.shadowColor = 'rgba(246, 78, 96, 0.2)';
+      
+      this.drawRoundedRect(ctx, x + barWidth, faultyY, barWidthScaled, faultyHeight, 4);
+      
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      
+      // X-axis labels with bounce-in animation
+      if (progress > 0.7) {
+        const labelProgress = Math.min(1, (progress - 0.7) / 0.3);
+        const bounceProgress = this.easeOutElastic(labelProgress);
+        
+        ctx.fillStyle = `rgba(108, 117, 125, ${labelProgress})`;
+        ctx.font = '11px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.save();
+        ctx.translate(x + barWidth, canvas.height - padding + 20);
+        ctx.scale(bounceProgress, bounceProgress);
+        ctx.fillText(item.name, 0, 0);
+        ctx.restore();
+      }
+      
+      // Animated value labels - always show outside bars in black
+      if (progress > 0.8) {
+        const labelAlpha = (progress - 0.8) / 0.2;
+        ctx.fillStyle = `rgba(0, 0, 0, ${labelAlpha})`;
+        ctx.font = 'bold 11px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        
+        // Jobs count label - always above bar
+        if (item.jobsCount > 0) {
+          ctx.fillText(item.jobsCount.toString(), x + (barWidth * 0.4), jobsY - 8);
+        }
+        
+        // Faulty count label - always above bar
+        if (item.faulty > 0) {
+          ctx.fillText(item.faulty.toString(), x + barWidth + (barWidth * 0.4), faultyY - 8);
+        }
+      }
+    });
+    
+    // Draw axes with animation
+    if (progress > 0.3) {
+      ctx.strokeStyle = `rgba(108, 117, 125, ${(progress - 0.3) / 0.7})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, canvas.height - padding);
+      ctx.lineTo(canvas.width - padding, canvas.height - padding);
+      ctx.stroke();
+    }
+  }
+  
+
+
   private renderPieChart(): void {
-    if (!this.pieChartCanvas?.nativeElement || this.chartData.length === 0) return;
+    if (!this.pieChartCanvas?.nativeElement) {
+      console.log('Pie chart canvas not found');
+      return;
+    }
+    
+    if (this.chartData.length === 0) {
+      console.log('No chart data available');
+      return;
+    }
     
     const canvas = this.pieChartCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      console.log('Cannot get canvas context');
+      return;
+    }
+
+    // Ensure canvas has proper dimensions
+    if (canvas.width === 0 || canvas.height === 0) {
+      canvas.width = canvas.offsetWidth || 800;
+      canvas.height = canvas.offsetHeight || 400;
+      console.log('Canvas dimensions set to:', canvas.width, 'x', canvas.height);
+    }
+
+    console.log('Rendering pie chart with data:', this.chartData.length, 'items');
+    console.log('Canvas size:', canvas.width, 'x', canvas.height);
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Remove existing listeners
+    const existingListener = this.chartClickListeners.get('pieChart');
+    if (existingListener) {
+      canvas.removeEventListener('click', existingListener);
+      this.chartClickListeners.delete('pieChart');
+    }
+    
+    try {
+      // Always render the modern pie chart directly
+      this.drawModernPieSlices(ctx, canvas, 1);
+      console.log('Pie chart rendered successfully');
+    } catch (error) {
+      console.error('Error rendering pie chart:', error);
+    }
+    
+    // Setup click detection with proper positioning
+    const total = this.chartData.reduce((sum, item) => sum + item.jobsCount, 0);
+    const legendWidth = 220;
+    const availableWidth = canvas.width - legendWidth;
+    const adjustedCenterX = legendWidth + (availableWidth / 2);
+    const adjustedCenterY = canvas.height / 2;
+    const adjustedOuterRadius = Math.min(availableWidth / 2, adjustedCenterY) - 40;
+    const adjustedInnerRadius = adjustedOuterRadius * 0.4;
+    
+    // Add click event listener for pie chart
+    const clickHandler = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      
+      // Calculate distance from center using adjusted positions
+      const dx = clickX - adjustedCenterX;
+      const dy = clickY - adjustedCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Check if click is within the pie chart (outside inner circle)
+      if (distance <= adjustedOuterRadius && distance >= adjustedInnerRadius) {
+        // Calculate angle of click
+        let angle = Math.atan2(dy, dx);
+        // Normalize angle to 0-2π and adjust for starting position
+        angle = (angle + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        
+        // Find which slice was clicked
+        let currentAngle = 0;
+        for (let i = 0; i < this.chartData.length; i++) {
+          const sliceAngle = (this.chartData[i].jobsCount / total) * 2 * Math.PI;
+          
+          if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
+            console.log('Modern pie chart clicked:', this.chartData[i]);
+            this.animateSliceClick(i);
+            // Small delay before navigation for visual feedback
+            setTimeout(() => {
+              this.onChartItemClick(this.chartData[i], 'parts-to-receive');
+            }, 300);
+            break;
+          }
+          
+          currentAngle += sliceAngle;
+        }
+      }
+    };
+    
+    canvas.addEventListener('click', clickHandler);
+    this.chartClickListeners.set('pieChart', clickHandler);
+    
+    // Enhanced interactive mouse handlers
+    const mouseMoveHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      
+      const dx = mouseX - adjustedCenterX;
+      const dy = mouseY - adjustedCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance <= adjustedOuterRadius && distance >= adjustedInnerRadius) {
+        canvas.style.cursor = 'pointer';
+        
+        // Calculate which slice is being hovered
+        let angle = Math.atan2(dy, dx);
+        angle = (angle + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        
+        let currentAngle = 0;
+        let newHoveredIndex = -1;
+        
+        for (let i = 0; i < this.chartData.length; i++) {
+          const sliceAngle = (this.chartData[i].jobsCount / total) * 2 * Math.PI;
+          
+          if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
+            newHoveredIndex = i;
+            break;
+          }
+          
+          currentAngle += sliceAngle;
+        }
+        
+        if (newHoveredIndex !== this.hoveredSliceIndex) {
+          this.hoveredSliceIndex = newHoveredIndex;
+          this.animateSliceHover();
+        }
+        
+        // Update tooltip position
+        this.updateTooltipPosition(event, canvas);
+        this.isHovering = true;
+      } else {
+        canvas.style.cursor = 'default';
+        if (this.hoveredSliceIndex !== -1) {
+          this.hoveredSliceIndex = -1;
+          this.animateSliceHover();
+        }
+        this.isHovering = false;
+      }
+    };
+    
+    const mouseLeaveHandler = () => {
+      canvas.style.cursor = 'default';
+      this.hoveredSliceIndex = -1;
+      this.isHovering = false;
+      this.animateSliceHover();
+    };
+    
+    canvas.addEventListener('mousemove', mouseMoveHandler);
+    canvas.addEventListener('mouseleave', mouseLeaveHandler);
+    this.chartClickListeners.set('pieChartHover', mouseMoveHandler);
+    this.chartClickListeners.set('pieChartLeave', mouseLeaveHandler);
+  }
+  
+  private animatePieChart(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): void {
+    this.isAnimating = true;
+    this.animationProgress = 0;
+    
+    const animate = () => {
+      this.animationProgress += 0.02;
+      
+      if (this.animationProgress >= 1) {
+        this.animationProgress = 1;
+        this.isAnimating = false;
+      }
+      
+      const easeProgress = this.easeOutCubic(this.animationProgress);
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      this.drawModernPieSlices(ctx, canvas, easeProgress);
+      
+      if (this.isAnimating) {
+        this.animationFrameId = requestAnimationFrame(animate);
+      }
+    };
+    
+    animate();
+  }
+  
+  private drawPieSlices(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 40;
-    
+    const baseRadius = Math.min(centerX, centerY) - 40;
     const total = this.chartData.reduce((sum, item) => sum + item.jobsCount, 0);
-    let currentAngle = -Math.PI / 2; // Start from top
+    let currentAngle = -Math.PI / 2;
     
-    // Draw background circle
-    ctx.fillStyle = '#f8f9fa';
+    // Draw gradient background
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, baseRadius + 20);
+    bgGradient.addColorStop(0, 'rgba(248, 250, 252, 0.9)');
+    bgGradient.addColorStop(1, 'rgba(241, 245, 249, 0.7)');
+    ctx.fillStyle = bgGradient;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + 10, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, baseRadius + 20, 0, 2 * Math.PI);
     ctx.fill();
     
-    // Draw pie slices
+    // Draw animated slices (no hover effects)
     this.chartData.forEach((item, index) => {
-      const sliceAngle = (item.jobsCount / total) * 2 * Math.PI;
+      const sliceAngle = (item.jobsCount / total) * 2 * Math.PI * progress;
+      const radius = baseRadius; // No hover scaling
       
-      // Draw slice
-      ctx.fillStyle = this.getChartColor(index);
+      // Create gradient for slice (consistent colors)
+      const sliceGradient = ctx.createRadialGradient(
+        centerX, centerY, 0,
+        centerX, centerY, radius
+      );
+      const color = this.getAnimatedChartColor(index, false); // Always pass false for hover
+      sliceGradient.addColorStop(0, color.light);
+      sliceGradient.addColorStop(1, color.dark);
+      
+      ctx.fillStyle = sliceGradient;
+      
+      // Add consistent shadow for depth
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 5;
+      
+      // Draw slice (no offset)
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
@@ -952,38 +1451,140 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       ctx.fill();
       
       // Draw slice border
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 3;
       ctx.stroke();
       
-      // Draw percentage label
-      const percentage = Math.round((item.jobsCount / total) * 100);
-      if (percentage > 5) { // Only show label if slice is large enough
-        const labelAngle = currentAngle + sliceAngle / 2;
-        const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
-        const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+      // Draw enhanced labels with data names and values
+      if (progress > 0.7 && sliceAngle > 0.2) {
+        const percentage = Math.round((item.jobsCount / total) * 100);
+        const labelProgress = Math.min(1, (progress - 0.7) / 0.3);
+        const bounceProgress = this.easeOutElastic(labelProgress);
         
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
+        const labelAngle = currentAngle + sliceAngle / 2;
+        const labelRadius = radius * 0.75;
+        const labelX = centerX + Math.cos(labelAngle) * labelRadius;
+        const labelY = centerY + Math.sin(labelAngle) * labelRadius;
+        
+        // Draw white background for better readability
+        ctx.fillStyle = `rgba(255, 255, 255, ${labelProgress * 0.9})`;
+        ctx.beginPath();
+        ctx.arc(labelX, labelY, 25 * bounceProgress, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw name (abbreviated if too long)
+        const displayName = item.name.length > 10 ? item.name.substring(0, 8) + '...' : item.name;
+        ctx.fillStyle = `rgba(31, 41, 55, ${labelProgress})`;
+        ctx.font = `bold ${9 * bounceProgress}px Inter, Arial, sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText(`${percentage}%`, labelX, labelY);
+        ctx.fillText(displayName, labelX, labelY - 5);
+        
+        // Draw value and percentage
+        ctx.font = `bold ${10 * bounceProgress}px Inter, Arial, sans-serif`;
+        ctx.fillText(`${item.jobsCount}`, labelX, labelY + 5);
+        ctx.font = `${8 * bounceProgress}px Inter, Arial, sans-serif`;
+        ctx.fillText(`(${percentage}%)`, labelX, labelY + 15);
       }
       
       currentAngle += sliceAngle;
     });
     
-    // Draw center circle
-    ctx.fillStyle = '#ffffff';
+    // Draw animated center circle
+    const centerRadius = baseRadius * 0.4 * progress;
+    const centerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, centerRadius);
+    centerGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    centerGradient.addColorStop(1, 'rgba(248, 250, 252, 0.9)');
+    
+    ctx.fillStyle = centerGradient;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+    ctx.shadowBlur = 10;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.4, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, centerRadius, 0, 2 * Math.PI);
     ctx.fill();
     
-    // Draw total in center
-    ctx.fillStyle = '#6c757d';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Total', centerX, centerY - 5);
-    ctx.fillText(total.toString(), centerX, centerY + 15);
+    ctx.shadowBlur = 0;
+    
+    // Draw total in center with bounce animation
+    if (progress > 0.8) {
+      const textProgress = (progress - 0.8) / 0.2;
+      const bounceProgress = this.easeOutElastic(textProgress);
+      
+      ctx.fillStyle = `rgba(108, 117, 125, ${textProgress})`;
+      ctx.font = `bold ${16 * bounceProgress}px Inter, Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('Total Jobs', centerX, centerY - 5);
+      ctx.fillText(total.toString(), centerX, centerY + 15);
+    }
+    
+    // Draw legend below pie chart
+    if (progress > 0.9) {
+      const legendY = centerY + baseRadius + 60;
+      const legendItemWidth = Math.min(120, canvas.width / Math.min(this.chartData.length, 4));
+      const startX = centerX - (Math.min(this.chartData.length, 4) * legendItemWidth) / 2;
+      
+      this.chartData.slice(0, 4).forEach((item, index) => {
+        const x = startX + (index * legendItemWidth);
+        const color = this.getAnimatedChartColor(index, false);
+        
+        // Legend color box
+        ctx.fillStyle = color.dark;
+        ctx.fillRect(x, legendY - 8, 12, 12);
+        
+        // Legend text
+        ctx.fillStyle = '#374151';
+        ctx.font = '11px Inter, Arial, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${item.name}: ${item.jobsCount}`, x + 18, legendY + 2);
+      });
+      
+      // Show remaining items count if more than 4
+      if (this.chartData.length > 4) {
+        const remaining = this.chartData.length - 4;
+        ctx.fillStyle = '#6B7280';
+        ctx.font = '10px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`+${remaining} more items`, centerX, legendY + 25);
+      }
+    }
+  }
+  
+  private getAnimatedChartColor(index: number, isHovered: boolean): {light: string, dark: string} {
+    const colors = [
+      { light: '#60A5FA', dark: '#2563EB' }, // Blue
+      { light: '#F87171', dark: '#DC2626' }, // Red  
+      { light: '#34D399', dark: '#059669' }, // Green
+      { light: '#FBBF24', dark: '#D97706' }, // Yellow
+      { light: '#A78BFA', dark: '#7C3AED' }, // Purple
+      { light: '#FB7185', dark: '#E11D48' }, // Pink
+      { light: '#FB923C', dark: '#EA580C' }, // Orange
+      { light: '#818CF8', dark: '#4338CA' }, // Indigo
+      { light: '#2DD4BF', dark: '#0D9488' }, // Teal
+      { light: '#FDE047', dark: '#CA8A04' }  // Lime
+    ];
+    
+    const colorSet = colors[index % colors.length];
+    
+    if (isHovered) {
+      return {
+        light: this.lightenColor(colorSet.light, 20),
+        dark: this.darkenColor(colorSet.dark, 10)
+      };
+    }
+    
+    return colorSet;
+  }
+  
+  private lightenColor(color: string, percent: number): string {
+    // Simple color lightening - in production, use a proper color library
+    return color;
+  }
+  
+  private darkenColor(color: string, percent: number): string {
+    // Simple color darkening - in production, use a proper color library  
+    return color;
   }
 
   // Additional methods for template
@@ -1218,6 +1819,13 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Remove existing click listener if any
+    const existingListener = this.chartClickListeners.get('weeklyBarChart');
+    if (existingListener) {
+      canvas.removeEventListener('click', existingListener);
+      this.chartClickListeners.delete('weeklyBarChart');
+    }
+    
     const padding = 60;
     const chartWidth = canvas.width - (padding * 2);
     const chartHeight = canvas.height - (padding * 2);
@@ -1270,30 +1878,19 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       const labelX = x + barWidth + 2.5;
       ctx.fillText(item.wkEnd, labelX, canvas.height - padding + 15);
       
-      // Value labels on bars
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 9px Arial';
+      // Value labels on bars - always display outside bars in black
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 10px Arial';
       ctx.textAlign = 'center';
       
-      // Always show labels, adjust position based on bar height
-      if (unusedHeight > 12) {
-        // Label inside bar if there's space
-        ctx.fillText(item.unUsed.toString(), x + (barWidth * 0.5), unusedY + 12);
-      } else if (item.unUsed > 0) {
-        // Label above bar if bar is too small
-        ctx.fillStyle = '#6c757d';
-        ctx.fillText(item.unUsed.toString(), x + (barWidth * 0.5), unusedY - 5);
-        ctx.fillStyle = '#ffffff';
+      // UnUsed parts label - always above bar
+      if (item.unUsed > 0) {
+        ctx.fillText(item.unUsed.toString(), x + (barWidth * 0.5), unusedY - 8);
       }
       
-      if (faultyHeight > 12) {
-        // Label inside bar if there's space
-        ctx.fillText(item.faulty.toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY + 12);
-      } else if (item.faulty > 0) {
-        // Label above bar if bar is too small
-        ctx.fillStyle = '#6c757d';
-        ctx.fillText(item.faulty.toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY - 5);
-        ctx.fillStyle = '#ffffff';
+      // Faulty parts label - always above bar
+      if (item.faulty > 0) {
+        ctx.fillText(item.faulty.toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY - 8);
       }
     });
     
@@ -1318,6 +1915,63 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     ctx.lineTo(padding, canvas.height - padding);
     ctx.lineTo(canvas.width - padding, canvas.height - padding);
     ctx.stroke();
+    
+    // Add click event listener for weekly bar chart
+    const clickHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      
+      // Check if click is within chart area
+      if (clickX >= padding && clickX <= canvas.width - padding && 
+          clickY >= padding && clickY <= canvas.height - padding) {
+        
+        // Determine which bar was clicked
+        const barGroupWidth = chartWidth / this.weeklyPartsData.length;
+        
+        for (let i = 0; i < this.weeklyPartsData.length; i++) {
+          const x = padding + (i * barGroupWidth) + (barGroupWidth * 0.1);
+          const barWidth = barGroupWidth * 0.35;
+          
+          // Check if click is within either bar for this data item
+          if (clickX >= x && clickX <= x + (barWidth * 2) + 5) {
+            this.onChartItemClick(this.weeklyPartsData[i], 'weekly-returned');
+            break;
+          }
+        }
+      }
+    };
+    
+    canvas.addEventListener('click', clickHandler);
+    this.chartClickListeners.set('weeklyBarChart', clickHandler);
+    
+    // Add hover effect
+    const hoverHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      
+      canvas.style.cursor = 'default';
+      
+      if (mouseX >= padding && mouseX <= canvas.width - padding && 
+          mouseY >= padding && mouseY <= canvas.height - padding) {
+        
+        const barGroupWidth = chartWidth / this.weeklyPartsData.length;
+        
+        for (let i = 0; i < this.weeklyPartsData.length; i++) {
+          const x = padding + (i * barGroupWidth) + (barGroupWidth * 0.1);
+          const barWidth = barGroupWidth * 0.35;
+          
+          if (mouseX >= x && mouseX <= x + (barWidth * 2) + 5) {
+            canvas.style.cursor = 'pointer';
+            break;
+          }
+        }
+      }
+    };
+    
+    canvas.addEventListener('mousemove', hoverHandler);
+    this.chartClickListeners.set('weeklyBarChartHover', hoverHandler);
   }
 
   private renderWeeklyLineChart(): void {
@@ -1639,6 +2293,587 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     return item.serviceCallId;
   }
 
+  // Chart Navigation Methods (mimicking legacy behavior)
+  handleChartNavigation(params: any): void {
+    const source = params.get('Source');
+    const invUserID = params.get('InvUserID');
+    const weekNo = params.get('WeekNo');
+    
+    // Ensure charts remain loaded during navigation
+    const preserveCharts = () => {
+      setTimeout(() => {
+        if (this.chartData.length > 0) {
+          this.renderCharts();
+        }
+        if (this.weeklyPartsData.length > 0) {
+          this.renderWeeklyCharts();
+        }
+        if (this.receivedChartData.length > 0) {
+          this.renderReceivedCharts();
+        }
+      }, 100);
+    };
+    
+    switch (source) {
+      case 'Graph':
+        // Parts to be Received chart was clicked
+        if (invUserID) {
+          this.partReturnFilterForm.patchValue({ inventoryUser: invUserID });
+          this.activeGraphTab = 'graph1';
+          preserveCharts();
+        }
+        break;
+        
+      case 'Received':
+        // Parts Received chart was clicked
+        if (invUserID) {
+          this.partReturnFilterForm.patchValue({ 
+            inventoryUser: invUserID,
+            status: '3' // Set to "Received" status
+          });
+          this.activeGraphTab = 'graph3';
+          preserveCharts();
+        }
+        break;
+        
+      case 'Return':
+        // Weekly Parts Returned chart was clicked
+        if (weekNo) {
+          const weekNumber = parseInt(weekNo);
+          if (weekNumber >= 1 && weekNumber <= 53) {
+            this.partReturnFilterForm.patchValue({ weekNo: weekNumber });
+            this.selectedWeekNo = weekNumber;
+            this.activeGraphTab = 'graph2';
+            this.loadPartsReturnDataByWeekNo();
+            preserveCharts();
+          }
+        }
+        break;
+    }
+  }
+
+  // Chart click handlers for different chart types
+  onChartItemClick(item: any, chartType: 'parts-to-receive' | 'parts-received' | 'weekly-returned'): void {
+    // Prevent navigation that would clear charts, handle drill-down locally
+    console.log('Chart item clicked:', item, 'Type:', chartType);
+    
+    switch (chartType) {
+      case 'parts-to-receive':
+        // Handle parts to be received chart click
+        this.handlePartsToReceiveClick(item);
+        break;
+        
+      case 'parts-received':
+        // Handle parts received chart click
+        this.handlePartsReceivedClick(item);
+        break;
+        
+      case 'weekly-returned':
+        // Handle weekly returned chart click
+        this.handleWeeklyReturnedClick(item);
+        break;
+    }
+  }
+
+  private handlePartsToReceiveClick(item: any): void {
+    // Filter data by inventory user without navigation
+    if (item.name) {
+      const mappedUser = this.mapChartNameToInventoryUser(item.name);
+      console.log('Parts to receive click - Chart name:', item.name, 'Mapped to user:', mappedUser);
+      
+      this.partReturnFilterForm.patchValue({ 
+        inventoryUser: mappedUser
+      }, { emitEvent: false });
+      
+      // Keep charts visible by not navigating away
+      setTimeout(() => {
+        this.getPartReturnStatusReport();
+      }, 100);
+    }
+  }
+
+  // Helper method for row hover effects
+  onRowHover(index: number, isHovering: boolean): void {
+    // Can be used for additional hover effects if needed
+    // Currently handled via CSS :hover
+  }
+  
+  // Interactive pie chart animation methods
+  private animateSliceHover(): void {
+    if (this.hoverAnimationId) {
+      cancelAnimationFrame(this.hoverAnimationId);
+    }
+    
+    // Initialize hover scales if not present
+    while (this.sliceHoverScale.length < this.chartData.length) {
+      this.sliceHoverScale.push(1);
+    }
+    
+    const animateHover = () => {
+      let hasChanges = false;
+      
+      this.chartData.forEach((_, index) => {
+        const targetScale = index === this.hoveredSliceIndex ? 1.1 : 1;
+        const currentScale = this.sliceHoverScale[index];
+        const diff = targetScale - currentScale;
+        
+        if (Math.abs(diff) > 0.01) {
+          this.sliceHoverScale[index] += diff * 0.15;
+          hasChanges = true;
+        } else {
+          this.sliceHoverScale[index] = targetScale;
+        }
+      });
+      
+      if (hasChanges) {
+        this.renderPieChart();
+        this.hoverAnimationId = requestAnimationFrame(animateHover);
+      } else {
+        this.hoverAnimationId = null;
+      }
+    };
+    
+    animateHover();
+  }
+  
+  private animateSliceClick(sliceIndex: number): void {
+    this.clickedSliceIndex = sliceIndex;
+    this.clickAnimationProgress = 0;
+    
+    const animateClick = () => {
+      this.clickAnimationProgress += 0.1;
+      
+      if (this.clickAnimationProgress >= 1) {
+        this.clickAnimationProgress = 1;
+        setTimeout(() => {
+          this.clickedSliceIndex = -1;
+          this.renderPieChart();
+        }, 200);
+      }
+      
+      this.renderPieChart();
+      
+      if (this.clickAnimationProgress < 1) {
+        requestAnimationFrame(animateClick);
+      }
+    };
+    
+    animateClick();
+  }
+  
+  // Color manipulation utilities
+  private brightenColor(color: string, percent: number): string {
+    // Convert hex to RGB and brighten
+    const hex = color.replace('#', '');
+    const r = Math.min(255, parseInt(hex.substr(0, 2), 16) + percent);
+    const g = Math.min(255, parseInt(hex.substr(2, 2), 16) + percent);
+    const b = Math.min(255, parseInt(hex.substr(4, 2), 16) + percent);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  
+  // Tooltip helper methods
+  public getSliceColor(index: number): string {
+    const colors = [
+      '#4F46E5', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', 
+      '#06B6D4', '#EC4899', '#84CC16'
+    ];
+    return colors[index % colors.length];
+  }
+  
+  private updateTooltipPosition(event: MouseEvent, canvas: HTMLCanvasElement): void {
+    const rect = canvas.getBoundingClientRect();
+    this.tooltipPosition.x = event.clientX - rect.left + 15;
+    this.tooltipPosition.y = event.clientY - rect.top - 10;
+  }
+
+  // Draw modern pie slices with animation and data labels
+  private drawModernPieSlices(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
+    console.log('drawModernPieSlices called with progress:', progress);
+    console.log('Chart data:', this.chartData);
+    
+    // Position pie chart to the right, accounting for left-side legend
+    const legendWidth = 220;
+    const availableWidth = canvas.width - legendWidth;
+    const centerX = legendWidth + (availableWidth / 2);
+    const centerY = canvas.height / 2;
+    const outerRadius = Math.min(availableWidth / 2, centerY) - 40;
+    const innerRadius = outerRadius * 0.4;
+    
+    console.log('Pie chart positioning:', {
+      legendWidth,
+      availableWidth,
+      centerX,
+      centerY,
+      outerRadius,
+      innerRadius
+    });
+    
+    const total = this.chartData.reduce((sum, item) => sum + item.jobsCount, 0);
+    console.log('Total jobs count:', total);
+    
+    // Check for valid dimensions
+    if (outerRadius <= 0 || innerRadius <= 0) {
+      console.error('Invalid pie chart dimensions - radius too small');
+      return;
+    }
+    
+    let currentAngle = -Math.PI / 2;
+
+    const modernColors = [
+      { main: '#4F46E5', light: '#6366F1', shadow: '#3730A3' },
+      { main: '#EF4444', light: '#F87171', shadow: '#DC2626' },
+      { main: '#10B981', light: '#34D399', shadow: '#059669' },
+      { main: '#F59E0B', light: '#FBBF24', shadow: '#D97706' },
+      { main: '#8B5CF6', light: '#A78BFA', shadow: '#7C3AED' },
+      { main: '#06B6D4', light: '#22D3EE', shadow: '#0891B2' },
+      { main: '#EC4899', light: '#F472B6', shadow: '#DB2777' },
+      { main: '#84CC16', light: '#A3E635', shadow: '#65A30D' }
+    ];
+
+    console.log('Drawing background gradient');
+    // Draw background
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, outerRadius + 20);
+    bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    bgGradient.addColorStop(0.7, 'rgba(248, 250, 252, 0.8)');
+    bgGradient.addColorStop(1, 'rgba(241, 245, 249, 0.9)');
+    ctx.fillStyle = bgGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerRadius + 15, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Draw slices with interactive effects
+    this.chartData.forEach((item, index) => {
+      const sliceAngle = ((item.jobsCount / total) * 2 * Math.PI) * progress;
+      const colors = modernColors[index % modernColors.length];
+      
+      // Calculate interactive transformations
+      const isHovered = this.hoveredSliceIndex === index;
+      const isClicked = this.clickedSliceIndex === index;
+      const hoverScale = this.sliceHoverScale[index] || 1;
+      
+      // Apply hover/click effects
+      const effectiveOuterRadius = outerRadius * hoverScale;
+      const effectiveInnerRadius = innerRadius * hoverScale;
+      
+      // Offset for hover effect (slice separation)
+      let offsetX = 0, offsetY = 0;
+      if (isHovered || isClicked) {
+        const midAngle = currentAngle + sliceAngle / 2;
+        const offsetDistance = isClicked ? 15 : 8;
+        offsetX = Math.cos(midAngle) * offsetDistance;
+        offsetY = Math.sin(midAngle) * offsetDistance;
+      }
+      
+      const effectiveCenterX = centerX + offsetX;
+      const effectiveCenterY = centerY + offsetY;
+      
+      // Enhanced gradient with hover effects
+      const sliceGradient = ctx.createRadialGradient(
+        effectiveCenterX, effectiveCenterY, effectiveInnerRadius,
+        effectiveCenterX, effectiveCenterY, effectiveOuterRadius
+      );
+      
+      if (isHovered) {
+        sliceGradient.addColorStop(0, this.brightenColor(colors.light, 20));
+        sliceGradient.addColorStop(0.6, this.brightenColor(colors.main, 15));
+        sliceGradient.addColorStop(1, colors.shadow);
+      } else if (isClicked) {
+        sliceGradient.addColorStop(0, this.brightenColor(colors.light, 30));
+        sliceGradient.addColorStop(0.6, this.brightenColor(colors.main, 25));
+        sliceGradient.addColorStop(1, this.brightenColor(colors.shadow, 10));
+      } else {
+        sliceGradient.addColorStop(0, colors.light);
+        sliceGradient.addColorStop(0.6, colors.main);
+        sliceGradient.addColorStop(1, colors.shadow);
+      }
+      
+      // Add glow effect for hovered/clicked slices
+      if (isHovered || isClicked) {
+        ctx.shadowColor = colors.main;
+        ctx.shadowBlur = isClicked ? 20 : 15;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+      
+      ctx.fillStyle = sliceGradient;
+      ctx.beginPath();
+      ctx.moveTo(effectiveCenterX, effectiveCenterY);
+      ctx.arc(effectiveCenterX, effectiveCenterY, effectiveOuterRadius, currentAngle, currentAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Reset shadow
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      
+      // Enhanced stroke with interaction feedback
+      ctx.strokeStyle = isHovered ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = isHovered ? 4 : 3;
+      ctx.stroke();
+      
+      // Add labels when animation is complete or nearly complete
+      if (progress > 0.8) {
+        const percentage = Math.round((item.jobsCount / total) * 100);
+        if (percentage >= 3) {
+          const labelAngle = currentAngle + ((item.jobsCount / total) * 2 * Math.PI) / 2;
+          const labelRadius = innerRadius + (outerRadius - innerRadius) * 0.65;
+          const labelX = centerX + Math.cos(labelAngle) * labelRadius;
+          const labelY = centerY + Math.sin(labelAngle) * labelRadius;
+          
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+          ctx.shadowBlur = 3;
+          
+          const displayName = item.name.length > 10 ? item.name.substring(0, 8) + '..' : item.name;
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 9px Inter, Arial, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(displayName, labelX, labelY - 6);
+          
+          ctx.font = 'bold 11px Inter, Arial, sans-serif';
+          ctx.fillText(`${item.jobsCount}`, labelX, labelY + 4);
+          
+          ctx.font = '8px Inter, Arial, sans-serif';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+          ctx.fillText(`(${percentage}%)`, labelX, labelY + 14);
+          
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+        }
+      }
+      
+      currentAngle += (item.jobsCount / total) * 2 * Math.PI;
+    });
+    
+    // Draw center circle
+    const innerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius);
+    innerGradient.addColorStop(0, '#ffffff');
+    innerGradient.addColorStop(0.6, '#fafbfc');
+    innerGradient.addColorStop(1, '#f1f5f9');
+    ctx.fillStyle = innerGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Center text
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 14px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Total Jobs', centerX, centerY - 8);
+    
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 24px Inter, Arial, sans-serif';
+    ctx.fillText(total.toString(), centerX, centerY + 16);
+    
+    // Draw legend when animation is complete
+    if (progress >= 1) {
+      this.drawModernLegend(ctx, canvas, modernColors);
+    }
+  }
+
+  // Draw elegant modern legend positioned on the left side
+  private drawModernLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, colors: any[]): void {
+    const legendX = 25;
+    const legendY = 40; // Start from top
+    const itemHeight = 40; // Increased spacing
+    const total = this.chartData.reduce((sum, item) => sum + item.jobsCount, 0);
+    
+    // Calculate legend dimensions
+    const legendWidth = 240;
+    const legendHeight = (this.chartData.length * itemHeight) + 80;
+    
+    // Draw elegant legend background with gradient
+    const bgGradient = ctx.createLinearGradient(legendX - 15, legendY - 35, legendX - 15, legendY - 35 + legendHeight);
+    bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    bgGradient.addColorStop(1, 'rgba(248, 250, 252, 0.98)');
+    
+    ctx.fillStyle = bgGradient;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 8;
+    
+    // Rounded rectangle for legend background
+    this.drawRoundedRect(ctx, legendX - 15, legendY - 35, legendWidth, legendHeight, 16);
+    
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    
+    // Draw subtle border
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.4)';
+    ctx.lineWidth = 1;
+    this.strokeRoundedRect(ctx, legendX - 15, legendY - 35, legendWidth, legendHeight, 12);
+    
+    // Draw elegant legend title
+    ctx.font = '600 18px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#111827';
+    ctx.textAlign = 'left';
+    ctx.fillText('Job Distribution', legendX, legendY - 10);
+    
+    // Draw refined summary
+    ctx.font = '500 13px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#6b7280';
+    ctx.fillText(`${total} jobs across ${this.chartData.length} technicians`, legendX, legendY + 12);
+    
+    // Draw elegant legend items
+    this.chartData.forEach((item, index) => {
+      const y = legendY + 35 + (index * itemHeight);
+      const color = colors[index % colors.length];
+      const percentage = Math.round((item.jobsCount / total) * 100);
+      
+      // Draw sophisticated color indicator
+      const circleGradient = ctx.createRadialGradient(legendX + 12, y + 12, 2, legendX + 12, y + 12, 12);
+      circleGradient.addColorStop(0, color.light);
+      circleGradient.addColorStop(0.7, color.main);
+      circleGradient.addColorStop(1, color.shadow);
+      
+      ctx.fillStyle = circleGradient;
+      ctx.beginPath();
+      ctx.arc(legendX + 12, y + 12, 12, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Add subtle border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw user name with better typography
+      ctx.fillStyle = '#111827';
+      ctx.font = '600 14px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      const maxNameLength = 16;
+      const displayName = item.name.length > maxNameLength ? 
+        item.name.substring(0, maxNameLength - 2) + '...' : item.name;
+      ctx.fillText(displayName, legendX + 35, y + 10);
+      
+      // Draw job count with emphasis
+      ctx.fillStyle = color.main;
+      ctx.font = 'bold 16px Inter, system-ui, sans-serif';
+      ctx.fillText(item.jobsCount.toString(), legendX + 35, y + 28);
+      
+      // Draw "jobs" label
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '500 12px Inter, system-ui, sans-serif';
+      const jobsTextX = legendX + 35 + ctx.measureText(item.jobsCount.toString()).width + 6;
+      ctx.fillText('jobs', jobsTextX, y + 28);
+      
+      // Draw percentage on the right
+      ctx.fillStyle = '#374151';
+      ctx.font = '600 13px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${percentage}%`, legendX + legendWidth - 35, y + 19);
+      
+      ctx.textAlign = 'left'; // Reset alignment
+    });
+  }
+  
+  // Helper method to draw rounded rectangles
+  private drawRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fill();
+  }
+  
+  // Helper method to stroke rounded rectangles
+  private strokeRoundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  private handlePartsReceivedClick(item: any): void {
+    // Filter by inventory user and set to received status
+    if (item.name) {
+      const mappedUser = this.mapChartNameToInventoryUser(item.name);
+      console.log('Parts received click - Chart name:', item.name, 'Mapped to user:', mappedUser);
+      
+      this.partReturnFilterForm.patchValue({ 
+        inventoryUser: mappedUser,
+        status: '3' // Received status
+      }, { emitEvent: false });
+      
+      // Switch to received chart tab
+      this.activeGraphTab = 'graph3';
+      
+      setTimeout(() => {
+        this.getPartReturnStatusReport();
+      }, 100);
+    }
+  }
+
+  private handleWeeklyReturnedClick(item: any): void {
+    // Filter by week number and load weekly data
+    if (item.weekNo) {
+      this.partReturnFilterForm.patchValue({ 
+        weekNo: item.weekNo
+      });
+      this.selectedWeekNo = item.weekNo;
+      // Switch to weekly chart tab
+      this.activeGraphTab = 'graph2';
+      this.loadPartsReturnDataByWeekNo();
+    }
+  }
+
+  // Map chart item names to inventory user values
+  private mapChartNameToInventoryUser(chartName: string): string {
+    if (!chartName) return 'All';
+    
+    console.log('Mapping chart name:', chartName);
+    console.log('Available inventory users:', this.inventoryUsers.map(u => ({ id: u.invUserID, name: u.username })));
+    
+    // First try to find exact match by username
+    let matchingUser = this.inventoryUsers.find(user => {
+      const userName = user.username?.toLowerCase().trim();
+      const chartNameLower = chartName.toLowerCase().trim();
+      console.log('Comparing:', userName, 'with', chartNameLower);
+      return userName === chartNameLower;
+    });
+    
+    // If no exact match, try partial match
+    if (!matchingUser) {
+      matchingUser = this.inventoryUsers.find(user => {
+        const userName = user.username?.toLowerCase().trim() || '';
+        const chartNameLower = chartName.toLowerCase().trim();
+        return userName.includes(chartNameLower) || chartNameLower.includes(userName);
+      });
+    }
+    
+    // If still no match, try by invUserID
+    if (!matchingUser) {
+      matchingUser = this.inventoryUsers.find(user => {
+        const userIdLower = user.invUserID?.toLowerCase().trim();
+        const chartNameLower = chartName.toLowerCase().trim();
+        return userIdLower === chartNameLower;
+      });
+    }
+    
+    console.log('Chart name:', chartName, 'Matched user:', matchingUser);
+    
+    return matchingUser ? this.getInventoryUserValue(matchingUser) : chartName;
+  }
+
   // Parts Received by Warehouse Chart methods
   loadPartsReceivedByWarehouseChart(): void {
     this.isLoadingReceivedChart = true;
@@ -1725,6 +2960,13 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Remove existing click listener if any
+    const existingListener = this.chartClickListeners.get('receivedBarChart');
+    if (existingListener) {
+      canvas.removeEventListener('click', existingListener);
+      this.chartClickListeners.delete('receivedBarChart');
+    }
+    
     const padding = 60;
     const chartWidth = canvas.width - (padding * 2);
     const chartHeight = canvas.height - (padding * 2);
@@ -1776,30 +3018,19 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       const labelX = x + barWidth;
       ctx.fillText(item.name, labelX, canvas.height - padding + 20);
       
-      // Value labels on bars
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 10px Arial';
+      // Value labels on bars - always display outside bars in black
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 11px Arial';
       ctx.textAlign = 'center';
       
-      // Always show labels, adjust position based on bar height
-      if (jobsHeight > 15) {
-        // Label inside bar if there's space
-        ctx.fillText((item.jobsCount || 0).toString(), x + (barWidth * 0.4), jobsY + 15);
-      } else if ((item.jobsCount || 0) > 0) {
-        // Label above bar if bar is too small
-        ctx.fillStyle = '#6c757d';
-        ctx.fillText((item.jobsCount || 0).toString(), x + (barWidth * 0.4), jobsY - 5);
-        ctx.fillStyle = '#ffffff';
+      // Jobs count label - always above bar
+      if ((item.jobsCount || 0) > 0) {
+        ctx.fillText((item.jobsCount || 0).toString(), x + (barWidth * 0.4), jobsY - 8);
       }
       
-      if (faultyHeight > 15) {
-        // Label inside bar if there's space
-        ctx.fillText((item.faulty || 0).toString(), x + barWidth + (barWidth * 0.4), faultyY + 15);
-      } else if ((item.faulty || 0) > 0) {
-        // Label above bar if bar is too small
-        ctx.fillStyle = '#6c757d';
-        ctx.fillText((item.faulty || 0).toString(), x + barWidth + (barWidth * 0.4), faultyY - 5);
-        ctx.fillStyle = '#ffffff';
+      // Faulty parts label - always above bar
+      if ((item.faulty || 0) > 0) {
+        ctx.fillText((item.faulty || 0).toString(), x + barWidth + (barWidth * 0.4), faultyY - 8);
       }
     });
     
@@ -1811,6 +3042,61 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     ctx.lineTo(padding, canvas.height - padding);
     ctx.lineTo(canvas.width - padding, canvas.height - padding);
     ctx.stroke();
+    
+    // Add click event listener for received bar chart
+    const clickHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      
+      // Check if click is within chart area
+      if (clickX >= padding && clickX <= canvas.width - padding && 
+          clickY >= padding && clickY <= canvas.height - padding) {
+        
+        // Determine which bar was clicked
+        const barWidth = chartWidth / (this.receivedChartData.length * 2);
+        
+        for (let i = 0; i < this.receivedChartData.length; i++) {
+          const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
+          
+          // Check if click is within either bar for this data item
+          if (clickX >= x && clickX <= x + (barWidth * 1.8)) {
+            this.onChartItemClick(this.receivedChartData[i], 'parts-received');
+            break;
+          }
+        }
+      }
+    };
+    
+    canvas.addEventListener('click', clickHandler);
+    this.chartClickListeners.set('receivedBarChart', clickHandler);
+    
+    // Add hover effect
+    const hoverHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      
+      canvas.style.cursor = 'default';
+      
+      if (mouseX >= padding && mouseX <= canvas.width - padding && 
+          mouseY >= padding && mouseY <= canvas.height - padding) {
+        
+        const barWidth = chartWidth / (this.receivedChartData.length * 2);
+        
+        for (let i = 0; i < this.receivedChartData.length; i++) {
+          const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
+          
+          if (mouseX >= x && mouseX <= x + (barWidth * 1.8)) {
+            canvas.style.cursor = 'pointer';
+            break;
+          }
+        }
+      }
+    };
+    
+    canvas.addEventListener('mousemove', hoverHandler);
+    this.chartClickListeners.set('receivedBarChartHover', hoverHandler);
   }
 
   private renderReceivedPieChart(): void {
@@ -1822,6 +3108,13 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Remove existing click listener if any
+    const existingListener = this.chartClickListeners.get('receivedPieChart');
+    if (existingListener) {
+      canvas.removeEventListener('click', existingListener);
+      this.chartClickListeners.delete('receivedPieChart');
+    }
     
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
@@ -1854,17 +3147,31 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
       ctx.lineWidth = 2;
       ctx.stroke();
       
-      // Draw percentage label
+      // Draw enhanced labels with names and values
       const percentage = Math.round((itemTotal / total) * 100);
-      if (percentage > 5) { // Only show label if slice is large enough
+      if (percentage > 3 && sliceAngle > 0.2) { // Show label if slice is large enough
         const labelAngle = currentAngle + sliceAngle / 2;
-        const labelX = centerX + Math.cos(labelAngle) * (radius * 0.7);
-        const labelY = centerY + Math.sin(labelAngle) * (radius * 0.7);
+        const labelX = centerX + Math.cos(labelAngle) * (radius * 0.75);
+        const labelY = centerY + Math.sin(labelAngle) * (radius * 0.75);
         
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Arial';
+        // Draw white background circle for better readability
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(labelX, labelY, 22, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw month name (abbreviated)
+        const displayName = item.name.length > 8 ? item.name.substring(0, 6) + '..' : item.name;
+        ctx.fillStyle = '#1f2937';
+        ctx.font = 'bold 9px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(`${percentage}%`, labelX, labelY);
+        ctx.fillText(displayName, labelX, labelY - 5);
+        
+        // Draw total value and percentage
+        ctx.font = 'bold 10px Arial';
+        ctx.fillText(`${itemTotal}`, labelX, labelY + 5);
+        ctx.font = '8px Arial';
+        ctx.fillText(`(${percentage}%)`, labelX, labelY + 15);
       }
       
       currentAngle += sliceAngle;
@@ -1880,8 +3187,91 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
     ctx.fillStyle = '#6c757d';
     ctx.font = 'bold 16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('Total', centerX, centerY - 5);
+    ctx.fillText('Total Received', centerX, centerY - 5);
     ctx.fillText(total.toString(), centerX, centerY + 15);
+    
+    // Draw legend below pie chart
+    const legendY = centerY + radius + 50;
+    const legendItemWidth = Math.min(100, canvas.width / Math.min(this.receivedChartData.length, 5));
+    const startX = centerX - (Math.min(this.receivedChartData.length, 5) * legendItemWidth) / 2;
+    
+    this.receivedChartData.slice(0, 5).forEach((item, index) => {
+      const x = startX + (index * legendItemWidth);
+      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+      
+      // Legend color box
+      ctx.fillStyle = this.getChartColor(index);
+      ctx.fillRect(x, legendY - 8, 12, 12);
+      
+      // Legend text
+      ctx.fillStyle = '#374151';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'left';
+      const displayName = item.name.length > 8 ? item.name.substring(0, 6) + '..' : item.name;
+      ctx.fillText(`${displayName}: ${itemTotal}`, x + 18, legendY + 2);
+    });
+    
+    // Show remaining items count if more than 5
+    if (this.receivedChartData.length > 5) {
+      const remaining = this.receivedChartData.length - 5;
+      ctx.fillStyle = '#6B7280';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`+${remaining} more`, centerX, legendY + 20);
+    }
+    
+    // Add click event listener for received pie chart
+    const clickHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      
+      // Calculate distance from center
+      const dx = clickX - centerX;
+      const dy = clickY - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Check if click is within the pie chart (outside inner circle)
+      if (distance <= radius && distance >= radius * 0.4) {
+        // Calculate angle of click
+        let angle = Math.atan2(dy, dx);
+        // Normalize angle to 0-2π and adjust for starting position
+        angle = (angle + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        
+        // Find which slice was clicked
+        let currentAngle = 0;
+        for (let i = 0; i < this.receivedChartData.length; i++) {
+          const itemTotal = (this.receivedChartData[i].jobsCount || 0) + (this.receivedChartData[i].faulty || 0);
+          const sliceAngle = (itemTotal / total) * 2 * Math.PI;
+          
+          if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
+            this.onChartItemClick(this.receivedChartData[i], 'parts-received');
+            break;
+          }
+          
+          currentAngle += sliceAngle;
+        }
+      }
+    };
+    
+    canvas.addEventListener('click', clickHandler);
+    this.chartClickListeners.set('receivedPieChart', clickHandler);
+    
+    // Add hover effect
+    const hoverHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      
+      const dx = mouseX - centerX;
+      const dy = mouseY - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      canvas.style.cursor = (distance <= radius && distance >= radius * 0.4) ? 'pointer' : 'default';
+    };
+    
+    canvas.addEventListener('mousemove', hoverHandler);
+    this.chartClickListeners.set('receivedPieChartHover', hoverHandler);
   }
 
   // Helper methods for received chart
@@ -1906,6 +3296,29 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
   // Graph tab management
   setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3'): void {
     this.activeGraphTab = tab;
+    // Ensure charts are properly rendered when switching tabs
+    setTimeout(() => {
+      switch (tab) {
+        case 'graph1':
+          if (this.chartData.length > 0) {
+            this.showChart = true;
+            this.renderCharts();
+          }
+          break;
+        case 'graph2':
+          if (this.weeklyPartsData.length > 0) {
+            this.showWeeklyChart = true;
+            this.renderWeeklyCharts();
+          }
+          break;
+        case 'graph3':
+          if (this.receivedChartData.length > 0) {
+            this.showReceivedChart = true;
+            this.renderReceivedCharts();
+          }
+          break;
+      }
+    }, 100);
   }
 
   // Helper methods for totals display
@@ -1915,5 +3328,66 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit {
 
   getFaultyReturnedTotal(): number {
     return this.receivedChartTotals?.faultyReceived || 0;
+  }
+
+  ngOnDestroy(): void {
+    // Clean up animations
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
+    this.chartAnimations.clear();
+    this.isAnimating = false;
+    
+    // Clean up all event listeners
+    this.chartClickListeners.forEach((listener, key) => {
+      const canvas = this.getCanvasForListener(key);
+      if (canvas && listener) {
+        canvas.removeEventListener('click', listener);
+        canvas.removeEventListener('mousemove', listener);
+      }
+    });
+    this.chartClickListeners.clear();
+  }
+
+  private getCanvasForListener(key: string): HTMLCanvasElement | null {
+    switch (key) {
+      case 'barChart':
+      case 'barChartHover':
+        return this.barChartCanvas?.nativeElement || null;
+      case 'pieChart':
+      case 'pieChartHover':
+        return this.pieChartCanvas?.nativeElement || null;
+      case 'weeklyBarChart':
+      case 'weeklyBarChartHover':
+        return this.weeklyBarChartCanvas?.nativeElement || null;
+      case 'receivedBarChart':
+      case 'receivedBarChartHover':
+        return this.receivedBarChartCanvas?.nativeElement || null;
+      case 'receivedPieChart':
+      case 'receivedPieChartHover':
+        return this.receivedPieChartCanvas?.nativeElement || null;
+      default:
+        return null;
+    }
+  }
+
+  // Debug method to check chart state
+  debugChartState(): void {
+    console.log('Chart Debug State:', {
+      activeTab: this.activeGraphTab,
+      showChart: this.showChart,
+      showWeeklyChart: this.showWeeklyChart,
+      showReceivedChart: this.showReceivedChart,
+      chartDataLength: this.chartData.length,
+      weeklyDataLength: this.weeklyPartsData.length,
+      receivedDataLength: this.receivedChartData.length,
+      canvasElements: {
+        barChart: !!this.barChartCanvas?.nativeElement,
+        pieChart: !!this.pieChartCanvas?.nativeElement,
+        weeklyBar: !!this.weeklyBarChartCanvas?.nativeElement,
+        receivedBar: !!this.receivedBarChartCanvas?.nativeElement,
+        receivedPie: !!this.receivedPieChartCanvas?.nativeElement
+      }
+    });
   }
 }

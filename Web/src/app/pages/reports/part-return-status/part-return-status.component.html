@@ -59,10 +59,10 @@
       </div>
 
       <!--begin::Card body-->
-      <div class="card-body py-4">
+      <div class="card-body py-2">
 
         <!--begin::Tabs Navigation-->
-        <div class="chart-tabs-wrapper mb-4">
+        <div class="chart-tabs-wrapper mb-2">
           <ul class="nav nav-tabs modern-tabs">
             <li class="nav-item">
               <a class="nav-link" 
@@ -109,19 +109,6 @@
                   <div class="chart-section" 
                       *ngIf="showChart || isLoadingChart || chartErrorMessage">
 
-                    <!--begin::Card header-->
-                    <div class="card-header border-0 pt-5">
-                      <h3 class="card-title align-items-start flex-column">
-                        <span class="card-label fw-bold fs-3 mb-1">
-                          Parts to be Received by Warehouse
-                        </span>
-                        <span class="text-muted fs-7">
-                          Monthly breakdown for {{ partReturnFilterForm.get('year')?.value }}
-                        </span>
-                      </h3>
-                    </div>
-                    <!--end::Card header-->
-
                     <!--begin::Card body-->
                     <div class="card-body" *ngIf="showChart">
 
@@ -144,178 +131,271 @@
                       <!-- Content -->
                       <div *ngIf="!isLoadingChart && chartData.length > 0">
 
-                        <!-- Comprehensive Totals for Year {{ partReturnFilterForm.get('year')?.value }} -->
-                        <div class="parts-return-totals-section mb-6">
-                          <div class="totals-header mb-4">
-                            <h4 class="totals-title">
-                              <i class="bi bi-graph-up-arrow me-2"></i>
-                              Parts Return Summary for {{ partReturnFilterForm.get('year')?.value }}
-                            </h4>
-                            <p class="totals-subtitle">Complete breakdown of parts return status</p>
-                          </div>
+                        <!-- Chart and Summary Layout -->
+                        <div class="row g-4">
+                          <!-- Chart Section - Left Side -->
+                          <div class="col-lg-8">
+                            <div class="chart-container">
 
-                          <div class="row g-4">
-                            <!-- UnUsed To Be Returned -->
-                            <div class="col-lg-3 col-md-6">
-                              <div class="totals-card unused-to-return">
-                                <div class="card-body">
-                                  <div class="totals-icon">
-                                    <i class="bi bi-clock-history"></i>
-                                  </div>
-                                  <div class="totals-content">
-                                    <h6 class="totals-label">UnUsed To Be Returned</h6>
-                                    <div class="totals-value">{{ chartTotals.unUsedTR || 0 }}</div>
-                                  </div>
+                              <!-- Chart Type Selector -->
+                              <div class="chart-selector-section">
+                                <h4 class="chart-selector-title">Data Visualization</h4>
+
+                                <div class="chart-type-controls">
+                                  <input type="radio" class="btn-check" 
+                                         name="chartType" id="barChart"
+                                         checked (change)="setChartType('bar')">
+                                  <label class="chart-type-btn" for="barChart">
+                                    <i class="bi bi-bar-chart"></i>
+                                    Bar Chart
+                                  </label>
+
+                                  <input type="radio" class="btn-check" 
+                                         name="chartType" id="pieChart"
+                                         (change)="setChartType('pie')">
+                                  <label class="chart-type-btn" for="pieChart">
+                                    <i class="bi bi-pie-chart"></i>
+                                    Pie Chart
+                                  </label>
+
+                                  <input type="radio" class="btn-check" 
+                                         name="chartType" id="dataTable"
+                                         (change)="setChartType('table')">
+                                  <label class="chart-type-btn" for="dataTable">
+                                    <i class="bi bi-table"></i>
+                                    Table
+                                  </label>
                                 </div>
                               </div>
-                            </div>
 
-                            <!-- Faulty To Be Returned -->
-                            <div class="col-lg-3 col-md-6">
-                              <div class="totals-card faulty-to-return">
-                                <div class="card-body">
-                                  <div class="totals-icon">
-                                    <i class="bi bi-exclamation-triangle"></i>
-                                  </div>
-                                  <div class="totals-content">
-                                    <h6 class="totals-label">Faulty To Be Returned</h6>
-                                    <div class="totals-value">{{ chartTotals.faultyTR || 0 }}</div>
-                                  </div>
-                                </div>
+                              <!-- Bar Chart -->
+                              <div *ngIf="currentChartType === 'bar'" class="chart-wrapper">
+                                <canvas #barChartCanvas class="chart-canvas" width="800" height="400"></canvas>
                               </div>
-                            </div>
 
-                            <!-- UnUsed Returned -->
-                            <div class="col-lg-3 col-md-6">
-                              <div class="totals-card unused-returned">
-                                <div class="card-body">
-                                  <div class="totals-icon">
-                                    <i class="bi bi-check-circle"></i>
-                                  </div>
-                                  <div class="totals-content">
-                                    <h6 class="totals-label">UnUsed Returned</h6>
-                                    <div class="totals-value">{{ getUnusedReturnedTotal() }}</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <!-- Faulty Returned -->
-                            <div class="col-lg-3 col-md-6">
-                              <div class="totals-card faulty-returned">
-                                <div class="card-body">
-                                  <div class="totals-icon">
-                                    <i class="bi bi-x-circle"></i>
-                                  </div>
-                                  <div class="totals-content">
-                                    <h6 class="totals-label">Faulty Returned</h6>
-                                    <div class="totals-value">{{ getFaultyReturnedTotal() }}</div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <!-- Additional Summary Stats -->
-                          <div class="row g-4 mt-3">
-                            <div class="col-lg-6">
-                              <div class="summary-stat">
-                                <span class="stat-label">Total Pending Returns:</span>
-                                <span class="stat-value pending">{{ (chartTotals.unUsedTR || 0) + (chartTotals.faultyTR || 0) }}</span>
-                              </div>
-                            </div>
-                            <div class="col-lg-6">
-                              <div class="summary-stat">
-                                <span class="stat-label">Total Completed Returns:</span>
-                                <span class="stat-value completed">{{ getUnusedReturnedTotal() + getFaultyReturnedTotal() }}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <!--end::Totals-->
-
-                        <!-- Chart Selection + Charts -->
-                        <div class="chart-container">
-
-                          <!-- Chart Type Selector -->
-                          <div class="chart-selector-section">
-                            <h4 class="chart-selector-title">Data Visualization</h4>
-
-                            <div class="chart-type-controls">
-                              <input type="radio" class="btn-check" 
-                                     name="chartType" id="barChart"
-                                     checked (change)="setChartType('bar')">
-                              <label class="chart-type-btn" for="barChart">
-                                <i class="bi bi-bar-chart"></i>
-                                Bar Chart
-                              </label>
-
-                              <input type="radio" class="btn-check" 
-                                     name="chartType" id="pieChart"
-                                     (change)="setChartType('pie')">
-                              <label class="chart-type-btn" for="pieChart">
-                                <i class="bi bi-pie-chart"></i>
-                                Pie Chart
-                              </label>
-
-                              <input type="radio" class="btn-check" 
-                                     name="chartType" id="dataTable"
-                                     (change)="setChartType('table')">
-                              <label class="chart-type-btn" for="dataTable">
-                                <i class="bi bi-table"></i>
-                                Table
-                              </label>
-                            </div>
-                          </div>
-
-                          <!-- Bar Chart -->
-                          <div *ngIf="currentChartType === 'bar'" class="chart-wrapper">
-                            <canvas #barChartCanvas class="chart-canvas" width="800" height="400"></canvas>
-                          </div>
-
-                          <!-- Pie Chart -->
-                          <div *ngIf="currentChartType === 'pie'" class="chart-wrapper d-flex justify-content-center">
-                            <canvas #pieChartCanvas class="chart-canvas" width="400" height="400"></canvas>
-                          </div>
-
-                          <!-- Data Table -->
-                          <div *ngIf="currentChartType === 'table'" class="table-responsive chart-table">
-                            <table class="table table-rounded table-striped border gy-7 gs-7">
-                              <thead>
-                                <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                                  <th>Period</th>
-                                  <th class="text-center">Jobs Count</th>
-                                  <th class="text-center">Faulty Parts</th>
-                                  <th class="text-center">Job %</th>
-                                  <th>Progress Bar</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr *ngFor="let item of chartData" class="align-middle">
-                                  <td>{{ item.name }}</td>
-                                  <td class="text-center">
-                                    <span class="badge badge-light-primary">{{ item.jobsCount }}</span>
-                                  </td>
-                                  <td class="text-center">
-                                    <span class="badge badge-light-danger">{{ item.faulty }}</span>
-                                  </td>
-                                  <td class="text-center">
-                                    {{ getChartItemPercentage(item) }}%
-                                  </td>
-                                  <td>
-                                    <div class="progress h-6px w-100">
-                                      <div class="progress-bar bg-primary"
-                                           [style.width.%]="getChartItemPercentage(item)">
+                              <!-- Pie Chart -->
+                              <div *ngIf="currentChartType === 'pie'" class="chart-wrapper">
+                                <canvas #pieChartCanvas class="chart-canvas" width="900" height="500"></canvas>
+                                
+                                <!-- Interactive Tooltip -->
+                                <div class="pie-chart-tooltip" 
+                                     [class.visible]="hoveredSliceIndex >= 0" 
+                                     [style.left.px]="tooltipPosition.x" 
+                                     [style.top.px]="tooltipPosition.y">
+                                  <div *ngIf="chartData && hoveredSliceIndex >= 0 && chartData[hoveredSliceIndex]" class="tooltip-content">
+                                    <div class="tooltip-header">
+                                      <div class="tooltip-color-indicator" 
+                                           [style.background]="getSliceColor(hoveredSliceIndex)"></div>
+                                      <span class="tooltip-name">{{ chartData[hoveredSliceIndex].name }}</span>
+                                    </div>
+                                    <div class="tooltip-data">
+                                      <div class="tooltip-row">
+                                        <span class="tooltip-label">Jobs:</span>
+                                        <span class="tooltip-value">{{ chartData[hoveredSliceIndex].jobsCount }}</span>
+                                      </div>
+                                      <div class="tooltip-row">
+                                        <span class="tooltip-label">Percentage:</span>
+                                        <span class="tooltip-value">{{ getChartItemPercentage(chartData[hoveredSliceIndex]) }}%</span>
+                                      </div>
+                                      <div class="tooltip-row" *ngIf="chartData && hoveredSliceIndex >= 0 && chartData[hoveredSliceIndex] && chartData[hoveredSliceIndex].faulty > 0">
+                                        <span class="tooltip-label">Faulty:</span>
+                                        <span class="tooltip-value text-danger">{{ chartData[hoveredSliceIndex].faulty }}</span>
                                       </div>
                                     </div>
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <!-- Data Table -->
+                              <div *ngIf="currentChartType === 'table'" class="modern-table-container">
+                                <div class="table-wrapper">
+                                  <table class="interactive-chart-table">
+                                    <thead>
+                                      <tr>
+                                        <th class="user-col">
+                                          <div class="header-content">
+                                            <i class="bi bi-person-circle me-2"></i>
+                                            <span>User</span>
+                                          </div>
+                                        </th>
+                                        <th class="jobs-col">
+                                          <div class="header-content">
+                                            <i class="bi bi-briefcase me-2"></i>
+                                            <span>Jobs Count</span>
+                                          </div>
+                                        </th>
+                                        <th class="faulty-col">
+                                          <div class="header-content">
+                                            <i class="bi bi-exclamation-triangle me-2"></i>
+                                            <span>Faulty Parts</span>
+                                          </div>
+                                        </th>
+                                        <th class="percentage-col">
+                                          <div class="header-content">
+                                            <i class="bi bi-percent me-2"></i>
+                                            <span>Job %</span>
+                                          </div>
+                                        </th>
+                                        <th class="progress-col">
+                                          <div class="header-content">
+                                            <i class="bi bi-bar-chart me-2"></i>
+                                            <span>Progress</span>
+                                          </div>
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <tr *ngFor="let item of chartData; let i = index" 
+                                          class="table-row"
+                                          (click)="onChartItemClick(item, 'parts-to-receive')"
+                                          (mouseenter)="onRowHover(i, true)"
+                                          (mouseleave)="onRowHover(i, false)"
+                                          title="Click to view details for {{ item.name }}"
+                                          [style.animation-delay.ms]="i * 100">
+                                        <td class="user-cell">
+                                          <div class="user-info">
+                                            <div class="user-avatar">
+                                              {{ getInitials(item.name) }}
+                                            </div>
+                                            <span class="user-name">{{ item.name }}</span>
+                                          </div>
+                                        </td>
+                                        <td class="jobs-cell">
+                                          <div class="metric-badge jobs-metric">
+                                            <span class="metric-value">{{ item.jobsCount }}</span>
+                                            <span class="metric-label">jobs</span>
+                                          </div>
+                                        </td>
+                                        <td class="faulty-cell">
+                                          <div class="metric-badge faulty-metric">
+                                            <span class="metric-value">{{ item.faulty }}</span>
+                                            <span class="metric-label">faulty</span>
+                                          </div>
+                                        </td>
+                                        <td class="percentage-cell">
+                                          <div class="percentage-display">
+                                            <span class="percentage-value">{{ getChartItemPercentage(item) }}%</span>
+                                            <div class="percentage-ring">
+                                              <svg width="24" height="24" viewBox="0 0 24 24">
+                                                <circle cx="12" cy="12" r="10" fill="none" stroke="#e5e7eb" stroke-width="2"/>
+                                                <circle cx="12" cy="12" r="10" fill="none" stroke="#3b82f6" stroke-width="2" 
+                                                        [style.stroke-dasharray]="'62.83'"
+                                                        [style.stroke-dashoffset]="62.83 - (62.83 * getChartItemPercentage(item) / 100)"
+                                                        transform="rotate(-90 12 12)"/>
+                                              </svg>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        <td class="progress-cell">
+                                          <div class="animated-progress">
+                                            <div class="progress-track">
+                                              <div class="progress-fill" 
+                                                   [style.width.%]="getChartItemPercentage(item)"
+                                                   [style.animation-delay.ms]="i * 150 + 500">
+                                                <div class="progress-glow"></div>
+                                              </div>
+                                            </div>
+                                            <span class="progress-text">{{ getChartItemPercentage(item) }}%</span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+
+                            </div>
+                            <!--end::Chart Container-->
                           </div>
 
+                          <!-- Summary Section - Right Side -->
+                          <div class="col-lg-4">
+                            <div class="parts-return-summary-sidebar">
+                              <div class="summary-header mb-3">
+                                <h5 class="summary-title">
+                                  <i class="bi bi-graph-up-arrow me-2"></i>
+                                  Parts Return Summary {{ partReturnFilterForm.get('year')?.value }}
+                                </h5>
+                                <p class="summary-subtitle">Current status overview</p>
+                              </div>
+
+                              <div class="summary-cards">
+                                <!-- UnUsed To Be Returned -->
+                                <div class="summary-card unused-to-return mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-clock-history"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">UnUsed To Be Returned</h6>
+                                        <div class="summary-value">{{ chartTotals.unUsedTR || 0 }}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Faulty To Be Returned -->
+                                <div class="summary-card faulty-to-return mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">Faulty To Be Returned</h6>
+                                        <div class="summary-value">{{ chartTotals.faultyTR || 0 }}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- UnUsed Returned -->
+                                <div class="summary-card unused-returned mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-check-circle"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">UnUsed Returned</h6>
+                                        <div class="summary-value">{{ getUnusedReturnedTotal() }}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Faulty Returned -->
+                                <div class="summary-card faulty-returned mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-x-circle"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">Faulty Returned</h6>
+                                        <div class="summary-value">{{ getFaultyReturnedTotal() }}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Summary Totals -->
+                                <div class="summary-totals mt-4">
+                                  <div class="total-row pending mb-2">
+                                    <span class="total-label">Total Pending:</span>
+                                    <span class="total-value">{{ (chartTotals.unUsedTR || 0) + (chartTotals.faultyTR || 0) }}</span>
+                                  </div>
+                                  <div class="total-row completed">
+                                    <span class="total-label">Total Completed:</span>
+                                    <span class="total-value">{{ getUnusedReturnedTotal() + getFaultyReturnedTotal() }}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <!--end::Chart Container-->
+                        <!--end::Chart and Summary Layout-->
 
                       </div>
                       <!--end::Content-->
@@ -514,7 +594,10 @@
                   </thead>
 
                   <tbody>
-                    <tr *ngFor="let item of weeklyPartsData" class="align-middle">
+                    <tr *ngFor="let item of weeklyPartsData" 
+                        class="align-middle clickable-row"
+                        (click)="onChartItemClick(item, 'weekly-returned')"
+                        title="Click to view details for week {{ item.weekNo }}">
 
                       <td>{{ item.wkEnd }}</td>
 
@@ -736,7 +819,10 @@
                   </thead>
 
                   <tbody>
-                    <tr *ngFor="let item of receivedChartData; let i = index">
+                    <tr *ngFor="let item of receivedChartData; let i = index"
+                        class="clickable-row"
+                        (click)="onChartItemClick(item, 'parts-received')"
+                        title="Click to view received parts details for {{ item.name }}">
 
                       <td class="fw-bold text-gray-800">{{ item.name }}</td>
 
