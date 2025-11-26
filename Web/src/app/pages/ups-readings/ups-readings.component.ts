@@ -241,12 +241,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'N', text: 'N/A' }
   ];
 
-  // Air filter options
+  // Air filter options (legacy values)
   airFilterOptions = [
     { value: 'C', text: 'Cleaned' },
-    { value: 'W', text: 'Replacement needed' }, // Changed from 'RN' to 'W' to match backend 1-char limit
     { value: 'R', text: 'Replaced' },
-    { value: 'N', text: 'N/A' }
+    { value: 'N', text: 'Replacement Needed' }, // Legacy: N = Replacement Needed
+    { value: 'A', text: 'N/A' } // Legacy: A = N/A
   ];
 
   // Fans age options (includes Warning option)
@@ -258,6 +258,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   ];
   yesNoOptions = YES_NO_OPTIONS;
   snmpOptions = SNMP_OPTIONS;
+  // Hostile environment options - legacy uses YS/NO
+  hostileEnvironmentOptions = [
+    { value: 'YS', text: 'Yes' },
+    { value: 'NO', text: 'No' }
+  ];
   yesNoNAOptions = [
     { value: 'Y', text: 'Yes' },
     { value: 'N', text: 'No' },
@@ -942,7 +947,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       epoSwitch: ['P'], // Default "Pass"
       coolingFans: ['P'], // Default "Pass"
       fansAge: ['P'], // Default "Pass"
-      airFilters: ['P'], // Default "Pass"
+      airFilters: ['C'], // Default "Cleaned" (legacy default)
       // Air filter details
       filterSet1Length: [''],
       filterSet1Width: [''],
@@ -958,7 +963,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.environmentForm = this.fb.group({
       roomTempVentilation: ['P'], // Default "Pass"
       safetyEquipment: ['P'], // Default "Pass"
-      hostileEnvironment: ['N'], // Default to "No"
+      hostileEnvironment: ['NO'], // Default to "No" (legacy uses NO)
       serviceSpace: ['P'], // Default "Pass"
       circuitBreakers: ['P'] // Default "Pass"
     });
@@ -1184,6 +1189,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.equipmentForm.get('kva')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(kvaValue => {
       this.updateEndOfLifeLabel(kvaValue);
       this.performAutomaticAgeValidation();
+      this.calculateEndOfLifeFromYear(); // Calculate based on year and KVA
+    });
+
+    // Watch for Year changes to calculate End of Life dynamically
+    this.equipmentForm.get('year')?.valueChanges.pipe(
+      takeUntil(this.destroy$),
+      debounceTime(300) // Wait for user to finish typing
+    ).subscribe(() => {
+      this.calculateEndOfLifeFromYear();
     });
 
     // Add automatic age validation when dateCode changes
@@ -1216,9 +1230,16 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         // Clear existing validators
         control.clearValidators();
         
-        // Add required validator if replacement is needed (changed from 'RN' to 'W')
-        if (airFilterValue === 'W') {
+        // Add required validator if replacement is needed (legacy: 'N' = Replacement Needed)
+        if (airFilterValue === 'N') {
           control.setValidators([Validators.required]);
+          // Mark as touched to show validation immediately if empty
+          if (!control.value || control.value.toString().trim() === '') {
+            control.markAsTouched();
+          }
+        } else {
+          // Clear touched state when not required
+          control.markAsUntouched();
         }
         
         // Update validation status
@@ -1330,6 +1351,60 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         throw new Error(`Year ${year} is not valid`);
       }
       return currentYear - year;
+    }
+  }
+
+  /**
+   * Calculate End of Life based on year and KVA following legacy logic:
+   * - If KVA <= 50: UPS Age threshold is 20 years
+   * - If KVA > 50: UPS Age threshold is 25 years
+   * - Compare (currentYear - equipmentYear) with threshold
+   * - Set endOfLife to 'F' (Fail) if exceeds threshold, 'P' (Pass) otherwise
+   */
+  private calculateEndOfLifeFromYear(): void {
+    // Skip if forms are not initialized or during loading
+    if (!this.equipmentForm || !this.measurementsForm || this.loading) {
+      return;
+    }
+
+    const year = this.equipmentForm.get('year')?.value;
+    const kvaValue = this.equipmentForm.get('kva')?.value;
+
+    // Skip if year or KVA is not set
+    if (!year || !kvaValue) {
+      return;
+    }
+
+    try {
+      const equipmentYear = typeof year === 'string' ? parseInt(year) : year;
+      const kva = this.convertToDouble(kvaValue);
+      const currentYear = new Date().getFullYear();
+
+      // Validate year is reasonable
+      if (equipmentYear < 1753 || equipmentYear > currentYear) {
+        return;
+      }
+
+      // Calculate UPS age threshold based on KVA (legacy logic)
+      let upsAgeThreshold = 25;
+      if (kva <= 50) {
+        upsAgeThreshold = 20;
+      }
+
+      // Calculate equipment age
+      const equipmentAge = currentYear - equipmentYear;
+
+      // Determine End of Life value
+      let endOfLifeValue = 'P'; // Default to Pass
+      if (equipmentAge > upsAgeThreshold) {
+        endOfLifeValue = 'F'; // Fail if exceeds threshold
+      }
+
+      // Update the End of Life field in measurements form
+      this.measurementsForm.get('endOfLife')?.setValue(endOfLifeValue, { emitEvent: false });
+
+    } catch (error) {
+      console.error('Error calculating End of Life:', error);
     }
   }
 
@@ -1917,7 +1992,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const currentHostileEnv = this.environmentForm.get('hostileEnvironment')?.value;
     if (!currentHostileEnv || currentHostileEnv.trim() === '') {
       this.environmentForm.patchValue({
-        hostileEnvironment: 'N', // Hostile environment verification - default to No (only if not set)
+        hostileEnvironment: 'NO', // Hostile environment verification - default to No (legacy uses NO)
       });
     }
 
@@ -2098,7 +2173,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       epoSwitch: finalEpoValue, // Use cleaned EPO value
       coolingFans: data.visual_Noise || 'P', // Map to existing noise field
       fansAge: data.visual_FansAge || 'P',
-      airFilters: data.visual_ReplaceFilters || 'P', // Map to existing replace filters field
+      airFilters: data.visual_ReplaceFilters || 'C', // Map to existing replace filters field (legacy default 'C')
       filterSet1Length: this.formatDecimal(data.afLength, 2),
       filterSet1Width: this.formatDecimal(data.afWidth, 2),
       filterSet1Thickness: data.afThickness || '',
@@ -2117,27 +2192,27 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Populate environment form
-    // Proper mapping: environment_Clean (is clean?) vs hostileEnvironment (is hostile?) are opposites
-    // Handle special values: YS (Yes with Safety), Y (Yes), N (No), NA (N/A)
+    // Legacy: environment_Clean field stores YS (Yes, hostile) or NO (No, not hostile)
+    // Our form uses the same values for consistency
     
-    // Enhanced mapping to handle YS (Yes with Safety concerns) and NA
     let hostileEnvValue: string;
     const dbValue = (data.environment_Clean || '').trim();
     
-    if (dbValue === 'Y') {
-      hostileEnvValue = 'N'; // Clean=Y → Hostile=N (not hostile)
-    } else if (dbValue === 'N' || dbValue === 'YS') {
-      hostileEnvValue = 'Y'; // NotClean=N or YesSafety=YS → Hostile=Y (hostile)
+    // Legacy uses YS for Yes (hostile) and NO for No (not hostile)
+    if (dbValue === 'YS') {
+      hostileEnvValue = 'YS'; // Hostile environment exists
+    } else if (dbValue === 'NO' || dbValue === 'Y') {
+      hostileEnvValue = 'NO'; // No hostile environment (also map legacy Y to NO)
     } else if (dbValue === 'NA') {
       hostileEnvValue = 'NA'; // NA stays NA
     } else {
-      hostileEnvValue = 'N'; // Default to not hostile
+      hostileEnvValue = 'NO'; // Default to not hostile
     }
 
     this.environmentForm.patchValue({
       roomTempVentilation: data.environment_RoomTemp || 'P',
       safetyEquipment: data.environment_Saftey || 'P',
-      hostileEnvironment: hostileEnvValue, // Properly inverted mapping
+      hostileEnvironment: hostileEnvValue, // Direct mapping - YS or NO
       serviceSpace: data.environment_Space || 'P',
       circuitBreakers: data.environment_Circuit || 'P'
     }, { emitEvent: false });
@@ -3213,19 +3288,34 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Validate filter size fields when replacement is needed
     const airFilterValue = this.visualForm.get('airFilters')?.value;
-    if (airFilterValue === 'W') { // Changed from 'RN' to 'W'
+    if (airFilterValue === 'N') { // Legacy: 'N' = Replacement Needed
       const filterSizeFields = [
-        { field: 'filterSet1Length', name: 'Filter Length' },
-        { field: 'filterSet1Width', name: 'Filter Width' },
-        { field: 'filterSet1Thickness', name: 'Filter Thickness' },
-        { field: 'filterSet1Quantity', name: 'Filter Quantity' }
+        { field: 'filterSet1Length', name: 'Filter Set 1 Length' },
+        { field: 'filterSet1Width', name: 'Filter Set 1 Width' },
+        { field: 'filterSet1Thickness', name: 'Filter Set 1 Thickness' },
+        { field: 'filterSet1Quantity', name: 'Filter Set 1 Quantity' }
       ];
 
       for (const filterField of filterSizeFields) {
         const value = this.visualForm.get(filterField.field)?.value;
-        if (!value || value.trim() === '') {
-          this.showLegacyValidationAlert(`${filterField.name} is required when filter replacement is needed`, filterField.field);
+        if (!value || value.toString().trim() === '') {
+          // Expand Visual section to show the validation error
+          this.showVisual = true;
+          
+          this.showLegacyValidationAlert(
+            `${filterField.name} is required when Air Filter Maintenance is set to "Replacement Needed". Please scroll down to the Filter Information section in Visual & Mechanical Verification.`, 
+            filterField.field
+          );
           this.visualForm.get(filterField.field)?.markAsTouched();
+          
+          // Try to scroll to the filter section
+          setTimeout(() => {
+            const filterSection = document.querySelector('.filter-section');
+            if (filterSection) {
+              filterSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 100);
+          
           return false;
         }
       }
@@ -3311,12 +3401,12 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       const ageValidation = UPSAgeValidationService.validateEquipmentAge(ageInYears, kva);
 
       // Legacy confirmation for old equipment (matching original 30-year popup)
-      if (ageInYears >= 30) {
-        if (!confirm(`Equipment age is ${ageInYears} years. Are you sure UPS age is more than 30 years?`)) {
-          this.equipmentForm.get('dateCode')?.markAsTouched();
-          return false;
-        }
-      }
+      // if (ageInYears >= 30) {
+      //   if (!confirm(`Equipment age is ${ageInYears} years. Are you sure UPS age is more than 30 years?`)) {
+      //     this.equipmentForm.get('dateCode')?.markAsTouched();
+      //     return false;
+      //   }
+      // }
 
       // Apply age validation results
       this.applyAgeValidationResults(ageValidation);
@@ -3393,17 +3483,38 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private validateEndOfLife(dateCode: string, kva: number): boolean {
     try {
-      // Use enhanced age calculation
+      // Calculate UPS age
       const upsAge = this.calculateEquipmentAge(dateCode);
+      const today = new Date();
 
-      // Use comprehensive age validation
-      const ageValidation = UPSAgeValidationService.validateEquipmentAge(upsAge, kva);
+      // Legacy logic: UPSAge threshold is 25 years, or 20 years if KVA <= 50
+      let ageThreshold = 25;
+      if (kva <= 50) {
+        ageThreshold = 20;
+      }
 
-      // Set endOfLife value based on validation result
-      this.measurementsForm.get('endOfLife')?.setValue(ageValidation.endOfLifeValue, { emitEvent: false });
+      // Check if UPS age exceeds threshold
+      if (upsAge > ageThreshold) {
+        // Always set to Failed first (automatic failure)
+        this.measurementsForm.get('endOfLife')?.setValue('F', { emitEvent: false });
 
-      // Apply other validation results (status changes, comments)
-      this.applyAgeValidationResults(ageValidation);
+        // Show confirmation popup (informational - failure is already applied)
+        if (confirm(`UPS date code is > ${ageThreshold} years. End of Life dropdown marked as Failed`)) {
+          // User confirmed - failure already applied
+          // Optionally expand measurements section if needed
+          this.showMeasurements = true;
+        } else {
+          // User cancelled - but failure still applies (legacy behavior)
+          // Expand measurements section to show the field
+          this.showMeasurements = true;
+          
+          // Stop form submission (return false)
+          return false;
+        }
+      } else {
+        // Within acceptable age - set to Pass
+        this.measurementsForm.get('endOfLife')?.setValue('P', { emitEvent: false });
+      }
 
       return true;
     } catch (error) {
@@ -4135,7 +4246,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           description: 'Equipment is operational with minor issues 🟢',
           triggers: [
             'Action items marked as "Y" (Yes, but not safety-critical)',
-            'Environment cleaning needed (hostileEnvironment = Y)',
+            'Environment cleaning needed (hostileEnvironment = YS)',
             'Minor voltage/current readings slightly outside normal range',
             'Cosmetic or housekeeping issues (vacuumClean = F)',
             'Preventive maintenance recommendations',
@@ -4326,8 +4437,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * NOTE: This is an ASYNC operation and should be called during save, not in real-time
    */
   private calculateEquipStatusFromAPI(): Observable<string> {
-    // Step 1: Get job summary report data (with "Y" parameter to get all field values from DB)
-    // Step 2: Get status description mapping
+    // Legacy: GetEquipStatus() implementation
+    // Step 1: JobSummaryReport(CallNbr, EquipID, "UPS", "Y")
+    // Step 2: GetStatusDescription("UPS")
+    // Step 3: Iterate through all columns and apply legacy logic
+    
     return forkJoin({
       jobSummary: this.equipmentService.getJobSummaryReport(this.callNbr, this.equipId, 'UPS'),
       statusDesc: this.equipmentService.getStatusDescription('UPS')
@@ -4341,17 +4455,20 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         // API returns: { success: true, data: [...] }
         const statusDescData = (statusDesc as any)?.data || statusDesc;
 
+        console.log('Raw jobSummary response:', jobSummary);
+        console.log('Raw statusDesc response:', statusDesc);
+
         // Legacy: if (dsDetails != null && dsDetails.Tables[0].Rows.Count > 0)
         if (!jobSummaryData || !Array.isArray(jobSummaryData) || jobSummaryData.length === 0) {
           console.log('No job summary data, returning Online');
           return 'Online';
         }
 
-        const rowData = jobSummaryData[0]; // First row of data (primaryData[0])
+        const rowData = jobSummaryData[0]; // First row of data
         const statusDescMap = new Map<string, string>();
 
         // Build status description lookup map: ColumnName -> StatusType
-        // Legacy: dsStatus.Tables[0].Rows
+        // Legacy: foreach (DataRow dr in dsStatus.Tables[0].Rows)
         if (statusDescData && Array.isArray(statusDescData) && statusDescData.length > 0) {
           statusDescData.forEach((row: any) => {
             const columnName = (row.columnName || row.ColumnName || '').trim();
@@ -4364,62 +4481,77 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
         console.log('Status Description Map:', statusDescMap);
         console.log('Row Data columns:', Object.keys(rowData));
+        console.log('Starting status calculation from row data...');
 
-        // Legacy: Loop through all columns (fields in the row)
-        // for (int z = 0; z < dsDetails.Tables[0].Columns.Count - 1; z++)
+        // Legacy: for (int z = 0; z < dsDetails.Tables[0].Columns.Count - 1; z++)
         const columns = Object.keys(rowData);
         
         for (const columnName of columns) {
+          // Legacy: string TempColumn = dsDetails.Tables[0].Columns[z].ColumnName;
+          // Legacy: TempField = dsDetails.Tables[0].Rows[0][TempColumn].ToString();
           const fieldValue = (rowData[columnName] || '').toString().trim();
 
-          // Legacy: Special handling for Action fields and Environment_Clean
-          // if (TempColumn.Contains("Action") || TempColumn.Contains("Environment_Clean"))
+          // Skip processing for certain metadata columns
+          if (columnName === 'CallNbr' || columnName === 'EquipId' || columnName === 'UpsId') {
+            continue;
+          }
+
+          // Log every column being checked for debugging
+          if (fieldValue === 'N' || fieldValue === 'F' || fieldValue === 'True' || fieldValue === 'F ' || 
+              fieldValue === 'Y' || fieldValue === 'YS' || fieldValue === 'W') {
+            console.log(`Column: ${columnName}, Value: "${fieldValue}", Current Status: ${resultStatus}`);
+          }
+
+          // Legacy: if (TempColumn.Contains("Action") || TempColumn.Contains("Environment_Clean"))
           if (columnName.includes('Action') || columnName.includes('Environment_Clean')) {
+            // Legacy: if (TempField == "Y")
             if (fieldValue === 'Y') {
               // Legacy: if (ResultStatus == "Online" || ResultStatus == "ProactiveReplacement")
               if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
-                console.log(`Setting OnLine(MinorDeficiency) due to ${columnName} = Y`);
                 resultStatus = 'OnLine(MinorDeficiency)';
               }
-            } else if (fieldValue === 'YS') {
-              // Legacy: Immediate return for safety issues
-              console.log(`Returning CriticalDeficiency due to ${columnName} = YS`);
+            } 
+            // Legacy: else if (TempField == "YS")
+            else if (fieldValue === 'YS') {
               return 'CriticalDeficiency';
             }
-          } else {
-            // Legacy: Check for failure values
-            // if (TempField == "N" || TempField == "F" || TempField == "True" || TempField == "F ")
+          } 
+          // Legacy: else block for all other columns
+          else {
+            // Legacy: if (TempField == "N" || TempField == "F" || TempField == "True" || TempField == "F ")
             if (fieldValue === 'N' || fieldValue === 'F' || fieldValue === 'True' || fieldValue === 'F ') {
-              // Legacy: First set to MinorDeficiency if currently Online or ProactiveReplacement
+              // Legacy: First set to MinorDeficiency if Online or ProactiveReplacement
+              // if (ResultStatus == "Online" || ResultStatus == "ProactiveReplacement")
               if (resultStatus === 'Online' || resultStatus === 'ProactiveReplacement') {
-                console.log(`Setting OnLine(MinorDeficiency) due to ${columnName} = ${fieldValue}`);
                 resultStatus = 'OnLine(MinorDeficiency)';
               }
 
-              // Legacy: Then check StatusDescription table for severity escalation
+              // Legacy: Then check StatusDescription for escalation
               // foreach (DataRow dr in dsStatus.Tables[0].Rows)
+              // if (TempColumn == dr["ColumnName"].ToString().Trim())
               const statusType = statusDescMap.get(columnName);
               
               if (statusType) {
-                console.log(`Checking ${columnName}: statusType = ${statusType}`);
+                // Legacy: if (dr["StatusType"].ToString().Trim() == "CriticalDeficiency")
                 if (statusType === 'CriticalDeficiency') {
-                  // Legacy: Immediate return for critical issues
-                  console.log(`Returning CriticalDeficiency due to ${columnName} statusType`);
                   return 'CriticalDeficiency';
-                } else if (statusType === 'OnLine(MajorDeficiency)') {
-                  console.log(`Setting OnLine(MajorDeficiency) due to ${columnName}`);
+                } 
+                // Legacy: else if (dr["StatusType"].ToString().Trim() == "OnLine(MajorDeficiency)")
+                else if (statusType === 'OnLine(MajorDeficiency)') {
                   resultStatus = 'OnLine(MajorDeficiency)';
-                } else if (statusType === 'ReplacementRecommended') {
-                  console.log(`Setting ReplacementRecommended due to ${columnName}`);
+                } 
+                // Legacy: else if (dr["StatusType"].ToString().Trim() == "ReplacementRecommended")
+                else if (statusType === 'ReplacementRecommended') {
                   resultStatus = 'ReplacementRecommended';
                 }
               }
-            } else if (fieldValue === 'W') {
-              // Legacy: Warning status triggers ProactiveReplacement only if currently Online
-              // if (TempField == "W") { if(ResultStatus == "Online") ResultStatus = "ProactiveReplacement"; }
-              if (resultStatus === 'Online') {
-                console.log(`Setting ProactiveReplacement due to ${columnName} = W`);
-                resultStatus = 'ProactiveReplacement';
+            } 
+            // Legacy: else { if(TempField == "W") { if(ResultStatus == "Online") ResultStatus = "ProactiveReplacement"; } }
+            else {
+              if (fieldValue === 'W') {
+                if (resultStatus === 'Online') {
+                  resultStatus = 'ProactiveReplacement';
+                }
               }
             }
           }
@@ -4430,8 +4562,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       }),
       catchError(error => {
         console.error('Error calculating equipment status from API:', error);
-        // Fallback to hardcoded logic on error
-        return of(this.calculateEquipStatusFallback());
+        // Fallback to form-based logic on error
+        return of(this.calculateEquipStatus());
       })
     );
   }
@@ -4643,9 +4775,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // 2. Environmental cleaning and housekeeping issues
     const housekeepingChecks = [
-      ['environmentForm', 'hostileEnvironment', 'Y'],  // Environment cleaning needed
+      ['environmentForm', 'hostileEnvironment', 'YS'],  // Environment cleaning needed (legacy uses YS)
       ['visualForm', 'vacuumClean', 'F'],              // Vacuum/dust accumulation issues
-      ['visualForm', 'airFilters', 'W']                // Filter replacement needed (changed from 'RN' to 'W')
+      ['visualForm', 'airFilters', 'N']                // Filter replacement needed (legacy: 'N' = Replacement Needed)
       // NOTE: Removed 'C' (Cleaned) - cleaned filters should not be a deficiency
     ];
 
@@ -4888,7 +5020,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Check for cosmetic or housekeeping issues that don't affect operation
     const preventiveMaintenanceIndicators = [
       this.visualForm.get('vacuumClean')?.value === 'F', // Cleaning needed
-      this.environmentForm.get('hostileEnvironment')?.value === 'Y' // Environmental attention needed
+      this.environmentForm.get('hostileEnvironment')?.value === 'YS' // Environmental attention needed (legacy uses YS for Yes)
     ];
 
     return preventiveMaintenanceIndicators.some(indicator => indicator === true);
@@ -6117,6 +6249,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.saving = true; // Prevent status recalculation during save/validation
     this.clearAllValidationErrors();
 
+    // Calculate End of Life before saving (legacy requirement)
+    this.calculateEndOfLifeFromYear();
+
     // Ensure manual Off-Line status is preserved during save
     this.preserveManualOffLineStatus();
 
@@ -6917,10 +7052,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * NA -> NA (not applicable stays not applicable)
    */
   private mapHostileToClean(hostileValue: string): string {
-    if (hostileValue === 'Y') return 'N'; // Hostile environment means not clean
-    if (hostileValue === 'N') return 'Y'; // No hostile environment means clean
+    // Legacy: environment_Clean field stores YS (hostile) or NO (not hostile) directly
+    // No inversion needed - pass through the value as-is
+    if (hostileValue === 'YS') return 'YS'; // Hostile environment (Yes with Safety)
+    if (hostileValue === 'NO') return 'NO'; // No hostile environment
     if (hostileValue === 'NA') return 'NA'; // N/A stays N/A
-    return 'Y'; // Default to clean
+    // Handle old values for backward compatibility
+    if (hostileValue === 'Y') return 'YS'; // Map old Y to YS
+    if (hostileValue === 'N') return 'NO'; // Map old N to NO
+    return 'NO'; // Default to NO (no hostile environment)
   }
 
   /**
@@ -7587,6 +7727,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.selectedYear = year;
     // Close year calendar after selection
     this.showYearCalendar = false;
+    // Calculate End of Life when year is selected via calendar
+    this.calculateEndOfLifeFromYear();
   }
 
   isCurrentYearSelected(year: number): boolean {
