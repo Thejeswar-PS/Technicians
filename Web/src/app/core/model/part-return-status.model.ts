@@ -134,6 +134,7 @@ export interface PartsReturnDataByWeekNoDto {
   truckStock: number;
   techName: string;
   maint_Auth_ID: string;
+  create_Date: Date | null;
   lastModified: Date | null;
 }
 
@@ -155,6 +156,7 @@ export interface PartsReturnDataByWeekNoItem {
   truckStock: number;
   techName: string;
   maintAuthId: string;
+  createDate: Date | null;
   lastModified: Date | null;
 }
 

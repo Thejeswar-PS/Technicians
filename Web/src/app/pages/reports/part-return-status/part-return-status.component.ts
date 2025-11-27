@@ -61,9 +61,9 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   isLoadingWeeklyChart: boolean = false;
   weeklyChartErrorMessage: string = '';
   showWeeklyChart: boolean = true;
-  currentWeeklyChartType: 'bar' | 'line' | 'table' = 'bar';
+  currentWeeklyChartType: 'bar' | 'pie' | 'table' = 'bar';
   @ViewChild('weeklyBarChartCanvas', { static: false }) weeklyBarChartCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('weeklyLineChartCanvas', { static: false }) weeklyLineChartCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('weeklyPieChartCanvas', { static: false }) weeklyPieChartCanvas!: ElementRef<HTMLCanvasElement>;
 
   // Parts Received by Warehouse Chart properties
   receivedChartData: PartsReceivedByWHChartDto[] = [];
@@ -87,11 +87,33 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   private chartAnimations: Map<string, any> = new Map();
   private isAnimating: boolean = false;
   
+  // Component initialization flag
+  private isComponentInitialized: boolean = false;
+  
   // Interactive chart properties
   private hoveredBarIndex: number = -1;
   public hoveredSliceIndex: number = -1;
   private animationProgress: number = 0;
   public tooltipPosition = { x: 0, y: 0 };
+  
+  // Additional interactive properties for weekly and received charts
+  public hoveredWeeklySliceIndex: number = -1;
+  public hoveredReceivedSliceIndex: number = -1;
+  public weeklyTooltipPosition = { x: 0, y: 0 };
+  public receivedTooltipPosition = { x: 0, y: 0 };
+  private hoveredWeeklyBarIndex: number = -1;
+  private hoveredReceivedBarIndex: number = -1;
+  private isWeeklyAnimating: boolean = false;
+  private isReceivedAnimating: boolean = false;
+  private weeklyAnimationProgress: number = 0;
+  private receivedAnimationProgress: number = 0;
+  private clickedWeeklySliceIndex: number = -1;
+  private clickedReceivedSliceIndex: number = -1;
+  private weeklySliceHoverScale: number[] = [];
+  private receivedSliceHoverScale: number[] = [];
+  
+  // Make Math available in template
+  public Math = Math;
   private isHovering = false;
   private hoverAnimationId: number | null = null;
   private sliceHoverScale: number[] = [];
@@ -104,6 +126,9 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   weeklyDataErrorMessage: string = '';
   showWeeklyData: boolean = true;
   selectedWeekNo: number = 1;
+  
+  // Control which data grid to display (legacy behavior)
+  showWeeklyDataGrid: boolean = false; // false = show main parts grid, true = show weekly parts grid
   
   chartColors = [
     '#3699ff', '#f64e60', '#1bc5bd', '#ffa800', '#8950fc',
@@ -119,11 +144,13 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   // Available years for dropdown (last 5 years)
   availableYears: number[] = [];
+  availableWeeks: { value: string, label: string }[] = [];
 
   partReturnFilterForm: FormGroup = this.fb.group({
     inventoryUser: ['All'],
-    status: ['0'],  // Not Returned by default (key 0)
+    status: [0],  // Not Returned by default (key 0)
     year: [new Date().getFullYear()],
+    week: [''], // New week filter
     weekNo: [1]
   });
 
@@ -145,16 +172,34 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   ngOnInit(): void {
     this.initializeYears();
+    this.initializeWeeks();
     this.initializeWeekNumber();
     this.loadInventoryUsers();
     this.determineEmployeeStatus();
+    
+    // Process query parameters first, then other initialization
     this.handleQueryParams();
     this.onFilterChanges();
     this.loadFilters();
+    
+
     this.loadPartsToBeReceivedChart();
     this.loadWeeklyPartsReturnedCount();
     this.loadPartsReceivedByWarehouseChart();
     this.loadPartsReturnDataByWeekNo();
+    
+    // Load initial main data (only if not in weekly mode)
+    // Weekly mode data is loaded by processLegacyNavigation
+    setTimeout(() => {
+      if (!this.showWeeklyDataGrid) {
+        this.getPartReturnStatusReport();
+      }
+    }, 100);
+    
+    // Set initialization flag after all setup is complete
+    setTimeout(() => {
+      this.isComponentInitialized = true;
+    }, 1000);
   }
 
   initializeYears(): void {
@@ -163,6 +208,36 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     for (let i = 0; i < 5; i++) {
       this.availableYears.push(currentYear - i);
     }
+  }
+
+  initializeWeeks(): void {
+    this.availableWeeks = [];
+    const currentYear = new Date().getFullYear();
+    
+    // Generate weeks for current year
+    for (let week = 1; week <= 53; week++) {
+      const startDate = this.getDateOfWeek(week, currentYear);
+      const endDate = new Date(startDate);
+      endDate.setDate(startDate.getDate() + 6);
+      
+      const label = `Week ${week} (${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+      
+      this.availableWeeks.push({
+        value: week.toString(),
+        label: label
+      });
+    }
+  }
+
+  private getDateOfWeek(week: number, year: number): Date {
+    const firstDayOfYear = new Date(year, 0, 1);
+    const daysOffset = (week - 1) * 7;
+    const dayOfWeek = firstDayOfYear.getDay();
+    const daysToMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7;
+    
+    const result = new Date(firstDayOfYear);
+    result.setDate(firstDayOfYear.getDate() + daysToMonday + daysOffset);
+    return result;
   }
 
   initializeWeekNumber(): void {
@@ -241,30 +316,149 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   handleQueryParams(): void {
     this.route.queryParamMap.subscribe((params) => {
-      if (params.has('invUserID')) {
-        const invUserID = params.get('invUserID');
-        this.partReturnFilterForm.controls['inventoryUser'].setValue(invUserID || 'All');
+      
+      let shouldReloadData = false;
+      let tabHandled = false;
+      
+      // FIRST: Handle tab parameter to restore active tab (only if no legacy navigation)
+      const tabParam = params.get('tab') as 'graph1' | 'graph2' | 'graph3';
+      if (tabParam && ['graph1', 'graph2', 'graph3'].includes(tabParam) && !params.has('Source')) {
+        this.activeGraphTab = tabParam;
+        if (tabParam === 'graph2') {
+          this.showWeeklyDataGrid = true;
+          const currentWeek = this.getCurrentWeekNumber();
+          this.selectedWeekNo = currentWeek;
+          setTimeout(() => {
+            this.loadPartsReturnDataByWeekNo();
+            this.loadWeeklyPartsReturnedCount();
+          }, 50);
+        } else {
+          this.showWeeklyDataGrid = false;
+        }
+        tabHandled = true;
       }
       
-      if (params.has('year')) {
-        const year = parseInt(params.get('year') || '');
-        if (year && this.availableYears.includes(year)) {
-          this.partReturnFilterForm.controls['year'].setValue(year);
+      // SECOND: Handle legacy chart navigation parameters (Source, InvUserID, WeekNo)
+      if (params.has('Source')) {
+        shouldReloadData = true;
+        this.processLegacyNavigation(params);
+        tabHandled = true; // Legacy navigation sets its own tabs
+        
+        // Clear legacy parameters after processing to prevent loops
+        setTimeout(() => {
+          const currentParams = { ...this.route.snapshot.queryParams };
+          delete currentParams['Source'];
+          delete currentParams['InvUserID']; 
+          delete currentParams['WeekNo'];
+          
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: currentParams,
+            replaceUrl: true // Use replaceUrl to avoid adding to browser history
+          });
+        }, 100);
+      } else {
+        // Handle regular query parameters
+        if (params.has('invUserID')) {
+          const invUserID = params.get('invUserID');
+          this.partReturnFilterForm.controls['inventoryUser'].setValue(invUserID || 'All');
+          shouldReloadData = true;
+        }
+        
+        if (params.has('year')) {
+          const year = parseInt(params.get('year') || '');
+          if (year && this.availableYears.includes(year)) {
+            this.partReturnFilterForm.controls['year'].setValue(year);
+            shouldReloadData = true;
+          }
+        }
+
+        if (params.has('status')) {
+          const status = params.get('status');
+          this.partReturnFilterForm.controls['status'].setValue(status ? parseInt(status) : 0);
+          shouldReloadData = true;
+        }
+        
+        if (shouldReloadData) {
+          this.getPartReturnStatusReport();
         }
       }
-
-      if (params.has('status')) {
-        const status = params.get('status');
-        this.partReturnFilterForm.controls['status'].setValue(status || '0');
+      
+      // THIRD: Set default tab only if no tab was handled
+      if (!tabHandled) {
+        this.activeGraphTab = 'graph1';
+        this.showWeeklyDataGrid = false;
+        setTimeout(() => {
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { tab: 'graph1' },
+            queryParamsHandling: 'merge'
+          });
+        }, 100);
       }
-
-      // Handle chart navigation parameters like legacy
-      if (params.has('Source')) {
-        this.handleChartNavigation(params);
-      }
-
-      this.getPartReturnStatusReport();
     });
+  }
+
+  private processLegacyNavigation(params: any): void {
+    const source = params.get('Source');
+    const invUserID = params.get('InvUserID');
+    const weekNo = params.get('WeekNo');
+    
+    // Mimic legacy ASP.NET behavior exactly
+    switch (source) {
+      case 'Graph':
+        // Like WHChart click in legacy: Auto-select user and set to "Not Returned"
+        if (invUserID) {
+          // Fix: Map chart user name to actual dropdown value like legacy ddlInvUser.SelectedItem.Text = InvUserID
+          const mappedUserValue = this.mapChartUserToDropdownValue(invUserID);
+          
+          this.partReturnFilterForm.patchValue({
+            inventoryUser: mappedUserValue,
+            status: 0 // Auto-select "Not Returned" like legacy
+          });
+          
+          this.setActiveGraphTab('graph1', true); // Update URL to reflect correct tab
+          this.showWeeklyDataGrid = false; // Show main grid
+          this.getPartReturnStatusReport(); // Call DisplayPartReqStatus equivalent
+        }
+        break;
+        
+      case 'Received':
+        // Like WRChart click in legacy: Auto-select user and set to "Returned"
+        if (invUserID) {
+          this.partReturnFilterForm.patchValue({
+            inventoryUser: invUserID,
+            status: 3 // Auto-select "Returned" like legacy
+          });
+          this.setActiveGraphTab('graph3', true); // Update URL to reflect correct tab
+          this.showWeeklyDataGrid = false; // Show main grid
+          this.getPartReturnStatusReport(); // Call DisplayPartReqStatus equivalent
+        }
+        break;
+        
+      case 'Return':
+        // Like WkChart click in legacy: Show weekly data
+        if (weekNo) {
+          const weekNumber = parseInt(weekNo);
+          if (weekNumber >= 1 && weekNumber <= 53) {
+            // Clear weekly data before switching to weekly view
+            this.partsReturnDataByWeekNo = [];
+            this.partReturnFilterForm.patchValue({ 
+              weekNo: weekNumber,
+              week: weekNumber.toString()
+            });
+            this.selectedWeekNo = weekNumber;
+            this.setActiveGraphTab('graph2', true); // Update URL to reflect correct tab
+            this.showWeeklyDataGrid = true; // Show weekly grid (legacy behavior)
+            
+            // Force UI update and load weekly data
+            setTimeout(() => {
+              this.loadPartsReturnDataByWeekNo(); // Call DisplayPartsReturned equivalent
+            }, 0);
+          }
+        }
+        break;
+    }
   }
 
   loadFilters(): void {
@@ -329,34 +523,45 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     const formValue = this.partReturnFilterForm.value;
     
     const key = parseInt(formValue.status) || 0; // Default to 'not-returned' (key 0)
-    const invUserID = (formValue.inventoryUser || 'All').toString().trim();
+    let invUserID = (formValue.inventoryUser || 'All').toString().trim();
     const year = formValue.year || new Date().getFullYear();
 
-
+    // Ensure we're sending full name to database if not 'All'
+    if (invUserID !== 'All') {
+      const user = this.inventoryUsers.find(u => u.username === invUserID || u.invUserID === invUserID);
+      if (user && user.username) {
+        invUserID = user.username; // Ensure we use full name
+      }
+    }
 
     // Call appropriate API method based on status
     let apiCall;
+    let selectedApiMethod = '';
     switch (key) {
       case 0: // Not Returned
         apiCall = this._reportService.getPartsNotReceived(invUserID, year);
+        selectedApiMethod = 'getPartsNotReceived';
         break;
       case 1: // In Progress
         apiCall = this._reportService.getPartsInProgress(invUserID, year);
+        selectedApiMethod = 'getPartsInProgress';
         break;
       case 2: // Pending
         apiCall = this._reportService.getPartsPending(invUserID, year);
+        selectedApiMethod = 'getPartsPending';
         break;
       case 3: // Returned
         apiCall = this._reportService.getPartsReturned(invUserID, year);
+        selectedApiMethod = 'getPartsReturned';
         break;
       default:
         apiCall = this._reportService.getPartsNotReceived(invUserID, year);
+        selectedApiMethod = 'getPartsNotReceived (default)';
         break;
     }
 
     apiCall.subscribe({
       next: (response: PartReturnStatusResponseDto) => {
-
         
         if (response.success && response.data) {
           this.partReturnStatusList = response.data.map(item => this.convertToDisplayFormat(item));
@@ -533,20 +738,60 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   onFilterChanges(): void {
     let previousYear = this.partReturnFilterForm.get('year')?.value;
+    let previousFormValue = this.partReturnFilterForm.value;
     
     this.partReturnFilterForm.valueChanges.subscribe((selectedValue: any) => {
-      console.log('Form values changed:', selectedValue);
-      
-      // Only reload data if this isn't a programmatic update
-      if (this.partReturnFilterForm.dirty) {
-        this.getPartReturnStatusReport();
+      // Sync week and weekNo fields
+      if (previousFormValue.week !== selectedValue.week && selectedValue.week && selectedValue.week !== '') {
+        const weekNumber = parseInt(selectedValue.week);
+        if (weekNumber !== selectedValue.weekNo) {
+          this.partReturnFilterForm.patchValue({ weekNo: weekNumber }, { emitEvent: false });
+          this.selectedWeekNo = weekNumber;
+          if (this.showWeeklyDataGrid) {
+            this.loadPartsReturnDataByWeekNo();
+          }
+        }
       }
+      
+      // Reload data when form values actually change
+      const hasValueChanged = JSON.stringify(previousFormValue) !== JSON.stringify(selectedValue);
+      if (hasValueChanged && this.isComponentInitialized) {
+        // Check for changes that affect main data (user, status, year)
+        const mainDataChanged = previousFormValue.inventoryUser !== selectedValue.inventoryUser || 
+                               previousFormValue.status !== selectedValue.status ||
+                               previousFormValue.year !== selectedValue.year;
+        
+        // Check for changes that affect weekly data (weekNo)
+        const weeklyDataChanged = previousFormValue.weekNo !== selectedValue.weekNo;
+        
+        // Reload appropriate data based on current view and what changed
+        if (this.showWeeklyDataGrid) {
+          // In weekly mode: reload weekly data if any relevant filter changed
+          if (weeklyDataChanged || mainDataChanged) {
+            this.loadPartsReturnDataByWeekNo();
+          }
+        } else {
+          // In main mode: reload main data if relevant filters changed
+          if (mainDataChanged) {
+            this.getPartReturnStatusReport();
+          }
+        }
+      }
+      previousFormValue = { ...selectedValue };
       
       // Reload charts when year changes
       if (selectedValue.year !== previousYear) {
         previousYear = selectedValue.year;
         this.loadPartsToBeReceivedChart();
         this.loadPartsReceivedByWarehouseChart();
+        this.loadWeeklyPartsReturnedCount();
+      }
+      
+      // Reload charts when inventory user changes (if charts are user-specific)
+      if (previousFormValue.inventoryUser !== selectedValue.inventoryUser && this.isComponentInitialized) {
+        this.loadPartsToBeReceivedChart();
+        this.loadPartsReceivedByWarehouseChart();
+        this.loadWeeklyPartsReturnedCount();
       }
     });
   }
@@ -675,12 +920,17 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   clearFilters(): void {
+    const currentWeek = this.getCurrentWeekNumber();
     this.partReturnFilterForm.patchValue({
       inventoryUser: 'All',
-      status: '0',  // Default to Not Returned (key 0)
+      status: 0,  // Default to Not Returned (key 0)
       year: new Date().getFullYear(),
-      weekNo: this.getCurrentWeekNumber()
+      week: '', // Clear week selection to show "All Weeks"
+      weekNo: currentWeek
     });
+    
+    // Reset to main grid view (legacy behavior)
+    this.showWeeklyDataGrid = false;
     
     this.currentPage = 1;
     this.loadPartsToBeReceivedChart();
@@ -694,9 +944,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   getInventoryUserValue(user: InventoryUser): string {
     // Backend expects full names like "Adam Keith", "Anton Johnson"
-    // Use username field which contains full names, not invUserID which has abbreviated names
+    // Always use username field which contains full names, not invUserID (AdamK, AJohnson, etc.)
     const value = (user.username || user.invUserID || '').trim();
-    console.log('getInventoryUserValue - User:', user, 'Returning value:', value);
     return value;
   }
 
@@ -765,7 +1014,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       const technicianParam = technician && technician.trim() ? `&technician=${encodeURIComponent(technician.trim())}` : '';
       const targetUrl = `${window.location.origin}${window.location.pathname}#/jobs/parts?callNumber=${callNumber}${technicianParam}`;
       
-      console.log('Navigating to call:', targetUrl);
       window.open(targetUrl, '_blank');
     }
   }
@@ -776,7 +1024,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       const technicianParam = technician && technician.trim() ? `&technician=${encodeURIComponent(technician.trim())}` : '';
       const targetUrl = `${window.location.origin}${window.location.pathname}#/jobs/parts?callNumber=${callNumber}${technicianParam}`;
       
-      console.log('Navigating to technician jobs:', targetUrl, 'for technician:', technician);
       window.open(targetUrl, '_blank');
     }
   }
@@ -862,7 +1109,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   renderCharts(): void {
     // Ensure we have data and canvas elements before rendering
     if (!this.chartData || this.chartData.length === 0) {
-      console.log('No chart data available for rendering');
       return;
     }
     
@@ -880,9 +1126,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         } else if (this.currentChartType === 'pie' && this.pieChartCanvas?.nativeElement) {
           this.renderPieChart();
         }
-        console.log('Charts rendered successfully, type:', this.currentChartType, 'Chart visible:', this.showChart);
       } catch (error) {
-        console.error('Error rendering charts:', error);
+        // Error rendering charts - silently handle
       }
     }, 50);
   }
@@ -912,6 +1157,12 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     if (existingListener) {
       canvas.removeEventListener('click', existingListener);
       this.chartClickListeners.delete('barChart');
+    }
+    
+    const existingHoverListener = this.chartClickListeners.get('barChartHover');
+    if (existingHoverListener) {
+      canvas.removeEventListener('mousemove', existingHoverListener);
+      this.chartClickListeners.delete('barChartHover');
     }
     
     // Start animation if not already animating
@@ -1010,15 +1261,26 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       if (clickX >= padding && clickX <= canvas.width - padding && 
           clickY >= padding && clickY <= canvas.height - padding) {
         
-        // Determine which bar was clicked
+        // Determine which bar was clicked - improved detection for both blue and red bars
         const barWidth = chartWidth / (this.chartData.length * 2);
         
         for (let i = 0; i < this.chartData.length; i++) {
           const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
           
-          // Check if click is within either bar for this data item
-          if (clickX >= x && clickX <= x + (barWidth * 1.8)) {
-            console.log('Bar chart clicked:', this.chartData[i]);
+          // Match the exact drawing coordinates from drawBars method
+          // Blue bar (jobs): drawRoundedRect(x, jobsY, barWidth * 0.8, jobsHeight)
+          const blueBarLeft = x;
+          const blueBarRight = x + (barWidth * 0.8);
+          
+          // Red bar (faulty): drawRoundedRect(x + barWidth, faultyY, barWidth * 0.8, faultyHeight)  
+          const redBarLeft = x + barWidth;
+          const redBarRight = x + barWidth + (barWidth * 0.8);
+          
+          // Check if click is within either bar
+          const isInBlueBar = clickX >= blueBarLeft && clickX <= blueBarRight;
+          const isInRedBar = clickX >= redBarLeft && clickX <= redBarRight;
+          
+          if (isInBlueBar || isInRedBar) {
             this.onChartItemClick(this.chartData[i], 'parts-to-receive');
             break;
           }
@@ -1046,7 +1308,16 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         for (let i = 0; i < this.chartData.length; i++) {
           const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
           
-          if (mouseX >= x && mouseX <= x + (barWidth * 1.8)) {
+          // Check both blue and red bars for hover - exact same coordinates as drawing
+          const blueBarLeft = x;
+          const blueBarRight = x + (barWidth * 0.8);
+          const redBarLeft = x + barWidth;
+          const redBarRight = x + barWidth + (barWidth * 0.8);
+          
+          const isInBlueBar = mouseX >= blueBarLeft && mouseX <= blueBarRight;
+          const isInRedBar = mouseX >= redBarLeft && mouseX <= redBarRight;
+          
+          if (isInBlueBar || isInRedBar) {
             canvas.style.cursor = 'pointer';
             newHoveredIndex = i;
             break;
@@ -1221,19 +1492,16 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   private renderPieChart(): void {
     if (!this.pieChartCanvas?.nativeElement) {
-      console.log('Pie chart canvas not found');
       return;
     }
     
     if (this.chartData.length === 0) {
-      console.log('No chart data available');
       return;
     }
     
     const canvas = this.pieChartCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
-      console.log('Cannot get canvas context');
       return;
     }
 
@@ -1241,11 +1509,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     if (canvas.width === 0 || canvas.height === 0) {
       canvas.width = canvas.offsetWidth || 800;
       canvas.height = canvas.offsetHeight || 400;
-      console.log('Canvas dimensions set to:', canvas.width, 'x', canvas.height);
     }
-
-    console.log('Rendering pie chart with data:', this.chartData.length, 'items');
-    console.log('Canvas size:', canvas.width, 'x', canvas.height);
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1260,9 +1524,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     try {
       // Always render the modern pie chart directly
       this.drawModernPieSlices(ctx, canvas, 1);
-      console.log('Pie chart rendered successfully');
     } catch (error) {
-      console.error('Error rendering pie chart:', error);
+      // Error rendering pie chart - silently handle
     }
     
     // Setup click detection with proper positioning
@@ -1301,7 +1564,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
           const sliceAngle = (this.chartData[i].jobsCount / total) * 2 * Math.PI;
           
           if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
-            console.log('Modern pie chart clicked:', this.chartData[i]);
             this.animateSliceClick(i);
             // Small delay before navigation for visual feedback
             setTimeout(() => {
@@ -1627,7 +1889,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     const startOfYear = new Date(currentDate.getFullYear(), 0, 1);
     const days = Math.floor((currentDate.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
     const weekNumber = Math.ceil(days / 7);
-    return Math.min(weekNumber, 53); // Ensure week number doesn't exceed 53
+    return Math.min(Math.max(weekNumber, 1), 53); // Ensure week number is between 1 and 53
   }
 
   // Get available week numbers (1-53)
@@ -1641,9 +1903,12 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     
     if (weekNo < 1 || weekNo > 53) {
       this.weeklyDataErrorMessage = 'Week number must be between 1 and 53';
+      this.partsReturnDataByWeekNo = []; // Clear data for invalid week
       return;
     }
 
+    // Clear data and start loading
+    this.partsReturnDataByWeekNo = [];
     this.isLoadingWeeklyData = true;
     this.weeklyDataErrorMessage = '';
 
@@ -1688,6 +1953,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       truckStock: item.truckStock || 0,
       techName: item.techName || '',
       maintAuthId: item.maint_Auth_ID || '',
+      createDate: item.create_Date ? new Date(item.create_Date) : null,
       lastModified: item.lastModified ? new Date(item.lastModified) : null
     };
   }
@@ -1704,6 +1970,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         truckStock: 15,
         techName: 'John Smith',
         maintAuthId: 'MA001',
+        createDate: new Date('2024-11-18'),
         lastModified: new Date('2024-11-20')
       },
       {
@@ -1715,6 +1982,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         truckStock: 8,
         techName: 'Jane Doe',
         maintAuthId: 'MA002',
+        createDate: new Date('2024-11-21'),
         lastModified: new Date('2024-11-22')
       },
       {
@@ -1726,6 +1994,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         truckStock: 12,
         techName: 'Mike Johnson',
         maintAuthId: 'MA003',
+        createDate: new Date('2024-11-22'),
         lastModified: new Date('2024-11-23')
       }
     ];
@@ -1790,7 +2059,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     setTimeout(() => this.renderWeeklyCharts(), 100);
   }
 
-  setWeeklyChartType(type: 'bar' | 'line' | 'table'): void {
+  setWeeklyChartType(type: 'bar' | 'pie' | 'table'): void {
     this.currentWeeklyChartType = type;
     if (type !== 'table') {
       setTimeout(() => this.renderWeeklyCharts(), 100);
@@ -1804,8 +2073,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   renderWeeklyCharts(): void {
     if (this.currentWeeklyChartType === 'bar') {
       this.renderWeeklyBarChart();
-    } else if (this.currentWeeklyChartType === 'line') {
-      this.renderWeeklyLineChart();
+    } else if (this.currentWeeklyChartType === 'pie') {
+      this.renderWeeklyPieChart();
     }
   }
 
@@ -1819,105 +2088,34 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Remove existing click listener if any
+    // Remove existing listeners
     const existingListener = this.chartClickListeners.get('weeklyBarChart');
     if (existingListener) {
       canvas.removeEventListener('click', existingListener);
       this.chartClickListeners.delete('weeklyBarChart');
     }
     
-    const padding = 60;
-    const chartWidth = canvas.width - (padding * 2);
-    const chartHeight = canvas.height - (padding * 2);
-    const barGroupWidth = chartWidth / this.weeklyPartsData.length;
-    const barWidth = barGroupWidth * 0.35;
-    const maxValue = Math.max(...this.weeklyPartsData.map(d => Math.max(d.unUsed, d.faulty)));
-    
-    // Draw background
-    ctx.fillStyle = '#f8f9fa';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw grid lines
-    ctx.strokeStyle = '#e9ecef';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (chartHeight * i / 5);
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(canvas.width - padding, y);
-      ctx.stroke();
-      
-      // Y-axis labels
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'right';
-      const value = Math.round(maxValue * (5 - i) / 5);
-      ctx.fillText(value.toString(), padding - 10, y + 4);
+    const existingHoverListener = this.chartClickListeners.get('weeklyBarChartHover');
+    if (existingHoverListener) {
+      canvas.removeEventListener('mousemove', existingHoverListener);
+      this.chartClickListeners.delete('weeklyBarChartHover');
     }
     
-    // Draw bars
-    this.weeklyPartsData.forEach((item, index) => {
-      const x = padding + (index * barGroupWidth) + (barGroupWidth * 0.1);
-      
-      // UnUsed parts bar (blue)
-      const unusedHeight = (item.unUsed / maxValue) * chartHeight;
-      const unusedY = padding + chartHeight - unusedHeight;
-      ctx.fillStyle = '#3699ff';
-      ctx.fillRect(x, unusedY, barWidth, unusedHeight);
-      
-      // Faulty parts bar (red)
-      const faultyHeight = (item.faulty / maxValue) * chartHeight;
-      const faultyY = padding + chartHeight - faultyHeight;
-      ctx.fillStyle = '#f64e60';
-      ctx.fillRect(x + barWidth + 5, faultyY, barWidth, faultyHeight);
-      
-      // X-axis labels (week end dates)
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'center';
-      const labelX = x + barWidth + 2.5;
-      ctx.fillText(item.wkEnd, labelX, canvas.height - padding + 15);
-      
-      // Value labels on bars - always display outside bars in black
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 10px Arial';
-      ctx.textAlign = 'center';
-      
-      // UnUsed parts label - always above bar
-      if (item.unUsed > 0) {
-        ctx.fillText(item.unUsed.toString(), x + (barWidth * 0.5), unusedY - 8);
-      }
-      
-      // Faulty parts label - always above bar
-      if (item.faulty > 0) {
-        ctx.fillText(item.faulty.toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY - 8);
-      }
-    });
+    // Start animation if not already animating
+    if (!this.isWeeklyAnimating) {
+      this.animateWeeklyBarChart(ctx, canvas);
+    } else {
+      this.drawWeeklyBars(ctx, canvas, 1); // Draw without animation
+    }
     
-    // Draw legend
-    ctx.fillStyle = '#3699ff';
-    ctx.fillRect(padding + 10, 20, 15, 12);
-    ctx.fillStyle = '#6c757d';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('Unused Parts', padding + 30, 31);
-    
-    ctx.fillStyle = '#f64e60';
-    ctx.fillRect(padding + 130, 20, 15, 12);
-    ctx.fillStyle = '#6c757d';
-    ctx.fillText('Faulty Parts', padding + 150, 31);
-    
-    // Draw axes
-    ctx.strokeStyle = '#6c757d';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, canvas.height - padding);
-    ctx.lineTo(canvas.width - padding, canvas.height - padding);
-    ctx.stroke();
+    const padding = 60;
+    const chartWidth = canvas.width - (padding * 2);
     
     // Add click event listener for weekly bar chart
     const clickHandler = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
       const rect = canvas.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
@@ -1926,15 +2124,26 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       if (clickX >= padding && clickX <= canvas.width - padding && 
           clickY >= padding && clickY <= canvas.height - padding) {
         
-        // Determine which bar was clicked
+        // Determine which bar was clicked - improved detection for both bars
         const barGroupWidth = chartWidth / this.weeklyPartsData.length;
         
         for (let i = 0; i < this.weeklyPartsData.length; i++) {
           const x = padding + (i * barGroupWidth) + (barGroupWidth * 0.1);
           const barWidth = barGroupWidth * 0.35;
           
-          // Check if click is within either bar for this data item
-          if (clickX >= x && clickX <= x + (barWidth * 2) + 5) {
+          // Check unused bar (green) - left bar
+          const unusedBarLeft = x;
+          const unusedBarRight = x + barWidth;
+          
+          // Check faulty bar (orange) - right bar with gap
+          const faultyBarLeft = x + barWidth + 5;
+          const faultyBarRight = x + barWidth + 5 + barWidth;
+          
+          // Check if click is within either the unused bar OR the faulty bar
+          const isInUnusedBar = clickX >= unusedBarLeft && clickX <= unusedBarRight;
+          const isInFaultyBar = clickX >= faultyBarLeft && clickX <= faultyBarRight;
+          
+          if (isInUnusedBar || isInFaultyBar) {
             this.onChartItemClick(this.weeklyPartsData[i], 'weekly-returned');
             break;
           }
@@ -1974,122 +2183,153 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     this.chartClickListeners.set('weeklyBarChartHover', hoverHandler);
   }
 
-  private renderWeeklyLineChart(): void {
-    if (!this.weeklyLineChartCanvas?.nativeElement || this.weeklyPartsData.length === 0) return;
+  private renderWeeklyPieChart(): void {
+    if (!this.weeklyPieChartCanvas?.nativeElement) {
+      return;
+    }
     
-    const canvas = this.weeklyLineChartCanvas.nativeElement;
+    if (this.weeklyPartsData.length === 0) {
+      return;
+    }
+    
+    const canvas = this.weeklyPieChartCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      return;
+    }
+
+    // Ensure canvas has proper dimensions
+    if (canvas.width === 0 || canvas.height === 0) {
+      canvas.width = canvas.offsetWidth || 900;
+      canvas.height = canvas.offsetHeight || 500;
+    }
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const padding = 60;
-    const chartWidth = canvas.width - (padding * 2);
-    const chartHeight = canvas.height - (padding * 2);
-    const stepX = chartWidth / (this.weeklyPartsData.length - 1);
-    const maxValue = Math.max(...this.weeklyPartsData.map(d => Math.max(d.unUsed, d.faulty)));
-    
-    // Draw background
-    ctx.fillStyle = '#f8f9fa';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw grid lines
-    ctx.strokeStyle = '#e9ecef';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (chartHeight * i / 5);
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(canvas.width - padding, y);
-      ctx.stroke();
-      
-      // Y-axis labels
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'right';
-      const value = Math.round(maxValue * (5 - i) / 5);
-      ctx.fillText(value.toString(), padding - 10, y + 4);
+    // Remove existing listeners
+    const existingListener = this.chartClickListeners.get('weeklyPieChart');
+    if (existingListener) {
+      canvas.removeEventListener('click', existingListener);
+      this.chartClickListeners.delete('weeklyPieChart');
     }
     
-    // Draw unused parts line
-    ctx.strokeStyle = '#3699ff';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    this.weeklyPartsData.forEach((item, index) => {
-      const x = padding + (index * stepX);
-      const y = padding + chartHeight - ((item.unUsed / maxValue) * chartHeight);
+    try {
+      // Render the modern pie chart directly
+      this.drawModernWeeklyPieSlices(ctx, canvas, 1);
+    } catch (error) {
+      // Error rendering weekly pie chart - silently handle
+    }
+    
+    // Setup interactive click detection
+    const total = this.getTotalWeeklyParts();
+    const legendWidth = 220;
+    const availableWidth = canvas.width - legendWidth;
+    const adjustedCenterX = legendWidth + (availableWidth / 2);
+    const adjustedCenterY = canvas.height / 2;
+    const adjustedOuterRadius = Math.min(availableWidth / 2, adjustedCenterY) - 40;
+    const adjustedInnerRadius = adjustedOuterRadius * 0.4;
+    
+    // Add click event listener for weekly pie chart
+    const clickHandler = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
       
-      if (index === 0) {
-        ctx.moveTo(x, y);
-      } else {
-        ctx.lineTo(x, y);
+      const rect = canvas.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const clickY = event.clientY - rect.top;
+      
+      // Calculate distance from center
+      const dx = clickX - adjustedCenterX;
+      const dy = clickY - adjustedCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Check if click is within the pie chart
+      if (distance <= adjustedOuterRadius && distance >= adjustedInnerRadius) {
+        // Calculate angle of click
+        let angle = Math.atan2(dy, dx);
+        angle = (angle + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        
+        // Find which slice was clicked
+        let currentAngle = 0;
+        for (let i = 0; i < this.weeklyPartsData.length; i++) {
+          const itemTotal = this.weeklyPartsData[i].unUsed + this.weeklyPartsData[i].faulty;
+          const sliceAngle = (itemTotal / total) * 2 * Math.PI;
+          
+          if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
+            this.animateWeeklySliceClick(i);
+            setTimeout(() => {
+              this.onChartItemClick(this.weeklyPartsData[i], 'weekly-returned');
+            }, 300);
+            break;
+          }
+          
+          currentAngle += sliceAngle;
+        }
       }
-    });
-    ctx.stroke();
+    };
     
-    // Draw faulty parts line
-    ctx.strokeStyle = '#f64e60';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    this.weeklyPartsData.forEach((item, index) => {
-      const x = padding + (index * stepX);
-      const y = padding + chartHeight - ((item.faulty / maxValue) * chartHeight);
+    canvas.addEventListener('click', clickHandler);
+    this.chartClickListeners.set('weeklyPieChart', clickHandler);
+    
+    // Enhanced interactive mouse handlers
+    const mouseMoveHandler = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
       
-      if (index === 0) {
-        ctx.moveTo(x, y);
+      const dx = mouseX - adjustedCenterX;
+      const dy = mouseY - adjustedCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance <= adjustedOuterRadius && distance >= adjustedInnerRadius) {
+        canvas.style.cursor = 'pointer';
+        
+        // Calculate which slice is being hovered
+        let angle = Math.atan2(dy, dx);
+        angle = (angle + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        
+        let currentAngle = 0;
+        let newHoveredIndex = -1;
+        
+        for (let i = 0; i < this.weeklyPartsData.length; i++) {
+          const itemTotal = this.weeklyPartsData[i].unUsed + this.weeklyPartsData[i].faulty;
+          const sliceAngle = (itemTotal / total) * 2 * Math.PI;
+          
+          if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
+            newHoveredIndex = i;
+            break;
+          }
+          
+          currentAngle += sliceAngle;
+        }
+        
+        if (newHoveredIndex !== this.hoveredWeeklySliceIndex) {
+          this.hoveredWeeklySliceIndex = newHoveredIndex;
+          this.animateWeeklySliceHover();
+        }
+        
+        // Update tooltip position
+        this.updateWeeklyTooltipPosition(event, canvas);
       } else {
-        ctx.lineTo(x, y);
+        canvas.style.cursor = 'default';
+        if (this.hoveredWeeklySliceIndex !== -1) {
+          this.hoveredWeeklySliceIndex = -1;
+          this.animateWeeklySliceHover();
+        }
       }
-    });
-    ctx.stroke();
+    };
     
-    // Draw data points
-    this.weeklyPartsData.forEach((item, index) => {
-      const x = padding + (index * stepX);
-      
-      // Unused parts points
-      const unusedY = padding + chartHeight - ((item.unUsed / maxValue) * chartHeight);
-      ctx.fillStyle = '#3699ff';
-      ctx.beginPath();
-      ctx.arc(x, unusedY, 4, 0, 2 * Math.PI);
-      ctx.fill();
-      
-      // Faulty parts points
-      const faultyY = padding + chartHeight - ((item.faulty / maxValue) * chartHeight);
-      ctx.fillStyle = '#f64e60';
-      ctx.beginPath();
-      ctx.arc(x, faultyY, 4, 0, 2 * Math.PI);
-      ctx.fill();
-      
-      // X-axis labels
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(item.wkEnd, x, canvas.height - padding + 15);
-    });
+    const mouseLeaveHandler = () => {
+      canvas.style.cursor = 'default';
+      this.hoveredWeeklySliceIndex = -1;
+      this.animateWeeklySliceHover();
+    };
     
-    // Draw legend
-    ctx.fillStyle = '#3699ff';
-    ctx.fillRect(padding + 10, 20, 15, 12);
-    ctx.fillStyle = '#6c757d';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('Unused Parts', padding + 30, 31);
-    
-    ctx.fillStyle = '#f64e60';
-    ctx.fillRect(padding + 130, 20, 15, 12);
-    ctx.fillStyle = '#6c757d';
-    ctx.fillText('Faulty Parts', padding + 150, 31);
-    
-    // Draw axes
-    ctx.strokeStyle = '#6c757d';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, canvas.height - padding);
-    ctx.lineTo(canvas.width - padding, canvas.height - padding);
-    ctx.stroke();
+    canvas.addEventListener('mousemove', mouseMoveHandler);
+    canvas.addEventListener('mouseleave', mouseLeaveHandler);
+    this.chartClickListeners.set('weeklyPieChartHover', mouseMoveHandler);
+    this.chartClickListeners.set('weeklyPieChartLeave', mouseLeaveHandler);
   }
 
   // Weekly chart helper methods
@@ -2103,12 +2343,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   getTotalWeeklyParts(): number {
     return this.getTotalWeeklyUnused() + this.getTotalWeeklyFaulty();
-  }
-
-  getWeeklyItemPercentage(item: WeeklyPartsReturnedCountDto): number {
-    const totalParts = this.getTotalWeeklyParts();
-    const itemTotal = item.unUsed + item.faulty;
-    return totalParts > 0 ? Math.round((itemTotal / totalParts) * 100) : 0;
   }
 
   getPaginationPages(): (number | null)[] {
@@ -2189,7 +2423,61 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   onInventoryUserChange(event: any): void {
-    // Optional: Add any specific handling for inventory user change
+    // Trigger data and chart reload when inventory user changes
+    if (this.isComponentInitialized) {
+      // Reload data based on current view
+      if (this.showWeeklyDataGrid) {
+        this.loadPartsReturnDataByWeekNo();
+      } else {
+        this.getPartReturnStatusReport();
+      }
+      
+      // Reload charts as they may be user-specific
+      this.loadPartsToBeReceivedChart();
+      this.loadPartsReceivedByWarehouseChart();
+      this.loadWeeklyPartsReturnedCount();
+    }
+  }
+
+  onStatusChange(event: any): void {
+    // Trigger data reload when status changes
+    if (this.isComponentInitialized) {
+      if (this.showWeeklyDataGrid) {
+        this.loadPartsReturnDataByWeekNo();
+      } else {
+        this.getPartReturnStatusReport();
+      }
+    }
+  }
+
+  onWeekChange(event: any): void {
+    // Trigger weekly data reload when week changes
+    const weekValue = event.target.value;
+    if (this.isComponentInitialized && weekValue && weekValue !== '') {
+      const weekNumber = parseInt(weekValue);
+      this.selectedWeekNo = weekNumber;
+      if (this.showWeeklyDataGrid) {
+        this.loadPartsReturnDataByWeekNo();
+      }
+    }
+  }
+
+  onYearChange(event: any): void {
+    // Trigger data and chart reload when year changes
+    if (this.isComponentInitialized) {
+      // Reload main data
+      if (!this.showWeeklyDataGrid) {
+        this.getPartReturnStatusReport();
+      }
+      // Reload all charts
+      this.loadPartsToBeReceivedChart();
+      this.loadPartsReceivedByWarehouseChart();
+      this.loadWeeklyPartsReturnedCount();
+      // Reload weekly data if in weekly mode
+      if (this.showWeeklyDataGrid) {
+        this.loadPartsReturnDataByWeekNo();
+      }
+    }
   }
 
   trackByUserId(index: number, user: InventoryUser): string {
@@ -2317,35 +2605,48 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     switch (source) {
       case 'Graph':
         // Parts to be Received chart was clicked
+        // Legacy: Navigate with query parameters like PartReturnStatus.aspx?Source=Graph&InvUserID=...
         if (invUserID) {
-          this.partReturnFilterForm.patchValue({ inventoryUser: invUserID });
-          this.activeGraphTab = 'graph1';
-          preserveCharts();
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { 
+              Source: 'Graph', 
+              InvUserID: invUserID 
+            },
+            queryParamsHandling: 'merge'
+          });
         }
         break;
         
       case 'Received':
         // Parts Received chart was clicked
+        // Legacy: Navigate with query parameters like PartReturnStatus.aspx?Source=Received&InvUserID=...
         if (invUserID) {
-          this.partReturnFilterForm.patchValue({ 
-            inventoryUser: invUserID,
-            status: '3' // Set to "Received" status
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { 
+              Source: 'Received', 
+              InvUserID: invUserID 
+            },
+            queryParamsHandling: 'merge'
           });
-          this.activeGraphTab = 'graph3';
-          preserveCharts();
         }
         break;
         
       case 'Return':
         // Weekly Parts Returned chart was clicked
+        // Legacy: Navigate with query parameters like PartReturnStatus.aspx?Source=Return&WeekNo=...
         if (weekNo) {
           const weekNumber = parseInt(weekNo);
           if (weekNumber >= 1 && weekNumber <= 53) {
-            this.partReturnFilterForm.patchValue({ weekNo: weekNumber });
-            this.selectedWeekNo = weekNumber;
-            this.activeGraphTab = 'graph2';
-            this.loadPartsReturnDataByWeekNo();
-            preserveCharts();
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { 
+                Source: 'Return', 
+                WeekNo: weekNumber 
+              },
+              queryParamsHandling: 'merge'
+            });
           }
         }
         break;
@@ -2355,8 +2656,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   // Chart click handlers for different chart types
   onChartItemClick(item: any, chartType: 'parts-to-receive' | 'parts-received' | 'weekly-returned'): void {
     // Prevent navigation that would clear charts, handle drill-down locally
-    console.log('Chart item clicked:', item, 'Type:', chartType);
-    
     switch (chartType) {
       case 'parts-to-receive':
         // Handle parts to be received chart click
@@ -2376,19 +2675,18 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   private handlePartsToReceiveClick(item: any): void {
-    // Filter data by inventory user without navigation
+    // Legacy: Navigate with query parameters like WHChart behavior
     if (item.name) {
       const mappedUser = this.mapChartNameToInventoryUser(item.name);
-      console.log('Parts to receive click - Chart name:', item.name, 'Mapped to user:', mappedUser);
       
-      this.partReturnFilterForm.patchValue({ 
-        inventoryUser: mappedUser
-      }, { emitEvent: false });
-      
-      // Keep charts visible by not navigating away
-      setTimeout(() => {
-        this.getPartReturnStatusReport();
-      }, 100);
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { 
+          Source: 'Graph', 
+          InvUserID: mappedUser 
+        },
+        queryParamsHandling: 'merge'
+      });
     }
   }
 
@@ -2488,8 +2786,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   // Draw modern pie slices with animation and data labels
   private drawModernPieSlices(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
-    console.log('drawModernPieSlices called with progress:', progress);
-    console.log('Chart data:', this.chartData);
     
     // Position pie chart to the right, accounting for left-side legend
     const legendWidth = 220;
@@ -2499,21 +2795,11 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     const outerRadius = Math.min(availableWidth / 2, centerY) - 40;
     const innerRadius = outerRadius * 0.4;
     
-    console.log('Pie chart positioning:', {
-      legendWidth,
-      availableWidth,
-      centerX,
-      centerY,
-      outerRadius,
-      innerRadius
-    });
-    
     const total = this.chartData.reduce((sum, item) => sum + item.jobsCount, 0);
-    console.log('Total jobs count:', total);
     
     // Check for valid dimensions
     if (outerRadius <= 0 || innerRadius <= 0) {
-      console.error('Invalid pie chart dimensions - radius too small');
+      // Invalid pie chart dimensions - radius too small
       return;
     }
     
@@ -2530,7 +2816,6 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       { main: '#84CC16', light: '#A3E635', shadow: '#65A30D' }
     ];
 
-    console.log('Drawing background gradient');
     // Draw background
     const bgGradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, outerRadius + 20);
     bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
@@ -2804,35 +3089,33 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   private handlePartsReceivedClick(item: any): void {
-    // Filter by inventory user and set to received status
+    // Legacy: Navigate with query parameters like WRChart behavior
     if (item.name) {
       const mappedUser = this.mapChartNameToInventoryUser(item.name);
-      console.log('Parts received click - Chart name:', item.name, 'Mapped to user:', mappedUser);
       
-      this.partReturnFilterForm.patchValue({ 
-        inventoryUser: mappedUser,
-        status: '3' // Received status
-      }, { emitEvent: false });
-      
-      // Switch to received chart tab
-      this.activeGraphTab = 'graph3';
-      
-      setTimeout(() => {
-        this.getPartReturnStatusReport();
-      }, 100);
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { 
+          Source: 'Received', 
+          InvUserID: mappedUser 
+        },
+        queryParamsHandling: 'merge'
+      });
     }
   }
 
   private handleWeeklyReturnedClick(item: any): void {
-    // Filter by week number and load weekly data
+    // Legacy: Navigate with query parameters like WkChart behavior
     if (item.weekNo) {
-      this.partReturnFilterForm.patchValue({ 
-        weekNo: item.weekNo
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { 
+          Source: 'Return', 
+          WeekNo: item.weekNo 
+        },
+        queryParamsHandling: 'merge'
       });
-      this.selectedWeekNo = item.weekNo;
-      // Switch to weekly chart tab
-      this.activeGraphTab = 'graph2';
-      this.loadPartsReturnDataByWeekNo();
+    } else {
     }
   }
 
@@ -2840,14 +3123,10 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   private mapChartNameToInventoryUser(chartName: string): string {
     if (!chartName) return 'All';
     
-    console.log('Mapping chart name:', chartName);
-    console.log('Available inventory users:', this.inventoryUsers.map(u => ({ id: u.invUserID, name: u.username })));
-    
     // First try to find exact match by username
     let matchingUser = this.inventoryUsers.find(user => {
       const userName = user.username?.toLowerCase().trim();
       const chartNameLower = chartName.toLowerCase().trim();
-      console.log('Comparing:', userName, 'with', chartNameLower);
       return userName === chartNameLower;
     });
     
@@ -2869,9 +3148,35 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       });
     }
     
-    console.log('Chart name:', chartName, 'Matched user:', matchingUser);
-    
     return matchingUser ? this.getInventoryUserValue(matchingUser) : chartName;
+  }
+  
+  // Map chart user names to proper dropdown values (DB expects full names like 'Adam Keith' not 'AdamK')
+  private mapChartUserToDropdownValue(chartUserName: string): string {
+    if (!chartUserName || chartUserName === 'All') return 'All';
+    
+    // Find user where username (display text) matches chart name
+    const userByName = this.inventoryUsers.find(user => 
+      user.username && user.username.toLowerCase() === chartUserName.toLowerCase()
+    );
+    
+    if (userByName) {
+      // Return the full username (display text) since DB expects full names
+      return userByName.username || chartUserName;
+    }
+    
+    // Try exact invUserID match as fallback
+    const userById = this.inventoryUsers.find(user => 
+      user.invUserID && user.invUserID.toLowerCase() === chartUserName.toLowerCase()
+    );
+    
+    if (userById) {
+      // Return full username, not the short invUserID
+      return userById.username || chartUserName;
+    }
+    
+    // If no match found, return as-is
+    return chartUserName;
   }
 
   // Parts Received by Warehouse Chart methods
@@ -2960,91 +3265,34 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Remove existing click listener if any
+    // Remove existing listeners
     const existingListener = this.chartClickListeners.get('receivedBarChart');
     if (existingListener) {
       canvas.removeEventListener('click', existingListener);
       this.chartClickListeners.delete('receivedBarChart');
     }
     
-    const padding = 60;
-    const chartWidth = canvas.width - (padding * 2);
-    const chartHeight = canvas.height - (padding * 2);
-    const barWidth = chartWidth / (this.receivedChartData.length * 2);
-    const maxValue = Math.max(...this.receivedChartData.map(d => Math.max(d.jobsCount || 0, d.faulty || 0)));
-    
-    // Draw background
-    ctx.fillStyle = '#f8f9fa';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Draw grid lines
-    ctx.strokeStyle = '#e9ecef';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const y = padding + (chartHeight * i / 5);
-      ctx.beginPath();
-      ctx.moveTo(padding, y);
-      ctx.lineTo(canvas.width - padding, y);
-      ctx.stroke();
-      
-      // Y-axis labels
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'right';
-      const value = Math.round(maxValue * (5 - i) / 5);
-      ctx.fillText(value.toString(), padding - 10, y + 4);
+    const existingHoverListener = this.chartClickListeners.get('receivedBarChartHover');
+    if (existingHoverListener) {
+      canvas.removeEventListener('mousemove', existingHoverListener);
+      this.chartClickListeners.delete('receivedBarChartHover');
     }
     
-    // Draw bars
-    this.receivedChartData.forEach((item, index) => {
-      const x = padding + (index * 2 * barWidth) + (barWidth * 0.1);
-      
-      // Jobs count bar (green)
-      const jobsHeight = ((item.jobsCount || 0) / maxValue) * chartHeight;
-      const jobsY = padding + chartHeight - jobsHeight;
-      ctx.fillStyle = '#1bc5bd';
-      ctx.fillRect(x, jobsY, barWidth * 0.8, jobsHeight);
-      
-      // Faulty parts bar (orange)
-      const faultyHeight = ((item.faulty || 0) / maxValue) * chartHeight;
-      const faultyY = padding + chartHeight - faultyHeight;
-      ctx.fillStyle = '#ffa800';
-      ctx.fillRect(x + barWidth, faultyY, barWidth * 0.8, faultyHeight);
-      
-      // X-axis labels
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '11px Arial';
-      ctx.textAlign = 'center';
-      const labelX = x + barWidth;
-      ctx.fillText(item.name, labelX, canvas.height - padding + 20);
-      
-      // Value labels on bars - always display outside bars in black
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 11px Arial';
-      ctx.textAlign = 'center';
-      
-      // Jobs count label - always above bar
-      if ((item.jobsCount || 0) > 0) {
-        ctx.fillText((item.jobsCount || 0).toString(), x + (barWidth * 0.4), jobsY - 8);
-      }
-      
-      // Faulty parts label - always above bar
-      if ((item.faulty || 0) > 0) {
-        ctx.fillText((item.faulty || 0).toString(), x + barWidth + (barWidth * 0.4), faultyY - 8);
-      }
-    });
+    // Start animation if not already animating
+    if (!this.isReceivedAnimating) {
+      this.animateReceivedBarChart(ctx, canvas);
+    } else {
+      this.drawReceivedBars(ctx, canvas, 1); // Draw without animation
+    }
     
-    // Draw axes
-    ctx.strokeStyle = '#6c757d';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(padding, padding);
-    ctx.lineTo(padding, canvas.height - padding);
-    ctx.lineTo(canvas.width - padding, canvas.height - padding);
-    ctx.stroke();
+    const padding = 60;
+    const chartWidth = canvas.width - (padding * 2);
     
     // Add click event listener for received bar chart
     const clickHandler = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
       const rect = canvas.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
@@ -3053,14 +3301,26 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       if (clickX >= padding && clickX <= canvas.width - padding && 
           clickY >= padding && clickY <= canvas.height - padding) {
         
-        // Determine which bar was clicked
-        const barWidth = chartWidth / (this.receivedChartData.length * 2);
+        // Determine which bar was clicked - improved detection for both bars
+        const barGroupWidth = chartWidth / this.receivedChartData.length;
         
         for (let i = 0; i < this.receivedChartData.length; i++) {
-          const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
+          const x = padding + (i * barGroupWidth) + (barGroupWidth * 0.15);
+          const barWidth = barGroupWidth * 0.35;
           
-          // Check if click is within either bar for this data item
-          if (clickX >= x && clickX <= x + (barWidth * 1.8)) {
+          // Check jobs bar (purple) - left bar
+          const jobsBarLeft = x;
+          const jobsBarRight = x + barWidth;
+          
+          // Check faulty bar (red) - right bar with gap
+          const faultyBarLeft = x + barWidth + 5;
+          const faultyBarRight = x + barWidth + 5 + barWidth;
+          
+          // Check if click is within either the jobs bar OR the faulty bar
+          const isInJobsBar = clickX >= jobsBarLeft && clickX <= jobsBarRight;
+          const isInFaultyBar = clickX >= faultyBarLeft && clickX <= faultyBarRight;
+          
+          if (isInJobsBar || isInFaultyBar) {
             this.onChartItemClick(this.receivedChartData[i], 'parts-received');
             break;
           }
@@ -3071,28 +3331,34 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     canvas.addEventListener('click', clickHandler);
     this.chartClickListeners.set('receivedBarChart', clickHandler);
     
-    // Add hover effect
+    // Add enhanced hover effect
     const hoverHandler = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
       
       canvas.style.cursor = 'default';
+      let newHoveredIndex = -1;
       
       if (mouseX >= padding && mouseX <= canvas.width - padding && 
           mouseY >= padding && mouseY <= canvas.height - padding) {
         
-        const barWidth = chartWidth / (this.receivedChartData.length * 2);
+        const barGroupWidth = chartWidth / this.receivedChartData.length;
         
         for (let i = 0; i < this.receivedChartData.length; i++) {
-          const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
+          const x = padding + (i * barGroupWidth) + (barGroupWidth * 0.15);
+          const barWidth = barGroupWidth * 0.35;
           
-          if (mouseX >= x && mouseX <= x + (barWidth * 1.8)) {
+          if (mouseX >= x && mouseX <= x + (barWidth * 2) + 5) {
             canvas.style.cursor = 'pointer';
+            newHoveredIndex = i;
             break;
           }
         }
       }
+      
+      // Only update cursor, no visual changes
+      this.hoveredReceivedBarIndex = newHoveredIndex;
     };
     
     canvas.addEventListener('mousemove', hoverHandler);
@@ -3100,142 +3366,70 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   private renderReceivedPieChart(): void {
-    if (!this.receivedPieChartCanvas?.nativeElement || this.receivedChartData.length === 0) return;
+    if (!this.receivedPieChartCanvas?.nativeElement) {
+      return;
+    }
+    
+    if (this.receivedChartData.length === 0) {
+      return;
+    }
     
     const canvas = this.receivedPieChartCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      return;
+    }
+
+    // Ensure canvas has proper dimensions
+    if (canvas.width === 0 || canvas.height === 0) {
+      canvas.width = canvas.offsetWidth || 900;
+      canvas.height = canvas.offsetHeight || 500;
+    }
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Remove existing click listener if any
+    // Remove existing listeners
     const existingListener = this.chartClickListeners.get('receivedPieChart');
     if (existingListener) {
       canvas.removeEventListener('click', existingListener);
       this.chartClickListeners.delete('receivedPieChart');
     }
     
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 40;
-    
-    const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
-    let currentAngle = -Math.PI / 2; // Start from top
-    
-    // Draw background circle
-    ctx.fillStyle = '#f8f9fa';
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius + 10, 0, 2 * Math.PI);
-    ctx.fill();
-    
-    // Draw pie slices
-    this.receivedChartData.forEach((item, index) => {
-      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
-      const sliceAngle = (itemTotal / total) * 2 * Math.PI;
-      
-      // Draw slice
-      ctx.fillStyle = this.getChartColor(index);
-      ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
-      ctx.closePath();
-      ctx.fill();
-      
-      // Draw slice border
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Draw enhanced labels with names and values
-      const percentage = Math.round((itemTotal / total) * 100);
-      if (percentage > 3 && sliceAngle > 0.2) { // Show label if slice is large enough
-        const labelAngle = currentAngle + sliceAngle / 2;
-        const labelX = centerX + Math.cos(labelAngle) * (radius * 0.75);
-        const labelY = centerY + Math.sin(labelAngle) * (radius * 0.75);
-        
-        // Draw white background circle for better readability
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        ctx.beginPath();
-        ctx.arc(labelX, labelY, 22, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        // Draw month name (abbreviated)
-        const displayName = item.name.length > 8 ? item.name.substring(0, 6) + '..' : item.name;
-        ctx.fillStyle = '#1f2937';
-        ctx.font = 'bold 9px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(displayName, labelX, labelY - 5);
-        
-        // Draw total value and percentage
-        ctx.font = 'bold 10px Arial';
-        ctx.fillText(`${itemTotal}`, labelX, labelY + 5);
-        ctx.font = '8px Arial';
-        ctx.fillText(`(${percentage}%)`, labelX, labelY + 15);
-      }
-      
-      currentAngle += sliceAngle;
-    });
-    
-    // Draw center circle
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(centerX, centerY, radius * 0.4, 0, 2 * Math.PI);
-    ctx.fill();
-    
-    // Draw total in center
-    ctx.fillStyle = '#6c757d';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('Total Received', centerX, centerY - 5);
-    ctx.fillText(total.toString(), centerX, centerY + 15);
-    
-    // Draw legend below pie chart
-    const legendY = centerY + radius + 50;
-    const legendItemWidth = Math.min(100, canvas.width / Math.min(this.receivedChartData.length, 5));
-    const startX = centerX - (Math.min(this.receivedChartData.length, 5) * legendItemWidth) / 2;
-    
-    this.receivedChartData.slice(0, 5).forEach((item, index) => {
-      const x = startX + (index * legendItemWidth);
-      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
-      
-      // Legend color box
-      ctx.fillStyle = this.getChartColor(index);
-      ctx.fillRect(x, legendY - 8, 12, 12);
-      
-      // Legend text
-      ctx.fillStyle = '#374151';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'left';
-      const displayName = item.name.length > 8 ? item.name.substring(0, 6) + '..' : item.name;
-      ctx.fillText(`${displayName}: ${itemTotal}`, x + 18, legendY + 2);
-    });
-    
-    // Show remaining items count if more than 5
-    if (this.receivedChartData.length > 5) {
-      const remaining = this.receivedChartData.length - 5;
-      ctx.fillStyle = '#6B7280';
-      ctx.font = '10px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(`+${remaining} more`, centerX, legendY + 20);
+    try {
+      // Render the modern pie chart directly
+      this.drawModernReceivedPieSlices(ctx, canvas, 1);
+    } catch (error) {
+      // Error rendering received pie chart - silently handle
     }
+    
+    // Setup interactive click detection
+    const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+    const legendWidth = 220;
+    const availableWidth = canvas.width - legendWidth;
+    const adjustedCenterX = legendWidth + (availableWidth / 2);
+    const adjustedCenterY = canvas.height / 2;
+    const adjustedOuterRadius = Math.min(availableWidth / 2, adjustedCenterY) - 40;
+    const adjustedInnerRadius = adjustedOuterRadius * 0.4;
     
     // Add click event listener for received pie chart
     const clickHandler = (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      
       const rect = canvas.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
       
       // Calculate distance from center
-      const dx = clickX - centerX;
-      const dy = clickY - centerY;
+      const dx = clickX - adjustedCenterX;
+      const dy = clickY - adjustedCenterY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      // Check if click is within the pie chart (outside inner circle)
-      if (distance <= radius && distance >= radius * 0.4) {
+      // Check if click is within the pie chart
+      if (distance <= adjustedOuterRadius && distance >= adjustedInnerRadius) {
         // Calculate angle of click
         let angle = Math.atan2(dy, dx);
-        // Normalize angle to 0-2π and adjust for starting position
         angle = (angle + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
         
         // Find which slice was clicked
@@ -3245,7 +3439,10 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
           const sliceAngle = (itemTotal / total) * 2 * Math.PI;
           
           if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
-            this.onChartItemClick(this.receivedChartData[i], 'parts-received');
+            this.animateReceivedSliceClick(i);
+            setTimeout(() => {
+              this.onChartItemClick(this.receivedChartData[i], 'parts-received');
+            }, 300);
             break;
           }
           
@@ -3257,21 +3454,64 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     canvas.addEventListener('click', clickHandler);
     this.chartClickListeners.set('receivedPieChart', clickHandler);
     
-    // Add hover effect
-    const hoverHandler = (event: MouseEvent) => {
+    // Enhanced interactive mouse handlers
+    const mouseMoveHandler = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
       
-      const dx = mouseX - centerX;
-      const dy = mouseY - centerY;
+      const dx = mouseX - adjustedCenterX;
+      const dy = mouseY - adjustedCenterY;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      canvas.style.cursor = (distance <= radius && distance >= radius * 0.4) ? 'pointer' : 'default';
+      if (distance <= adjustedOuterRadius && distance >= adjustedInnerRadius) {
+        canvas.style.cursor = 'pointer';
+        
+        // Calculate which slice is being hovered
+        let angle = Math.atan2(dy, dx);
+        angle = (angle + Math.PI / 2 + 2 * Math.PI) % (2 * Math.PI);
+        
+        let currentAngle = 0;
+        let newHoveredIndex = -1;
+        
+        for (let i = 0; i < this.receivedChartData.length; i++) {
+          const itemTotal = (this.receivedChartData[i].jobsCount || 0) + (this.receivedChartData[i].faulty || 0);
+          const sliceAngle = (itemTotal / total) * 2 * Math.PI;
+          
+          if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
+            newHoveredIndex = i;
+            break;
+          }
+          
+          currentAngle += sliceAngle;
+        }
+        
+        if (newHoveredIndex !== this.hoveredReceivedSliceIndex) {
+          this.hoveredReceivedSliceIndex = newHoveredIndex;
+          this.renderReceivedPieChart();
+        }
+        
+        // Update tooltip position
+        this.updateReceivedTooltipPosition(event, canvas);
+      } else {
+        canvas.style.cursor = 'default';
+        if (this.hoveredReceivedSliceIndex !== -1) {
+          this.hoveredReceivedSliceIndex = -1;
+          this.renderReceivedPieChart();
+        }
+      }
     };
     
-    canvas.addEventListener('mousemove', hoverHandler);
-    this.chartClickListeners.set('receivedPieChartHover', hoverHandler);
+    const mouseLeaveHandler = () => {
+      canvas.style.cursor = 'default';
+      this.hoveredReceivedSliceIndex = -1;
+      this.renderReceivedPieChart();
+    };
+    
+    canvas.addEventListener('mousemove', mouseMoveHandler);
+    canvas.addEventListener('mouseleave', mouseLeaveHandler);
+    this.chartClickListeners.set('receivedPieChartHover', mouseMoveHandler);
+    this.chartClickListeners.set('receivedPieChartLeave', mouseLeaveHandler);
   }
 
   // Helper methods for received chart
@@ -3283,43 +3523,71 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     return this.receivedChartData.reduce((total, item) => total + (item.faulty || 0), 0);
   }
 
-  getReceivedChartItemPercentage(item: any): number {
-    const totalReceived = this.getTotalReceivedUnused() + this.getTotalReceivedFaulty();
-    const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
-    return totalReceived > 0 ? Math.round((itemTotal / totalReceived) * 100) : 0;
-  }
-
   toggleReceivedChartVisibility(): void {
     this.showReceivedChart = !this.showReceivedChart;
   }
 
   // Graph tab management
-  setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3'): void {
-    this.activeGraphTab = tab;
-    // Ensure charts are properly rendered when switching tabs
-    setTimeout(() => {
-      switch (tab) {
-        case 'graph1':
-          if (this.chartData.length > 0) {
-            this.showChart = true;
-            this.renderCharts();
-          }
-          break;
-        case 'graph2':
-          if (this.weeklyPartsData.length > 0) {
-            this.showWeeklyChart = true;
-            this.renderWeeklyCharts();
-          }
-          break;
-        case 'graph3':
-          if (this.receivedChartData.length > 0) {
-            this.showReceivedChart = true;
-            this.renderReceivedCharts();
-          }
-          break;
-      }
-    }, 100);
+setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true) {
+  this.activeGraphTab = tab;
+
+  // Update URL to preserve tab state on refresh (only when called by user interaction)
+  if (updateUrl) {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: tab },
+      queryParamsHandling: 'merge'
+    });
   }
+
+  if (tab === 'graph2') {
+    // 👉 Weekly parts returned tab selected
+    this.showWeeklyDataGrid = true;  // show weekly table instead of main table
+
+    // Set default filters and current week
+    const currentWeek = this.getCurrentWeekNumber();
+    this.partReturnFilterForm.patchValue({
+      inventoryUser: 'All',
+      status: 0, // Not Returned (key 0)
+      year: new Date().getFullYear(),
+      week: currentWeek.toString(),
+      weekNo: currentWeek
+    });
+    this.selectedWeekNo = currentWeek;
+
+    // Load weekly tables & charts
+    this.loadPartsReturnDataByWeekNo();
+    this.loadWeeklyPartsReturnedCount();
+  } 
+  else if (tab === 'graph3') {
+    // 👉 Parts Received by Warehouse tab selected
+    this.showWeeklyDataGrid = false; // hide weekly table
+    
+    // Set status to 'Returned' for Parts Received by Warehouse
+    this.partReturnFilterForm.patchValue({
+      status: 3 // Returned (key 3)
+    });
+    
+    // Load data with returned status
+    if (this.isComponentInitialized) {
+      this.getPartReturnStatusReport();
+    }
+  }
+  else {
+    // 👉 Other tabs selected (graph1)
+    this.showWeeklyDataGrid = false; // hide weekly table
+    
+    // Set status to 'Not Returned' for Parts to be Received
+    this.partReturnFilterForm.patchValue({
+      status: 0 // Not Returned (key 0)
+    });
+    
+    // Load data with not returned status
+    if (this.isComponentInitialized) {
+      this.getPartReturnStatusReport();
+    }
+  }
+}
 
   // Helper methods for totals display
   getUnusedReturnedTotal(): number {
@@ -3371,22 +3639,1318 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     }
   }
 
+  // Additional hover methods for weekly and received charts
+  onWeeklyRowHover(index: number, isHovering: boolean): void {
+    // Handle weekly row hover effects
+    if (isHovering) {
+      // Add any specific weekly hover logic here
+    }
+  }
+  
+  onReceivedRowHover(index: number, isHovering: boolean): void {
+    // Handle received chart row hover effects
+    if (isHovering) {
+      // Add any specific received chart hover logic here
+    }
+  }
+
   // Debug method to check chart state
   debugChartState(): void {
-    console.log('Chart Debug State:', {
-      activeTab: this.activeGraphTab,
-      showChart: this.showChart,
-      showWeeklyChart: this.showWeeklyChart,
-      showReceivedChart: this.showReceivedChart,
-      chartDataLength: this.chartData.length,
-      weeklyDataLength: this.weeklyPartsData.length,
-      receivedDataLength: this.receivedChartData.length,
-      canvasElements: {
-        barChart: !!this.barChartCanvas?.nativeElement,
-        pieChart: !!this.pieChartCanvas?.nativeElement,
-        weeklyBar: !!this.weeklyBarChartCanvas?.nativeElement,
-        receivedBar: !!this.receivedBarChartCanvas?.nativeElement,
-        receivedPie: !!this.receivedPieChartCanvas?.nativeElement
+    // Debug information available in development mode
+  }
+
+  // Method to switch back to main parts grid (from weekly grid)
+  switchToMainGrid(): void {
+    this.showWeeklyDataGrid = false;
+    this.getPartReturnStatusReport(); // Reload main grid data
+  }
+
+  // Get current grid type for display purposes
+  getCurrentGridType(): string {
+    return this.showWeeklyDataGrid ? 'Weekly Parts Return Data' : 'Parts Return Status';
+  }
+
+  // Get grid-specific record count
+  getCurrentGridRecordCount(): number {
+    return this.showWeeklyDataGrid ? this.partsReturnDataByWeekNo.length : this.totalRecords;
+  }
+
+  // Weekly and received chart tooltip methods
+  updateWeeklyTooltipPosition(event: MouseEvent, canvas: HTMLCanvasElement): void {
+    const rect = canvas.getBoundingClientRect();
+    this.weeklyTooltipPosition.x = event.clientX - rect.left + 15;
+    this.weeklyTooltipPosition.y = event.clientY - rect.top - 10;
+  }
+
+  updateReceivedTooltipPosition(event: MouseEvent, canvas: HTMLCanvasElement): void {
+    const rect = canvas.getBoundingClientRect();
+    this.receivedTooltipPosition.x = event.clientX - rect.left + 15;
+    this.receivedTooltipPosition.y = event.clientY - rect.top - 10;
+  }
+
+  // Weekly bar chart animation methods
+  private animateWeeklyBarChart(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): void {
+    this.isWeeklyAnimating = true;
+    this.weeklyAnimationProgress = 0;
+    
+    const animate = () => {
+      this.weeklyAnimationProgress += 0.02;
+      
+      if (this.weeklyAnimationProgress >= 1) {
+        this.weeklyAnimationProgress = 1;
+        this.isWeeklyAnimating = false;
+      }
+      
+      // Easing function for smooth animation
+      const easeProgress = this.easeOutCubic(this.weeklyAnimationProgress);
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      this.drawWeeklyBars(ctx, canvas, easeProgress);
+      
+      if (this.isWeeklyAnimating) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    animate();
+  }
+
+  private drawWeeklyBars(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
+    const padding = 60;
+    const chartWidth = canvas.width - (padding * 2);
+    const chartHeight = canvas.height - (padding * 2);
+    const barGroupWidth = chartWidth / this.weeklyPartsData.length;
+    const barWidth = barGroupWidth * 0.35;
+    const maxValue = Math.max(...this.weeklyPartsData.map(d => Math.max(d.unUsed, d.faulty)));
+    
+    // Draw gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, 'rgba(80, 205, 137, 0.02)');
+    gradient.addColorStop(1, 'rgba(255, 149, 0, 0.05)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw animated grid lines
+    ctx.strokeStyle = 'rgba(233, 236, 239, 0.8)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight * i / 5);
+      const gridProgress = Math.max(0, Math.min(1, (progress * 1.2) - (i * 0.1)));
+      
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(padding + (chartWidth * gridProgress), y);
+      ctx.stroke();
+      
+      // Y-axis labels with fade-in
+      if (progress > 0.5) {
+        ctx.fillStyle = `rgba(108, 117, 125, ${(progress - 0.5) * 2})`;
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.textAlign = 'right';
+        const value = Math.round(maxValue * (5 - i) / 5);
+        ctx.fillText(value.toString(), padding - 10, y + 4);
+      }
+    }
+    
+    // Draw animated bars
+    this.weeklyPartsData.forEach((item, index) => {
+      const x = padding + (index * barGroupWidth) + (barGroupWidth * 0.1);
+      
+      // UnUsed parts bar with gradient and animation
+      const unusedHeight = ((item.unUsed / maxValue) * chartHeight * progress);
+      const unusedY = padding + chartHeight - unusedHeight;
+      
+      // Create gradient for unused bar
+      const unusedGradient = ctx.createLinearGradient(0, unusedY, 0, unusedY + unusedHeight);
+      unusedGradient.addColorStop(0, '#50cd89');
+      unusedGradient.addColorStop(1, '#38a169');
+      
+      ctx.fillStyle = unusedGradient;
+      ctx.shadowColor = 'rgba(80, 205, 137, 0.2)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 5;
+      
+      this.drawRoundedRect(ctx, x, unusedY, barWidth, unusedHeight, 4);
+      
+      // Faulty parts bar with gradient and animation
+      const faultyHeight = ((item.faulty / maxValue) * chartHeight * progress);
+      const faultyY = padding + chartHeight - faultyHeight;
+      
+      const faultyGradient = ctx.createLinearGradient(0, faultyY, 0, faultyY + faultyHeight);
+      faultyGradient.addColorStop(0, '#ff9500');
+      faultyGradient.addColorStop(1, '#e67e00');
+      
+      ctx.fillStyle = faultyGradient;
+      ctx.shadowColor = 'rgba(255, 149, 0, 0.2)';
+      
+      this.drawRoundedRect(ctx, x + barWidth + 5, faultyY, barWidth, faultyHeight, 4);
+      
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      
+      // X-axis labels with bounce-in animation
+      if (progress > 0.7) {
+        const labelProgress = Math.min(1, (progress - 0.7) / 0.3);
+        const bounceProgress = this.easeOutElastic(labelProgress);
+        
+        ctx.fillStyle = `rgba(108, 117, 125, ${labelProgress})`;
+        ctx.font = '10px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.save();
+        const labelX = x + barWidth + 2.5;
+        ctx.translate(labelX, canvas.height - padding + 15);
+        ctx.scale(bounceProgress, bounceProgress);
+        ctx.fillText(item.wkEnd, 0, 0);
+        ctx.restore();
+      }
+      
+      // Animated value labels
+      if (progress > 0.8) {
+        const labelAlpha = (progress - 0.8) / 0.2;
+        ctx.fillStyle = `rgba(0, 0, 0, ${labelAlpha})`;
+        ctx.font = 'bold 10px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        
+        // UnUsed parts label - always above bar
+        if (item.unUsed > 0) {
+          ctx.fillText(item.unUsed.toString(), x + (barWidth * 0.5), unusedY - 8);
+        }
+        
+        // Faulty parts label - always above bar
+        if (item.faulty > 0) {
+          ctx.fillText(item.faulty.toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY - 8);
+        }
+      }
+    });
+    
+    // Draw animated axes
+    if (progress > 0.3) {
+      const axisProgress = (progress - 0.3) / 0.7;
+      ctx.strokeStyle = `rgba(108, 117, 125, ${axisProgress})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, canvas.height - padding);
+      ctx.lineTo(canvas.width - padding, canvas.height - padding);
+      ctx.stroke();
+    }
+    
+    // Draw animated legend
+    if (progress > 0.6) {
+      const legendAlpha = (progress - 0.6) / 0.4;
+      
+      ctx.fillStyle = `rgba(80, 205, 137, ${legendAlpha})`;
+      ctx.fillRect(padding + 10, 20, 15, 12);
+      ctx.fillStyle = `rgba(108, 117, 125, ${legendAlpha})`;
+      ctx.font = '12px Inter, Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Unused Parts', padding + 30, 31);
+      
+      ctx.fillStyle = `rgba(255, 149, 0, ${legendAlpha})`;
+      ctx.fillRect(padding + 130, 20, 15, 12);
+      ctx.fillStyle = `rgba(108, 117, 125, ${legendAlpha})`;
+      ctx.fillText('Faulty Parts', padding + 150, 31);
+    }
+  }
+
+  // Received warehouse bar chart animation methods
+  private animateReceivedBarChart(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement): void {
+    this.isReceivedAnimating = true;
+    this.receivedAnimationProgress = 0;
+    
+    const animate = () => {
+      this.receivedAnimationProgress += 0.02;
+      
+      if (this.receivedAnimationProgress >= 1) {
+        this.receivedAnimationProgress = 1;
+        this.isReceivedAnimating = false;
+      }
+      
+      // Easing function for smooth animation
+      const easeProgress = this.easeOutCubic(this.receivedAnimationProgress);
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      this.drawReceivedBars(ctx, canvas, easeProgress);
+      
+      if (this.isReceivedAnimating) {
+        requestAnimationFrame(animate);
+      }
+    };
+    
+    animate();
+  }
+
+  private drawReceivedBars(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
+    const padding = 60;
+    const chartWidth = canvas.width - (padding * 2);
+    const chartHeight = canvas.height - (padding * 2);
+    const barGroupWidth = chartWidth / this.receivedChartData.length;
+    const barWidth = barGroupWidth * 0.35; // Narrower bars to fit two per group
+    const maxValue = Math.max(...this.receivedChartData.map((d: PartsReceivedByWHChartDto) => Math.max(d.jobsCount || 0, d.faulty || 0)));
+    
+    // Draw gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, 'rgba(54, 153, 255, 0.02)');
+    gradient.addColorStop(1, 'rgba(102, 126, 234, 0.05)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw animated grid lines
+    ctx.strokeStyle = 'rgba(233, 236, 239, 0.8)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight * i / 5);
+      const gridProgress = Math.max(0, Math.min(1, (progress * 1.2) - (i * 0.1)));
+      
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(padding + (chartWidth * gridProgress), y);
+      ctx.stroke();
+      
+      // Y-axis labels with fade-in
+      if (progress > 0.5) {
+        ctx.fillStyle = `rgba(108, 117, 125, ${(progress - 0.5) * 2})`;
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.textAlign = 'right';
+        const value = Math.round(maxValue * (5 - i) / 5);
+        ctx.fillText(value.toString(), padding - 10, y + 4);
+      }
+    }
+    
+    // Draw animated bars
+    this.receivedChartData.forEach((item: PartsReceivedByWHChartDto, index: number) => {
+      const x = padding + (index * barGroupWidth) + (barGroupWidth * 0.15);
+      
+      // Jobs count bar with gradient and animation
+      const jobsHeight = ((item.jobsCount || 0) / maxValue) * chartHeight * progress;
+      const jobsY = padding + chartHeight - jobsHeight;
+      
+      // Create gradient for jobs bar
+      const jobsGradient = ctx.createLinearGradient(0, jobsY, 0, jobsY + jobsHeight);
+      jobsGradient.addColorStop(0, '#8b5cf6');
+      jobsGradient.addColorStop(1, '#7c3aed');
+      
+      ctx.fillStyle = jobsGradient;
+      ctx.shadowColor = 'rgba(139, 92, 246, 0.2)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 5;
+      
+      this.drawRoundedRect(ctx, x, jobsY, barWidth, jobsHeight, 4);
+      
+      // Faulty parts bar with gradient and animation
+      const faultyHeight = ((item.faulty || 0) / maxValue) * chartHeight * progress;
+      const faultyY = padding + chartHeight - faultyHeight;
+      
+      const faultyGradient = ctx.createLinearGradient(0, faultyY, 0, faultyY + faultyHeight);
+      faultyGradient.addColorStop(0, '#ef4444');
+      faultyGradient.addColorStop(1, '#dc2626');
+      
+      ctx.fillStyle = faultyGradient;
+      ctx.shadowColor = 'rgba(239, 68, 68, 0.2)';
+      
+      this.drawRoundedRect(ctx, x + barWidth + 5, faultyY, barWidth, faultyHeight, 4);
+      
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+      
+      // X-axis labels with bounce-in animation
+      if (progress > 0.7) {
+        const labelProgress = Math.min(1, (progress - 0.7) / 0.3);
+        const bounceProgress = this.easeOutElastic(labelProgress);
+        
+        ctx.fillStyle = `rgba(108, 117, 125, ${labelProgress})`;
+        ctx.font = '10px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.save();
+        const labelX = x + barWidth + 2.5;
+        ctx.translate(labelX, canvas.height - padding + 15);
+        ctx.scale(bounceProgress, bounceProgress);
+        ctx.fillText(item.name, 0, 0);
+        ctx.restore();
+      }
+      
+      // Animated value labels
+      if (progress > 0.8) {
+        const labelAlpha = (progress - 0.8) / 0.2;
+        ctx.fillStyle = `rgba(0, 0, 0, ${labelAlpha})`;
+        ctx.font = 'bold 10px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        
+        // Jobs count label - always above bar
+        if ((item.jobsCount || 0) > 0) {
+          ctx.fillText((item.jobsCount || 0).toString(), x + (barWidth * 0.5), jobsY - 8);
+        }
+        
+        // Faulty parts label - always above bar  
+        if ((item.faulty || 0) > 0) {
+          ctx.fillText((item.faulty || 0).toString(), x + barWidth + 5 + (barWidth * 0.5), faultyY - 8);
+        }
+      }
+    });
+    
+    // Draw animated axes
+    if (progress > 0.3) {
+      const axisProgress = (progress - 0.3) / 0.7;
+      ctx.strokeStyle = `rgba(108, 117, 125, ${axisProgress})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, canvas.height - padding);
+      ctx.lineTo(canvas.width - padding, canvas.height - padding);
+      ctx.stroke();
+    }
+    
+    // Draw animated legend
+    if (progress > 0.6) {
+      const legendAlpha = (progress - 0.6) / 0.4;
+      
+      ctx.fillStyle = `rgba(139, 92, 246, ${legendAlpha})`;
+      ctx.fillRect(padding + 10, 20, 15, 12);
+      ctx.fillStyle = `rgba(108, 117, 125, ${legendAlpha})`;
+      ctx.font = '12px Inter, Arial, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('Jobs Count', padding + 30, 31);
+      
+      ctx.fillStyle = `rgba(239, 68, 68, ${legendAlpha})`;
+      ctx.fillRect(padding + 120, 20, 15, 12);
+      ctx.fillStyle = `rgba(108, 117, 125, ${legendAlpha})`;
+      ctx.fillText('Faulty Parts', padding + 140, 31);
+    }
+  }
+
+  // Weekly pie chart animation and interaction methods
+  private drawModernWeeklyPieSlices(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
+    // Position pie chart to the right, accounting for left-side data panel
+    const legendWidth = 250;
+    const availableWidth = canvas.width - legendWidth;
+    const centerX = legendWidth + (availableWidth / 2);
+    const centerY = canvas.height / 2;
+    const outerRadius = Math.min(availableWidth / 2, centerY) - 40;
+    const innerRadius = outerRadius * 0.4;
+    
+    const total = this.getTotalWeeklyParts();
+    
+    // Check for valid dimensions
+    if (outerRadius <= 0 || innerRadius <= 0 || total === 0) {
+      return;
+    }
+    
+    let currentAngle = -Math.PI / 2;
+
+    const modernColors = [
+      '#4f46e5', '#ef4444', '#10b981', '#f59e0b', 
+      '#06b6d4', '#ec4899', '#84cc16', '#8b5cf6'
+    ];
+
+    // Draw slices with labels inside
+    this.weeklyPartsData.forEach((item, index) => {
+      const itemTotal = item.unUsed + item.faulty;
+      const sliceAngle = ((itemTotal / total) * 2 * Math.PI) * progress;
+      const color = modernColors[index % modernColors.length];
+      const percentage = ((itemTotal / total) * 100).toFixed(1);
+      
+      // Draw slice
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, outerRadius, currentAngle, currentAngle + sliceAngle);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw inner circle (donut hole)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Calculate label position (middle of slice)
+      const labelAngle = currentAngle + sliceAngle / 2;
+      const labelRadius = (outerRadius + innerRadius) / 2;
+      const labelX = centerX + Math.cos(labelAngle) * labelRadius;
+      const labelY = centerY + Math.sin(labelAngle) * labelRadius;
+      
+      // Draw labels inside slices if slice is large enough
+      if (sliceAngle > 0.3) { // Only show labels for slices larger than ~17 degrees
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Draw week ending date (truncated if needed)
+        const weekName = item.wkEnd.length > 10 ? item.wkEnd.substring(0, 8) + '...' : item.wkEnd;
+        ctx.fillText(weekName, labelX, labelY - 12);
+        
+        // Draw count
+        ctx.font = 'bold 13px Arial';
+        ctx.fillText(itemTotal.toString(), labelX, labelY + 2);
+        
+        // Draw percentage
+        ctx.font = '10px Arial';
+        ctx.fillText(`(${percentage}%)`, labelX, labelY + 14);
+      }
+      
+      currentAngle += sliceAngle;
+    });
+    
+    // Draw center label
+    ctx.fillStyle = '#374151';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Total Parts', centerX, centerY - 10);
+    
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText(total.toString(), centerX, centerY + 10);
+    
+    // Draw left-side data panel
+    this.drawWeeklyDataPanel(ctx, canvas, modernColors);
+  }
+
+  // Draw simple data panel on the left side for Weekly chart
+  private drawWeeklyDataPanel(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, colors: string[]): void {
+    const panelX = 25;
+    const panelY = 40;
+    const itemHeight = 35;
+    const total = this.getTotalWeeklyParts();
+    
+    // Panel background
+    const panelWidth = 220;
+    const panelHeight = (this.weeklyPartsData.length * itemHeight) + 80;
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fillRect(panelX - 10, panelY - 30, panelWidth, panelHeight);
+    
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(panelX - 10, panelY - 30, panelWidth, panelHeight);
+    
+    // Panel title
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('Weekly Distribution', panelX, panelY - 5);
+    
+    // Summary
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px Arial';
+    ctx.fillText(`${total} parts across ${this.weeklyPartsData.length} weeks`, panelX, panelY + 15);
+    
+    // Data items
+    this.weeklyPartsData.forEach((item, index) => {
+      const y = panelY + 40 + (index * itemHeight);
+      const color = colors[index % colors.length];
+      const itemTotal = item.unUsed + item.faulty;
+      const percentage = Math.round((itemTotal / total) * 100);
+      
+      // Color indicator
+      ctx.fillStyle = color;
+      ctx.fillRect(panelX, y - 8, 12, 12);
+      
+      // Week name
+      ctx.fillStyle = '#111827';
+      ctx.font = 'bold 12px Arial';
+      const displayName = item.wkEnd.length > 15 ? item.wkEnd.substring(0, 13) + '...' : item.wkEnd;
+      ctx.fillText(displayName, panelX + 20, y - 2);
+      
+      // Count and percentage
+      ctx.fillStyle = color;
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText(itemTotal.toString(), panelX + 20, y + 12);
+      
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '11px Arial';
+      const countTextWidth = ctx.measureText(itemTotal.toString()).width;
+      ctx.fillText(`parts (${percentage}%)`, panelX + 20 + countTextWidth + 8, y + 12);
+    });
+  }
+
+  // Draw elegant modern legend positioned on the left side for Weekly chart
+  private drawWeeklyModernLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, colors: any[]): void {
+    const legendX = 25;
+    const legendY = 40;
+    const itemHeight = 40;
+    const total = this.getTotalWeeklyParts();
+    
+    // Calculate legend dimensions
+    const legendWidth = 240;
+    const legendHeight = (this.weeklyPartsData.length * itemHeight) + 80;
+    
+    // Draw elegant legend background with gradient
+    const bgGradient = ctx.createLinearGradient(legendX - 15, legendY - 35, legendX - 15, legendY - 35 + legendHeight);
+    bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    bgGradient.addColorStop(1, 'rgba(248, 250, 252, 0.98)');
+    
+    ctx.fillStyle = bgGradient;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 8;
+    
+    // Rounded rectangle for legend background
+    this.drawRoundedRect(ctx, legendX - 15, legendY - 35, legendWidth, legendHeight, 16);
+    
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    
+    // Draw subtle border
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.4)';
+    ctx.lineWidth = 1;
+    this.strokeRoundedRect(ctx, legendX - 15, legendY - 35, legendWidth, legendHeight, 12);
+    
+    // Draw elegant legend title
+    ctx.font = '600 18px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#111827';
+    ctx.textAlign = 'left';
+    ctx.fillText('Weekly Distribution', legendX, legendY - 10);
+    
+    // Draw refined summary
+    ctx.font = '500 13px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#6b7280';
+    ctx.fillText(`${total} parts across ${this.weeklyPartsData.length} weeks`, legendX, legendY + 12);
+    
+    // Draw elegant legend items
+    this.weeklyPartsData.forEach((item, index) => {
+      const y = legendY + 35 + (index * itemHeight);
+      const color = colors[index % colors.length];
+      const itemTotal = item.unUsed + item.faulty;
+      const percentage = Math.round((itemTotal / total) * 100);
+      
+      // Draw sophisticated color indicator
+      const circleGradient = ctx.createRadialGradient(legendX + 12, y + 12, 2, legendX + 12, y + 12, 12);
+      circleGradient.addColorStop(0, color.light);
+      circleGradient.addColorStop(0.7, color.main);
+      circleGradient.addColorStop(1, color.shadow);
+      
+      ctx.fillStyle = circleGradient;
+      ctx.beginPath();
+      ctx.arc(legendX + 12, y + 12, 12, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Add subtle border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw week name with better typography
+      ctx.fillStyle = '#111827';
+      ctx.font = '600 14px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      const maxNameLength = 16;
+      const displayName = item.wkEnd.length > maxNameLength ? 
+        item.wkEnd.substring(0, maxNameLength - 2) + '...' : item.wkEnd;
+      ctx.fillText(displayName, legendX + 35, y + 10);
+      
+      // Draw part count with emphasis
+      ctx.fillStyle = color.main;
+      ctx.font = 'bold 16px Inter, system-ui, sans-serif';
+      ctx.fillText(itemTotal.toString(), legendX + 35, y + 28);
+      
+      // Draw "parts" label
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '500 12px Inter, system-ui, sans-serif';
+      const partsTextX = legendX + 35 + ctx.measureText(itemTotal.toString()).width + 6;
+      ctx.fillText('parts', partsTextX, y + 28);
+      
+      // Draw percentage
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '500 11px Inter, system-ui, sans-serif';
+      const percentageTextX = partsTextX + ctx.measureText('parts').width + 12;
+      ctx.fillText(`(${percentage}%)`, percentageTextX, y + 28);
+    });
+  }
+
+  private drawWeeklyPieLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, legendWidth: number): void {
+    const legendX = 30;
+    let legendY = 80;
+    const lineHeight = 35;
+    const total = this.getTotalWeeklyParts();
+    
+    // Legend title
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 18px Inter, Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Weekly Distribution', legendX, legendY - 20);
+    
+    // Legend items
+    this.weeklyPartsData.forEach((item, index) => {
+      const itemTotal = item.unUsed + item.faulty;
+      const percentage = total > 0 ? Math.round((itemTotal / total) * 100) : 0;
+      const color = this.getWeeklySliceColor(index);
+      const isHovered = this.hoveredWeeklySliceIndex === index;
+      
+      // Highlight hovered legend item
+      if (isHovered) {
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+        ctx.fillRect(legendX - 10, legendY - 20, legendWidth - 40, 30);
+      }
+      
+      // Color indicator
+      ctx.fillStyle = color;
+      ctx.fillRect(legendX, legendY - 12, 16, 16);
+      
+      // Week text
+      ctx.fillStyle = isHovered ? '#1f2937' : '#374151';
+      ctx.font = isHovered ? 'bold 14px Inter, Arial, sans-serif' : '14px Inter, Arial, sans-serif';
+      ctx.fillText(`Week ${item.weekNo}`, legendX + 25, legendY - 2);
+      
+      // Value and percentage
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '12px Inter, Arial, sans-serif';
+      ctx.fillText(`${itemTotal} parts (${percentage}%)`, legendX + 25, legendY + 12);
+      
+      legendY += lineHeight;
+    });
+  }
+
+  private animateWeeklySliceHover(): void {
+    if (!this.weeklyPieChartCanvas?.nativeElement) return;
+    
+    const canvas = this.weeklyPieChartCanvas.nativeElement;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    this.drawModernWeeklyPieSlices(ctx, canvas, 1);
+  }
+
+  private animateWeeklySliceClick(index: number): void {
+    this.clickedWeeklySliceIndex = index;
+    
+    // Animate click effect
+    let scale = 1;
+    const animateClick = () => {
+      scale += 0.02;
+      if (scale >= 1.1) {
+        scale = 1.1;
+        // Reset after short delay
+        setTimeout(() => {
+          this.clickedWeeklySliceIndex = -1;
+          this.animateWeeklySliceHover();
+        }, 200);
+        return;
+      }
+      
+      this.weeklySliceHoverScale[index] = scale;
+      this.animateWeeklySliceHover();
+      requestAnimationFrame(animateClick);
+    };
+    
+    animateClick();
+  }
+
+  // Received pie chart animation and interaction methods
+  private drawModernReceivedPieSlices(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
+    // Position pie chart to the right, accounting for left-side legend
+    const legendWidth = 220;
+    const availableWidth = canvas.width - legendWidth;
+    const centerX = legendWidth + (availableWidth / 2);
+    const centerY = canvas.height / 2;
+    const outerRadius = Math.min(availableWidth / 2, centerY) - 40;
+    const innerRadius = outerRadius * 0.4;
+    
+    const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+    
+    // Check for valid dimensions
+    if (outerRadius <= 0 || innerRadius <= 0) {
+      return;
+    }
+    
+    let currentAngle = -Math.PI / 2;
+
+    const modernColors = [
+      { main: '#8b5cf6', light: '#a78bfa', shadow: '#7c3aed' },
+      { main: '#ef4444', light: '#f87171', shadow: '#dc2626' },
+      { main: '#10b981', light: '#34d399', shadow: '#059669' },
+      { main: '#f59e0b', light: '#fbbf24', shadow: '#d97706' },
+      { main: '#06b6d4', light: '#22d3ee', shadow: '#0891b2' },
+      { main: '#ec4899', light: '#f472b6', shadow: '#db2777' },
+      { main: '#84cc16', light: '#a3e635', shadow: '#65a30d' },
+      { main: '#4f46e5', light: '#6366f1', shadow: '#3730a3' }
+    ];
+
+    // Draw background
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, outerRadius + 20);
+    bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+    bgGradient.addColorStop(0.7, 'rgba(248, 250, 252, 0.8)');
+    bgGradient.addColorStop(1, 'rgba(241, 245, 249, 0.9)');
+    ctx.fillStyle = bgGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, outerRadius + 15, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Draw slices with interactive effects
+    this.receivedChartData.forEach((item, index) => {
+      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+      const sliceAngle = ((itemTotal / total) * 2 * Math.PI) * progress;
+      const colors = modernColors[index % modernColors.length];
+      
+      // Calculate interactive transformations
+      const isHovered = this.hoveredReceivedSliceIndex === index;
+      const isClicked = this.clickedReceivedSliceIndex === index;
+      const hoverScale = this.receivedSliceHoverScale[index] || 1;
+      
+      // Apply hover/click effects
+      const effectiveOuterRadius = outerRadius * hoverScale;
+      const effectiveInnerRadius = innerRadius * hoverScale;
+      
+      // Offset for hover effect (slice separation)
+      let offsetX = 0, offsetY = 0;
+      if (isHovered || isClicked) {
+        const midAngle = currentAngle + sliceAngle / 2;
+        const offsetDistance = isClicked ? 15 : 8;
+        offsetX = Math.cos(midAngle) * offsetDistance;
+        offsetY = Math.sin(midAngle) * offsetDistance;
+      }
+      
+      const effectiveCenterX = centerX + offsetX;
+      const effectiveCenterY = centerY + offsetY;
+      
+      // Enhanced gradient with hover effects
+      const sliceGradient = ctx.createRadialGradient(
+        effectiveCenterX, effectiveCenterY, effectiveInnerRadius,
+        effectiveCenterX, effectiveCenterY, effectiveOuterRadius
+      );
+      
+      if (isHovered) {
+        sliceGradient.addColorStop(0, this.brightenColor(colors.light, 20));
+        sliceGradient.addColorStop(0.6, this.brightenColor(colors.main, 15));
+        sliceGradient.addColorStop(1, colors.shadow);
+      } else if (isClicked) {
+        sliceGradient.addColorStop(0, this.brightenColor(colors.light, 30));
+        sliceGradient.addColorStop(0.6, this.brightenColor(colors.main, 25));
+        sliceGradient.addColorStop(1, this.brightenColor(colors.shadow, 10));
+      } else {
+        sliceGradient.addColorStop(0, colors.light);
+        sliceGradient.addColorStop(0.6, colors.main);
+        sliceGradient.addColorStop(1, colors.shadow);
+      }
+      
+      // Add glow effect for hovered/clicked slices
+      if (isHovered || isClicked) {
+        ctx.shadowColor = colors.main;
+        ctx.shadowBlur = isClicked ? 25 : 15;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+      
+      ctx.fillStyle = sliceGradient;
+      
+      // Draw the slice
+      ctx.beginPath();
+      ctx.arc(effectiveCenterX, effectiveCenterY, effectiveInnerRadius, 0, 2 * Math.PI);
+      ctx.arc(effectiveCenterX, effectiveCenterY, effectiveOuterRadius, currentAngle, currentAngle + sliceAngle, false);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Reset shadow
+      ctx.shadowBlur = 0;
+      
+      // Draw slice border
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Draw labels with better positioning and visibility for larger slices
+      if (sliceAngle > 0.15) { // Show labels for smaller slices too
+        const labelAngle = currentAngle + sliceAngle / 2;
+        const labelRadius = (effectiveOuterRadius + effectiveInnerRadius) / 2;
+        const labelX = effectiveCenterX + Math.cos(labelAngle) * labelRadius;
+        const labelY = effectiveCenterY + Math.sin(labelAngle) * labelRadius;
+        
+        // Add text shadow for better visibility
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+        ctx.shadowBlur = 3;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 13px Inter, Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Draw warehouse name with better length handling
+        const maxNameLength = sliceAngle > 0.8 ? 15 : sliceAngle > 0.5 ? 12 : sliceAngle > 0.3 ? 8 : 6;
+        const displayName = item.name.length > maxNameLength ? 
+          item.name.substring(0, maxNameLength - 2) + '..' : item.name;
+        ctx.fillText(displayName, labelX, labelY - 16);
+        
+        // Draw value with emphasis
+        ctx.font = 'bold 15px Inter, Arial, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(itemTotal.toString(), labelX, labelY + 2);
+        
+        // Draw percentage
+        const percentage = Math.round((itemTotal / total) * 100);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px Inter, Arial, sans-serif';
+        ctx.fillText(`(${percentage}%)`, labelX, labelY + 18);
+        
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+      }
+      
+      currentAngle += (itemTotal / total) * 2 * Math.PI;
+    });
+    
+    // Draw center circle
+    const innerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius);
+    innerGradient.addColorStop(0, '#ffffff');
+    innerGradient.addColorStop(0.6, '#fafbfc');
+    innerGradient.addColorStop(1, '#f1f5f9');
+    ctx.fillStyle = innerGradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Center text with better visibility
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 16px Inter, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Total Parts', centerX, centerY - 12);
+    
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 28px Inter, Arial, sans-serif';
+    ctx.fillText(total.toString(), centerX, centerY + 12);
+    
+    // Draw legend when animation is complete
+    if (progress >= 1) {
+      this.drawReceivedModernLegend(ctx, canvas, modernColors);
+    }
+  }
+
+  // Draw simple data panel on the left side for Received chart
+  private drawReceivedDataPanel(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, colors: string[]): void {
+    const panelX = 25;
+    const panelY = 40;
+    const itemHeight = 35;
+    const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+    
+    // Panel background
+    const panelWidth = 220;
+    const panelHeight = (this.receivedChartData.length * itemHeight) + 80;
+    
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+    ctx.fillRect(panelX - 10, panelY - 30, panelWidth, panelHeight);
+    
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(panelX - 10, panelY - 30, panelWidth, panelHeight);
+    
+    // Panel title
+    ctx.fillStyle = '#111827';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('Warehouse Distribution', panelX, panelY - 5);
+    
+    // Summary
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '12px Arial';
+    ctx.fillText(`${total} parts across ${this.receivedChartData.length} warehouses`, panelX, panelY + 15);
+    
+    // Data items
+    this.receivedChartData.forEach((item, index) => {
+      const y = panelY + 40 + (index * itemHeight);
+      const color = colors[index % colors.length];
+      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+      const percentage = Math.round((itemTotal / total) * 100);
+      
+      // Color indicator
+      ctx.fillStyle = color;
+      ctx.fillRect(panelX, y - 8, 12, 12);
+      
+      // Warehouse name
+      ctx.fillStyle = '#111827';
+      ctx.font = 'bold 12px Arial';
+      const displayName = item.name.length > 15 ? item.name.substring(0, 13) + '...' : item.name;
+      ctx.fillText(displayName, panelX + 20, y - 2);
+      
+      // Count and percentage
+      ctx.fillStyle = color;
+      ctx.font = 'bold 14px Arial';
+      ctx.fillText(itemTotal.toString(), panelX + 20, y + 12);
+      
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '11px Arial';
+      const countTextWidth = ctx.measureText(itemTotal.toString()).width;
+      ctx.fillText(`parts (${percentage}%)`, panelX + 20 + countTextWidth + 8, y + 12);
+    });
+  }
+
+  // Draw elegant modern legend positioned on the left side for Received chart
+  private drawReceivedModernLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, colors: any[]): void {
+    const legendX = 25;
+    const legendY = 40;
+    const itemHeight = 40;
+    const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+    
+    // Calculate legend dimensions
+    const legendWidth = 240;
+    const legendHeight = (this.receivedChartData.length * itemHeight) + 80;
+    
+    // Draw elegant legend background with gradient
+    const bgGradient = ctx.createLinearGradient(legendX - 15, legendY - 35, legendX - 15, legendY - 35 + legendHeight);
+    bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+    bgGradient.addColorStop(1, 'rgba(248, 250, 252, 0.98)');
+    
+    ctx.fillStyle = bgGradient;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 8;
+    
+    // Rounded rectangle for legend background
+    this.drawRoundedRect(ctx, legendX - 15, legendY - 35, legendWidth, legendHeight, 16);
+    
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    
+    // Draw subtle border
+    ctx.strokeStyle = 'rgba(203, 213, 225, 0.4)';
+    ctx.lineWidth = 1;
+    this.strokeRoundedRect(ctx, legendX - 15, legendY - 35, legendWidth, legendHeight, 12);
+    
+    // Draw elegant legend title
+    ctx.font = '600 18px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#111827';
+    ctx.textAlign = 'left';
+    ctx.fillText('Warehouse Distribution', legendX, legendY - 10);
+    
+    // Draw refined summary
+    ctx.font = '500 13px Inter, system-ui, sans-serif';
+    ctx.fillStyle = '#6b7280';
+    ctx.fillText(`${total} parts across ${this.receivedChartData.length} warehouses`, legendX, legendY + 12);
+    
+    // Draw elegant legend items
+    this.receivedChartData.forEach((item, index) => {
+      const y = legendY + 35 + (index * itemHeight);
+      const color = colors[index % colors.length];
+      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+      const percentage = Math.round((itemTotal / total) * 100);
+      
+      // Draw sophisticated color indicator
+      const circleGradient = ctx.createRadialGradient(legendX + 12, y + 12, 2, legendX + 12, y + 12, 12);
+      circleGradient.addColorStop(0, color.light);
+      circleGradient.addColorStop(0.7, color.main);
+      circleGradient.addColorStop(1, color.shadow);
+      
+      ctx.fillStyle = circleGradient;
+      ctx.beginPath();
+      ctx.arc(legendX + 12, y + 12, 12, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Add subtle border
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw warehouse name with better typography
+      ctx.fillStyle = '#111827';
+      ctx.font = '600 14px Inter, system-ui, sans-serif';
+      ctx.textAlign = 'left';
+      const maxNameLength = 16;
+      const displayName = item.name.length > maxNameLength ? 
+        item.name.substring(0, maxNameLength - 2) + '...' : item.name;
+      ctx.fillText(displayName, legendX + 35, y + 10);
+      
+      // Draw part count with emphasis
+      ctx.fillStyle = color.main;
+      ctx.font = 'bold 16px Inter, system-ui, sans-serif';
+      ctx.fillText(itemTotal.toString(), legendX + 35, y + 28);
+      
+      // Draw "parts" label
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '500 12px Inter, system-ui, sans-serif';
+      const partsTextX = legendX + 35 + ctx.measureText(itemTotal.toString()).width + 6;
+      ctx.fillText('parts', partsTextX, y + 28);
+      
+      // Draw percentage
+      ctx.fillStyle = '#9ca3af';
+      ctx.font = '500 11px Inter, system-ui, sans-serif';
+      const percentageTextX = partsTextX + ctx.measureText('parts').width + 12;
+      ctx.fillText(`(${percentage}%)`, percentageTextX, y + 28);
+    });
+  }
+
+  private drawReceivedPieLegend(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, legendWidth: number): void {
+    const legendX = 30;
+    let legendY = 80;
+    const lineHeight = 35;
+    const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+    
+    // Legend title
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 18px Inter, Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Received by Month', legendX, legendY - 20);
+    
+    // Legend items
+    this.receivedChartData.forEach((item, index) => {
+      const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+      const percentage = total > 0 ? Math.round((itemTotal / total) * 100) : 0;
+      const color = this.getReceivedSliceColor(index);
+      const isHovered = this.hoveredReceivedSliceIndex === index;
+      
+      // Highlight hovered legend item
+      if (isHovered) {
+        ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+        ctx.fillRect(legendX - 10, legendY - 20, legendWidth - 40, 30);
+      }
+      
+      // Color indicator
+      ctx.fillStyle = color;
+      ctx.fillRect(legendX, legendY - 12, 16, 16);
+      
+      // Month text
+      ctx.fillStyle = isHovered ? '#1f2937' : '#374151';
+      ctx.font = isHovered ? 'bold 14px Inter, Arial, sans-serif' : '14px Inter, Arial, sans-serif';
+      ctx.fillText(item.name, legendX + 25, legendY - 2);
+      
+      // Value and percentage
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '12px Inter, Arial, sans-serif';
+      ctx.fillText(`${itemTotal} parts (${percentage}%)`, legendX + 25, legendY + 12);
+      
+      legendY += lineHeight;
+    });
+  }
+
+
+
+  private animateReceivedSliceClick(index: number): void {
+    this.clickedReceivedSliceIndex = index;
+    
+    // Animate click effect
+    let scale = 1;
+    const animateClick = () => {
+      scale += 0.02;
+      if (scale >= 1.1) {
+        scale = 1.1;
+        // Reset after short delay
+        setTimeout(() => {
+          this.clickedReceivedSliceIndex = -1;
+          this.renderReceivedPieChart();
+        }, 200);
+        return;
+      }
+      
+      this.receivedSliceHoverScale[index] = scale;
+      this.renderReceivedPieChart();
+      requestAnimationFrame(animateClick);
+    };
+    
+    animateClick();
+  }
+
+  public getWeeklySliceColor(index: number): string {
+    const colors = [
+      '#50cd89', '#ff9500', '#4F46E5', '#EF4444', 
+      '#8B5CF6', '#06B6D4', '#EC4899', '#84CC16'
+    ];
+    return colors[index % colors.length];
+  }
+
+  public getReceivedSliceColor(index: number): string {
+    const colors = [
+      '#8b5cf6', '#ef4444', '#10b981', '#f59e0b', 
+      '#06b6d4', '#ec4899', '#84cc16', '#4f46e5'
+    ];
+    return colors[index % colors.length];
+  }
+
+  public getWeeklyItemPercentage(item: WeeklyPartsReturnedCountDto): number {
+    const total = this.getTotalWeeklyParts();
+    const itemTotal = item.unUsed + item.faulty;
+    return total > 0 ? Math.round((itemTotal / total) * 100) : 0;
+  }
+
+  public getReceivedChartItemPercentage(item: PartsReceivedByWHChartDto): number {
+    const total = this.receivedChartData.reduce((sum, chartItem) => sum + (chartItem.jobsCount || 0) + (chartItem.faulty || 0), 0);
+    const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+    return total > 0 ? Math.round((itemTotal / total) * 100) : 0;
+  }
+
+
+
+  // Mouse event handlers for received pie chart
+  onReceivedPieChartMouseMove(event: MouseEvent): void {
+    const canvas = this.receivedPieChartCanvas?.nativeElement;
+    if (!canvas || !this.receivedChartData || this.receivedChartData.length === 0) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Position pie chart to the right, accounting for left-side legend
+    const legendWidth = 220;
+    const availableWidth = canvas.width - legendWidth;
+    const centerX = legendWidth + (availableWidth / 2);
+    const centerY = canvas.height / 2;
+    const outerRadius = Math.min(availableWidth / 2, centerY) - 40;
+    const innerRadius = outerRadius * 0.4;
+    
+    // Calculate distance from center
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Check if mouse is within the donut chart area
+    if (distance >= innerRadius && distance <= outerRadius) {
+      // Calculate angle
+      const angle = Math.atan2(dy, dx);
+      const adjustedAngle = angle < -Math.PI / 2 ? angle + 2 * Math.PI : angle;
+      const normalizedAngle = adjustedAngle + Math.PI / 2;
+      
+      // Find which slice the mouse is over
+      const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+      let currentAngle = 0;
+      let hoveredIndex = -1;
+      
+      for (let i = 0; i < this.receivedChartData.length; i++) {
+        const item = this.receivedChartData[i];
+        const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+        const sliceAngle = (itemTotal / total) * 2 * Math.PI;
+        
+        if (normalizedAngle >= currentAngle && normalizedAngle <= currentAngle + sliceAngle) {
+          hoveredIndex = i;
+          break;
+        }
+        
+        currentAngle += sliceAngle;
+      }
+      
+      // Update hover state
+      if (hoveredIndex !== this.hoveredReceivedSliceIndex) {
+        this.hoveredReceivedSliceIndex = hoveredIndex;
+        
+        // Animate hover effect
+        this.animateReceivedSliceHover(hoveredIndex);
+        
+        // Update tooltip position
+        this.receivedTooltipPosition = { x: event.clientX + 10, y: event.clientY - 10 };
+        
+        // Redraw chart
+        this.renderReceivedPieChart();
+      }
+    } else {
+      // Mouse is outside the chart area
+      if (this.hoveredReceivedSliceIndex !== -1) {
+        this.hoveredReceivedSliceIndex = -1;
+        this.resetReceivedSliceAnimations();
+        this.renderReceivedPieChart();
+      }
+    }
+  }
+
+  onReceivedPieChartMouseLeave(): void {
+    if (this.hoveredReceivedSliceIndex !== -1) {
+      this.hoveredReceivedSliceIndex = -1;
+      this.resetReceivedSliceAnimations();
+      this.renderReceivedPieChart();
+    }
+  }
+
+  onReceivedPieChartClick(event: MouseEvent): void {
+    const canvas = this.receivedPieChartCanvas?.nativeElement;
+    if (!canvas || !this.receivedChartData || this.receivedChartData.length === 0) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // Position pie chart to the right, accounting for left-side legend
+    const legendWidth = 220;
+    const availableWidth = canvas.width - legendWidth;
+    const centerX = legendWidth + (availableWidth / 2);
+    const centerY = canvas.height / 2;
+    const outerRadius = Math.min(availableWidth / 2, centerY) - 40;
+    const innerRadius = outerRadius * 0.4;
+    
+    // Calculate distance from center
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Check if click is within the donut chart area
+    if (distance >= innerRadius && distance <= outerRadius) {
+      // Calculate angle
+      const angle = Math.atan2(dy, dx);
+      const adjustedAngle = angle < -Math.PI / 2 ? angle + 2 * Math.PI : angle;
+      const normalizedAngle = adjustedAngle + Math.PI / 2;
+      
+      // Find which slice was clicked
+      const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
+      let currentAngle = 0;
+      let clickedIndex = -1;
+      
+      for (let i = 0; i < this.receivedChartData.length; i++) {
+        const item = this.receivedChartData[i];
+        const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
+        const sliceAngle = (itemTotal / total) * 2 * Math.PI;
+        
+        if (normalizedAngle >= currentAngle && normalizedAngle <= currentAngle + sliceAngle) {
+          clickedIndex = i;
+          break;
+        }
+        
+        currentAngle += sliceAngle;
+      }
+      
+      // Handle click
+      if (clickedIndex !== -1) {
+        this.clickedReceivedSliceIndex = clickedIndex === this.clickedReceivedSliceIndex ? -1 : clickedIndex;
+        this.renderReceivedPieChart();
+        
+        // Optional: Add click action here (e.g., drill down, show details)
+      }
+    }
+  }
+
+  private animateReceivedSliceHover(sliceIndex: number): void {
+    if (sliceIndex === -1) return;
+    
+    const targetScale = 1.1;
+    const currentScale = this.receivedSliceHoverScale[sliceIndex] || 1;
+    
+    const animate = () => {
+      const diff = targetScale - currentScale;
+      if (Math.abs(diff) > 0.01) {
+        this.receivedSliceHoverScale[sliceIndex] = currentScale + (diff * 0.2);
+        requestAnimationFrame(animate);
+      } else {
+        this.receivedSliceHoverScale[sliceIndex] = targetScale;
+      }
+    };
+    
+    animate();
+  }
+
+  private resetReceivedSliceAnimations(): void {
+    Object.keys(this.receivedSliceHoverScale).forEach(key => {
+      const index = parseInt(key);
+      const currentScale = this.receivedSliceHoverScale[index];
+      
+      if (currentScale && currentScale > 1) {
+        const animate = () => {
+          const diff = 1 - currentScale;
+          if (Math.abs(diff) > 0.01) {
+            this.receivedSliceHoverScale[index] = currentScale + (diff * 0.2);
+            requestAnimationFrame(animate);
+          } else {
+            this.receivedSliceHoverScale[index] = 1;
+          }
+        };
+        
+        animate();
       }
     });
   }

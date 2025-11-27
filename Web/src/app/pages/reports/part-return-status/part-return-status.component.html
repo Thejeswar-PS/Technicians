@@ -24,13 +24,19 @@
     
     <!-- Page Title - Centered between buttons -->
     <div class="parts-page-title">
-      <h2 class="fw-bold text-primary mb-0">
-        <i class="bi bi-arrow-clockwise me-2"></i>
-        Parts Return Status Report
+      <h2 class="fw-bold mb-0" style="color: #00a8ff !important;">
+        <i class="bi bi-arrow-clockwise me-2" *ngIf="!showWeeklyDataGrid"></i>
+        <i class="bi bi-calendar-week me-2" *ngIf="showWeeklyDataGrid"></i>
+        {{ getCurrentGridType() }}
       </h2>
       <!-- Filter Information -->
       <div class="text-dark mt-2" *ngIf="!isLoading">
-        <span class="fw-semibold">Filtered by: {{ partReturnFilterForm.get('inventoryUser')?.value }}</span>
+        <span class="fw-semibold" *ngIf="!showWeeklyDataGrid">Filtered by: {{ partReturnFilterForm.get('inventoryUser')?.value }}</span>
+        <span class="fw-semibold" *ngIf="showWeeklyDataGrid">Week {{ selectedWeekNo }} Details - {{ getCurrentGridRecordCount() }} records</span>
+        <button class="btn btn-sm btn-outline-secondary ms-3" *ngIf="showWeeklyDataGrid" (click)="switchToMainGrid()">
+          <i class="bi bi-arrow-left me-1"></i>
+          Back to Main View
+        </button>
       </div>
     </div>
   </div>
@@ -40,29 +46,10 @@
 
     <!--begin::Charts Section with Tabs-->
     <div class="card shadow-sm parts-main-card mb-4">
-      <!-- Charts Header -->
+      <!-- Header with Tabs -->
       <div class="card-header border-0 py-4">
-        <div class="parts-filter-header">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-bar-chart me-2 text-primary"></i>
-                Parts Return Analytics
-                <span class="badge ms-2 bg-primary">
-                  Interactive Charts
-                </span>
-              </h5>
-              <small class="text-muted">Analyze parts return data with visual representations</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!--begin::Card body-->
-      <div class="card-body py-2">
-
         <!--begin::Tabs Navigation-->
-        <div class="chart-tabs-wrapper mb-2">
+        <div class="chart-tabs-wrapper">
           <ul class="nav nav-tabs modern-tabs">
             <li class="nav-item">
               <a class="nav-link" 
@@ -93,6 +80,10 @@
           </ul>
         </div>
         <!--end::Tabs Navigation-->
+      </div>
+
+      <!--begin::Card body-->
+      <div class="card-body py-2">
 
           <!--begin::Tab Content-->
           <div class="tab-content">
@@ -423,30 +414,16 @@
       <div class="chart-section"
            *ngIf="showWeeklyChart || isLoadingWeeklyChart || weeklyChartErrorMessage">
 
-        <!--begin::Card header-->
-        <div class="card-header border-0 pt-5">
-          <h3 class="card-title align-items-start flex-column">
-            <span class="card-label fw-bold fs-3 mb-1">
-              Weekly Parts Returned Count
-            </span>
-            <span class="text-muted fs-7">
-              Weekly breakdown of unused and faulty parts returned
-            </span>
-          </h3>
-        </div>
-        <!--end::Card header-->
-
         <!--begin::Card body-->
         <div class="card-body" *ngIf="showWeeklyChart">
 
-          <!--begin::Loading-->
-          <div *ngIf="isLoadingWeeklyChart"
+          <!-- Loading -->
+          <div *ngIf="isLoadingWeeklyChart" 
                class="d-flex justify-content-center py-10 chart-loading">
             <div class="spinner-border text-primary"></div>
           </div>
-          <!--end::Loading-->
 
-          <!--begin::Error-->
+          <!-- Error -->
           <div *ngIf="weeklyChartErrorMessage && !isLoadingWeeklyChart"
                class="alert alert-warning d-flex align-items-center p-5 mb-10">
             <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
@@ -455,195 +432,263 @@
               <span>{{ weeklyChartErrorMessage }}</span>
             </div>
           </div>
-          <!--end::Error-->
 
-          <!--begin::Chart Content-->
+          <!-- Content -->
           <div *ngIf="!isLoadingWeeklyChart && weeklyPartsData.length > 0">
 
-            <!--begin::Totals-->
-            <div class="row g-6 g-xl-9 mb-6 chart-totals">
+            <!-- Chart and Summary Layout -->
+            <div class="row g-4">
+              <!-- Chart Section - Left Side -->
+              <div class="col-lg-8">
+                <div class="chart-container">
 
-              <!-- Total Unused -->
-              <div class="col-lg-4 col-xxl-4">
-                <div class="card bg-light-primary border-primary">
-                  <div class="card-body d-flex align-items-center">
-                    <div class="symbol symbol-40px me-3">
-                      <span class="symbol-label bg-primary">
-                        <i class="ki-duotone ki-package fs-2 text-white"></i>
-                      </span>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <span class="fw-bold fs-6 text-gray-800">Total Unused</span>
-                      <span class="fw-bold fs-3 text-primary">
-                        {{ getTotalWeeklyUnused() }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                  <!-- Chart Type Selector -->
+                  <div class="chart-selector-section">
+                    <h4 class="chart-selector-title">Weekly Data Visualization</h4>
 
-              <!-- Total Faulty -->
-              <div class="col-lg-4 col-xxl-4">
-                <div class="card bg-light-danger border-danger">
-                  <div class="card-body d-flex align-items-center">
-                    <div class="symbol symbol-40px me-3">
-                      <span class="symbol-label bg-danger">
-                        <i class="ki-duotone ki-cross-circle fs-2 text-white"></i>
-                      </span>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <span class="fw-bold fs-6 text-gray-800">Total Faulty</span>
-                      <span class="fw-bold fs-3 text-danger">
-                        {{ getTotalWeeklyFaulty() }}
-                      </span>
+                    <div class="chart-type-controls">
+                      <input type="radio" class="btn-check" 
+                             name="weeklyChartType" id="weeklyBarChart"
+                             checked (change)="setWeeklyChartType('bar')">
+                      <label class="chart-type-btn" for="weeklyBarChart">
+                        <i class="bi bi-bar-chart"></i>
+                        Bar Chart
+                      </label>
+
+                      <input type="radio" class="btn-check" 
+                             name="weeklyChartType" id="weeklyPieChart"
+                             (change)="setWeeklyChartType('pie')">
+                      <label class="chart-type-btn" for="weeklyPieChart">
+                        <i class="bi bi-pie-chart"></i>
+                        Pie Chart
+                      </label>
+
+                      <input type="radio" class="btn-check" 
+                             name="weeklyChartType" id="weeklyDataTable"
+                             (change)="setWeeklyChartType('table')">
+                      <label class="chart-type-btn" for="weeklyDataTable">
+                        <i class="bi bi-table"></i>
+                        Table
+                      </label>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <!-- Total Returned -->
-              <div class="col-lg-4 col-xxl-4">
-                <div class="card bg-light-success border-success">
-                  <div class="card-body d-flex align-items-center">
-                    <div class="symbol symbol-40px me-3">
-                      <span class="symbol-label bg-success">
-                        <i class="ki-duotone ki-abstract-27 fs-2 text-white"></i>
-                      </span>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <span class="fw-bold fs-6 text-gray-800">Total Returned</span>
-                      <span class="fw-bold fs-3 text-success">
-                        {{ getTotalWeeklyParts() }}
-                      </span>
-                    </div>
+                  <!-- Bar Chart -->
+                  <div *ngIf="currentWeeklyChartType === 'bar'" class="chart-wrapper">
+                    <canvas #weeklyBarChartCanvas class="chart-canvas" width="800" height="400"></canvas>
                   </div>
-                </div>
-              </div>
 
-            </div>
-            <!--end::Totals-->
-
-            <!--begin::Chart Container-->
-            <div class="chart-container">
-
-              <!--begin::Chart Selector-->
-              <div class="chart-selector-section">
-                <h4 class="chart-selector-title">Weekly Parts Data Visualization</h4>
-
-                <div class="chart-type-controls">
-
-                  <!-- Bar -->
-                  <input type="radio" class="btn-check"
-                         name="weeklyChartType" id="weeklyBarChart"
-                         checked (change)="setWeeklyChartType('bar')">
-                  <label class="chart-type-btn" for="weeklyBarChart">
-                    <i class="bi bi-bar-chart"></i>
-                    Bar Chart
-                  </label>
-
-                  <!-- Line -->
-                  <input type="radio" class="btn-check"
-                         name="weeklyChartType" id="weeklyLineChart"
-                         (change)="setWeeklyChartType('line')">
-                  <label class="chart-type-btn" for="weeklyLineChart">
-                    <i class="bi bi-graph-up"></i>
-                    Line Chart
-                  </label>
-
-                  <!-- Table -->
-                  <input type="radio" class="btn-check"
-                         name="weeklyChartType" id="weeklyDataTable"
-                         (change)="setWeeklyChartType('table')">
-                  <label class="chart-type-btn" for="weeklyDataTable">
-                    <i class="bi bi-table"></i>
-                    Table
-                  </label>
-
-                </div>
-              </div>
-              <!--end::Chart Selector-->
-
-              <!--begin::Bar Chart-->
-              <div *ngIf="currentWeeklyChartType === 'bar'" class="chart-wrapper">
-                <canvas #weeklyBarChartCanvas class="chart-canvas" width="800" height="400"></canvas>
-              </div>
-              <!--end::Bar Chart-->
-
-              <!--begin::Line Chart-->
-              <div *ngIf="currentWeeklyChartType === 'line'" class="chart-wrapper">
-                <canvas #weeklyLineChartCanvas class="chart-canvas" width="800" height="400"></canvas>
-              </div>
-              <!--end::Line Chart-->
-
-              <!--begin::Data Table-->
-              <div *ngIf="currentWeeklyChartType === 'table'"
-                   class="table-responsive chart-table">
-
-                <table class="table table-rounded table-striped border gy-7 gs-7">
-
-                  <thead>
-                    <tr class="fw-semibold fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                      <th>Week End</th>
-                      <th class="text-center">Week No</th>
-                      <th class="text-center">Unused Parts</th>
-                      <th class="text-center">Faulty Parts</th>
-                      <th class="text-center">Total</th>
-                      <th class="text-center">Week %</th>
-                      <th>Progress Bar</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    <tr *ngFor="let item of weeklyPartsData" 
-                        class="align-middle clickable-row"
-                        (click)="onChartItemClick(item, 'weekly-returned')"
-                        title="Click to view details for week {{ item.weekNo }}">
-
-                      <td>{{ item.wkEnd }}</td>
-
-                      <td class="text-center">
-                        <span class="badge badge-light-info">{{ item.weekNo }}</span>
-                      </td>
-
-                      <td class="text-center">
-                        <span class="badge badge-light-primary">{{ item.unUsed }}</span>
-                      </td>
-
-                      <td class="text-center">
-                        <span class="badge badge-light-danger">{{ item.faulty }}</span>
-                      </td>
-
-                      <td class="text-center">
-                        <span class="badge badge-light-success">
-                          {{ item.unUsed + item.faulty }}
-                        </span>
-                      </td>
-
-                      <td class="text-center">
-                        {{ getWeeklyItemPercentage(item) }}%
-                      </td>
-
-                      <td>
-                        <div class="progress h-6px w-100">
-                          <div class="progress-bar bg-primary"
-                               [style.width.%]="(item.unUsed / getTotalWeeklyUnused()) * 100">
+                  <!-- Pie Chart -->
+                  <div *ngIf="currentWeeklyChartType === 'pie'" class="chart-wrapper">
+                    <canvas #weeklyPieChartCanvas class="chart-canvas" width="900" height="500"></canvas>
+                    
+                    <!-- Interactive Tooltip -->
+                    <div class="pie-chart-tooltip" 
+                         [class.visible]="hoveredWeeklySliceIndex >= 0" 
+                         [style.left.px]="weeklyTooltipPosition.x" 
+                         [style.top.px]="weeklyTooltipPosition.y">
+                      <div *ngIf="weeklyPartsData && hoveredWeeklySliceIndex >= 0 && weeklyPartsData[hoveredWeeklySliceIndex]" class="tooltip-content">
+                        <div class="tooltip-header">
+                          <div class="tooltip-color-indicator" 
+                               [style.background]="getWeeklySliceColor(hoveredWeeklySliceIndex)"></div>
+                          <span class="tooltip-name">Week {{ weeklyPartsData[hoveredWeeklySliceIndex].weekNo }}</span>
+                        </div>
+                        <div class="tooltip-data">
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Unused:</span>
+                            <span class="tooltip-value">{{ weeklyPartsData[hoveredWeeklySliceIndex].unUsed }}</span>
+                          </div>
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Faulty:</span>
+                            <span class="tooltip-value">{{ weeklyPartsData[hoveredWeeklySliceIndex].faulty }}</span>
+                          </div>
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Total:</span>
+                            <span class="tooltip-value">{{ weeklyPartsData[hoveredWeeklySliceIndex].unUsed + weeklyPartsData[hoveredWeeklySliceIndex].faulty }}</span>
+                          </div>
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Percentage:</span>
+                            <span class="tooltip-value">{{ getWeeklyItemPercentage(weeklyPartsData[hoveredWeeklySliceIndex]) }}%</span>
                           </div>
                         </div>
-                      </td>
+                      </div>
+                    </div>
+                  </div>
 
-                    </tr>
-                  </tbody>
 
-                </table>
+                  <!-- Data Table -->
+                  <div *ngIf="currentWeeklyChartType === 'table'" class="modern-table-container">
+                    <div class="table-wrapper">
+                      <table class="interactive-chart-table">
+                        <thead>
+                          <tr>
+                            <th class="week-col">
+                              <div class="header-content">
+                                <i class="bi bi-calendar-week me-2"></i>
+                                <span>Week</span>
+                              </div>
+                            </th>
+                            <th class="unused-col">
+                              <div class="header-content">
+                                <i class="bi bi-box me-2"></i>
+                                <span>Unused Parts</span>
+                              </div>
+                            </th>
+                            <th class="faulty-col">
+                              <div class="header-content">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <span>Faulty Parts</span>
+                              </div>
+                            </th>
+                            <th class="progress-col">
+                              <div class="header-content">
+                                <i class="bi bi-bar-chart me-2"></i>
+                                <span>Progress</span>
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of weeklyPartsData; let i = index" 
+                              class="table-row"
+                              (click)="onChartItemClick(item, 'weekly-returned')"
+                              (mouseenter)="onWeeklyRowHover(i, true)"
+                              (mouseleave)="onWeeklyRowHover(i, false)"
+                              title="Click to view details for week {{ item.weekNo }}"
+                              [style.animation-delay.ms]="i * 100">
+                            <td class="week-cell">
+                              <div class="week-info">
+                                <div class="week-badge">
+                                  Week {{ item.weekNo }}
+                                </div>
+                                <span class="week-end">{{ item.wkEnd | date:'dd-MMM' }}</span>
+                              </div>
+                            </td>
+                            <td class="unused-cell">
+                              <div class="metric-badge unused-metric" *ngIf="item.unUsed > 0">
+                                <span class="metric-value">{{ item.unUsed }}</span>
+                                <span class="metric-label">unused</span>
+                              </div>
+                              <div class="metric-badge unused-metric" *ngIf="item.unUsed === 0">
+                                <span class="metric-label">unused</span>
+                              </div>
+                            </td>
+                            <td class="faulty-cell">
+                              <div class="metric-badge faulty-metric">
+                                <span class="metric-value">{{ item.faulty }}</span>
+                                <span class="metric-label">faulty</span>
+                              </div>
+                            </td>
 
+                            <td class="progress-cell">
+                              <div class="animated-progress">
+                                <div class="progress-track">
+                                  <div class="progress-fill" 
+                                       [style.width.%]="getWeeklyItemPercentage(item)"
+                                       [style.animation-delay.ms]="i * 150 + 500">
+                                    <div class="progress-glow"></div>
+                                  </div>
+                                </div>
+                                <span class="progress-text">{{ getWeeklyItemPercentage(item) }}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+                <!--end::Chart Container-->
               </div>
-              <!--end::Data Table-->
 
+              <!-- Summary Section - Right Side -->
+              <div class="col-lg-4">
+                <div class="parts-return-summary-sidebar">
+                  <div class="summary-header mb-3">
+                    <h5 class="summary-title">
+                      <i class="bi bi-calendar-week me-2"></i>
+                      Weekly Parts Summary {{ partReturnFilterForm.get('year')?.value }}
+                    </h5>
+                    <p class="summary-subtitle">Weekly breakdown overview</p>
+                  </div>
+
+                  <div class="summary-cards">
+                    <!-- Total Unused -->
+                    <div class="summary-card unused-weekly mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-box"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Total Unused Parts</h6>
+                            <div class="summary-value">{{ getTotalWeeklyUnused() || 0 }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Total Faulty -->
+                    <div class="summary-card faulty-weekly mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Total Faulty Parts</h6>
+                            <div class="summary-value">{{ getTotalWeeklyFaulty() || 0 }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Total Weekly Parts -->
+                    <div class="summary-card total-weekly mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-collection"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Total Weekly Parts</h6>
+                            <div class="summary-value">{{ getTotalWeeklyParts() || 0 }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Average per Week -->
+                    <div class="summary-card average-weekly mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-graph-up"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Average per Week</h6>
+                            <div class="summary-value">{{ Math.round((getTotalWeeklyParts() || 0) / (weeklyPartsData.length || 1)) }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Summary Totals -->
+                    <div class="summary-totals mt-4">
+                      <div class="total-row weeks mb-2">
+                        <span class="total-label">Total Weeks:</span>
+                        <span class="total-value">{{ weeklyPartsData.length }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <!--end::Chart Container-->
+            <!--end::Chart and Summary Layout-->
 
           </div>
-          <!--end::Chart Content-->
+          <!--end::Content-->
 
         </div>
         <!--end::Card body-->
@@ -668,28 +713,16 @@
       <div class="chart-section"
            *ngIf="showReceivedChart || isLoadingReceivedChart || receivedChartErrorMessage">
 
-        <!--begin::Card header-->
-        <div class="card-header border-0 pt-5">
-          <h3 class="card-title align-items-start flex-column">
-            <span class="card-label fw-bold fs-3 mb-1">Parts Received by Warehouse</span>
-            <span class="text-muted fs-7">
-              Monthly breakdown of received parts for {{ partReturnFilterForm.get('year')?.value }}
-            </span>
-          </h3>
-        </div>
-        <!--end::Card header-->
-
         <!--begin::Card body-->
         <div class="card-body" *ngIf="showReceivedChart">
 
-          <!--begin::Loading-->
+          <!-- Loading -->
           <div *ngIf="isLoadingReceivedChart"
                class="d-flex justify-content-center py-10 chart-loading">
             <div class="spinner-border text-primary"></div>
           </div>
-          <!--end::Loading-->
 
-          <!--begin::Error Message-->
+          <!-- Error -->
           <div *ngIf="receivedChartErrorMessage && !isLoadingReceivedChart"
                class="alert alert-warning d-flex align-items-center p-5 mb-10">
             <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
@@ -698,163 +731,267 @@
               <span>{{ receivedChartErrorMessage }}</span>
             </div>
           </div>
-          <!--end::Error Message-->
 
-          <!--begin::Chart Content-->
+          <!-- Content -->
           <div *ngIf="!isLoadingReceivedChart && receivedChartData.length > 0">
 
-            <!--begin::Totals-->
-            <div class="row g-6 g-xl-9 mb-6 chart-totals">
+            <!-- Chart and Summary Layout -->
+            <div class="row g-4">
+              <!-- Chart Section - Left Side -->
+              <div class="col-lg-8">
+                <div class="chart-container">
 
-              <!-- Total Jobs Count -->
-              <div class="col-lg-6 col-xxl-6">
-                <div class="card bg-light-success border-success">
-                  <div class="card-body d-flex align-items-center">
-                    <div class="symbol symbol-40px me-3">
-                      <span class="symbol-label bg-success">
-                        <i class="ki-duotone ki-check-circle fs-2 text-white"></i>
-                      </span>
+                  <!-- Chart Type Selector -->
+                  <div class="chart-selector-section">
+                    <h4 class="chart-selector-title">Received Parts Data Visualization</h4>
+
+                    <div class="chart-type-controls">
+                      <input type="radio" class="btn-check" 
+                             name="receivedChartType" id="receivedBarChart"
+                             checked (change)="setReceivedChartType('bar')">
+                      <label class="chart-type-btn" for="receivedBarChart">
+                        <i class="bi bi-bar-chart"></i>
+                        Bar Chart
+                      </label>
+
+                      <input type="radio" class="btn-check" 
+                             name="receivedChartType" id="receivedPieChart"
+                             (change)="setReceivedChartType('pie')">
+                      <label class="chart-type-btn" for="receivedPieChart">
+                        <i class="bi bi-pie-chart"></i>
+                        Pie Chart
+                      </label>
+
+                      <input type="radio" class="btn-check" 
+                             name="receivedChartType" id="receivedDataTable"
+                             (change)="setReceivedChartType('table')">
+                      <label class="chart-type-btn" for="receivedDataTable">
+                        <i class="bi bi-table"></i>
+                        Table
+                      </label>
                     </div>
-                    <div class="d-flex flex-column">
-                      <span class="fw-bold fs-6 text-gray-800">Total Jobs Count</span>
-                      <span class="fw-bold fs-3 text-success">
-                        {{ receivedChartTotals.unUsedReceived }}
-                      </span>
+                  </div>
+
+                  <!-- Bar Chart -->
+                  <div *ngIf="currentReceivedChartType === 'bar'" class="chart-wrapper">
+                    <canvas #receivedBarChartCanvas class="chart-canvas" width="800" height="400"></canvas>
+                  </div>
+
+                  <!-- Pie Chart -->
+                  <div *ngIf="currentReceivedChartType === 'pie'" class="chart-wrapper">
+                    <canvas #receivedPieChartCanvas class="chart-canvas" width="900" height="500"
+                            (mousemove)="onReceivedPieChartMouseMove($event)"
+                            (mouseleave)="onReceivedPieChartMouseLeave()"
+                            (click)="onReceivedPieChartClick($event)"></canvas>
+                    
+                    <!-- Interactive Tooltip -->
+                    <div class="pie-chart-tooltip" 
+                         [class.visible]="hoveredReceivedSliceIndex >= 0" 
+                         [style.left.px]="receivedTooltipPosition.x" 
+                         [style.top.px]="receivedTooltipPosition.y">
+                      <div *ngIf="receivedChartData && hoveredReceivedSliceIndex >= 0 && receivedChartData[hoveredReceivedSliceIndex]" class="tooltip-content">
+                        <div class="tooltip-header">
+                          <div class="tooltip-color-indicator" 
+                               [style.background]="getReceivedSliceColor(hoveredReceivedSliceIndex)"></div>
+                          <span class="tooltip-name">{{ receivedChartData[hoveredReceivedSliceIndex].name }}</span>
+                        </div>
+                        <div class="tooltip-data">
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Jobs Count:</span>
+                            <span class="tooltip-value">{{ receivedChartData[hoveredReceivedSliceIndex].jobsCount || 0 }}</span>
+                          </div>
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Faulty Parts:</span>
+                            <span class="tooltip-value">{{ receivedChartData[hoveredReceivedSliceIndex].faulty || 0 }}</span>
+                          </div>
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Total:</span>
+                            <span class="tooltip-value">{{ (receivedChartData[hoveredReceivedSliceIndex].jobsCount || 0) + (receivedChartData[hoveredReceivedSliceIndex].faulty || 0) }}</span>
+                          </div>
+                          <div class="tooltip-row">
+                            <span class="tooltip-label">Percentage:</span>
+                            <span class="tooltip-value">{{ getReceivedChartItemPercentage(receivedChartData[hoveredReceivedSliceIndex]) }}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Data Table -->
+                  <div *ngIf="currentReceivedChartType === 'table'" class="modern-table-container">
+                    <div class="table-wrapper">
+                      <table class="interactive-chart-table">
+                        <thead>
+                          <tr>
+                            <th class="month-col">
+                              <div class="header-content">
+                                <i class="bi bi-person-check me-2"></i>
+                                <span>User</span>
+                              </div>
+                            </th>
+                            <th class="jobs-col">
+                              <div class="header-content">
+                                <i class="bi bi-briefcase me-2"></i>
+                                <span>Jobs Count</span>
+                              </div>
+                            </th>
+                            <th class="faulty-col">
+                              <div class="header-content">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <span>Faulty Parts</span>
+                              </div>
+                            </th>
+                            <th class="progress-col">
+                              <div class="header-content">
+                                <i class="bi bi-bar-chart me-2"></i>
+                                <span>Progress</span>
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of receivedChartData; let i = index" 
+                              class="table-row"
+                              (click)="onChartItemClick(item, 'parts-received')"
+                              (mouseenter)="onReceivedRowHover(i, true)"
+                              (mouseleave)="onReceivedRowHover(i, false)"
+                              title="Click to view received parts details for {{ item.name }}"
+                              [style.animation-delay.ms]="i * 100">
+                            <td class="month-cell">
+                              <div class="month-info">
+                                <div class="month-badge">
+                                  {{ item.name }}
+                                </div>
+                                <span class="month-year">{{ partReturnFilterForm.get('year')?.value }}</span>
+                              </div>
+                            </td>
+                            <td class="jobs-cell">
+                              <div class="metric-badge jobs-metric" *ngIf="(item.jobsCount || 0) > 0">
+                                <span class="metric-value">{{ item.jobsCount || 0 }}</span>
+                                <span class="metric-label">jobs</span>
+                              </div>
+                              <div class="metric-badge jobs-metric" *ngIf="(item.jobsCount || 0) === 0">
+                                <span class="metric-label">jobs</span>
+                              </div>
+                            </td>
+                            <td class="faulty-cell">
+                              <div class="metric-badge faulty-metric" *ngIf="(item.faulty || 0) > 0">
+                                <span class="metric-value">{{ item.faulty || 0 }}</span>
+                                <span class="metric-label">faulty</span>
+                              </div>
+                              <div class="metric-badge faulty-metric" *ngIf="(item.faulty || 0) === 0">
+                                <span class="metric-label">faulty</span>
+                              </div>
+                            </td>
+                            <td class="progress-cell">
+                              <div class="animated-progress">
+                                <div class="progress-track">
+                                  <div class="progress-fill" 
+                                       [style.width.%]="getReceivedChartItemPercentage(item)"
+                                       [style.animation-delay.ms]="i * 150 + 500">
+                                    <div class="progress-glow"></div>
+                                  </div>
+                                </div>
+                                <span class="progress-text">{{ getReceivedChartItemPercentage(item) }}%</span>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                </div>
+                <!--end::Chart Container-->
+              </div>
+
+              <!-- Summary Section - Right Side -->
+              <div class="col-lg-4">
+                <div class="parts-return-summary-sidebar">
+                  <div class="summary-header mb-3">
+                    <h5 class="summary-title">
+                      <i class="bi bi-inbox me-2"></i>
+                      Received Parts Summary {{ partReturnFilterForm.get('year')?.value }}
+                    </h5>
+                    <p class="summary-subtitle">Monthly breakdown overview</p>
+                  </div>
+
+                  <div class="summary-cards">
+                    <!-- Total Jobs Count -->
+                    <div class="summary-card jobs-received mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-briefcase"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Total Jobs Count</h6>
+                            <div class="summary-value">{{ receivedChartTotals.unUsedReceived || 0 }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Total Faulty Parts -->
+                    <div class="summary-card faulty-received mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Total Faulty Parts</h6>
+                            <div class="summary-value">{{ receivedChartTotals.faultyReceived || 0 }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Total Received -->
+                    <div class="summary-card total-received mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-collection"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Total Received</h6>
+                            <div class="summary-value">{{ (receivedChartTotals.unUsedReceived || 0) + (receivedChartTotals.faultyReceived || 0) }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Average per Month -->
+                    <div class="summary-card average-received mb-3">
+                      <div class="card-body p-3">
+                        <div class="d-flex align-items-center">
+                          <div class="summary-icon me-3">
+                            <i class="bi bi-graph-up"></i>
+                          </div>
+                          <div class="summary-content flex-grow-1">
+                            <h6 class="summary-label mb-1">Average per Month</h6>
+                            <div class="summary-value">{{ Math.round(((receivedChartTotals.unUsedReceived || 0) + (receivedChartTotals.faultyReceived || 0)) / (receivedChartData.length || 1)) }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Summary Totals -->
+                    <div class="summary-totals mt-4">
+                      <div class="total-row months mb-2">
+                        <span class="total-label">Total Warehouses:</span>
+                        <span class="total-value">{{ receivedChartData.length }}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-
-              <!-- Total Faulty Parts -->
-              <div class="col-lg-6 col-xxl-6">
-                <div class="card bg-light-warning border-warning">
-                  <div class="card-body d-flex align-items-center">
-                    <div class="symbol symbol-40px me-3">
-                      <span class="symbol-label bg-warning">
-                        <i class="ki-duotone ki-information fs-2 text-white"></i>
-                      </span>
-                    </div>
-                    <div class="d-flex flex-column">
-                      <span class="fw-bold fs-6 text-gray-800">Total Faulty Parts</span>
-                      <span class="fw-bold fs-3 text-warning">
-                        {{ receivedChartTotals.faultyReceived }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
             </div>
-            <!--end::Totals-->
-
-            <!--begin::Chart Container-->
-            <div class="chart-container">
-
-              <!--begin::Chart Selector-->
-              <div class="chart-selector-section">
-                <h4 class="chart-selector-title">Data Visualization</h4>
-
-                <div class="chart-type-controls">
-
-                  <!-- Bar -->
-                  <input type="radio" class="btn-check"
-                         name="receivedChartType" id="receivedBarChart"
-                         checked (change)="setReceivedChartType('bar')">
-                  <label class="chart-type-btn" for="receivedBarChart">
-                    <i class="bi bi-bar-chart"></i>
-                    Bar Chart
-                  </label>
-
-                  <!-- Pie -->
-                  <input type="radio" class="btn-check"
-                         name="receivedChartType" id="receivedPieChart"
-                         (change)="setReceivedChartType('pie')">
-                  <label class="chart-type-btn" for="receivedPieChart">
-                    <i class="bi bi-pie-chart"></i>
-                    Pie Chart
-                  </label>
-
-                  <!-- Table -->
-                  <input type="radio" class="btn-check"
-                         name="receivedChartType" id="receivedDataTable"
-                         (change)="setReceivedChartType('table')">
-                  <label class="chart-type-btn" for="receivedDataTable">
-                    <i class="bi bi-table"></i>
-                    Table
-                  </label>
-
-                </div>
-              </div>
-              <!--end::Chart Selector-->
-
-              <!--begin::Bar Chart-->
-              <div *ngIf="currentReceivedChartType === 'bar'" class="chart-wrapper">
-                <canvas #receivedBarChartCanvas
-                        class="chart-canvas"
-                        width="800" height="400">
-                </canvas>
-              </div>
-              <!--end::Bar Chart-->
-
-              <!--begin::Pie Chart-->
-              <div *ngIf="currentReceivedChartType === 'pie'" class="chart-wrapper d-flex justify-content-center">
-                <canvas #receivedPieChartCanvas
-                        class="chart-canvas"
-                        width="400" height="400">
-                </canvas>
-              </div>
-              <!--end::Pie Chart-->
-
-              <!--begin::Data Table-->
-              <div *ngIf="currentReceivedChartType === 'table'" class="table-responsive">
-                <table class="table table-hover border-0">
-                  <thead class="bg-light">
-                    <tr class="fw-bold fs-6 text-gray-800">
-                      <th>Month</th>
-                      <th class="text-center">Jobs Count</th>
-                      <th class="text-center">Faulty Parts</th>
-                      <th class="text-center">Total</th>
-                      <th class="text-center">Percentage</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    <tr *ngFor="let item of receivedChartData; let i = index"
-                        class="clickable-row"
-                        (click)="onChartItemClick(item, 'parts-received')"
-                        title="Click to view received parts details for {{ item.name }}">
-
-                      <td class="fw-bold text-gray-800">{{ item.name }}</td>
-
-                      <td class="text-center text-success fw-semibold">
-                        {{ item.jobsCount || 0 }}
-                      </td>
-
-                      <td class="text-center text-warning fw-semibold">
-                        {{ item.faulty || 0 }}
-                      </td>
-
-                      <td class="text-center fw-bold">
-                        {{ (item.jobsCount || 0) + (item.faulty || 0) }}
-                      </td>
-
-                      <td class="text-center">
-                        <span class="badge badge-light-primary">
-                          {{ getReceivedChartItemPercentage(item) }}%
-                        </span>
-                      </td>
-
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <!--end::Data Table-->
-
-            </div>
-            <!--end::Chart Container-->
+            <!--end::Chart and Summary Layout-->
 
           </div>
-          <!--end::Chart Content-->
+          <!--end::Content-->
 
         </div>
         <!--end::Card body-->
@@ -868,8 +1005,11 @@
 </div>
 <!--end::Graph 3 Tab-->
 
+    <!-- Spacer for better visual separation -->
+    <div class="mb-4"></div>
+
     <!-- Filter & Data Section -->
-    <div class="card shadow-sm parts-main-card">
+    <div class="card shadow-sm parts-main-card mt-3">
       <!-- Filter Header -->
       <div class="card-header border-0 py-4">
         <div class="parts-filter-header">
@@ -878,8 +1018,10 @@
               <h5 class="mb-0 fw-bold text-dark">
                 <i class="bi bi-funnel me-2 text-primary"></i>
                 Filters & Search
-                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
-                  {{totalRecords}} Result{{totalRecords === 1 ? '' : 's'}}
+                <span class="badge ms-3 px-3 py-2 fs-6 fw-bold" [ngClass]="getFilterBadgeClass()" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                  <i class="bi bi-check-circle me-1" *ngIf="!showWeeklyDataGrid"></i>
+                  <i class="bi bi-calendar-week me-1" *ngIf="showWeeklyDataGrid"></i>
+                  {{getCurrentGridRecordCount()}} {{showWeeklyDataGrid ? 'Weekly' : ''}} Result{{getCurrentGridRecordCount() === 1 ? '' : 's'}}
                 </span>
               </h5>
               <small class="text-muted">Customize your view with filters below</small>
@@ -889,39 +1031,43 @@
           <!-- Filter Controls -->
           <div class="filter-controls-section mt-3">
             <form [formGroup]="partReturnFilterForm" class="parts-filter-form">
-              <div class="row g-3">
+              <div class="row g-4">
                 <!-- Inventory User Filter -->
-                <div class="col-md-4">
+                <div class="col-lg-3 col-md-6">
                   <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-person-check me-1"></i>
+                    <label class="filter-label fw-semibold mb-2">
+                      <i class="bi bi-person-check me-2 text-primary"></i>
                       Inventory User
                     </label>
                     <div class="position-relative">
-                      <select class="form-select modern-select" 
+                      <select class="form-select modern-select enhanced-dropdown" 
                               formControlName="inventoryUser" 
                               [disabled]="isLoadingInventoryUsers"
-                              (change)="onInventoryUserChange($event)">
+                              (change)="onInventoryUserChange($event)"
+                              style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
                         <option *ngFor="let user of inventoryUsers; trackBy: trackByUserId"
                                 [value]="getInventoryUserValue(user)">
                           {{ getInventoryUserDisplayName(user) }}
                         </option>
                       </select>
                       <span *ngIf="isLoadingInventoryUsers" class="loading-indicator">
-                        <i class="bi bi-arrow-repeat spin"></i>
+                        <i class="bi bi-arrow-repeat spin text-primary"></i>
                       </span>
                     </div>
                   </div>
                 </div>
                 
                 <!-- Status Filter -->
-                <div class="col-md-4">
+                <div class="col-lg-3 col-md-6">
                   <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-tag me-1"></i>
+                    <label class="filter-label fw-semibold mb-2">
+                      <i class="bi bi-tag me-2 text-success"></i>
                       Status
                     </label>
-                    <select class="form-select modern-select" formControlName="status">
+                    <select class="form-select modern-select enhanced-dropdown" 
+                            formControlName="status"
+                            (change)="onStatusChange($event)"
+                            style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
                       <option *ngFor="let option of statusOptions"
                               [value]="option.key">
                         {{ option.label }}
@@ -930,14 +1076,37 @@
                   </div>
                 </div>
 
-                <!-- Year Filter -->
-                <div class="col-md-4">
+                <!-- Week Filter -->
+                <div class="col-lg-3 col-md-6">
                   <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-calendar me-1"></i>
+                    <label class="filter-label fw-semibold mb-2">
+                      <i class="bi bi-calendar-week me-2 text-warning"></i>
+                      Week
+                    </label>
+                    <select class="form-select modern-select enhanced-dropdown" 
+                            formControlName="week"
+                            (change)="onWeekChange($event)"
+                            style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
+                      <option value="">All Weeks</option>
+                      <option *ngFor="let week of availableWeeks"
+                              [value]="week.value">
+                        {{ week.label }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Year Filter -->
+                <div class="col-lg-3 col-md-6">
+                  <div class="filter-group">
+                    <label class="filter-label fw-semibold mb-2">
+                      <i class="bi bi-calendar me-2 text-info"></i>
                       Year
                     </label>
-                    <select class="form-select modern-select" formControlName="year">
+                    <select class="form-select modern-select enhanced-dropdown" 
+                            formControlName="year"
+                            (change)="onYearChange($event)"
+                            style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
                       <option *ngFor="let year of availableYears"
                               [value]="year">
                         {{ year }}
@@ -970,8 +1139,10 @@
         </div>
 
 
-        <!-- Data Table Section -->
-        <div class="table-section" *ngIf="!isLoading">
+
+
+        <!-- Main Parts Return Data Table (Legacy: dgReturns table) -->
+        <div class="table-section" *ngIf="!isLoading && !showWeeklyDataGrid">
           <div class="table-responsive">
             <table class="table modern-table">
               <thead class="table-header">
@@ -1022,18 +1193,6 @@
                     <div class="header-content">
                       <span class="header-text">Technician</span>
                       <i [class]="'sort-icon ' + sortIcon('technician')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="sortTable('invUserID')" [ngClass]="getSortClass('invUserID')">
-                    <div class="header-content">
-                      <span class="header-text">Inv User</span>
-                      <i [class]="'sort-icon ' + sortIcon('invUserID')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="sortTable('status')" [ngClass]="getSortClass('status')">
-                    <div class="header-content">
-                      <span class="header-text">Status</span>
-                      <i [class]="'sort-icon ' + sortIcon('status')"></i>
                     </div>
                   </th>
                   <th class="sortable header-cell" (click)="sortTable('lastModified')" [ngClass]="getSortClass('lastModified')">
@@ -1095,16 +1254,6 @@
                     </div>
                   </td>
                   
-                  <td class="data-cell">
-                    <span class="badge badge-light-info">{{ item.invUserID }}</span>
-                  </td>
-                  
-                  <td class="status-cell">
-                    <span class="status-badge" [ngClass]="getStatusBadgeClass(item.status)">
-                      {{ getStatusDisplayName(item.status) }}
-                    </span>
-                  </td>
-                  
                   <td class="date-cell">
                     <span class="date-content">{{ item.lastModified | date:'dd-MMM-yyyy HH:mm' }}</span>
                   </td>
@@ -1117,8 +1266,156 @@
         </div>
 
 
+        <!-- Weekly Parts Return Data Table (Legacy: dgWeekReturns table) -->
+        <div class="table-section" *ngIf="!isLoading && showWeeklyDataGrid">
+          <!-- Only show table when there's actual weekly data -->
+          <div class="table-responsive" *ngIf="!isLoadingWeeklyData && partsReturnDataByWeekNo.length > 0">
+            <table class="table modern-table weekly-data-table">
+              <thead class="table-header">
+                <tr>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Service Call ID</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Unused Sent Back</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Faulty Sent Back</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Return Status</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Return Notes</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Truck Stock</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Technician</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Maint Auth ID</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Last Modified</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="table-body">
+                <tr *ngFor="let item of partsReturnDataByWeekNo; trackBy: trackByWeeklyServiceCallId" 
+                    class="table-row">
+                  
+                  <td class="call-number-cell">
+                    <a class="call-link" (click)="navigateToServiceCall(item.serviceCallId, item.techName)" 
+                       [title]="'View parts for service call ' + item.serviceCallId + ' - Technician: ' + item.techName"
+                       role="button">
+                      {{ item.serviceCallId }}
+                      <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                    </a>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-success">{{ item.unusedSentBack }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-danger">{{ item.faultySentBack }}</span>
+                  </td>
+                  
+                  <td class="status-cell">
+                    <span class="status-badge" [ngClass]="getReturnStatusBadgeClass(item.returnStatus)">
+                      {{ item.returnStatus }}
+                    </span>
+                  </td>
+                  
+                  <td class="notes-cell">
+                    <div class="notes-content" [title]="item.returnNotes || 'No notes available'">
+                      <span class="notes-text" [class.has-notes]="item.returnNotes && item.returnNotes.length > 0">
+                        <ng-container *ngIf="item.returnNotes && item.returnNotes.length > 0; else noNotes">
+                          {{ item.returnNotes }}
+                        </ng-container>
+                        <ng-template #noNotes>
+                          <span class="text-muted fst-italic">No notes</span>
+                        </ng-template>
+                      </span>
+                    </div>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-info">{{ item.truckStock }}</span>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <div class="technician-info">
+                      <i class="bi bi-person-badge me-1 text-muted"></i>
+                      <a class="technician-link" (click)="navigateToTechnicianJobs(item.serviceCallId, item.techName)"
+                         [title]="'View parts for technician ' + item.techName + ' - Call: ' + item.serviceCallId"
+                         role="button">
+                        {{ item.techName }}
+                        <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                      </a>
+                    </div>
+                  </td>
+                  
+                  <td class="data-cell">
+                    <span class="badge badge-light-secondary">{{ item.maintAuthId }}</span>
+                  </td>
+                  
+                  <td class="date-cell">
+                    <span class="date-content">{{ item.lastModified | date:'dd-MMM-yyyy HH:mm' }}</span>
+                  </td>
+
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Weekly Data Loading -->
+          <div *ngIf="isLoadingWeeklyData" class="text-center py-4">
+            <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+            <span class="text-muted">Loading weekly data...</span>
+          </div>
+          
+          <!-- Weekly Data Error -->
+          <div *ngIf="weeklyDataErrorMessage && !isLoadingWeeklyData" class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            {{ weeklyDataErrorMessage }}
+          </div>
+          
+          <!-- Empty Weekly Data - No Rows Found (show immediately when no data) -->
+          <div *ngIf="!isLoadingWeeklyData && !weeklyDataErrorMessage && partsReturnDataByWeekNo.length === 0" class="empty-state">
+            <div class="empty-state-content">
+              <i class="bi bi-calendar-x empty-icon"></i>
+              <h4 class="empty-title">No Rows Found</h4>
+              <p class="empty-text">No parts return data found for week {{ selectedWeekNo }}.</p>
+              <button class="btn btn-primary" (click)="showWeeklyDataGrid = false">
+                <i class="bi bi-arrow-left me-2"></i>Back to Main View
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Enhanced Pagination Controls - Below Table -->
-        <div class="enhanced-pagination-wrapper" *ngIf="totalRecords > 0">
+        <div class="enhanced-pagination-wrapper" *ngIf="totalRecords > 0 && !showWeeklyDataGrid">
           <div class="enhanced-pagination-controls">
             <div class="row align-items-center g-3">
               <!-- Left side - Page size and record info -->
@@ -1196,8 +1493,8 @@
           </div>
         </div>
 
-        <!-- Empty State -->
-        <div *ngIf="totalRecords === 0 && !isLoading" class="empty-state">
+        <!-- Empty State for Main Grid -->
+        <div *ngIf="totalRecords === 0 && !isLoading && !showWeeklyDataGrid" class="empty-state">
           <div class="empty-state-content">
             <i class="bi bi-inbox empty-icon"></i>
             <h4 class="empty-title">No Parts Return Data Found</h4>
