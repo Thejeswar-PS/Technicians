@@ -124,12 +124,12 @@ export class EquipmentService {
               const manufacturerValue = item.value || item.Value || item.name || item.Name || 
                                       item.manufacturer || item.Manufacturer || item.ManufacturerName ||
                                       item.manufacturerName || item.MANUFACTURER || item.text || item.Text ||
-                                      item.ManufacturerID || item.ManufName || item.mfg || item.MFG || '';
+                                      item.ManufacturerID || item.ManufName || item.mfg || item.MFG || item.manufID ||'';
               
               const manufacturerText = item.text || item.Text || item.name || item.Name || 
                                      item.manufacturer || item.Manufacturer || item.ManufacturerName ||
                                      item.manufacturerName || item.MANUFACTURER || item.value || item.Value ||
-                                     item.ManufName || item.mfg || item.MFG || manufacturerValue || '';
+                                     item.ManufName || item.mfg || item.MFG || manufacturerValue || item.manufName || '';
               
               return {
                 value: manufacturerValue.toString(),
@@ -298,7 +298,7 @@ export class EquipmentService {
    */
   getMultiModuleTypes(): Observable<{ value: string; text: string }[]> {
     const multiModuleTypes = [
-      { value: 'Select', text: 'Select' },
+      { value: 'Select', text: 'Se' },
       { value: 'N1', text: 'N + 1' },
       { value: 'N2', text: 'N + 2' },
       { value: 'N3', text: 'N + 3' },

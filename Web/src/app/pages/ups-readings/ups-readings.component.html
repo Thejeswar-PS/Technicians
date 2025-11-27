@@ -419,7 +419,7 @@
                         formControlName="parallelCabinet"
                         id="parallelCabinet"
                       >
-                        <option value="Y">Yes</option>
+                        <option value="YS">Yes</option>
                         <option value="NO">No</option>
                         <option value="NA">N/A</option>
                       </select>
@@ -1068,9 +1068,9 @@
                   </div>
                   <div class="measurement-content">
                     <label class="form-label"
-                      >UPS date code is < 25 years (End of Life):</label
+                      >UPS date code is < 20 years (End of Life):</label
                     >
-                    <select class="form-select" formControlName="endOfLife">
+                    <select class="form-select" formControlName="endOfLife" title="Calculated automatically based on Year and KVA">
                       <option
                         *ngFor="let option of measurementOptions"
                         [value]="option.value"
@@ -1078,6 +1078,10 @@
                         {{ option.text }}
                       </option>
                     </select>
+                    <small class="text-muted d-block mt-1">
+                      <i class="bi bi-info-circle me-1"></i>
+                      Auto-calculated based on Equipment Year and KVA Rating
+                    </small>
                   </div>
                 </div>
               </div>
@@ -1276,9 +1280,9 @@
                 
                 <!-- Requirement notice for replacement needed -->
                 <div class="alert alert-warning d-flex align-items-center mb-3" 
-                     *ngIf="visualForm.get('airFilters')?.value === 'W'">
+                     *ngIf="visualForm.get('airFilters')?.value === 'N'">
                   <i class="bi bi-exclamation-triangle me-2"></i>
-                  <small>
+                  <small style="color: black;">
                     <strong>Filter dimensions required:</strong> Please enter all filter measurements when replacement is needed for parts ordering.
                   </small>
                 </div>
@@ -1302,7 +1306,7 @@
                               [maxlength]="getCharacterLimit('filterSet1Length') || null"
                               (blur)="formatFilterDimension('filterSet1Length')"
                             />
-                            <label for="filter1Length">Length <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
+                            <label for="filter1Length">Length <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Length')?.invalid && visualForm.get('filterSet1Length')?.touched">
                               Length is required when replacement is needed
                             </div>
@@ -1319,7 +1323,7 @@
                               [maxlength]="getCharacterLimit('filterSet1Width') || null"
                               (blur)="formatFilterDimension('filterSet1Width')"
                             />
-                            <label for="filter1Width">Width <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
+                            <label for="filter1Width">Width <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Width')?.invalid && visualForm.get('filterSet1Width')?.touched">
                               Width is required when replacement is needed
                             </div>
@@ -1335,7 +1339,7 @@
                               id="filter1Thickness"
                               [maxlength]="getCharacterLimit('filterSet1Thickness') || null"
                             />
-                            <label for="filter1Thickness">Thickness <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
+                            <label for="filter1Thickness">Thickness <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Thickness')?.invalid && visualForm.get('filterSet1Thickness')?.touched">
                               Thickness is required when replacement is needed
                             </div>
@@ -1350,7 +1354,7 @@
                               formControlName="filterSet1Quantity"
                               id="filter1Quantity"
                             />
-                            <label for="filter1Quantity">Quantity <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'W'">*</span></label>
+                            <label for="filter1Quantity">Quantity <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Quantity')?.invalid && visualForm.get('filterSet1Quantity')?.touched">
                               Quantity is required when replacement is needed
                             </div>
@@ -1543,7 +1547,7 @@
                     <select class="form-select" formControlName="hostileEnvironment">
                       <option value="">Select status...</option>
                       <option
-                        *ngFor="let option of yesNoNAOptions"
+                        *ngFor="let option of hostileEnvironmentOptions"
                         [value]="option.value"
                       >
                         {{ option.text }}
