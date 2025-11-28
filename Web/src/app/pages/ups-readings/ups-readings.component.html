@@ -1308,7 +1308,9 @@
                             />
                             <label for="filter1Length">Length <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Length')?.invalid && visualForm.get('filterSet1Length')?.touched">
-                              Length is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Length')?.errors?.required">Length is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Length')?.errors?.numeric">Please enter a valid number for Length</div>
+                              <div *ngIf="visualForm.get('filterSet1Length')?.errors?.minValue">Length must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
@@ -1325,7 +1327,9 @@
                             />
                             <label for="filter1Width">Width <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Width')?.invalid && visualForm.get('filterSet1Width')?.touched">
-                              Width is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Width')?.errors?.required">Width is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Width')?.errors?.numeric">Please enter a valid number for Width</div>
+                              <div *ngIf="visualForm.get('filterSet1Width')?.errors?.minValue">Width must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
@@ -1341,7 +1345,9 @@
                             />
                             <label for="filter1Thickness">Thickness <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Thickness')?.invalid && visualForm.get('filterSet1Thickness')?.touched">
-                              Thickness is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Thickness')?.errors?.required">Thickness is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Thickness')?.errors?.numeric">Please enter a valid number for Thickness</div>
+                              <div *ngIf="visualForm.get('filterSet1Thickness')?.errors?.minValue">Thickness must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
@@ -1356,7 +1362,9 @@
                             />
                             <label for="filter1Quantity">Quantity <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Quantity')?.invalid && visualForm.get('filterSet1Quantity')?.touched">
-                              Quantity is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Quantity')?.errors?.required">Quantity is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Quantity')?.errors?.numeric">Please enter a valid number for Quantity</div>
+                              <div *ngIf="visualForm.get('filterSet1Quantity')?.errors?.minValue">Quantity must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
