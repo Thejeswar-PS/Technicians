@@ -410,8 +410,22 @@
       &.show {
         max-height: none;
         opacity: 1;
-        padding: 2rem;
         overflow: visible; // Allow content to be visible when expanded
+        &.calendar-open{
+          // When a calendar inside this section is opened we want the section to expand
+          // so the calendar can be displayed in-flow rather than requiring a scroll.
+          padding-bottom: 3.5rem; // extra room for the calendar to render
+          overflow: visible;
+
+          // Render compact calendar in-flow so it pushes layout and prevents scrolling
+          .compact-calendar-dropdown {
+            position: static;
+            width: 100%;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); // lighter drop shadow when inline
+            z-index: 1; // keep visual ordering but in-flow
+          }
+        }
         
         // Ensure form content is properly contained
         .ups-form {
@@ -3847,7 +3861,6 @@
 // Compact Calendar Dropdown
 .compact-calendar-dropdown {
   position: absolute;
-  bottom: 100%;
   left: 0;
   right: 0;
   width: 280px; // Slightly wider for 4-column year grid
@@ -4019,6 +4032,53 @@
         
         &:hover {
           transform: scale(1.02); // Subtle hover effect
+        }
+      }
+    }
+  }
+
+  /* Scrollable vertical year list used for capacitor pickers (DC / AC Input / AC Output / Comm / Fans) */
+  .year-list-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    max-height: 220px; /* allow scrolling for larger year ranges */
+    overflow-y: auto;
+    width: 100%;
+
+    /* subtle border/visuals to match compact grid items */
+    .year-list-item {
+      display: block; /* full width buttons stacked vertically */
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      min-height: 38px;
+      transition: background-color 0.12s ease, transform 0.12s ease;
+
+      &.btn-outline-primary {
+        border-color: #e5e7eb;
+        color: #374151;
+        background: white;
+
+        &:hover {
+          background-color: #f8fafc;
+          border-color: #5486ff;
+          color: #5486ff;
+          transform: translateX(2px);
+        }
+      }
+
+      &.btn-primary {
+        background-color: #5486ff;
+        border-color: #5486ff;
+        color: white;
+        box-shadow: 0 1px 2px rgba(84, 134, 255, 0.12);
+
+        &:hover {
+          transform: translateX(-1px);
         }
       }
     }

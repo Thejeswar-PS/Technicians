@@ -874,6 +874,36 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!yearCalendar && !yearInput && !calendarButton && this.showYearCalendar) {
       this.showYearCalendar = false;
     }
+
+    // --- Capacitor/year pickers ---
+    const clickedInsideDcCaps = !!target.closest('.dc-caps-dropdown');
+    const clickedInsideAcInputCaps = !!target.closest('.ac-input-caps-dropdown');
+    const clickedInsideAcOutputCaps = !!target.closest('.ac-output-caps-dropdown');
+    const clickedInsideCommCaps = !!target.closest('.comm-caps-dropdown');
+    const clickedInsideFans = !!target.closest('.fans-year-dropdown');
+
+    const clickedDcInput = !!target.closest('#dcCapsYear');
+    const clickedAcInput = !!target.closest('#acInputCapsYear');
+    const clickedAcOutputInput = !!target.closest('#acOutputCapsYear');
+    const clickedCommInput = !!target.closest('#commCapsYear');
+    const clickedFansInput = !!target.closest('#fansYear');
+
+    // Close individual capacitor year pickers when click is outside their input/toggle/dropdown
+    if (!clickedInsideDcCaps && !clickedDcInput && !calendarButton && this.showDcCapsYearCalendar) {
+      this.showDcCapsYearCalendar = false;
+    }
+    if (!clickedInsideAcInputCaps && !clickedAcInput && !calendarButton && this.showAcInputCapsYearCalendar) {
+      this.showAcInputCapsYearCalendar = false;
+    }
+    if (!clickedInsideAcOutputCaps && !clickedAcOutputInput && !calendarButton && this.showAcOutputCapsYearCalendar) {
+      this.showAcOutputCapsYearCalendar = false;
+    }
+    if (!clickedInsideCommCaps && !clickedCommInput && !calendarButton && this.showCommCapsYearCalendar) {
+      this.showCommCapsYearCalendar = false;
+    }
+    if (!clickedInsideFans && !clickedFansInput && !calendarButton && this.showFansYearCalendar) {
+      this.showFansYearCalendar = false;
+    }
   }
 
   // Set up date code display value watcher
@@ -1999,10 +2029,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       this.validateAndUpdateStatusOnFailure(); // Trigger on any change
     });
 
-    // SNMP communication issues - Monitor ALL changes
-    this.equipmentForm.get('snmpPresent')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
-      this.validateAndUpdateStatusOnFailure(); // Trigger on any change
-    });
+    // SNMP communication dropdown should NOT change equipment status automatically.
+    // Historically SNMP changes triggered validation that could flip the equipment status
+    // (e.g., to Minor Deficiency) which is misleading for simple SNMP present/absent toggles.
+    // We intentionally do NOT subscribe snmpPresent to validateAndUpdateStatusOnFailure.
+    // The form's enable/disable behavior is still handled elsewhere (setupDynamicFieldControl).
   }
 
   private initializeFormsWithDefaults(): void {
@@ -3828,20 +3859,26 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       const dateCodeDisplay = `${monthName} ${year}`;
 
       if (!dcCapsAge || dcCapsAge.trim() === '') {
-        this.showLegacyValidationAlert(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'dcCapsYear');
+        // Ensure capacitor section is visible so user can correct the field
+        this.showCapacitor = true;
+        // Use showValidationMessage so the alert is shown and the input is scrolled/focused
+        this.showValidationMessage(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'dcCapsYear', 'dcCapsYear');
         this.capacitorForm.get('dcCapsAge')?.markAsTouched();
         return false;
       }
 
       if (!acInputCapsAge || acInputCapsAge.trim() === '') {
-        this.showLegacyValidationAlert(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'acInputCapsYear');
+        this.showCapacitor = true;
+        this.showValidationMessage(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'acInputCapsYear', 'acInputCapsYear');
         this.capacitorForm.get('acInputCapsAge')?.markAsTouched();
         return false;
       }
 
       if ((!acOutputCapsAge || acOutputCapsAge.trim() === '') &&
           (!commCapsAge || commCapsAge.trim() === '')) {
-        this.showLegacyValidationAlert(`You must enter AC OP WYE or OP Delta Caps Year. Here is the UPS DateCode: ${dateCodeDisplay}`, 'acOutputCapsYear');
+        this.showCapacitor = true;
+        // Prefer focusing acOutputCapsYear but commCapsYear is acceptable as alternate — highlight both by focusing the AC output field
+        this.showValidationMessage(`You must enter AC Output Caps Year. Here is the UPS DateCode: ${dateCodeDisplay}`, 'acOutputCapsYear', 'acOutputCapsYear');
         this.capacitorForm.get('acOutputCapsAge')?.markAsTouched();
         return false;
       }
@@ -7893,7 +7930,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Fans Year Calendar Methods
-  toggleFansYearCalendar(): void {
+  toggleFansYearCalendar(event?: Event): void {
+    // stop an outside click handler from closing the calendar when we're intentionally toggling it
+    if (event) {
+      event.stopPropagation();
+    }
     this.showFansYearCalendar = !this.showFansYearCalendar;
     if (this.showFansYearCalendar) {
       const currentFansYear = this.capacitorForm.get('fansYear')?.value || new Date().getFullYear();
@@ -7957,7 +7998,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // DC Caps Year Calendar Methods
-  toggleDcCapsYearCalendar(): void {
+  toggleDcCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showDcCapsYearCalendar = !this.showDcCapsYearCalendar;
     if (this.showDcCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('dcCapsAge')?.value || new Date().getFullYear();
@@ -8021,7 +8065,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // AC Input Caps Year Calendar Methods
-  toggleAcInputCapsYearCalendar(): void {
+  toggleAcInputCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showAcInputCapsYearCalendar = !this.showAcInputCapsYearCalendar;
     if (this.showAcInputCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('acInputCapsAge')?.value || new Date().getFullYear();
@@ -8085,7 +8132,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // AC Output Caps Year Calendar Methods
-  toggleAcOutputCapsYearCalendar(): void {
+  toggleAcOutputCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showAcOutputCapsYearCalendar = !this.showAcOutputCapsYearCalendar;
     if (this.showAcOutputCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('acOutputCapsAge')?.value || new Date().getFullYear();
@@ -8149,7 +8199,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Comm Caps Year Calendar Methods
-  toggleCommCapsYearCalendar(): void {
+  toggleCommCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showCommCapsYearCalendar = !this.showCommCapsYearCalendar;
     if (this.showCommCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('commCapsAge')?.value || new Date().getFullYear();
@@ -8211,6 +8264,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.commCapsYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
     this.commCapsYearRangeEnd = Math.min(this.maxYear, this.commCapsYearRangeStart + this.yearsPerRange - 1);
   }
+
+  
 
   /**
    * Gets a status indicator class for character count (green, yellow, red)
