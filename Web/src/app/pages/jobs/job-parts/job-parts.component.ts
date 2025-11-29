@@ -123,7 +123,8 @@ export class JobPartsComponent implements OnInit {
     // Determine employee status (Technician or not) early
     this.determineEmployeeStatus();
     this.route.queryParams.subscribe(params => {
-      this.callNbr = params['CallNbr'] || '';
+      // Support both parameter names for backward compatibility
+      this.callNbr = params['CallNbr'] || params['callNumber'] || '';
       this.techName = params['TechName'] || '';
       this.source = params['Source'] || '';
 

@@ -753,7 +753,23 @@ export class PartsRequestStatusComponent implements OnInit {
     return user.username?.toUpperCase() || '';
   }
 
-  getStatusBadgeClass(status: string): string {
+  getStatusBadgeClass(request: any): string {
+    // Handle both object and string inputs for backward compatibility
+    if (typeof request === 'string') {
+      return 'status-' + request.toLowerCase().replace(/\s+/g, '-');
+    }
+    
+    // Check if the request is urgent first - if yes, always show red regardless of status
+    if (request?.urgent && (
+      request.urgent.toLowerCase() === 'yes' || 
+      request.urgent === true || 
+      request.urgent === 'true'
+    )) {
+      return 'status-urgent';
+    }
+    
+    // If not urgent, use the normal status-based class
+    const status = request?.status;
     if (!status) return 'status-default';
     return 'status-' + status.toLowerCase().replace(/\s+/g, '-');
   }
@@ -885,11 +901,27 @@ export class PartsRequestStatusComponent implements OnInit {
     }
   }
 
-  navigateToJobParts(callNumber: string): void {
-    if (callNumber && callNumber.trim() !== '') {
-      this.router.navigate(['/jobs/parts'], { 
-        queryParams: { callNumber: callNumber.trim() }
-      });
+  navigateToJobParts(request: any): void {
+    if (request?.callNumber && request.callNumber.trim() !== '') {
+      // Create the URL using Angular router for consistency with both CallNbr and TechName
+      const queryParams: any = { 
+        CallNbr: request.callNumber.trim() 
+      };
+      
+      // Add technician name if available
+      if (request.technician && request.technician.trim() !== '') {
+        queryParams.TechName = request.technician.trim();
+      }
+      
+      const url = this.router.serializeUrl(
+        this.router.createUrlTree(['/jobs/parts'], { 
+          queryParams: queryParams
+        })
+      );
+      
+      // Open in new tab with proper URL construction for hash routing
+      const targetUrl = `${window.location.origin}${window.location.pathname}#${url}`;
+      window.open(targetUrl, '_blank');
     }
   }
 

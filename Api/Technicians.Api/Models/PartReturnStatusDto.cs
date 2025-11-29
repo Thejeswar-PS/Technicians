@@ -11,7 +11,7 @@ namespace Technicians.Api.Models
         public int UnusedParts { get; set; }
         public string InvUserID { get; set; } = string.Empty;
         public string Technician { get; set; } = string.Empty;
-        public DateTime LastModified { get; set; }
+        public DateTime? LastModified { get; set; }
     }
 
     public class PartReturnStatusRequestDto
@@ -20,13 +20,5 @@ namespace Technicians.Api.Models
         public string Source { get; set; } = "Web";
         public string InvUserID { get; set; } = "All";
         public int Year { get; set; } = DateTime.Now.Year;
-    }
-
-    public class PartReturnStatusResponseDto
-    {
-        public List<PartReturnStatusDto> Parts { get; set; } = new List<PartReturnStatusDto>();
-        public int TotalCount { get; set; }
-        public string RequestedKey { get; set; } = string.Empty;
-        public string Source { get; set; } = string.Empty;
     }
 }

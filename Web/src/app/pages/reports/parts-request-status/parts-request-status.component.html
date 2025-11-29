@@ -218,9 +218,11 @@
                     [ngClass]="getStatusRowClass(request.status)">
                   
                   <td class="call-number-cell">
-                    <a class="call-link" (click)="navigateToJobParts(request.callNumber)" 
-                       [title]="'View parts for call ' + request.callNumber">
+                    <a class="call-link" (click)="navigateToJobParts(request)" 
+                       [title]="'View parts for call ' + request.callNumber + ' (opens in new tab)'"
+                       role="button">
                       {{request.callNumber}}
+                      <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
                     </a>
                   </td>
                   
@@ -244,7 +246,7 @@
                   </td>
                   
                   <td class="status-cell">
-                    <span class="status-badge" [ngClass]="getStatusBadgeClass(request.status)">{{request.status}}</span>
+                    <span class="status-badge" [ngClass]="getStatusBadgeClass(request)">{{request.status}}</span>
                   </td>
                   
                   <td class="age-cell">

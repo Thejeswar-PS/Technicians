@@ -67,6 +67,7 @@ builder.Services.AddScoped<PartsDataRepository>();
 builder.Services.AddScoped<PartsShippingDataRepository>();
 builder.Services.AddScoped<ReadingsRepository>();
 builder.Services.AddScoped<PartReqStatusRepository>();
+builder.Services.AddScoped<PartReturnStatusRepository>();
 
 
 

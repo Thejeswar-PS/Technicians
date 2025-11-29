@@ -5,14 +5,19 @@ import { RouterModule } from '@angular/router';
 import { JobReportDetailsComponent } from './job-report-details/job-report-details.component';
 import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-report.component';
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
+import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
+
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
+import { NgApexchartsModule } from 'ng-apexcharts';
 
 @NgModule({
   declarations: [
     JobReportDetailsComponent,
     JobScheduleReportComponent,
     PartsRequestStatusComponent,
+    PartReturnStatusComponent,
+
   ],
   imports: [
     CommonModule,
@@ -20,7 +25,8 @@ import { InlineSVGModule } from 'ng-inline-svg-2';
     ReactiveFormsModule,
     RouterModule,
     ReportsRoutingModule,
-    InlineSVGModule.forRoot()
+    InlineSVGModule.forRoot(),
+    NgApexchartsModule
   ]
 })
 export class ReportsModule { }
