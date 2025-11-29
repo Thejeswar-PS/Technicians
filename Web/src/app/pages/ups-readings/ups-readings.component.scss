@@ -4096,6 +4096,244 @@
   }
 }
 
+.compact-calendar-dropdown1 {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  width: 280px; // Slightly wider for 4-column year grid
+  z-index: 1000;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 4px;
+  animation: slideUp 0.2s ease-out;
+  overflow: hidden; // Ensure content stays within container bounds
+  
+  .calendar-header {
+    background: linear-gradient(135deg, #5486ff 0%, #667eea 100%);
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px 6px 0 0;
+    
+    h6 {
+      color: white;
+      margin: 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+  }
+  
+  .month-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem;
+    padding: 0.75rem;
+    
+    .month-btn-compact {
+      padding: 0.4rem 0.2rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      
+      &.btn-outline-primary {
+        border-color: #d1d5db;
+        color: #6b7280;
+        background: white;
+        
+        &:hover {
+          background-color: #f3f4f6;
+          border-color: #5486ff;
+          color: #5486ff;
+        }
+      }
+      
+      &.btn-primary {
+        background-color: #5486ff;
+        border-color: #5486ff;
+        color: white;
+        box-shadow: 0 1px 3px rgba(84, 134, 255, 0.3);
+      }
+    }
+  }
+  
+  // Year navigation header
+  .year-navigation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem 0.2rem;
+    
+    .year-nav-btn {
+      padding: 0.4rem 0.7rem !important;
+      color: white !important;
+      border: 1px solid rgba(255, 255, 255, 0.3) !important;
+      background: rgba(255, 255, 255, 0.15) !important;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 6px !important;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        border-color: rgba(255, 255, 255, 0.5) !important;
+        color: white !important;
+        transform: scale(1.05);
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+      }
+      
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4) !important;
+        color: white !important;
+        outline: none !important;
+      }
+      
+      &:active {
+        transform: scale(0.98) !important;
+        background-color: rgba(255, 255, 255, 0.3) !important;
+      }
+      
+      &:disabled {
+        opacity: 0.3 !important;
+        cursor: not-allowed !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.05) !important;
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          transform: none !important;
+          box-shadow: none !important;
+        }
+      }
+      
+      i {
+        font-size: 1rem;
+        font-weight: 900;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+    }
+    
+    .year-range-display {
+      font-size: 1rem;
+      font-weight: 700;
+      color: white;
+      text-align: center;
+      flex: 1;
+      margin: 0 0.75rem;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      letter-spacing: 0.5px;
+      padding: 0.2rem 0;
+    }
+  }
+  
+  .year-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr); // 4x4 grid for compact square layout
+    gap: 0.15rem; // Reduced gap for more compact layout
+    padding: 0.5rem; // Reduced padding
+    min-height: 120px; // Optimized height for 4x4 grid
+    
+    .year-btn-compact {
+      padding: 0.25rem 0.15rem; // Much smaller padding
+      font-size: 0.75rem; // Smaller font size
+      font-weight: 500;
+      border-radius: 3px; // Smaller border radius for rounded corners
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-align: center;
+      min-height: 28px; // Fixed smaller height
+      max-height: 28px; // Fixed smaller height
+      
+      &.btn-outline-primary {
+        border-color: #d1d5db;
+        color: #6b7280;
+        background: white;
+        
+        &:hover {
+          background-color: #f3f4f6;
+          border-color: #5486ff;
+          color: #5486ff;
+          transform: scale(1.02); // Subtle hover effect
+        }
+      }
+      
+      &.btn-primary {
+        background-color: #5486ff;
+        border-color: #5486ff;
+        color: white;
+        box-shadow: 0 1px 2px rgba(84, 134, 255, 0.2); // Smaller shadow
+        
+        &:hover {
+          transform: scale(1.02); // Subtle hover effect
+        }
+      }
+    }
+  }
+
+  /* Scrollable vertical year list used for capacitor pickers (DC / AC Input / AC Output / Comm / Fans) */
+  .year-list-scroll {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem;
+    max-height: 220px; /* allow scrolling for larger year ranges */
+    overflow-y: auto;
+    width: 100%;
+
+    /* subtle border/visuals to match compact grid items */
+    .year-list-item {
+      display: block; /* full width buttons stacked vertically */
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem 0.6rem;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      min-height: 38px;
+      transition: background-color 0.12s ease, transform 0.12s ease;
+
+      &.btn-outline-primary {
+        border-color: #e5e7eb;
+        color: #374151;
+        background: white;
+
+        &:hover {
+          background-color: #f8fafc;
+          border-color: #5486ff;
+          color: #5486ff;
+          transform: translateX(2px);
+        }
+      }
+
+      &.btn-primary {
+        background-color: #5486ff;
+        border-color: #5486ff;
+        color: white;
+        box-shadow: 0 1px 2px rgba(84, 134, 255, 0.12);
+
+        &:hover {
+          transform: translateX(-1px);
+        }
+      }
+    }
+  }
+
+  .current-selection {
+    padding: 0 0.75rem 0.5rem 0.75rem;
+    text-align: center;
+    border-top: 1px solid #f3f4f6;
+    
+    .text-muted {
+      color: #6b7280 !important;
+      font-size: 0.8rem;
+    }
+  }
+}
+
 // Year Calendar Dropdown Specific Styles
 .year-calendar-dropdown {
   width: 280px !important; // Slightly wider for year display

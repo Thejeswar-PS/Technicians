@@ -395,7 +395,9 @@
                         class="form-select"
                         formControlName="multiModule"
                         id="multiModule"
+                        [class.is-invalid]="equipmentForm.get('multiModule')?.touched && (equipmentForm.get('multiModule')?.value === '' || equipmentForm.get('multiModule')?.value === 'Select' || equipmentForm.get('multiModule')?.value === null)"
                       >
+                        <option value="">Choose configuration...</option>
                         <option
                           *ngFor="let option of multiModuleTypes"
                           [value]="option.value"
@@ -403,7 +405,10 @@
                           {{ option.text }}
                         </option>
                       </select>
-                      <label for="multiModule">Multi-Module</label>
+                      <label for="multiModule">Multi-Module <span class="text-danger">*</span></label>
+                      <div class="invalid-feedback" *ngIf="equipmentForm.get('multiModule')?.touched && (equipmentForm.get('multiModule')?.value === '' || equipmentForm.get('multiModule')?.value === 'Select' || equipmentForm.get('multiModule')?.value === null)">
+                        Please select a Multi-Module configuration
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -486,7 +491,7 @@
                       </button>
                       
                       <!-- Month Calendar Picker -->
-                      <div class="compact-calendar-dropdown" *ngIf="showMonthCalendar">
+                      <div class="compact-calendar-dropdown1" *ngIf="showMonthCalendar">
                         <div class="calendar-header">
                           <h6 class="mb-0">Select Month</h6>
                         </div>
@@ -544,7 +549,7 @@
                       </button>
                       
                       <!-- Year Calendar Picker -->
-                      <div class="compact-calendar-dropdown" *ngIf="showYearCalendar" (click)="$event.stopPropagation()">
+                      <div class="compact-calendar-dropdown1" *ngIf="showYearCalendar" (click)="$event.stopPropagation()">
                         <div class="calendar-header">
                           <div class="year-navigation-header" (click)="$event.stopPropagation()">
                             <button 

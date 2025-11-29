@@ -298,7 +298,6 @@ export class EquipmentService {
    */
   getMultiModuleTypes(): Observable<{ value: string; text: string }[]> {
     const multiModuleTypes = [
-      { value: 'Se', text: 'Select' },
       { value: 'N1', text: 'N + 1' },
       { value: 'N2', text: 'N + 2' },
       { value: 'N3', text: 'N + 3' },

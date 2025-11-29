@@ -928,7 +928,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.equipmentForm = this.fb.group({
       manufacturer: ['', Validators.required],
       kva: ['', [Validators.required, this.decimalKvaValidator()]],
-      multiModule: ['Select'], // Default to "Select"
+      // Default to empty string so the <option value="">Choose configuration...</option> is selected
+      multiModule: [''],
       maintByPass: ['NA'], // Default to "NA" (None)
       other: [''],
       model: ['', Validators.required],
@@ -3268,6 +3269,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (kva > 10000) {
       this.showLegacyValidationAlert('KVA value seems unusually high. Please verify.', 'kva');
       this.equipmentForm.get('kva')?.markAsTouched();
+      return false;
+    }
+
+    // Validate Multi-Module selection (required for full save)
+    const multiModuleVal = this.equipmentForm.get('multiModule')?.value;
+    // The form default uses 'Select' as a placeholder; treat empty or 'Select' as invalid
+    if (!multiModuleVal || multiModuleVal === 'Select' || multiModuleVal === '') {
+      this.showLegacyValidationAlert('Please select the Multi-Module configuration', 'multiModule');
+      this.equipmentForm.get('multiModule')?.markAsTouched();
       return false;
     }
 
