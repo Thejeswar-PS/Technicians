@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { JobReportDetailsComponent } from './job-report-details/job-report-details.component';
 import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-report.component';
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
+import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
 
 const routes: Routes = [
   {
@@ -21,6 +22,10 @@ const routes: Routes = [
   {
     path: 'parts-request-status', 
     component: PartsRequestStatusComponent
+  },
+  {
+    path: 'part-return-status', 
+    component: PartReturnStatusComponent
   }
 ];
 
