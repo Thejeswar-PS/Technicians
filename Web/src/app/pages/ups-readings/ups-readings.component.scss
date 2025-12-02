@@ -2,84 +2,26 @@
 // Enhanced with professional design patterns, improved UX, and zoom-resistant layout
 
 // Zoom-level detection and handling
-@media screen and (min-resolution: 150dpi), 
-       screen and (-webkit-min-device-pixel-ratio: 1.5),
-       screen and (min--moz-device-pixel-ratio: 1.5),
-       screen and (-o-min-device-pixel-ratio: 3/2) {
-  // High zoom / high DPI styles
-  .ups-readings-container {
-    .ups-readings-section {
-      margin: 0 0.5rem 1rem 0.5rem !important;
-      width: calc(100% - 1rem) !important;
-      
-      .ups-section-content.show {
-        padding: 1rem !important;
-      }
-    }
-    
-    .card,
-    .ups-main-card {
-      width: calc(100% - 0.75rem) !important;
-      max-width: 1000px !important; // Increased max-width at high zoom
-    }
-  }
-}
+
 
 .ups-readings-container {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 2rem 1rem;
-  max-width: 100vw; // Prevent horizontal overflow
-  overflow-x: hidden; // Hide any content that extends beyond viewport
-  box-sizing: border-box; // Include padding in width calculation
-  position: relative; // Establish positioning context
-  contain: layout; // Optimize rendering and prevent layout shifts
-  
-  // Center content with max-width for better layout
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  
-  // Ensure container adapts to different zoom levels
-  @media screen and (min-zoom: 1.5) {
-    padding: 1rem 0.5rem;
-  }
-  
-  @media screen and (min-zoom: 2) {
-    padding: 0.5rem 0.25rem;
-  }
+  max-width: 100%;
+  overflow-x: hidden;
 
-  // Header container styling
-  .ups-readings-header__top {
-    max-width: 1400px; // Match increased card max-width
-    width: calc(100% - 1rem); // Match reduced container margins
-    margin: 0 auto; // Center the header
-    
-    @media (max-width: 1024px) {
-      max-width: 1200px; // Increased medium screen card width
-      width: calc(100% - 0.75rem);
-    }
-    
-    @media (max-width: 768px) {
-      width: calc(100% - 0.5rem); // Match mobile card width
-    }
-    
-    @media (max-width: 576px) {
-      width: calc(100% - 0.25rem); // Match small mobile card width
-    }
-  }
-
-  // Page title styling - now inline with buttons
+  // Page title styling - inline with buttons
   .ups-page-title {
     text-align: center;
-    flex: 1; // Take remaining space and center the title
+    flex: 1;
     
     h2 {
-      color: #5486ff; // Blue color matching table headers
-      font-size: 2.2rem; // Slightly smaller to fit better inline
+      color: #5486ff;
+      font-size: 2.2rem;
       font-weight: 700;
       letter-spacing: -0.5px;
-      margin: 0; // Remove any default margins
+      margin: 0;
       
       i {
         color: #5486ff;
@@ -115,9 +57,6 @@
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     margin: 0 auto 2rem auto; // Center the card horizontally
-    overflow: hidden; // Ensure content stays within card boundaries
-    max-width: 1400px; // Increased maximum width for more content space
-    width: calc(100% - 1rem); // Reduced side margins - just small white space
     box-sizing: border-box; // Include padding and border in width calculation
     position: relative; // Establish positioning context
     contain: layout style; // Optimize rendering and contain layout
@@ -134,11 +73,8 @@
     }
 
     .card-body {
-      padding: 1rem 0; // Add some padding around form sections
       background: transparent;
       max-width: 100%;
-      box-sizing: border-box;
-      overflow: hidden; // Prevent body content from overflowing
       
       .ups-readings-form {
         padding: 0; // Remove extra padding since card-body has padding

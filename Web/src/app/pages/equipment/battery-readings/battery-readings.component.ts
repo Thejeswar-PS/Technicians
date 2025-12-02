@@ -1,10 +1,8 @@
-import { Component, OnInit, ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { BatteryReadingsService } from '../../../core/services/battery-readings.service';
-import { JobService } from '../../../core/services/job.service';
-import { CommonService } from '../../../core/services/common.service';
 import {
   BatteryStringInfo,
   EquipReconciliationInfo,
@@ -61,7 +59,6 @@ export class BatteryReadingsComponent implements OnInit {
   batteriesNoLabel: string = 'No of Batteries per string';
   showPackNoField: boolean = false;
   packNoLabel: string = 'Batteries per String';
-  reconciliationBattPerStringLabel: string = 'Batteries Per String';
 
   // Grid Row Counts
   totalReplace: number = 0;
@@ -74,10 +71,6 @@ export class BatteryReadingsComponent implements OnInit {
   batteryTypes: any[] = [];
   statuses: any[] = [];
 
-  // User Status
-  userEmployeeStatus: string = '';
-  isRepMonCalculateDisabled: boolean = false;
-
   @ViewChild('errMsg') errMsgElement!: ElementRef;
 
   constructor(
@@ -85,10 +78,7 @@ export class BatteryReadingsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private batteryService: BatteryReadingsService,
-    private jobService: JobService,
-    private commonService: CommonService,
-    private toastr: ToastrService,
-    private cdr: ChangeDetectorRef
+    private toastr: ToastrService
   ) {
     this.batteryStringForm = this.createBatteryStringForm();
     this.reconciliationForm = this.createReconciliationForm();
@@ -97,7 +87,6 @@ export class BatteryReadingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeFromRoute();
-    this.getEmployeeStatus();
     this.loadInitialData();
   }
 
@@ -115,49 +104,10 @@ export class BatteryReadingsComponent implements OnInit {
       this.battNum = params['BattNum'] || '40';
       this.battPack = params['BattPack'] || '';
 
-      console.log('🔵 [INIT] URL Params captured - BattNum:', this.battNum, '| BattPack:', this.battPack);
-
       if (!this.battNum || this.battNum === '' || this.battNum === '0') {
         this.battNum = '40';
       }
-      
-      console.log('🔵 [INIT] After validation - BattNum:', this.battNum, '| BattPack:', this.battPack);
     });
-  }
-
-  /**
-   * Get employee status to determine if repMonCalculate dropdown should be disabled
-   * Legacy: GetEmpStatus() - If status is "Technician", disable dropdown and set to "System" (1)
-   */
-  private getEmployeeStatus(): void {
-    this.commonService.getEmployeeStatusForJobList(this.getUserId()).subscribe(
-      (response: any) => {
-        if (response && response.length > 0) {
-          const status = response[0].status || response[0].Status;
-          this.userEmployeeStatus = status;
-          
-          if (status === 'Technician') {
-            this.isRepMonCalculateDisabled = true;
-            
-            // Set the value to "1" (System) and disable the control
-            this.batteryStringForm.patchValue({ repMonCalculate: '1' });
-            this.batteryStringForm.get('repMonCalculate')?.disable();
-            
-          } else if (status === 'Manager' || status === 'Other') {
-            this.isRepMonCalculateDisabled = false;
-            // Keep control enabled (default state)
-          } else {
-            // Default to enabled for unknown statuses
-            this.isRepMonCalculateDisabled = false;
-          }
-        } else {
-          this.isRepMonCalculateDisabled = false;
-        }
-      },
-      (error) => {
-        this.isRepMonCalculateDisabled = false;
-      }
-    );
   }
 
   /**
@@ -188,43 +138,10 @@ export class BatteryReadingsComponent implements OnInit {
       .subscribe(
         (data) => {
           this.batteryStringInfo = data;
-          
-          // Fetch equipment details to get latest batteriesPerString and batteriesPerPack
-          this.jobService.getEquipmentDetailsByCallNbr(this.callNbr).subscribe(
-            (equipmentDetails) => {
-              if (equipmentDetails && equipmentDetails.length > 0) {
-                // Find the battery equipment
-                const batteryEquipment: any = equipmentDetails.find(
-                  (equip: any) => equip.equipId === this.equipId || 
-                  (equip.equipType && equip.equipType.trim().toUpperCase().includes('BATTERY'))
-                );
-
-                if (batteryEquipment) {
-                  // Update battNum and battPack from API response (overriding URL params)
-                  this.battNum = batteryEquipment.batteriesPerString?.toString() || this.battNum;
-                  this.battPack = batteryEquipment.batteriesPerPack?.toString() || this.battPack;
-
-                  console.log('🔵 [INIT API] Fetched from GetEquipmentDetails API:');
-                  console.log('   batteriesPerString (battNum):', this.battNum);
-                  console.log('   batteriesPerPack (battPack):', this.battPack);
-                }
-              }
-
-              // Now populate form with updated values
-              this.populateBatteryStringForm(data);
-              this.enableDisableLithium();
-              this.loadReconciliationInfo();
-              this.loadBatteryGridData();
-            },
-            (error) => {
-              console.error('Error fetching equipment details on init:', error);
-              // Continue with existing values if API call fails
-              this.populateBatteryStringForm(data);
-              this.enableDisableLithium();
-              this.loadReconciliationInfo();
-              this.loadBatteryGridData();
-            }
-          );
+          this.populateBatteryStringForm(data);
+          this.enableDisableLithium();
+          this.loadReconciliationInfo();
+          this.loadBatteryGridData();
         },
         (error) => {
           this.handleError('Error loading battery string info: ' + error.message);
@@ -257,52 +174,15 @@ export class BatteryReadingsComponent implements OnInit {
       .subscribe(
         (data) => {
           this.batteryReadings = this.mapBatteryDataToRows(data);
-          
-          // Only update batteriesNo with actual count if NOT from URL parameters
-          // URL parameters take precedence (legacy: txtBatteriesNo.Text from QueryString)
-          const currentBatteriesNo = this.batteryStringForm.get('batteriesNo')?.value;
-          const stringType = this.batteryStringForm.get('stringType')?.value;
-          
-          console.log('🔍 loadBatteryGridData - Checking URL param precedence:');
-          console.log('  stringType:', stringType, '(type:', typeof stringType, ')');
-          console.log('  currentBatteriesNo:', currentBatteriesNo);
-          console.log('  this.battNum:', this.battNum, '| this.battPack:', this.battPack);
-          console.log('  data.length (DB count):', data.length);
-          
-          // Determine if batteriesNo value is from URL param based on string type
-          // Type 1: batteriesNo comes from BattNum
-          // Type 2/3: batteriesNo comes from BattPack
-          let isFromUrlParam = false;
-          if (stringType === '1') {
-            isFromUrlParam = !!(this.battNum && this.battNum !== '40');
-          } else if (stringType === '2' || stringType === '3') {
-            isFromUrlParam = !!this.battPack;
-          }
-          
-          console.log('  isFromUrlParam:', isFromUrlParam);
-          console.log('  Will overwrite?', (!isFromUrlParam || !currentBatteriesNo));
-          
-          if (!isFromUrlParam || !currentBatteriesNo) {
-            console.log('  ❌ OVERWRITING batteriesNo with DB count:', data.length);
-            this.batteryStringForm.patchValue({
-              batteriesNo: data.length
-            });
-          } else {
-            console.log('  ✅ PRESERVING batteriesNo from URL param:', currentBatteriesNo);
-          }
+          // Update batteriesNo with actual count of battery rows
+          this.batteryStringForm.patchValue({
+            batteriesNo: data.length
+          });
           
           // Update reconciliation battPerString only after Change button (not initial load)
-          // This should match the API's batteriesPerString value (this.battNum)
           if (updateReconciliation) {
-            // The reconciliation battPerString should be the actual batteriesPerString from API
-            // which is stored in this.battNum (not a calculated value)
-            const battPerStringValue = parseInt(this.battNum) || 0;
-            
-            console.log('📊 Updating reconciliation battPerString:', battPerStringValue, '(from battNum/API batteriesPerString)');
-            console.log('   StringType:', stringType, '| battNum:', this.battNum, '| battPack:', this.battPack);
-            
             this.reconciliationForm.patchValue({
-              battPerString: battPerStringValue
+              battPerString: data.length
             });
           }
           
@@ -319,38 +199,30 @@ export class BatteryReadingsComponent implements OnInit {
    * Map battery data to grid rows
    */
   private mapBatteryDataToRows(data: BatteryData[]): BatteryReadingRow[] {
-    
-    return data.map((item, index) => {
-      // API GET returns 'mhos', API POST expects 'milliohms'
-      const mhosValue = item.milliohms || item.mhos || 0;
-      const mappedRow = {
-        batteryId: typeof item.batteryId === 'string' ? parseInt(item.batteryId) : (item.batteryId || index + 1),
-        vdc: typeof item.vdc === 'string' ? parseFloat(item.vdc) : (item.vdc || 0),
-        vac: typeof item.vac === 'string' ? parseFloat(item.vac) : (item.vac || 0),
-        mhos: typeof mhosValue === 'string' ? parseFloat(mhosValue) : mhosValue,
-        strap1: typeof item.strap1 === 'string' ? parseFloat(item.strap1) : (item.strap1 || 0),
-        strap2: typeof item.strap2 === 'string' ? parseFloat(item.strap2) : (item.strap2 || 0),
-        spGravity: typeof item.spGravity === 'string' ? parseFloat(item.spGravity) : (item.spGravity || 0),
-        cracks: item.cracks || 'N',
-        replacementNeeded: item.replacementNeeded || 'N',
-        monitoringBattery: item.monitoringBattery || 'N',
-        actionPlan: item.actionPlan || '',
-        temp: typeof item.temp === 'string' ? parseInt(item.temp) : (item.temp || 70),
-      };
-      return mappedRow;
-    });
+    return data.map((item, index) => ({
+      batteryId: item.batteryId || index + 1,
+      vdc: item.vdc || 0,
+      vac: item.vac || 0,
+      mhos: item.mhos || 0,
+      strap1: item.strap1 || 0,
+      strap2: item.strap2 || 0,
+      spGravity: item.spGravity || 0,
+      cracks: item.cracks || 'N',
+      replacementNeeded: item.replacementNeeded || 'N',
+      monitoringBattery: item.monitoringBattery || 'N',
+      actionPlan: item.actionPlan || '',
+      temp: item.temp || 70,
+    }));
   }
 
   /**
    * DisplayBatteryInfo - Legacy equivalent
    * Adjusts battery grid rows based on battery count
-   * 
-   * Legacy calculation logic:
-   * - Type 1 (External): BattNum = txtBatteriesNo.Text
-   * - Type 2 (Internal): BattNum = txtPackNo.Text * txtBatteriesNo.Text
-   * - Type 3 (Packs): BattNum = txtPackNo.Text
-   * 
-   * Important: Uses DISPLAY values (form field values) directly, not API values
+   * 1. Calculates expected battery count based on stringType
+   * 2. Adds rows if current count < expected
+   * 3. Deletes rows if current count > expected (with validation)
+   * 4. Saves ALL rows (delete + insert in one operation)
+   * 5. Reloads grid data
    */
   private displayBatteryInfo(): void {
     try {
@@ -359,62 +231,17 @@ export class BatteryReadingsComponent implements OnInit {
       const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
       const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
       
-      console.log('🔢 displayBatteryInfo - Row Calculation:');
-      console.log('   String Type:', stringType);
-      console.log('   Display batteriesNo:', batteriesNo);
-      console.log('   Display packNo:', packNo);
-      
-      // Update reconciliation label based on stringType (legacy: lblRecBatt.Text)
-      // Also update reconciliation battPerString value (legacy: txtBPerString.Text = BattNum.ToString())
-      // Type 3: batteriesNo = BattPack (No of Packs), packNo = BattNum (Batteries per Pack)
-      // Type 2: batteriesNo = BattPack (No of Strings), packNo = BattNum (Batteries per String)
-      // Type 1: batteriesNo = BattNum (No of Batteries per string)
-      let battPerStringValue = 0;
-      
-      if (stringType === '3') {
-        // Type 3: Show "No of Battery Packs" = batteriesNo (BattPack)
-        this.reconciliationBattPerStringLabel = 'No of Battery Packs';
-        battPerStringValue = batteriesNo;
-      } else if (stringType === '2') {
-        // Type 2: Show "Batteries per String" = packNo (BattNum)
-        this.reconciliationBattPerStringLabel = 'Batteries per String';
-        battPerStringValue = packNo;
-      } else {
-        // Type 1: Show "No of Batteries per string" = batteriesNo (BattNum)
-        this.reconciliationBattPerStringLabel = 'No of Batteries per string';
-        battPerStringValue = batteriesNo;
-      }
-      
-      // Update the reconciliation form battPerString field (legacy: txtBPerString.Text = BattNum.ToString())
-      this.reconciliationForm.patchValue({
-        battPerString: battPerStringValue
-      });
-      
-      console.log('✅ Updated reconciliation battPerString:');
-      console.log('   Label:', this.reconciliationBattPerStringLabel);
-      console.log('   Value:', battPerStringValue);
-      console.log('   Calculation: Type', stringType,
-        stringType === '3' ? `= batteriesNo (${batteriesNo})` :
-        stringType === '2' ? `= packNo (${packNo})` :
-        `= batteriesNo (${batteriesNo})`);
-      
       let expectedBatteryCount = 0;
       if (stringType === '3') {
-        // Battery Packs / Trays: Use batteriesNo (No of Battery Packs)
-        expectedBatteryCount = batteriesNo;
-        console.log('   Type 3 calculation: batteriesNo (No of Battery Packs) =', expectedBatteryCount);
+        // Battery Packs / Trays
+        expectedBatteryCount = packNo;
       } else if (stringType === '2') {
-        // Internal Single / Parallel Strings: packNo * batteriesNo
+        // Internal Single / Parallel Strings
         expectedBatteryCount = packNo * batteriesNo;
-        console.log('   Type 2 calculation: packNo * batteriesNo =', packNo, '*', batteriesNo, '=', expectedBatteryCount);
       } else {
-        // External: Use batteriesNo
+        // External
         expectedBatteryCount = batteriesNo;
-        console.log('   Type 1 calculation: batteriesNo =', expectedBatteryCount);
       }
-      
-      console.log('   ✅ Expected battery rows:', expectedBatteryCount);
-      console.log('   ✅ Updated reconciliation battPerString to:', battPerStringValue);
 
       // Step 2: Get current battery info from backend
       this.batteryService.getBatteryInfo(this.callNbr, this.equipId, this.batStrId).subscribe(
@@ -427,9 +254,8 @@ export class BatteryReadingsComponent implements OnInit {
               // Need to add batteries
               this.addMissingBatteryRows(currentBatteries, expectedBatteryCount);
             } else if (currentCount > expectedBatteryCount) {
-              // Need to delete extra batteries (skip validation for Change button)
-              // Change button should be able to delete rows even with VDC values
-              this.deleteExtraBatteryRows(currentBatteries, expectedBatteryCount, true);
+              // Need to delete extra batteries (with validation)
+              this.deleteExtraBatteryRows(currentBatteries, expectedBatteryCount);
             }
           } else {
             // Count matches - just reload grid
@@ -520,26 +346,16 @@ export class BatteryReadingsComponent implements OnInit {
    * Delete extra battery rows when count decreases
    * Legacy: DELETE FROM Battery with validation (check if VDC > 0)
    * Now: Filter array and save (delete-then-insert handles removal)
-   * 
-   * @param currentBatteries - Current battery data array
-   * @param expectedCount - Expected number of batteries
-   * @param skipValidation - Skip VDC validation (true for Change button flow)
    */
-  private deleteExtraBatteryRows(currentBatteries: BatteryData[], expectedCount: number, skipValidation: boolean = false): void {
+  private deleteExtraBatteryRows(currentBatteries: BatteryData[], expectedCount: number): void {
     // Validate that batteries to be deleted have VDC = 0 (legacy validation)
-    // Skip validation for Change button flow - allow deletion even with VDC values
     let canDelete = true;
-    
-    if (!skipValidation) {
-      for (let k = expectedCount; k < currentBatteries.length; k++) {
-        if (currentBatteries[k].vdc > 0) {
-          canDelete = false;
-          this.handleError('Cannot delete battery rows with VDC values > 0. Please clear the values first.');
-          break;
-        }
+    for (let k = expectedCount; k < currentBatteries.length; k++) {
+      if (currentBatteries[k].vdc > 0) {
+        canDelete = false;
+        this.handleError('Cannot delete battery rows with VDC values > 0. Please clear the values first.');
+        break;
       }
-    } else {
-      console.log('⚠️ Skipping VDC validation for Change button - allowing deletion of rows with values');
     }
 
     if (canDelete) {
@@ -683,26 +499,12 @@ export class BatteryReadingsComponent implements OnInit {
       floatVoltageStatus: data.floatVoltS,
       floatVoltageValue: data.floatVoltV,
       repMonCalculate: data.repMonCalc,
-      // Use API values (battNum/battPack) instead of DB values to preserve Change button updates
-      packNo: (() => {
-        const stringType = data.stringType;
-        // Type 2/3: packNo = battNum
-        // Type 1: packNo = battPack (hidden field but needed for API batteriesPerPack)
-        const value = (stringType === '2' || stringType === '3') ? this.battNum : this.battPack;
-        console.log('🔄 [SIMPLE POPULATE] packNo set to:', value, '(StringType:', stringType, ')');
-        return value;
-      })(),
+      packNo: data.batteryPackCount,
       battDisconnect: data.indBattDisconnect,
       indBattInterconnection: data.indBattInterConn,
       rackIntegrity: data.rackIntegrity,
       ventFanOperation: data.ventFanOperation,
-      // Use API values (battPack for Type 2/3, battNum for Type 1) instead of batteryReadings.length
-      batteriesNo: (() => {
-        const stringType = data.stringType;
-        const value = (stringType === '2' || stringType === '3') ? this.battPack : this.battNum;
-        console.log('🔄 [SIMPLE POPULATE] batteriesNo set to:', value, '(StringType:', stringType, ')');
-        return value;
-      })(),
+      batteriesNo: this.batteryReadings.length, // Use actual battery count from grid
       replaceWholeString: data.replaceWholeString,
       mvacCheck: data.chckmVac,
       strapCheck: data.chkStrap,
@@ -780,25 +582,12 @@ export class BatteryReadingsComponent implements OnInit {
       floatVoltageStatus: data.floatVoltS,
       floatVoltageValue: data.floatVoltV,
       repMonCalculate: data.repMonCalc,
-      // Map URL params based on string type:
-      // LEGACY MAPPING (from BatteryReadings.aspx with BattNum=2, BattPack=5):
-      // Type 1: batteriesNo=BattNum (2), packNo from DB
-      // Type 2: batteriesNo=BattPack (5), packNo=BattNum (2) → shows "5 2"
-      // Type 3: batteriesNo=BattPack (5), packNo=BattNum (2) → shows "5 2"
-      packNo: (() => {
-        const value = (data.stringType === '2' || data.stringType === '3') ? (this.battNum || data.batteryPackCount) : data.batteryPackCount;
-        console.log('🟢 [POPULATE] packNo set to:', value, '(StringType:', data.stringType, ', BattNum:', this.battNum, ', DB:', data.batteryPackCount, ')');
-        return value;
-      })(),
+      packNo: data.batteryPackCount,
       battDisconnect: data.indBattDisconnect,
       indBattInterconnection: data.indBattInterConn,
       rackIntegrity: data.rackIntegrity,
       ventFanOperation: data.ventFanOperation,
-      batteriesNo: (() => {
-        const value = (data.stringType === '2' || data.stringType === '3') ? (this.battPack || this.batteryReadings.length || '40') : (this.battNum || this.batteryReadings.length || '40');
-        console.log('🟢 [POPULATE] batteriesNo set to:', value, '(StringType:', data.stringType, ', BattPack:', this.battPack, ', BattNum:', this.battNum, ')');
-        return value;
-      })(),
+      batteriesNo: this.battNum,
       replaceWholeString: data.replaceWholeString,
       mvacCheck: data.chckmVac,
       strapCheck: data.chkStrap,
@@ -812,24 +601,18 @@ export class BatteryReadingsComponent implements OnInit {
     // Trigger string type change handler to update labels and field visibility
     console.log('🔄 Calling onStringTypeChange after form population');
     console.log('📝 stringType value:', data.stringType);
-    console.log('📝 URL params - BattNum:', this.battNum, '| BattPack:', this.battPack);
-    console.log('📝 Mapping logic - Type 1: batteriesNo=BattNum | Type 2/3: batteriesNo=BattPack, packNo=BattNum');
-    console.log('📝 Form values after patchValue:', {
-      batteriesNo: this.batteryStringForm.get('batteriesNo')?.value,
-      packNo: this.batteryStringForm.get('packNo')?.value
-    });
+    console.log('📝 packNo value:', data.batteryPackCount);
     this.onStringTypeChange(null);
 
     // Load reference values after form population
     const midType = data.readingMethod;
     if (midType) {
       // First: Load all make/models with equipId = 0 (get all available options)
-      // Then: After loading completes, load equipment-specific battery make/model
-      this.loadBatteryMakeModels(midType, 0, () => {
-        // Callback: After battery models are loaded, load equipment's saved battery
-        // Pass empty string for makeModel to get the equipment's saved battery make/model
-        this.loadRefValueForMakeModel(midType, '', this.equipId);
-      });
+      this.loadBatteryMakeModels(midType, 0);
+      
+      // Second: Load equipment-specific battery make/model with current equipId
+      // Pass empty string for makeModel to get the equipment's saved battery make/model
+      this.loadRefValueForMakeModel(midType, '', this.equipId);
     }
   }
 
@@ -855,8 +638,6 @@ export class BatteryReadingsComponent implements OnInit {
       actBattPerString: data.actBattPerString,
       reconciled: data.verified,
     });
-    
-    this.onReconciliationChange();
   }
 
   /**
@@ -947,32 +728,24 @@ export class BatteryReadingsComponent implements OnInit {
    * Create reconciliation form
    */
   private createReconciliationForm(): FormGroup {
-    const form = this.fb.group({
+    return this.fb.group({
       recMake: [''],
-      recMakeCorrect: ['YS'],
-      actMake: [{ value: '', disabled: true }],
+      recMakeCorrect: [''],
+      actMake: [''],
       recModel: [''],
-      recModelCorrect: ['YS'],
-      actModel: [{ value: '', disabled: true }],
+      recModelCorrect: [''],
+      actModel: [''],
       recSerialNo: [''],
-      recSerialNoCorrect: ['YS'],
-      actSerialNo: [{ value: '', disabled: true }],
+      recSerialNoCorrect: [''],
+      actSerialNo: [''],
       ascStrings: [''],
       ascStringsCorrect: [''],
       actAscStrings: [''],
       battPerString: [''],
-      battPerStringCorrect: ['YS'],
-      actBattPerString: [{ value: '', disabled: true }],
+      battPerStringCorrect: [''],
+      actBattPerString: [''],
       reconciled: [false],
     });
-    
-    // Add value change listener to reconciled checkbox
-    form.get('reconciled')?.valueChanges.subscribe(value => {
-      console.log('🔔 Reconciled checkbox value changed:', value, typeof value);
-    });
-    
-    console.log('✅ Reconciliation form created with reconciled initial value:', form.get('reconciled')?.value);
-    return form;
   }
 
   /**
@@ -1034,22 +807,6 @@ export class BatteryReadingsComponent implements OnInit {
   }
 
   /**
-   * Handle manufacturer change - ensure form control is updated
-   */
-  onManufacturerChange(event: any): void {
-    const value = event.target.value;
-    this.batteryStringForm.patchValue({ manufacturer: value });
-  }
-
-  /**
-   * Handle generic field change - ensure form control is updated
-   */
-  onFieldChange(event: any, fieldName: string): void {
-    const value = event.target.value;
-    this.batteryStringForm.patchValue({ [fieldName]: value });
-  }
-
-  /**
    * Handle replace whole string checkbox change
    */
   onReplaceStringChange(event: any): void {
@@ -1090,172 +847,36 @@ export class BatteryReadingsComponent implements OnInit {
   onStringTypeChange(event: any): void {
     const stringType = event?.target?.value || this.batteryStringForm.get('stringType')?.value;
     
-    
-    // Get current form values BEFORE any changes
-    const currentBatteriesNo = this.batteryStringForm.get('batteriesNo')?.value;
-    const currentPackNo = this.batteryStringForm.get('packNo')?.value;
-   
-    // Determine if we're in initial load (has URL params) or user change (event exists)
-    const isUserChange = event !== null;
-    const hasUrlParams = !!(this.battNum || this.battPack);
+    console.log('🔧 onStringTypeChange called with stringType:', stringType);
+    console.log('📋 Event object:', event);
     
     if (stringType === '3') {
       // Battery Packs / Trays
-      // LEGACY: Shows BattPack (5) then BattNum (2) → "5 2"
-      // batteriesNo field shows BattPack (5), packNo field shows BattNum (2)
-      this.batteriesNoLabel = 'No of Battery Packs:';
-      this.packNoLabel = 'Batteries per Pack:';
-      this.reconciliationBattPerStringLabel = 'No of Battery Packs';
+      console.log('✅ Setting labels for Battery Packs (stringType=3)');
+      this.batteriesNoLabel = 'No of Battery Packs';
+      this.packNoLabel = 'Batteries per Pack';
       this.showPackNoField = true;
-      
-      // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
-      if (hasUrlParams) {
-        // Use URL params to set correct values for Type 3
-        const newBatteriesNo = this.battPack || currentBatteriesNo;
-        const newPackNo = this.battNum || currentPackNo;
-        
-        this.batteryStringForm.patchValue({
-          batteriesNo: newBatteriesNo,
-          packNo: newPackNo
-        });
-      }
     } else if (stringType === '2') {
       // Internal Single / Parallel Strings
-      // LEGACY: Shows BattPack (5) then BattNum (2) → "5 2"
-      // batteriesNo field shows BattPack (5), packNo field shows BattNum (2)
-      this.batteriesNoLabel = 'No of Internal Strings:';
-      this.packNoLabel = 'Batteries per String:';
-      this.reconciliationBattPerStringLabel = 'Batteries per String';
-      this.showPackNoField = true;
-      
-      // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
-      if (hasUrlParams) {
-        // Use URL params to set correct values for Type 2
-        const newBatteriesNo = this.battPack || currentBatteriesNo;
-        const newPackNo = this.battNum || currentPackNo;
-        
-        this.batteryStringForm.patchValue({
-          batteriesNo: newBatteriesNo,
-          packNo: newPackNo
-        });
-      }
-    } else {
-      // External (default) - Type 1
-      // batteriesNo should show BattNum only
-      // packNo field is hidden but should preserve its value for API
-      this.batteriesNoLabel = 'No of Batteries per string:';
+      console.log('✅ Setting labels for Internal Strings (stringType=2)');
+      this.batteriesNoLabel = 'No of Internal Strings';
       this.packNoLabel = 'Batteries per String';
-      this.reconciliationBattPerStringLabel = 'No of Batteries per string';
+      this.showPackNoField = true;
+    } else {
+      // External (default)
+      console.log('✅ Setting labels for External (stringType=1 or default)');
+      this.batteriesNoLabel = 'No of Batteries per string';
+      this.packNoLabel = 'Batteries per String';
       this.showPackNoField = false;
-      
-      // Update values if: (1) User is changing type with URL params OR (2) Initial load with URL params
-      if (hasUrlParams) {
-        // Use URL params to set correct value for Type 1 (only BattNum)
-        const newBatteriesNo = this.battNum || currentBatteriesNo;
-        
-        this.batteryStringForm.patchValue({
-          batteriesNo: newBatteriesNo
-          // NOTE: Do NOT clear packNo - it may have a value that needs to be sent to API
-          // packNo field is hidden but value is preserved
-        });
-      }
-      // NOTE: Removed automatic packNo clearing for Type 1
-      // The packNo value is preserved even though the field is hidden
+      // Clear packNo value when hiding
+      this.batteryStringForm.patchValue({ packNo: '' });
     }
     
-  }
-  /**
-   * Handle reconciliation dropdown changes
-   * Clears "Actual" field when "Is Correct" is changed to Yes or N/A
-   * Enables/disables actual fields based on "Is Correct" value (legacy: EnabletoEdit)
-   */
-  onReconciliationChange(): void {
-    const recMakeCorrect = this.reconciliationForm.get('recMakeCorrect')?.value;
-    const recModelCorrect = this.reconciliationForm.get('recModelCorrect')?.value;
-    const recSerialNoCorrect = this.reconciliationForm.get('recSerialNoCorrect')?.value;
-    const battPerStringCorrect = this.reconciliationForm.get('battPerStringCorrect')?.value;
-
-    // Enable/disable and clear actual Make field
-    if (recMakeCorrect === 'NO') {
-      this.reconciliationForm.get('actMake')?.enable();
-    } else {
-      this.reconciliationForm.get('actMake')?.disable();
-      this.reconciliationForm.patchValue({ actMake: '' });
-    }
-
-    // Enable/disable and clear actual Model field
-    if (recModelCorrect === 'NO') {
-      this.reconciliationForm.get('actModel')?.enable();
-    } else {
-      this.reconciliationForm.get('actModel')?.disable();
-      this.reconciliationForm.patchValue({ actModel: '' });
-    }
-
-    // Enable/disable and clear actual Serial No field
-    if (recSerialNoCorrect === 'NO') {
-      this.reconciliationForm.get('actSerialNo')?.enable();
-    } else {
-      this.reconciliationForm.get('actSerialNo')?.disable();
-      this.reconciliationForm.patchValue({ actSerialNo: '' });
-    }
-
-    // Enable/disable and clear actual Batteries Per String field
-    if (battPerStringCorrect === 'NO') {
-      this.reconciliationForm.get('actBattPerString')?.enable();
-    } else {
-      this.reconciliationForm.get('actBattPerString')?.disable();
-      this.reconciliationForm.patchValue({ actBattPerString: '' });
-    }
-  }
-
-  /**
-   * Handle checkbox clicks in Sealed Battery section (Container & Cover)
-   * Legacy: CheckBoxClick for sealed battery checkboxes
-   */
-  onSealedCheckboxChange(checkboxName: string, dropdownName: string): void {
-    const isChecked = this.batteryStringForm.get(checkboxName)?.value;
-    
-    if (isChecked) {
-      // If checkbox is checked, set dropdown to Fail
-      this.batteryStringForm.patchValue({ [dropdownName]: 'F' });
-    } else {
-      // If unchecked, set to Pass
-      this.batteryStringForm.patchValue({ [dropdownName]: 'P' });
-    }
-  }
-
-  /**
-   * Handle checkbox clicks in Flooded Battery section (Plates)
-   * Legacy: CheckBoxClick with three related checkboxes
-   */
-  onFloodedPlatesCheckboxChange(): void {
-    const wrapped = this.batteryStringForm.get('plusWrappedCheck')?.value;
-    const sulfated = this.batteryStringForm.get('plusSulfatedCheck')?.value;
-    const mispositioned = this.batteryStringForm.get('plusMisposCheck')?.value;
-    
-    // If any of the three checkboxes is checked, set dropdown to Fail
-    if (wrapped || sulfated || mispositioned) {
-      this.batteryStringForm.patchValue({ plusWrappedVerify: 'F' });
-    } else {
-      this.batteryStringForm.patchValue({ plusWrappedVerify: 'P' });
-    }
-  }
-
-  /**
-   * Handle checkbox clicks in Flooded Battery section (Flame Arrestors & Covers)
-   * Legacy: CheckBoxClick with three related checkboxes
-   */
-  onFloodedCoversCheckboxChange(): void {
-    const missing = this.batteryStringForm.get('missingCheck')?.value;
-    const broken = this.batteryStringForm.get('brokenCheck')?.value;
-    const needsCleaning = this.batteryStringForm.get('needsCleaningCheck')?.value;
-    
-    // If any of the three checkboxes is checked, set dropdown to Fail
-    if (missing || broken || needsCleaning) {
-      this.batteryStringForm.patchValue({ missingVerify: 'F' });
-    } else {
-      this.batteryStringForm.patchValue({ missingVerify: 'P' });
-    }
+    console.log('📊 Final state:', {
+      batteriesNoLabel: this.batteriesNoLabel,
+      packNoLabel: this.packNoLabel,
+      showPackNoField: this.showPackNoField
+    });
   }
 
   /**
@@ -1263,37 +884,9 @@ export class BatteryReadingsComponent implements OnInit {
    */
   onBattMakeModelChange(event: any): void {
     const midType = this.batteryStringForm.get('midType')?.value;
-    const selectedValue = event.target.value;
-    
-    // Find the selected battery in our batteryMakeModels array
-    // IMPORTANT: selectedValue is the battery NAME (display name)
-    const selectedBattery = this.batteryMakeModels.find(item => item.name === selectedValue);
-    
-    if (selectedBattery) {
-      // Use the stored reference value directly
-      // Both Fluke and BCM use refValue (value1)
-      let refValue = '';
-      if (midType === '2' || midType === '3') {
-        // Both Fluke and BCM use refValue (value1)
-        refValue = selectedBattery.refValue !== undefined ? selectedBattery.refValue.toString() : '';
-      }
-      
-      // Clear if value is "0"
-      if (refValue === '0') {
-        refValue = '';
-      }
-      
-      // Update form control
-      this.batteryStringForm.get('battMakeModel')?.setValue(selectedValue, { emitEvent: false });
-      this.batteryStringForm.patchValue({ refValue: refValue });
-      
-      // Trigger change detection
-      this.cdr.detectChanges();
-    } else {
-      // Fallback: Make API call if battery not found in array
-      this.batteryStringForm.get('battMakeModel')?.setValue(selectedValue, { emitEvent: false });
-      this.loadRefValueForMakeModel(midType, selectedValue, this.equipId);
-    }
+    const makeModel = event.target.value;
+    this.batteryStringForm.patchValue({ battMakeModel: makeModel });
+    this.loadRefValueForMakeModel(midType, makeModel, this.equipId);
   }
 
   /**
@@ -1305,61 +898,26 @@ export class BatteryReadingsComponent implements OnInit {
    * 4. battMakeModel - Battery make/model name (empty for initial load to get all)
    * 5. refValue1 - Reference value 1 (Fluke value, 0 when loading)
    * 6. refValue2 - Reference value 2 (BCM value, 0 when loading)
-   * 
-   * @param midType - Reading method (2=Fluke, 3=BCM)
-   * @param equipId - Equipment ID (0 for all batteries, specific for equipment's battery)
-   * @param onComplete - Optional callback to execute after loading completes
    */
-  private loadBatteryMakeModels(midType: string, equipId: number, onComplete?: () => void): void {
+  private loadBatteryMakeModels(midType: string, equipId: number): void {
     this.batteryService.getReferenceValues(equipId, 'G', midType, '', 0, 0).subscribe(
       (data) => {
         if (data && data.length > 0) {
           // Map the response to batteryMakeModels
           // API returns: Name (display), Value (identifier), RefValue, Resistance
           // Service maps to: name, id, value1, value2
-          // item.id contains the full Value string like "BAE10 Opzs 1000|2600.00#0.00"
-          this.batteryMakeModels = data.map((item: any) => {
-            // Parse item.id to extract identifier before the pipe "|"
-            // Example: "BAE10 Opzs 1000|2600.00#0.00" → "BAE10 Opzs 1000"
-            let identifier = item.name || '';
-            
-            if (item.id && typeof item.id === 'string') {
-              // item.id from service contains the full Value field
-              const parts = item.id.split('|');
-              if (parts.length > 0 && parts[0].trim()) {
-                identifier = parts[0].trim();
-              }
-            }
-            
-            return {
-              name: item.name || '', // Battery make/model name for display
-              value: identifier,      // Use parsed identifier for dropdown value
-              refValue: item.value1,  // Store reference value (Fluke)
-              resistance: item.value2 // Store resistance value (BCM)
-            };
-          });
-          
-          // Execute callback if provided (after models are loaded)
-          if (onComplete) {
-            onComplete();
-          }
+          // Use 'name' as both display and value for dropdown binding consistency
+          this.batteryMakeModels = data.map((item: any) => ({
+            name: item.name || '', // Battery make/model name from API (for display)
+            value: item.name || '' // Use name as value for binding with second API call
+          }));
         } else {
           this.batteryMakeModels = [];
-          
-          // Execute callback even if no data (to prevent blocking)
-          if (onComplete) {
-            onComplete();
-          }
         }
       },
       (error) => {
         console.error('Error loading battery make/models:', error);
         this.batteryMakeModels = [];
-        
-        // Execute callback even on error (to prevent blocking)
-        if (onComplete) {
-          onComplete();
-        }
       }
     );
   }
@@ -1380,9 +938,9 @@ export class BatteryReadingsComponent implements OnInit {
         if (data && data.length > 0) {
           const refData = data[0];
           
-          // DON'T update battMakeModel here - it was already set by user selection
-          // Only update battMakeModel if makeModel parameter is empty (initial load)
-          if (!makeModel && refData.name) {
+          // Bind the battery make/model dropdown with the Name from API
+          // Second API call uses 'name' field (API's "Name") for dropdown selection
+          if (refData.name) {
             this.batteryStringForm.patchValue({ battMakeModel: refData.name });
           }
           
@@ -1400,22 +958,18 @@ export class BatteryReadingsComponent implements OnInit {
           
           this.batteryStringForm.patchValue({ refValue: refValue.toString() });
         } else {
-          // Only clear if this was an empty makeModel lookup (initial load)
-          if (!makeModel) {
-            this.batteryStringForm.patchValue({ 
-              battMakeModel: '',
-              refValue: '' 
-            });
-          } else {
-            // Just clear refValue if no data found for selected model
-            this.batteryStringForm.patchValue({ refValue: '' });
-          }
+          this.batteryStringForm.patchValue({ 
+            battMakeModel: '',
+            refValue: '' 
+          });
         }
       },
       (error) => {
         console.error('Error loading reference value:', error);
-        // Don't clear battMakeModel on error - keep user's selection
-        this.batteryStringForm.patchValue({ refValue: '' });
+        this.batteryStringForm.patchValue({ 
+          battMakeModel: '',
+          refValue: '' 
+        });
       }
     );
   }
@@ -1447,50 +1001,6 @@ export class BatteryReadingsComponent implements OnInit {
         },
         (error) => {
           console.warn('Error loading reference values:', error);
-        }
-      );
-  }
-
-  /**
-   * Update reference values in backend (legacy GetReferenceValues with 'U' operation)
-   * Called during save to persist the selected battery make/model and ref value
-   * 
-   * Legacy C# code:
-   * SqlDataReader dr = da.GetReferenceValues(
-   *   EquipID,                              // equipId
-   *   "U",                                   // operation = "U" for UPDATE
-   *   ddlMidType.SelectedValue,              // midType (2=Fluke, 3=BCM)
-   *   ddlBattMakeModel.SelectedItem.Text,    // battMakeModel (display NAME, not value!)
-   *   cvtDecimal(txtRefValue.Text),          // refValue1
-   *   cvtDecimal(txtRefValue.Text)           // refValue2
-   * );
-   */
-  updateReferenceValues(): void {
-    const midType = this.batteryStringForm.get('midType')?.value;
-    const selectedValue = this.batteryStringForm.get('battMakeModel')?.value;
-    const refValueStr = this.batteryStringForm.get('refValue')?.value;
-    const refValue = refValueStr ? parseFloat(refValueStr) : 0;
-
-    // CRITICAL: Legacy passes SelectedItem.Text (display name), not SelectedValue
-    // Find the battery in our array to get the display name
-    const selectedBattery = this.batteryMakeModels.find(item => item.value === selectedValue);
-    const battMakeModelName = selectedBattery ? selectedBattery.name : selectedValue;
-
-    // Skip if no battery selected or no reference value
-    if (!battMakeModelName || !refValue) {
-      return;
-    }
-
-    // Legacy passes same refValue for both refValue1 and refValue2
-    this.batteryService
-      .saveReferenceValues(this.equipId, 'U', midType, battMakeModelName, refValue, refValue)
-      .subscribe(
-        () => {
-          // Reference values updated successfully
-        },
-        (error) => {
-          console.error('Error updating reference values:', error);
-          // Don't block save on reference value update failure
         }
       );
   }
@@ -1630,13 +1140,7 @@ export class BatteryReadingsComponent implements OnInit {
   calculateBatteryDef(): void {
     try {
       const batteryType = this.batteryStringForm.get('batteryType')?.value;
-      const batteryTypeName = this.batteryStringForm.get('batteryTypeName')?.value;
-      const floatVoltageStatus = this.batteryStringForm.get('floatVoltageStatus')?.value;
-      const floatVoltageValue = this.batteryStringForm.get('floatVoltageValue')?.value || 0;
-
-      if (batteryType === 'PS') {
-        return;
-      }
+      if (batteryType === 'PS') return;
 
       let monitor2 = 0;
       let replace = 0;
@@ -1649,9 +1153,9 @@ export class BatteryReadingsComponent implements OnInit {
       this.batteryService
         .getBatteryTypeValues(
           batteryType,
-          batteryTypeName,
-          floatVoltageStatus,
-          floatVoltageValue
+          this.batteryStringForm.get('batteryTypeName')?.value,
+          this.batteryStringForm.get('floatVoltageStatus')?.value,
+          this.batteryStringForm.get('floatVoltageValue')?.value || 0
         )
         .subscribe(
           (typeValues) => {
@@ -1708,104 +1212,6 @@ export class BatteryReadingsComponent implements OnInit {
         );
     } catch (error) {
       this.handleError('Error calculating battery deficiency: ' + error);
-    }
-  }
-
-  /**
-   * Calculate battery deficiency with callback (synchronous flow)
-   * This version calls a callback after the async calculation completes
-   * Used before status calculation to ensure usedQuantity is up-to-date
-   */
-  calculateBatteryDefSync(callback: () => void): void {
-    try {
-      const batteryType = this.batteryStringForm.get('batteryType')?.value;
-      const batteryTypeName = this.batteryStringForm.get('batteryTypeName')?.value;
-      const floatVoltageStatus = this.batteryStringForm.get('floatVoltageStatus')?.value;
-      const floatVoltageValue = this.batteryStringForm.get('floatVoltageValue')?.value || 0;
-
-      if (batteryType === 'PS') {
-        callback();
-        return;
-      }
-
-      let monitor2 = 0;
-      let replace = 0;
-      let monitorlow = 0;
-      let replacelow = 0;
-      let mhWarning = 0;
-      let mhError = 0;
-
-      // Load thresholds from battery type values
-      this.batteryService
-        .getBatteryTypeValues(
-          batteryType,
-          batteryTypeName,
-          floatVoltageStatus,
-          floatVoltageValue
-        )
-        .subscribe(
-          (typeValues) => {
-            monitor2 = typeValues.monitorEnd;
-            replace = typeValues.replace;
-
-            const readingType = this.batteryStringForm.get('readingType')?.value;
-            const midType = this.batteryStringForm.get('midType')?.value;
-            const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
-            const stringType = this.batteryStringForm.get('stringType')?.value;
-
-            // Calculate thresholds based on reading type
-            if (
-              readingType === '2' &&
-              midType !== '3'
-            ) {
-              const refValue = this.convertToDecimal(
-                this.batteryStringForm.get('refValue')?.value || '0'
-              );
-              if (midType === '1') {
-                mhWarning = (refValue * 70) / 100;
-                mhError = (refValue * 60) / 100;
-              } else {
-                mhWarning = (refValue * 140) / 100;
-                mhError = (refValue * 150) / 100;
-              }
-            } else if (readingType === '1' && midType === '3') {
-              monitorlow = 25.6;
-              replacelow = 24.0;
-            } else if (readingType === '1' && stringType === '3') {
-              replace = batteriesNo * replace;
-              monitor2 = batteriesNo * monitor2;
-            } else if (readingType === '3') {
-              const battTypeValue = this.getBatteryTypeValue();
-              replace = batteriesNo * battTypeValue + 0.2;
-              monitor2 = batteriesNo * battTypeValue + 0.5;
-            }
-
-            // Apply calculations to grid rows
-            this.applyBatteryDefCalculations(
-              monitor2,
-              replace,
-              monitorlow,
-              replacelow,
-              mhWarning,
-              mhError,
-              midType,
-              readingType
-            );
-
-            // Call callback after calculation completes
-            callback();
-          },
-          (error) => {
-            console.warn('Error loading battery type values:', error);
-            // Even on error, call callback to continue flow
-            callback();
-          }
-        );
-    } catch (error) {
-      console.error('Error in calculateBatteryDefSync:', error);
-      this.handleError('Error calculating battery deficiency: ' + error);
-      // Even on error, call callback to continue flow
-      callback();
     }
   }
 
@@ -1825,54 +1231,49 @@ export class BatteryReadingsComponent implements OnInit {
     let totalReplace = 0;
     let totalMonitor = 0;
 
-    // Create a new array to trigger change detection
-    this.batteryReadings = this.batteryReadings.map((row, index) => {
+    this.batteryReadings.forEach((row) => {
       const vdc = this.convertToDecimal(row.vdc.toString());
       const mhos = this.convertToDecimal(row.mhos.toString());
-      
-      let actionPlan = row.actionPlan;
-      let replacementNeeded = row.replacementNeeded;
-      let monitoringBattery = row.monitoringBattery;
 
       // VDC Analysis
       if (replacelow > 0 || monitorlow > 0) {
         if (vdc >= replace && vdc < replacelow) {
-          actionPlan = `Float voltage must be between ${replace} and ${replacelow}`;
-          replacementNeeded = 'Y';
-          monitoringBattery = 'N';
+          row.actionPlan = `Float voltage must be between ${replace} and ${replacelow}`;
+          row.replacementNeeded = 'Y';
+          row.monitoringBattery = 'N';
           totalReplace++;
         } else if (vdc >= monitor2 && vdc < monitorlow) {
-          actionPlan = `Float voltage between ${monitor2} and ${monitorlow}`;
-          monitoringBattery = 'Y';
-          replacementNeeded = 'N';
+          row.actionPlan = `Float voltage between ${monitor2} and ${monitorlow}`;
+          row.monitoringBattery = 'Y';
+          row.replacementNeeded = 'N';
           totalMonitor++;
         } else {
-          replacementNeeded = 'N';
-          monitoringBattery = 'N';
+          row.replacementNeeded = 'N';
+          row.monitoringBattery = 'N';
           if (row.cracks !== 'F') {
-            actionPlan = '';
+            row.actionPlan = '';
           } else {
-            actionPlan = 'Battery is leaking / damaged / corrosion';
+            row.actionPlan = 'Battery is leaking / damaged / corrosion';
           }
         }
       } else {
         if (vdc <= replace) {
-          actionPlan = `Float voltage is less than or equal to ${replace}. To be Replaced`;
-          replacementNeeded = 'Y';
-          monitoringBattery = 'N';
+          row.actionPlan = `Float voltage is less than or equal to ${replace}. To be Replaced`;
+          row.replacementNeeded = 'Y';
+          row.monitoringBattery = 'N';
           totalReplace++;
         } else if (vdc <= monitor2) {
-          actionPlan = `Float voltage is less than or equal to ${monitor2}. To be Monitored`;
-          monitoringBattery = 'Y';
-          replacementNeeded = 'N';
+          row.actionPlan = `Float voltage is less than or equal to ${monitor2}. To be Monitored`;
+          row.monitoringBattery = 'Y';
+          row.replacementNeeded = 'N';
           totalMonitor++;
         } else {
-          replacementNeeded = 'N';
-          monitoringBattery = 'N';
+          row.replacementNeeded = 'N';
+          row.monitoringBattery = 'N';
           if (row.cracks !== 'F') {
-            actionPlan = '';
+            row.actionPlan = '';
           } else {
-            actionPlan = 'Battery is leaking / damaged / corrosion';
+            row.actionPlan = 'Battery is leaking / damaged / corrosion';
           }
         }
       }
@@ -1881,46 +1282,38 @@ export class BatteryReadingsComponent implements OnInit {
       if (readingType === '2' && midType !== '3') {
         if (midType === '1') {
           if (mhos <= mhError) {
-            if (replacementNeeded === 'N') {
-              actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
-              replacementNeeded = 'Y';
-              monitoringBattery = 'N';
+            if (row.replacementNeeded === 'N') {
+              row.actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
+              row.replacementNeeded = 'Y';
+              row.monitoringBattery = 'N';
               totalReplace++;
             }
           } else if (mhos <= mhWarning) {
-            if (monitoringBattery === 'N') {
-              actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
-              monitoringBattery = 'Y';
-              replacementNeeded = 'N';
+            if (row.monitoringBattery === 'N') {
+              row.actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
+              row.monitoringBattery = 'Y';
+              row.replacementNeeded = 'N';
               totalMonitor++;
             }
           }
         } else if (midType === '2') {
           if (mhos > mhError) {
-            if (replacementNeeded === 'N') {
-              actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
-              replacementNeeded = 'Y';
-              monitoringBattery = 'N';
+            if (row.replacementNeeded === 'N') {
+              row.actionPlan = `Fail value:${mhError}. Battery to be Replaced`;
+              row.replacementNeeded = 'Y';
+              row.monitoringBattery = 'N';
               totalReplace++;
             }
           } else if (mhos > mhWarning && mhos <= mhError) {
-            if (monitoringBattery === 'N') {
-              actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
-              monitoringBattery = 'Y';
-              replacementNeeded = 'N';
+            if (row.monitoringBattery === 'N') {
+              row.actionPlan = `Warning value:${mhWarning}. Battery to be Monitored`;
+              row.monitoringBattery = 'Y';
+              row.replacementNeeded = 'N';
               totalMonitor++;
             }
           }
         }
       }
-
-      // Return updated row (creates new object reference)
-      return {
-        ...row,
-        actionPlan,
-        replacementNeeded,
-        monitoringBattery
-      };
     });
 
     this.batteryStringForm.patchValue({
@@ -1935,230 +1328,54 @@ export class BatteryReadingsComponent implements OnInit {
   /**
    * Get equipment status based on battery conditions
    * Legacy: GetEquipStatus()
-   * 
-   * IMPORTANT: The legacy has a BUG in the else clause:
-   * if ((ddlStatus.SelectedValue != "Offline")) { ... }
-   * else { return "CriticalDeficiency"; }  ← This is WRONG! Should not return CD for Offline
-   * 
-   * We're fixing this by having the caller check for Offline before calling this method
    */
   getEquipmentStatus(): string {
     try {
-      const currentStatus = this.batteryStringForm.get('equipStatus')?.value;
-      let resultStatus = 'Online';
+      const status = this.batteryStringForm.get('equipStatus')?.value;
 
-      // Get critical form values for status determination
+      if (status === 'Offline') {
+        return 'CriticalDeficiency';
+      }
+
       const usedQuantity = parseInt(this.batteryStringForm.get('usedQuantity')?.value) || 0;
-      const reasonToReplace = this.batteryStringForm.get('reasonToReplace')?.value;
-      const replaceWholeString = this.batteryStringForm.get('replaceWholeString')?.value;
-
-      // Step 1: Check usedQuantity (batteries marked for replacement)
-      // Legacy: if(cvt2Int(txtUsedQuantity.Text)>0) return "CriticalDeficiency";
       if (usedQuantity > 0) {
         return 'CriticalDeficiency';
       }
-      
-      // Step 2: Check for replacement recommended or proactive replacement
-      // Legacy: RecommendtoReplace() || (ddlReasonToReplace.SelectedValue == "DA" && chkReplace.Checked)
-      const recommendToReplaceResult = this.recommendToReplace();
-      
-      if (recommendToReplaceResult || 
-          (reasonToReplace === 'DA' && replaceWholeString)) {
-        resultStatus = 'ReplacementRecommended';
-        return resultStatus;
-      }
-      
-      // Check if checkbox is checked with other reasons (DF or BT)
-      if (replaceWholeString && (reasonToReplace === 'DF' || reasonToReplace === 'BT')) {
-        resultStatus = 'ReplacementRecommended';
-        return resultStatus;
-      }
-      
-      // Step 3: Check for proactive replacement
-      // Legacy: ProactiveReplace()
-      const proactiveReplaceResult = this.proactiveReplace();
-      if (proactiveReplaceResult) {
-        resultStatus = 'ProactiveReplacement';
-        return resultStatus;
+
+      if (this.recommendToReplace() || 
+          (this.batteryStringForm.get('reasonToReplace')?.value === 'DA' &&
+            this.batteryStringForm.get('replaceWholeString')?.value)) {
+        return 'ReplacementRecommended';
       }
 
-      // Step 4: Preserve non-Online status if no issues found above
-      // Legacy: if (ddlStatus.SelectedValue != "Online") resultStatus = ddlStatus.SelectedValue;
-      if (currentStatus !== 'Online') {
-        resultStatus = currentStatus;
+      if (this.proactiveReplace()) {
+        return 'ProactiveReplacement';
       }
 
-      // Step 5: Check field-level deficiencies
-      // Legacy: Loops through JobSummaryReport checking all fields against GetStatusDescription
-      const statusFromFields = this.checkFieldLevelDeficiencies(resultStatus);
-      
-      if (statusFromFields !== resultStatus) {
-        resultStatus = statusFromFields;
+      if (status !== 'Online') {
+        return status;
       }
 
-      return resultStatus;
+      // Check for deficiencies in grid
+      let hasReplace = false;
+      let hasMonitor = false;
+
+      this.batteryReadings.forEach((row) => {
+        if (row.replacementNeeded === 'Y') hasReplace = true;
+        if (row.monitoringBattery === 'Y') hasMonitor = true;
+      });
+
+      if (hasReplace) {
+        return 'CriticalDeficiency';
+      } else if (hasMonitor) {
+        return 'OnLine(MinorDeficiency)';
+      }
+
+      return 'Online';
     } catch (error) {
       this.handleError('Error determining equipment status: ' + error);
       return 'Online';
     }
-  }
-
-  /**
-   * Check field-level deficiencies based on form values
-   * Simplified version of legacy JobSummaryReport loop
-   * Returns highest priority status found
-   */
-  private checkFieldLevelDeficiencies(currentStatus: string): string {
-    let resultStatus = currentStatus;
-    const failedFields: string[] = [];
-
-
-    // Define status priority (higher number = higher priority)
-    const statusPriority: { [key: string]: number } = {
-      'Online': 0,
-      'OnLine(MinorDeficiency)': 1,
-      'ProactiveReplacement': 2,
-      'OnLine(MajorDeficiency)': 3,
-      'ReplacementRecommended': 4,
-      'CriticalDeficiency': 5
-    };
-
-    // Helper to update status if new one has higher priority
-    const updateStatus = (fieldName: string, fieldValue: any, newStatus: string) => {
-      const currentPriority = statusPriority[resultStatus] || 0;
-      const newPriority = statusPriority[newStatus] || 0;
-      if (newPriority > currentPriority) {
-        console.log(`  Field "${fieldName}" = "${fieldValue}" → Upgrading status to "${newStatus}" (priority ${newPriority} > ${currentPriority})`);
-        failedFields.push(`${fieldName}=${fieldValue}`);
-        resultStatus = newStatus;
-      }
-    };
-
-    // Check Battery Charging System fields (critical failures)
-    // Legacy checks TempField == "N" || TempField == "F"
-    const batteryVoltageVerify = this.batteryStringForm.get('batteryVoltageVerify')?.value;
-    if (batteryVoltageVerify === 'F') {
-      updateStatus('batteryVoltageVerify', batteryVoltageVerify, 'CriticalDeficiency');
-    }
-    
-    const plusTerminalVerify = this.batteryStringForm.get('plusTerminalVerify')?.value;
-    if (plusTerminalVerify === 'F') {
-      updateStatus('plusTerminalVerify', plusTerminalVerify, 'OnLine(MajorDeficiency)');
-    }
-    
-    const minusTerminalVerify = this.batteryStringForm.get('minusTerminalVerify')?.value;
-    if (minusTerminalVerify === 'F') {
-      updateStatus('minusTerminalVerify', minusTerminalVerify, 'OnLine(MajorDeficiency)');
-    }
-    
-    const dcChargingVerify = this.batteryStringForm.get('dcChargingVerify')?.value;
-    if (dcChargingVerify === 'F') {
-      updateStatus('dcChargingVerify', dcChargingVerify, 'OnLine(MinorDeficiency)');
-    }
-    
-    const acRippleVoltageVerify = this.batteryStringForm.get('acRippleVoltageVerify')?.value;
-    if (acRippleVoltageVerify === 'F') {
-      updateStatus('acRippleVoltageVerify', acRippleVoltageVerify, 'OnLine(MinorDeficiency)');
-    }
-    
-    const acRippleCurrentVerify = this.batteryStringForm.get('acRippleCurrentVerify')?.value;
-    if (acRippleCurrentVerify === 'F') {
-      updateStatus('acRippleCurrentVerify', acRippleCurrentVerify, 'OnLine(MinorDeficiency)');
-    }
-    
-    const resistancePf = this.batteryStringForm.get('resistancePf')?.value;
-    if (resistancePf === 'F') {
-      updateStatus('resistancePf', resistancePf, 'OnLine(MajorDeficiency)');
-    }
-    
-    const torqueVerify = this.batteryStringForm.get('torqueVerify')?.value;
-    if (torqueVerify === 'F') {
-      updateStatus('torqueVerify', torqueVerify, 'OnLine(MinorDeficiency)');
-    }
-
-    // Check Sealed Battery Inspection fields
-    const batteryTypeName = this.batteryStringForm.get('batteryTypeName')?.value;
-    if (batteryTypeName === 'S') {
-      const bulgedPf = this.batteryStringForm.get('bulgedPf')?.value;
-      if (bulgedPf === 'F') {
-        updateStatus('bulgedPf', bulgedPf, 'CriticalDeficiency');
-      }
-      
-      const crackedPf = this.batteryStringForm.get('crackedPf')?.value;
-      if (crackedPf === 'F') {
-        updateStatus('crackedPf', crackedPf, 'CriticalDeficiency');
-      }
-      
-      const debrisPf = this.batteryStringForm.get('debrisPf')?.value;
-      if (debrisPf === 'F') {
-        updateStatus('debrisPf', debrisPf, 'OnLine(MinorDeficiency)');
-      }
-      
-      const rotten = this.batteryStringForm.get('rotten')?.value;
-      if (rotten === 'F') {
-        updateStatus('rotten', rotten, 'CriticalDeficiency');
-      }
-      
-      const verifySaftey = this.batteryStringForm.get('verifySaftey')?.value;
-      if (verifySaftey === 'F') {
-        updateStatus('verifySaftey', verifySaftey, 'OnLine(MajorDeficiency)');
-      }
-      
-      const intercellConnector = this.batteryStringForm.get('intercellConnector')?.value;
-      if (intercellConnector === 'F') {
-        updateStatus('intercellConnector', intercellConnector, 'OnLine(MajorDeficiency)');
-      }
-    }
-
-    // Check Flooded Battery Inspection fields
-    if (batteryTypeName === 'F') {
-      const plusWrappedVerify = this.batteryStringForm.get('plusWrappedVerify')?.value;
-      if (plusWrappedVerify === 'F') {
-        updateStatus('plusWrappedVerify', plusWrappedVerify, 'CriticalDeficiency');
-      }
-      
-      const missingVerify = this.batteryStringForm.get('missingVerify')?.value;
-      if (missingVerify === 'F') {
-        updateStatus('missingVerify', missingVerify, 'OnLine(MajorDeficiency)');
-      }
-      
-      const waterLevelVerify = this.batteryStringForm.get('waterLevelVerify')?.value;
-      if (waterLevelVerify === 'F') {
-        updateStatus('waterLevelVerify', waterLevelVerify, 'OnLine(MinorDeficiency)');
-      }
-    }
-
-    // Check temperature verification
-    const roomTempVerify = this.batteryStringForm.get('roomTempVerify')?.value;
-    if (roomTempVerify === 'F') {
-      updateStatus('roomTempVerify', roomTempVerify, 'OnLine(MinorDeficiency)');
-    }
-    
-    const batteryTempVerify = this.batteryStringForm.get('batteryTempVerify')?.value;
-    if (batteryTempVerify === 'F') {
-      updateStatus('batteryTempVerify', batteryTempVerify, 'OnLine(MinorDeficiency)');
-    }
-
-    // Check rack and fan
-    const rackIntegrity = this.batteryStringForm.get('rackIntegrity')?.value;
-    if (rackIntegrity === 'F') {
-      updateStatus('rackIntegrity', rackIntegrity, 'OnLine(MajorDeficiency)');
-    }
-    
-    const ventFanOperation = this.batteryStringForm.get('ventFanOperation')?.value;
-    if (ventFanOperation === 'F') {
-      updateStatus('ventFanOperation', ventFanOperation, 'OnLine(MinorDeficiency)');
-    }
-    
-    const battDisconnect = this.batteryStringForm.get('battDisconnect')?.value;
-    if (battDisconnect === 'F') {
-      updateStatus('battDisconnect', battDisconnect, 'OnLine(MinorDeficiency)');
-    }
-
-    console.log('  Failed fields:', failedFields.length > 0 ? failedFields : 'None');
-    console.log('  checkFieldLevelDeficiencies - Output status:', resultStatus);
-
-    return resultStatus;
   }
 
   /**
@@ -2167,7 +1384,7 @@ export class BatteryReadingsComponent implements OnInit {
   /**
    * Main save flow - aligned with legacy SaveData() method
    * Flow:
-   * 1. Validate() - Validate all form fields (ONLY for 'Save', NOT for 'SaveAsDraft')
+   * 1. Validate() - Validate all form fields
    * 2. BatteryData() - Calculate deficiency and save battery grid
    * 3. SaveUpdateBatteryString() - Save battery string info
    * 4. UpdateBatteryInfo(1) - Update reading type in equipment info
@@ -2176,21 +1393,11 @@ export class BatteryReadingsComponent implements OnInit {
    * 7. GetReferenceValues() - Reload reference values
    * 8. UpdateEquipStatus() - Update equipment status
    * 9. DisplayBatteryStringInfo() - Reload data
-   * 
-   * IMPORTANT: SaveAsDraft should NOT validate - allow saving incomplete data
    */
   onSaveBatteryReadings(saveType: 'Save' | 'SaveAsDraft'): void {
-    // CRITICAL: Only validate for 'Save', NOT for 'SaveAsDraft'
-    // SaveAsDraft allows saving incomplete/partial data for later completion
-    if (saveType === 'Save') {
-      console.log('🔍 Running validation for Save...');
-      if (!this.validate()) {
-        console.log('❌ Validation failed, aborting save');
-        return;
-      }
-      console.log('✅ Validation passed');
-    } else {
-      console.log('⏭️ Skipping validation for SaveAsDraft (allow incomplete data)');
+    // Validate form before saving
+    if (!this.validate()) {
+      return;
     }
 
     this.isSaving = true;
@@ -2338,8 +1545,7 @@ export class BatteryReadingsComponent implements OnInit {
       batteryId: row.batteryId,
       temp: row.temp,
       vdc: row.vdc,
-      mhos: row.mhos, // Keep for backward compatibility
-      milliohms: row.mhos, // API expects milliohms field
+      mhos: row.mhos,
       strap1: row.strap1,
       strap2: row.strap2,
       spGravity: row.spGravity,
@@ -2355,18 +1561,7 @@ export class BatteryReadingsComponent implements OnInit {
     // Step 1c: Insert new battery data (legacy: INSERT INTO Battery)
     this.batteryService.saveBatteryData(batteryDataList).subscribe(
       () => {
-        // CRITICAL: Legacy BatteryData() sets preliminary status AFTER saving grid
-        // This happens BEFORE GetEquipStatus() is called
-        // Legacy logic:
-        // if (ddlStatus.SelectedValue != "Offline")
-        // {
-        //     if (Majcount > 0 || ReplaceCount > 0) { ddlStatus.SelectedValue = "CriticalDeficiency"; }
-        //     else if (Mincount > 0) { ddlStatus.SelectedValue = "OnLine(MinorDeficiency)"; }
-        //     else { ddlStatus.SelectedValue = "Online"; }
-        // }
-        this.setPreliminaryStatusFromGrid();
-        
-        // Step 2: After battery data is saved and preliminary status set, save battery string info
+        // Step 2: After battery data is saved, save battery string info
         this.saveBatteryStringInfo(saveType);
       },
       (error) => {
@@ -2375,76 +1570,6 @@ export class BatteryReadingsComponent implements OnInit {
         this.saving = false;
       }
     );
-  }
-
-  /**
-   * Set preliminary status based on battery grid counts
-   * Legacy: Done in BatteryData() AFTER saving grid, BEFORE GetEquipStatus()
-   * 
-   * Counts from grid:
-   * - Majcount: Batteries with Cracks = "F" (leaking/damaged/corrosion)
-   * - ReplaceCount: Batteries with ReplacementNeeded = "Y"
-   * - Mincount: Batteries with MonitoringBattery = "Y"
-   * 
-   * Status logic:
-   * - If Majcount > 0 OR ReplaceCount > 0 → CriticalDeficiency
-   * - Else if Mincount > 0 → OnLine(MinorDeficiency)
-   * - Else → Online
-   */
-  private setPreliminaryStatusFromGrid(): void {
-    const currentStatus = this.batteryStringForm.get('equipStatus')?.value;
-    
-    console.log('\n🔍 === setPreliminaryStatusFromGrid START ===');
-    console.log('📊 Current Status:', currentStatus);
-    
-    // Only set preliminary status if current status is NOT Offline
-    if (currentStatus !== 'Offline') {
-      // Count batteries by condition from grid
-      let majCount = 0;      // Leaking/Damaged/Corrosion (Cracks = "F")
-      let replaceCount = 0;  // Replacement Needed = "Y"
-      let minCount = 0;       // Monitoring = "Y"
-      
-      this.batteryReadings.forEach(row => {
-        if (row.cracks === 'F') {
-          majCount++;
-        } else if (row.replacementNeeded === 'Y') {
-          replaceCount++;
-        } else if (row.monitoringBattery === 'Y') {
-          minCount++;
-        }
-      });
-      
-      console.log('📊 Grid Counts:');
-      console.log('   - Majcount (Cracks=F):', majCount);
-      console.log('   - ReplaceCount (ReplacementNeeded=Y):', replaceCount);
-      console.log('   - Mincount (MonitoringBattery=Y):', minCount);
-      
-      // Apply legacy status logic
-      let preliminaryStatus = currentStatus;
-      
-      if (majCount > 0 || replaceCount > 0) {
-        preliminaryStatus = 'CriticalDeficiency';
-        console.log('✅ Setting preliminary status to CriticalDeficiency (Majcount > 0 or ReplaceCount > 0)');
-      } else if (minCount > 0) {
-        preliminaryStatus = 'OnLine(MinorDeficiency)';
-        console.log('✅ Setting preliminary status to OnLine(MinorDeficiency) (Mincount > 0)');
-      } else {
-        preliminaryStatus = 'Online';
-        console.log('✅ Setting preliminary status to Online (all batteries healthy)');
-      }
-      
-      // Update form with preliminary status
-      if (preliminaryStatus !== currentStatus) {
-        console.log('🔄 Updating status from', currentStatus, 'to', preliminaryStatus);
-        this.batteryStringForm.patchValue({ equipStatus: preliminaryStatus });
-      } else {
-        console.log('ℹ️ Status unchanged:', preliminaryStatus);
-      }
-    } else {
-      console.log('⏭️ Status is Offline, skipping preliminary status calculation');
-    }
-    
-    console.log('=== setPreliminaryStatusFromGrid END ===\n');
   }
 
   /**
@@ -2515,9 +1640,6 @@ export class BatteryReadingsComponent implements OnInit {
           this.updateFormWithEquipmentInfo(equipmentInfo);
         }
 
-        // Step 4: Fetch equipment details to update battNum and battPack
-        this.fetchEquipmentDetailsForBatteryParams();
-
         // Handle post-update actions based on operation type
         if (i === 1) {
           // i=1: ReadingType updated - proceed to next step (reconciliation)
@@ -2530,77 +1652,6 @@ export class BatteryReadingsComponent implements OnInit {
       },
       (error) => {
         this.handleError(`Error fetching equipment info after update (i=${i}): ${error.message}`);
-      }
-    );
-  }
-
-  /**
-   * Fetch equipment details from GetEquipmentDetails API to get updated batteriesPerString and batteriesPerPack
-   * This is called after Change button success to set the updated values
-   */
-  private fetchEquipmentDetailsForBatteryParams(): void {
-    console.log('🔍 [FETCH EQUIPMENT] Calling GetEquipmentDetails API for callNbr:', this.callNbr);
-    
-    this.jobService.getEquipmentDetailsByCallNbr(this.callNbr).subscribe(
-      (equipmentDetails) => {
-        console.log('📦 [API RESPONSE] Received equipment details:', equipmentDetails);
-        
-        if (equipmentDetails && equipmentDetails.length > 0) {
-          // Find the battery equipment by matching equipId
-          const batteryEquipment: any = equipmentDetails.find(
-            (equip: any) => equip.equipId === this.equipId
-          );
-
-          console.log('🔍 [SEARCH] Looking for equipId:', this.equipId);
-          console.log('📌 [FOUND] Battery equipment:', batteryEquipment);
-
-          if (batteryEquipment) {
-            // Log the raw values from API
-            console.log('📊 [RAW API VALUES]:');
-            console.log('   batteriesPerString:', batteryEquipment.batteriesPerString);
-            console.log('   batteriesPerPack:', batteryEquipment.batteriesPerPack);
-            
-            // Update battNum and battPack from API response
-            this.battNum = batteryEquipment.batteriesPerString?.toString() || this.battNum;
-            this.battPack = batteryEquipment.batteriesPerPack?.toString() || this.battPack;
-
-            console.log('🔵 [API UPDATE] Updated battNum and battPack:');
-            console.log('   battNum (from batteriesPerString):', this.battNum);
-            console.log('   battPack (from batteriesPerPack):', this.battPack);
-
-            // Update the form fields with the new values based on stringType
-            const stringType = this.batteryStringForm.get('stringType')?.value;
-            console.log('🔢 [STRING TYPE]:', stringType);
-            
-            if (stringType === '2' || stringType === '3') {
-              // Type 2 & 3: batteriesNo=battPack, packNo=battNum
-              this.batteryStringForm.patchValue({
-                batteriesNo: this.battPack,
-                packNo: this.battNum
-              });
-              console.log('✅ [FORM UPDATE] Type 2/3: batteriesNo=' + this.battPack + ', packNo=' + this.battNum);
-            } else {
-              // Type 1: batteriesNo=battNum, packNo=battPack (packNo is hidden but needed for API)
-              this.batteryStringForm.patchValue({
-                batteriesNo: this.battNum,
-                packNo: this.battPack
-              });
-              console.log('✅ [FORM UPDATE] Type 1: batteriesNo=' + this.battNum + ', packNo=' + this.battPack);
-            }
-            
-            // Recalculate and display battery rows with the updated values
-            console.log('🔄 [DISPLAY] Calling displayBatteryInfo() to recalculate rows...');
-            this.displayBatteryInfo();
-          } else {
-            console.warn('⚠️ [NOT FOUND] No equipment found with equipId:', this.equipId);
-          }
-        } else {
-          console.warn('⚠️ [EMPTY RESPONSE] No equipment details returned from API');
-        }
-      },
-      (error) => {
-        console.error('❌ [API ERROR] Error fetching equipment details:', error);
-        // Don't show error to user as this is supplementary data
       }
     );
   }
@@ -2744,69 +1795,17 @@ export class BatteryReadingsComponent implements OnInit {
 
   /**
    * Step 5 & 6: Calculate status and reload reference values (legacy GetEquipStatus & GetReferenceValues)
-   * IMPORTANT: Legacy logic - only calculate status if current status is NOT "Offline"
-   * 
-   * CRITICAL FIX: Must recalculate battery deficiencies BEFORE checking equipment status
-   * Legacy flow: The usedQuantity field is used by GetEquipStatus, but it can be:
-   * 1. Auto-calculated from grid when user clicks "Change" button
-   * 2. Manually entered by user
-   * 3. Updated from battery grid data before status check
-   * 
-   * We need to ensure usedQuantity reflects the actual battery grid state before status check
    */
   private calculateAndUpdateStatus(): void {
     const currentStatus = this.batteryStringForm.get('equipStatus')?.value;
-    const repMonCalculate = this.batteryStringForm.get('repMonCalculate')?.value;
-    
-    console.log('\n==== calculateAndUpdateStatus START ====');
-    console.log('📊 Current Status before calculation:', currentStatus);
-    console.log('📊 RepMonCalculate mode:', repMonCalculate);
-    
-    // CRITICAL: If RepMonCalculate = "1" (System), recalculate battery deficiencies from grid
-    // This ensures usedQuantity reflects actual battery grid state before status check
-    // Legacy: CalculateBatteryDef() updates txtUsedQuantity based on battery readings
-    if (repMonCalculate === '1') {
-      console.log('⚙️ RepMonCalculate = "1" (System), calling calculateBatteryDefSync()...');
-      this.calculateBatteryDefSync(() => {
-        // After battery def calculation completes, proceed with status check
-        this.proceedWithStatusCalculation(currentStatus);
-      });
-    } else {
-      console.log('✋ RepMonCalculate = "2" (Manual), skipping auto-calculation');
-      console.log('📝 Using manually entered usedQuantity:', this.batteryStringForm.get('usedQuantity')?.value);
-      // If manual mode, proceed directly with status check using manually entered values
-      this.proceedWithStatusCalculation(currentStatus);
-    }
-  }
-
-  /**
-   * Proceed with status calculation after battery deficiency calculation completes
-   */
-  private proceedWithStatusCalculation(currentStatus: string): void {
-    console.log('\n🔄 Proceeding with status calculation...');
-    console.log('📊 Final usedQuantity value:', this.batteryStringForm.get('usedQuantity')?.value);
-    console.log('📊 Final monitored value:', this.batteryStringForm.get('monitored')?.value);
     
     // Step 5: Calculate equipment status (legacy GetEquipStatus logic)
-    // Legacy: if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
-    let newStatus = currentStatus;
+    let newStatus = this.getEquipmentStatus();
     
-    if (currentStatus !== 'Offline') {
-      console.log('✅ Status is NOT Offline, calling getEquipmentStatus()...');
-      newStatus = this.getEquipmentStatus();
-      console.log('🎯 New status from getEquipmentStatus():', newStatus);
-    } else {
-      console.log('⏭️ Status IS Offline, skipping getEquipmentStatus()');
-    }
-    
-    // Step 6: Update reference values (legacy GetReferenceValues with 'U' operation)
-    // Legacy: SqlDataReader dr = da.GetReferenceValues(EquipID, "U", ddlMidType.SelectedValue, 
-    //         ddlBattMakeModel.SelectedItem.Text, cvtDecimal(txtRefValue.Text), cvtDecimal(txtRefValue.Text));
-    this.updateReferenceValues();
+    // Step 6: Reload reference values (legacy GetReferenceValues)
+    this.loadReferenceValues();
     
     // Step 7: Update equipment status
-    console.log('💾 Calling updateEquipmentStatusFinal with status:', newStatus);
-    console.log('==== calculateAndUpdateStatus END ====\n');
     this.updateEquipmentStatusFinal(newStatus);
   }
 
@@ -2814,21 +1813,6 @@ export class BatteryReadingsComponent implements OnInit {
    * Step 7: Update equipment status (legacy UpdateEquipStatus method)
    */
   private updateEquipmentStatusFinal(newStatus: string): void {
-    console.log('==== updateEquipmentStatusFinal START ====');
-    console.log('Status to update:', newStatus);
-    
-    // Legacy DateCode handling from SaveData:
-    // DateTime DtDateCode = Convert.ToDateTime(txtStartDt.Text);
-    // UES.MonthName = DateTimeFormatInfo.CurrentInfo.GetMonthName(DtDateCode.Month);
-    // UES.Year = DtDateCode.Year;
-    let startDate = this.batteryStringForm.get('startDate')?.value;
-    
-    // If startDate is empty, default to 01/01/1900
-    if (!startDate || startDate === '') {
-      startDate = '1900-01-01';
-      console.log('⚠️ DateCode is empty for status update, defaulting to 1900-01-01');
-    }
-    
     const statusInfo: UpdateEquipStatus = {
       callNbr: this.callNbr,
       equipId: this.equipId,
@@ -2839,28 +1823,19 @@ export class BatteryReadingsComponent implements OnInit {
       modelNo: this.batteryStringForm.get('modelNo')?.value || '',
       serialNo: this.batteryStringForm.get('serialNo')?.value || '',
       location: this.batteryStringForm.get('location')?.value || '',
-      monthName: this.getMonthFromDate(startDate),
-      year: this.getYearFromDate(startDate),
+      monthName: this.getMonthFromDate(this.batteryStringForm.get('startDate')?.value),
+      year: this.getYearFromDate(this.batteryStringForm.get('startDate')?.value),
       readingType: this.batteryStringForm.get('readingType')?.value || '',
       vfSelection: this.batteryStringForm.get('floatVoltageStatus')?.value || '',
-      // CRITICAL: Swap values for Type 2/3 when sending to API
-      // Display: batteriesNo=5, packNo=3
-      // API expects: batteriesPerString=3, batteriesPerPack=5
-      batteriesPerString: this.getApiBatteriesPerString(),
-      batteriesPerPack: this.getApiBatteriesPerPack(),
+      batteriesPerString: parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0,
+      batteriesPerPack: parseInt(this.batteryStringForm.get('packNo')?.value) || 0,
       // Required fields for API validation
       Notes: this.batteryStringForm.get('commentsUsed')?.value || '',
       MaintAuthID: this.getUserId(),
     };
 
-    console.log('UpdateEquipStatus payload:', statusInfo);
-    console.log('   MonthName:', statusInfo.monthName);
-    console.log('   Year:', statusInfo.year);
-
     this.batteryService.updateEquipStatus(statusInfo).subscribe(
       () => {
-        console.log('updateEquipStatus API call successful');
-        console.log('==== updateEquipmentStatusFinal END ====');
         this.toastr.success(this.successMessage || 'Battery readings saved successfully!');
         this.isSaving = false;
         this.saving = false;
@@ -2869,8 +1844,6 @@ export class BatteryReadingsComponent implements OnInit {
         this.loadBatteryStringInfo();
       },
       (error) => {
-        console.error('updateEquipStatus API call failed:', error);
-        console.log('==== updateEquipmentStatusFinal END (with error) ====');
         this.handleError('Error updating equipment status: ' + error.message);
         this.isSaving = false;
         this.saving = false;
@@ -2898,22 +1871,6 @@ export class BatteryReadingsComponent implements OnInit {
    * 4. DisplayBatteryStringInfo()
    */
   onChange(): void {
-    // Validate packNo for stringType 2 and 3 (legacy: OnclickChange validation)
-    const stringType = this.batteryStringForm.get('stringType')?.value;
-    const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
-
-    if (stringType === '3') {
-      if (packNo <= 0) {
-        this.toastr.error('You must provide the No of Battery Packs');
-        return;
-      }
-    } else if (stringType === '2') {
-      if (packNo <= 0) {
-        this.toastr.error('You must provide the No of Internal Strings');
-        return;
-      }
-    }
-
     this.saving = true;
     
     // Step 1: Save battery string as draft (legacy: SaveUpdateBatteryString)
@@ -2923,11 +1880,10 @@ export class BatteryReadingsComponent implements OnInit {
     this.batteryService.saveUpdateBatteryStringReadings(batteryStringInfo).subscribe(
       () => {
         // Step 2: Update equipment batteries (legacy: UpdateBatteryInfo(2))
-        // CRITICAL: Swap values for Type 2/3 when sending to API
         const batteryData = {
           readingType: this.batteryStringForm.get('readingType')?.value || '',
-          batteriesPerString: this.getApiBatteriesPerString(),
-          batteriesPerPack: this.getApiBatteriesPerPack(),
+          batteriesPerString: parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0,
+          batteriesPerPack: parseInt(this.batteryStringForm.get('packNo')?.value) || 0,
           stringType: this.batteryStringForm.get('stringType')?.value || '',
         };
 
@@ -2944,8 +1900,6 @@ export class BatteryReadingsComponent implements OnInit {
    * UpdateBatteryInfo(2) for Change button - simpler flow without full save cascade
    */
   private updateBatteryInfoForChange(batteryData: any): void {
-    console.log('🔄 [CHANGE BUTTON] Calling UpdateBatteryInfo(2) with data:', batteryData);
-    
     this.batteryService.updateBatteryInfo(
       this.callNbr,
       this.equipId,
@@ -2954,13 +1908,8 @@ export class BatteryReadingsComponent implements OnInit {
       batteryData
     ).subscribe(
       (response) => {
-        console.log('✅ [CHANGE BUTTON] UpdateBatteryInfo(2) successful');
-        console.log('📡 [CHANGE BUTTON] Response:', response);
-        
-        // Fetch fresh equipment details to get updated batteriesPerString and batteriesPerPack
-        // This will also update the form fields and call displayBatteryInfo()
-        this.fetchEquipmentDetailsForBatteryParams();
-        
+        // After UpdateBatteryInfo(2), call DisplayBatteryInfo() to adjust rows
+        this.displayBatteryInfo();
         this.saving = false;
       },
       (error) => {
@@ -2974,35 +1923,8 @@ export class BatteryReadingsComponent implements OnInit {
    * Build battery string info for saving
    */
   private buildBatteryStringInfo(): BatteryStringInfo {
-    // Legacy DateCode handling from SaveUpdateBatteryString:
-    // if (txtStartDt.Text == "") { txtStartDt.Text = "01/01/1900"; }
-    let startDate = this.batteryStringForm.get('startDate')?.value;
-    
-    // If startDate is empty or invalid, default to 01/01/1900
-    if (!startDate || startDate === '') {
-      startDate = '1900-01-01'; // Default date in YYYY-MM-DD format
-      console.log('⚠️ DateCode is empty, defaulting to 1900-01-01');
-    }
-    
-    // Validate the date
-    const dtDateCode = new Date(startDate);
-    if (isNaN(dtDateCode.getTime())) {
-      console.error('❌ Invalid DateCode:', startDate);
-      // If invalid, still default to 1900-01-01 for backward compatibility
-      startDate = '1900-01-01';
-    }
-    
-    // Check if date is in the future (this should be caught by validate(), but double-check)
-    const today = new Date();
-    if (dtDateCode > today) {
-      console.error('❌ DateCode is in the future:', startDate);
-      // This will be caught by validate(), but we log it here
-    }
-    
-    console.log('📅 DateCode processing:');
-    console.log('   Input:', startDate);
-    console.log('   Month:', this.getMonthFromDate(startDate));
-    console.log('   Year:', this.getYearFromDate(startDate));
+    const startDate = this.batteryStringForm.get('startDate')?.value;
+    const dateObj = new Date(startDate);
     
     // Step 1: Get battery voltage validation using getBatteryFloatVoltage (legacy flow)
     const batteryVoltage = this.convertToDouble(this.batteryStringForm.get('totalBatteryVoltage')?.value) || 0;
@@ -3012,12 +1934,10 @@ export class BatteryReadingsComponent implements OnInit {
     let batVoltagePf = this.batteryStringForm.get('batteryVoltageVerify')?.value || '';
     
     // Step 2: Call getBatteryFloatVoltage and validate battery voltage (legacy SaveUpdateBatteryString logic)
-    // Use getApiBatteriesPerString() for voltage calculation (gets swapped value for Type 2/3)
     if (batteryVoltage > 0 && stringType !== '3') {
       const voltageRange = this.getBatteryFloatVoltage();
-      const apiBatteriesPerString = this.getApiBatteriesPerString();
-      const minVoltForString = voltageRange.lowVolt * apiBatteriesPerString;
-      const maxVoltForString = voltageRange.maxVolt * apiBatteriesPerString;
+      const minVoltForString = voltageRange.lowVolt * batteriesNo;
+      const maxVoltForString = voltageRange.maxVolt * batteriesNo;
       
       // If voltage is within acceptable range, set to Pass
       if (batteryVoltage >= minVoltForString && batteryVoltage <= maxVoltForString) {
@@ -3097,8 +2017,7 @@ export class BatteryReadingsComponent implements OnInit {
       chkStrap: this.batteryStringForm.get('strapCheck')?.value || false,
       maintAuthId: this.getUserId(),
       repMonCalc: this.batteryStringForm.get('repMonCalculate')?.value || '',
-      // CRITICAL: Swap values for Type 2/3 when sending to API
-      batteryPackCount: this.getApiBatteriesPerPack(),
+      batteryPackCount: parseInt(this.batteryStringForm.get('packNo')?.value) || 0,
       indBattDisconnect: this.batteryStringForm.get('battDisconnect')?.value || '',
       indBattInterConn: this.batteryStringForm.get('indBattInterconnection')?.value || '',
       rackIntegrity: this.batteryStringForm.get('rackIntegrity')?.value || '',
@@ -3158,117 +2077,33 @@ export class BatteryReadingsComponent implements OnInit {
    * Build reconciliation info for saving
    */
   private buildReconciliationInfo(): EquipReconciliationInfo {
-    // Log individual form values
-    const reconciled = this.reconciliationForm.get('reconciled')?.value;
-    const recMake = this.reconciliationForm.get('recMake')?.value;
-    const recMakeCorrect = this.reconciliationForm.get('recMakeCorrect')?.value;
-    const actMake = this.reconciliationForm.get('actMake')?.value;
-    const recModel = this.reconciliationForm.get('recModel')?.value;
-    const recModelCorrect = this.reconciliationForm.get('recModelCorrect')?.value;
-    const actModel = this.reconciliationForm.get('actModel')?.value;
-    const recSerialNo = this.reconciliationForm.get('recSerialNo')?.value;
-    const recSerialNoCorrect = this.reconciliationForm.get('recSerialNoCorrect')?.value;
-    const actSerialNo = this.reconciliationForm.get('actSerialNo')?.value;
-    const ascStrings = this.reconciliationForm.get('ascStrings')?.value;
-    const ascStringsCorrect = this.reconciliationForm.get('ascStringsCorrect')?.value;
-    const actAscStrings = this.reconciliationForm.get('actAscStrings')?.value;
-    const battPerString = this.reconciliationForm.get('battPerString')?.value;
-    const battPerStringCorrect = this.reconciliationForm.get('battPerStringCorrect')?.value;
-    const actBattPerString = this.reconciliationForm.get('actBattPerString')?.value;
-    
-    
-    const reconInfo: EquipReconciliationInfo = {
+    return {
       callNbr: this.callNbr,
       equipId: this.equipId,
-      make: recMake || '',
-      makeCorrect: recMakeCorrect || '',
-      actMake: actMake || '',
-      model: recModel || '',
-      modelCorrect: recModelCorrect || '',
-      actModel: actModel || '',
-      serialNo: recSerialNo || '',
-      serialNoCorrect: recSerialNoCorrect || '',
-      actSerialNo: actSerialNo || '',
-      ascStringsNo: parseInt(ascStrings) || 0,
-      ascStringsCorrect: ascStringsCorrect || '',
-      actAscStringNo: parseInt(actAscStrings) || 0,
-      battPerString: parseInt(battPerString) || 0,
-      battPerStringCorrect: battPerStringCorrect || '',
-      actBattPerString: parseInt(actBattPerString) || 0,
+      make: this.reconciliationForm.get('recMake')?.value || '',
+      makeCorrect: this.reconciliationForm.get('recMakeCorrect')?.value || '',
+      actMake: this.reconciliationForm.get('actMake')?.value || '',
+      model: this.reconciliationForm.get('recModel')?.value || '',
+      modelCorrect: this.reconciliationForm.get('recModelCorrect')?.value || '',
+      actModel: this.reconciliationForm.get('actModel')?.value || '',
+      serialNo: this.reconciliationForm.get('recSerialNo')?.value || '',
+      serialNoCorrect: this.reconciliationForm.get('recSerialNoCorrect')?.value || '',
+      actSerialNo: this.reconciliationForm.get('actSerialNo')?.value || '',
+      ascStringsNo: parseInt(this.reconciliationForm.get('ascStrings')?.value) || 0,
+      ascStringsCorrect: this.reconciliationForm.get('ascStringsCorrect')?.value || '',
+      actAscStringNo: parseInt(this.reconciliationForm.get('actAscStrings')?.value) || 0,
+      battPerString: parseInt(this.reconciliationForm.get('battPerString')?.value) || 0,
+      battPerStringCorrect: this.reconciliationForm.get('battPerStringCorrect')?.value || '',
+      actBattPerString: parseInt(this.reconciliationForm.get('actBattPerString')?.value) || 0,
       totalEquips: 0,
       totalEquipsCorrect: '',
       actTotalEquips: 0,
       kva: '',
       kvaCorrect: '',
       actKva: '',
-      verified: reconciled || false,
+      verified: this.reconciliationForm.get('reconciled')?.value || false,
       modifiedBy: this.getUserId(),
     };
-    
-    
-    return reconInfo;
-  }
-
-  /**
-   * Get API batteries per string value - maps display fields to API
-   * 
-   * LEGACY BEHAVIOR (BattNum=2, BattPack=5):
-   * Type 1: batteriesPerString = 2 (from BattNum)
-   * Type 2: batteriesPerString = 2 (from BattNum, which is in packNo field)
-   * Type 3: batteriesPerString = 2 (from BattNum, which is in packNo field)
-   */
-  private getApiBatteriesPerString(): number {
-    const stringType = this.batteryStringForm.get('stringType')?.value || '';
-    const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
-    const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
-    
-    if (stringType === '3') {
-      // For Type 3: packNo field (labeled "Batteries per Pack") → batteriesPerString
-      // This matches legacy: BattNum → batteriesPerString
-      console.log('✅ getApiBatteriesPerString (Type 3): packNo field=' + packNo + ' → API batteriesPerString=' + packNo);
-      return packNo;
-    } else if (stringType === '2') {
-      // For Type 2: packNo field (labeled "Batteries per String") → batteriesPerString
-      // This matches legacy: BattNum → batteriesPerString
-      console.log('✅ getApiBatteriesPerString (Type 2): packNo field=' + packNo + ' → API batteriesPerString=' + packNo);
-      return packNo;
-    } else {
-      // For Type 1: batteriesNo field (labeled "No of Batteries per string") → batteriesPerString
-      // This matches legacy: BattNum → batteriesPerString
-      console.log('✅ getApiBatteriesPerString (Type 1): batteriesNo field=' + batteriesNo + ' → API batteriesPerString=' + batteriesNo);
-      return batteriesNo;
-    }
-  }
-
-  /**
-   * Get API batteries per pack value - maps display fields to API
-   * 
-   * LEGACY BEHAVIOR (BattNum=2, BattPack=5):
-   * Type 1: batteriesPerPack = 5 (from BattPack, which is in packNo field from DB)
-   * Type 2: batteriesPerPack = 5 (from BattPack, which is in batteriesNo field)
-   * Type 3: batteriesPerPack = 5 (from BattPack, which is in batteriesNo field)
-   */
-  private getApiBatteriesPerPack(): number {
-    const stringType = this.batteryStringForm.get('stringType')?.value || '';
-    const batteriesNo = parseInt(this.batteryStringForm.get('batteriesNo')?.value) || 0;
-    const packNo = parseInt(this.batteryStringForm.get('packNo')?.value) || 0;
-    
-    if (stringType === '3') {
-      // For Type 3: batteriesNo field (labeled "No of Battery Packs") → batteriesPerPack
-      // This matches legacy: BattPack → batteriesPerPack
-      console.log('✅ getApiBatteriesPerPack (Type 3): batteriesNo field=' + batteriesNo + ' → API batteriesPerPack=' + batteriesNo);
-      return batteriesNo;
-    } else if (stringType === '2') {
-      // For Type 2: batteriesNo field (labeled "No of Internal Strings") → batteriesPerPack
-      // This matches legacy: BattPack → batteriesPerPack
-      console.log('✅ getApiBatteriesPerPack (Type 2): batteriesNo field=' + batteriesNo + ' → API batteriesPerPack=' + batteriesNo);
-      return batteriesNo;
-    } else {
-      // For Type 1: packNo field (hidden but may have value) → batteriesPerPack
-      // This matches legacy: BattPack from DB
-      console.log('✅ getApiBatteriesPerPack (Type 1): packNo field=' + packNo + ' → API batteriesPerPack=' + packNo);
-      return packNo;
-    }
   }
 
   /**
@@ -3345,47 +2180,19 @@ export class BatteryReadingsComponent implements OnInit {
 
   private getMonthFromDate(dateString: string): string {
     try {
-      // Handle empty or invalid dates - default to January (legacy: 01/01/1900)
-      if (!dateString || dateString === '') {
-        dateString = '1900-01-01';
-      }
-      
       const date = new Date(dateString);
-      
-      // If date is invalid, default to January
-      if (isNaN(date.getTime())) {
-        return 'January';
-      }
-      
-      // Use UTC methods to avoid timezone conversion issues
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                          'July', 'August', 'September', 'October', 'November', 'December'];
-      return monthNames[date.getUTCMonth()];
+      return date.toLocaleString('default', { month: 'long' });
     } catch {
-      // On any error, default to January (legacy behavior for 01/01/1900)
-      return 'January';
+      return '';
     }
   }
 
   private getYearFromDate(dateString: string): number {
     try {
-      // Handle empty or invalid dates - default to 1900 (legacy: 01/01/1900)
-      if (!dateString || dateString === '') {
-        dateString = '1900-01-01';
-      }
-      
       const date = new Date(dateString);
-      
-      // If date is invalid, default to 1900
-      if (isNaN(date.getTime())) {
-        return 1900;
-      }
-      
-      // Use UTC method to avoid timezone conversion issues
-      return date.getUTCFullYear();
+      return date.getFullYear();
     } catch {
-      // On any error, default to 1900 (legacy behavior for 01/01/1900)
-      return 1900;
+      return 0;
     }
   }
 
@@ -3396,46 +2203,33 @@ export class BatteryReadingsComponent implements OnInit {
 
   /**
    * Update action plan based on dropdown changes
-   * Legacy JavaScript functions:
-   * - CountReplaceYes(id) - Updates action plan when Replace dropdown changes
-   * - CountMonitorYes(id) - Updates action plan when Monitor dropdown changes  
-   * - ddlCrackChange(id) - Updates action plan when Cracks dropdown changes
-   * 
-   * IMPORTANT: Each dropdown change is handled independently in legacy
-   * The logic priority is:
-   * 1. If Replace = "Y" → "Float voltage or Conductance value is not as per manufacturer specification"
-   * 2. Else if Monitor = "Y" → "Float voltage or Conductance value is not as per manufacturer specification"
-   * 3. Else if Cracks = "F" → "Battery is leaking / damaged / corrosion"
-   * 4. Else → "" (empty)
    */
   onRowDropdownChange(row: BatteryReadingRow): void {
-    console.log('🔄 onRowDropdownChange called for battery:', row.batteryId);
-    console.log('   Replace:', row.replacementNeeded, 'Monitor:', row.monitoringBattery, 'Cracks:', row.cracks);
-    
-    // Legacy logic: Check in priority order
+    // Update action plan based on the dropdown selections
     if (row.replacementNeeded === 'Y') {
-      // Replace = "Y" → Set specific action plan and clear Monitor
-      row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
+      if (row.cracks === 'F') {
+        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
+      } else if (!row.actionPlan || !row.actionPlan.includes('Float voltage')) {
+        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
+      }
       row.monitoringBattery = 'N';
-      console.log('   ✅ Set action plan: Replace = Y');
     } else if (row.monitoringBattery === 'Y') {
-      // Monitor = "Y" → Set specific action plan and clear Replace
-      row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
+      if (row.cracks === 'F') {
+        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
+      } else if (!row.actionPlan || !row.actionPlan.includes('Float voltage')) {
+        row.actionPlan = 'Float voltage or Conductance value is not as per manufacturer specification';
+      }
       row.replacementNeeded = 'N';
-      console.log('   ✅ Set action plan: Monitor = Y');
-    } else if (row.cracks === 'F') {
-      // Cracks = "F" → Set leaking/damaged message
-      row.actionPlan = 'Battery is leaking / damaged / corrosion';
-      console.log('   ✅ Set action plan: Cracks = F');
     } else {
-      // All are "N" or "P" → Clear action plan
-      row.actionPlan = '';
-      console.log('   ✅ Cleared action plan: All conditions false');
+      // Both are 'N'
+      if (row.cracks === 'F') {
+        row.actionPlan = 'Battery is leaking / damaged / corrosion';
+      } else {
+        row.actionPlan = '';
+      }
     }
 
-    console.log('   📝 Final action plan:', row.actionPlan);
-
-    // Update totals (this increments/decrements usedQuantity and monitored)
+    // Update totals
     this.updateTotals();
   }
 
@@ -3576,9 +2370,8 @@ export class BatteryReadingsComponent implements OnInit {
           }
 
           if (readingType === '2') {
-            console.log(`Battery ${battery.batteryId} - mhos value:`, battery.mhos, `(type: ${typeof battery.mhos})`);
             if (!this.checkZeros(battery.mhos)) {
-              this.toastr.error(`Please enter the MHOS value for Battery No: ${battery.batteryId}. Current value: ${battery.mhos}`);
+              this.toastr.error(`Please enter the MHOS value for Battery No: ${battery.batteryId}`);
               return false;
             }
           }
@@ -3696,36 +2489,6 @@ export class BatteryReadingsComponent implements OnInit {
       return false;
     }
 
-    // Reconciliation "Actual" fields validation - when "Is Correct" is "No"
-    const recMakeCorrect = this.reconciliationForm.get('recMakeCorrect')?.value;
-    const actMake = this.reconciliationForm.get('actMake')?.value;
-    const recModelCorrect = this.reconciliationForm.get('recModelCorrect')?.value;
-    const actModel = this.reconciliationForm.get('actModel')?.value;
-    const recSerialNoCorrect = this.reconciliationForm.get('recSerialNoCorrect')?.value;
-    const actSerialNo = this.reconciliationForm.get('actSerialNo')?.value;
-    const battPerStringCorrect = this.reconciliationForm.get('battPerStringCorrect')?.value;
-    const actBattPerString = this.reconciliationForm.get('actBattPerString')?.value;
-
-    if (recMakeCorrect === 'NO' && (!actMake || actMake.trim() === '')) {
-      this.toastr.error('Actual Make is required when Make is marked as incorrect');
-      return false;
-    }
-
-    if (recModelCorrect === 'NO' && (!actModel || actModel.trim() === '')) {
-      this.toastr.error('Actual Model is required when Model is marked as incorrect');
-      return false;
-    }
-
-    if (recSerialNoCorrect === 'NO' && (!actSerialNo || actSerialNo.trim() === '')) {
-      this.toastr.error('Actual Serial No is required when Serial No is marked as incorrect');
-      return false;
-    }
-
-    if (battPerStringCorrect === 'NO' && (!actBattPerString || actBattPerString <= 0)) {
-      this.toastr.error('Actual Batteries Per String count is required when Batteries Per String is marked as incorrect');
-      return false;
-    }
-
     // Battery Charging System Verification
     if (!this.checkZeros(totalBatteryVoltage) || !this.checkZeros(plusTerminalToGnd) || 
         !this.checkZeros(minusTerminalToGnd) || !this.checkZeros(dcChargeCurrent) || 
@@ -3809,8 +2572,8 @@ export class BatteryReadingsComponent implements OnInit {
       return false;
     }
 
-    // Graph verification validation - only required if there are battery readings rows
-    if (this.batteryReadings && this.batteryReadings.length > 0 && !readingsGraphCheck) {
+    // Graph verification validation
+    if (!readingsGraphCheck) {
       this.toastr.error('Please check that you have verified the readings in Graph');
       return false;
     }
@@ -3828,5 +2591,79 @@ export class BatteryReadingsComponent implements OnInit {
     }
 
     return true;
+  }
+
+  /**
+   * Handle reconciliation field changes
+   */
+  onReconciliationChange(): void {
+    // Update reconciliation state when fields change
+    // This can be used to enable/disable save button or show warnings
+  }
+
+  /**
+   * Get reconciliation label for batteries per string field
+   */
+  get reconciliationBattPerStringLabel(): string {
+    const stringType = this.batteryStringForm.get('stringType')?.value;
+    if (stringType === '2') {
+      return 'Batteries per Internal String';
+    }
+    return 'Batteries per String';
+  }
+
+  /**
+   * Handle sealed battery checkbox changes
+   */
+  onSealedCheckboxChange(checkboxField: string, pfField: string): void {
+    const checkboxValue = this.batteryStringForm.get(checkboxField)?.value;
+    if (checkboxValue) {
+      this.batteryStringForm.get(pfField)?.setValue('F');
+    } else {
+      this.batteryStringForm.get(pfField)?.setValue('P');
+    }
+  }
+
+  /**
+   * Handle flooded battery plates checkbox changes
+   */
+  onFloodedPlatesCheckboxChange(): void {
+    // Check if any plates checkboxes are checked
+    const plusWrapped = this.batteryStringForm.get('plusWrappedCheck')?.value;
+    const plusSulfated = this.batteryStringForm.get('plusSulfatedCheck')?.value;
+    const plusMispos = this.batteryStringForm.get('plusMisposCheck')?.value;
+
+    // Set the PF field based on checkbox states
+    if (plusWrapped || plusSulfated || plusMispos) {
+      this.batteryStringForm.get('plusPlatesPf')?.setValue('F');
+    } else {
+      this.batteryStringForm.get('plusPlatesPf')?.setValue('P');
+    }
+  }
+
+  /**
+   * Handle flooded battery covers checkbox changes
+   */
+  onFloodedCoversCheckboxChange(): void {
+    // Check if any covers checkboxes are checked
+    const missing = this.batteryStringForm.get('missingCheck')?.value;
+    const broken = this.batteryStringForm.get('brokenCheck')?.value;
+    const needsCleaning = this.batteryStringForm.get('needsCleaningCheck')?.value;
+
+    // Set the PF field based on checkbox states
+    if (missing || broken || needsCleaning) {
+      this.batteryStringForm.get('coversPf')?.setValue('F');
+    } else {
+      this.batteryStringForm.get('coversPf')?.setValue('P');
+    }
+  }
+
+  /**
+   * Check if replace/monitor calculation dropdown should be disabled
+   */
+  get isRepMonCalculateDisabled(): boolean {
+    // Technicians can only use System calculation
+    // This would typically check user role
+    return false; // Set to true if user is technician
   }
 }
