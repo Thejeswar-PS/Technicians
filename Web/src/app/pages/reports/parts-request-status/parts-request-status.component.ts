@@ -759,16 +759,17 @@ export class PartsRequestStatusComponent implements OnInit {
       return 'status-' + request.toLowerCase().replace(/\s+/g, '-');
     }
     
-    // Check if the request is urgent first - if yes, always show red regardless of status
+     // Check if the request is urgent first - if yes, add urgent class for red text
     if (request?.urgent && (
       request.urgent.toLowerCase() === 'yes' || 
       request.urgent === true || 
       request.urgent === 'true'
     )) {
-      return 'status-urgent';
+      const status = request?.status;
+      const baseClass = status ? 'status-' + status.toLowerCase().replace(/\s+/g, '-') : 'status-default';
+      return baseClass + ' status-urgent-text';
     }
-    
-    // If not urgent, use the normal status-based class
+    // Use the normal status-based class
     const status = request?.status;
     if (!status) return 'status-default';
     return 'status-' + status.toLowerCase().replace(/\s+/g, '-');

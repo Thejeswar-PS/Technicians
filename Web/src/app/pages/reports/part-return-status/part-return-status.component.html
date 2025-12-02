@@ -1033,18 +1033,17 @@
             <form [formGroup]="partReturnFilterForm" class="parts-filter-form">
               <div class="row g-4">
                 <!-- Inventory User Filter -->
-                <div class="col-lg-3 col-md-6">
+                <div class="col-md-4">
                   <div class="filter-group">
-                    <label class="filter-label fw-semibold mb-2">
-                      <i class="bi bi-person-check me-2 text-primary"></i>
+                    <label class="filter-label">
+                      <i class="bi bi-person-check me-1"></i>
                       Inventory User
                     </label>
                     <div class="position-relative">
-                      <select class="form-select modern-select enhanced-dropdown" 
+                      <select class="form-select modern-select" 
                               formControlName="inventoryUser" 
                               [disabled]="isLoadingInventoryUsers"
-                              (change)="onInventoryUserChange($event)"
-                              style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
+                              (change)="onInventoryUserChange($event)">
                         <option *ngFor="let user of inventoryUsers; trackBy: trackByUserId"
                                 [value]="getInventoryUserValue(user)">
                           {{ getInventoryUserDisplayName(user) }}
@@ -1058,16 +1057,15 @@
                 </div>
                 
                 <!-- Status Filter -->
-                <div class="col-lg-3 col-md-6">
+                <div class="col-md-4">
                   <div class="filter-group">
-                    <label class="filter-label fw-semibold mb-2">
-                      <i class="bi bi-tag me-2 text-success"></i>
+                    <label class="filter-label">
+                      <i class="bi bi-tag me-1"></i>
                       Status
                     </label>
-                    <select class="form-select modern-select enhanced-dropdown" 
+                    <select class="form-select modern-select" 
                             formControlName="status"
-                            (change)="onStatusChange($event)"
-                            style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
+                            (change)="onStatusChange($event)">
                       <option *ngFor="let option of statusOptions"
                               [value]="option.key">
                         {{ option.label }}
@@ -1076,37 +1074,16 @@
                   </div>
                 </div>
 
-                <!-- Week Filter -->
-                <div class="col-lg-3 col-md-6">
-                  <div class="filter-group">
-                    <label class="filter-label fw-semibold mb-2">
-                      <i class="bi bi-calendar-week me-2 text-warning"></i>
-                      Week
-                    </label>
-                    <select class="form-select modern-select enhanced-dropdown" 
-                            formControlName="week"
-                            (change)="onWeekChange($event)"
-                            style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
-                      <option value="">All Weeks</option>
-                      <option *ngFor="let week of availableWeeks"
-                              [value]="week.value">
-                        {{ week.label }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-
                 <!-- Year Filter -->
-                <div class="col-lg-3 col-md-6">
+                <div class="col-md-4">
                   <div class="filter-group">
-                    <label class="filter-label fw-semibold mb-2">
-                      <i class="bi bi-calendar me-2 text-info"></i>
+                    <label class="filter-label">
+                      <i class="bi bi-calendar me-1"></i>
                       Year
                     </label>
-                    <select class="form-select modern-select enhanced-dropdown" 
+                    <select class="form-select modern-select" 
                             formControlName="year"
-                            (change)="onYearChange($event)"
-                            style="min-width: 200px; padding: 12px 16px; font-size: 14px; border-radius: 8px; border: 2px solid #e5e7eb; background: white;">
+                            (change)="onYearChange($event)">
                       <option *ngFor="let year of availableYears"
                               [value]="year">
                         {{ year }}
