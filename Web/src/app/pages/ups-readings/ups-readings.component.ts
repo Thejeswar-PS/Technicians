@@ -292,6 +292,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // UI state
   showReconciliation = true;
   showReconciliationDetails = false;
+  
+  // Event handlers for cleanup
+  private resizeHandler = () => this.adjustYearPickerPosition();
+  private scrollHandler = () => this.adjustYearPickerPosition();
   showMeasurements = false;
   showAirFilterDetails = false;
   showVisual = false;
@@ -466,14 +470,23 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     // Debug logging will be triggered after form population
+    
+    // Add event listeners for repositioning year picker dropdowns
+    window.addEventListener('resize', this.resizeHandler);
+    window.addEventListener('scroll', this.scrollHandler, { passive: true });
+    
+    // Add hover-to-close functionality for measurement cards
+    this.setupHoverToCloseCalendars();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
 
-    // Remove click outside handler
+    // Remove event handlers
     document.removeEventListener('click', (event) => this.onDocumentClick(event));
+    window.removeEventListener('resize', this.resizeHandler);
+    window.removeEventListener('scroll', this.scrollHandler);
   }
 
   /**
@@ -7871,6 +7884,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Fans Year Calendar Methods
   toggleFansYearCalendar(): void {
+    // Close all other capacitor dropdowns first
+    this.closeAllCapacitorDropdowns();
+    
     this.showFansYearCalendar = !this.showFansYearCalendar;
     if (this.showFansYearCalendar) {
       const currentFansYear = this.capacitorForm.get('fansYear')?.value || new Date().getFullYear();
@@ -7880,12 +7896,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       for (let year = this.fansYearRangeStart; year <= this.fansYearRangeEnd; year++) {
         this.currentFansYears.push(year);
       }
+      
+      // Apply positioning specifically for this dropdown
+      this.adjustSpecificYearPickerPosition('fans');
+    } else {
+      // Cleanup positioning when closing
+      this.cleanupDropdownPositioning();
     }
   }
 
   onFansYearSelect(year: number): void {
     this.capacitorForm.patchValue({ fansYear: year.toString() });
     this.showFansYearCalendar = false;
+    this.cleanupDropdownPositioning();
   }
 
   isFansYearSelected(year: number): boolean {
@@ -7935,6 +7958,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // DC Caps Year Calendar Methods
   toggleDcCapsYearCalendar(): void {
+    // Close all other capacitor dropdowns first
+    this.closeAllCapacitorDropdowns();
+    
     this.showDcCapsYearCalendar = !this.showDcCapsYearCalendar;
     if (this.showDcCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('dcCapsAge_Year')?.value || new Date().getFullYear();
@@ -7944,12 +7970,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       for (let year = this.dcCapsYearRangeStart; year <= this.dcCapsYearRangeEnd; year++) {
         this.currentDcCapsYears.push(year);
       }
+      
+      // Apply positioning specifically for this dropdown
+      this.adjustSpecificYearPickerPosition('dcCaps');
+    } else {
+      // Cleanup positioning when closing
+      this.cleanupDropdownPositioning();
     }
   }
 
   onDcCapsYearSelect(year: number): void {
     this.capacitorForm.patchValue({ dcCapsAge_Year: year.toString() });
     this.showDcCapsYearCalendar = false;
+    this.cleanupDropdownPositioning();
   }
 
   isDcCapsYearSelected(year: number): boolean {
@@ -7999,6 +8032,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // AC Input Caps Year Calendar Methods
   toggleAcInputCapsYearCalendar(): void {
+    // Close all other capacitor dropdowns first
+    this.closeAllCapacitorDropdowns();
+    
     this.showAcInputCapsYearCalendar = !this.showAcInputCapsYearCalendar;
     if (this.showAcInputCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('acInputCapsAge_Year')?.value || new Date().getFullYear();
@@ -8008,12 +8044,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       for (let year = this.acInputCapsYearRangeStart; year <= this.acInputCapsYearRangeEnd; year++) {
         this.currentAcInputCapsYears.push(year);
       }
+      
+      // Apply positioning specifically for this dropdown
+      this.adjustSpecificYearPickerPosition('acInputCaps');
+    } else {
+      // Cleanup positioning when closing
+      this.cleanupDropdownPositioning();
     }
   }
 
   onAcInputCapsYearSelect(year: number): void {
     this.capacitorForm.patchValue({ acInputCapsAge_Year: year.toString() });
     this.showAcInputCapsYearCalendar = false;
+    this.cleanupDropdownPositioning();
   }
 
   isAcInputCapsYearSelected(year: number): boolean {
@@ -8063,6 +8106,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // AC Output Caps Year Calendar Methods
   toggleAcOutputCapsYearCalendar(): void {
+    // Close all other capacitor dropdowns first
+    this.closeAllCapacitorDropdowns();
+    
     this.showAcOutputCapsYearCalendar = !this.showAcOutputCapsYearCalendar;
     if (this.showAcOutputCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('acOutputCapsAge_Year')?.value || new Date().getFullYear();
@@ -8072,12 +8118,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       for (let year = this.acOutputCapsYearRangeStart; year <= this.acOutputCapsYearRangeEnd; year++) {
         this.currentAcOutputCapsYears.push(year);
       }
+      
+      // Apply positioning specifically for this dropdown
+      this.adjustSpecificYearPickerPosition('acOutputCaps');
+    } else {
+      // Cleanup positioning when closing
+      this.cleanupDropdownPositioning();
     }
   }
 
   onAcOutputCapsYearSelect(year: number): void {
     this.capacitorForm.patchValue({ acOutputCapsAge_Year: year.toString() });
     this.showAcOutputCapsYearCalendar = false;
+    this.cleanupDropdownPositioning();
   }
 
   isAcOutputCapsYearSelected(year: number): boolean {
@@ -8127,6 +8180,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Comm Caps Year Calendar Methods
   toggleCommCapsYearCalendar(): void {
+    // Close all other capacitor dropdowns first
+    this.closeAllCapacitorDropdowns();
+    
     this.showCommCapsYearCalendar = !this.showCommCapsYearCalendar;
     if (this.showCommCapsYearCalendar) {
       const currentYear = this.capacitorForm.get('commCapsAge_Year')?.value || new Date().getFullYear();
@@ -8136,12 +8192,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       for (let year = this.commCapsYearRangeStart; year <= this.commCapsYearRangeEnd; year++) {
         this.currentCommCapsYears.push(year);
       }
+      
+      // Apply positioning specifically for this dropdown
+      this.adjustSpecificYearPickerPosition('commCaps');
+    } else {
+      // Cleanup positioning when closing
+      this.cleanupDropdownPositioning();
     }
   }
 
   onCommCapsYearSelect(year: number): void {
     this.capacitorForm.patchValue({ commCapsAge_Year: year.toString() });
     this.showCommCapsYearCalendar = false;
+    this.cleanupDropdownPositioning();
   }
 
   isCommCapsYearSelected(year: number): boolean {
@@ -8255,5 +8318,184 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     };
     
     return descriptions[fieldName] || fieldName;
+  }
+
+  // Helper method for repositioning on resize/scroll (used by event handlers)
+  private adjustYearPickerPosition(): void {
+    // This method is called by resize/scroll handlers
+    // It should reposition any currently open capacitor dropdowns
+    setTimeout(() => {
+      // Only reposition currently visible dropdowns
+      if (this.showDcCapsYearCalendar) {
+        this.adjustSpecificYearPickerPosition('dcCaps');
+      }
+      if (this.showAcInputCapsYearCalendar) {
+        this.adjustSpecificYearPickerPosition('acInputCaps');
+      }
+      if (this.showAcOutputCapsYearCalendar) {
+        this.adjustSpecificYearPickerPosition('acOutputCaps');
+      }
+      if (this.showCommCapsYearCalendar) {
+        this.adjustSpecificYearPickerPosition('commCaps');
+      }
+      if (this.showFansYearCalendar) {
+        this.adjustSpecificYearPickerPosition('fans');
+      }
+    }, 10);
+  }
+
+  // Helper method to close all capacitor dropdowns (prevent multiple open)
+  private closeAllCapacitorDropdowns(): void {
+    this.showDcCapsYearCalendar = false;
+    this.showAcInputCapsYearCalendar = false;
+    this.showAcOutputCapsYearCalendar = false;
+    this.showCommCapsYearCalendar = false;
+    this.showFansYearCalendar = false;
+    this.cleanupDropdownPositioning();
+  }
+
+  // Helper method to position specific dropdown by type
+  private adjustSpecificYearPickerPosition(capacitorType: string): void {
+    setTimeout(() => {
+      let inputSelector = '';
+      
+      // Define correct input selectors for each capacitor type
+      switch (capacitorType) {
+        case 'dcCaps':
+          inputSelector = 'input[formControlName="dcCapsAge"]';
+          break;
+        case 'acInputCaps':
+          inputSelector = 'input[formControlName="acInputCapsAge"]';
+          break;
+        case 'acOutputCaps':
+          inputSelector = 'input[formControlName="acOutputCapsAge"]';
+          break;
+        case 'commCaps':
+          inputSelector = 'input[formControlName="commCapsAge"]';
+          break;
+        case 'fans':
+          inputSelector = 'input[formControlName="fansYear"]';
+          break;
+        default:
+          return;
+      }
+
+      // Find the input field and its associated dropdown
+      const inputField = document.querySelector(inputSelector) as HTMLElement;
+      if (!inputField) return;
+
+      const positionContainer = inputField.closest('.position-relative');
+      if (!positionContainer) return;
+
+      const targetDropdown = positionContainer.querySelector('.compact-calendar-dropdown') as HTMLElement;
+      if (!targetDropdown) return;
+
+      // Position dropdown above the input field for all types
+      const inputRect = inputField.getBoundingClientRect();
+      const dropdownHeight = 220;
+      const margin = 15;
+      
+      // Position above the input field for better visibility
+      const left = Math.max(10, Math.min(inputRect.left, window.innerWidth - 290));
+      const top = Math.max(10, inputRect.top - dropdownHeight - margin);
+      
+      // Debug logging
+      console.log(`Positioning ${capacitorType} calendar above input:`, {
+        inputRect,
+        calculatedPosition: { left, top },
+        targetDropdown: targetDropdown
+      });
+      
+      // Set CSS custom properties for positioning
+      targetDropdown.style.setProperty('--dropdown-top', `${top}px`);
+      targetDropdown.style.setProperty('--dropdown-left', `${left}px`);
+      
+      // Remove any existing styles that might interfere
+      targetDropdown.removeAttribute('style');
+      
+      // Apply positioning with maximum priority
+      targetDropdown.style.cssText = `
+        position: fixed !important;
+        left: ${left}px !important;
+        top: ${top}px !important;
+        bottom: auto !important;
+        right: auto !important;
+        z-index: 999999 !important;
+        width: 280px !important;
+        height: auto !important;
+        max-height: 220px !important;
+        transform: none !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
+        display: block !important;
+        visibility: visible !important;
+        background: white !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 6px !important;
+        --dropdown-top: ${top}px;
+        --dropdown-left: ${left}px;
+      `;
+      
+      // Add class for additional CSS targeting
+      targetDropdown.classList.add('position-fixed-above');
+      
+      // Force immediate repaint
+      targetDropdown.offsetHeight;
+      
+      console.log(`Applied fixed positioning for ${capacitorType}:`, {
+        top: `${top}px`,
+        left: `${left}px`,
+        element: targetDropdown,
+        computedStyle: getComputedStyle(targetDropdown).position
+      });
+    }, 100); // Longer delay for reliable DOM updates
+  }
+
+  // Setup hover-to-close functionality for measurement cards
+  private setupHoverToCloseCalendars(): void {
+    setTimeout(() => {
+      const measurementCards = document.querySelectorAll('.measurement-card') as NodeListOf<HTMLElement>;
+      
+      measurementCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+          // Close all other calendars when hovering over a different card
+          const currentCardInput = card.querySelector('input[type="text"]') as HTMLElement;
+          if (!currentCardInput) return;
+          
+          const currentFormControlName = currentCardInput.getAttribute('formControlName');
+          
+          // Close calendars that don't belong to the current card
+          if (currentFormControlName !== 'dcCapsAge' && this.showDcCapsYearCalendar) {
+            this.showDcCapsYearCalendar = false;
+          }
+          if (currentFormControlName !== 'acInputCapsAge' && this.showAcInputCapsYearCalendar) {
+            this.showAcInputCapsYearCalendar = false;
+          }
+          if (currentFormControlName !== 'acOutputCapsAge' && this.showAcOutputCapsYearCalendar) {
+            this.showAcOutputCapsYearCalendar = false;
+          }
+          if (currentFormControlName !== 'commCapsAge' && this.showCommCapsYearCalendar) {
+            this.showCommCapsYearCalendar = false;
+          }
+          if (currentFormControlName !== 'fansYear' && this.showFansYearCalendar) {
+            this.showFansYearCalendar = false;
+          }
+          
+          // Cleanup positioning for closed calendars
+          this.cleanupDropdownPositioning();
+        });
+      });
+    }, 1000); // Wait for DOM to be fully loaded
+  }
+
+  // Helper method to clean up dropdown positioning when closed
+  private cleanupDropdownPositioning(): void {
+    // Clean up all capacity-related dropdowns including fans
+    const dropdowns = document.querySelectorAll('.ups-readings-section:not(:first-of-type) .compact-calendar-dropdown') as NodeListOf<HTMLElement>;
+    dropdowns.forEach(dropdown => {
+      // Only reset display and visibility, keep positioning for next use
+      dropdown.style.display = '';
+      dropdown.style.visibility = '';
+      dropdown.classList.remove('position-fixed-above');
+    });
   }
 }
