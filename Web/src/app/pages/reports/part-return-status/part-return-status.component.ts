@@ -3066,11 +3066,11 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       ctx.font = 'bold 16px Inter, system-ui, sans-serif';
       ctx.fillText(item.jobsCount.toString(), legendX + 35, y + 28);
       
-      // Draw "jobs" label
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '500 12px Inter, system-ui, sans-serif';
-      const jobsTextX = legendX + 35 + ctx.measureText(item.jobsCount.toString()).width + 6;
-      ctx.fillText('jobs', jobsTextX, y + 28);
+      // Remove "jobs" label as requested
+      // ctx.fillStyle = '#6b7280';
+      // ctx.font = '500 12px Inter, system-ui, sans-serif';
+      // const jobsTextX = legendX + 35 + ctx.measureText(item.jobsCount.toString()).width + 6;
+      // ctx.fillText('jobs', jobsTextX, y + 28);
       
       // Draw percentage on the right
       ctx.fillStyle = '#374151';
@@ -4514,8 +4514,9 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
           ctx.font = 'bold 15px Inter, Arial, sans-serif';
           ctx.fillText(itemTotal.toString(), labelX, labelY);
           
-          ctx.font = 'bold 10px Inter, Arial, sans-serif';
-          ctx.fillText(`(${percentage}%)`, labelX, labelY + 14);
+          // Removed percentage display as requested
+          // ctx.font = 'bold 10px Inter, Arial, sans-serif';
+          // ctx.fillText(`(${percentage}%)`, labelX, labelY + 14);
           
         } else if (isMediumSlice) {
           // Medium slices: Show name and value
@@ -4688,7 +4689,7 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
     // Draw refined summary
     ctx.font = '500 13px Inter, system-ui, sans-serif';
     ctx.fillStyle = '#6b7280';
-    ctx.fillText(`${total} parts across ${this.receivedChartData.length} warehouses`, legendX, legendY + 12);
+    ctx.fillText(`${total} across ${this.receivedChartData.length} warehouses`, legendX, legendY + 12);
     
     // Draw elegant legend items
     this.receivedChartData.forEach((item, index) => {
@@ -4727,17 +4728,17 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
       ctx.font = 'bold 16px Inter, system-ui, sans-serif';
       ctx.fillText(itemTotal.toString(), legendX + 35, y + 28);
       
-      // Draw "parts" label
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '500 12px Inter, system-ui, sans-serif';
-      const partsTextX = legendX + 35 + ctx.measureText(itemTotal.toString()).width + 6;
-      ctx.fillText('parts', partsTextX, y + 28);
-      
+      // Removed "parts" label and percentage as requested
+      // ctx.fillStyle = '#6b7280';
+      // ctx.font = '500 12px Inter, system-ui, sans-serif';
+      // const partsTextX = legendX + 35 + ctx.measureText(itemTotal.toString()).width + 6;
+      // ctx.fillText('parts', partsTextX, y + 28);
+      // 
       // Draw percentage
-      ctx.fillStyle = '#9ca3af';
-      ctx.font = '500 11px Inter, system-ui, sans-serif';
-      const percentageTextX = partsTextX + ctx.measureText('parts').width + 12;
-      ctx.fillText(`(${percentage}%)`, percentageTextX, y + 28);
+      // ctx.fillStyle = '#9ca3af';
+      // ctx.font = '500 11px Inter, system-ui, sans-serif';
+      // const percentageTextX = partsTextX + ctx.measureText('parts').width + 12;
+      // ctx.fillText(`(${percentage}%)`, percentageTextX, y + 28);
     });
   }
 
