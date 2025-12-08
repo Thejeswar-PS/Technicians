@@ -966,111 +966,237 @@ export class PduReadingsComponent implements OnInit {
   calculateLoadPercentage(voltage: string): void {
     const kva = parseFloat(this.equipmentForm.value.kva || '0');
     if (!kva) {
-      this.toastr.warning('Please enter KVA Rating to calculate load percentage');
+      this.toastr.warning('KVA value cannot be empty');
       return;
     }
 
-    const voltageNum = parseInt(voltage);
-    let voltValue = 0;
-    let phases = 1;
+    const comments5 = this.commentsForm.get('comments5')?.value || '';
+    const addComment = (txt: string) => {
+      const updated = comments5 ? `${comments5}\n${txt}` : txt;
+      this.commentsForm.patchValue({ comments5: updated });
+    };
+
+    const setPf = (control: string, value: 'P' | 'F') => {
+      this.outputForm.patchValue({ [control]: value });
+    };
+
+    const confirmOrCancel = (message: string): boolean => {
+      return window.confirm(message);
+    };
 
     switch (voltage) {
-      case '1': // 120V
-        const curr120A = parseFloat(this.outputForm.value.output120CurrA || '0');
-        voltValue = 120;
-        const load120A = this.pduService.calculateLoadPercentage(curr120A, kva, voltValue, phases);
+      case '1': { // 120V
+        const currA = this.outputForm.value.output120CurrA;
+        if (currA === null || currA === undefined || currA === '') {
+          this.toastr.warning('Output Current cannot be empty');
+          return;
+        }
+        const current = parseFloat(currA);
+        const volt = parseFloat(this.outputForm.value.output120VoltA || '120');
+        const eachPhaseKva = parseFloat(kva.toString());
+        const actKva = (current * volt) / 1000;
+        const load = actKva * 100 / eachPhaseKva;
         this.outputForm.patchValue({
-          load120A: load120A.toFixed(2),
-          total120Load: load120A.toFixed(2)
+          load120A: load.toFixed(2),
+          total120Load: load.toFixed(2)
         });
+        if (load >= 90) {
+          if (!confirmOrCancel('Are you sure that Load on UPS Phase A exceeds maximum limit')) return;
+          addComment('Load on UPS Phase A exceeded maximum limit.');
+          setPf('load120A_PF', 'F');
+        } else if (load >= 80) {
+          if (!confirmOrCancel('Are you sure that Load on UPS Phase A is above 80%')) return;
+          addComment('Load on UPS Phase A is above 80%.');
+          setPf('load120A_PF', 'F');
+        } else {
+          setPf('load120A_PF', 'P');
+        }
         break;
+      }
 
-      case '2': // 240V
-        const curr240A = parseFloat(this.outputForm.value.output240CurrA || '0');
-        const curr240B = parseFloat(this.outputForm.value.output240CurrB || '0');
-        voltValue = 240;
-        phases = 2;
-        const load240A = this.pduService.calculateLoadPercentage(curr240A, kva, voltValue, phases);
-        const load240B = this.pduService.calculateLoadPercentage(curr240B, kva, voltValue, phases);
-        const total240 = ((load240A + load240B) / 2);
+      case '2': { // 240V (split phase)
+        const currA = this.outputForm.value.output240CurrA;
+        const currB = this.outputForm.value.output240CurrB;
+        if (currA === '' || currB === '' || currA === null || currB === null) {
+          this.toastr.warning('Output Current A or Output Current B cannot be empty');
+          return;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const voltA = parseFloat(this.outputForm.value.output240VoltA || '120');
+        const voltB = parseFloat(this.outputForm.value.output240VoltB || '120');
+        const eachPhaseKva = Math.round(kva / 2);
+        const loadA = (currentA * voltA / 1000) * 100 / eachPhaseKva;
+        const loadB = (currentB * voltB / 1000) * 100 / eachPhaseKva;
+        const total = ((loadA + loadB) / 2);
         this.outputForm.patchValue({
-          load240A: load240A.toFixed(2),
-          load240B: load240B.toFixed(2),
-          total240Load: total240.toFixed(2)
+          load240A: loadA.toFixed(2),
+          load240B: loadB.toFixed(2),
+          total240Load: total.toFixed(2)
         });
+        if (loadA >= 90) {
+          if (!confirmOrCancel('Are you sure that Load on UPS Phase A exceeds maximum limit')) return;
+          addComment('Load on UPS Phase A exceeded maximum limit.');
+          setPf('load240A_PF', 'F');
+        } else if (loadA >= 80) {
+          if (!confirmOrCancel('Are you sure that Load on UPS Phase A is above 80%')) return;
+          addComment('Load on UPS Phase A is above 80%.');
+          setPf('load240A_PF', 'F');
+        } else {
+          setPf('load240A_PF', 'P');
+        }
+        if (loadB >= 90) {
+          if (!confirmOrCancel('Are you sure that Load on UPS Phase B exceeds maximum limit')) return;
+          addComment('Load on UPS Phase B exceeded maximum limit.');
+          setPf('load240B_PF', 'F');
+        } else if (loadB >= 80) {
+          if (!confirmOrCancel('Are you sure that Load on UPS Phase B is above 80%')) return;
+          addComment('Load on UPS Phase B is above 80%.');
+          setPf('load240B_PF', 'F');
+        } else {
+          setPf('load240B_PF', 'P');
+        }
         break;
+      }
 
-      case '3': // 208V
-        const curr208A = parseFloat(this.outputForm.value.output208CurrA || '0');
-        const curr208B = parseFloat(this.outputForm.value.output208CurrB || '0');
-        const curr208C = parseFloat(this.outputForm.value.output208CurrC || '0');
-        voltValue = 208;
-        phases = 3;
-        const load208A = this.pduService.calculateLoadPercentage(curr208A, kva, voltValue, phases);
-        const load208B = this.pduService.calculateLoadPercentage(curr208B, kva, voltValue, phases);
-        const load208C = this.pduService.calculateLoadPercentage(curr208C, kva, voltValue, phases);
-        const total208 = ((load208A + load208B + load208C) / 3);
+      case '3': { // 208V three-phase
+        const currA = this.outputForm.value.output208CurrA;
+        const currB = this.outputForm.value.output208CurrB;
+        const currC = this.outputForm.value.output208CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output208VoltAB || '208');
+        const voltBC = parseFloat(this.outputForm.value.output208VoltBC || '208');
+        const voltCA = parseFloat(this.outputForm.value.output208VoltCA || '208');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load208A: load208A.toFixed(2),
-          load208B: load208B.toFixed(2),
-          load208C: load208C.toFixed(2),
-          total208Load: total208.toFixed(2)
+          load208A: loadA.toFixed(2),
+          load208B: loadB.toFixed(2),
+          load208C: loadC.toFixed(2),
+          total208Load: total.toFixed(2)
         });
+        this.evaluateLoadThreshold('A', loadA, 'load208A_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('B', loadB, 'load208B_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('C', loadC, 'load208C_PF', addComment, setPf, confirmOrCancel);
         break;
+      }
 
-      case '4': // 480V
-        const curr480A = parseFloat(this.outputForm.value.output480CurrA || '0');
-        const curr480B = parseFloat(this.outputForm.value.output480CurrB || '0');
-        const curr480C = parseFloat(this.outputForm.value.output480CurrC || '0');
-        voltValue = 480;
-        phases = 3;
-        const load480A = this.pduService.calculateLoadPercentage(curr480A, kva, voltValue, phases);
-        const load480B = this.pduService.calculateLoadPercentage(curr480B, kva, voltValue, phases);
-        const load480C = this.pduService.calculateLoadPercentage(curr480C, kva, voltValue, phases);
-        const total480 = ((load480A + load480B + load480C) / 3);
+      case '4': { // 480V three-phase
+        const currA = this.outputForm.value.output480CurrA;
+        const currB = this.outputForm.value.output480CurrB;
+        const currC = this.outputForm.value.output480CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output480VoltAB || '480');
+        const voltBC = parseFloat(this.outputForm.value.output480VoltBC || '480');
+        const voltCA = parseFloat(this.outputForm.value.output480VoltCA || '480');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load480A: load480A.toFixed(2),
-          load480B: load480B.toFixed(2),
-          load480C: load480C.toFixed(2),
-          total480Load: total480.toFixed(2)
+          load480A: loadA.toFixed(2),
+          load480B: loadB.toFixed(2),
+          load480C: loadC.toFixed(2),
+          total480Load: total.toFixed(2)
         });
+        this.evaluateLoadThreshold('A', loadA, 'load480A_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('B', loadB, 'load480B_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('C', loadC, 'load480C_PF', addComment, setPf, confirmOrCancel);
         break;
+      }
 
-      case '6': // 575V
-        const curr575A = parseFloat(this.outputForm.value.output575CurrA || '0');
-        const curr575B = parseFloat(this.outputForm.value.output575CurrB || '0');
-        const curr575C = parseFloat(this.outputForm.value.output575CurrC || '0');
-        voltValue = 575;
-        phases = 3;
-        const load575A = this.pduService.calculateLoadPercentage(curr575A, kva, voltValue, phases);
-        const load575B = this.pduService.calculateLoadPercentage(curr575B, kva, voltValue, phases);
-        const load575C = this.pduService.calculateLoadPercentage(curr575C, kva, voltValue, phases);
-        const total575 = ((load575A + load575B + load575C) / 3);
+      case '5': { // 600V three-phase
+        const currA = this.outputForm.value.output600CurrA;
+        const currB = this.outputForm.value.output600CurrB;
+        const currC = this.outputForm.value.output600CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output600VoltAB || '600');
+        const voltBC = parseFloat(this.outputForm.value.output600VoltBC || '600');
+        const voltCA = parseFloat(this.outputForm.value.output600VoltCA || '600');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load575A: load575A.toFixed(2),
-          load575B: load575B.toFixed(2),
-          load575C: load575C.toFixed(2),
-          total575Load: total575.toFixed(2)
+          load600A: loadA.toFixed(2),
+          load600B: loadB.toFixed(2),
+          load600C: loadC.toFixed(2),
+          total600Load: total.toFixed(2)
         });
+        this.evaluateLoadThreshold('A', loadA, 'load600A_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('B', loadB, 'load600B_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('C', loadC, 'load600C_PF', addComment, setPf, confirmOrCancel);
         break;
+      }
 
-      case '5': // 600V
-        const curr600A = parseFloat(this.outputForm.value.output600CurrA || '0');
-        const curr600B = parseFloat(this.outputForm.value.output600CurrB || '0');
-        const curr600C = parseFloat(this.outputForm.value.output600CurrC || '0');
-        voltValue = 600;
-        phases = 3;
-        const load600A = this.pduService.calculateLoadPercentage(curr600A, kva, voltValue, phases);
-        const load600B = this.pduService.calculateLoadPercentage(curr600B, kva, voltValue, phases);
-        const load600C = this.pduService.calculateLoadPercentage(curr600C, kva, voltValue, phases);
-        const total600 = ((load600A + load600B + load600C) / 3);
+      case '6': { // 575V three-phase
+        const currA = this.outputForm.value.output575CurrA;
+        const currB = this.outputForm.value.output575CurrB;
+        const currC = this.outputForm.value.output575CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output575VoltAB || '575');
+        const voltBC = parseFloat(this.outputForm.value.output575VoltBC || '575');
+        const voltCA = parseFloat(this.outputForm.value.output575VoltCA || '575');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load600A: load600A.toFixed(2),
-          load600B: load600B.toFixed(2),
-          load600C: load600C.toFixed(2),
-          total600Load: total600.toFixed(2)
+          load575A: loadA.toFixed(2),
+          load575B: loadB.toFixed(2),
+          load575C: loadC.toFixed(2),
+          total575Load: total.toFixed(2)
         });
+        this.evaluateLoadThreshold('A', loadA, 'load575A_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('B', loadB, 'load575B_PF', addComment, setPf, confirmOrCancel);
+        this.evaluateLoadThreshold('C', loadC, 'load575C_PF', addComment, setPf, confirmOrCancel);
         break;
+      }
+    }
+  }
+
+  // Legacy threshold handling for load percentages
+  private evaluateLoadThreshold(phaseLabel: 'A' | 'B' | 'C', load: number, pfControl: string, addComment: (txt: string) => void, setPf: (c: string, v: 'P' | 'F') => void, confirmOrCancel: (msg: string) => boolean): void {
+    if (load >= 90) {
+      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} exceeds maximum limit`)) return;
+      addComment(`Load on UPS Phase ${phaseLabel} exceeded maximum limit.`);
+      setPf(pfControl, 'F');
+    } else if (load >= 80) {
+      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} is above 80%`)) return;
+      addComment(`Load on UPS Phase ${phaseLabel} is above 80%.`);
+      setPf(pfControl, 'F');
+    } else {
+      setPf(pfControl, 'P');
     }
   }
 
