@@ -1,46 +1,39 @@
-<!-- Battery Readings Page -->
-<div class="container-fluid ups-readings-container">
-  <!-- Loading spinner -->
-  <div
-    *ngIf="loading"
-    class="d-flex justify-content-center align-items-center ups-readings-loading"
-  >
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
-
-  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button
-      type="button"
-      class="btn btn-sm btn-primary ups-readings-header__back"
-      (click)="goBack()"
-      [disabled]="saving"
-    >
-      <i class="bi bi-arrow-left me-2"></i>
-      Back
-    </button>
-    
-    <!-- Page Title - Centered between buttons -->
-    <div class="ups-page-title">
-      <h2 class="fw-bold text-primary mb-0">
-        <i class="bi bi-battery-charging me-2"></i>
-        Battery Readings & Verification
-      </h2>
-    </div>
-    
-    <button
-      type="button"
-      class="btn btn-sm btn-primary ups-readings-header__action"
-      (click)="saveBatteryReadings()"
-      [disabled]="saving"
-    >
-      <span
-        *ngIf="saving"
-        class="spinner-border spinner-border-sm me-2"
-        role="status"
-      ></span>
-      <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
-      {{ saving ? "Saving..." : "Save Battery Data" }}
-    </button>
-  </div>
+{
+    "callNbr": "0000807865",
+    "equipId": 82479,
+    "atsId": "ATS001RBCWMMA02",
+    "manufacturer": "ASCO",
+    "modelNo": "D0030003010N10C",
+    "serialNo": "914186-049 RE",
+    "temp": "71",
+    "status": "Online                             ",
+    "voltage": "480",
+    "amps": "20",
+    "poles": "3",
+    "manuals": "Y",
+    "clean": "P",
+    "inspect": "P",
+    "checkContact": "P",
+    "inspectARC": "P",
+    "transferSwitch": "P",
+    "testSwitch": "P",
+    "comments1": "Unit is working well.",
+    "engineStart": "1",
+    "transferEmergency": "1",
+    "reTransferNormal": "1",
+    "gensetCooldown": "1",
+    "clockTime": "1",
+    "pickupVoltA": "485",
+    "pickupVoltB": "482",
+    "pickupVoltC": "482",
+    "dropoutVoltA": "20",
+    "dropoutVoltB": "21",
+    "dropoutVoltC": "20",
+    "emVoltPickup": "470",
+    "emVoltDropout": "470",
+    "freqPick": "60",
+    "freqDropout": null,
+    "comments2": "Unit is working well.",
+    "statusNotes": "ATS PM done",
+    "maint_Auth_ID": "Suresh.Punna"
+}

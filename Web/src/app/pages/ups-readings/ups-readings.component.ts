@@ -1776,7 +1776,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private loadEquipmentInfo(): void {
-    this.equipmentService.editEquipInfo(this.callNbr, this.equipId)
+    this.equipmentService.editEquipInfo(this.callNbr, this.equipId, this.upsId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data: any) => {
@@ -2159,10 +2159,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Map CTO/Part No from either field (backward compatibility)
     const ctoPartNoValue = data.ctoPartNo || data.other || '';
     
+    // Validate multiModule value - only use if it exists in multiModuleTypes
+    let validMultiModule = '';
+    if (data.multiModule) {
+      const multiModuleExists = this.multiModuleTypes.some(type => 
+        type.value === data.multiModule
+      );
+      validMultiModule = multiModuleExists ? data.multiModule : '';
+    }
+    
     this.equipmentForm.patchValue({
       manufacturer: data.manufacturer || '',
       kva: data.kva || '',
-      multiModule: data.multiModule || '',
+      multiModule: validMultiModule,
       maintByPass: data.maintByPass || '',
       other: ctoPartNoValue, // Sync with ctoPartNo for backward compatibility
       model: data.modelNo || '',
@@ -7099,6 +7108,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private validateForms(): boolean {
     let isValid = true;
+    let firstInvalidField: { form: string; field: string } | null = null;
 
     // Major PM specific validation - all transfer tests must be completed
     if (this.isMajorPM) {
@@ -7115,25 +7125,80 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         const value = this.transferForm.get(test.field)?.value;
         if (!value || value === '') {
           this.transferForm.get(test.field)?.markAsTouched();
+          if (!firstInvalidField) {
+            firstInvalidField = { form: 'transfer', field: test.field };
+          }
           isValid = false;
         }
       }
     }
 
     const formsToValidate = [
-      this.equipmentForm,
-      this.inputReadingsForm,
-      this.outputReadingsForm
+      { form: this.equipmentForm, name: 'equipment' },
+      { form: this.inputReadingsForm, name: 'inputReadings' },
+      { form: this.outputReadingsForm, name: 'outputReadings' }
     ];
 
-    formsToValidate.forEach(form => {
+    formsToValidate.forEach(({ form, name }) => {
       if (!form.valid) {
         form.markAllAsTouched();
+        
+        // Find first invalid control if not already found
+        if (!firstInvalidField) {
+          Object.keys(form.controls).forEach(key => {
+            const control = form.get(key);
+            if (control?.invalid && !firstInvalidField) {
+              firstInvalidField = { form: name, field: key };
+            }
+          });
+        }
+        
         isValid = false;
       }
     });
 
+    // Scroll to and focus on first invalid field
+    if (!isValid && firstInvalidField) {
+      this.scrollToAndFocusField(firstInvalidField.form, firstInvalidField.field);
+    }
+
     return isValid;
+  }
+
+  /**
+   * Scrolls to and focuses on a specific form field
+   */
+  private scrollToAndFocusField(formName: string, fieldName: string): void {
+    setTimeout(() => {
+      // Try to find the element by ID first
+      let element = document.getElementById(fieldName);
+      
+      // If not found by ID, try by formControlName
+      if (!element) {
+        element = document.querySelector(`[formControlName="${fieldName}"]`) as HTMLElement;
+      }
+      
+      if (element) {
+        // Scroll the element into view
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Focus the element after scrolling
+        setTimeout(() => {
+          if (element && (element instanceof HTMLInputElement || 
+              element instanceof HTMLSelectElement || 
+              element instanceof HTMLTextAreaElement)) {
+            element.focus();
+            // Add a visual highlight
+            element.classList.add('field-highlight');
+            setTimeout(() => {
+              if (element) {
+                element.classList.remove('field-highlight');
+              }
+            }, 2000);
+          }
+        }, 500);
+      }
+    }, 100);
   }
 
   onGoBack(): void {

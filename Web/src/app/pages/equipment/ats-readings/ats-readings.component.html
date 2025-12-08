@@ -1,0 +1,686 @@
+<!-- ATS Readings Page -->
+<div class="container-fluid ats-readings-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="loading"
+    class="d-flex justify-content-center align-items-center ats-readings-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="ats-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ats-readings-header__back"
+      (click)="goBack()"
+      [disabled]="saving"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="ats-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-lightning me-2"></i>
+        ATS Readings & Verification
+      </h2>
+      <!-- Job and Equipment Information -->
+      <div class="text-dark mt-2" *ngIf="!loading">
+        <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | ATS ID: {{ equipNo || 'N/A' }}</span>
+      </div>
+    </div>
+    
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ats-readings-header__action"
+      (click)="saveAts()"
+      [disabled]="saving"
+    >
+      <span
+        *ngIf="saving"
+        class="spinner-border spinner-border-sm me-2"
+        role="status"
+      ></span>
+      <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
+      {{ saving ? "Saving..." : "Save ATS Data" }}
+    </button>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!loading">
+    <div class="card shadow-sm ats-main-card">
+      <div class="card-header border-0 py-4">
+        <div class="ats-readings-header">
+          <div class="ats-readings-header__group"></div>
+
+        <!-- Messages -->
+        <div
+          class="ats-readings-messages"
+          *ngIf="errorMessage || successMessage"
+        >
+          <div
+            *ngIf="errorMessage"
+            class="alert alert-danger d-inline-flex align-items-center"
+          >
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+          <div
+            *ngIf="
+              successMessage && successMessage.includes('No Information Found')
+            "
+            class="alert alert-warning d-inline-flex align-items-center"
+          >
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+          <div
+            *ngIf="
+              successMessage && !successMessage.includes('No Information Found')
+            "
+            class="alert alert-success d-inline-flex align-items-center"
+          >
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form sections within card body -->
+      <div class="card-body">
+        <div class="ats-readings-form">
+
+        <!-- Equipment Verification Section -->
+        <section class="ats-readings-section">
+          <div class="ats-section-card">
+            <div
+              class="ats-section-header"
+              (click)="showEquipmentVerification = !showEquipmentVerification"
+            >
+              <div class="ats-section-title">
+                <i class="bi bi-gear-wide-connected me-2 text-primary"></i>
+                <h5 class="mb-0">Equipment Verification</h5>
+                <small class="text-muted"
+                  >Verify ATS equipment details and specifications</small
+                >
+              </div>
+              <i
+                class="bi transition-transform"
+                [class.bi-chevron-down]="showEquipmentVerification"
+                [class.bi-chevron-right]="!showEquipmentVerification"
+                [class.rotate-90]="showEquipmentVerification"
+              ></i>
+            </div>
+
+            <div class="ats-section-content" [class.show]="showEquipmentVerification">
+              <form [formGroup]="equipmentForm" class="ats-form">
+                <!-- Basic Equipment Information -->
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <select
+                          class="form-select"
+                          formControlName="manufacturer"
+                          [class.is-invalid]="
+                            equipmentForm.get('manufacturer')?.invalid &&
+                            equipmentForm.get('manufacturer')?.touched
+                          "
+                          id="manufacturer"
+                        >
+                          <option value="">Choose manufacturer...</option>
+                          <option
+                            *ngFor="let mfg of manufacturers"
+                            [value]="mfg.value"
+                          >
+                            {{ mfg.label }}
+                          </option>
+                        </select>
+                        <label for="manufacturer"
+                          >Make <span class="text-danger">*</span></label
+                        >
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            equipmentForm.get('manufacturer')?.invalid &&
+                            equipmentForm.get('manufacturer')?.touched
+                          "
+                        >
+                          Make is required
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="modelNo"
+                          [class.is-invalid]="
+                            equipmentForm.get('modelNo')?.invalid &&
+                            equipmentForm.get('modelNo')?.touched
+                          "
+                          id="modelNo"
+                          placeholder="e.g., ASCO-300"
+                        />
+                        <label for="modelNo"
+                          >Model No <span class="text-danger">*</span></label
+                        >
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            equipmentForm.get('modelNo')?.invalid &&
+                            equipmentForm.get('modelNo')?.touched
+                          "
+                        >
+                          Model No is required
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="serialNo"
+                          [class.is-invalid]="
+                            equipmentForm.get('serialNo')?.invalid &&
+                            equipmentForm.get('serialNo')?.touched
+                          "
+                          id="serialNo"
+                          placeholder="Serial No"
+                        />
+                        <label for="serialNo"
+                          >Serial No <span class="text-danger">*</span></label
+                        >
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            equipmentForm.get('serialNo')?.invalid &&
+                            equipmentForm.get('serialNo')?.touched
+                          "
+                        >
+                          Serial No is required
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="temp"
+                          id="temp"
+                          placeholder="Temperature"
+                        />
+                        <label for="temp">Temperature (F)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <select
+                          class="form-select"
+                          formControlName="status"
+                          id="status"
+                        >
+                          <option value="">Choose status...</option>
+                          <option
+                            *ngFor="let s of statusOptions"
+                            [value]="s.value"
+                          >
+                            {{ s.label }}
+                          </option>
+                        </select>
+                        <label for="status">Status</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="voltage"
+                          id="voltage"
+                          placeholder="Voltage"
+                        />
+                        <label for="voltage">Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="amps"
+                          id="amps"
+                          placeholder="Amps"
+                        />
+                        <label for="amps">Amps</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input
+                          type="text"
+                          class="form-control"
+                          formControlName="poles"
+                          id="poles"
+                          placeholder="Poles"
+                        />
+                        <label for="poles">Poles</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <select
+                          class="form-select"
+                          formControlName="manuals"
+                          id="manuals"
+                        >
+                          <option value="">Choose...</option>
+                          <option value="Y">Yes</option>
+                          <option value="N">No</option>
+                        </select>
+                        <label for="manuals">Proper Manuals Onsite</label>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-floating">
+                        <textarea
+                          rows="3"
+                          class="form-control"
+                          formControlName="statusNotes"
+                          id="statusNotes"
+                          placeholder="Status Notes"
+                          style="height: 100px"
+                        ></textarea>
+                        <label for="statusNotes">Status Notes</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Reconciliation Section -->
+        <section class="ats-readings-section">
+          <div class="ats-section-card">
+            <div
+              class="ats-section-header"
+              (click)="showReconciliation = !showReconciliation"
+            >
+              <div class="ats-section-title">
+                <i class="bi bi-check2-square me-2 text-success"></i>
+                <h5 class="mb-0">Equipment Reconciliation</h5>
+                <small class="text-muted"
+                  >Verify recorded information matches actual equipment</small
+                >
+              </div>
+              <div class="d-flex align-items-center gap-3" [formGroup]="reconciliationForm" (click)="$event.stopPropagation()">
+                <div class="verification-status">
+                  <div class="form-check d-flex align-items-center">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      formControlName="verified"
+                      id="verifiedHeader"
+                    />
+                    <label
+                      class="form-check-label fw-semibold"
+                      [class]="
+                        reconciliationForm.get('verified')?.value
+                          ? 'text-success'
+                          : 'text-muted'
+                      "
+                      for="verifiedHeader"
+                    >
+                      <i
+                        class="bi me-1"
+                        [class]="
+                          reconciliationForm.get('verified')?.value
+                            ? 'bi-check-circle-fill text-success'
+                            : 'bi-circle text-muted'
+                        "
+                      ></i>
+                      Verified
+                    </label>
+                  </div>
+                </div>
+                <i
+                  class="bi transition-transform"
+                  [class.bi-chevron-down]="showReconciliation"
+                  [class.bi-chevron-right]="!showReconciliation"
+                  [class.rotate-90]="showReconciliation"
+                ></i>
+              </div>
+            </div>
+
+            <div class="ats-section-content" [class.show]="showReconciliation">
+              <form [formGroup]="reconciliationForm" class="ats-form">
+                <!-- Reconciliation Fields -->
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input 
+                          type="text" 
+                          class="form-control" 
+                          formControlName="model" 
+                          [value]="reconciliationForm.get('model')?.value || ''" 
+                          readonly 
+                          id="model" 
+                          placeholder="Model"
+                          style="color: #000 !important; opacity: 1 !important;" 
+                        />
+                        <label for="model">Model</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="modelCorrect" id="modelCorrect">
+                          <option *ngFor="let o of yesNoOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="modelCorrect">Is this Correct?</label>
+                      </div>
+                    </div>
+                    <div class="col-md-5">
+                      <div class="form-floating">
+                        <input 
+                          type="text" 
+                          class="form-control text-danger" 
+                          formControlName="actModel" 
+                          [readonly]="reconciliationForm.get('modelCorrect')?.value !== 'NO'"
+                          id="actModel" 
+                          placeholder="Actual Model" 
+                        />
+                        <label for="actModel">Actual</label>
+                      </div>
+                    </div>
+
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input 
+                          type="text" 
+                          class="form-control" 
+                          formControlName="serialNo" 
+                          [value]="reconciliationForm.get('serialNo')?.value || ''" 
+                          readonly 
+                          id="serialNo" 
+                          placeholder="Serial No"
+                          style="color: #000 !important; opacity: 1 !important;" 
+                        />
+                        <label for="serialNo">Serial No</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="serialNoCorrect" id="serialNoCorrect">
+                          <option *ngFor="let o of yesNoOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="serialNoCorrect">Is this Correct?</label>
+                      </div>
+                    </div>
+                    <div class="col-md-5">
+                      <div class="form-floating">
+                        <input 
+                          type="text" 
+                          class="form-control text-danger" 
+                          formControlName="actSerialNo" 
+                          [readonly]="reconciliationForm.get('serialNoCorrect')?.value !== 'NO'"
+                          id="actSerialNo" 
+                          placeholder="Actual Serial No" 
+                        />
+                        <label for="actSerialNo">Actual</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Visual Inspection Section -->
+        <section class="ats-readings-section">
+          <div class="ats-section-card">
+            <div
+              class="ats-section-header"
+              (click)="showVisualInspection = !showVisualInspection"
+            >
+              <div class="ats-section-title">
+                <i class="bi bi-tools me-2 text-primary"></i>
+                <h5 class="mb-0">ATS Visual and Mechanical Verification</h5>
+                <small class="text-muted"
+                  >Pass/Fail checks for critical components</small
+                >
+              </div>
+              <i
+                class="bi transition-transform"
+                [class.bi-chevron-down]="showVisualInspection"
+                [class.bi-chevron-right]="!showVisualInspection"
+                [class.rotate-90]="showVisualInspection"
+              ></i>
+            </div>
+
+            <div class="ats-section-content" [class.show]="showVisualInspection">
+              <form class="ats-form" [formGroup]="visualForm">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="clean" id="clean">
+                          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="clean">1. Clean and lubricate transfer mechanism</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="inspect" id="inspect">
+                          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="inspect">2. Inspect main/arcing/aux contacts & terminations</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="checkContact" id="checkContact">
+                          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="checkContact">3. Check contact deflection, spring tension & travel</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="inspectARC" id="inspectARC">
+                          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="inspectARC">4. Inspect ARC shields for proper installation</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="transferSwitch" id="transferSwitch">
+                          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="transferSwitch">5. Transfer ATS manually</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select class="form-select" formControlName="testSwitch" id="testSwitch">
+                          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+                        </select>
+                        <label for="testSwitch">6. Power up switch and simulate power failure</label>
+                      </div>
+                    </div>
+                    <div class="col-12">
+                      <div class="form-floating">
+                        <textarea rows="3" class="form-control" placeholder="Please note the reason, if any." formControlName="comments1" id="comments1"></textarea>
+                        <label for="comments1">Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Timers and Voltage Settings Section -->
+        <section class="ats-readings-section">
+          <div class="ats-section-card">
+            <div
+              class="ats-section-header"
+              (click)="showTimers = !showTimers"
+            >
+              <div class="ats-section-title">
+                <i class="bi bi-clock-history me-2 text-warning"></i>
+                <h5 class="mb-0">Timers and Voltage Settings</h5>
+                <small class="text-muted"
+                  >Record time delays and voltage pickup/dropout values</small
+                >
+              </div>
+              <i
+                class="bi transition-transform"
+                [class.bi-chevron-down]="showTimers"
+                [class.bi-chevron-right]="!showTimers"
+                [class.rotate-90]="showTimers"
+              ></i>
+            </div>
+
+            <div class="ats-section-content" [class.show]="showTimers">
+              <form class="ats-form" [formGroup]="timersForm">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <!-- Time Delay Settings -->
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="engineStart" id="engineStart" placeholder="TD engine start" />
+                        <label for="engineStart">TD engine start</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="transferEmergency" id="transferEmergency" placeholder="Transfer to Emergency" />
+                        <label for="transferEmergency">Transfer to Emergency</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="reTransferNormal" id="reTransferNormal" placeholder="Retransfer to Normal" />
+                        <label for="reTransferNormal">Retransfer to Normal</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="gensetCooldown" id="gensetCooldown" placeholder="Genset Cooldown" />
+                        <label for="gensetCooldown">Genset Cooldown</label>
+                      </div>
+                    </div>
+                    <div class="col-md-2">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="clockTime" id="clockTime" placeholder="Exerciser Clock Time" />
+                        <label for="clockTime">Exerciser Clock Time</label>
+                      </div>
+                    </div>
+
+                    <!-- Normal Source Voltage Pickup -->
+                     <div class="row g-3">
+                    <div class="col-2">
+                      <h6 class="fw-bold text-primary mt-3 mb-3">Normal Source Voltage Pickup</h6>
+                    </div>
+                    <div class="col-md-1">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="pickupVoltA" id="pickupVoltA" placeholder="A" />
+                        <label for="pickupVoltA">A</label>
+                      </div>
+                    </div>
+                    <div class="col-md-1">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="pickupVoltB" id="pickupVoltB" placeholder="B" />
+                        <label for="pickupVoltB">B</label>
+                      </div>
+                    </div>
+                    <div class="col-md-1">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="pickupVoltC" id="pickupVoltC" placeholder="C" />
+                        <label for="pickupVoltC">C</label>
+                      </div>
+                    </div>
+                    <div class="col-1">
+                    </div>
+
+                    <!-- Normal Source Voltage Dropout -->
+                    <div class="col-2">
+                      <h6 class="fw-bold text-primary mt-3 mb-3">Normal Source Voltage Dropout</h6>
+                    </div>
+                    <div class="col-md-1">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="dropoutVoltA" id="dropoutVoltA" placeholder="A" />
+                        <label for="dropoutVoltA">A</label>
+                      </div>
+                    </div>
+                    <div class="col-md-1">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="dropoutVoltB" id="dropoutVoltB" placeholder="B" />
+                        <label for="dropoutVoltB">B</label>
+                      </div>
+                    </div>
+                    <div class="col-md-1">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="dropoutVoltC" id="dropoutVoltC" placeholder="C" />
+                        <label for="dropoutVoltC">C</label>
+                      </div>
+                    </div>
+                    </div>
+
+                    <!-- Emergency Settings -->
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="emVoltPickup" id="emVoltPickup" placeholder="Emergency Source Voltage Pickup" />
+                        <label for="emVoltPickup">Emergency Source Voltage Pickup</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="emVoltDropout" id="emVoltDropout" placeholder="Emergency Source Voltage Dropout" />
+                        <label for="emVoltDropout">Emergency Source Voltage Dropout</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="freqPick" id="freqPick" placeholder="Emergency Frequency Pickup" />
+                        <label for="freqPick">Emergency Frequency Pickup</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" formControlName="freqDropout" id="freqDropout" placeholder="Emergency Frequency Dropout" />
+                        <label for="freqDropout">Emergency Frequency Dropout</label>
+                      </div>
+                    </div>
+
+                    <!-- Comments -->
+                    <div class="col-12">
+                      <div class="form-floating">
+                        <textarea rows="3" class="form-control" placeholder="Please note the reason, if any." formControlName="comments2" id="comments2" style="height: 100px"></textarea>
+                        <label for="comments2">Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>

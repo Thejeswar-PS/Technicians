@@ -397,6 +397,30 @@ namespace Technicians.Api.Controllers
             return Ok(new { success = true, message = "PDU updated successfully" });
         }
 
+        [HttpGet("GetATSInfo")]
+        public async Task<IActionResult> GetATSInfo(
+        [FromQuery] string callNbr,
+        [FromQuery] string equipNo,
+        [FromQuery] int equipId)
+        {
+            var data = await _repository.GetATSInfoAsync(callNbr, equipNo, equipId);
+
+            if (data == null)
+                return NotFound(new { Message = "No ATS info found" });
+
+            return Ok(data);
+        }
+
+        [HttpPost("UpdateATSInfo")]
+        public async Task<IActionResult> UpdateATS([FromBody] ATSInfo dto)
+        {
+            var success = await _repository.SaveOrUpdateATSAsync(dto);
+
+            if (!success)
+                return StatusCode(500, new { message = "Failed to update ATS info." });
+
+            return Ok(new { message = "ATS updated successfully." });
+        }
 
     }
 }

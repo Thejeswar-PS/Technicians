@@ -944,8 +944,89 @@ namespace Technicians.Api.Repository
                     return false;
                 }
             }
-
-
         }
+
+        public async Task<ATSInfo?> GetATSInfoAsync(string callNbr, string equipNo, int equipId)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var parameters = new DynamicParameters();
+                parameters.Add("@CallNbr", callNbr);
+                parameters.Add("@ATSId", equipNo);   // Your CodeId → ATSId
+                //parameters.Add("@EquipId", equipId); // You had commented this before
+
+                var result = await connection.QueryFirstOrDefaultAsync<ATSInfo>(
+                    "GetATSInfo",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return result;
+            }
+        }
+
+        public async Task<bool> SaveOrUpdateATSAsync(ATSInfo dto)
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                var parameters = new DynamicParameters();
+
+                parameters.Add("@CallNbr", dto.CallNbr);
+                parameters.Add("@EquipId", dto.EquipId);
+                parameters.Add("@ATSId", dto.ATSId);
+
+                parameters.Add("@Manufacturer", dto.Manufacturer);
+                parameters.Add("@ModelNo", dto.ModelNo);
+                parameters.Add("@SerialNo", dto.SerialNo);
+                parameters.Add("@Temp", dto.Temp);
+                parameters.Add("@Status", dto.Status);
+                parameters.Add("@Voltage", dto.Voltage);
+                parameters.Add("@Amps", dto.Amps);
+
+                parameters.Add("@Poles", dto.Poles);
+                parameters.Add("@Manuals", dto.Manuals);
+                parameters.Add("@Clean", dto.Clean);
+                parameters.Add("@Inspect", dto.Inspect);
+                parameters.Add("@CheckContact", dto.CheckContact);
+                parameters.Add("@InspectARC", dto.InspectARC);
+                parameters.Add("@TransferSwitch", dto.TransferSwitch);
+                parameters.Add("@TestSwitch", dto.TestSwitch);
+                parameters.Add("@Comments1", dto.Comments1);
+
+                parameters.Add("@EngineStart", dto.EngineStart);
+                parameters.Add("@TransferEmergency", dto.TransferEmergency);
+                parameters.Add("@ReTransferNormal", dto.ReTransferNormal);
+                parameters.Add("@GensetCooldown", dto.GensetCooldown);
+                parameters.Add("@ClockTime", dto.ClockTime);
+
+                parameters.Add("@PickupVoltA", dto.PickupVoltA);
+                parameters.Add("@PickupVoltB", dto.PickupVoltB);
+                parameters.Add("@PickupVoltC", dto.PickupVoltC);
+
+                parameters.Add("@DropoutVoltA", dto.DropoutVoltA);
+                parameters.Add("@DropoutVoltB", dto.DropoutVoltB);
+                parameters.Add("@DropoutVoltC", dto.DropoutVoltC);
+
+                parameters.Add("@EmVoltPickup", dto.EmVoltPickup);
+                parameters.Add("@EmVoltDropout", dto.EmVoltDropout);
+
+                parameters.Add("@FreqPick", dto.FreqPick);
+                parameters.Add("@FreDropout", dto.FreqDropout);
+
+                parameters.Add("@Comments2", dto.Comments2);
+                parameters.Add("@StatusNotes", dto.StatusNotes);
+
+                parameters.Add("@Maint_Auth_ID", dto.Maint_Auth_ID);
+
+                await connection.ExecuteAsync(
+                    "SaveUpdateATS",
+                    parameters,
+                    commandType: CommandType.StoredProcedure
+                );
+
+                return true;
+            }
+        }
+
     }
 }

@@ -41,7 +41,7 @@ export interface UploadResponse {
   providedIn: 'root'
 })
 export class FileUploadService {
-  private apiUrl = environment.apiUrl || 'https://localhost:7115/api';
+  private apiUrl = environment.apiUrl || 'https://localhost:7217/api';
 
   constructor(private http: HttpClient) {
   }

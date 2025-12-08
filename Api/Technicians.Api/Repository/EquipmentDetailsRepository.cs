@@ -372,14 +372,14 @@ namespace Technicians.Api.Repository
         }
 
         //16b. EditEquipInfo - Hybrid approach using both stored procedures
-        public async Task<EditEquipInfoDto> EditEquipInfoAsync(string callNbr, int equipId)
+        public async Task<EditEquipInfoDto> EditEquipInfoAsync(string callNbr, int equipId, string equipNo)
         {
             using var connection = new SqlConnection(_connectionString);
 
             var parameters = new DynamicParameters();
             parameters.Add("@CallNbr", callNbr);
             parameters.Add("@EquipId", equipId);
-            parameters.Add("@EquipNo", ""); // Required parameter for _New SP
+            parameters.Add("@EquipNo", equipNo); // Required parameter for _New SP
 
             await connection.OpenAsync();
 

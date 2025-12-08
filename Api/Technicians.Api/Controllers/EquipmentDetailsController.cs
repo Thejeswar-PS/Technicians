@@ -306,14 +306,14 @@ namespace Technicians.Api.Controllers
 
         // 11b. EditEquipInfo
         [HttpGet("EditEquipInfo")]
-        public async Task<IActionResult> EditEquipInfo([FromQuery] string callNbr, [FromQuery] int equipId)
+        public async Task<IActionResult> EditEquipInfo([FromQuery] string callNbr, [FromQuery] int equipId, [FromQuery] string equipNo)
         {
             if (string.IsNullOrWhiteSpace(callNbr))
                 return BadRequest("CallNbr is required.");
 
             try
             {
-                var result = await _repository.EditEquipInfoAsync(callNbr, equipId);
+                var result = await _repository.EditEquipInfoAsync(callNbr, equipId, equipNo);
 
                 if (result == null)
                     return NotFound("No equipment info found.");
