@@ -963,16 +963,16 @@ export class PduReadingsComponent implements OnInit {
   }
 
   // Calculate load percentage
-  calculateLoadPercentage(voltage: string): void {
+  calculateLoadPercentage(voltage: string): boolean {
     const kva = parseFloat(this.equipmentForm.value.kva || '0');
     if (!kva) {
       this.toastr.warning('KVA value cannot be empty');
-      return;
+      return false;
     }
 
-    const comments5 = this.commentsForm.get('comments5')?.value || '';
     const addComment = (txt: string) => {
-      const updated = comments5 ? `${comments5}\n${txt}` : txt;
+      const existing = this.trimValue(this.commentsForm.get('comments5')?.value);
+      const updated = existing ? `${existing}\n${txt}` : txt;
       this.commentsForm.patchValue({ comments5: updated });
     };
 
@@ -989,7 +989,7 @@ export class PduReadingsComponent implements OnInit {
         const currA = this.outputForm.value.output120CurrA;
         if (currA === null || currA === undefined || currA === '') {
           this.toastr.warning('Output Current cannot be empty');
-          return;
+          return false;
         }
         const current = parseFloat(currA);
         const volt = parseFloat(this.outputForm.value.output120VoltA || '120');
@@ -1000,16 +1000,8 @@ export class PduReadingsComponent implements OnInit {
           load120A: load.toFixed(2),
           total120Load: load.toFixed(2)
         });
-        if (load >= 90) {
-          if (!confirmOrCancel('Are you sure that Load on UPS Phase A exceeds maximum limit')) return;
-          addComment('Load on UPS Phase A exceeded maximum limit.');
-          setPf('load120A_PF', 'F');
-        } else if (load >= 80) {
-          if (!confirmOrCancel('Are you sure that Load on UPS Phase A is above 80%')) return;
-          addComment('Load on UPS Phase A is above 80%.');
-          setPf('load120A_PF', 'F');
-        } else {
-          setPf('load120A_PF', 'P');
+        if (!this.evaluateLoadThreshold('A', load, 'load120A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
         }
         break;
       }
@@ -1019,7 +1011,7 @@ export class PduReadingsComponent implements OnInit {
         const currB = this.outputForm.value.output240CurrB;
         if (currA === '' || currB === '' || currA === null || currB === null) {
           this.toastr.warning('Output Current A or Output Current B cannot be empty');
-          return;
+          return false;
         }
         const currentA = parseFloat(currA);
         const currentB = parseFloat(currB);
@@ -1034,27 +1026,11 @@ export class PduReadingsComponent implements OnInit {
           load240B: loadB.toFixed(2),
           total240Load: total.toFixed(2)
         });
-        if (loadA >= 90) {
-          if (!confirmOrCancel('Are you sure that Load on UPS Phase A exceeds maximum limit')) return;
-          addComment('Load on UPS Phase A exceeded maximum limit.');
-          setPf('load240A_PF', 'F');
-        } else if (loadA >= 80) {
-          if (!confirmOrCancel('Are you sure that Load on UPS Phase A is above 80%')) return;
-          addComment('Load on UPS Phase A is above 80%.');
-          setPf('load240A_PF', 'F');
-        } else {
-          setPf('load240A_PF', 'P');
+        if (!this.evaluateLoadThreshold('A', loadA, 'load240A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
         }
-        if (loadB >= 90) {
-          if (!confirmOrCancel('Are you sure that Load on UPS Phase B exceeds maximum limit')) return;
-          addComment('Load on UPS Phase B exceeded maximum limit.');
-          setPf('load240B_PF', 'F');
-        } else if (loadB >= 80) {
-          if (!confirmOrCancel('Are you sure that Load on UPS Phase B is above 80%')) return;
-          addComment('Load on UPS Phase B is above 80%.');
-          setPf('load240B_PF', 'F');
-        } else {
-          setPf('load240B_PF', 'P');
+        if (!this.evaluateLoadThreshold('B', loadB, 'load240B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
         }
         break;
       }
@@ -1065,7 +1041,7 @@ export class PduReadingsComponent implements OnInit {
         const currC = this.outputForm.value.output208CurrC;
         if (!currA || !currB || !currC) {
           this.toastr.warning('Output Current A, B, C cannot be empty');
-          return;
+          return false;
         }
         const currentA = parseFloat(currA);
         const currentB = parseFloat(currB);
@@ -1084,9 +1060,15 @@ export class PduReadingsComponent implements OnInit {
           load208C: loadC.toFixed(2),
           total208Load: total.toFixed(2)
         });
-        this.evaluateLoadThreshold('A', loadA, 'load208A_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('B', loadB, 'load208B_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('C', loadC, 'load208C_PF', addComment, setPf, confirmOrCancel);
+        if (!this.evaluateLoadThreshold('A', loadA, 'load208A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load208B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load208C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
       }
 
@@ -1096,7 +1078,7 @@ export class PduReadingsComponent implements OnInit {
         const currC = this.outputForm.value.output480CurrC;
         if (!currA || !currB || !currC) {
           this.toastr.warning('Output Current A, B, C cannot be empty');
-          return;
+          return false;
         }
         const currentA = parseFloat(currA);
         const currentB = parseFloat(currB);
@@ -1115,9 +1097,15 @@ export class PduReadingsComponent implements OnInit {
           load480C: loadC.toFixed(2),
           total480Load: total.toFixed(2)
         });
-        this.evaluateLoadThreshold('A', loadA, 'load480A_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('B', loadB, 'load480B_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('C', loadC, 'load480C_PF', addComment, setPf, confirmOrCancel);
+        if (!this.evaluateLoadThreshold('A', loadA, 'load480A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load480B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load480C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
       }
 
@@ -1127,7 +1115,7 @@ export class PduReadingsComponent implements OnInit {
         const currC = this.outputForm.value.output600CurrC;
         if (!currA || !currB || !currC) {
           this.toastr.warning('Output Current A, B, C cannot be empty');
-          return;
+          return false;
         }
         const currentA = parseFloat(currA);
         const currentB = parseFloat(currB);
@@ -1146,9 +1134,15 @@ export class PduReadingsComponent implements OnInit {
           load600C: loadC.toFixed(2),
           total600Load: total.toFixed(2)
         });
-        this.evaluateLoadThreshold('A', loadA, 'load600A_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('B', loadB, 'load600B_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('C', loadC, 'load600C_PF', addComment, setPf, confirmOrCancel);
+        if (!this.evaluateLoadThreshold('A', loadA, 'load600A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load600B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load600C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
       }
 
@@ -1158,7 +1152,7 @@ export class PduReadingsComponent implements OnInit {
         const currC = this.outputForm.value.output575CurrC;
         if (!currA || !currB || !currC) {
           this.toastr.warning('Output Current A, B, C cannot be empty');
-          return;
+          return false;
         }
         const currentA = parseFloat(currA);
         const currentB = parseFloat(currB);
@@ -1177,27 +1171,273 @@ export class PduReadingsComponent implements OnInit {
           load575C: loadC.toFixed(2),
           total575Load: total.toFixed(2)
         });
-        this.evaluateLoadThreshold('A', loadA, 'load575A_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('B', loadB, 'load575B_PF', addComment, setPf, confirmOrCancel);
-        this.evaluateLoadThreshold('C', loadC, 'load575C_PF', addComment, setPf, confirmOrCancel);
+        if (!this.evaluateLoadThreshold('A', loadA, 'load575A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load575B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load575C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
       }
     }
+    return true;
   }
 
   // Legacy threshold handling for load percentages
-  private evaluateLoadThreshold(phaseLabel: 'A' | 'B' | 'C', load: number, pfControl: string, addComment: (txt: string) => void, setPf: (c: string, v: 'P' | 'F') => void, confirmOrCancel: (msg: string) => boolean): void {
+  private evaluateLoadThreshold(phaseLabel: 'A' | 'B' | 'C', load: number, pfControl: string, addComment: (txt: string) => void, setPf: (c: string, v: 'P' | 'F') => void, confirmOrCancel: (msg: string) => boolean): boolean {
     if (load >= 90) {
-      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} exceeds maximum limit`)) return;
+      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} exceeds maximum limit`)) return false;
       addComment(`Load on UPS Phase ${phaseLabel} exceeded maximum limit.`);
       setPf(pfControl, 'F');
     } else if (load >= 80) {
-      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} is above 80%`)) return;
+      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} is above 80%`)) return false;
       addComment(`Load on UPS Phase ${phaseLabel} is above 80%.`);
       setPf(pfControl, 'F');
     } else {
       setPf(pfControl, 'P');
     }
+    return true;
+  }
+
+  // Legacy-equivalent pre-save validation suite
+  private runLegacyValidations(isDraft: boolean): boolean {
+    const eq = this.equipmentForm.value;
+    const recon = this.reconciliationForm.value;
+    const inputVoltage = this.inputForm.value.inputVoltage;
+    const outputVoltage = this.outputForm.value.outputVoltage;
+
+    if (eq.status !== 'Online' && !this.trimValue(eq.statusNotes)) {
+      window.alert('Please enter the reason for status.');
+      return false;
+    }
+
+    const rawDate = eq.dateCode;
+    if (!rawDate) {
+      window.alert('Please enter the DateCode.');
+      return false;
+    }
+    const parsedDate = new Date(rawDate);
+    if (isNaN(parsedDate.getTime())) {
+      window.alert('Please enter the DateCode.');
+      return false;
+    }
+    const normalizedDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+    const minDate = new Date(1900, 0, 1);
+    const today = new Date();
+    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (normalizedDate <= minDate) {
+      window.alert('Please enter the DateCode.');
+      return false;
+    }
+    if (normalizedDate > todayNormalized) {
+      window.alert("DateCode cannot be higher than today's date");
+      return false;
+    }
+
+    const kvaVal = this.trimValue(eq.kva);
+    if (!kvaVal || kvaVal === '0') {
+      window.alert('Please enter the KVA value');
+      return false;
+    }
+    if (!this.isIntegerOrFloat(kvaVal)) {
+      window.alert('Please enter the valid KVA');
+      return false;
+    }
+    this.equipmentForm.patchValue({ kva: kvaVal });
+
+    const tempValStr = this.trimValue(eq.temperature);
+    const tempVal = parseInt(tempValStr, 10);
+    if (!(tempVal > 67 && tempVal < 78)) {
+      if (!tempValStr || tempValStr === '0' || isNaN(tempVal)) {
+        window.alert('Please enter the Temperature');
+        return false;
+      }
+      this.equipmentForm.patchValue({ status: 'OnLine(MinorDeficiency)' });
+    }
+
+    if (!recon.verified) {
+      window.alert('You must verify the Reconciliation section before Saving PM form');
+      return false;
+    }
+
+    if (inputVoltage === '0' || outputVoltage === '0') {
+      window.alert('You must enter the values for Input,Ouptput voltages.');
+      return false;
+    }
+
+    if (!this.calculateLoadPercentage(outputVoltage)) {
+      return false;
+    }
+
+    if (!this.validateFrequencyTolerance(inputVoltage, outputVoltage)) {
+      return false;
+    }
+
+    if (!this.ensureCommentsForFails()) {
+      return false;
+    }
+
+    if (this.equipmentForm.value.status !== 'Online') {
+      if (!this.trimValue(this.equipmentForm.value.statusNotes)) {
+        window.alert('Please enter the reason for status.');
+        return false;
+      }
+      if (!window.confirm(`Are you sure that the Equipment Status : ${this.equipmentForm.value.status}`)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private validateFrequencyTolerance(inputVoltage: string, outputVoltage: string): boolean {
+    const addComment = (txt: string) => {
+      const existing = this.trimValue(this.commentsForm.get('comments5')?.value);
+      const updated = existing ? `${existing}\n${txt}` : txt;
+      this.commentsForm.patchValue({ comments5: updated });
+    };
+
+    let inputFreqVal: number | undefined;
+    let inputFreqPfControl: string | undefined;
+    switch (inputVoltage) {
+      case '1':
+        inputFreqVal = parseFloat(this.inputForm.value.input120Freq);
+        inputFreqPfControl = 'input120Freq_PF';
+        break;
+      case '2':
+        inputFreqVal = parseFloat(this.inputForm.value.input240Freq);
+        inputFreqPfControl = 'input240Freq_PF';
+        break;
+      case '3':
+        inputFreqVal = parseFloat(this.inputForm.value.input208Freq);
+        inputFreqPfControl = 'input208Freq_PF';
+        break;
+      case '4':
+        inputFreqVal = parseFloat(this.inputForm.value.input480Freq);
+        inputFreqPfControl = 'input480Freq_PF';
+        break;
+      case '6':
+        inputFreqVal = parseFloat(this.inputForm.value.input575Freq);
+        inputFreqPfControl = 'input575Freq_PF';
+        break;
+      case '5':
+        inputFreqVal = parseFloat(this.inputForm.value.input600Freq);
+        inputFreqPfControl = 'input600Freq_PF';
+        break;
+    }
+
+    if (inputFreqVal !== undefined && inputFreqPfControl) {
+      if (inputFreqVal >= 55 && inputFreqVal <= 65) {
+        this.inputForm.patchValue({ [inputFreqPfControl]: 'P' });
+      } else {
+        if (!window.confirm('Are you sure that Input Frequency not within specified tolerance')) {
+          return false;
+        }
+        addComment('Input Frequency not within specified tolerance.');
+        this.inputForm.patchValue({ [inputFreqPfControl]: 'F' });
+      }
+    }
+
+    let outputFreqVal: number | undefined;
+    let outputFreqPfControl: string | undefined;
+    switch (outputVoltage) {
+      case '1':
+        outputFreqVal = parseFloat(this.outputForm.value.output120Freq);
+        outputFreqPfControl = 'output120Freq_PF';
+        break;
+      case '2':
+        outputFreqVal = parseFloat(this.outputForm.value.output240Freq);
+        outputFreqPfControl = 'output240Freq_PF';
+        break;
+      case '3':
+        outputFreqVal = parseFloat(this.outputForm.value.output208Freq);
+        outputFreqPfControl = 'output208Freq_PF';
+        break;
+      case '4':
+        outputFreqVal = parseFloat(this.outputForm.value.output480Freq);
+        outputFreqPfControl = 'output480Freq_PF';
+        break;
+      case '6':
+        outputFreqVal = parseFloat(this.outputForm.value.output575Freq);
+        outputFreqPfControl = 'output575Freq_PF';
+        break;
+      case '5':
+        outputFreqVal = parseFloat(this.outputForm.value.output600Freq);
+        outputFreqPfControl = 'output600Freq_PF';
+        break;
+    }
+
+    if (outputFreqVal !== undefined && outputFreqPfControl) {
+      if (outputFreqVal >= 58 && outputFreqVal <= 62) {
+        this.outputForm.patchValue({ [outputFreqPfControl]: 'P' });
+      } else {
+        if (!window.confirm('Are you sure that Output Frequency not within specified tolerance')) {
+          return false;
+        }
+        addComment('Output Frequency not within specified tolerance.');
+        this.outputForm.patchValue({ [outputFreqPfControl]: 'F' });
+      }
+    }
+
+    return true;
+  }
+
+  private ensureCommentsForFails(): boolean {
+    const comments1 = this.trimValue(this.commentsForm.value.comments1);
+    const comments5 = this.trimValue(this.commentsForm.value.comments5);
+    const statusNotes = this.trimValue(this.equipmentForm.value.statusNotes);
+
+    const passFailControls = [
+      // Visual and mechanical
+      'busswork', 'transformers', 'powerConn', 'mainCirBreaks', 'subfeedCirBreaks', 'currentCTs',
+      'circuitBoards', 'filterCapacitors', 'epoConn', 'wiringConn', 'ribbonCables', 'compAirClean',
+      'staticSwitch', 'frontPanel', 'internalPower', 'localMonitoring', 'localEPO',
+      // Input PF fields
+      'input120VoltA_PF', 'input120CurrA_PF', 'input120Freq_PF',
+      'input240VoltA_PF', 'input240VoltB_PF', 'input240CurrA_PF', 'input240CurrB_PF', 'input240Freq_PF',
+      'input208VoltAB_PF', 'input208VoltBC_PF', 'input208VoltCA_PF', 'input208CurrA_PF', 'input208CurrB_PF', 'input208CurrC_PF', 'input208Freq_PF',
+      'input480VoltAB_PF', 'input480VoltBC_PF', 'input480VoltCA_PF', 'input480CurrA_PF', 'input480CurrB_PF', 'input480CurrC_PF', 'input480Freq_PF',
+      'input575VoltAB_PF', 'input575VoltBC_PF', 'input575VoltCA_PF', 'input575CurrA_PF', 'input575CurrB_PF', 'input575CurrC_PF', 'input575Freq_PF',
+      'input600VoltAB_PF', 'input600VoltBC_PF', 'input600VoltCA_PF', 'input600CurrA_PF', 'input600CurrB_PF', 'input600CurrC_PF', 'input600Freq_PF',
+      // Output PF fields
+      'output120VoltA_PF', 'output120CurrA_PF', 'output120Freq_PF', 'load120A_PF',
+      'output240VoltA_PF', 'output240VoltB_PF', 'output240CurrA_PF', 'output240CurrB_PF', 'output240Freq_PF', 'load240A_PF', 'load240B_PF',
+      'output208VoltAB_PF', 'output208VoltBC_PF', 'output208VoltCA_PF', 'output208CurrA_PF', 'output208CurrB_PF', 'output208CurrC_PF', 'output208Freq_PF', 'load208A_PF', 'load208B_PF', 'load208C_PF',
+      'output480VoltAB_PF', 'output480VoltBC_PF', 'output480VoltCA_PF', 'output480CurrA_PF', 'output480CurrB_PF', 'output480CurrC_PF', 'output480Freq_PF', 'load480A_PF', 'load480B_PF', 'load480C_PF',
+      'output575VoltAB_PF', 'output575VoltBC_PF', 'output575VoltCA_PF', 'output575CurrA_PF', 'output575CurrB_PF', 'output575CurrC_PF', 'output575Freq_PF', 'load575A_PF', 'load575B_PF', 'load575C_PF',
+      'output600VoltAB_PF', 'output600VoltBC_PF', 'output600VoltCA_PF', 'output600CurrA_PF', 'output600CurrB_PF', 'output600CurrC_PF', 'output600Freq_PF', 'load600A_PF', 'load600B_PF', 'load600C_PF'
+    ];
+
+    const yesNoControls = [
+      'recMakeCorrect', 'recModelCorrect', 'recSerialNoCorrect', 'kvaCorrect',
+      'ascStringsCorrect', 'battPerStringCorrect', 'totalEquipsCorrect', 'newEquipment'
+    ];
+
+    let hasFailOrYes = false;
+
+    passFailControls.forEach(control => {
+      const value = (this.visualForm.get(control) || this.inputForm.get(control) || this.outputForm.get(control))?.value;
+      if (value && value.toString().trim().toUpperCase() === 'F') {
+        hasFailOrYes = true;
+      }
+    });
+
+    yesNoControls.forEach(control => {
+      const value = this.reconciliationForm.get(control)?.value;
+      if (value && value.toString().trim().toUpperCase() === 'YS') {
+        hasFailOrYes = true;
+      }
+    });
+
+    if (hasFailOrYes && !comments1 && !statusNotes && !comments5) {
+      window.alert('You must enter the respected comments if anything selected as Fail or Yes');
+      return false;
+    }
+
+    return true;
   }
 
   // Save methods
@@ -1261,6 +1501,9 @@ export class PduReadingsComponent implements OnInit {
 
       this.successMessage = isDraft ? 'Saved as draft successfully' : 'Update Successfull';
       this.toastr.success(this.successMessage);
+
+      // Refresh data to reflect persisted values (legacy page reload behavior)
+      await this.loadData();
       
     } catch (error: any) {
       console.error('Error saving PDU readings:', error);
@@ -1280,15 +1523,10 @@ export class PduReadingsComponent implements OnInit {
   }
 
   private validateForm(isDraft: boolean): boolean {
-    if (!isDraft) {
-      // Validate status notes if status is not Online
-      if (this.equipmentForm.value.status !== 'Online' && !this.equipmentForm.value.statusNotes) {
-        this.errorMessage = 'Please enter the reason for Equipment Status.';
-        this.toastr.error(this.errorMessage);
-        return false;
-      }
+    if (isDraft) {
+      return true;
     }
-    return true;
+    return this.runLegacyValidations(false);
   }
 
   private preparePDUData(isDraft: boolean): PDUReadings {
@@ -1619,7 +1857,7 @@ export class PduReadingsComponent implements OnInit {
       kva: recon.kvaSize || '',
       kvaCorrect: recon.kvaCorrect,
       // Only send actKva if user explicitly entered it
-      actKva: (recon.actKva && recon.actKva.toString().trim()) || '',
+      actKva: this.trimValue(recon.actKVA ?? recon.actKva),
       // Legacy fields from reconciliation form
       ascStringsNo: recon.ascStringsNo || 0,
       ascStringsCorrect: recon.ascStringsCorrect || '',
@@ -1639,6 +1877,15 @@ export class PduReadingsComponent implements OnInit {
   }
 
   // Utility methods
+  private trimValue(value: any): string {
+    return (value ?? '').toString().trim();
+  }
+
+  private isIntegerOrFloat(input: string): boolean {
+    const pattern = /^[-+]?(\d+(\.\d*)?|\.\d+)$/;
+    return pattern.test(input);
+  }
+
   private removeZeros(value: any): string {
     if (value === 0 || value === '0') {
       return '';
