@@ -495,7 +495,11 @@ export class EquipmentDetailsComponent implements OnInit {
         
       case 'PDU':
         route = '/equipment/pdu-readings';
-        params = { ...params, PDUId: equipment.equipNo };
+        params = { 
+          ...params, 
+          PDUId: equipment.equipNo,
+          Digest: ''
+        };
         break;
         
       case 'RECTIFIER':

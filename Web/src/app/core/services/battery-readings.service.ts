@@ -851,7 +851,8 @@ export class BatteryReadingsService {
       actTotalEquips: response.actTotalEquips || 0,
       kva: response.kva || '',
       kvaCorrect: response.kvaCorrect || '',
-      actKva: response.actKva || '',
+      // Handle both actKva (model) and actKVA (API response) property names
+      actKva: response.actKVA || response.actKva || '',
       verified: response.verified || false,
       modifiedBy: response.modifiedBy || response.ModifiedBy || '',
     };

@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../../../modules/auth/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
 import { PduService } from 'src/app/core/services/pdu.service';
 import { EquipmentService } from 'src/app/core/services/equipment.service';
+import { BatteryReadingsService } from 'src/app/core/services/battery-readings.service';
 import { PDUReadings, PDUReconciliationInfo, VOLTAGE_CONFIGS, OUTPUT_VOLTAGE_CONFIGS, VoltageConfiguration } from 'src/app/core/model/pdu-readings.model';
 
 @Component({
@@ -85,7 +87,9 @@ export class PduReadingsComponent implements OnInit {
     private router: Router,
     private pduService: PduService,
     private equipmentService: EquipmentService,
-    private toastr: ToastrService
+    private batteryService: BatteryReadingsService,
+    private toastr: ToastrService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -93,6 +97,51 @@ export class PduReadingsComponent implements OnInit {
     this.initializeForms();
     this.loadManufacturers();
     this.loadData();
+  }
+
+  // Legacy-equivalent: GetEquipStatus() for PDU
+  private async getEquipStatus(): Promise<string> {
+    try {
+      const [jobSummary, statusDesc] = await Promise.all([
+        this.equipmentService.getJobSummaryReport(this.callNbr, this.equipId, 'PDU').toPromise(),
+        this.equipmentService.getStatusDescription('PDU').toPromise()
+      ]);
+
+      let resultStatus = 'Online';
+      if (jobSummary && jobSummary.Tables && jobSummary.Tables[0] && jobSummary.Tables[0].Rows && jobSummary.Tables[0].Rows.length > 0) {
+        const row = jobSummary.Tables[0].Rows[0];
+        const columns = jobSummary.Tables[0].Columns || Object.keys(row);
+        for (let z = 0; z < columns.length - 1; z++) {
+          const tempColumn = columns[z].ColumnName || columns[z];
+          const tempField = (row[tempColumn] ?? '').toString();
+
+          const checkMinor = tempColumn.includes('Action') || tempColumn.includes('Critical')
+            ? tempField === 'Y'
+            : (tempField === 'N' || tempField === 'F' || tempField === 'True' || tempField === '12' || tempField === 'W');
+
+          if (checkMinor) {
+            resultStatus = 'OnLine(MinorDeficiency)';
+            for (const dr of (statusDesc || [])) {
+              if ((dr['ColumnName'] || '').toString().trim() === tempColumn) {
+                const type = (dr['StatusType'] || '').toString().trim();
+                if (type === 'CriticalDeficiency') {
+                  return 'CriticalDeficiency';
+                } else if (type === 'OnLine(MajorDeficiency)') {
+                  resultStatus = 'OnLine(MajorDeficiency)';
+                } else if (type === 'ReplacementRecommended') {
+                  resultStatus = 'ReplacementRecommended';
+                } else if (type === 'ProactiveReplacement') {
+                  resultStatus = 'ProactiveReplacement';
+                }
+              }
+            }
+          }
+        }
+      }
+      return resultStatus;
+    } catch (e) {
+      return 'Online';
+    }
   }
 
   private loadRouteParams(): void {
@@ -122,6 +171,9 @@ export class PduReadingsComponent implements OnInit {
 
     // Reconciliation Form
     this.reconciliationForm = this.fb.group({
+      recMake: [''],
+      recMakeCorrect: ['YS'],
+      actMake: [''],
       recModel: [''],
       recModelCorrect: ['YS'],
       actModel: [''],
@@ -131,9 +183,17 @@ export class PduReadingsComponent implements OnInit {
       kvaSize: [''],
       kvaCorrect: ['YS'],
       actKVA: [''],
+      ascStringsNo: [''],
+      ascStringsCorrect: ['YS'],
+      actASCStringNo: [''],
+      battPerString: [''],
+      battPerStringCorrect: ['YS'],
+      actBattPerString: [''],
       totalEquips: [''],
       totalEquipsCorrect: ['YS'],
       actTotalEquips: [''],
+      newEquipment: ['NO'],
+      equipmentNotes: [''],
       verified: [false]
     });
 
@@ -383,7 +443,22 @@ export class PduReadingsComponent implements OnInit {
   private loadManufacturers(): void {
     this.equipmentService.getManufacturerNames().subscribe({
       next: (manufacturers) => {
-        this.manufacturers = manufacturers.map(m => ({ value: m.id, label: m.name }));
+        // API returns objects like { manufID: string, manufName: string }
+        // Filter out empty entries, trim values, and deduplicate by manufID
+        const cleaned = (manufacturers || [])
+          .map((m: any) => ({
+            value: (m.value ?? m.id ?? '').toString().trim(),
+            label: (m.text ?? m.name ?? '').toString().trim()
+          }))
+          .filter((m: any) => m.value && m.label);
+
+        // Deduplicate by value (manufID)
+        const seen = new Set<string>();
+        this.manufacturers = cleaned.filter(m => {
+          if (seen.has(m.value)) return false;
+          seen.add(m.value);
+          return true;
+        });
       },
       error: (error) => {
         console.error('Error loading manufacturers:', error);
@@ -439,9 +514,16 @@ export class PduReadingsComponent implements OnInit {
           location: equipInfo.location || ''
         });
 
+        // Calculate dateCode from year and month if available
         if (equipInfo.equipYear && equipInfo.equipMonth) {
-          const dateCode = new Date(equipInfo.equipYear, this.getMonthNumber(equipInfo.equipMonth) - 1, 1);
-          this.equipmentForm.patchValue({ dateCode });
+          const monthNum = this.getMonthNumber(equipInfo.equipMonth);
+          if (monthNum > 0) {
+            // JavaScript Date constructor uses 0-indexed months, so subtract 1
+            const dateCode = new Date(equipInfo.equipYear, monthNum - 1, 1);
+            // Format as yyyy-MM-dd for date input
+            const dateStr = dateCode.toISOString().split('T')[0];
+            this.equipmentForm.patchValue({ dateCode: dateStr });
+          }
         }
       }
     } catch (error) {
@@ -451,22 +533,35 @@ export class PduReadingsComponent implements OnInit {
 
   private async loadReconciliationInfo(): Promise<void> {
     try {
-      const reconInfo = await this.pduService.getReconciliationInfo(this.callNbr, this.equipId).toPromise();
+      const reconInfo = await this.batteryService.getEquipReconciliationInfo(this.callNbr, this.equipId).toPromise();
       
       if (reconInfo) {
+        // Handle both actKva (model) and actKVA (API response) property names
+        const actKvaValue = (reconInfo as any).actKVA || reconInfo.actKva || '';
+        
         this.reconciliationForm.patchValue({
-          recModel: reconInfo.model || '',
-          recModelCorrect: reconInfo.modelCorrect || 'YS',
-          actModel: reconInfo.actModel || '',
-          recSerialNo: reconInfo.serialNo || '',
-          recSerialNoCorrect: reconInfo.serialNoCorrect || 'YS',
-          actSerialNo: reconInfo.actSerialNo || '',
-          kvaSize: reconInfo.kva || '',
-          kvaCorrect: reconInfo.kvaCorrect || 'YS',
-          actKVA: reconInfo.actKVA || '',
+          recMake: (reconInfo.make || '').trim(),
+          recMakeCorrect: (reconInfo.makeCorrect || '').trim() || 'YS',
+          actMake: (reconInfo.actMake || '').trim(),
+          recModel: (reconInfo.model || '').trim(),
+          recModelCorrect: (reconInfo.modelCorrect || '').trim() || 'YS',
+          actModel: (reconInfo.actModel || '').trim(),
+          recSerialNo: (reconInfo.serialNo || '').trim(),
+          recSerialNoCorrect: (reconInfo.serialNoCorrect || '').trim() || 'YS',
+          actSerialNo: (reconInfo.actSerialNo || '').trim(),
+          kvaSize: (reconInfo.kva || '').trim(),
+          kvaCorrect: (reconInfo.kvaCorrect || '').trim() || 'YS',
+          actKVA: (actKvaValue || '').trim(),
+          ascStringsNo: reconInfo.ascStringsNo || 0,
+          ascStringsCorrect: (reconInfo.ascStringsCorrect || '').trim() || 'YS',
+          actASCStringNo: reconInfo.actAscStringNo || 0,
+          battPerString: reconInfo.battPerString || 0,
+          battPerStringCorrect: (reconInfo.battPerStringCorrect || '').trim() || 'YS',
+          actBattPerString: reconInfo.actBattPerString || 0,
           totalEquips: reconInfo.totalEquips || 0,
-          totalEquipsCorrect: reconInfo.totalEquipsCorrect || 'YS',
+          totalEquipsCorrect: (reconInfo.totalEquipsCorrect || '').trim() || 'YS',
           actTotalEquips: reconInfo.actTotalEquips || 0,
+          newEquipment: 'NO',
           verified: reconInfo.verified || false
         });
 
@@ -481,26 +576,58 @@ export class PduReadingsComponent implements OnInit {
   }
 
   private populateFormsWithData(data: PDUReadings): void {
+    const trim = (v: any) => (typeof v === 'string' ? v.trim() : v);
+    const normalizeStatus = (v: string | undefined) => {
+      const sv = (v || '').trim();
+      const valid = this.statusOptions.map(s => s.value);
+      // If incoming already matches one of our values after trim, use it
+      if (valid.includes(sv)) return sv;
+      // Map common display strings to internal values
+      const map: Record<string, string> = {
+        'Off-Line': 'Offline',
+        'Critical Deficiency': 'CriticalDeficiency',
+        'Replacement Recommended': 'ReplacementRecommended',
+        'On-Line(Major Deficiency)': 'OnLine(MajorDeficiency)',
+        'On-Line(Minor Deficiency)': 'OnLine(MinorDeficiency)',
+        'On-Line': 'Online'
+      };
+      return map[sv] || 'Online';
+    };
+
+    const resolveManufacturerValue = (name: string | undefined) => {
+      const nm = (name || '').trim();
+      if (!nm) return '';
+      // manufacturers: { value: id, label: name }
+      const found = this.manufacturers.find(m => (m.label || '').trim().toLowerCase() === nm.toLowerCase());
+      return found ? found.value : nm; // fallback to name so field shows something
+    };
     // Equipment form
     this.equipmentForm.patchValue({
-      manufacturer: data.manufacturer || '',
-      modelNo: data.modelNo || '',
-      serialNo: data.serialNo || '',
-      location: data.location || '',
-      kva: data.kva || '',
-      temperature: data.temp || '',
-      status: data.status || 'Online',
-      statusNotes: data.statusNotes || ''
+      manufacturer: resolveManufacturerValue(data.manufacturer),
+      modelNo: trim(data.modelNo) || '',
+      serialNo: trim(data.serialNo) || '',
+      location: trim(data.location) || '',
+      kva: trim(data.kva) || '',
+      temperature: trim(data.temp) || '',
+      status: normalizeStatus(data.status),
+      statusNotes: trim(data.statusNotes) || ''
     });
 
+    // Calculate dateCode from year and month if available
     if (data.year && data.month) {
-      const dateCode = new Date(data.year, this.getMonthNumber(data.month) - 1, 1);
-      this.equipmentForm.patchValue({ dateCode });
+      const monthNum = this.getMonthNumber(data.month);
+      if (monthNum > 0) {
+        // JavaScript Date constructor uses 0-indexed months, so subtract 1
+        const dateCode = new Date(data.year, monthNum - 1, 1);
+        // Format as yyyy-MM-dd for date input
+        const dateStr = dateCode.toISOString().split('T')[0];
+        this.equipmentForm.patchValue({ dateCode: dateStr });
+      }
     }
 
     // Visual form
     this.visualForm.patchValue({
-      busswork: data.busswork || 'P',
+      busswork: (data.busswork || 'P').trim(),
       transformers: data.transformers || 'P',
       powerConn: data.powerConn || 'P',
       mainCirBreaks: data.mainCirBreaks || 'P',
@@ -516,10 +643,10 @@ export class PduReadingsComponent implements OnInit {
       frontPanel: data.frontPanel || 'P',
       internalPower: data.internalPower || 'P',
       localMonitoring: data.localMonitoring || 'P',
-      localEPO: data.localEPO || 'P',
-      neutralCurrent: data.neutral_T || '',
-      groundCurrent: data.ground_T || '',
-      comments: data.comments || ''
+      localEPO: (data.localEPO || 'P').trim(),
+      neutralCurrent: trim(data.neutral_T) || '',
+      groundCurrent: trim(data.ground_T) || '',
+      comments: trim(data.comments) || ''
     });
 
     // Input voltage
@@ -538,8 +665,8 @@ export class PduReadingsComponent implements OnInit {
 
     // Comments
     this.commentsForm.patchValue({
-      comments1: data.comments1 || '',
-      comments5: data.comments5 || ''
+      comments1: trim(data.comments1) || '',
+      comments5: trim(data.comments5) || ''
     });
   }
 
@@ -961,30 +1088,34 @@ export class PduReadingsComponent implements OnInit {
       const pduData = this.preparePDUData(isDraft);
       const reconData = this.prepareReconciliationData();
 
-      // Save PDU readings
+      // Legacy SaveData sequence:
+      // 1. SaveUpdatePDUVerification(ButtonType)
       const pduResult = await this.pduService.savePDUReadings(pduData).toPromise();
       
-      // Save reconciliation info
-      await this.pduService.saveReconciliationInfo(reconData).toPromise();
+      // 2. SaveUpdateReconciliationInfo()
+      await this.batteryService.saveUpdateEquipReconciliationInfo(reconData).toPromise();
 
-      // Calculate and update status if not draft
-      if (!isDraft && this.equipmentForm.value.status !== 'Offline') {
-        const statusResult = await this.pduService.calculateEquipmentStatus(this.callNbr, this.equipId).toPromise();
-        if (statusResult?.status) {
-          this.equipmentForm.patchValue({ status: statusResult.status });
-          pduData.status = statusResult.status;
-        }
+      // 3. if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
+      let statusToSend = this.equipmentForm.value.status;
+      if (statusToSend !== 'Offline') {
+        statusToSend = await this.getEquipStatus();
       }
 
-      // Update equipment status
-      const dateCode = this.equipmentForm.value.dateCode;
-      const monthName = dateCode ? this.getMonthName(dateCode.getMonth() + 1) : '';
-      const year = dateCode ? dateCode.getFullYear() : new Date().getFullYear();
+      // 4. da.UpdateEquipStatus(UES)
+      let dateCode: any = this.equipmentForm.value.dateCode;
+      if (dateCode && typeof dateCode === 'string') {
+        const parsed = new Date(dateCode);
+        if (!isNaN(parsed.getTime())) {
+          dateCode = parsed;
+        }
+      }
+      const monthName = dateCode instanceof Date ? this.getMonthName(dateCode.getMonth()) : '';
+      const year = dateCode instanceof Date ? dateCode.getFullYear() : new Date().getFullYear();
 
-      await this.pduService.updateEquipmentStatus({
+      await this.batteryService.updateEquipStatus({
         callNbr: this.callNbr,
         equipId: this.equipId,
-        status: this.equipmentForm.value.status,
+        status: statusToSend,
         statusNotes: this.equipmentForm.value.statusNotes,
         tableName: 'PDU_Verification',
         manufacturer: this.equipmentForm.value.manufacturer,
@@ -993,7 +1124,13 @@ export class PduReadingsComponent implements OnInit {
         location: this.equipmentForm.value.location,
         monthName: monthName,
         year: year,
-        readingType: '1'
+        readingType: '1',
+        // Fields required by UpdateEquipStatus (legacy API expectations)
+        vfSelection: this.equipmentForm.value.vfSelection || '',
+        batteriesPerString: this.equipmentForm.value.batteriesPerString || 0,
+        batteriesPerPack: this.equipmentForm.value.batteriesPerPack || 0,
+        Notes: this.equipmentForm.value.statusNotes || '',
+        MaintAuthID: (this as any).authService?.currentUserValue?.id || this.techId || ''
       }).toPromise();
 
       this.successMessage = isDraft ? 'Saved as draft successfully' : 'Update Successfull';
@@ -1035,9 +1172,24 @@ export class PduReadingsComponent implements OnInit {
     const out = this.outputForm.value;
     const comm = this.commentsForm.value;
     
-    const dateCode = eq.dateCode;
-    const month = dateCode ? this.getMonthName(dateCode.getMonth() + 1) : '';
-    const year = dateCode ? dateCode.getFullYear() : 0;
+    let month = '';
+    let year = 0;
+    
+    let dateCode: any = eq.dateCode;
+    // Normalize to Date if string and extract month/year without timezone offset
+    if (dateCode && typeof dateCode === 'string') {
+      // Parse yyyy-MM-dd string directly to avoid UTC timezone issues
+      const parts = dateCode.split('-');
+      if (parts.length === 3) {
+        year = parseInt(parts[0], 10);
+        const monthNum = parseInt(parts[1], 10); // 1-12
+        month = this.getMonthName(monthNum);
+      }
+    } else if (dateCode instanceof Date) {
+      // For Date objects, use local time to get correct month/year
+      month = this.getMonthName(dateCode.getMonth() + 1);
+      year = dateCode.getFullYear();
+    }
 
     const data: PDUReadings = {
       pduId: this.pduId,
@@ -1096,7 +1248,8 @@ export class PduReadingsComponent implements OnInit {
       
       comments1: comm.comments1,
       comments5: comm.comments5,
-      saveAsDraft: isDraft
+      saveAsDraft: isDraft,
+      maint_Auth_Id: this.authService.currentUserValue?.id || this.techId || ''
     };
 
     // Populate input readings based on selected voltage
@@ -1325,26 +1478,38 @@ export class PduReadingsComponent implements OnInit {
   private prepareReconciliationData(): PDUReconciliationInfo {
     const recon = this.reconciliationForm.value;
     
-    return {
+    const payload: any = {
       callNbr: this.callNbr,
       equipId: this.equipId,
       make: this.equipmentForm.value.manufacturer,
-      makeCorrect: '',
-      actMake: '',
-      model: recon.recModel,
+      makeCorrect: recon.recMakeCorrect || '',
+      actMake: recon.actMake || '',
+      model: recon.recModel || '',
       modelCorrect: recon.recModelCorrect,
-      actModel: recon.actModel,
-      serialNo: recon.recSerialNo,
+      actModel: recon.actModel || '',
+      serialNo: recon.recSerialNo || '',
       serialNoCorrect: recon.recSerialNoCorrect,
-      actSerialNo: recon.actSerialNo,
-      kva: recon.kvaSize,
+      actSerialNo: recon.actSerialNo || '',
+      kva: recon.kvaSize || '',
       kvaCorrect: recon.kvaCorrect,
-      actKVA: recon.actKVA,
+      // Only send actKva if user explicitly entered it
+      actKva: (recon.actKva && recon.actKva.toString().trim()) || '',
+      // Legacy fields from reconciliation form
+      ascStringsNo: recon.ascStringsNo || 0,
+      ascStringsCorrect: recon.ascStringsCorrect || '',
+      actAscStringNo: recon.actASCStringNo || 0,
+      battPerString: recon.battPerString || 0,
+      battPerStringCorrect: recon.battPerStringCorrect || '',
+      actBattPerString: recon.actBattPerString || 0,
       totalEquips: parseInt(recon.totalEquips) || 0,
       totalEquipsCorrect: recon.totalEquipsCorrect,
       actTotalEquips: parseInt(recon.actTotalEquips) || 0,
-      verified: recon.verified
+      verified: recon.verified,
+      // Who modified (required by EquipReconciliationInfo)
+      modifiedBy: (this as any).authService?.currentUserValue?.id || this.techId || ''
     };
+
+    return payload;
   }
 
   // Utility methods

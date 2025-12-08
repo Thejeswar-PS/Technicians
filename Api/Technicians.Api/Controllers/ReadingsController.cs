@@ -367,6 +367,36 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("GetPDUVerification")]
+        public async Task<IActionResult> GetPDUVerification(
+            [FromQuery] string callNbr,
+            [FromQuery] int equipId,
+            [FromQuery] string pduId)
+        {
+            var result = await _repository.GetPDUAsync(callNbr, equipId, pduId);
+
+            if (result == null)
+                return NotFound("No PDU data found");
+
+            return Ok(result);
+        }
+
+        [HttpPost("SaveUpdatePDUReadings")]
+        public IActionResult SaveAaETechPDU([FromBody] aaETechPDU model)
+        {
+            if (model == null)
+                return BadRequest("Invalid request");
+
+            string error;
+
+            bool result = _repository.SaveUpdateAaETechPDU(model, out error);
+
+            if (!result)
+                return BadRequest(new { success = false, message = error });
+
+            return Ok(new { success = true, message = "PDU updated successfully" });
+        }
+
 
     }
 }
