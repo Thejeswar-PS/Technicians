@@ -419,23 +419,23 @@ export class OrderRequestComponent implements OnInit {
     if (this.selectedFiles.length > 0) {
       // Use the file upload endpoint
       this.orderRequestService.saveUpdateOrderRequestWithFiles(orderRequest, this.selectedFiles).subscribe({
-        next: (response: SaveUpdateOrderRequestResponse) => {
+        next: (response: any) => {
           let successMessage = response.message || 'Order request saved successfully';
           
-          // Add file upload summary to success message
-          if (response.uploadedFiles && response.uploadedFiles.length > 0) {
-            const successfulUploads = response.uploadedFiles.filter(f => f.uploadStatus === 'Success').length;
-            const failedUploads = response.uploadedFiles.filter(f => f.uploadStatus === 'Failed').length;
+          // Handle file upload results from new backend structure
+          if (response.fileResults && response.fileResults.length > 0) {
+            const successfulUploads = response.fileResults.filter((f: any) => f.success === true).length;
+            const failedUploads = response.fileResults.filter((f: any) => f.success === false).length;
             
-            if (successfulUploads > 0) {
-              successMessage += `. ${successfulUploads} file(s) uploaded successfully`;
-            }
             if (failedUploads > 0) {
-              successMessage += `. ${failedUploads} file(s) failed to upload`;
+              // Show failed uploads in error message
+              const failedFiles = response.fileResults.filter((f: any) => f.success === false);
+              const errorMessages = failedFiles.map((f: any) => `${f.fileName}: ${f.errorMessage}`).join('; ');
+              this.formError = `Some files failed to upload: ${errorMessages}`;
             }
             
             // Log file details for debugging
-            console.log('File upload results:', response.uploadedFiles);
+            console.log('File upload results:', response.fileResults);
           }
           
           this.formSuccess = successMessage;
@@ -472,7 +472,7 @@ export class OrderRequestComponent implements OnInit {
     } else {
       // No files, use the regular endpoint
       this.orderRequestService.saveUpdateOrderRequest(orderRequest).subscribe({
-        next: (response: SaveUpdateOrderRequestResponse) => {
+        next: (response: any) => {
           this.formSuccess = response.message || 'Order request saved successfully';
           this.isFormSubmitting = false;
           this.isLoading = false;

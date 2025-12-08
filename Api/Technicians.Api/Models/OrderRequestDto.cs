@@ -47,4 +47,24 @@ namespace Technicians.Api.Models
         
         public bool Archive { get; set; }
     }
+
+    public class FileUploadResult
+    {
+        public string FileName { get; set; } = string.Empty;
+        public bool Success { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public long FileSize { get; set; }
+    }
+
+    /// <summary>
+    /// Information about uploaded files for order requests
+    /// </summary>
+    public class OrderRequestFileInfo
+    {
+        public string FileName { get; set; } = string.Empty;
+        public long FileSizeKB { get; set; }
+        public DateTime UploadedOn { get; set; }
+        public string FilePath { get; set; } = string.Empty;
+    }
 }

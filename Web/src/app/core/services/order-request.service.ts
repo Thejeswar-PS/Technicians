@@ -93,20 +93,20 @@ export class OrderRequestService {
   }
 
   /**
-   * Saves or updates an order request with file attachments
+   * Saves or updates an order request with file attachments using new backend structure
    * @param orderRequest - The order request data to save/update
    * @param files - Array of files to upload
-   * @returns Observable<SaveUpdateOrderRequestResponse> - Result with row index and message
+   * @returns Observable<any> - Result with row index and file upload results
    */
-  saveUpdateOrderRequestWithFiles(orderRequest: SaveUpdateOrderRequestRequest, files: File[]): Observable<SaveUpdateOrderRequestResponse> {
+  saveUpdateOrderRequestWithFiles(orderRequest: SaveUpdateOrderRequestRequest, files: File[]): Observable<any> {
     const formData = new FormData();
     
-    // Add order request data as JSON
-    formData.append('orderRequest', JSON.stringify(orderRequest));
+    // Add order request data as JSON (backend expects orderRequestJson parameter)
+    formData.append('orderRequestJson', JSON.stringify(orderRequest));
     
     // Add files
-    files.forEach((file, index) => {
-      formData.append(`files`, file, file.name);
+    files.forEach((file) => {
+      formData.append('files', file, file.name);
     });
     
     // Create headers without Content-Type to let browser set it with boundary for FormData
@@ -114,8 +114,57 @@ export class OrderRequestService {
       'Access-Control-Allow-Origin': '*'
     });
     
-    return this.http.post<SaveUpdateOrderRequestResponse>(`${this.API}/OrderRequest/SaveUpdateOrderRequestWithFiles`, formData, { 
+    return this.http.post<any>(`${this.API}/OrderRequest/SaveWithFiles`, formData, { 
       headers: uploadHeaders 
+    });
+  }
+
+  /**
+   * Uploads files for an existing order request
+   * @param rowIndex - The order request row index
+   * @param files - Array of files to upload
+   * @returns Observable<any> - Upload results
+   */
+  uploadFiles(rowIndex: number, files: File[]): Observable<any> {
+    const formData = new FormData();
+    
+    // Add files
+    files.forEach((file) => {
+      formData.append('files', file, file.name);
+    });
+    
+    const uploadHeaders = new HttpHeaders({
+      'Access-Control-Allow-Origin': '*'
+    });
+    
+    return this.http.post<any>(`${this.API}/OrderRequest/UploadFiles/${rowIndex}`, formData, { 
+      headers: uploadHeaders 
+    });
+  }
+
+  /**
+   * Gets files for an order request
+   * @param rowIndex - The order request row index
+   * @returns Observable<any> - List of files
+   */
+  getOrderRequestFiles(rowIndex: number): Observable<any> {
+    return this.http.get<any>(`${this.API}/OrderRequest/GetFiles/${rowIndex}`, { 
+      headers: this.headers 
+    });
+  }
+
+  /**
+   * Deletes a file from an order request
+   * @param rowIndex - The order request row index
+   * @param fileName - The file name to delete
+   * @returns Observable<any> - Delete result
+   */
+  deleteOrderRequestFile(rowIndex: number, fileName: string): Observable<any> {
+    const params = new HttpParams().set('fileName', fileName);
+    
+    return this.http.delete<any>(`${this.API}/OrderRequest/DeleteFile/${rowIndex}`, { 
+      headers: this.headers,
+      params: params
     });
   }
 }

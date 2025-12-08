@@ -150,5 +150,165 @@ namespace Technicians.Api.Repository
         /// <param name="rowIndex">The OrderRequest RowIndex (Auto Generated ID)</param>
         /// <param name="files">Collection of files to upload</param>
         /// <returns>List of upload results</returns>
+        public async Task<List<FileUploadResult>> SaveOrderRequestFilesAsync(int rowIndex, IFormFileCollection files)
+        {
+            var results = new List<FileUploadResult>();
+            var allowedExtensions = new[] { ".jpg", ".gif", ".doc", ".bmp", ".xls", ".png", ".jpeg", ".pdf" };
+
+            // Base network file share path - matching legacy system
+            string baseFilePath = @"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo";
+            string orderDirectory = Path.Combine(baseFilePath, rowIndex.ToString());
+
+            try
+            {
+                // Create directory if it doesn't exist
+                if (!Directory.Exists(orderDirectory))
+                {
+                    Directory.CreateDirectory(orderDirectory);
+                }
+
+                foreach (var file in files)
+                {
+                    var result = new FileUploadResult
+                    {
+                        FileName = file.FileName,
+                        Success = false,
+                        ErrorMessage = string.Empty
+                    };
+
+                    try
+                    {
+                        // Validate file
+                        if (file.Length == 0)
+                        {
+                            result.ErrorMessage = "File is empty";
+                            results.Add(result);
+                            continue;
+                        }
+
+                        // Check file extension
+                        var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+                        if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
+                        {
+                            result.ErrorMessage = $"File type not allowed. Allowed types: {string.Join(", ", allowedExtensions)}";
+                            results.Add(result);
+                            continue;
+                        }
+
+                        // Generate full file path
+                        string filePath = Path.Combine(orderDirectory, file.FileName);
+
+                        // Save file to network share
+                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(fileStream);
+                        }
+
+                        result.Success = true;
+                        result.FilePath = filePath;
+                        result.FileSize = file.Length;
+                    }
+                    catch (Exception ex)
+                    {
+                        result.ErrorMessage = $"Failed to save file: {ex.Message}";
+                    }
+
+                    results.Add(result);
+                }
+            }
+            catch (Exception ex)
+            {
+                // If directory creation fails, mark all files as failed
+                foreach (var file in files)
+                {
+                    results.Add(new FileUploadResult
+                    {
+                        FileName = file.FileName,
+                        Success = false,
+                        ErrorMessage = $"Failed to create directory: {ex.Message}"
+                    });
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Gets all files for a specific order request
+        /// </summary>
+        /// <param name="rowIndex">The OrderRequest RowIndex</param>
+        /// <returns>List of file information</returns>
+        public List<OrderRequestFileInfo> GetOrderRequestFiles(int rowIndex)
+        {
+            var files = new List<OrderRequestFileInfo>();
+            
+            try
+            {
+                string baseFilePath = @"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo";
+                string orderDirectory = Path.Combine(baseFilePath, rowIndex.ToString());
+
+                if (!Directory.Exists(orderDirectory))
+                {
+                    return files; // Return empty list if directory doesn't exist
+                }
+
+                var directoryInfo = new DirectoryInfo(orderDirectory);
+                foreach (var file in directoryInfo.GetFiles())
+                {
+                    files.Add(new OrderRequestFileInfo
+                    {
+                        FileName = file.Name,
+                        FileSizeKB = file.Length / 1024,
+                        UploadedOn = file.CreationTime,
+                        FilePath = file.FullName
+                    });
+                }
+
+                return files.OrderBy(f => f.FileName).ToList();
+            }
+            catch (Exception)
+            {
+                return files; // Return empty list on error
+            }
+        }
+
+        /// <summary>
+        /// Gets the file access URL for viewing files (matching legacy getRootURL method)
+        /// </summary>
+        /// <param name="rowIndex">The OrderRequest RowIndex</param>
+        /// <param name="fileName">The file name</param>
+        /// <returns>File URL for viewing</returns>
+        public string GetFileAccessUrl(int rowIndex, string fileName)
+        {
+            // Legacy getRootURL equivalent - uses different path for viewing
+            return $"file:////VDC1/Files/Parts/PartsCommon/ETechPartsShipInfo/{rowIndex}/{fileName}";
+        }
+
+        /// <summary>
+        /// Deletes a specific file from an order request
+        /// </summary>
+        /// <param name="rowIndex">The OrderRequest RowIndex</param>
+        /// <param name="fileName">The file name to delete</param>
+        /// <returns>True if successful, false otherwise</returns>
+        public bool DeleteOrderRequestFile(int rowIndex, string fileName)
+        {
+            try
+            {
+                string baseFilePath = @"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo";
+                string filePath = Path.Combine(baseFilePath, rowIndex.ToString(), fileName);
+
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                    return true;
+                }
+
+                return false; // File doesn't exist
+            }
+            catch (Exception)
+            {
+                return false; // Error occurred
+            }
+        }
     }
 }
