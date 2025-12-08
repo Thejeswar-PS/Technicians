@@ -62,7 +62,7 @@
         <form class="ups-form" [formGroup]="equipmentForm">
           <div class="form-group-modern">
             <div class="row g-3">
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <select class="form-select" formControlName="manufacturer" id="manufacturer">
                     <option value="" disabled>Select manufacturer</option>
@@ -71,43 +71,43 @@
                   <label for="manufacturer">Make</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <input type="text" class="form-control" formControlName="modelNo" id="modelNo" placeholder="Model No" />
                   <label for="modelNo">Model No</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <input type="text" class="form-control" formControlName="serialNo" id="serialNo" placeholder="Serial No" />
                   <label for="serialNo">Serial No</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <input type="text" class="form-control" formControlName="location" id="location" placeholder="Location" />
                   <label for="location">Location</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <input type="date" class="form-control" formControlName="dateCode" id="dateCode" placeholder="Date Code" />
                   <label for="dateCode">Date Code</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <input type="text" class="form-control" formControlName="kva" id="kva" placeholder="KVA Rating" />
                   <label for="kva">KVA Rating</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <input type="text" class="form-control" formControlName="temperature" id="temperature" placeholder="Temperature" />
                   <label for="temperature">Temperature (F)</label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-3">
                 <div class="form-floating">
                   <select class="form-select" formControlName="status" id="status">
                     <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
@@ -191,7 +191,7 @@
               </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-4">
               <div class="form-floating">
                 <input type="text" class="form-control" formControlName="kvaSize" readonly id="kvaSize" placeholder="KVA Size" />
                 <label for="kvaSize">KVA Size</label>
@@ -205,7 +205,7 @@
                 <label for="kvaCorrect">Is this Correct?</label>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-5">
               <div class="form-floating">
                 <input type="text" class="form-control text-danger" formControlName="actKVA" [readonly]="reconciliationForm.get('kvaCorrect')?.value === 'YS'" id="actKVA" placeholder="Actual KVA" />
                 <label for="actKVA">Actual</label>

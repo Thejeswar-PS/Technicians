@@ -108,22 +108,44 @@ export class PduReadingsComponent implements OnInit {
       ]);
 
       let resultStatus = 'Online';
-      if (jobSummary && jobSummary.Tables && jobSummary.Tables[0] && jobSummary.Tables[0].Rows && jobSummary.Tables[0].Rows.length > 0) {
-        const row = jobSummary.Tables[0].Rows[0];
-        const columns = jobSummary.Tables[0].Columns || Object.keys(row);
-        for (let z = 0; z < columns.length - 1; z++) {
-          const tempColumn = columns[z].ColumnName || columns[z];
-          const tempField = (row[tempColumn] ?? '').toString();
+      const rows = jobSummary?.Tables?.[0]?.Rows?.length ? jobSummary.Tables[0].Rows : jobSummary?.data?.primaryData;
+      console.log('GetEquipStatus rows:', rows);
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        const columns = jobSummary?.Tables?.[0]?.Columns || Object.keys(row);
+        for (const col of columns) {
+          const tempColumnRaw = (col.ColumnName || col || '').toString();
+          const tempColumn = tempColumnRaw.trim();
+          const rawValue = (row[tempColumn] ?? row[col] ?? '').toString();
+          const tempField = rawValue.trim();
 
-          const checkMinor = tempColumn.includes('Action') || tempColumn.includes('Critical')
-            ? tempField === 'Y'
-            : (tempField === 'N' || tempField === 'F' || tempField === 'True' || tempField === '12' || tempField === 'W');
+          let shouldCheckStatus = false;
 
-          if (checkMinor) {
+          const columnLower = tempColumn.toLowerCase();
+          if (columnLower.includes('action') || columnLower.includes('critical')) {
+            if (tempField === 'Y') {
+              shouldCheckStatus = true;
+            }
+          } else {
+            if (tempField === 'N' || tempField === 'F' || tempField === 'True' || tempField === '12' || tempField === 'W') {
+              shouldCheckStatus = true;
+            }
+          }
+
+          if (shouldCheckStatus) {
+            console.log('GetEquipStatus match ->', { tempColumn, tempField });
             resultStatus = 'OnLine(MinorDeficiency)';
-            for (const dr of (statusDesc || [])) {
-              if ((dr['ColumnName'] || '').toString().trim() === tempColumn) {
+            const statusTables = (statusDesc as any)?.Tables;
+            const statusRows = Array.isArray(statusTables?.[0]?.Rows)
+              ? statusTables[0].Rows
+              : Array.isArray(statusDesc)
+                ? statusDesc as any[]
+                : [];
+            for (const dr of statusRows) {
+              const descColumn = (dr['ColumnName'] || '').toString().trim();
+              if (descColumn.toLowerCase() === columnLower) {
                 const type = (dr['StatusType'] || '').toString().trim();
+                console.log('GetEquipStatus override ->', { tempColumn, type });
                 if (type === 'CriticalDeficiency') {
                   return 'CriticalDeficiency';
                 } else if (type === 'OnLine(MajorDeficiency)') {
@@ -138,8 +160,10 @@ export class PduReadingsComponent implements OnInit {
           }
         }
       }
+        console.log('GetEquipStatus resultStatus ->', resultStatus);
       return resultStatus;
     } catch (e) {
+        console.error('GetEquipStatus error ->', e);
       return 'Online';
     }
   }
@@ -1464,8 +1488,10 @@ export class PduReadingsComponent implements OnInit {
       // 3. if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
       let statusToSend = this.equipmentForm.value.status;
       if (statusToSend !== 'Offline') {
-        statusToSend = await this.getEquipStatus();
+        statusToSend = (await this.getEquipStatus())?.trim() || 'Online';
       }
+      console.log('UpdateEquipStatus statusToSend ->', statusToSend);
+      this.equipmentForm.patchValue({ status: statusToSend });
 
       // 4. da.UpdateEquipStatus(UES)
       let dateCode: any = this.equipmentForm.value.dateCode;
