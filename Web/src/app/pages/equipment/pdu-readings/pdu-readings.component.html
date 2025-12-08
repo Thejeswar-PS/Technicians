@@ -129,24 +129,33 @@
   </section>
   
 
-<!-- Reconciliation -->
-<section class="ups-readings-section">
+<!-- Equipment Reconciliation -->
+<section class="ups-readings-section power-verification">
   <div class="ups-section-card">
-    <div class="ups-section-header">
+    <div class="ups-section-header d-flex align-items-center justify-content-between">
       <div class="ups-section-title">
         <i class="bi bi-check-square me-2 text-success"></i>
-        <h5 class="mb-0">Reconciliation</h5>
+        <h5 class="mb-0">Equipment Reconciliation</h5>
         <small class="text-muted">Verify recorded information matches actual equipment</small>
+      </div>
+      <div class="d-flex align-items-center gap-3 ms-auto" [formGroup]="reconciliationForm">
+        <div class="form-check mb-0">
+          <input
+            id="verified"
+            class="form-check-input"
+            type="checkbox"
+            formControlName="verified"
+            style="border: 2px solid #009EF7; width: 20px; height: 20px;"
+          />
+          <label for="verified" class="form-check-label fw-bold text-success mb-0">
+            <i class="bi bi-check-circle me-1"></i>
+            Verified
+          </label>
+        </div>
       </div>
     </div>
     <div class="ups-section-content show">
       <form class="ups-form" [formGroup]="reconciliationForm">
-        <div class="d-flex justify-content-end mb-3">
-          <div class="form-check">
-            <input id="verified" class="form-check-input" type="checkbox" formControlName="verified" />
-            <label for="verified" class="form-check-label text-danger fw-semibold">Verified</label>
-          </div>
-        </div>
         <div class="form-group-modern">
           <div class="row g-3">
             <div class="col-md-4">
@@ -233,121 +242,161 @@
       <form class="ups-form" [formGroup]="visualForm">
         <div class="form-group-modern">
       <div class="row g-3">
-      <div class="col-md-6">
-        <label class="form-label">1. Busswork</label>
-        <select class="form-select" formControlName="busswork">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="busswork" id="busswork">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="busswork">1. Busswork</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">2. Transformers</label>
-        <select class="form-select" formControlName="transformers">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="transformers" id="transformers">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="transformers">2. Transformers</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">3. Power Connections</label>
-        <select class="form-select" formControlName="powerConn">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="powerConn" id="powerConn">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="powerConn">3. Power Connections</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">4. Main Circuit Breakers</label>
-        <select class="form-select" formControlName="mainCirBreaks">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="mainCirBreaks" id="mainCirBreaks">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="mainCirBreaks">4. Main Circuit Breakers</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">5. Subfeed Circuit Breakers</label>
-        <select class="form-select" formControlName="subfeedCirBreaks">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="subfeedCirBreaks" id="subfeedCirBreaks">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="subfeedCirBreaks">5. Subfeed Circuit Breakers</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">6. Current CT's</label>
-        <select class="form-select" formControlName="currentCTs">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="currentCTs" id="currentCTs">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="currentCTs">6. Current CT's</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">7. Circuit Boards</label>
-        <select class="form-select" formControlName="circuitBoards">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="circuitBoards" id="circuitBoards">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="circuitBoards">7. Circuit Boards</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">8. Filter Capacitors</label>
-        <select class="form-select" formControlName="filterCapacitors">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-
-      <div class="col-md-6">
-        <label class="form-label">9. EPO Connections</label>
-        <select class="form-select" formControlName="epoConn">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">10. Wiring Connections</label>
-        <select class="form-select" formControlName="wiringConn">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">11. Ribbon Cables / Terminals</label>
-        <select class="form-select" formControlName="ribbonCables">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">12. Compressed Air Cleaned</label>
-        <select class="form-select" formControlName="compAirClean">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">13. Test if static Switch is installed</label>
-        <select class="form-select" formControlName="staticSwitch">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">14. Verify front panel indicators</label>
-        <select class="form-select" formControlName="frontPanel">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">15. Verify internal power supply</label>
-        <select class="form-select" formControlName="internalPower">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">16. Verify local monitoring</label>
-        <select class="form-select" formControlName="localMonitoring">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">17. Verify local EPO</label>
-        <select class="form-select" formControlName="localEPO">
-          <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
-        </select>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="filterCapacitors" id="filterCapacitors">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="filterCapacitors">8. Filter Capacitors</label>
+        </div>
       </div>
 
-      <div class="col-md-6">
-        <label class="form-label">Neutral Current</label>
-        <input type="text" class="form-control" formControlName="neutralCurrent" />
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="epoConn" id="epoConn">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="epoConn">9. EPO Connections</label>
+        </div>
       </div>
-      <div class="col-md-6">
-        <label class="form-label">Ground Current</label>
-        <input type="text" class="form-control" formControlName="groundCurrent" />
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="wiringConn" id="wiringConn">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="wiringConn">10. Wiring Connections</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="ribbonCables" id="ribbonCables">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="ribbonCables">11. Ribbon Cables / Terminals</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="compAirClean" id="compAirClean">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="compAirClean">12. Compressed Air Cleaned</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="staticSwitch" id="staticSwitch">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="staticSwitch">13. Test if static Switch is installed</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="frontPanel" id="frontPanel">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="frontPanel">14. Verify front panel indicators</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="internalPower" id="internalPower">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="internalPower">15. Verify internal power supply</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="localMonitoring" id="localMonitoring">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="localMonitoring">16. Verify local monitoring</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="localEPO" id="localEPO">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="localEPO">17. Verify local EPO</label>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="form-floating">
+          <input type="text" class="form-control" formControlName="neutralCurrent" id="neutralCurrent" />
+          <label for="neutralCurrent">Neutral Current</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <input type="text" class="form-control" formControlName="groundCurrent" id="groundCurrent" />
+          <label for="groundCurrent">Ground Current</label>
+        </div>
       </div>
       <div class="col-12">
-        <label class="form-label">Comments</label>
-        <textarea rows="3" class="form-control" placeholder="Please note the reason, if any." formControlName="comments"></textarea>
+        <div class="form-floating">
+          <textarea rows="3" class="form-control" placeholder="Please note the reason, if any." formControlName="comments" id="comments"></textarea>
+          <label for="comments" class="form-label">Comments</label>
+        </div>
       </div>
       </div>
         </div>
@@ -356,19 +405,21 @@
   </div>
 </section>
 
-<!-- Power Verification (Input) -->
+<!-- Power Verification -->
 <section class="ups-readings-section">
   <div class="ups-section-card">
     <div class="ups-section-header">
       <div class="ups-section-title">
         <i class="bi bi-lightning-charge me-2 text-primary"></i>
-        <h5 class="mb-0">Power Verification (Input)</h5>
-        <small class="text-muted">Select voltage and record input readings</small>
+        <h5 class="mb-0">Power Verification</h5>
+        <small class="text-muted">Record input and output readings</small>
       </div>
     </div>
     <div class="ups-section-content show">
-      <form class="ups-form" [formGroup]="inputForm">
-        <div class="form-group-modern">
+      <div class="mb-4 power-block">
+        <h6 class="fw-bold text-primary mb-3 power-subtitle">Input Verification</h6>
+        <form class="ups-form" [formGroup]="inputForm">
+          <div class="form-group-modern">
     <div class="row g-3 align-items-center mb-2">
       <div class="col-auto">
         <label class="form-label mb-0">Input</label>
@@ -850,25 +901,14 @@
       </div>
     </div>
   <!-- end 600V input section -->
-        </div>
-      </form>
-    </div>
-  </div>
-</section>
-
-<!-- Output Verification -->
-<section class="ups-readings-section">
-  <div class="ups-section-card">
-    <div class="ups-section-header">
-      <div class="ups-section-title">
-        <i class="bi bi-activity me-2 text-primary"></i>
-        <h5 class="mb-0">Output Verification</h5>
-        <small class="text-muted">Record output voltages, currents, and loads</small>
+          </div>
+        </form>
       </div>
-    </div>
-    <div class="ups-section-content show">
-      <form class="ups-form" [formGroup]="outputForm">
-        <div class="form-group-modern">
+
+      <div class="border-top pt-4 power-block">
+        <h6 class="fw-bold text-primary mb-3 power-subtitle">Output Verification</h6>
+        <form class="ups-form" [formGroup]="outputForm">
+          <div class="form-group-modern">
     <div class="row g-3 align-items-center mb-2">
       <div class="col-auto">
         <label class="form-label mb-0">Output</label>
@@ -1561,8 +1601,9 @@
         </div>
       </div>
     </div>
-        </div>
-      </form>
+    </div>
+  </form>
+      </div>
     </div>
   </div>
 </section>
