@@ -12,7 +12,7 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class EquipmentService {
-  private apiUrl = environment.apiUrl || 'https://localhost:7115/api';
+  private apiUrl = environment.apiUrl || 'https://localhost:7217/api';
 
   constructor(private http: HttpClient) {}
 
@@ -28,10 +28,11 @@ export class EquipmentService {
    * Edit equipment info for UPS readings
    * Equivalent to da.EditEquipInfo(CallNbr, EquipID) in legacy code
    */
-  editEquipInfo(callNbr: string, equipId: number): Observable<any> {
+  editEquipInfo(callNbr: string, equipId: number, equipNo: string): Observable<any> {
     const params = new HttpParams()
       .set('callNbr', callNbr)
-      .set('equipId', equipId.toString());
+      .set('equipId', equipId.toString())
+      .set('equipNo', equipNo);
     
     return this.http.get<any>(`${this.apiUrl}/EquipmentDetails/EditEquipInfo`, { params });
   }
@@ -298,7 +299,6 @@ export class EquipmentService {
    */
   getMultiModuleTypes(): Observable<{ value: string; text: string }[]> {
     const multiModuleTypes = [
-      { value: 'Select', text: 'Se' },
       { value: 'N1', text: 'N + 1' },
       { value: 'N2', text: 'N + 2' },
       { value: 'N3', text: 'N + 3' },

@@ -367,6 +367,60 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("GetPDUVerification")]
+        public async Task<IActionResult> GetPDUVerification(
+            [FromQuery] string callNbr,
+            [FromQuery] int equipId,
+            [FromQuery] string pduId)
+        {
+            var result = await _repository.GetPDUAsync(callNbr, equipId, pduId);
+
+            if (result == null)
+                return NotFound("No PDU data found");
+
+            return Ok(result);
+        }
+
+        [HttpPost("SaveUpdatePDUReadings")]
+        public IActionResult SaveAaETechPDU([FromBody] aaETechPDU model)
+        {
+            if (model == null)
+                return BadRequest("Invalid request");
+
+            string error;
+
+            bool result = _repository.SaveUpdateAaETechPDU(model, out error);
+
+            if (!result)
+                return BadRequest(new { success = false, message = error });
+
+            return Ok(new { success = true, message = "PDU updated successfully" });
+        }
+
+        [HttpGet("GetATSInfo")]
+        public async Task<IActionResult> GetATSInfo(
+        [FromQuery] string callNbr,
+        [FromQuery] string equipNo,
+        [FromQuery] int equipId)
+        {
+            var data = await _repository.GetATSInfoAsync(callNbr, equipNo, equipId);
+
+            if (data == null)
+                return NotFound(new { Message = "No ATS info found" });
+
+            return Ok(data);
+        }
+
+        [HttpPost("UpdateATSInfo")]
+        public async Task<IActionResult> UpdateATS([FromBody] ATSInfo dto)
+        {
+            var success = await _repository.SaveOrUpdateATSAsync(dto);
+
+            if (!success)
+                return StatusCode(500, new { message = "Failed to update ATS info." });
+
+            return Ok(new { message = "ATS updated successfully." });
+        }
 
     }
 }

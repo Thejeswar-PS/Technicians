@@ -1,10 +1,10 @@
-// Modern UPS Readings Component Styling
+﻿// Modern UPS Readings Component Styling
 // Enhanced with professional design patterns, improved UX, and zoom-resistant layout
 
 // Zoom-level detection and handling
 
 
-.ups-readings-container {
+.ats-readings-container {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
   padding: 2rem 1rem;
@@ -12,7 +12,7 @@
   overflow-x: hidden;
 
   // Page title styling - inline with buttons
-  .ups-page-title {
+  .ats-page-title {
     text-align: center;
     flex: 1;
     
@@ -30,7 +30,7 @@
     }
   }
 
-  .ups-readings-loading {
+  .ats-readings-loading {
     position: fixed;
     top: 0;
     left: 0;
@@ -49,7 +49,7 @@
 
   // Header styling with boundary constraints and centered layout
   .card,
-  .ups-main-card {
+  .ats-main-card {
     border: none;
     border-radius: 1rem;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
@@ -76,7 +76,7 @@
       background: transparent;
       max-width: 100%;
       
-      .ups-readings-form {
+      .ats-readings-form {
         padding: 0; // Remove extra padding since card-body has padding
         max-width: 100%;
         box-sizing: border-box;
@@ -85,7 +85,7 @@
     }
   }
 
-  .ups-readings-header {
+  .ats-readings-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -163,7 +163,7 @@
     }
   }
 
-  .ups-readings-messages {
+  .ats-readings-messages {
     margin-top: 1.5rem;
 
     .alert {
@@ -191,7 +191,7 @@
   }
 
   // Overview section styling
-  .ups-overview {
+  .ats-overview {
     background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
     border-radius: 1rem;
     padding: 1.5rem;
@@ -257,7 +257,7 @@
   }
 
   // Form sections
-  .ups-readings-form {
+  .ats-readings-form {
     display: flex;
     flex-direction: column;
     gap: 1rem; // Reduced gap since we added margins to sections
@@ -270,7 +270,7 @@
     // Zoom resistance and viewport constraints
     @media screen and (min-resolution: 120dpi), screen and (-webkit-min-device-pixel-ratio: 1.25) {
       // Styles for high DPI displays / zoom levels
-      .ups-readings-section {
+      .ats-readings-section {
         max-width: 100%;
         overflow-x: hidden;
       }
@@ -283,14 +283,14 @@
     }
   }
 
-  .ups-readings-section {
+  .ats-readings-section {
     margin: 0 1rem 1rem 1rem; // Reduced horizontal margins for more content space
     width: calc(100% - 2rem); // Adjusted width calculation for smaller margins
     max-width: calc(100% - 2rem); // Prevent expansion beyond container
     min-width: 0; // Allow shrinking below content size if needed
     box-sizing: border-box; // Include padding and border in width calculation
     
-    .ups-section-card {
+    .ats-section-card {
       background: rgba(255, 255, 255, 0.95);
       border: none;
       border-radius: 1rem;
@@ -311,7 +311,7 @@
       }
     }
 
-    .ups-section-header {
+    .ats-section-header {
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
       padding: 1.5rem 2rem;
       cursor: pointer;
@@ -333,7 +333,7 @@
         background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
       }
 
-      .ups-section-title {
+      .ats-section-title {
         display: flex;
         align-items: center;
         gap: 1rem;
@@ -399,7 +399,7 @@
       }
     }
 
-    .ups-section-content {
+    .ats-section-content {
       max-height: 0;
       overflow: hidden;
       opacity: 0;
@@ -428,7 +428,7 @@
         }
         
         // Ensure form content is properly contained
-        .ups-form {
+        .ats-form {
           max-width: 100%;
           overflow-x: hidden; // Prevent horizontal overflow
           box-sizing: border-box;
@@ -472,7 +472,7 @@
   }
 
   // Form styling
-  .ups-form {
+  .ats-form {
     .form-group-modern {
       margin-bottom: 2rem;
       max-width: 100%;
@@ -984,7 +984,7 @@
       animation: slideIn 0.3s ease-out;
 
       &::before {
-        content: "⚠";
+        content: "âš ";
         margin-right: 0.5rem;
         font-weight: bold;
       }
@@ -1236,18 +1236,12 @@
   .measurements-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); // Slightly wider for better alignment
-    gap: 1.25rem 1.25rem; // Equal horizontal and vertical gaps
-    row-gap: 3rem; // Extra row gap to accommodate year picker dropdowns
+    gap: 1.25rem;
     margin-top: 1.5rem;
-    margin-bottom: 2rem; // Bottom margin for dropdown space
     align-items: stretch; // Ensure all cards stretch to the same height
-    position: relative; // Establish positioning context
-    z-index: 0; // Ensure grid doesn't interfere with dropdown z-index
-    overflow: visible; // Allow dropdowns to extend beyond grid bounds
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
-      row-gap: 2.5rem; // Reduced gap on mobile but still adequate
     }
   }
 
@@ -1599,7 +1593,7 @@
 
       // Add arrow using pseudo-element for better visibility
       .custom-select::after {
-        content: '▼';
+        content: 'â–¼';
         position: absolute;
         top: 50%;
         right: 0.75rem;
@@ -1972,26 +1966,15 @@
     border: 1px solid #e2e8f0;
     border-radius: 0.75rem;
     padding: 1.25rem;
-    padding-bottom: 2rem; // Extra bottom padding for year picker dropdowns
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     height: 100%; // Ensure all cards have the same height
-    min-height: 200px; // Increased minimum height for year picker space
-    overflow: visible; // Allow year picker dropdowns to be visible outside card bounds
-    position: relative; // Ensure proper positioning context for dropdowns
-    margin-bottom: 2rem; // Extra bottom margin for dropdown space
-    z-index: 1; // Lower z-index than dropdowns
-    
-    // Ensure cards don't create new stacking contexts that interfere with dropdowns
-    transform: none !important;
-    will-change: auto !important;
-    filter: none !important; // Prevent filter from creating stacking context
+    min-height: 160px; // Set minimum height for consistency
 
     &:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-      z-index: 2 !important; // Slightly higher but still much lower than dropdowns (9999)
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .measurement-header {
@@ -2238,7 +2221,7 @@
   }
 
   // Info tips
-  .ups-info-tip {
+  .ats-info-tip {
     background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
     border: 1px solid #93c5fd;
     border-radius: 0.75rem;
@@ -2265,7 +2248,7 @@
   }
 
   // Action buttons
-  .ups-actions {
+  .ats-actions {
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     border-radius: 1rem;
     padding: 2rem;
@@ -2323,7 +2306,7 @@
   }
 
   // New Action Buttons Section (within sections)
-  .ups-action-buttons {
+  .ats-action-buttons {
     padding: 1rem 0;
     
     .save-draft-btn,
@@ -2424,7 +2407,7 @@
   }
 
   // Footer
-  .ups-footer {
+  .ats-footer {
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     color: #64748b;
     padding: 2rem 0;
@@ -2450,10 +2433,10 @@
 
   // Responsive design with zoom-level considerations
   @media (max-width: 1024px) {
-    .ups-readings-container {
+    .ats-readings-container {
       padding: 1rem 0.5rem;
 
-    .ups-readings-header {
+    .ats-readings-header {
       flex-direction: column;
       text-align: center;
 
@@ -2463,18 +2446,18 @@
       }
     }
 
-    .ups-section-content.show {
+    .ats-section-content.show {
       padding: 1.5rem;
     }
 
-    .ups-readings-section {
+    .ats-readings-section {
       margin: 0 0.75rem 1rem 0.75rem; // Slightly smaller margins on medium screens
       width: calc(100% - 1.5rem); // Adjust width calculation for smaller margins
       max-width: calc(100% - 1.5rem);
     }
 
     .card,
-    .ups-main-card {
+    .ats-main-card {
       width: calc(100% - 0.75rem); // Minimal reduction on medium screens
       max-width: 1200px; // Increased max-width for medium screens
     }
@@ -2483,11 +2466,11 @@
 
   // High zoom levels / small viewport handling
   @media (max-width: 900px), (max-resolution: 96dpi) and (max-width: 1200px) {
-    .ups-readings-section {
-      .ups-section-content.show {
+    .ats-readings-section {
+      .ats-section-content.show {
         padding: 1rem; // Reduce padding at higher zoom levels
         
-        .ups-form {
+        .ats-form {
           .form-group-modern {
             .row {
               .col-md-4,
@@ -2504,11 +2487,11 @@
   }
 
   @media (max-width: 768px) {
-    .ups-readings-container {
+    .ats-readings-container {
       padding: 1rem 0.25rem; // Reduce container padding on mobile
     }
 
-    .ups-overview__grid {
+    .ats-overview__grid {
       grid-template-columns: 1fr;
     }
 
@@ -2538,7 +2521,7 @@
       }
     }
 
-    .ups-actions {
+    .ats-actions {
       .btn {
         width: 100%;
         margin-bottom: 1rem;
@@ -2549,21 +2532,21 @@
       }
     }
 
-    .ups-readings-section {
+    .ats-readings-section {
       margin: 0 0.75rem 1rem 0.75rem; // Maintain reasonable margins on mobile
       width: calc(100% - 1.5rem); // Adjust width for mobile margins
       max-width: calc(100% - 1.5rem);
     }
 
     .card,
-    .ups-main-card {
+    .ats-main-card {
       width: calc(100% - 0.5rem); // Almost full width on mobile with small margins
       max-width: 100%; // Allow full width on mobile
     }
   }
 
   @media (max-width: 576px) {
-    .ups-readings-container {
+    .ats-readings-container {
       padding: 0.5rem 0.125rem; // Minimal container padding on very small screens
     }
 
@@ -2571,28 +2554,26 @@
       padding: 1.5rem 1rem;
     }
 
-    .ups-section-content.show {
+    .ats-section-content.show {
       padding: 1rem;
     }
 
     .measurements-grid {
       grid-template-columns: 1fr;
-      row-gap: 2rem; // Maintain space for year picker dropdowns on small screens
     }
 
     .measurement-card {
       padding: 1rem;
-      margin-bottom: 1.5rem; // Additional bottom margin on small screens
     }
 
-    .ups-readings-section {
+    .ats-readings-section {
       margin: 0 0.5rem 1rem 0.5rem; // Maintain minimal but reasonable margins
       width: calc(100% - 1rem); // Adjust width for small margins
       max-width: calc(100% - 1rem);
     }
 
     .card,
-    .ups-main-card {
+    .ats-main-card {
       width: calc(100% - 0.25rem); // Nearly full width with tiny margins
       margin: 0 auto 2rem auto; // Maintain centered alignment
       border-radius: 0.75rem; // Slightly smaller border radius on mobile
@@ -2601,14 +2582,14 @@
 
   // Extreme zoom level handling (200%+ zoom)
   @media screen and (min-resolution: 200dpi), screen and (-webkit-min-device-pixel-ratio: 2) {
-    .ups-readings-section {
+    .ats-readings-section {
       margin: 0 0.5rem 0.5rem 0.5rem !important;
       width: calc(100% - 1rem) !important;
       
-      .ups-section-header {
+      .ats-section-header {
         padding: 0.75rem 1rem !important;
         
-        .ups-section-title {
+        .ats-section-title {
           gap: 0.5rem;
           
           h5 {
@@ -2621,7 +2602,7 @@
         }
       }
       
-      .ups-section-content.show {
+      .ats-section-content.show {
         padding: 0.75rem !important;
         
         .form-group-modern {
@@ -2639,7 +2620,7 @@
     }
     
     .card,
-    .ups-main-card {
+    .ats-main-card {
       width: calc(100% - 0.5rem) !important;
       max-width: 800px !important; // Increased max-width at extreme zoom
       
@@ -2648,7 +2629,7 @@
       }
     }
     
-    .ups-readings-header__top {
+    .ats-readings-header__top {
       width: calc(100% - 0.5rem) !important;
       max-width: 800px !important;
     }
@@ -2700,15 +2681,15 @@
     }
   }
 
-  .ups-readings-section {
+  .ats-readings-section {
     animation: fadeInUp 0.6s ease forwards;
   }
 
-  .ups-readings-section:nth-child(1) { animation-delay: 0.1s; }
-  .ups-readings-section:nth-child(2) { animation-delay: 0.2s; }
-  .ups-readings-section:nth-child(3) { animation-delay: 0.3s; }
-  .ups-readings-section:nth-child(4) { animation-delay: 0.4s; }
-  .ups-readings-section:nth-child(5) { animation-delay: 0.5s; }
+  .ats-readings-section:nth-child(1) { animation-delay: 0.1s; }
+  .ats-readings-section:nth-child(2) { animation-delay: 0.2s; }
+  .ats-readings-section:nth-child(3) { animation-delay: 0.3s; }
+  .ats-readings-section:nth-child(4) { animation-delay: 0.4s; }
+  .ats-readings-section:nth-child(5) { animation-delay: 0.5s; }
 
   .spinner-border {
     animation: pulse 1.5s ease-in-out infinite;
@@ -2903,21 +2884,21 @@
 }
 
 // Custom scrollbar
-.ups-section-content::-webkit-scrollbar {
+.ats-section-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.ups-section-content::-webkit-scrollbar-track {
+.ats-section-content::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 3px;
 }
 
-.ups-section-content::-webkit-scrollbar-thumb {
+.ats-section-content::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
 
-.ups-section-content::-webkit-scrollbar-thumb:hover {
+.ats-section-content::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
@@ -3879,43 +3860,18 @@
 
 // Compact Calendar Dropdown
 .compact-calendar-dropdown {
-  position: absolute; // Default positioning (will be overridden for capacitors)
+  position: absolute;
+  left: 0;
+  right: 0;
   width: 280px; // Slightly wider for 4-column year grid
-  z-index: 99999 !important; // Very high z-index to ensure it appears above everything
+  z-index: 1000;
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35); // Even stronger shadow for better visibility
-  overflow: visible; // Allow year grid to be fully visible
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 4px;
   animation: slideUp 0.2s ease-out;
-  
-  // Ensure dropdown is always visible above other elements
-  &.show {
-    display: block !important;
-  }
-  
-  // Force above positioning for JavaScript-controlled dropdowns
-  &.position-fixed-above {
-    position: fixed !important;
-    top: var(--dropdown-top, auto) !important;
-    left: var(--dropdown-left, auto) !important;
-    bottom: auto !important;
-    right: auto !important;
-    transform: none !important;
-    z-index: 999999 !important;
-  }
-  
-  // Override default top: 100% for capacitor sections
-  .ups-readings-section:not(:first-of-type) & {
-    top: auto !important;
-    
-    &[style*="top"] {
-      top: var(--dropdown-top) !important;
-    }
-  }
-  
-  // JavaScript will handle positioning for capacitor dropdowns
-  // Equipment Verification dropdowns use CSS positioning
+  overflow: hidden; // Ensure content stays within container bounds
   
   .calendar-header {
     background: linear-gradient(135deg, #5486ff 0%, #667eea 100%);
@@ -4042,8 +3998,6 @@
     gap: 0.15rem; // Reduced gap for more compact layout
     padding: 0.5rem; // Reduced padding
     min-height: 120px; // Optimized height for 4x4 grid
-    max-height: none; // Remove any height restrictions
-    overflow: visible; // Ensure all year buttons are visible
     
     .year-btn-compact {
       padding: 0.25rem 0.15rem; // Much smaller padding
@@ -4723,22 +4677,6 @@
   color: #dc3545;
 }
 
-// Field highlight animation for validation focus
-.field-highlight {
-  animation: fieldPulse 0.5s ease-in-out 2;
-  border-color: #ffc107 !important;
-  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25) !important;
-}
-
-@keyframes fieldPulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
-  }
-  50% {
-    box-shadow: 0 0 0 0.4rem rgba(255, 193, 7, 0.5);
-  }
-}
-
 // Error icon styling
 .bi-exclamation-circle {
   color: #dc3545;
@@ -4808,7 +4746,7 @@
         border-color: #dee2e6;
         
         // Highlight calculated value when not empty
-        &:not(:contains('—')) {
+        &:not(:contains('â€”')) {
           background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%) !important;
           color: #0c5460 !important;
           border-color: #b8daff;
@@ -4906,110 +4844,5 @@
       font-size: 0.75rem;
       line-height: 1.2;
     }
-  }
-
-  // Equipment Verification Section - Maintain existing absolute positioning
-  .ups-readings-section:first-of-type {
-    .ups-section-content.show {
-      .form-floating {
-        .position-relative {
-          .compact-calendar-dropdown {
-            position: absolute !important; // Override fixed positioning for Equipment Verification
-            top: auto !important;
-            bottom: 100% !important;
-            left: 0 !important;
-            right: 0 !important;
-            margin-top: 0 !important;
-            margin-bottom: 4px !important;
-            z-index: 1050 !important; // Lower z-index for Equipment Verification
-            animation: slideUp 0.2s ease-out !important;
-          }
-        }
-      }
-    }
-  }
-
-  // Capacitor Section - Always-above overlay positioning for year picker dropdowns
-  .ups-readings-section {
-    .ups-section-content.show {
-      // Ensure capacitor year picker dropdowns are completely unobstructed
-      .measurement-content, .form-floating {
-        .position-relative {
-          // Positioning context for calculating dropdown placement
-          position: relative;
-          
-          // Year picker dropdowns use fixed positioning and are placed by JavaScript
-          .compact-calendar-dropdown {
-            // All positioning handled by fixed positioning and JavaScript
-            // No container constraints can clip or obstruct the dropdown
-            z-index: 99999 !important;
-            position: fixed !important;
-            top: auto !important;
-            bottom: auto !important;
-            left: auto !important;
-            right: auto !important;
-            display: block !important;
-            visibility: visible !important;
-            
-            // Override any default dropdown positioning
-            &[style] {
-              top: var(--calculated-top) !important;
-              left: var(--calculated-left) !important;
-            }
-            
-            // Ensure the year grid is fully visible with proper dimensions
-            .year-grid-compact {
-              height: auto;
-              min-height: 120px;
-              max-height: none !important;
-              overflow: visible !important;
-              
-              // Ensure all 16 year buttons (4x4 grid) are visible
-              .year-btn-compact {
-                visibility: visible;
-                display: flex !important;
-              }
-            }
-          }
-        }
-      }
-
-    }
-  }
-
-  // Force above positioning for ALL capacitor calendars including fans
-  .ups-readings-section:not(:first-of-type) {
-    .position-relative {
-      .compact-calendar-dropdown {
-        position: fixed !important;
-        z-index: 999999 !important;
-        background: white !important;
-        border: 1px solid #e5e7eb !important;
-        border-radius: 6px !important;
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4) !important;
-        display: block !important;
-        visibility: visible !important;
-        top: auto !important;
-        bottom: auto !important;
-        left: auto !important;
-        right: auto !important;
-        transform: none !important;
-        
-        // Completely override the default top: 100% rule
-        &[style] {
-          top: var(--dropdown-top, auto) !important;
-          left: var(--dropdown-left, auto) !important;
-        }
-      }
-    }
-  }
-  
-  // Specific override for fans calendar
-  input[formControlName="fansYear"] + .btn + .compact-calendar-dropdown,
-  input[formControlName="fansYear"] ~ .compact-calendar-dropdown {
-    position: fixed !important;
-    top: auto !important;
-    bottom: auto !important;
-    z-index: 999999 !important;
   }
 }

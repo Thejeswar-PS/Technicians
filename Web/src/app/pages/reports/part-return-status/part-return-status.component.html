@@ -254,7 +254,7 @@
                                         <td class="jobs-cell">
                                           <div class="metric-badge jobs-metric">
                                             <span class="metric-value">{{ item.jobsCount }}</span>
-                                            <span class="metric-label"></span>
+                                            <span class="metric-label">jobs</span>
                                           </div>
                                         </td>
                                         <td class="faulty-cell">
@@ -868,10 +868,10 @@
                             <td class="jobs-cell">
                               <div class="metric-badge jobs-metric" *ngIf="(item.jobsCount || 0) > 0">
                                 <span class="metric-value">{{ item.jobsCount || 0 }}</span>
-                                <span class="metric-label"></span>
+                                <span class="metric-label">jobs</span>
                               </div>
                               <div class="metric-badge jobs-metric" *ngIf="(item.jobsCount || 0) === 0">
-                                <span class="metric-label"></span>
+                                <span class="metric-label">jobs</span>
                               </div>
                             </td>
                             <td class="faulty-cell">

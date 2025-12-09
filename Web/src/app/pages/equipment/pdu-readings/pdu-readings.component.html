@@ -1,0 +1,1637 @@
+<!-- PDU Readings Page (styled like UPS Readings) -->
+<div class="container-fluid ups-readings-container">
+  <!-- Header: Back, Title, Save -->
+  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button type="button" class="btn btn-sm btn-primary ups-readings-header__back" (click)="goBack()" [disabled]="saving">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+
+    <div class="ups-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-speedometer2 me-2"></i>
+        PDU Readings & Verification
+      </h2>
+      <div class="text-dark mt-2">
+        <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | PDU ID: {{ pduId || 'N/A' }}</span>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-light-primary" (click)="saveDraft()" [disabled]="saving">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+        <i *ngIf="!saving" class="bi bi-file-earmark-text me-2"></i>
+        {{ saving ? 'Saving...' : 'Save As Draft' }}
+      </button>
+      <button type="button" class="btn btn-sm btn-primary ups-readings-header__action" (click)="savePDU()" [disabled]="saving">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+        <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
+        {{ saving ? 'Saving...' : 'Save PDU Data' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="ups-readings-messages mb-3" *ngIf="errorMessage || successMessage">
+    <div *ngIf="errorMessage" class="alert alert-danger d-inline-flex align-items-center">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <span>{{ errorMessage }}</span>
+    </div>
+    <div *ngIf="successMessage" class="alert alert-success d-inline-flex align-items-center">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <span>{{ successMessage }}</span>
+    </div>
+  </div>
+
+  <!-- Main card wrapper matching UPS styling -->
+  <div class="card shadow-sm ups-main-card">
+    <div class="card-body">
+      <div class="ups-readings-form">
+
+  <!-- Equipment Verification -->
+  <section class="ups-readings-section">
+    <div class="ups-section-card">
+      <div class="ups-section-header">
+        <div class="ups-section-title">
+          <i class="bi bi-gear-wide-connected me-2 text-primary"></i>
+          <h5 class="mb-0">Equipment Verification</h5>
+          <small class="text-muted">Verify PDU equipment details and specifications</small>
+        </div>
+      </div>
+      <div class="ups-section-content show">
+        <form class="ups-form" [formGroup]="equipmentForm">
+          <div class="form-group-modern">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <select class="form-select" formControlName="manufacturer" id="manufacturer">
+                    <option value="" disabled>Select manufacturer</option>
+                    <option *ngFor="let m of manufacturers" [value]="m.value">{{ m.label }}</option>
+                  </select>
+                  <label for="manufacturer">Make</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <input type="text" class="form-control" formControlName="modelNo" id="modelNo" placeholder="Model No" />
+                  <label for="modelNo">Model No</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <input type="text" class="form-control" formControlName="serialNo" id="serialNo" placeholder="Serial No" />
+                  <label for="serialNo">Serial No</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <input type="text" class="form-control" formControlName="location" id="location" placeholder="Location" />
+                  <label for="location">Location</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <input type="date" class="form-control" formControlName="dateCode" id="dateCode" placeholder="Date Code" />
+                  <label for="dateCode">Date Code</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <input type="text" class="form-control" formControlName="kva" id="kva" placeholder="KVA Rating" />
+                  <label for="kva">KVA Rating</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <input type="text" class="form-control" formControlName="temperature" id="temperature" placeholder="Temperature" />
+                  <label for="temperature">Temperature (F)</label>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="form-floating">
+                  <select class="form-select" formControlName="status" id="status">
+                    <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+                  </select>
+                  <label for="status">Status</label>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="form-floating">
+                  <textarea rows="3" class="form-control" formControlName="statusNotes" id="statusNotes" placeholder="Reason for Status"></textarea>
+                  <label for="statusNotes">Reason for Status</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+  
+
+<!-- Equipment Reconciliation -->
+<section class="ups-readings-section power-verification">
+  <div class="ups-section-card">
+    <div class="ups-section-header d-flex align-items-center justify-content-between">
+      <div class="ups-section-title">
+        <i class="bi bi-check-square me-2 text-success"></i>
+        <h5 class="mb-0">Equipment Reconciliation</h5>
+        <small class="text-muted">Verify recorded information matches actual equipment</small>
+      </div>
+      <div class="d-flex align-items-center gap-3 ms-auto" [formGroup]="reconciliationForm">
+        <div class="form-check mb-0">
+          <input
+            id="verified"
+            class="form-check-input"
+            type="checkbox"
+            formControlName="verified"
+            style="border: 2px solid #009EF7; width: 20px; height: 20px;"
+          />
+          <label for="verified" class="form-check-label fw-bold text-success mb-0">
+            <i class="bi bi-check-circle me-1"></i>
+            Verified
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="ups-section-content show">
+      <form class="ups-form" [formGroup]="reconciliationForm">
+        <div class="form-group-modern">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="form-floating">
+                <input type="text" class="form-control" formControlName="recModel" readonly id="recModel" placeholder="Model" />
+                <label for="recModel">Model</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <select class="form-select" formControlName="recModelCorrect" id="recModelCorrect">
+                  <option *ngFor="let o of yesNoOptions" [value]="o.value">{{ o.label }}</option>
+                </select>
+                <label for="recModelCorrect">Is this Correct?</label>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="form-floating">
+                <input type="text" class="form-control text-danger" formControlName="actModel" [readonly]="reconciliationForm.get('recModelCorrect')?.value === 'YS'" id="actModel" placeholder="Actual Model" />
+                <label for="actModel">Actual</label>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="form-floating">
+                <input type="text" class="form-control" formControlName="recSerialNo" readonly id="recSerialNo" placeholder="Serial No" />
+                <label for="recSerialNo">Serial No</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <select class="form-select" formControlName="recSerialNoCorrect" id="recSerialNoCorrect">
+                  <option *ngFor="let o of yesNoOptions" [value]="o.value">{{ o.label }}</option>
+                </select>
+                <label for="recSerialNoCorrect">Is this Correct?</label>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="form-floating">
+                <input type="text" class="form-control text-danger" formControlName="actSerialNo" [readonly]="reconciliationForm.get('recSerialNoCorrect')?.value === 'YS'" id="actSerialNo" placeholder="Actual Serial No" />
+                <label for="actSerialNo">Actual</label>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="form-floating">
+                <input type="text" class="form-control" formControlName="kvaSize" readonly id="kvaSize" placeholder="KVA Size" />
+                <label for="kvaSize">KVA Size</label>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-floating">
+                <select class="form-select" formControlName="kvaCorrect" id="kvaCorrect">
+                  <option *ngFor="let o of yesNoOptions" [value]="o.value">{{ o.label }}</option>
+                </select>
+                <label for="kvaCorrect">Is this Correct?</label>
+              </div>
+            </div>
+            <div class="col-md-5">
+              <div class="form-floating">
+                <input type="text" class="form-control text-danger" formControlName="actKVA" [readonly]="reconciliationForm.get('kvaCorrect')?.value === 'YS'" id="actKVA" placeholder="Actual KVA" />
+                <label for="actKVA">Actual</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+
+<!-- Visual and Mechanical Verification -->
+<section class="ups-readings-section">
+  <div class="ups-section-card">
+    <div class="ups-section-header">
+      <div class="ups-section-title">
+        <i class="bi bi-tools me-2 text-primary"></i>
+        <h5 class="mb-0">PDU Visual and Mechanical Verification</h5>
+        <small class="text-muted">Pass/Fail checks for critical components</small>
+      </div>
+    </div>
+    <div class="ups-section-content show">
+      <form class="ups-form" [formGroup]="visualForm">
+        <div class="form-group-modern">
+      <div class="row g-3">
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="busswork" id="busswork">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="busswork">1. Busswork</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="transformers" id="transformers">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="transformers">2. Transformers</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="powerConn" id="powerConn">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="powerConn">3. Power Connections</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="mainCirBreaks" id="mainCirBreaks">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="mainCirBreaks">4. Main Circuit Breakers</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="subfeedCirBreaks" id="subfeedCirBreaks">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="subfeedCirBreaks">5. Subfeed Circuit Breakers</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="currentCTs" id="currentCTs">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="currentCTs">6. Current CT's</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="circuitBoards" id="circuitBoards">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="circuitBoards">7. Circuit Boards</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="filterCapacitors" id="filterCapacitors">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="filterCapacitors">8. Filter Capacitors</label>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="epoConn" id="epoConn">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="epoConn">9. EPO Connections</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="wiringConn" id="wiringConn">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="wiringConn">10. Wiring Connections</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="ribbonCables" id="ribbonCables">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="ribbonCables">11. Ribbon Cables / Terminals</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="compAirClean" id="compAirClean">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="compAirClean">12. Compressed Air Cleaned</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="staticSwitch" id="staticSwitch">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="staticSwitch">13. Test if static Switch is installed</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="frontPanel" id="frontPanel">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="frontPanel">14. Verify front panel indicators</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="internalPower" id="internalPower">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="internalPower">15. Verify internal power supply</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="localMonitoring" id="localMonitoring">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="localMonitoring">16. Verify local monitoring</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <select class="form-select" formControlName="localEPO" id="localEPO">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+          <label for="localEPO">17. Verify local EPO</label>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="form-floating">
+          <input type="text" class="form-control" formControlName="neutralCurrent" id="neutralCurrent" />
+          <label for="neutralCurrent">Neutral Current</label>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="form-floating">
+          <input type="text" class="form-control" formControlName="groundCurrent" id="groundCurrent" />
+          <label for="groundCurrent">Ground Current</label>
+        </div>
+      </div>
+      <div class="col-12">
+        <div class="form-floating">
+          <textarea rows="3" class="form-control" placeholder="Please note the reason, if any." formControlName="comments" id="comments"></textarea>
+          <label for="comments" class="form-label">Comments</label>
+        </div>
+      </div>
+      </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- Power Verification -->
+<section class="ups-readings-section">
+  <div class="ups-section-card">
+    <div class="ups-section-header">
+      <div class="ups-section-title">
+        <i class="bi bi-lightning-charge me-2 text-primary"></i>
+        <h5 class="mb-0">Power Verification</h5>
+        <small class="text-muted">Record input and output readings</small>
+      </div>
+    </div>
+    <div class="ups-section-content show">
+      <div class="mb-4 power-block">
+        <h6 class="fw-bold text-primary mb-3 power-subtitle">Input Verification</h6>
+        <form class="ups-form" [formGroup]="inputForm">
+          <div class="form-group-modern">
+    <div class="row g-3 align-items-center mb-2">
+      <div class="col-auto">
+        <label class="form-label mb-0">Input</label>
+      </div>
+      <div class="col-auto">
+        <select class="form-select" formControlName="inputVoltage">
+          <option value="0">Select</option>
+          <option value="1">120</option>
+          <option value="2">240</option>
+          <option value="3">208</option>
+          <option value="4">480</option>
+          <option value="6">575</option>
+          <option value="5">600</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 120V -->
+    <div *ngIf="showInput120" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 110V - 130V | Fr: 55 Hz - 65 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A</label>
+          <input type="text" class="form-control" formControlName="input120VoltA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Voltage A Result</label>
+          <select class="form-select" formControlName="input120VoltA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="input120Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="input120Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="input120CurrA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="input120CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 240V -->
+    <div *ngIf="showInput240" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 110V - 130V | Fr: 55 Hz - 65 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A</label>
+          <input type="text" class="form-control" formControlName="input240VoltA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Voltage A Result</label>
+          <select class="form-select" formControlName="input240VoltA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="input240CurrA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="input240CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B</label>
+          <input type="text" class="form-control" formControlName="input240VoltB" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Voltage B Result</label>
+          <select class="form-select" formControlName="input240VoltB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="input240CurrB" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="input240CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="input240Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="input240Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 208V -->
+    <div *ngIf="showInput208" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 192V - 224V | P-N | Fr: 55 Hz - 65 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="input208VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input208VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="input208VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="input208CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="input208CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="input208VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input208VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="input208VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="input208CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="input208CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="input208VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input208VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="input208VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="input208CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="input208CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="input208Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="input208Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 480V -->
+    <div *ngIf="showInput480" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 455V - 505V | P-N | Fr: 55 Hz - 65 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="input480VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input480VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="input480VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="input480CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="input480CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="input480VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input480VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="input480VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="input480CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="input480CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="input480VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input480VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="input480VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="input480CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="input480CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="input480Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="input480Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 575V -->
+    <div *ngIf="showInput575" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 545V - 605V | P-N | Fr: 55 Hz - 65 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="input575VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input575VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="input575VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="input575CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="input575CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="input575VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input575VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="input575VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="input575CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="input575CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="input575VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input575VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="input575VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="input575CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="input575CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="input575Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="input575Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 600V -->
+    <div *ngIf="showInput600" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 570V - 630V | P-N | Fr: 55 Hz - 65 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="input600VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input600VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="input600VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="input600CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="input600CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="input600VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input600VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="input600VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="input600CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="input600CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="input600VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(inputForm.value.input600VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="input600VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="input600CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="input600CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="input600Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="input600Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  <!-- end 600V input section -->
+          </div>
+        </form>
+      </div>
+
+      <div class="border-top pt-4 power-block">
+        <h6 class="fw-bold text-primary mb-3 power-subtitle">Output Verification</h6>
+        <form class="ups-form" [formGroup]="outputForm">
+          <div class="form-group-modern">
+    <div class="row g-3 align-items-center mb-2">
+      <div class="col-auto">
+        <label class="form-label mb-0">Output</label>
+      </div>
+      <div class="col-auto">
+        <select class="form-select" formControlName="outputVoltage">
+          <option value="0">Select</option>
+          <option value="1">120</option>
+          <option value="2">240</option>
+          <option value="3">208</option>
+          <option value="4">480</option>
+          <option value="6">575</option>
+          <option value="5">600</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 120V Output -->
+    <div *ngIf="showOutput120" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 114V - 126V | Fr: 58 Hz - 62 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A</label>
+          <input type="text" class="form-control" formControlName="output120VoltA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Voltage A Result</label>
+          <select class="form-select" formControlName="output120VoltA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="output120Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="output120Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="output120CurrA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="output120CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) A</label>
+          <input type="text" class="form-control" formControlName="load120A" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load A Result</label>
+          <select class="form-select" formControlName="load120A_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Total</label>
+          <input type="text" class="form-control" formControlName="total120Load" />
+        </div>
+        <div class="col-md-3 align-self-end">
+          <button type="button" class="btn btn-dark" (click)="calculateLoadPercentage('1')">Calculate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 240V Output -->
+    <div *ngIf="showOutput240" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 114V - 126V | Fr: 58 Hz - 62 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A</label>
+          <input type="text" class="form-control" formControlName="output240VoltA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Voltage A Result</label>
+          <select class="form-select" formControlName="output240VoltA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="output240CurrA" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="output240CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B</label>
+          <input type="text" class="form-control" formControlName="output240VoltB" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Voltage B Result</label>
+          <select class="form-select" formControlName="output240VoltB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="output240CurrB" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="output240CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Load(%) A</label>
+          <input type="text" class="form-control" formControlName="load240A" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load A Result</label>
+          <select class="form-select" formControlName="load240A_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) B</label>
+          <input type="text" class="form-control" formControlName="load240B" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load B Result</label>
+          <select class="form-select" formControlName="load240B_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Total</label>
+          <input type="text" class="form-control" formControlName="total240Load" />
+        </div>
+        <div class="col-md-3 align-self-end">
+          <button type="button" class="btn btn-dark" (click)="calculateLoadPercentage('2')">Calculate</button>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="output240Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="output240Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 208V Output -->
+    <div *ngIf="showOutput208" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 197V - 219V | P-N | Fr: 58 Hz - 62 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="output208VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output208VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="output208VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="output208CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="output208CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="output208VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output208VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="output208VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="output208CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="output208CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="output208VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output208VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="output208VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="output208CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="output208CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Load(%) A</label>
+          <input type="text" class="form-control" formControlName="load208A" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load A Result</label>
+          <select class="form-select" formControlName="load208A_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) B</label>
+          <input type="text" class="form-control" formControlName="load208B" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load B Result</label>
+          <select class="form-select" formControlName="load208B_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) C</label>
+          <input type="text" class="form-control" formControlName="load208C" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load C Result</label>
+          <select class="form-select" formControlName="load208C_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Total</label>
+          <input type="text" class="form-control" formControlName="total208Load" />
+        </div>
+        <div class="col-md-3 align-self-end">
+          <button type="button" class="btn btn-dark" (click)="calculateLoadPercentage('3')">Calculate</button>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="output208Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="output208Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 480V Output -->
+    <div *ngIf="showOutput480" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 460V - 500V | P-N | Fr: 58 Hz - 62 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="output480VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output480VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="output480VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="output480CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="output480CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="output480VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output480VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="output480VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="output480CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="output480CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="output480VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output480VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="output480VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="output480CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="output480CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Load(%) A</label>
+          <input type="text" class="form-control" formControlName="load480A" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load A Result</label>
+          <select class="form-select" formControlName="load480A_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) B</label>
+          <input type="text" class="form-control" formControlName="load480B" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load B Result</label>
+          <select class="form-select" formControlName="load480B_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) C</label>
+          <input type="text" class="form-control" formControlName="load480C" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load C Result</label>
+          <select class="form-select" formControlName="load480C_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Total</label>
+          <input type="text" class="form-control" formControlName="total480Load" />
+        </div>
+        <div class="col-md-3 align-self-end">
+          <button type="button" class="btn btn-dark" (click)="calculateLoadPercentage('4')">Calculate</button>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="output480Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="output480Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 575V Output -->
+    <div *ngIf="showOutput575" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 547V - 603V | P-N | Fr: 58 Hz - 62 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="output575VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output575VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="output575VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="output575CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="output575CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="output575VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output575VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="output575VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="output575CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="output575CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="output575VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output575VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="output575VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="output575CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="output575CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Load(%) A</label>
+          <input type="text" class="form-control" formControlName="load575A" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load A Result</label>
+          <select class="form-select" formControlName="load575A_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) B</label>
+          <input type="text" class="form-control" formControlName="load575B" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load B Result</label>
+          <select class="form-select" formControlName="load575B_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) C</label>
+          <input type="text" class="form-control" formControlName="load575C" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load C Result</label>
+          <select class="form-select" formControlName="load575C_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Total</label>
+          <input type="text" class="form-control" formControlName="total575Load" />
+        </div>
+        <div class="col-md-3 align-self-end">
+          <button type="button" class="btn btn-dark" (click)="calculateLoadPercentage('6')">Calculate</button>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="output575Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="output575Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 600V Output -->
+    <div *ngIf="showOutput600" class="mb-3">
+      <div class="text-primary fw-semibold mb-2">Tolerance: 580V - 620V | P-N | Fr: 58 Hz - 62 Hz</div>
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Voltage A-B</label>
+          <input type="text" class="form-control" formControlName="output600VoltAB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output600VoltAB)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">A-B Result</label>
+          <select class="form-select" formControlName="output600VoltAB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A</label>
+          <input type="text" class="form-control" formControlName="output600CurrA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current A Result</label>
+          <select class="form-select" formControlName="output600CurrA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage B-C</label>
+          <input type="text" class="form-control" formControlName="output600VoltBC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output600VoltBC)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">B-C Result</label>
+          <select class="form-select" formControlName="output600VoltBC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B</label>
+          <input type="text" class="form-control" formControlName="output600CurrB" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current B Result</label>
+          <select class="form-select" formControlName="output600CurrB_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Voltage C-A</label>
+          <input type="text" class="form-control" formControlName="output600VoltCA" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">P-N</label>
+          <input type="text" class="form-control" [value]="calculatePhaseToNeutral(outputForm.value.output600VoltCA)" readonly />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">C-A Result</label>
+          <select class="form-select" formControlName="output600VoltCA_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C</label>
+          <input type="text" class="form-control" formControlName="output600CurrC" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Current C Result</label>
+          <select class="form-select" formControlName="output600CurrC_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Load(%) A</label>
+          <input type="text" class="form-control" formControlName="load600A" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load A Result</label>
+          <select class="form-select" formControlName="load600A_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) B</label>
+          <input type="text" class="form-control" formControlName="load600B" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load B Result</label>
+          <select class="form-select" formControlName="load600B_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load(%) C</label>
+          <input type="text" class="form-control" formControlName="load600C" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Load C Result</label>
+          <select class="form-select" formControlName="load600C_PF">
+            <option value="P">Pass</option>
+            <option value="F">Fail</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Total</label>
+          <input type="text" class="form-control" formControlName="total600Load" />
+        </div>
+        <div class="col-md-3 align-self-end">
+          <button type="button" class="btn btn-dark" (click)="calculateLoadPercentage('5')">Calculate</button>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">Frequency</label>
+          <input type="text" class="form-control" formControlName="output600Freq" />
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Frequency Result</label>
+          <select class="form-select" formControlName="output600Freq_PF">
+            <option *ngFor="let o of passFailOptions" [value]="o.value">{{ o.label }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    </div>
+  </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Comments -->
+<section class="ups-readings-section">
+  <div class="ups-section-card">
+    <div class="ups-section-header">
+      <div class="ups-section-title">
+        <i class="bi bi-chat-left-text me-2 text-primary"></i>
+        <h5 class="mb-0">Comments</h5>
+        <small class="text-muted">Additional notes and observations</small>
+      </div>
+    </div>
+    <div class="ups-section-content show">
+      <form class="ups-form" [formGroup]="commentsForm">
+        <div class="form-group-modern">
+          <div class="form-floating">
+            <textarea rows="3" class="form-control" placeholder="Please note the reason, if any." formControlName="comments5" id="comments5"></textarea>
+            <label for="comments5">Comments</label>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+      </div> <!-- /ups-readings-form -->
+    </div> <!-- /card-body -->
+  </div> <!-- /card ups-main-card -->
+</div> <!-- /container-fluid ups-readings-container -->

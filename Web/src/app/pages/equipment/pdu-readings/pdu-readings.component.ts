@@ -1,9 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AuthService } from '../../../modules/auth/services/auth.service';
 import { ToastrService } from 'ngx-toastr';
 import { PduService } from 'src/app/core/services/pdu.service';
 import { EquipmentService } from 'src/app/core/services/equipment.service';
+import { BatteryReadingsService } from 'src/app/core/services/battery-readings.service';
 import { PDUReadings, PDUReconciliationInfo, VOLTAGE_CONFIGS, OUTPUT_VOLTAGE_CONFIGS, VoltageConfiguration } from 'src/app/core/model/pdu-readings.model';
 
 @Component({
@@ -85,7 +87,9 @@ export class PduReadingsComponent implements OnInit {
     private router: Router,
     private pduService: PduService,
     private equipmentService: EquipmentService,
-    private toastr: ToastrService
+    private batteryService: BatteryReadingsService,
+    private toastr: ToastrService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -93,6 +97,75 @@ export class PduReadingsComponent implements OnInit {
     this.initializeForms();
     this.loadManufacturers();
     this.loadData();
+  }
+
+  // Legacy-equivalent: GetEquipStatus() for PDU
+  private async getEquipStatus(): Promise<string> {
+    try {
+      const [jobSummary, statusDesc] = await Promise.all([
+        this.equipmentService.getJobSummaryReport(this.callNbr, this.equipId, 'PDU').toPromise(),
+        this.equipmentService.getStatusDescription('PDU').toPromise()
+      ]);
+
+      let resultStatus = 'Online';
+      const rows = jobSummary?.Tables?.[0]?.Rows?.length ? jobSummary.Tables[0].Rows : jobSummary?.data?.primaryData;
+      console.log('GetEquipStatus rows:', rows);
+      if (rows && rows.length > 0) {
+        const row = rows[0];
+        const columns = jobSummary?.Tables?.[0]?.Columns || Object.keys(row);
+        for (const col of columns) {
+          const tempColumnRaw = (col.ColumnName || col || '').toString();
+          const tempColumn = tempColumnRaw.trim();
+          const rawValue = (row[tempColumn] ?? row[col] ?? '').toString();
+          const tempField = rawValue.trim();
+
+          let shouldCheckStatus = false;
+
+          const columnLower = tempColumn.toLowerCase();
+          if (columnLower.includes('action') || columnLower.includes('critical')) {
+            if (tempField === 'Y') {
+              shouldCheckStatus = true;
+            }
+          } else {
+            if (tempField === 'N' || tempField === 'F' || tempField === 'True' || tempField === '12' || tempField === 'W') {
+              shouldCheckStatus = true;
+            }
+          }
+
+          if (shouldCheckStatus) {
+            console.log('GetEquipStatus match ->', { tempColumn, tempField });
+            resultStatus = 'OnLine(MinorDeficiency)';
+            const statusTables = (statusDesc as any)?.Tables;
+            const statusRows = Array.isArray(statusTables?.[0]?.Rows)
+              ? statusTables[0].Rows
+              : Array.isArray(statusDesc)
+                ? statusDesc as any[]
+                : [];
+            for (const dr of statusRows) {
+              const descColumn = (dr['ColumnName'] || '').toString().trim();
+              if (descColumn.toLowerCase() === columnLower) {
+                const type = (dr['StatusType'] || '').toString().trim();
+                console.log('GetEquipStatus override ->', { tempColumn, type });
+                if (type === 'CriticalDeficiency') {
+                  return 'CriticalDeficiency';
+                } else if (type === 'OnLine(MajorDeficiency)') {
+                  resultStatus = 'OnLine(MajorDeficiency)';
+                } else if (type === 'ReplacementRecommended') {
+                  resultStatus = 'ReplacementRecommended';
+                } else if (type === 'ProactiveReplacement') {
+                  resultStatus = 'ProactiveReplacement';
+                }
+              }
+            }
+          }
+        }
+      }
+        console.log('GetEquipStatus resultStatus ->', resultStatus);
+      return resultStatus;
+    } catch (e) {
+        console.error('GetEquipStatus error ->', e);
+      return 'Online';
+    }
   }
 
   private loadRouteParams(): void {
@@ -122,6 +195,9 @@ export class PduReadingsComponent implements OnInit {
 
     // Reconciliation Form
     this.reconciliationForm = this.fb.group({
+      recMake: [''],
+      recMakeCorrect: ['YS'],
+      actMake: [''],
       recModel: [''],
       recModelCorrect: ['YS'],
       actModel: [''],
@@ -131,9 +207,17 @@ export class PduReadingsComponent implements OnInit {
       kvaSize: [''],
       kvaCorrect: ['YS'],
       actKVA: [''],
+      ascStringsNo: [''],
+      ascStringsCorrect: ['YS'],
+      actASCStringNo: [''],
+      battPerString: [''],
+      battPerStringCorrect: ['YS'],
+      actBattPerString: [''],
       totalEquips: [''],
       totalEquipsCorrect: ['YS'],
       actTotalEquips: [''],
+      newEquipment: ['NO'],
+      equipmentNotes: [''],
       verified: [false]
     });
 
@@ -383,7 +467,22 @@ export class PduReadingsComponent implements OnInit {
   private loadManufacturers(): void {
     this.equipmentService.getManufacturerNames().subscribe({
       next: (manufacturers) => {
-        this.manufacturers = manufacturers.map(m => ({ value: m.id, label: m.name }));
+        // API returns objects like { manufID: string, manufName: string }
+        // Filter out empty entries, trim values, and deduplicate by manufID
+        const cleaned = (manufacturers || [])
+          .map((m: any) => ({
+            value: (m.value ?? m.id ?? '').toString().trim(),
+            label: (m.text ?? m.name ?? '').toString().trim()
+          }))
+          .filter((m: any) => m.value && m.label);
+
+        // Deduplicate by value (manufID)
+        const seen = new Set<string>();
+        this.manufacturers = cleaned.filter(m => {
+          if (seen.has(m.value)) return false;
+          seen.add(m.value);
+          return true;
+        });
       },
       error: (error) => {
         console.error('Error loading manufacturers:', error);
@@ -439,9 +538,16 @@ export class PduReadingsComponent implements OnInit {
           location: equipInfo.location || ''
         });
 
+        // Calculate dateCode from year and month if available
         if (equipInfo.equipYear && equipInfo.equipMonth) {
-          const dateCode = new Date(equipInfo.equipYear, this.getMonthNumber(equipInfo.equipMonth) - 1, 1);
-          this.equipmentForm.patchValue({ dateCode });
+          const monthNum = this.getMonthNumber(equipInfo.equipMonth);
+          if (monthNum > 0) {
+            // JavaScript Date constructor uses 0-indexed months, so subtract 1
+            const dateCode = new Date(equipInfo.equipYear, monthNum - 1, 1);
+            // Format as yyyy-MM-dd for date input
+            const dateStr = dateCode.toISOString().split('T')[0];
+            this.equipmentForm.patchValue({ dateCode: dateStr });
+          }
         }
       }
     } catch (error) {
@@ -451,22 +557,35 @@ export class PduReadingsComponent implements OnInit {
 
   private async loadReconciliationInfo(): Promise<void> {
     try {
-      const reconInfo = await this.pduService.getReconciliationInfo(this.callNbr, this.equipId).toPromise();
+      const reconInfo = await this.batteryService.getEquipReconciliationInfo(this.callNbr, this.equipId).toPromise();
       
       if (reconInfo) {
+        // Handle both actKva (model) and actKVA (API response) property names
+        const actKvaValue = (reconInfo as any).actKVA || reconInfo.actKva || '';
+        
         this.reconciliationForm.patchValue({
-          recModel: reconInfo.model || '',
-          recModelCorrect: reconInfo.modelCorrect || 'YS',
-          actModel: reconInfo.actModel || '',
-          recSerialNo: reconInfo.serialNo || '',
-          recSerialNoCorrect: reconInfo.serialNoCorrect || 'YS',
-          actSerialNo: reconInfo.actSerialNo || '',
-          kvaSize: reconInfo.kva || '',
-          kvaCorrect: reconInfo.kvaCorrect || 'YS',
-          actKVA: reconInfo.actKVA || '',
+          recMake: (reconInfo.make || '').trim(),
+          recMakeCorrect: (reconInfo.makeCorrect || '').trim() || 'YS',
+          actMake: (reconInfo.actMake || '').trim(),
+          recModel: (reconInfo.model || '').trim(),
+          recModelCorrect: (reconInfo.modelCorrect || '').trim() || 'YS',
+          actModel: (reconInfo.actModel || '').trim(),
+          recSerialNo: (reconInfo.serialNo || '').trim(),
+          recSerialNoCorrect: (reconInfo.serialNoCorrect || '').trim() || 'YS',
+          actSerialNo: (reconInfo.actSerialNo || '').trim(),
+          kvaSize: (reconInfo.kva || '').trim(),
+          kvaCorrect: (reconInfo.kvaCorrect || '').trim() || 'YS',
+          actKVA: (actKvaValue || '').trim(),
+          ascStringsNo: reconInfo.ascStringsNo || 0,
+          ascStringsCorrect: (reconInfo.ascStringsCorrect || '').trim() || 'YS',
+          actASCStringNo: reconInfo.actAscStringNo || 0,
+          battPerString: reconInfo.battPerString || 0,
+          battPerStringCorrect: (reconInfo.battPerStringCorrect || '').trim() || 'YS',
+          actBattPerString: reconInfo.actBattPerString || 0,
           totalEquips: reconInfo.totalEquips || 0,
-          totalEquipsCorrect: reconInfo.totalEquipsCorrect || 'YS',
+          totalEquipsCorrect: (reconInfo.totalEquipsCorrect || '').trim() || 'YS',
           actTotalEquips: reconInfo.actTotalEquips || 0,
+          newEquipment: 'NO',
           verified: reconInfo.verified || false
         });
 
@@ -481,26 +600,58 @@ export class PduReadingsComponent implements OnInit {
   }
 
   private populateFormsWithData(data: PDUReadings): void {
+    const trim = (v: any) => (typeof v === 'string' ? v.trim() : v);
+    const normalizeStatus = (v: string | undefined) => {
+      const sv = (v || '').trim();
+      const valid = this.statusOptions.map(s => s.value);
+      // If incoming already matches one of our values after trim, use it
+      if (valid.includes(sv)) return sv;
+      // Map common display strings to internal values
+      const map: Record<string, string> = {
+        'Off-Line': 'Offline',
+        'Critical Deficiency': 'CriticalDeficiency',
+        'Replacement Recommended': 'ReplacementRecommended',
+        'On-Line(Major Deficiency)': 'OnLine(MajorDeficiency)',
+        'On-Line(Minor Deficiency)': 'OnLine(MinorDeficiency)',
+        'On-Line': 'Online'
+      };
+      return map[sv] || 'Online';
+    };
+
+    const resolveManufacturerValue = (name: string | undefined) => {
+      const nm = (name || '').trim();
+      if (!nm) return '';
+      // manufacturers: { value: id, label: name }
+      const found = this.manufacturers.find(m => (m.label || '').trim().toLowerCase() === nm.toLowerCase());
+      return found ? found.value : nm; // fallback to name so field shows something
+    };
     // Equipment form
     this.equipmentForm.patchValue({
-      manufacturer: data.manufacturer || '',
-      modelNo: data.modelNo || '',
-      serialNo: data.serialNo || '',
-      location: data.location || '',
-      kva: data.kva || '',
-      temperature: data.temp || '',
-      status: data.status || 'Online',
-      statusNotes: data.statusNotes || ''
+      manufacturer: resolveManufacturerValue(data.manufacturer),
+      modelNo: trim(data.modelNo) || '',
+      serialNo: trim(data.serialNo) || '',
+      location: trim(data.location) || '',
+      kva: trim(data.kva) || '',
+      temperature: trim(data.temp) || '',
+      status: normalizeStatus(data.status),
+      statusNotes: trim(data.statusNotes) || ''
     });
 
+    // Calculate dateCode from year and month if available
     if (data.year && data.month) {
-      const dateCode = new Date(data.year, this.getMonthNumber(data.month) - 1, 1);
-      this.equipmentForm.patchValue({ dateCode });
+      const monthNum = this.getMonthNumber(data.month);
+      if (monthNum > 0) {
+        // JavaScript Date constructor uses 0-indexed months, so subtract 1
+        const dateCode = new Date(data.year, monthNum - 1, 1);
+        // Format as yyyy-MM-dd for date input
+        const dateStr = dateCode.toISOString().split('T')[0];
+        this.equipmentForm.patchValue({ dateCode: dateStr });
+      }
     }
 
     // Visual form
     this.visualForm.patchValue({
-      busswork: data.busswork || 'P',
+      busswork: (data.busswork || 'P').trim(),
       transformers: data.transformers || 'P',
       powerConn: data.powerConn || 'P',
       mainCirBreaks: data.mainCirBreaks || 'P',
@@ -516,10 +667,10 @@ export class PduReadingsComponent implements OnInit {
       frontPanel: data.frontPanel || 'P',
       internalPower: data.internalPower || 'P',
       localMonitoring: data.localMonitoring || 'P',
-      localEPO: data.localEPO || 'P',
-      neutralCurrent: data.neutral_T || '',
-      groundCurrent: data.ground_T || '',
-      comments: data.comments || ''
+      localEPO: (data.localEPO || 'P').trim(),
+      neutralCurrent: trim(data.neutral_T) || '',
+      groundCurrent: trim(data.ground_T) || '',
+      comments: trim(data.comments) || ''
     });
 
     // Input voltage
@@ -538,8 +689,8 @@ export class PduReadingsComponent implements OnInit {
 
     // Comments
     this.commentsForm.patchValue({
-      comments1: data.comments1 || '',
-      comments5: data.comments5 || ''
+      comments1: trim(data.comments1) || '',
+      comments5: trim(data.comments5) || ''
     });
   }
 
@@ -836,115 +987,481 @@ export class PduReadingsComponent implements OnInit {
   }
 
   // Calculate load percentage
-  calculateLoadPercentage(voltage: string): void {
+  calculateLoadPercentage(voltage: string): boolean {
     const kva = parseFloat(this.equipmentForm.value.kva || '0');
     if (!kva) {
-      this.toastr.warning('Please enter KVA Rating to calculate load percentage');
-      return;
+      this.toastr.warning('KVA value cannot be empty');
+      return false;
     }
 
-    const voltageNum = parseInt(voltage);
-    let voltValue = 0;
-    let phases = 1;
+    const addComment = (txt: string) => {
+      const existing = this.trimValue(this.commentsForm.get('comments5')?.value);
+      const updated = existing ? `${existing}\n${txt}` : txt;
+      this.commentsForm.patchValue({ comments5: updated });
+    };
+
+    const setPf = (control: string, value: 'P' | 'F') => {
+      this.outputForm.patchValue({ [control]: value });
+    };
+
+    const confirmOrCancel = (message: string): boolean => {
+      return window.confirm(message);
+    };
 
     switch (voltage) {
-      case '1': // 120V
-        const curr120A = parseFloat(this.outputForm.value.output120CurrA || '0');
-        voltValue = 120;
-        const load120A = this.pduService.calculateLoadPercentage(curr120A, kva, voltValue, phases);
+      case '1': { // 120V
+        const currA = this.outputForm.value.output120CurrA;
+        if (currA === null || currA === undefined || currA === '') {
+          this.toastr.warning('Output Current cannot be empty');
+          return false;
+        }
+        const current = parseFloat(currA);
+        const volt = parseFloat(this.outputForm.value.output120VoltA || '120');
+        const eachPhaseKva = parseFloat(kva.toString());
+        const actKva = (current * volt) / 1000;
+        const load = actKva * 100 / eachPhaseKva;
         this.outputForm.patchValue({
-          load120A: load120A.toFixed(2),
-          total120Load: load120A.toFixed(2)
+          load120A: load.toFixed(2),
+          total120Load: load.toFixed(2)
         });
+        if (!this.evaluateLoadThreshold('A', load, 'load120A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
+      }
 
-      case '2': // 240V
-        const curr240A = parseFloat(this.outputForm.value.output240CurrA || '0');
-        const curr240B = parseFloat(this.outputForm.value.output240CurrB || '0');
-        voltValue = 240;
-        phases = 2;
-        const load240A = this.pduService.calculateLoadPercentage(curr240A, kva, voltValue, phases);
-        const load240B = this.pduService.calculateLoadPercentage(curr240B, kva, voltValue, phases);
-        const total240 = ((load240A + load240B) / 2);
+      case '2': { // 240V (split phase)
+        const currA = this.outputForm.value.output240CurrA;
+        const currB = this.outputForm.value.output240CurrB;
+        if (currA === '' || currB === '' || currA === null || currB === null) {
+          this.toastr.warning('Output Current A or Output Current B cannot be empty');
+          return false;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const voltA = parseFloat(this.outputForm.value.output240VoltA || '120');
+        const voltB = parseFloat(this.outputForm.value.output240VoltB || '120');
+        const eachPhaseKva = Math.round(kva / 2);
+        const loadA = (currentA * voltA / 1000) * 100 / eachPhaseKva;
+        const loadB = (currentB * voltB / 1000) * 100 / eachPhaseKva;
+        const total = ((loadA + loadB) / 2);
         this.outputForm.patchValue({
-          load240A: load240A.toFixed(2),
-          load240B: load240B.toFixed(2),
-          total240Load: total240.toFixed(2)
+          load240A: loadA.toFixed(2),
+          load240B: loadB.toFixed(2),
+          total240Load: total.toFixed(2)
         });
+        if (!this.evaluateLoadThreshold('A', loadA, 'load240A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load240B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
+      }
 
-      case '3': // 208V
-        const curr208A = parseFloat(this.outputForm.value.output208CurrA || '0');
-        const curr208B = parseFloat(this.outputForm.value.output208CurrB || '0');
-        const curr208C = parseFloat(this.outputForm.value.output208CurrC || '0');
-        voltValue = 208;
-        phases = 3;
-        const load208A = this.pduService.calculateLoadPercentage(curr208A, kva, voltValue, phases);
-        const load208B = this.pduService.calculateLoadPercentage(curr208B, kva, voltValue, phases);
-        const load208C = this.pduService.calculateLoadPercentage(curr208C, kva, voltValue, phases);
-        const total208 = ((load208A + load208B + load208C) / 3);
+      case '3': { // 208V three-phase
+        const currA = this.outputForm.value.output208CurrA;
+        const currB = this.outputForm.value.output208CurrB;
+        const currC = this.outputForm.value.output208CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return false;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output208VoltAB || '208');
+        const voltBC = parseFloat(this.outputForm.value.output208VoltBC || '208');
+        const voltCA = parseFloat(this.outputForm.value.output208VoltCA || '208');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load208A: load208A.toFixed(2),
-          load208B: load208B.toFixed(2),
-          load208C: load208C.toFixed(2),
-          total208Load: total208.toFixed(2)
+          load208A: loadA.toFixed(2),
+          load208B: loadB.toFixed(2),
+          load208C: loadC.toFixed(2),
+          total208Load: total.toFixed(2)
         });
+        if (!this.evaluateLoadThreshold('A', loadA, 'load208A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load208B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load208C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
+      }
 
-      case '4': // 480V
-        const curr480A = parseFloat(this.outputForm.value.output480CurrA || '0');
-        const curr480B = parseFloat(this.outputForm.value.output480CurrB || '0');
-        const curr480C = parseFloat(this.outputForm.value.output480CurrC || '0');
-        voltValue = 480;
-        phases = 3;
-        const load480A = this.pduService.calculateLoadPercentage(curr480A, kva, voltValue, phases);
-        const load480B = this.pduService.calculateLoadPercentage(curr480B, kva, voltValue, phases);
-        const load480C = this.pduService.calculateLoadPercentage(curr480C, kva, voltValue, phases);
-        const total480 = ((load480A + load480B + load480C) / 3);
+      case '4': { // 480V three-phase
+        const currA = this.outputForm.value.output480CurrA;
+        const currB = this.outputForm.value.output480CurrB;
+        const currC = this.outputForm.value.output480CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return false;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output480VoltAB || '480');
+        const voltBC = parseFloat(this.outputForm.value.output480VoltBC || '480');
+        const voltCA = parseFloat(this.outputForm.value.output480VoltCA || '480');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load480A: load480A.toFixed(2),
-          load480B: load480B.toFixed(2),
-          load480C: load480C.toFixed(2),
-          total480Load: total480.toFixed(2)
+          load480A: loadA.toFixed(2),
+          load480B: loadB.toFixed(2),
+          load480C: loadC.toFixed(2),
+          total480Load: total.toFixed(2)
         });
+        if (!this.evaluateLoadThreshold('A', loadA, 'load480A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load480B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load480C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
+      }
 
-      case '6': // 575V
-        const curr575A = parseFloat(this.outputForm.value.output575CurrA || '0');
-        const curr575B = parseFloat(this.outputForm.value.output575CurrB || '0');
-        const curr575C = parseFloat(this.outputForm.value.output575CurrC || '0');
-        voltValue = 575;
-        phases = 3;
-        const load575A = this.pduService.calculateLoadPercentage(curr575A, kva, voltValue, phases);
-        const load575B = this.pduService.calculateLoadPercentage(curr575B, kva, voltValue, phases);
-        const load575C = this.pduService.calculateLoadPercentage(curr575C, kva, voltValue, phases);
-        const total575 = ((load575A + load575B + load575C) / 3);
+      case '5': { // 600V three-phase
+        const currA = this.outputForm.value.output600CurrA;
+        const currB = this.outputForm.value.output600CurrB;
+        const currC = this.outputForm.value.output600CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return false;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output600VoltAB || '600');
+        const voltBC = parseFloat(this.outputForm.value.output600VoltBC || '600');
+        const voltCA = parseFloat(this.outputForm.value.output600VoltCA || '600');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load575A: load575A.toFixed(2),
-          load575B: load575B.toFixed(2),
-          load575C: load575C.toFixed(2),
-          total575Load: total575.toFixed(2)
+          load600A: loadA.toFixed(2),
+          load600B: loadB.toFixed(2),
+          load600C: loadC.toFixed(2),
+          total600Load: total.toFixed(2)
         });
+        if (!this.evaluateLoadThreshold('A', loadA, 'load600A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load600B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load600C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
         break;
+      }
 
-      case '5': // 600V
-        const curr600A = parseFloat(this.outputForm.value.output600CurrA || '0');
-        const curr600B = parseFloat(this.outputForm.value.output600CurrB || '0');
-        const curr600C = parseFloat(this.outputForm.value.output600CurrC || '0');
-        voltValue = 600;
-        phases = 3;
-        const load600A = this.pduService.calculateLoadPercentage(curr600A, kva, voltValue, phases);
-        const load600B = this.pduService.calculateLoadPercentage(curr600B, kva, voltValue, phases);
-        const load600C = this.pduService.calculateLoadPercentage(curr600C, kva, voltValue, phases);
-        const total600 = ((load600A + load600B + load600C) / 3);
+      case '6': { // 575V three-phase
+        const currA = this.outputForm.value.output575CurrA;
+        const currB = this.outputForm.value.output575CurrB;
+        const currC = this.outputForm.value.output575CurrC;
+        if (!currA || !currB || !currC) {
+          this.toastr.warning('Output Current A, B, C cannot be empty');
+          return false;
+        }
+        const currentA = parseFloat(currA);
+        const currentB = parseFloat(currB);
+        const currentC = parseFloat(currC);
+        const voltAB = parseFloat(this.outputForm.value.output575VoltAB || '575');
+        const voltBC = parseFloat(this.outputForm.value.output575VoltBC || '575');
+        const voltCA = parseFloat(this.outputForm.value.output575VoltCA || '575');
+        const eachPhaseKva = Math.round(kva / 3);
+        const loadA = (voltAB * currentA / 1732) * 100 / eachPhaseKva;
+        const loadB = (voltBC * currentB / 1732) * 100 / eachPhaseKva;
+        const loadC = (voltCA * currentC / 1732) * 100 / eachPhaseKva;
+        const total = (loadA + loadB + loadC) / 3;
         this.outputForm.patchValue({
-          load600A: load600A.toFixed(2),
-          load600B: load600B.toFixed(2),
-          load600C: load600C.toFixed(2),
-          total600Load: total600.toFixed(2)
+          load575A: loadA.toFixed(2),
+          load575B: loadB.toFixed(2),
+          load575C: loadC.toFixed(2),
+          total575Load: total.toFixed(2)
         });
+        if (!this.evaluateLoadThreshold('A', loadA, 'load575A_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('B', loadB, 'load575B_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        if (!this.evaluateLoadThreshold('C', loadC, 'load575C_PF', addComment, setPf, confirmOrCancel)) {
+          return false;
+        }
+        break;
+      }
+    }
+    return true;
+  }
+
+  // Legacy threshold handling for load percentages
+  private evaluateLoadThreshold(phaseLabel: 'A' | 'B' | 'C', load: number, pfControl: string, addComment: (txt: string) => void, setPf: (c: string, v: 'P' | 'F') => void, confirmOrCancel: (msg: string) => boolean): boolean {
+    if (load >= 90) {
+      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} exceeds maximum limit`)) return false;
+      addComment(`Load on UPS Phase ${phaseLabel} exceeded maximum limit.`);
+      setPf(pfControl, 'F');
+    } else if (load >= 80) {
+      if (!confirmOrCancel(`Are you sure that Load on UPS Phase ${phaseLabel} is above 80%`)) return false;
+      addComment(`Load on UPS Phase ${phaseLabel} is above 80%.`);
+      setPf(pfControl, 'F');
+    } else {
+      setPf(pfControl, 'P');
+    }
+    return true;
+  }
+
+  // Legacy-equivalent pre-save validation suite
+  private runLegacyValidations(isDraft: boolean): boolean {
+    const eq = this.equipmentForm.value;
+    const recon = this.reconciliationForm.value;
+    const inputVoltage = this.inputForm.value.inputVoltage;
+    const outputVoltage = this.outputForm.value.outputVoltage;
+
+    if (eq.status !== 'Online' && !this.trimValue(eq.statusNotes)) {
+      window.alert('Please enter the reason for status.');
+      return false;
+    }
+
+    const rawDate = eq.dateCode;
+    if (!rawDate) {
+      window.alert('Please enter the DateCode.');
+      return false;
+    }
+    const parsedDate = new Date(rawDate);
+    if (isNaN(parsedDate.getTime())) {
+      window.alert('Please enter the DateCode.');
+      return false;
+    }
+    const normalizedDate = new Date(parsedDate.getFullYear(), parsedDate.getMonth(), parsedDate.getDate());
+    const minDate = new Date(1900, 0, 1);
+    const today = new Date();
+    const todayNormalized = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    if (normalizedDate <= minDate) {
+      window.alert('Please enter the DateCode.');
+      return false;
+    }
+    if (normalizedDate > todayNormalized) {
+      window.alert("DateCode cannot be higher than today's date");
+      return false;
+    }
+
+    const kvaVal = this.trimValue(eq.kva);
+    if (!kvaVal || kvaVal === '0') {
+      window.alert('Please enter the KVA value');
+      return false;
+    }
+    if (!this.isIntegerOrFloat(kvaVal)) {
+      window.alert('Please enter the valid KVA');
+      return false;
+    }
+    this.equipmentForm.patchValue({ kva: kvaVal });
+
+    const tempValStr = this.trimValue(eq.temperature);
+    const tempVal = parseInt(tempValStr, 10);
+    if (!(tempVal > 67 && tempVal < 78)) {
+      if (!tempValStr || tempValStr === '0' || isNaN(tempVal)) {
+        window.alert('Please enter the Temperature');
+        return false;
+      }
+      this.equipmentForm.patchValue({ status: 'OnLine(MinorDeficiency)' });
+    }
+
+    if (!recon.verified) {
+      window.alert('You must verify the Reconciliation section before Saving PM form');
+      return false;
+    }
+
+    if (inputVoltage === '0' || outputVoltage === '0') {
+      window.alert('You must enter the values for Input,Ouptput voltages.');
+      return false;
+    }
+
+    if (!this.calculateLoadPercentage(outputVoltage)) {
+      return false;
+    }
+
+    if (!this.validateFrequencyTolerance(inputVoltage, outputVoltage)) {
+      return false;
+    }
+
+    if (!this.ensureCommentsForFails()) {
+      return false;
+    }
+
+    if (this.equipmentForm.value.status !== 'Online') {
+      if (!this.trimValue(this.equipmentForm.value.statusNotes)) {
+        window.alert('Please enter the reason for status.');
+        return false;
+      }
+      if (!window.confirm(`Are you sure that the Equipment Status : ${this.equipmentForm.value.status}`)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private validateFrequencyTolerance(inputVoltage: string, outputVoltage: string): boolean {
+    const addComment = (txt: string) => {
+      const existing = this.trimValue(this.commentsForm.get('comments5')?.value);
+      const updated = existing ? `${existing}\n${txt}` : txt;
+      this.commentsForm.patchValue({ comments5: updated });
+    };
+
+    let inputFreqVal: number | undefined;
+    let inputFreqPfControl: string | undefined;
+    switch (inputVoltage) {
+      case '1':
+        inputFreqVal = parseFloat(this.inputForm.value.input120Freq);
+        inputFreqPfControl = 'input120Freq_PF';
+        break;
+      case '2':
+        inputFreqVal = parseFloat(this.inputForm.value.input240Freq);
+        inputFreqPfControl = 'input240Freq_PF';
+        break;
+      case '3':
+        inputFreqVal = parseFloat(this.inputForm.value.input208Freq);
+        inputFreqPfControl = 'input208Freq_PF';
+        break;
+      case '4':
+        inputFreqVal = parseFloat(this.inputForm.value.input480Freq);
+        inputFreqPfControl = 'input480Freq_PF';
+        break;
+      case '6':
+        inputFreqVal = parseFloat(this.inputForm.value.input575Freq);
+        inputFreqPfControl = 'input575Freq_PF';
+        break;
+      case '5':
+        inputFreqVal = parseFloat(this.inputForm.value.input600Freq);
+        inputFreqPfControl = 'input600Freq_PF';
         break;
     }
+
+    if (inputFreqVal !== undefined && inputFreqPfControl) {
+      if (inputFreqVal >= 55 && inputFreqVal <= 65) {
+        this.inputForm.patchValue({ [inputFreqPfControl]: 'P' });
+      } else {
+        if (!window.confirm('Are you sure that Input Frequency not within specified tolerance')) {
+          return false;
+        }
+        addComment('Input Frequency not within specified tolerance.');
+        this.inputForm.patchValue({ [inputFreqPfControl]: 'F' });
+      }
+    }
+
+    let outputFreqVal: number | undefined;
+    let outputFreqPfControl: string | undefined;
+    switch (outputVoltage) {
+      case '1':
+        outputFreqVal = parseFloat(this.outputForm.value.output120Freq);
+        outputFreqPfControl = 'output120Freq_PF';
+        break;
+      case '2':
+        outputFreqVal = parseFloat(this.outputForm.value.output240Freq);
+        outputFreqPfControl = 'output240Freq_PF';
+        break;
+      case '3':
+        outputFreqVal = parseFloat(this.outputForm.value.output208Freq);
+        outputFreqPfControl = 'output208Freq_PF';
+        break;
+      case '4':
+        outputFreqVal = parseFloat(this.outputForm.value.output480Freq);
+        outputFreqPfControl = 'output480Freq_PF';
+        break;
+      case '6':
+        outputFreqVal = parseFloat(this.outputForm.value.output575Freq);
+        outputFreqPfControl = 'output575Freq_PF';
+        break;
+      case '5':
+        outputFreqVal = parseFloat(this.outputForm.value.output600Freq);
+        outputFreqPfControl = 'output600Freq_PF';
+        break;
+    }
+
+    if (outputFreqVal !== undefined && outputFreqPfControl) {
+      if (outputFreqVal >= 58 && outputFreqVal <= 62) {
+        this.outputForm.patchValue({ [outputFreqPfControl]: 'P' });
+      } else {
+        if (!window.confirm('Are you sure that Output Frequency not within specified tolerance')) {
+          return false;
+        }
+        addComment('Output Frequency not within specified tolerance.');
+        this.outputForm.patchValue({ [outputFreqPfControl]: 'F' });
+      }
+    }
+
+    return true;
+  }
+
+  private ensureCommentsForFails(): boolean {
+    const comments1 = this.trimValue(this.commentsForm.value.comments1);
+    const comments5 = this.trimValue(this.commentsForm.value.comments5);
+    const statusNotes = this.trimValue(this.equipmentForm.value.statusNotes);
+
+    const passFailControls = [
+      // Visual and mechanical
+      'busswork', 'transformers', 'powerConn', 'mainCirBreaks', 'subfeedCirBreaks', 'currentCTs',
+      'circuitBoards', 'filterCapacitors', 'epoConn', 'wiringConn', 'ribbonCables', 'compAirClean',
+      'staticSwitch', 'frontPanel', 'internalPower', 'localMonitoring', 'localEPO',
+      // Input PF fields
+      'input120VoltA_PF', 'input120CurrA_PF', 'input120Freq_PF',
+      'input240VoltA_PF', 'input240VoltB_PF', 'input240CurrA_PF', 'input240CurrB_PF', 'input240Freq_PF',
+      'input208VoltAB_PF', 'input208VoltBC_PF', 'input208VoltCA_PF', 'input208CurrA_PF', 'input208CurrB_PF', 'input208CurrC_PF', 'input208Freq_PF',
+      'input480VoltAB_PF', 'input480VoltBC_PF', 'input480VoltCA_PF', 'input480CurrA_PF', 'input480CurrB_PF', 'input480CurrC_PF', 'input480Freq_PF',
+      'input575VoltAB_PF', 'input575VoltBC_PF', 'input575VoltCA_PF', 'input575CurrA_PF', 'input575CurrB_PF', 'input575CurrC_PF', 'input575Freq_PF',
+      'input600VoltAB_PF', 'input600VoltBC_PF', 'input600VoltCA_PF', 'input600CurrA_PF', 'input600CurrB_PF', 'input600CurrC_PF', 'input600Freq_PF',
+      // Output PF fields
+      'output120VoltA_PF', 'output120CurrA_PF', 'output120Freq_PF', 'load120A_PF',
+      'output240VoltA_PF', 'output240VoltB_PF', 'output240CurrA_PF', 'output240CurrB_PF', 'output240Freq_PF', 'load240A_PF', 'load240B_PF',
+      'output208VoltAB_PF', 'output208VoltBC_PF', 'output208VoltCA_PF', 'output208CurrA_PF', 'output208CurrB_PF', 'output208CurrC_PF', 'output208Freq_PF', 'load208A_PF', 'load208B_PF', 'load208C_PF',
+      'output480VoltAB_PF', 'output480VoltBC_PF', 'output480VoltCA_PF', 'output480CurrA_PF', 'output480CurrB_PF', 'output480CurrC_PF', 'output480Freq_PF', 'load480A_PF', 'load480B_PF', 'load480C_PF',
+      'output575VoltAB_PF', 'output575VoltBC_PF', 'output575VoltCA_PF', 'output575CurrA_PF', 'output575CurrB_PF', 'output575CurrC_PF', 'output575Freq_PF', 'load575A_PF', 'load575B_PF', 'load575C_PF',
+      'output600VoltAB_PF', 'output600VoltBC_PF', 'output600VoltCA_PF', 'output600CurrA_PF', 'output600CurrB_PF', 'output600CurrC_PF', 'output600Freq_PF', 'load600A_PF', 'load600B_PF', 'load600C_PF'
+    ];
+
+    const yesNoControls = [
+      'recMakeCorrect', 'recModelCorrect', 'recSerialNoCorrect', 'kvaCorrect',
+      'ascStringsCorrect', 'battPerStringCorrect', 'totalEquipsCorrect', 'newEquipment'
+    ];
+
+    let hasFailOrYes = false;
+
+    passFailControls.forEach(control => {
+      const value = (this.visualForm.get(control) || this.inputForm.get(control) || this.outputForm.get(control))?.value;
+      if (value && value.toString().trim().toUpperCase() === 'F') {
+        hasFailOrYes = true;
+      }
+    });
+
+    yesNoControls.forEach(control => {
+      const value = this.reconciliationForm.get(control)?.value;
+      if (value && value.toString().trim().toUpperCase() === 'YS') {
+        hasFailOrYes = true;
+      }
+    });
+
+    if (hasFailOrYes && !comments1 && !statusNotes && !comments5) {
+      window.alert('You must enter the respected comments if anything selected as Fail or Yes');
+      return false;
+    }
+
+    return true;
   }
 
   // Save methods
@@ -961,30 +1478,36 @@ export class PduReadingsComponent implements OnInit {
       const pduData = this.preparePDUData(isDraft);
       const reconData = this.prepareReconciliationData();
 
-      // Save PDU readings
+      // Legacy SaveData sequence:
+      // 1. SaveUpdatePDUVerification(ButtonType)
       const pduResult = await this.pduService.savePDUReadings(pduData).toPromise();
       
-      // Save reconciliation info
-      await this.pduService.saveReconciliationInfo(reconData).toPromise();
+      // 2. SaveUpdateReconciliationInfo()
+      await this.batteryService.saveUpdateEquipReconciliationInfo(reconData).toPromise();
 
-      // Calculate and update status if not draft
-      if (!isDraft && this.equipmentForm.value.status !== 'Offline') {
-        const statusResult = await this.pduService.calculateEquipmentStatus(this.callNbr, this.equipId).toPromise();
-        if (statusResult?.status) {
-          this.equipmentForm.patchValue({ status: statusResult.status });
-          pduData.status = statusResult.status;
+      // 3. if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
+      let statusToSend = this.equipmentForm.value.status;
+      if (statusToSend !== 'Offline') {
+        statusToSend = (await this.getEquipStatus())?.trim() || 'Online';
+      }
+      console.log('UpdateEquipStatus statusToSend ->', statusToSend);
+      this.equipmentForm.patchValue({ status: statusToSend });
+
+      // 4. da.UpdateEquipStatus(UES)
+      let dateCode: any = this.equipmentForm.value.dateCode;
+      if (dateCode && typeof dateCode === 'string') {
+        const parsed = new Date(dateCode);
+        if (!isNaN(parsed.getTime())) {
+          dateCode = parsed;
         }
       }
+      const monthName = dateCode instanceof Date ? this.getMonthName(dateCode.getMonth()) : '';
+      const year = dateCode instanceof Date ? dateCode.getFullYear() : new Date().getFullYear();
 
-      // Update equipment status
-      const dateCode = this.equipmentForm.value.dateCode;
-      const monthName = dateCode ? this.getMonthName(dateCode.getMonth() + 1) : '';
-      const year = dateCode ? dateCode.getFullYear() : new Date().getFullYear();
-
-      await this.pduService.updateEquipmentStatus({
+      await this.batteryService.updateEquipStatus({
         callNbr: this.callNbr,
         equipId: this.equipId,
-        status: this.equipmentForm.value.status,
+        status: statusToSend,
         statusNotes: this.equipmentForm.value.statusNotes,
         tableName: 'PDU_Verification',
         manufacturer: this.equipmentForm.value.manufacturer,
@@ -993,11 +1516,20 @@ export class PduReadingsComponent implements OnInit {
         location: this.equipmentForm.value.location,
         monthName: monthName,
         year: year,
-        readingType: '1'
+        readingType: '1',
+        // Fields required by UpdateEquipStatus (legacy API expectations)
+        vfSelection: this.equipmentForm.value.vfSelection || '',
+        batteriesPerString: this.equipmentForm.value.batteriesPerString || 0,
+        batteriesPerPack: this.equipmentForm.value.batteriesPerPack || 0,
+        Notes: this.equipmentForm.value.statusNotes || '',
+        MaintAuthID: (this as any).authService?.currentUserValue?.id || this.techId || ''
       }).toPromise();
 
       this.successMessage = isDraft ? 'Saved as draft successfully' : 'Update Successfull';
       this.toastr.success(this.successMessage);
+
+      // Refresh data to reflect persisted values (legacy page reload behavior)
+      await this.loadData();
       
     } catch (error: any) {
       console.error('Error saving PDU readings:', error);
@@ -1017,15 +1549,10 @@ export class PduReadingsComponent implements OnInit {
   }
 
   private validateForm(isDraft: boolean): boolean {
-    if (!isDraft) {
-      // Validate status notes if status is not Online
-      if (this.equipmentForm.value.status !== 'Online' && !this.equipmentForm.value.statusNotes) {
-        this.errorMessage = 'Please enter the reason for Equipment Status.';
-        this.toastr.error(this.errorMessage);
-        return false;
-      }
+    if (isDraft) {
+      return true;
     }
-    return true;
+    return this.runLegacyValidations(false);
   }
 
   private preparePDUData(isDraft: boolean): PDUReadings {
@@ -1035,9 +1562,24 @@ export class PduReadingsComponent implements OnInit {
     const out = this.outputForm.value;
     const comm = this.commentsForm.value;
     
-    const dateCode = eq.dateCode;
-    const month = dateCode ? this.getMonthName(dateCode.getMonth() + 1) : '';
-    const year = dateCode ? dateCode.getFullYear() : 0;
+    let month = '';
+    let year = 0;
+    
+    let dateCode: any = eq.dateCode;
+    // Normalize to Date if string and extract month/year without timezone offset
+    if (dateCode && typeof dateCode === 'string') {
+      // Parse yyyy-MM-dd string directly to avoid UTC timezone issues
+      const parts = dateCode.split('-');
+      if (parts.length === 3) {
+        year = parseInt(parts[0], 10);
+        const monthNum = parseInt(parts[1], 10); // 1-12
+        month = this.getMonthName(monthNum);
+      }
+    } else if (dateCode instanceof Date) {
+      // For Date objects, use local time to get correct month/year
+      month = this.getMonthName(dateCode.getMonth() + 1);
+      year = dateCode.getFullYear();
+    }
 
     const data: PDUReadings = {
       pduId: this.pduId,
@@ -1096,7 +1638,8 @@ export class PduReadingsComponent implements OnInit {
       
       comments1: comm.comments1,
       comments5: comm.comments5,
-      saveAsDraft: isDraft
+      saveAsDraft: isDraft,
+      maint_Auth_Id: this.authService.currentUserValue?.id || this.techId || ''
     };
 
     // Populate input readings based on selected voltage
@@ -1325,29 +1868,50 @@ export class PduReadingsComponent implements OnInit {
   private prepareReconciliationData(): PDUReconciliationInfo {
     const recon = this.reconciliationForm.value;
     
-    return {
+    const payload: any = {
       callNbr: this.callNbr,
       equipId: this.equipId,
       make: this.equipmentForm.value.manufacturer,
-      makeCorrect: '',
-      actMake: '',
-      model: recon.recModel,
+      makeCorrect: recon.recMakeCorrect || '',
+      actMake: recon.actMake || '',
+      model: recon.recModel || '',
       modelCorrect: recon.recModelCorrect,
-      actModel: recon.actModel,
-      serialNo: recon.recSerialNo,
+      actModel: recon.actModel || '',
+      serialNo: recon.recSerialNo || '',
       serialNoCorrect: recon.recSerialNoCorrect,
-      actSerialNo: recon.actSerialNo,
-      kva: recon.kvaSize,
+      actSerialNo: recon.actSerialNo || '',
+      kva: recon.kvaSize || '',
       kvaCorrect: recon.kvaCorrect,
-      actKVA: recon.actKVA,
+      // Only send actKva if user explicitly entered it
+      actKva: this.trimValue(recon.actKVA ?? recon.actKva),
+      // Legacy fields from reconciliation form
+      ascStringsNo: recon.ascStringsNo || 0,
+      ascStringsCorrect: recon.ascStringsCorrect || '',
+      actAscStringNo: recon.actASCStringNo || 0,
+      battPerString: recon.battPerString || 0,
+      battPerStringCorrect: recon.battPerStringCorrect || '',
+      actBattPerString: recon.actBattPerString || 0,
       totalEquips: parseInt(recon.totalEquips) || 0,
       totalEquipsCorrect: recon.totalEquipsCorrect,
       actTotalEquips: parseInt(recon.actTotalEquips) || 0,
-      verified: recon.verified
+      verified: recon.verified,
+      // Who modified (required by EquipReconciliationInfo)
+      modifiedBy: (this as any).authService?.currentUserValue?.id || this.techId || ''
     };
+
+    return payload;
   }
 
   // Utility methods
+  private trimValue(value: any): string {
+    return (value ?? '').toString().trim();
+  }
+
+  private isIntegerOrFloat(input: string): boolean {
+    const pattern = /^[-+]?(\d+(\.\d*)?|\.\d+)$/;
+    return pattern.test(input);
+  }
+
   private removeZeros(value: any): string {
     if (value === 0 || value === '0') {
       return '';

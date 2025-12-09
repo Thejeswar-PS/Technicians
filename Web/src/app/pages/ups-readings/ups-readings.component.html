@@ -395,6 +395,7 @@
                         class="form-select"
                         formControlName="multiModule"
                         id="multiModule"
+                        [class.is-invalid]="equipmentForm.get('multiModule')?.touched && (equipmentForm.get('multiModule')?.value === '' || equipmentForm.get('multiModule')?.value === 'Select' || equipmentForm.get('multiModule')?.value === null)"
                       >
                         <option value="">Choose configuration...</option>
                         <option
@@ -404,7 +405,10 @@
                           {{ option.text }}
                         </option>
                       </select>
-                      <label for="multiModule">Multi-Module</label>
+                      <label for="multiModule">Multi-Module <span class="text-danger">*</span></label>
+                      <div class="invalid-feedback" *ngIf="equipmentForm.get('multiModule')?.touched && (equipmentForm.get('multiModule')?.value === '' || equipmentForm.get('multiModule')?.value === 'Select' || equipmentForm.get('multiModule')?.value === null)">
+                        Please select a Multi-Module configuration
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -487,7 +491,7 @@
                       </button>
                       
                       <!-- Month Calendar Picker -->
-                      <div class="compact-calendar-dropdown" *ngIf="showMonthCalendar">
+                      <div class="compact-calendar-dropdown1" *ngIf="showMonthCalendar">
                         <div class="calendar-header">
                           <h6 class="mb-0">Select Month</h6>
                         </div>
@@ -545,7 +549,7 @@
                       </button>
                       
                       <!-- Year Calendar Picker -->
-                      <div class="compact-calendar-dropdown" *ngIf="showYearCalendar" (click)="$event.stopPropagation()">
+                      <div class="compact-calendar-dropdown1" *ngIf="showYearCalendar" (click)="$event.stopPropagation()">
                         <div class="calendar-header">
                           <div class="year-navigation-header" (click)="$event.stopPropagation()">
                             <button 
@@ -1308,7 +1312,9 @@
                             />
                             <label for="filter1Length">Length <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Length')?.invalid && visualForm.get('filterSet1Length')?.touched">
-                              Length is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Length')?.errors?.required">Length is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Length')?.errors?.numeric">Please enter a valid number for Length</div>
+                              <div *ngIf="visualForm.get('filterSet1Length')?.errors?.minValue">Length must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
@@ -1325,7 +1331,9 @@
                             />
                             <label for="filter1Width">Width <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Width')?.invalid && visualForm.get('filterSet1Width')?.touched">
-                              Width is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Width')?.errors?.required">Width is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Width')?.errors?.numeric">Please enter a valid number for Width</div>
+                              <div *ngIf="visualForm.get('filterSet1Width')?.errors?.minValue">Width must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
@@ -1341,7 +1349,9 @@
                             />
                             <label for="filter1Thickness">Thickness <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Thickness')?.invalid && visualForm.get('filterSet1Thickness')?.touched">
-                              Thickness is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Thickness')?.errors?.required">Thickness is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Thickness')?.errors?.numeric">Please enter a valid number for Thickness</div>
+                              <div *ngIf="visualForm.get('filterSet1Thickness')?.errors?.minValue">Thickness must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
@@ -1356,7 +1366,9 @@
                             />
                             <label for="filter1Quantity">Quantity <span class="text-danger" *ngIf="visualForm.get('airFilters')?.value === 'N'">*</span></label>
                             <div class="invalid-feedback" *ngIf="visualForm.get('filterSet1Quantity')?.invalid && visualForm.get('filterSet1Quantity')?.touched">
-                              Quantity is required when replacement is needed
+                              <div *ngIf="visualForm.get('filterSet1Quantity')?.errors?.required">Quantity is required when replacement is needed</div>
+                              <div *ngIf="visualForm.get('filterSet1Quantity')?.errors?.numeric">Please enter a valid number for Quantity</div>
+                              <div *ngIf="visualForm.get('filterSet1Quantity')?.errors?.minValue">Quantity must be greater than 0.00</div>
                             </div>
                           </div>
                         </div>
@@ -4146,7 +4158,8 @@
             ></i>
           </div>
 
-          <div class="ups-section-content" [class.show]="showCapacitor">
+          <div class="ups-section-content" [class.show]="showCapacitor"
+            [class.calendar-open]="showDcCapsYearCalendar || showAcInputCapsYearCalendar || showAcOutputCapsYearCalendar || showCommCapsYearCalendar || showFansYearCalendar">
             <form [formGroup]="capacitorForm" class="ups-form">
               <div class="measurements-grid">
                 <div class="measurement-card">
@@ -4172,24 +4185,25 @@
                           <input
                             type="text"
                             class="form-control"
+                            id="dcCapsYear"
                             formControlName="dcCapsAge"
                             placeholder="Year"
                             maxlength="4"
-                            (focus)="toggleDcCapsYearCalendar()"
+                            (focus)="toggleDcCapsYearCalendar($event)"
                           />
                           
                           <!-- Year calendar toggle button -->
                           <button
                             type="button"
                             class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleDcCapsYearCalendar()"
+                            (click)="toggleDcCapsYearCalendar($event)"
                             [title]="showDcCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
                           >
                             <i class="bi bi-calendar-date"></i>
                           </button>
                           
                           <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown" *ngIf="showDcCapsYearCalendar" (click)="$event.stopPropagation()">
+                          <div class="compact-calendar-dropdown dc-caps-dropdown" *ngIf="showDcCapsYearCalendar" (click)="$event.stopPropagation()">
                             <div class="calendar-header">
                               <div class="year-navigation-header" (click)="$event.stopPropagation()">
                                 <button 
@@ -4213,14 +4227,15 @@
                                 </button>
                               </div>
                             </div>
-                            <div class="year-grid-compact" [attr.data-change-counter]="dcCapsYearRangeChangeCounter">
+                            <div class="year-list-scroll" [attr.data-change-counter]="dcCapsYearRangeChangeCounter">
                               <button
                                 type="button"
                                 *ngFor="let year of currentDcCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-btn-compact"
+                                class="btn btn-sm year-list-item"
                                 [class.btn-primary]="isDcCapsYearSelected(year)"
                                 [class.btn-outline-primary]="!isDcCapsYearSelected(year)"
                                 (click)="onDcCapsYearSelect(year)"
+                                title="Select {{ year }}"
                               >
                                 {{ year }}
                               </button>
@@ -4255,24 +4270,25 @@
                           <input
                             type="text"
                             class="form-control"
+                            id="acInputCapsYear"
                             formControlName="acInputCapsAge"
                             placeholder="Year"
                             maxlength="4"
-                            (focus)="toggleAcInputCapsYearCalendar()"
+                            (focus)="toggleAcInputCapsYearCalendar($event)"
                           />
                           
                           <!-- Year calendar toggle button -->
                           <button
                             type="button"
                             class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleAcInputCapsYearCalendar()"
+                            (click)="toggleAcInputCapsYearCalendar($event)"
                             [title]="showAcInputCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
                           >
                             <i class="bi bi-calendar-date"></i>
                           </button>
                           
                           <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown" *ngIf="showAcInputCapsYearCalendar" (click)="$event.stopPropagation()">
+                          <div class="compact-calendar-dropdown ac-input-caps-dropdown" *ngIf="showAcInputCapsYearCalendar" (click)="$event.stopPropagation()">
                             <div class="calendar-header">
                               <div class="year-navigation-header" (click)="$event.stopPropagation()">
                                 <button 
@@ -4296,14 +4312,15 @@
                                 </button>
                               </div>
                             </div>
-                            <div class="year-grid-compact" [attr.data-change-counter]="acInputCapsYearRangeChangeCounter">
+                            <div class="year-list-scroll" [attr.data-change-counter]="acInputCapsYearRangeChangeCounter">
                               <button
                                 type="button"
                                 *ngFor="let year of currentAcInputCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-btn-compact"
+                                class="btn btn-sm year-list-item"
                                 [class.btn-primary]="isAcInputCapsYearSelected(year)"
                                 [class.btn-outline-primary]="!isAcInputCapsYearSelected(year)"
                                 (click)="onAcInputCapsYearSelect(year)"
+                                title="Select {{ year }}"
                               >
                                 {{ year }}
                               </button>
@@ -4338,24 +4355,25 @@
                           <input
                             type="text"
                             class="form-control"
+                            id="acOutputCapsYear"
                             formControlName="acOutputCapsAge"
                             placeholder="Year"
                             maxlength="4"
-                            (focus)="toggleAcOutputCapsYearCalendar()"
+                            (focus)="toggleAcOutputCapsYearCalendar($event)"
                           />
                           
                           <!-- Year calendar toggle button -->
                           <button
                             type="button"
                             class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleAcOutputCapsYearCalendar()"
+                            (click)="toggleAcOutputCapsYearCalendar($event)"
                             [title]="showAcOutputCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
                           >
                             <i class="bi bi-calendar-date"></i>
                           </button>
                           
                           <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown" *ngIf="showAcOutputCapsYearCalendar" (click)="$event.stopPropagation()">
+                          <div class="compact-calendar-dropdown ac-output-caps-dropdown" *ngIf="showAcOutputCapsYearCalendar" (click)="$event.stopPropagation()">
                             <div class="calendar-header">
                               <div class="year-navigation-header" (click)="$event.stopPropagation()">
                                 <button 
@@ -4379,14 +4397,15 @@
                                 </button>
                               </div>
                             </div>
-                            <div class="year-grid-compact" [attr.data-change-counter]="acOutputCapsYearRangeChangeCounter">
+                            <div class="year-list-scroll" [attr.data-change-counter]="acOutputCapsYearRangeChangeCounter">
                               <button
                                 type="button"
                                 *ngFor="let year of currentAcOutputCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-btn-compact"
+                                class="btn btn-sm year-list-item"
                                 [class.btn-primary]="isAcOutputCapsYearSelected(year)"
                                 [class.btn-outline-primary]="!isAcOutputCapsYearSelected(year)"
                                 (click)="onAcOutputCapsYearSelect(year)"
+                                title="Select {{ year }}"
                               >
                                 {{ year }}
                               </button>
@@ -4421,24 +4440,25 @@
                           <input
                             type="text"
                             class="form-control"
+                            id="commCapsYear"
                             formControlName="commCapsAge"
                             placeholder="Year"
                             maxlength="4"
-                            (focus)="toggleCommCapsYearCalendar()"
+                            (focus)="toggleCommCapsYearCalendar($event)"
                           />
                           
                           <!-- Year calendar toggle button -->
                           <button
                             type="button"
                             class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleCommCapsYearCalendar()"
+                            (click)="toggleCommCapsYearCalendar($event)"
                             [title]="showCommCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
                           >
                             <i class="bi bi-calendar-date"></i>
                           </button>
                           
                           <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown" *ngIf="showCommCapsYearCalendar" (click)="$event.stopPropagation()">
+                          <div class="compact-calendar-dropdown comm-caps-dropdown" *ngIf="showCommCapsYearCalendar" (click)="$event.stopPropagation()">
                             <div class="calendar-header">
                               <div class="year-navigation-header" (click)="$event.stopPropagation()">
                                 <button 
@@ -4462,14 +4482,15 @@
                                 </button>
                               </div>
                             </div>
-                            <div class="year-grid-compact" [attr.data-change-counter]="commCapsYearRangeChangeCounter">
+                            <div class="year-list-scroll" [attr.data-change-counter]="commCapsYearRangeChangeCounter">
                               <button
                                 type="button"
                                 *ngFor="let year of currentCommCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-btn-compact"
+                                class="btn btn-sm year-list-item"
                                 [class.btn-primary]="isCommCapsYearSelected(year)"
                                 [class.btn-outline-primary]="!isCommCapsYearSelected(year)"
                                 (click)="onCommCapsYearSelect(year)"
+                                title="Select {{ year }}"
                               >
                                 {{ year }}
                               </button>
@@ -4494,24 +4515,25 @@
                       <input
                         type="text"
                         class="form-control"
+                        id="fansYear"
                         formControlName="fansYear"
                         placeholder="Enter year (e.g., 2024, 2025...)"
                         maxlength="4"
-                        (focus)="toggleFansYearCalendar()"
+                        (focus)="toggleFansYearCalendar($event)"
                       />
                       
                       <!-- Year calendar toggle button -->
                       <button
                         type="button"
                         class="btn btn-sm btn-primary calendar-toggle-btn"
-                        (click)="toggleFansYearCalendar()"
+                        (click)="toggleFansYearCalendar($event)"
                         [title]="showFansYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
                       >
                         <i class="bi bi-calendar-date"></i>
                       </button>
                       
                       <!-- Year Calendar Picker -->
-                      <div class="compact-calendar-dropdown" *ngIf="showFansYearCalendar" (click)="$event.stopPropagation()">
+                      <div class="compact-calendar-dropdown fans-year-dropdown" *ngIf="showFansYearCalendar" (click)="$event.stopPropagation()">
                         <div class="calendar-header">
                           <div class="year-navigation-header" (click)="$event.stopPropagation()">
                             <button 
@@ -4535,14 +4557,15 @@
                             </button>
                           </div>
                         </div>
-                        <div class="year-grid-compact" [attr.data-change-counter]="fansYearRangeChangeCounter">
+                        <div class="year-list-scroll" [attr.data-change-counter]="fansYearRangeChangeCounter">
                           <button
                             type="button"
                             *ngFor="let year of currentFansYears; trackBy: trackByYear"
-                            class="btn btn-sm year-btn-compact"
+                            class="btn btn-sm year-list-item"
                             [class.btn-primary]="isFansYearSelected(year)"
                             [class.btn-outline-primary]="!isFansYearSelected(year)"
                             (click)="onFansYearSelect(year)"
+                            title="Select {{ year }}"
                           >
                             {{ year }}
                           </button>

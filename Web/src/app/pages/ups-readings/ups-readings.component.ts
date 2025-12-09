@@ -887,6 +887,36 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!yearCalendar && !yearInput && !calendarButton && this.showYearCalendar) {
       this.showYearCalendar = false;
     }
+
+    // --- Capacitor/year pickers ---
+    const clickedInsideDcCaps = !!target.closest('.dc-caps-dropdown');
+    const clickedInsideAcInputCaps = !!target.closest('.ac-input-caps-dropdown');
+    const clickedInsideAcOutputCaps = !!target.closest('.ac-output-caps-dropdown');
+    const clickedInsideCommCaps = !!target.closest('.comm-caps-dropdown');
+    const clickedInsideFans = !!target.closest('.fans-year-dropdown');
+
+    const clickedDcInput = !!target.closest('#dcCapsYear');
+    const clickedAcInput = !!target.closest('#acInputCapsYear');
+    const clickedAcOutputInput = !!target.closest('#acOutputCapsYear');
+    const clickedCommInput = !!target.closest('#commCapsYear');
+    const clickedFansInput = !!target.closest('#fansYear');
+
+    // Close individual capacitor year pickers when click is outside their input/toggle/dropdown
+    if (!clickedInsideDcCaps && !clickedDcInput && !calendarButton && this.showDcCapsYearCalendar) {
+      this.showDcCapsYearCalendar = false;
+    }
+    if (!clickedInsideAcInputCaps && !clickedAcInput && !calendarButton && this.showAcInputCapsYearCalendar) {
+      this.showAcInputCapsYearCalendar = false;
+    }
+    if (!clickedInsideAcOutputCaps && !clickedAcOutputInput && !calendarButton && this.showAcOutputCapsYearCalendar) {
+      this.showAcOutputCapsYearCalendar = false;
+    }
+    if (!clickedInsideCommCaps && !clickedCommInput && !calendarButton && this.showCommCapsYearCalendar) {
+      this.showCommCapsYearCalendar = false;
+    }
+    if (!clickedInsideFans && !clickedFansInput && !calendarButton && this.showFansYearCalendar) {
+      this.showFansYearCalendar = false;
+    }
   }
 
   // Set up date code display value watcher
@@ -911,7 +941,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.equipmentForm = this.fb.group({
       manufacturer: ['', Validators.required],
       kva: ['', [Validators.required, this.decimalKvaValidator()]],
-      multiModule: ['Select'], // Default to "Select"
+      // Default to empty string so the <option value="">Choose configuration...</option> is selected
+      multiModule: [''],
       maintByPass: ['NA'], // Default to "NA" (None)
       other: [''],
       model: ['', Validators.required],
@@ -1245,12 +1276,17 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         // Clear existing validators
         control.clearValidators();
         
-        // Add required validator if replacement is needed (legacy: 'N' = Replacement Needed)
+        // Add required validator + numeric > 0 validator if replacement is needed (legacy: 'N' = Replacement Needed)
         if (airFilterValue === 'N') {
-          control.setValidators([Validators.required]);
-          // Mark as touched to show validation immediately if empty
+          control.setValidators([Validators.required, this.positiveDecimalGreaterThanZeroValidator()]);
+          // Mark as touched to show validation immediately when empty or when an existing value is invalid (0 or non-numeric)
           if (!control.value || control.value.toString().trim() === '') {
             control.markAsTouched();
+          } else {
+            const valStr = control.value.toString().trim();
+            if (!this.isNumeric(valStr) || parseFloat(valStr) <= 0) {
+              control.markAsTouched();
+            }
           }
         } else {
           // Clear touched state when not required
@@ -1261,6 +1297,34 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         control.updateValueAndValidity();
       }
     });
+  }
+
+  /**
+   * Validator that requires a numeric value greater than 0.00
+   * Accepts integer or decimal values (legacy-compatible) but rejects 0 and negative numbers
+   */
+  private positiveDecimalGreaterThanZeroValidator(): ValidatorFn {
+    return (control: AbstractControl): { [key: string]: any } | null => {
+      const val = control?.value;
+      // Let required validator handle empty values
+      if (val === null || val === undefined || val.toString().trim() === '') {
+        return null;
+      }
+
+      const str = val.toString().trim();
+
+      // Use isNumeric util already present in this component
+      if (!this.isNumeric(str)) {
+        return { 'numeric': { value: val, message: 'Please enter a valid numeric value' } };
+      }
+
+      const num = parseFloat(str);
+      if (isNaN(num) || num <= 0) {
+        return { 'minValue': { value: val, message: 'Value must be greater than 0.00' } };
+      }
+
+      return null;
+    };
   }
 
   /**
@@ -1725,7 +1789,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private loadEquipmentInfo(): void {
-    this.equipmentService.editEquipInfo(this.callNbr, this.equipId)
+    this.equipmentService.editEquipInfo(this.callNbr, this.equipId, this.upsId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data: any) => {
@@ -1983,10 +2047,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       this.validateAndUpdateStatusOnFailure(); // Trigger on any change
     });
 
-    // SNMP communication issues - Monitor ALL changes
-    this.equipmentForm.get('snmpPresent')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
-      this.validateAndUpdateStatusOnFailure(); // Trigger on any change
-    });
+    // SNMP communication dropdown should NOT change equipment status automatically.
+    // Historically SNMP changes triggered validation that could flip the equipment status
+    // (e.g., to Minor Deficiency) which is misleading for simple SNMP present/absent toggles.
+    // We intentionally do NOT subscribe snmpPresent to validateAndUpdateStatusOnFailure.
+    // The form's enable/disable behavior is still handled elsewhere (setupDynamicFieldControl).
   }
 
   private initializeFormsWithDefaults(): void {
@@ -2107,10 +2172,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Map CTO/Part No from either field (backward compatibility)
     const ctoPartNoValue = data.ctoPartNo || data.other || '';
     
+    // Validate multiModule value - only use if it exists in multiModuleTypes
+    let validMultiModule = '';
+    if (data.multiModule) {
+      const multiModuleExists = this.multiModuleTypes.some(type => 
+        type.value === data.multiModule
+      );
+      validMultiModule = multiModuleExists ? data.multiModule : '';
+    }
+    
     this.equipmentForm.patchValue({
       manufacturer: data.manufacturer || '',
       kva: data.kva || '',
-      multiModule: data.multiModule || '',
+      multiModule: validMultiModule,
       maintByPass: data.maintByPass || '',
       other: ctoPartNoValue, // Sync with ctoPartNo for backward compatibility
       model: data.modelNo || '',
@@ -3224,6 +3298,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       return false;
     }
 
+    // Validate Multi-Module selection (required for full save)
+    const multiModuleVal = this.equipmentForm.get('multiModule')?.value;
+    // The form default uses 'Select' as a placeholder; treat empty or 'Select' as invalid
+    if (!multiModuleVal || multiModuleVal === 'Select' || multiModuleVal === '') {
+      this.showLegacyValidationAlert('Please select the Multi-Module configuration', 'multiModule');
+      this.equipmentForm.get('multiModule')?.markAsTouched();
+      return false;
+    }
+
     // Check if KVA form control has validation errors from custom validator
     const kvaControl = this.equipmentForm.get('kva');
     if (kvaControl && kvaControl.invalid) {
@@ -3337,6 +3420,29 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           
           return false;
         }
+
+        // Validate numeric and ensure value is greater than 0.00
+        const valueStr = value.toString().trim();
+        if (!this.isNumeric(valueStr)) {
+          this.showVisual = true;
+          this.showLegacyValidationAlert(
+            `${filterField.name} must be a numeric value (e.g., 12.50). Please correct the value in the Filter Information section.`,
+            filterField.field
+          );
+          this.visualForm.get(filterField.field)?.markAsTouched();
+          return false;
+        }
+
+        const numeric = parseFloat(valueStr);
+        if (isNaN(numeric) || numeric <= 0) {
+          this.showVisual = true;
+          this.showLegacyValidationAlert(
+            `${filterField.name} must be greater than 0.00 when replacement is needed. Please correct the value in the Filter Information section.`,
+            filterField.field
+          );
+          this.visualForm.get(filterField.field)?.markAsTouched();
+          return false;
+        }
       }
     }
 
@@ -3419,8 +3525,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     if (!selectedForPopup) {
       selectedForPopup = status || 'Online';
     }
-
-    console.debug('[DEBUG] validateComprehensiveInputs -> final status used for popup. selectedForPopup:', selectedForPopup, 'formStatus:', status, 'lastUserSelectedStatus:', this.lastUserSelectedStatus, 'manualStatusOverride:', this.manualStatusOverride);
 
     if (selectedForPopup !== 'Online') {
       if (!confirm(`Are you sure that the Equipment Status : ${selectedForPopup}`)) {
@@ -3793,20 +3897,26 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       const dateCodeDisplay = `${monthName} ${year}`;
 
       if (!dcCapsAge || dcCapsAge.trim() === '') {
-        this.showLegacyValidationAlert(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'dcCapsYear');
+        // Ensure capacitor section is visible so user can correct the field
+        this.showCapacitor = true;
+        // Use showValidationMessage so the alert is shown and the input is scrolled/focused
+        this.showValidationMessage(`You must enter DC Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'dcCapsYear', 'dcCapsYear');
         this.capacitorForm.get('dcCapsAge')?.markAsTouched();
         return false;
       }
 
       if (!acInputCapsAge || acInputCapsAge.trim() === '') {
-        this.showLegacyValidationAlert(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'acInputCapsYear');
+        this.showCapacitor = true;
+        this.showValidationMessage(`You must enter AC Input Caps Year. Here is the UPS DateCode : ${dateCodeDisplay}`, 'acInputCapsYear', 'acInputCapsYear');
         this.capacitorForm.get('acInputCapsAge')?.markAsTouched();
         return false;
       }
 
       if ((!acOutputCapsAge || acOutputCapsAge.trim() === '') &&
           (!commCapsAge || commCapsAge.trim() === '')) {
-        this.showLegacyValidationAlert(`You must enter AC OP WYE or OP Delta Caps Year. Here is the UPS DateCode: ${dateCodeDisplay}`, 'acOutputCapsYear');
+        this.showCapacitor = true;
+        // Prefer focusing acOutputCapsYear but commCapsYear is acceptable as alternate — highlight both by focusing the AC output field
+        this.showValidationMessage(`You must enter AC Output Caps Year. Here is the UPS DateCode: ${dateCodeDisplay}`, 'acOutputCapsYear', 'acOutputCapsYear');
         this.capacitorForm.get('acOutputCapsAge')?.markAsTouched();
         return false;
       }
@@ -4503,9 +4613,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         // API returns: { success: true, data: [...] }
         const statusDescData = (statusDesc as any)?.data || statusDesc;
 
-        console.log('Raw jobSummary response:', jobSummary);
-        console.log('Raw statusDesc response:', statusDesc);
-
         // Legacy: if (dsDetails != null && dsDetails.Tables[0].Rows.Count > 0)
         if (!jobSummaryData || !Array.isArray(jobSummaryData) || jobSummaryData.length === 0) {
           console.log('No job summary data, returning Online');
@@ -4527,10 +4634,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           });
         }
 
-        console.log('Status Description Map:', statusDescMap);
-        console.log('Row Data columns:', Object.keys(rowData));
-        console.log('Starting status calculation from row data...');
-
         // Legacy: for (int z = 0; z < dsDetails.Tables[0].Columns.Count - 1; z++)
         const columns = Object.keys(rowData);
         
@@ -4547,7 +4650,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           // Log every column being checked for debugging
           if (fieldValue === 'N' || fieldValue === 'F' || fieldValue === 'True' || fieldValue === 'F ' || 
               fieldValue === 'Y' || fieldValue === 'YS' || fieldValue === 'W') {
-            console.log(`Column: ${columnName}, Value: "${fieldValue}", Current Status: ${resultStatus}`);
           }
 
           // Legacy: if (TempColumn.Contains("Action") || TempColumn.Contains("Environment_Clean"))
@@ -5158,8 +5260,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Status change detected - update immediately only if not manually overridden to Off-Line
       console.debug('[DEBUG] validateAndUpdateStatusOnFailure -> status change detected. currentStatus:', currentStatus, 'newStatus:', newStatus);
       this.equipmentForm.patchValue({ status: newStatus }, { emitEvent: false });
-      console.debug('[DEBUG] validateAndUpdateStatusOnFailure -> form.status after patch:', this.equipmentForm?.get('status')?.value);
-
+      
       // Show notification to user about status change
       this.showStatusChangeNotification(currentStatus, newStatus);
     }
@@ -5185,8 +5286,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   onManualStatusChange(selectedStatus: string): void {
     // Debug: log incoming selected status and current form status
-    console.log('[DEBUG] onManualStatusChange called. selectedStatus:', selectedStatus, 'formStatusBefore:', this.equipmentForm?.get('status')?.value, 'manualStatusOverride:', this.manualStatusOverride);
-
+    
     // Capture the user's explicit selection so confirmation and subsequent logic can prefer this value
     this.lastUserSelectedStatus = selectedStatus;
 
@@ -5211,7 +5311,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Force the status to Offline immediately with no events
       this.equipmentForm.patchValue({ status: 'Offline' }, { emitEvent: false });
       // Debug: log form status after applying Offline override
-      console.log('[DEBUG] onManualStatusChange -> status set to Offline (manual override). formStatusAfter:', this.equipmentForm?.get('status')?.value);
     } else {
       // Clear manual override when changing away from Off-Line
       this.manualStatusOverride = false;
@@ -5219,7 +5318,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       // Apply the new status  
       this.equipmentForm.patchValue({ status: selectedStatus }, { emitEvent: false });
       // Debug: log form status after applying selected status
-      console.log('[DEBUG] onManualStatusChange -> manual override cleared or not Offline. selectedStatus applied. formStatusAfter:', this.equipmentForm?.get('status')?.value);
     }
   }
 
@@ -5340,7 +5438,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Keep a record of the last value the technician explicitly chose in the UI
     this.lastUserSelectedStatus = selectedValue;
     // Debug: log the raw event value and current equipment form status
-    console.log('[DEBUG] onStatusDropdownChange event. event.target.value:', selectedValue, 'formStatusBefore:', this.equipmentForm?.get('status')?.value);
     this.onManualStatusChange(selectedValue);
     console.log('[DEBUG] onStatusDropdownChange after calling onManualStatusChange. formStatusNow:', this.equipmentForm?.get('status')?.value);
   }
@@ -5353,7 +5450,6 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       takeUntil(this.destroy$)
     ).subscribe(newStatus => {
       // Debug: log every status change from the form control
-      console.log('[DEBUG] equipmentForm.status valueChanges -> newStatus:', newStatus, 'manualStatusOverride:', this.manualStatusOverride);
       // If status changes to something other than Offline while manual override is active, restore it
       if (this.manualStatusOverride && newStatus !== 'Offline' && !this.loading && !this.saving) {
         setTimeout(() => {
@@ -7025,6 +7121,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private validateForms(): boolean {
     let isValid = true;
+    let firstInvalidField: { form: string; field: string } | null = null;
 
     // Major PM specific validation - all transfer tests must be completed
     if (this.isMajorPM) {
@@ -7041,25 +7138,80 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
         const value = this.transferForm.get(test.field)?.value;
         if (!value || value === '') {
           this.transferForm.get(test.field)?.markAsTouched();
+          if (!firstInvalidField) {
+            firstInvalidField = { form: 'transfer', field: test.field };
+          }
           isValid = false;
         }
       }
     }
 
     const formsToValidate = [
-      this.equipmentForm,
-      this.inputReadingsForm,
-      this.outputReadingsForm
+      { form: this.equipmentForm, name: 'equipment' },
+      { form: this.inputReadingsForm, name: 'inputReadings' },
+      { form: this.outputReadingsForm, name: 'outputReadings' }
     ];
 
-    formsToValidate.forEach(form => {
+    formsToValidate.forEach(({ form, name }) => {
       if (!form.valid) {
         form.markAllAsTouched();
+        
+        // Find first invalid control if not already found
+        if (!firstInvalidField) {
+          Object.keys(form.controls).forEach(key => {
+            const control = form.get(key);
+            if (control?.invalid && !firstInvalidField) {
+              firstInvalidField = { form: name, field: key };
+            }
+          });
+        }
+        
         isValid = false;
       }
     });
 
+    // Scroll to and focus on first invalid field
+    if (!isValid && firstInvalidField) {
+      this.scrollToAndFocusField(firstInvalidField.form, firstInvalidField.field);
+    }
+
     return isValid;
+  }
+
+  /**
+   * Scrolls to and focuses on a specific form field
+   */
+  private scrollToAndFocusField(formName: string, fieldName: string): void {
+    setTimeout(() => {
+      // Try to find the element by ID first
+      let element = document.getElementById(fieldName);
+      
+      // If not found by ID, try by formControlName
+      if (!element) {
+        element = document.querySelector(`[formControlName="${fieldName}"]`) as HTMLElement;
+      }
+      
+      if (element) {
+        // Scroll the element into view
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Focus the element after scrolling
+        setTimeout(() => {
+          if (element && (element instanceof HTMLInputElement || 
+              element instanceof HTMLSelectElement || 
+              element instanceof HTMLTextAreaElement)) {
+            element.focus();
+            // Add a visual highlight
+            element.classList.add('field-highlight');
+            setTimeout(() => {
+              if (element) {
+                element.classList.remove('field-highlight');
+              }
+            }, 2000);
+          }
+        }, 500);
+      }
+    }, 100);
   }
 
   onGoBack(): void {
@@ -7883,10 +8035,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Fans Year Calendar Methods
-  toggleFansYearCalendar(): void {
-    // Close all other capacitor dropdowns first
-    this.closeAllCapacitorDropdowns();
-    
+  toggleFansYearCalendar(event?: Event): void {
+    // stop an outside click handler from closing the calendar when we're intentionally toggling it
+    if (event) {
+      event.stopPropagation();
+    }
     this.showFansYearCalendar = !this.showFansYearCalendar;
     if (this.showFansYearCalendar) {
       const currentFansYear = this.capacitorForm.get('fansYear')?.value || new Date().getFullYear();
@@ -7957,13 +8110,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // DC Caps Year Calendar Methods
-  toggleDcCapsYearCalendar(): void {
-    // Close all other capacitor dropdowns first
-    this.closeAllCapacitorDropdowns();
-    
+  toggleDcCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showDcCapsYearCalendar = !this.showDcCapsYearCalendar;
     if (this.showDcCapsYearCalendar) {
-      const currentYear = this.capacitorForm.get('dcCapsAge_Year')?.value || new Date().getFullYear();
+      const currentYear = this.capacitorForm.get('dcCapsAge')?.value || new Date().getFullYear();
       this.setDcCapsYearRangeContaining(currentYear);
 
       this.currentDcCapsYears = [];
@@ -7980,13 +8133,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onDcCapsYearSelect(year: number): void {
-    this.capacitorForm.patchValue({ dcCapsAge_Year: year.toString() });
+    this.capacitorForm.patchValue({ dcCapsAge: year.toString() });
     this.showDcCapsYearCalendar = false;
     this.cleanupDropdownPositioning();
   }
 
   isDcCapsYearSelected(year: number): boolean {
-    const formYear = this.capacitorForm.get('dcCapsAge_Year')?.value;
+    const formYear = this.capacitorForm.get('dcCapsAge')?.value;
     return formYear === year.toString() || parseInt(formYear) === year;
   }
 
@@ -8031,13 +8184,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // AC Input Caps Year Calendar Methods
-  toggleAcInputCapsYearCalendar(): void {
-    // Close all other capacitor dropdowns first
-    this.closeAllCapacitorDropdowns();
-    
+  toggleAcInputCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showAcInputCapsYearCalendar = !this.showAcInputCapsYearCalendar;
     if (this.showAcInputCapsYearCalendar) {
-      const currentYear = this.capacitorForm.get('acInputCapsAge_Year')?.value || new Date().getFullYear();
+      const currentYear = this.capacitorForm.get('acInputCapsAge')?.value || new Date().getFullYear();
       this.setAcInputCapsYearRangeContaining(currentYear);
 
       this.currentAcInputCapsYears = [];
@@ -8054,13 +8207,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onAcInputCapsYearSelect(year: number): void {
-    this.capacitorForm.patchValue({ acInputCapsAge_Year: year.toString() });
+    this.capacitorForm.patchValue({ acInputCapsAge: year.toString() });
     this.showAcInputCapsYearCalendar = false;
     this.cleanupDropdownPositioning();
   }
 
   isAcInputCapsYearSelected(year: number): boolean {
-    const formYear = this.capacitorForm.get('acInputCapsAge_Year')?.value;
+    const formYear = this.capacitorForm.get('acInputCapsAge')?.value;
     return formYear === year.toString() || parseInt(formYear) === year;
   }
 
@@ -8105,13 +8258,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // AC Output Caps Year Calendar Methods
-  toggleAcOutputCapsYearCalendar(): void {
-    // Close all other capacitor dropdowns first
-    this.closeAllCapacitorDropdowns();
-    
+  toggleAcOutputCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showAcOutputCapsYearCalendar = !this.showAcOutputCapsYearCalendar;
     if (this.showAcOutputCapsYearCalendar) {
-      const currentYear = this.capacitorForm.get('acOutputCapsAge_Year')?.value || new Date().getFullYear();
+      const currentYear = this.capacitorForm.get('acOutputCapsAge')?.value || new Date().getFullYear();
       this.setAcOutputCapsYearRangeContaining(currentYear);
 
       this.currentAcOutputCapsYears = [];
@@ -8128,13 +8281,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onAcOutputCapsYearSelect(year: number): void {
-    this.capacitorForm.patchValue({ acOutputCapsAge_Year: year.toString() });
+    this.capacitorForm.patchValue({ acOutputCapsAge: year.toString() });
     this.showAcOutputCapsYearCalendar = false;
     this.cleanupDropdownPositioning();
   }
 
   isAcOutputCapsYearSelected(year: number): boolean {
-    const formYear = this.capacitorForm.get('acOutputCapsAge_Year')?.value;
+    const formYear = this.capacitorForm.get('acOutputCapsAge')?.value;
     return formYear === year.toString() || parseInt(formYear) === year;
   }
 
@@ -8179,13 +8332,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // Comm Caps Year Calendar Methods
-  toggleCommCapsYearCalendar(): void {
-    // Close all other capacitor dropdowns first
-    this.closeAllCapacitorDropdowns();
-    
+  toggleCommCapsYearCalendar(event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
     this.showCommCapsYearCalendar = !this.showCommCapsYearCalendar;
     if (this.showCommCapsYearCalendar) {
-      const currentYear = this.capacitorForm.get('commCapsAge_Year')?.value || new Date().getFullYear();
+      const currentYear = this.capacitorForm.get('commCapsAge')?.value || new Date().getFullYear();
       this.setCommCapsYearRangeContaining(currentYear);
 
       this.currentCommCapsYears = [];
@@ -8202,13 +8355,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onCommCapsYearSelect(year: number): void {
-    this.capacitorForm.patchValue({ commCapsAge_Year: year.toString() });
+    this.capacitorForm.patchValue({ commCapsAge: year.toString() });
     this.showCommCapsYearCalendar = false;
     this.cleanupDropdownPositioning();
   }
 
   isCommCapsYearSelected(year: number): boolean {
-    const formYear = this.capacitorForm.get('commCapsAge_Year')?.value;
+    const formYear = this.capacitorForm.get('commCapsAge')?.value;
     return formYear === year.toString() || parseInt(formYear) === year;
   }
 
@@ -8251,6 +8404,8 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.commCapsYearRangeStart = this.minYear + (rangeIndex * this.yearsPerRange);
     this.commCapsYearRangeEnd = Math.min(this.maxYear, this.commCapsYearRangeStart + this.yearsPerRange - 1);
   }
+
+  
 
   /**
    * Gets a status indicator class for character count (green, yellow, red)

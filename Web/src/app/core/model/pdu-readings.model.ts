@@ -91,6 +91,7 @@ export interface PDUReadings {
   
   // Draft Status
   saveAsDraft: boolean;
+  maint_Auth_Id: string;
 }
 
 export interface PDUReconciliationInfo {
@@ -111,13 +112,20 @@ export interface PDUReconciliationInfo {
   
   kva: string;
   kvaCorrect: string;
-  actKVA: string;
+  actKva: string;
+  ascStringsNo: number;
+  ascStringsCorrect: string;
+  actAscStringNo: number;
+  battPerString: number;
+  battPerStringCorrect: string;
+  actBattPerString: number;
   
   totalEquips: number;
   totalEquipsCorrect: string;
   actTotalEquips: number;
   
   verified: boolean;
+  modifiedBy: string;
 }
 
 export interface PDUEquipInfo {

@@ -8,7 +8,7 @@ import { PDUReadings, PDUReconciliationInfo, PDUEquipInfo } from '../model/pdu-r
   providedIn: 'root'
 })
 export class PduService {
-  private apiUrl = `${environment.apiUrl}/PDU`;
+  private apiUrl = `${environment.apiUrl}/Readings`;
 
   constructor(private http: HttpClient) {}
 
@@ -19,12 +19,12 @@ export class PduService {
       .set('equipId', equipId.toString())
       .set('pduId', pduId);
     
-    return this.http.get<PDUReadings>(`${this.apiUrl}/readings`, { params });
+    return this.http.get<PDUReadings>(`${this.apiUrl}/GetPDUVerification`, { params });
   }
 
   // Save or update PDU readings
   savePDUReadings(data: PDUReadings): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/readings`, data);
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/SaveUpdatePDUReadings`, data);
   }
 
   // Get reconciliation info
