@@ -6,6 +6,7 @@ using Technicians.Api.Repository;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.IIS;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,7 +69,7 @@ builder.Services.AddScoped<PartsShippingDataRepository>();
 builder.Services.AddScoped<ReadingsRepository>();
 builder.Services.AddScoped<PartReqStatusRepository>();
 builder.Services.AddScoped<PartReturnStatusRepository>();
-
+builder.Services.AddScoped<OrderRequestRepository>();
 
 
 var app = builder.Build();

@@ -725,14 +725,22 @@
           color: white;
         }
 
-        &.status-urgent {
-          background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-          color: white;
-        }
-
         &.status-ordered-tracking-req {
           background: linear-gradient(135deg, #ff00bf 0%, #e91e63 100%);
           color: white;
+        }
+        // Urgent text color override - only changes text color, keeps background
+        &.status-urgent-text {
+          color: #ff0000 !important;
+        }
+
+         // Special override for ORDEREDTRACKINGREQ - use white text with strong shadow on pink background
+        &.status-orderedtrackingreq.status-urgent-text,
+        &.status-ordered-tracking-req.status-urgent-text {
+          color: white !important;
+          font-weight: 900 !important;
+          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.6) !important;
+          letter-spacing: 0.5px !important;
         }
       }
     }

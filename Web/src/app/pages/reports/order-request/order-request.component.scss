@@ -1,0 +1,257 @@
+// Auto ID Section Styling
+.auto-id-section {
+  .auto-id-label {
+    color: #dc3545;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  
+  .id-components {
+    .id-badge {
+      background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+      border: 2px solid #fc8181;
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+      min-width: 60px;
+      
+      .component-label {
+        display: block;
+        color: #718096;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+      }
+      
+      strong {
+        color: #dc3545;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// Modern form styling to match part-return-status
+.modern-form-group {
+  .form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+
+    i {
+      color: #6c757d;
+      font-size: 0.8rem;
+    }
+
+    &.required::after {
+      content: " *";
+      color: #dc3545;
+    }
+  }
+
+  .modern-input {
+    border: 1.5px solid #e4e6ef;
+    border-radius: 0.475rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    transition: all 0.15s ease-in-out;
+
+    &:focus {
+      border-color: #009ef7;
+      box-shadow: 0 0 0 0.25rem rgba(0, 158, 247, 0.15);
+      outline: none;
+    }
+
+    &.is-invalid {
+      border-color: #f1416c;
+      
+      &:focus {
+        border-color: #f1416c;
+        box-shadow: 0 0 0 0.25rem rgba(241, 65, 108, 0.15);
+      }
+    }
+  }
+
+  select.modern-input {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m1 6 7 7 7-7'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+  }
+}
+
+.card {
+  box-shadow: 0 0.1rem 0.75rem 0.25rem rgba(0, 0, 0, 0.05);
+  border: 0;
+  border-radius: 0.75rem;
+}
+
+.page-header {
+  .card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    
+    .card-body {
+      padding: 2rem;
+    }
+    
+    h1 {
+      color: white;
+      font-weight: 700;
+      margin: 0;
+    }
+  }
+}
+
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
+.badge {
+  font-size: 0.875rem;
+}
+
+.svg-icon-success {
+  color: #50cd89;
+}
+
+.svg-icon-primary {
+  color: #009ef7;
+}
+
+.svg-icon-danger {
+  color: #f1416c;
+}
+
+.svg-icon-info {
+  color: #7239ea;
+}
+
+// Attachment section styling
+.attachment-section {
+  .table {
+    margin-bottom: 0;
+    
+    thead th {
+      background-color: #f8f9fa;
+      border-top: none;
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: #495057;
+      padding: 1rem 0.75rem;
+    }
+    
+    tbody td {
+      padding: 0.875rem 0.75rem;
+      vertical-align: middle;
+      border-color: #e4e6ef;
+    }
+    
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 0.375rem;
+    }
+  }
+  
+  .empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: #a1a5b7;
+    
+    i {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+  }
+}
+
+// Parts test list specific styles
+.parts-test-section {
+  .table-responsive {
+    max-height: 500px;
+    overflow-y: auto;
+  }
+  
+  .table {
+    th {
+      position: sticky;
+      top: 0;
+      background-color: var(--kt-app-sidebar-bg-color);
+      z-index: 10;
+      border-bottom: 2px solid var(--kt-border-color);
+    }
+    
+    td {
+      vertical-align: middle;
+      
+      .text-hover-primary:hover {
+        transition: color 0.15s ease-in-out;
+      }
+    }
+  }
+  
+  .form-control,
+  .form-select {
+    &:focus {
+      border-color: var(--kt-primary);
+      box-shadow: 0 0 0 0.25rem rgba(0, 158, 247, 0.25);
+    }
+  }
+}
+
+// Loading and error states
+.loading-overlay {
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(2px);
+}
+
+.error-state {
+  .svg-icon-danger {
+    animation: pulse 2s infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 768px) {
+  .fs-2hx {
+    font-size: 2rem !important;
+  }
+  
+  .mw-400px {
+    max-width: 300px;
+  }
+  
+  .parts-test-section {
+    .table-responsive {
+      max-height: 300px;
+    }
+    
+    .card-toolbar {
+      flex-direction: column;
+      
+      .btn {
+        margin-bottom: 0.5rem;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
