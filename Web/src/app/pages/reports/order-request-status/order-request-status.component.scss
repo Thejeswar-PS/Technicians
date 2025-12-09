@@ -1,0 +1,719 @@
+// Modern Order Request Status Component - Parts Request Status Design
+.order-request-status-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  position: relative;
+  contain: layout;
+  
+  // Allow full-width layout
+  > * {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  // Loading overlay
+  .order-request-status-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border-width: 3px;
+      border-color: #5486ff;
+      border-right-color: transparent;
+    }
+  }
+
+  // Header styling
+  .order-request-status-header__top {
+    width: 100%;
+    margin: 0;
+    
+    .order-request-status-header__back {
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+
+  // Page title
+  .order-request-status-page-title {
+    text-align: center;
+    flex: 1;
+    
+    h2 {
+      color: #5486ff;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0;
+      
+      i {
+        color: #5486ff;
+        font-size: 2rem;
+      }
+    }
+  }
+}
+
+// Main card
+.order-request-status-main-card {
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+  
+  .card-header {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 2rem 2rem 1rem 2rem;
+    min-height: 200px;
+    
+    h5 {
+      color: #1f2937;
+      font-weight: 700;
+    }
+  }
+  
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding-top: 1rem;
+  }
+}
+
+// Filter controls
+.filter-controls-section {
+  min-height: 80px;
+  margin-bottom: 0;
+  
+  .order-request-status-filter-form {
+    .filter-group {
+      .filter-label {
+        display: block;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        line-height: 1.2;
+        min-height: 20px;
+        
+        i {
+          color: #5486ff;
+        }
+      }
+      
+      .modern-select {
+        border: 2px solid rgba(84, 134, 255, 0.1);
+        border-radius: 12px;
+        padding: 12px 16px;
+        padding-right: 40px;
+        font-family: "Inter", system-ui, sans-serif;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        
+        &:focus {
+          border-color: #5486ff;
+          box-shadow: 0 0 0 3px rgba(84, 134, 255, 0.1);
+          transform: translateY(-1px);
+          outline: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235486ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+        }
+        
+        &:hover {
+          border-color: rgba(84, 134, 255, 0.2);
+          background: rgba(255, 255, 255, 0.9);
+        }
+      }
+    }
+  }
+}
+
+// Table styling
+.table-section {
+  min-height: 300px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+  
+  .table-responsive {
+    flex: 1;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    
+    table {
+      width: 100%;
+      table-layout: fixed;
+    }
+  }
+}
+
+// Badge styling
+.badge-info-custom {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  border: none;
+}
+
+// Custom Status Badge Styling with Specified Colors - Status Column Only
+.order-request-status-container {
+  // Target only the Status column (11th column) badges
+  .table td:nth-child(11) .badge {
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    padding: 0.6rem 1rem !important;
+    border-radius: 20px !important;
+    letter-spacing: 0.3px !important;
+    text-transform: uppercase !important;
+    border: 1px solid #c8d9e8 !important;
+    background-color: #e0edf6 !important;
+    color: #000000 !important;
+    box-shadow: 0 2px 6px rgba(59, 66, 97, 0.1) !important;
+    
+    // Force override all Bootstrap badge classes
+    &.badge-light-success,
+    &.badge-light-warning, 
+    &.badge-light-primary,
+    &.badge-light-info,
+    &.badge-light-danger,
+    &.badge-light-secondary {
+      background-color: #e0edf6 !important;
+      background: #e0edf6 !important;
+      color: #000000 !important;
+      border-color: #c8d9e8 !important;
+      opacity: 1 !important;
+    }
+    
+    // Subtle hover effect for status badges only
+    &:hover {
+      background-color: #d4e6f1 !important;
+      color: #000000 !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 3px 8px rgba(59, 66, 97, 0.15) !important;
+      transition: all 0.2s ease !important;
+    }
+  }
+  
+  // Additional force override for any conflicting styles
+  .badge[class*="badge-light"] {
+    background-color: #e0edf6 !important;
+    background: #e0edf6 !important;
+    color: #000000 !important;
+  }
+}
+
+// Messages
+.order-request-status-messages {
+  margin-bottom: 1.5rem;
+  
+  .alert {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    
+    &.alert-danger {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+      border-left: 4px solid #ef4444;
+      color: #dc2626;
+    }
+  }
+}
+
+// Modern table styling to match parts request status blue header design
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 1.1rem;
+  
+  td, th {
+    font-weight: 500;
+  }
+  
+  .table-header {
+    th {
+      background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+      color: white !important;
+      border: none !important;
+      position: relative;
+      padding: 0;
+      height: 60px;
+      vertical-align: middle;
+      text-align: center;
+      
+      &.header-cell {
+        .header-content {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          padding: 1rem 1.25rem;
+          height: 100%;
+          min-height: 60px;
+          
+          .header-text {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            line-height: 1;
+          }
+          
+          .sort-icon {
+            opacity: 0.6;
+            transition: opacity 0.3s ease;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+          }
+        }
+      }
+      
+      &.sortable {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%) !important;
+          transform: translateY(-1px);
+          
+          .sort-icon {
+            opacity: 1;
+          }
+        }
+      }
+      
+      &:first-child {
+        border-radius: 16px 0 0 0;
+      }
+      
+      &:last-child {
+        border-radius: 0 16px 0 0;
+      }
+    }
+  }
+  
+  .table-body {
+    .table-row {
+      transition: all 0.3s ease;
+      border: none;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        z-index: 2;
+        position: relative;
+      }
+      
+      td {
+        padding: 1rem 1.25rem;
+        border: none;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        vertical-align: middle;
+        background: white;
+        text-align: center;
+        height: 60px;
+      }
+      
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+  }
+}
+
+// Force override for standard Bootstrap table to use blue header with rounded corners
+.table {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  table-layout: fixed !important;
+  width: 100% !important;
+  
+  // Reference-based spacing and text handling
+  th, td {
+    padding: 1rem 0.75rem !important;
+  }
+  
+  // Header text optimized for reference layout
+  th {
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    hyphens: auto !important;
+    line-height: 1.4 !important;
+    height: auto !important;
+    min-height: 75px !important;
+    vertical-align: middle !important;
+    font-size: 0.95rem !important;
+  }
+  
+  // Body cells with full text visibility
+  td {
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    padding: 1rem 0.75rem !important;
+    vertical-align: middle !important;
+    height: auto !important;
+    min-height: 60px !important;
+    line-height: 1.3 !important;
+  }
+  
+  // Enhanced column widths for full text visibility (totals 100%)
+  th:nth-child(1), td:nth-child(1) { width: 5% !important; }    // Row #
+  th:nth-child(2), td:nth-child(2) { width: 7% !important; }    // Order Type
+  th:nth-child(3), td:nth-child(3) { width: 7% !important; }    // Requester
+  th:nth-child(4), td:nth-child(4) { width: 11% !important; }   // DCG Part #
+  th:nth-child(5), td:nth-child(5) { width: 8% !important; }    // Manuf Part #
+  th:nth-child(6), td:nth-child(6) { width: 4% !important; }    // Qty
+  th:nth-child(7), td:nth-child(7) { width: 9% !important; }    // Vendor
+  th:nth-child(8), td:nth-child(8) { width: 9% !important; }    // PO Number
+  th:nth-child(9), td:nth-child(9) { width: 8% !important; }    // Order Date
+  th:nth-child(10), td:nth-child(10) { width: 8% !important; }  // Arrive Date
+  th:nth-child(11), td:nth-child(11) { width: 9% !important; }  // Status (increased for badge space)
+  th:nth-child(12), td:nth-child(12) { width: 9% !important; }  // Created On (increased for better spacing)
+  th:nth-child(13), td:nth-child(13) { width: 6% !important; }  // Created By
+  
+  thead {
+    th {
+      background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+      background-image: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+      color: white !important;
+      border: none !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.3px !important;
+      padding: 1rem 0.75rem !important;
+      height: auto !important;
+      min-height: 75px !important;
+      vertical-align: middle !important;
+      text-align: center !important;
+      position: relative !important;
+      
+      // Allow multi-line headers with reference spacing
+      display: table-cell !important;
+      vertical-align: middle !important;
+      line-height: 1.4 !important;
+      
+      // Optimized font size for reference layout
+      font-size: 0.85rem !important;
+      
+      // Allow text wrapping for better readability
+      white-space: normal !important;
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      hyphens: auto !important;
+      
+      // Inner content alignment
+      > * {
+        display: inline !important;
+        vertical-align: middle !important;
+      }
+      
+      // Icon alignment
+      i {
+        display: inline !important;
+        vertical-align: middle !important;
+        margin-left: 0.25rem !important;
+        font-size: 0.65rem !important;
+      }
+      
+      &:first-child {
+        border-top-left-radius: 16px !important;
+      }
+      
+      &:last-child {
+        border-top-right-radius: 16px !important;
+      }
+      
+      &:hover {
+        background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%) !important;
+        transform: translateY(-1px);
+      }
+    }
+  }
+  
+  tbody tr {
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background-color: #f8f9fa;
+      transform: translateY(-1px);
+    }
+    
+    // Ensure rows can expand for content
+    td {
+      height: auto !important;
+      min-height: 60px !important;
+      vertical-align: top !important;
+      padding-top: 1rem !important;
+      padding-bottom: 1rem !important;
+    }
+    
+    // Extra spacing for Status column to prevent badge overlap
+    td:nth-child(11) {
+      padding-left: 0.75rem !important;
+      padding-right: 1rem !important;
+    }
+    
+    // Extra spacing for Created On column for better separation
+    td:nth-child(12) {
+      padding-left: 1rem !important;
+      padding-right: 0.75rem !important;
+    }
+    
+    // Clickable order type styling
+    td:nth-child(2) .cursor-pointer {
+      transition: all 0.2s ease;
+      
+      &:hover {
+        color: #4c7bff !important;
+        transform: translateX(2px);
+        text-shadow: 0 1px 3px rgba(76, 123, 255, 0.2);
+      }
+      
+      &:active {
+        transform: translateX(1px);
+      }
+    }
+  }
+}
+
+// Force override any conflicting styles
+.table.align-middle.table-row-dashed {
+  thead tr th {
+    background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+    background-color: transparent !important;
+    background-image: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+    color: white !important;
+    border: none !important;
+    
+    // Perfect vertical alignment override with reference spacing
+    padding: 1rem 0.75rem !important;
+    height: auto !important;
+    min-height: 75px !important;
+    line-height: 1.4 !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    display: table-cell !important;
+    
+    // Text and icon baseline alignment with reference styling
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    
+    // Ensure all content is centered
+    * {
+      vertical-align: middle !important;
+    }
+    
+    // Icon specific alignment
+    i.fas {
+      display: inline-block !important;
+      vertical-align: middle !important;
+      line-height: 1 !important;
+      margin-left: 0.5rem !important;
+      margin-top: -1px !important;
+      font-size: 0.75rem !important;
+    }
+  }
+}
+
+// Additional specific overrides for perfect alignment
+.order-request-status-container {
+  // Enhanced gray text colors for better readability
+  .text-muted {
+    color: #4b5563 !important; // Darker than default muted
+  }
+  
+  .text-gray-600 {
+    color: #374151 !important; // Darker gray-600
+  }
+  
+  .text-gray-700 {
+    color: #1f2937 !important; // Much darker gray-700
+  }
+  
+  .text-gray-800 {
+    color: #111827 !important; // Keep gray-800 very dark
+  }
+  
+  .text-gray-400 {
+    color: #6b7280 !important; // Slightly darker gray-400
+  }
+  
+  .table thead th {
+    // Reset any inherited variations
+    font-family: inherit !important;
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+    
+    // Ensure consistent spacing for all headers
+    box-sizing: border-box !important;
+    
+    // Remove any margin that could affect alignment
+    margin: 0 !important;
+    
+    // Allow proper text wrapping
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow: visible !important;
+    
+    // Override Bootstrap min-width classes to prevent horizontal scrolling
+    min-width: unset !important;
+  }
+  
+  // Override all min-width utility classes
+  .table th[class*="min-w-"],
+  .table td[class*="min-w-"] {
+    min-width: unset !important;
+  }
+  
+  // Ensure table container never scrolls horizontally
+  .table-responsive {
+    overflow-x: hidden !important;
+  }
+  
+  // Enhanced text display for all content
+  .table td {
+    position: relative;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    
+    // Specific styling for long text columns
+    &:nth-child(4),  // DCG Part #
+    &:nth-child(7),  // Vendor
+    &:nth-child(8) { // PO Number
+      font-size: 0.8rem !important;
+      line-height: 1.4 !important;
+      word-spacing: -1px !important;
+    }
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .order-request-status-container {
+    padding: 1rem 0.5rem;
+    
+    .order-request-status-header__top {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+      
+      .order-request-status-page-title h2 {
+        font-size: 1.8rem;
+      }
+    }
+    
+    .order-request-status-main-card {
+      .card-header {
+        min-height: 320px;
+        padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+      }
+    }
+    
+    // Mobile table adjustments
+    .table {
+      font-size: 0.75rem !important;
+      
+      th, td {
+        padding: 0.5rem 0.25rem !important;
+      }
+      
+      thead th {
+        font-size: 0.7rem !important;
+        line-height: 50px !important;
+        height: 50px !important;
+      }
+      
+      .loading-indicator {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #5486ff;
+        
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// Medium screen adjustments
+@media (max-width: 1200px) {
+  .order-request-status-container {
+    .table {
+      font-size: 0.8rem !important;
+      
+      th, td {
+        padding: 0.6rem 0.4rem !important;
+      }
+    }
+  }
+}

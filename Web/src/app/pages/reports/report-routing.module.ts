@@ -5,6 +5,7 @@ import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-r
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
 import { OrderRequestComponent } from './order-request/order-request.component';
+import { OrderRequestStatusComponent } from './order-request-status/order-request-status.component';
 
 const routes: Routes = [
   {
@@ -31,6 +32,10 @@ const routes: Routes = [
   {
     path: 'order-request', 
     component: OrderRequestComponent
+  },
+  {
+    path: 'order-request-status', 
+    component: OrderRequestStatusComponent
   }
 ];
 

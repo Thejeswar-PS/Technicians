@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Job } from '../model/job-model';
 import { IReportTeam } from '../model/trending-report-team.models';
@@ -26,6 +26,11 @@ import {
   PartsReturnDataByWeekNoDto,
   PartsReturnDataByWeekNoApiResponseDto
 } from '../model/part-return-status.model';
+import { 
+  OrderRequestStatusRequestDto, 
+  OrderRequestStatusDto, 
+  OrderRequestStatusResponse 
+} from '../model/order-request-status.model';
 
 @Injectable({
   providedIn: 'root'
@@ -416,5 +421,135 @@ export class ReportService {
       headers: this.headers,
       params: params 
     });
+  }
+
+  // Order Request Status API methods
+  getOrderRequestStatus(request: OrderRequestStatusRequestDto): Observable<OrderRequestStatusDto[]> {
+    return this.http.post<any[]>(`${this.API}/OrderRequestStatus/GetOrderRequestStatus`, request, { 
+      headers: this.headers 
+    }).pipe(
+      // Transform API response to match frontend model
+      map((response: any[]) => {
+        if (!response || !Array.isArray(response)) {
+          return [];
+        }
+        return response.map((item: any, index: number) => {
+          if (!item) {
+            return {
+              rowIndex: index + 1,
+              orderType: undefined,
+              requester: undefined,
+              dcgPartNo: undefined,
+              manufPartNo: undefined,
+              qtyNeeded: undefined,
+              vendor: undefined,
+              poNumber: undefined,
+              orderDate: undefined,
+              arriveDate: undefined,
+              notes: undefined,
+              status: undefined,
+              lastModifiedBy: undefined,
+              createdOn: undefined,
+              createdBy: undefined,
+              modifiedBy: undefined,
+              modifiedOn: undefined,
+              archive: false
+            } as OrderRequestStatusDto;
+          }
+          return {
+            rowIndex: item.rowIndex || (index + 1),
+            orderType: item.orderType || undefined,
+            requester: item.requester || undefined,
+            dcgPartNo: item.dcgPartNo || undefined,
+            manufPartNo: item.manufPartNo || undefined,
+            qtyNeeded: item.qtyNeeded || undefined,
+            vendor: item.vendor || undefined,
+            poNumber: item.poNumber || undefined,
+            orderDate: item.orderDate || undefined,
+            arriveDate: item.arriveDate || undefined,
+            notes: item.notes || item.comment || item.description || item.remarks || undefined,
+            status: item.status || undefined,
+            lastModifiedBy: item.lastModifiedBy || undefined,
+            // Map API fields to frontend expected fields
+            createdOn: item.lastModifiedOn || item.createdOn || item.modifiedOn || undefined,
+            createdBy: item.lastModifiedBy || item.createdBy || item.modifiedBy || undefined,
+            modifiedBy: item.lastModifiedBy || item.modifiedBy || undefined,
+            modifiedOn: item.lastModifiedOn || item.modifiedOn || undefined,
+            archive: item.archive || false
+          } as OrderRequestStatusDto;
+        });
+      })
+    );
+  }
+
+  getOrderRequestStatusByParams(status: string = 'All', orderType: string = 'All', archive: boolean = false): Observable<OrderRequestStatusDto[]> {
+    let params = new HttpParams()
+      .set('status', status)
+      .set('orderType', orderType)
+      .set('archive', archive.toString());
+
+    return this.http.get<any[]>(`${this.API}/OrderRequestStatus/GetOrderRequestStatus`, { 
+      headers: this.headers,
+      params: params 
+    }).pipe(
+      // Transform API response to match frontend model
+      map((response: any[]) => {
+        console.log('Raw API response for getOrderRequestStatusByParams:', response);
+        if (!response || !Array.isArray(response)) {
+          return [];
+        }
+        return response.map((item: any, index: number) => {
+          console.log(`Item ${index}:`, item);
+          console.log(`Item ${index} all fields:`, Object.keys(item || {}));
+          console.log(`Item ${index} notes field:`, item?.notes);
+          console.log(`Item ${index} comment field:`, item?.comment);
+          console.log(`Item ${index} description field:`, item?.description);
+          console.log(`Item ${index} remarks field:`, item?.remarks);
+          if (!item) {
+            return {
+              rowIndex: index + 1,
+              orderType: undefined,
+              requester: undefined,
+              dcgPartNo: undefined,
+              manufPartNo: undefined,
+              qtyNeeded: undefined,
+              vendor: undefined,
+              poNumber: undefined,
+              orderDate: undefined,
+              arriveDate: undefined,
+              notes: undefined,
+              status: undefined,
+              lastModifiedBy: undefined,
+              createdOn: undefined,
+              createdBy: undefined,
+              modifiedBy: undefined,
+              modifiedOn: undefined,
+              archive: false
+            } as OrderRequestStatusDto;
+          }
+          return {
+            rowIndex: item.rowIndex || (index + 1),
+            orderType: item.orderType || undefined,
+            requester: item.requester || undefined,
+            dcgPartNo: item.dcgPartNo || undefined,
+            manufPartNo: item.manufPartNo || undefined,
+            qtyNeeded: item.qtyNeeded || undefined,
+            vendor: item.vendor || undefined,
+            poNumber: item.poNumber || undefined,
+            orderDate: item.orderDate || undefined,
+            arriveDate: item.arriveDate || undefined,
+            notes: item.notes || item.comment || item.description || item.remarks || undefined,
+            status: item.status || undefined,
+            lastModifiedBy: item.lastModifiedBy || undefined,
+            // Map API fields to frontend expected fields
+            createdOn: item.lastModifiedOn || item.createdOn || item.modifiedOn || undefined,
+            createdBy: item.lastModifiedBy || item.createdBy || item.modifiedBy || undefined,
+            modifiedBy: item.lastModifiedBy || item.modifiedBy || undefined,
+            modifiedOn: item.lastModifiedOn || item.modifiedOn || undefined,
+            archive: item.archive || false
+          } as OrderRequestStatusDto;
+        });
+      })
+    );
   }
 }
