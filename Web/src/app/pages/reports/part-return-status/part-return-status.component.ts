@@ -1261,24 +1261,37 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       if (clickX >= padding && clickX <= canvas.width - padding && 
           clickY >= padding && clickY <= canvas.height - padding) {
         
-        // Determine which bar was clicked - improved detection for both blue and red bars
+        // STRICT click detection - matches drawing coordinates EXACTLY
         const barWidth = chartWidth / (this.chartData.length * 2);
         
         for (let i = 0; i < this.chartData.length; i++) {
           const x = padding + (i * 2 * barWidth) + (barWidth * 0.1);
           
-          // Match the exact drawing coordinates from drawBars method
-          // Blue bar (jobs): drawRoundedRect(x, jobsY, barWidth * 0.8, jobsHeight)
+          // Calculate EXACT coordinates as in drawBars method
+          const maxValue = Math.max(...this.chartData.map(d => Math.max(d.jobsCount, d.faulty)));
+          const jobsHeight = (this.chartData[i].jobsCount / maxValue) * chartHeight;
+          const jobsY = padding + chartHeight - jobsHeight;
+          const faultyHeight = (this.chartData[i].faulty / maxValue) * chartHeight;
+          const faultyY = padding + chartHeight - faultyHeight;
+          const barWidthScaled = barWidth * 0.8;
+          
+          // Blue bar (jobs) - EXACT bounds from drawBars
           const blueBarLeft = x;
-          const blueBarRight = x + (barWidth * 0.8);
+          const blueBarRight = x + barWidthScaled;
+          const blueBarTop = Math.max(jobsY, padding); // Never go above chart area
+          const blueBarBottom = padding + chartHeight;
           
-          // Red bar (faulty): drawRoundedRect(x + barWidth, faultyY, barWidth * 0.8, faultyHeight)  
+          // Red bar (faulty) - EXACT bounds from drawBars
           const redBarLeft = x + barWidth;
-          const redBarRight = x + barWidth + (barWidth * 0.8);
+          const redBarRight = x + barWidth + barWidthScaled;
+          const redBarTop = Math.max(faultyY, padding); // Never go above chart area  
+          const redBarBottom = padding + chartHeight;
           
-          // Check if click is within either bar
-          const isInBlueBar = clickX >= blueBarLeft && clickX <= blueBarRight;
-          const isInRedBar = clickX >= redBarLeft && clickX <= redBarRight;
+          // STRICT click detection with expanded hit zones for better UX
+          const isInBlueBar = clickX >= (blueBarLeft - 2) && clickX <= (blueBarRight + 2) && 
+                             clickY >= (blueBarTop - 5) && clickY <= (blueBarBottom + 5);
+          const isInRedBar = clickX >= (redBarLeft - 2) && clickX <= (redBarRight + 2) && 
+                            clickY >= (redBarTop - 5) && clickY <= (redBarBottom + 5);
           
           if (isInBlueBar || isInRedBar) {
             this.onChartItemClick(this.chartData[i], 'parts-to-receive');
@@ -2124,24 +2137,37 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       if (clickX >= padding && clickX <= canvas.width - padding && 
           clickY >= padding && clickY <= canvas.height - padding) {
         
-        // Determine which bar was clicked - improved detection for both bars
+        // STRICT weekly bar chart detection - matches drawWeeklyBars EXACTLY
         const barGroupWidth = chartWidth / this.weeklyPartsData.length;
+        const barWidth = barGroupWidth * 0.35;
+        const maxValue = Math.max(...this.weeklyPartsData.map(d => Math.max(d.unUsed, d.faulty)));
         
         for (let i = 0; i < this.weeklyPartsData.length; i++) {
           const x = padding + (i * barGroupWidth) + (barGroupWidth * 0.1);
-          const barWidth = barGroupWidth * 0.35;
           
-          // Check unused bar (green) - left bar
+          // Calculate EXACT coordinates as in drawWeeklyBars method
+          const unusedHeight = (this.weeklyPartsData[i].unUsed / maxValue) * (canvas.height - (padding * 2));
+          const unusedY = padding + (canvas.height - (padding * 2)) - unusedHeight;
+          const faultyHeight = (this.weeklyPartsData[i].faulty / maxValue) * (canvas.height - (padding * 2));
+          const faultyY = padding + (canvas.height - (padding * 2)) - faultyHeight;
+          
+          // Unused bar (green) - EXACT bounds from drawWeeklyBars
           const unusedBarLeft = x;
           const unusedBarRight = x + barWidth;
+          const unusedBarTop = Math.max(unusedY, padding);
+          const unusedBarBottom = padding + (canvas.height - (padding * 2));
           
-          // Check faulty bar (orange) - right bar with gap
+          // Faulty bar (orange) - EXACT bounds from drawWeeklyBars
           const faultyBarLeft = x + barWidth + 5;
           const faultyBarRight = x + barWidth + 5 + barWidth;
+          const faultyBarTop = Math.max(faultyY, padding);
+          const faultyBarBottom = padding + (canvas.height - (padding * 2));
           
-          // Check if click is within either the unused bar OR the faulty bar
-          const isInUnusedBar = clickX >= unusedBarLeft && clickX <= unusedBarRight;
-          const isInFaultyBar = clickX >= faultyBarLeft && clickX <= faultyBarRight;
+          // STRICT click detection with expanded hit zones for better UX
+          const isInUnusedBar = clickX >= (unusedBarLeft - 2) && clickX <= (unusedBarRight + 2) &&
+                                clickY >= (unusedBarTop - 5) && clickY <= (unusedBarBottom + 5);
+          const isInFaultyBar = clickX >= (faultyBarLeft - 2) && clickX <= (faultyBarRight + 2) &&
+                                clickY >= (faultyBarTop - 5) && clickY <= (faultyBarBottom + 5);
           
           if (isInUnusedBar || isInFaultyBar) {
             this.onChartItemClick(this.weeklyPartsData[i], 'weekly-returned');
@@ -3040,11 +3066,11 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       ctx.font = 'bold 16px Inter, system-ui, sans-serif';
       ctx.fillText(item.jobsCount.toString(), legendX + 35, y + 28);
       
-      // Draw "jobs" label
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '500 12px Inter, system-ui, sans-serif';
-      const jobsTextX = legendX + 35 + ctx.measureText(item.jobsCount.toString()).width + 6;
-      ctx.fillText('jobs', jobsTextX, y + 28);
+      // Remove "jobs" label as requested
+      // ctx.fillStyle = '#6b7280';
+      // ctx.font = '500 12px Inter, system-ui, sans-serif';
+      // const jobsTextX = legendX + 35 + ctx.measureText(item.jobsCount.toString()).width + 6;
+      // ctx.fillText('jobs', jobsTextX, y + 28);
       
       // Draw percentage on the right
       ctx.fillStyle = '#374151';
@@ -3301,24 +3327,37 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       if (clickX >= padding && clickX <= canvas.width - padding && 
           clickY >= padding && clickY <= canvas.height - padding) {
         
-        // Determine which bar was clicked - improved detection for both bars
+        // STRICT received bar chart detection 
         const barGroupWidth = chartWidth / this.receivedChartData.length;
+        const barWidth = barGroupWidth * 0.35;
+        const maxValue = Math.max(...this.receivedChartData.map(d => Math.max((d.jobsCount || 0), (d.faulty || 0))));
         
         for (let i = 0; i < this.receivedChartData.length; i++) {
           const x = padding + (i * barGroupWidth) + (barGroupWidth * 0.15);
-          const barWidth = barGroupWidth * 0.35;
           
-          // Check jobs bar (purple) - left bar
+          // Calculate EXACT coordinates as in drawing method
+          const jobsHeight = ((this.receivedChartData[i].jobsCount || 0) / maxValue) * (canvas.height - (padding * 2));
+          const jobsY = padding + (canvas.height - (padding * 2)) - jobsHeight;
+          const faultyHeight = ((this.receivedChartData[i].faulty || 0) / maxValue) * (canvas.height - (padding * 2));
+          const faultyY = padding + (canvas.height - (padding * 2)) - faultyHeight;
+          
+          // Jobs bar (purple) - EXACT bounds from drawing
           const jobsBarLeft = x;
           const jobsBarRight = x + barWidth;
+          const jobsBarTop = Math.max(jobsY, padding);
+          const jobsBarBottom = padding + (canvas.height - (padding * 2));
           
-          // Check faulty bar (red) - right bar with gap
+          // Faulty bar (red) - EXACT bounds from drawing
           const faultyBarLeft = x + barWidth + 5;
           const faultyBarRight = x + barWidth + 5 + barWidth;
+          const faultyBarTop = Math.max(faultyY, padding);
+          const faultyBarBottom = padding + (canvas.height - (padding * 2));
           
-          // Check if click is within either the jobs bar OR the faulty bar
-          const isInJobsBar = clickX >= jobsBarLeft && clickX <= jobsBarRight;
-          const isInFaultyBar = clickX >= faultyBarLeft && clickX <= faultyBarRight;
+          // STRICT click detection with expanded hit zones for better UX
+          const isInJobsBar = clickX >= (jobsBarLeft - 2) && clickX <= (jobsBarRight + 2) &&
+                             clickY >= (jobsBarTop - 5) && clickY <= (jobsBarBottom + 5);
+          const isInFaultyBar = clickX >= (faultyBarLeft - 2) && clickX <= (faultyBarRight + 2) &&
+                               clickY >= (faultyBarTop - 5) && clickY <= (faultyBarBottom + 5);
           
           if (isInJobsBar || isInFaultyBar) {
             this.onChartItemClick(this.receivedChartData[i], 'parts-received');
@@ -3403,14 +3442,12 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
       // Error rendering received pie chart - silently handle
     }
     
-    // Setup interactive click detection
+    // Setup interactive click detection with centered chart coordinates
     const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
-    const legendWidth = 220;
-    const availableWidth = canvas.width - legendWidth;
-    const adjustedCenterX = legendWidth + (availableWidth / 2);
+    const adjustedCenterX = canvas.width / 2;
     const adjustedCenterY = canvas.height / 2;
-    const adjustedOuterRadius = Math.min(availableWidth / 2, adjustedCenterY) - 40;
-    const adjustedInnerRadius = adjustedOuterRadius * 0.4;
+    const adjustedOuterRadius = Math.min(canvas.width, canvas.height) / 2 - 60;
+    const adjustedInnerRadius = adjustedOuterRadius * 0.6;
     
     // Add click event listener for received pie chart
     const clickHandler = (event: MouseEvent) => {
@@ -4341,13 +4378,11 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
 
   // Received pie chart animation and interaction methods
   private drawModernReceivedPieSlices(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, progress: number): void {
-    // Position pie chart to the right, accounting for left-side legend
-    const legendWidth = 220;
-    const availableWidth = canvas.width - legendWidth;
-    const centerX = legendWidth + (availableWidth / 2);
+    // Modern donut-style chart positioned in center
+    const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const outerRadius = Math.min(availableWidth / 2, centerY) - 40;
-    const innerRadius = outerRadius * 0.4;
+    const outerRadius = Math.min(canvas.width, canvas.height) / 2 - 60;
+    const innerRadius = outerRadius * 0.6; // Large center hole for donut style
     
     const total = this.receivedChartData.reduce((sum, item) => sum + (item.jobsCount || 0) + (item.faulty || 0), 0);
     
@@ -4358,135 +4393,149 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
     
     let currentAngle = -Math.PI / 2;
 
+    // Modern high-contrast color palette
     const modernColors = [
-      { main: '#8b5cf6', light: '#a78bfa', shadow: '#7c3aed' },
-      { main: '#ef4444', light: '#f87171', shadow: '#dc2626' },
-      { main: '#10b981', light: '#34d399', shadow: '#059669' },
-      { main: '#f59e0b', light: '#fbbf24', shadow: '#d97706' },
-      { main: '#06b6d4', light: '#22d3ee', shadow: '#0891b2' },
-      { main: '#ec4899', light: '#f472b6', shadow: '#db2777' },
-      { main: '#84cc16', light: '#a3e635', shadow: '#65a30d' },
-      { main: '#4f46e5', light: '#6366f1', shadow: '#3730a3' }
+      { main: '#FF6B6B', light: '#FF8E8E', shadow: '#E84545' }, // Bright Red
+      { main: '#4ECDC4', light: '#7EDDD8', shadow: '#2EAB9F' }, // Teal
+      { main: '#45B7D1', light: '#6BC5D8', shadow: '#2A9FC7' }, // Blue
+      { main: '#F9CA24', light: '#F9D949', shadow: '#E6B800' }, // Yellow
+      { main: '#A55EEA', light: '#B87EED', shadow: '#8B3CD9' }, // Purple
+      { main: '#26DE81', light: '#52E69B', shadow: '#1CB55A' }, // Green
+      { main: '#FD79A8', light: '#FE98BC', shadow: '#E84393' }, // Pink
+      { main: '#FDCB6E', light: '#FDD888', shadow: '#E6B800' }  // Orange
     ];
 
-    // Draw background
-    const bgGradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, outerRadius + 20);
-    bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
-    bgGradient.addColorStop(0.7, 'rgba(248, 250, 252, 0.8)');
-    bgGradient.addColorStop(1, 'rgba(241, 245, 249, 0.9)');
+    // Draw modern background with subtle gradient
+    const bgGradient = ctx.createRadialGradient(centerX, centerY, innerRadius, centerX, centerY, outerRadius + 30);
+    bgGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+    bgGradient.addColorStop(0.8, 'rgba(248, 250, 252, 0.3)');
+    bgGradient.addColorStop(1, 'rgba(241, 245, 249, 0.5)');
     ctx.fillStyle = bgGradient;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, outerRadius + 15, 0, 2 * Math.PI);
+    ctx.arc(centerX, centerY, outerRadius + 20, 0, 2 * Math.PI);
     ctx.fill();
 
-    // Draw slices with interactive effects
+    // Draw donut slices with modern styling
     this.receivedChartData.forEach((item, index) => {
       const itemTotal = (item.jobsCount || 0) + (item.faulty || 0);
       const sliceAngle = ((itemTotal / total) * 2 * Math.PI) * progress;
       const colors = modernColors[index % modernColors.length];
+      const percentage = Math.round((itemTotal / total) * 100);
       
-      // Calculate interactive transformations
+      // Interactive effects
       const isHovered = this.hoveredReceivedSliceIndex === index;
       const isClicked = this.clickedReceivedSliceIndex === index;
-      const hoverScale = this.receivedSliceHoverScale[index] || 1;
       
-      // Apply hover/click effects
-      const effectiveOuterRadius = outerRadius * hoverScale;
-      const effectiveInnerRadius = innerRadius * hoverScale;
-      
-      // Offset for hover effect (slice separation)
+      // Apply hover/click effects with slight expansion
+      let effectiveOuterRadius = outerRadius;
+      let effectiveInnerRadius = innerRadius;
       let offsetX = 0, offsetY = 0;
+      
       if (isHovered || isClicked) {
         const midAngle = currentAngle + sliceAngle / 2;
-        const offsetDistance = isClicked ? 15 : 8;
+        const offsetDistance = isClicked ? 12 : 6;
         offsetX = Math.cos(midAngle) * offsetDistance;
         offsetY = Math.sin(midAngle) * offsetDistance;
+        effectiveOuterRadius = outerRadius + (isClicked ? 8 : 4);
       }
       
       const effectiveCenterX = centerX + offsetX;
       const effectiveCenterY = centerY + offsetY;
       
-      // Enhanced gradient with hover effects
+      // Modern gradient with smooth transitions
       const sliceGradient = ctx.createRadialGradient(
         effectiveCenterX, effectiveCenterY, effectiveInnerRadius,
         effectiveCenterX, effectiveCenterY, effectiveOuterRadius
       );
       
-      if (isHovered) {
-        sliceGradient.addColorStop(0, this.brightenColor(colors.light, 20));
-        sliceGradient.addColorStop(0.6, this.brightenColor(colors.main, 15));
-        sliceGradient.addColorStop(1, colors.shadow);
-      } else if (isClicked) {
-        sliceGradient.addColorStop(0, this.brightenColor(colors.light, 30));
-        sliceGradient.addColorStop(0.6, this.brightenColor(colors.main, 25));
-        sliceGradient.addColorStop(1, this.brightenColor(colors.shadow, 10));
-      } else {
-        sliceGradient.addColorStop(0, colors.light);
-        sliceGradient.addColorStop(0.6, colors.main);
-        sliceGradient.addColorStop(1, colors.shadow);
-      }
-      
-      // Add glow effect for hovered/clicked slices
       if (isHovered || isClicked) {
+        sliceGradient.addColorStop(0, colors.light);
+        sliceGradient.addColorStop(0.5, colors.main);
+        sliceGradient.addColorStop(1, colors.shadow);
+        
+        // Add glow effect
         ctx.shadowColor = colors.main;
-        ctx.shadowBlur = isClicked ? 25 : 15;
+        ctx.shadowBlur = isClicked ? 20 : 12;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
+      } else {
+        sliceGradient.addColorStop(0, colors.light);
+        sliceGradient.addColorStop(0.7, colors.main);
+        sliceGradient.addColorStop(1, colors.shadow);
       }
       
       ctx.fillStyle = sliceGradient;
       
-      // Draw the slice
+      // Draw the donut slice with slight padding between slices
+      const paddingAngle = 0.01; // Small gap between slices
       ctx.beginPath();
-      ctx.arc(effectiveCenterX, effectiveCenterY, effectiveInnerRadius, 0, 2 * Math.PI);
-      ctx.arc(effectiveCenterX, effectiveCenterY, effectiveOuterRadius, currentAngle, currentAngle + sliceAngle, false);
+      ctx.arc(effectiveCenterX, effectiveCenterY, effectiveInnerRadius, currentAngle + paddingAngle, currentAngle + sliceAngle - paddingAngle);
+      ctx.arc(effectiveCenterX, effectiveCenterY, effectiveOuterRadius, currentAngle + sliceAngle - paddingAngle, currentAngle + paddingAngle, true);
       ctx.closePath();
       ctx.fill();
       
       // Reset shadow
       ctx.shadowBlur = 0;
       
-      // Draw slice border
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 3;
+      // Draw subtle slice borders for clean separation
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 2;
       ctx.stroke();
       
-      // Draw labels with better positioning and visibility for larger slices
-      if (sliceAngle > 0.15) { // Show labels for smaller slices too
+      // Draw clean, readable labels inside slices
+      if (sliceAngle > 0.08) { // Only show labels for reasonably sized slices
         const labelAngle = currentAngle + sliceAngle / 2;
         const labelRadius = (effectiveOuterRadius + effectiveInnerRadius) / 2;
         const labelX = effectiveCenterX + Math.cos(labelAngle) * labelRadius;
         const labelY = effectiveCenterY + Math.sin(labelAngle) * labelRadius;
         
-        // Add text shadow for better visibility
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-        ctx.shadowBlur = 3;
+        // Smart label positioning based on slice size
+        const isLargeSlice = sliceAngle > 0.3;
+        const isMediumSlice = sliceAngle > 0.15;
+        
+        // Text styling with better visibility
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 2;
         ctx.shadowOffsetX = 1;
         ctx.shadowOffsetY = 1;
         
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 13px Inter, Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        
-        // Draw warehouse name with better length handling
-        const maxNameLength = sliceAngle > 0.8 ? 15 : sliceAngle > 0.5 ? 12 : sliceAngle > 0.3 ? 8 : 6;
-        const displayName = item.name.length > maxNameLength ? 
-          item.name.substring(0, maxNameLength - 2) + '..' : item.name;
-        ctx.fillText(displayName, labelX, labelY - 16);
-        
-        // Draw value with emphasis
-        ctx.font = 'bold 15px Inter, Arial, sans-serif';
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(itemTotal.toString(), labelX, labelY + 2);
         
-        // Draw percentage
-        const percentage = Math.round((itemTotal / total) * 100);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 12px Inter, Arial, sans-serif';
-        ctx.fillText(`(${percentage}%)`, labelX, labelY + 18);
+        if (isLargeSlice) {
+          // Large slices: Show name, value, and percentage on separate lines
+          ctx.font = 'bold 11px Inter, Arial, sans-serif';
+          const maxNameLength = 10;
+          const displayName = item.name.length > maxNameLength ? 
+            item.name.substring(0, maxNameLength - 2) + '..' : item.name;
+          ctx.fillText(displayName, labelX, labelY - 16);
+          
+          ctx.font = 'bold 15px Inter, Arial, sans-serif';
+          ctx.fillText(itemTotal.toString(), labelX, labelY);
+          
+          // Removed percentage display as requested
+          // ctx.font = 'bold 10px Inter, Arial, sans-serif';
+          // ctx.fillText(`(${percentage}%)`, labelX, labelY + 14);
+          
+        } else if (isMediumSlice) {
+          // Medium slices: Show name and value
+          ctx.font = 'bold 10px Inter, Arial, sans-serif';
+          const maxNameLength = 6;
+          const displayName = item.name.length > maxNameLength ? 
+            item.name.substring(0, maxNameLength - 2) + '..' : item.name;
+          ctx.fillText(displayName, labelX, labelY - 8);
+          
+          ctx.font = 'bold 12px Inter, Arial, sans-serif';
+          ctx.fillText(itemTotal.toString(), labelX, labelY + 6);
+          
+        } else {
+          // Small slices: Show only value
+          ctx.font = 'bold 10px Inter, Arial, sans-serif';
+          ctx.fillText(itemTotal.toString(), labelX, labelY);
+        }
         
-        // Reset shadow
+        // Reset text shadow
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
         ctx.shadowOffsetX = 0;
@@ -4496,30 +4545,42 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
       currentAngle += (itemTotal / total) * 2 * Math.PI;
     });
     
-    // Draw center circle
-    const innerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius);
+    // Draw modern center circle with subtle shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 4;
+    
+    const innerGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, innerRadius * 0.9);
     innerGradient.addColorStop(0, '#ffffff');
-    innerGradient.addColorStop(0.6, '#fafbfc');
-    innerGradient.addColorStop(1, '#f1f5f9');
+    innerGradient.addColorStop(0.5, '#fafbfc');
+    innerGradient.addColorStop(1, '#f8fafc');
     ctx.fillStyle = innerGradient;
     ctx.beginPath();
     ctx.arc(centerX, centerY, innerRadius, 0, 2 * Math.PI);
     ctx.fill();
     
-    ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+    // Reset shadow
+    ctx.shadowBlur = 0;
+    
+    // Subtle border
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
     ctx.lineWidth = 1;
     ctx.stroke();
     
-    // Center text with better visibility
-    ctx.fillStyle = '#64748b';
-    ctx.font = '600 16px Inter, Arial, sans-serif';
+    // Modern center text display
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('Total Parts', centerX, centerY - 12);
     
+    // Large total count (main focal point)
     ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 28px Inter, Arial, sans-serif';
-    ctx.fillText(total.toString(), centerX, centerY + 12);
+    ctx.font = 'bold 44px Inter, Arial, sans-serif';
+    ctx.fillText(total.toString(), centerX, centerY - 10);
+    
+    // Descriptive label below
+    ctx.fillStyle = '#64748b';
+    ctx.font = '600 14px Inter, Arial, sans-serif';
+    ctx.fillText('Total Parts', centerX, centerY + 24);
     
     // Draw legend when animation is complete
     if (progress >= 1) {
@@ -4628,7 +4689,7 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
     // Draw refined summary
     ctx.font = '500 13px Inter, system-ui, sans-serif';
     ctx.fillStyle = '#6b7280';
-    ctx.fillText(`${total} parts across ${this.receivedChartData.length} warehouses`, legendX, legendY + 12);
+    ctx.fillText(`${total} across ${this.receivedChartData.length} warehouses`, legendX, legendY + 12);
     
     // Draw elegant legend items
     this.receivedChartData.forEach((item, index) => {
@@ -4667,17 +4728,17 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
       ctx.font = 'bold 16px Inter, system-ui, sans-serif';
       ctx.fillText(itemTotal.toString(), legendX + 35, y + 28);
       
-      // Draw "parts" label
-      ctx.fillStyle = '#6b7280';
-      ctx.font = '500 12px Inter, system-ui, sans-serif';
-      const partsTextX = legendX + 35 + ctx.measureText(itemTotal.toString()).width + 6;
-      ctx.fillText('parts', partsTextX, y + 28);
-      
+      // Removed "parts" label and percentage as requested
+      // ctx.fillStyle = '#6b7280';
+      // ctx.font = '500 12px Inter, system-ui, sans-serif';
+      // const partsTextX = legendX + 35 + ctx.measureText(itemTotal.toString()).width + 6;
+      // ctx.fillText('parts', partsTextX, y + 28);
+      // 
       // Draw percentage
-      ctx.fillStyle = '#9ca3af';
-      ctx.font = '500 11px Inter, system-ui, sans-serif';
-      const percentageTextX = partsTextX + ctx.measureText('parts').width + 12;
-      ctx.fillText(`(${percentage}%)`, percentageTextX, y + 28);
+      // ctx.fillStyle = '#9ca3af';
+      // ctx.font = '500 11px Inter, system-ui, sans-serif';
+      // const percentageTextX = partsTextX + ctx.measureText('parts').width + 12;
+      // ctx.fillText(`(${percentage}%)`, percentageTextX, y + 28);
     });
   }
 

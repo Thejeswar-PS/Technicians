@@ -4,6 +4,7 @@ import { JobReportDetailsComponent } from './job-report-details/job-report-detai
 import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-report.component';
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
+import { OrderRequestComponent } from './order-request/order-request.component';
 
 const routes: Routes = [
   {
@@ -26,6 +27,10 @@ const routes: Routes = [
   {
     path: 'part-return-status', 
     component: PartReturnStatusComponent
+  },
+  {
+    path: 'order-request', 
+    component: OrderRequestComponent
   }
 ];
 
