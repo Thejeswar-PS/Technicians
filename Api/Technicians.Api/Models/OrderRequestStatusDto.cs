@@ -8,6 +8,7 @@ namespace Technicians.Api.Models
         public string Status { get; set; } = "All";
         public string OrderType { get; set; } = "All";
         public bool Archive { get; set; } = false;
+        public object Notes { get; internal set; }
     }
 
     /// <summary>

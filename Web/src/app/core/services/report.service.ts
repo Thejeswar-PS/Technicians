@@ -31,6 +31,16 @@ import {
   OrderRequestStatusDto, 
   OrderRequestStatusResponse 
 } from '../model/order-request-status.model';
+import { 
+  PartsTestRequest, 
+  PartsTestResponse,
+  SaveUpdatePartsTestDto,
+  SaveUpdatePartsTestResponse,
+  EmployeeDto,
+  EmployeeRequest,
+  EmployeeResponse,
+  DeletePartsTestResponse
+} from '../model/parts-test-info.model';
 
 @Injectable({
   providedIn: 'root'
@@ -551,5 +561,65 @@ export class ReportService {
         });
       })
     );
+  }
+
+  // Parts Test API methods
+  getPartsTestList(request: PartsTestRequest): Observable<PartsTestResponse> {
+    return this.http.post<PartsTestResponse>(`${this.API}/PartsTest/GetPartsTestList`, request, { 
+      headers: this.headers 
+    });
+  }
+
+  getPartsTestListByParams(rowIndex: number = 0, source: string = 'PartsTest'): Observable<PartsTestResponse> {
+    let params = new HttpParams()
+      .set('rowIndex', rowIndex.toString())
+      .set('source', source);
+
+    return this.http.get<PartsTestResponse>(`${this.API}/PartsTest/GetPartsTestList`, { 
+      headers: this.headers,
+      params: params 
+    });
+  }
+
+  // Get maximum test row index
+  getMaxTestRowIndex(): Observable<{ success: boolean; maxRowIndex: number }> {
+    return this.http.get<{ success: boolean; maxRowIndex: number }>(`${this.API}/PartsTest/GetMaxTestRowIndex`, { 
+      headers: this.headers 
+    });
+  }
+
+  // Save or update parts test list entry
+  saveUpdatePartsTestList(dto: SaveUpdatePartsTestDto): Observable<SaveUpdatePartsTestResponse> {
+    return this.http.post<SaveUpdatePartsTestResponse>(`${this.API}/PartsTest/SaveUpdatePartsTestList`, dto, { 
+      headers: this.headers 
+    });
+  }
+
+  // Employee lookup methods
+  getEmployeeNamesByDept(department: string): Observable<EmployeeResponse> {
+    let params = new HttpParams().set('department', department);
+    
+    return this.http.get<EmployeeResponse>(`${this.API}/PartsTest/GetEmployeeNamesByDept`, { 
+      headers: this.headers,
+      params: params 
+    });
+  }
+
+  getEmployeeNamesByDeptPost(request: EmployeeRequest): Observable<EmployeeResponse> {
+    return this.http.post<EmployeeResponse>(`${this.API}/PartsTest/GetEmployeeNamesByDept`, request, { 
+      headers: this.headers 
+    });
+  }
+
+  // Delete parts test list entry
+  deletePartsTestList(rowIndex: number, source: string = 'PartsTest'): Observable<DeletePartsTestResponse> {
+    let params = new HttpParams()
+      .set('rowIndex', rowIndex.toString())
+      .set('source', source);
+    
+    return this.http.delete<DeletePartsTestResponse>(`${this.API}/PartsTest/DeletePartsTestList`, { 
+      headers: this.headers,
+      params: params 
+    });
   }
 }

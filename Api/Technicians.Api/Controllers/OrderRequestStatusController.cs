@@ -34,8 +34,8 @@ namespace Technicians.Api.Controllers
                     return BadRequest("Invalid request payload.");
                 }
 
-                _logger.LogInformation("Getting order request status for Status: {Status}, OrderType: {OrderType}, Archive: {Archive}", 
-                    request.Status, request.OrderType, request.Archive);
+                _logger.LogInformation("Getting order request status for Status: {Status}, OrderType: {OrderType}, Archive: {Archive}, Notes: {Notes}", 
+                    request.Status, request.OrderType, request.Archive, request.Notes);
 
                 var results = await _repository.GetOrderRequestStatusAsync(request);
 
@@ -45,8 +45,8 @@ namespace Technicians.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting order request status for Status: {Status}, OrderType: {OrderType}, Archive: {Archive}", 
-                    request.Status, request.OrderType, request.Archive);
+                _logger.LogError(ex, "Error getting order request status for Status: {Status}, OrderType: {OrderType}, Archive: {Archive}, Notes: {Notes}", 
+                    request.Status, request.OrderType, request.Archive, request.Notes);
                 
                 return StatusCode(500, new { 
                     success = false, 

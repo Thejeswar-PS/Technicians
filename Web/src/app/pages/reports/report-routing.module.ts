@@ -6,6 +6,7 @@ import { PartsRequestStatusComponent } from './parts-request-status/parts-reques
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
 import { OrderRequestComponent } from './order-request/order-request.component';
 import { OrderRequestStatusComponent } from './order-request-status/order-request-status.component';
+import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.component';
 
 const routes: Routes = [
   {
@@ -36,6 +37,10 @@ const routes: Routes = [
   {
     path: 'order-request-status', 
     component: OrderRequestStatusComponent
+  },
+  {
+    path: 'parts-test-info', 
+    component: PartsTestInfoComponent
   }
 ];
 
