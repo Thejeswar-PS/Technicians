@@ -1,0 +1,320 @@
+<!-- Order Request Status Page -->
+<div class="container-fluid order-request-status-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center order-request-status-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="order-request-status-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary order-request-status-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="order-request-status-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-clipboard-check me-2"></i>
+        Order Request Status
+      </h2>
+    </div>
+
+
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+    <!-- Filter & Data Section -->
+    <div class="card shadow-sm order-request-status-main-card">
+      <!-- Filter Header -->
+      <div class="card-header border-0 py-4">
+        <div class="order-request-status-filter-header">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-funnel me-2 text-primary"></i>
+                Filters & Search
+                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
+                  {{totalItems}} Result{{totalItems === 1 ? '' : 's'}}
+                </span>
+              </h5>
+              <small class="text-muted">Customize your view with filters below</small>
+            </div>
+          </div>
+
+          <!-- Filter Controls -->
+          <div class="filter-controls-section mt-3">
+            <form class="order-request-status-filter-form" [formGroup]="orderStatusFilterForm">
+              <div class="row g-3">
+                <!-- Status Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-tag me-1"></i>
+                      Status
+                    </label>
+                    <div class="position-relative">
+                      <select class="form-select modern-select" formControlName="status">
+                        <option *ngFor="let option of statusOptions" [value]="option.value">
+                          {{option.label}}
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Order Type Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-box me-1"></i>
+                      Order Type
+                    </label>
+                    <div class="position-relative">
+                      <select class="form-select modern-select" formControlName="orderType">
+                        <option *ngFor="let option of orderTypeOptions" [value]="option.value">
+                          {{option.label}}
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Include Archive Filter -->
+                <div class="col-md-4">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-x-circle me-1"></i>
+                      Include Archive
+                    </label>
+                    <div class="form-check form-switch mt-3">
+                      <input class="form-check-input" 
+                             type="checkbox" 
+                             id="archive" 
+                             formControlName="archive">
+                      <label class="form-check-label" for="archive">
+                        Show Archived Orders
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Display Section -->
+      <div class="card-body py-4">
+        
+        <!-- Messages -->
+        <div class="order-request-status-messages" *ngIf="errorMessage && !isLoading">
+          <div class="alert alert-danger d-inline-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+        </div>
+
+        <!-- Loading indicator for data processing -->
+        <div *ngIf="isLoading" class="text-center py-4">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+          <span class="text-muted">Processing data...</span>
+        </div>
+
+    <!--begin::Table-->
+    <div *ngIf="!isLoading && !errorMessage" class="table-responsive">
+      <!--begin::Results Summary-->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="text-gray-700">
+          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to 
+          {{ Math.min(currentPage * itemsPerPage, totalItems) }} of 
+          {{ totalItems }} entries
+        </div>
+
+        <div class="text-warning fw-bold" *ngIf="isArchiveMode()">
+          <i class="bi bi-archive fs-4 text-warning me-2"></i>
+          Showing Archived Orders
+        </div>
+      </div>
+      <!--end::Results Summary-->
+
+      <table class="table align-middle table-row-dashed fs-6 gy-5">
+        <!--begin::Table head-->
+        <thead>
+          <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
+            <th class="min-w-70px cursor-pointer" (click)="sortData('rowIndex')">
+              Row #
+              <i class="fas ms-2" [ngClass]="getSortIcon('rowIndex')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('orderType')">
+              Order Type
+              <i class="fas ms-2" [ngClass]="getSortIcon('orderType')"></i>
+            </th>
+            <th class="min-w-125px cursor-pointer" (click)="sortData('requester')">
+              Requester
+              <i class="fas ms-2" [ngClass]="getSortIcon('requester')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('dcgPartNo')">
+              DCG Part #
+              <i class="fas ms-2" [ngClass]="getSortIcon('dcgPartNo')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('manufPartNo')">
+              Manuf Part #
+              <i class="fas ms-2" [ngClass]="getSortIcon('manufPartNo')"></i>
+            </th>
+            <th class="min-w-80px cursor-pointer" (click)="sortData('qtyNeeded')">
+              Qty
+              <i class="fas ms-2" [ngClass]="getSortIcon('qtyNeeded')"></i>
+            </th>
+            <th class="min-w-125px cursor-pointer" (click)="sortData('vendor')">
+              Vendor
+              <i class="fas ms-2" [ngClass]="getSortIcon('vendor')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('poNumber')">
+              PO Number
+              <i class="fas ms-2" [ngClass]="getSortIcon('poNumber')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('orderDate')">
+              Order Date
+              <i class="fas ms-2" [ngClass]="getSortIcon('orderDate')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('arriveDate')">
+              Arrive Date
+              <i class="fas ms-2" [ngClass]="getSortIcon('arriveDate')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('status')">
+              Status
+              <i class="fas ms-2" [ngClass]="getSortIcon('status')"></i>
+            </th>
+            <th class="min-w-125px cursor-pointer" (click)="sortData('createdOn')">
+              Created On
+              <i class="fas ms-2" [ngClass]="getSortIcon('createdOn')"></i>
+            </th>
+            <th class="min-w-100px cursor-pointer" (click)="sortData('createdBy')">
+              Created By
+              <i class="fas ms-2" [ngClass]="getSortIcon('createdBy')"></i>
+            </th>
+          </tr>
+        </thead>
+        <!--end::Table head-->
+
+        <!--begin::Table body-->
+        <tbody class="text-gray-600 fw-semibold">
+          <tr *ngFor="let orderRequest of getPaginatedData(); trackBy: trackByRowIndex">
+            <td>
+              <span class="badge badge-light-info">{{ orderRequest.rowIndex }}</span>
+            </td>
+            <td>
+              <span class="text-primary fw-bold cursor-pointer" 
+                    (click)="viewOrderRequest(orderRequest)"
+                    title="Click to view order details">
+                {{ orderRequest.orderType || 'N/A' }}
+              </span>
+            </td>
+            <td>{{ orderRequest.requester || 'N/A' }}</td>
+            <td>{{ orderRequest.dcgPartNo || 'N/A' }}</td>
+            <td class="fw-bold text-primary">{{ orderRequest.manufPartNo || 'N/A' }}</td>
+            <td>
+              <span class="badge badge-light-success">{{ orderRequest.qtyNeeded || 0 }}</span>
+            </td>
+            <td>{{ orderRequest.vendor || 'N/A' }}</td>
+            <td>{{ orderRequest.poNumber || 'N/A' }}</td>
+            <td>{{ formatDate(orderRequest.orderDate) || 'N/A' }}</td>
+            <td>{{ formatDate(orderRequest.arriveDate) || 'N/A' }}</td>
+            <td>
+              <span class="badge" 
+                    [ngClass]="{
+                      'badge-light-success': orderRequest.status === 'COMPLETED',
+                      'badge-light-warning': orderRequest.status === 'PENDING' || orderRequest.status === 'ORDERED',
+                      'badge-light-primary': orderRequest.status === 'NEW',
+                      'badge-light-info': orderRequest.status === 'RECEIVED',
+                      'badge-light-danger': orderRequest.status === 'CANCELLED',
+                      'badge-light-secondary': !orderRequest.status || orderRequest.status === 'N/A'
+                    }">
+                {{ orderRequest.status || 'N/A' }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex flex-column">
+                <span class="text-gray-800 fw-bold fs-7">{{ formatDate(orderRequest.createdOn) || 'N/A' }}</span>
+                <span class="text-muted fs-8">{{ (formatDateTime(orderRequest.createdOn) || '').slice(11, 19) || 'N/A' }}</span>
+              </div>
+            </td>
+            <td>{{ orderRequest.createdBy || 'N/A' }}</td>
+          </tr>
+        </tbody>
+        <!--end::Table body-->
+      </table>
+
+      <!--begin::Empty State-->
+      <div *ngIf="filteredList.length === 0 && !isLoading" class="text-center py-10">
+        <i class="ki-duotone ki-search-list fs-4x text-gray-400 mb-4">
+          <span class="path1"></span>
+          <span class="path2"></span>
+          <span class="path3"></span>
+        </i>
+        <h3 class="text-gray-600 fw-semibold mb-2">No Order Requests Found</h3>
+        <p class="text-gray-400 fs-6 mb-0">
+          {{ hasActiveFilters() ? 'No order requests match your current filters.' : 'No order requests are available.' }}
+        </p>
+        <button type="button" class="btn btn-light-primary mt-4" (click)="clearFilters()" 
+                *ngIf="hasActiveFilters()">
+          Clear Filters
+        </button>
+      </div>
+      <!--end::Empty State-->
+    </div>
+    <!--end::Table-->
+
+    <!--begin::Pagination-->
+    <div *ngIf="getTotalPages() > 1 && !isLoading" class="d-flex justify-content-between align-items-center mt-6">
+      <div class="text-gray-700">
+        Page {{ currentPage }} of {{ getTotalPages() }}
+      </div>
+      
+      <nav>
+        <ul class="pagination">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <button class="page-link" (click)="goToPage(1)" [disabled]="currentPage === 1">
+              <i class="ki-duotone ki-double-left fs-2"></i>
+            </button>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <button class="page-link" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+              <i class="ki-duotone ki-left fs-2"></i>
+            </button>
+          </li>
+          
+          <li class="page-item" *ngFor="let page of getPageNumbers()" [class.active]="page === currentPage">
+            <button class="page-link" (click)="goToPage(page)">{{ page }}</button>
+          </li>
+          
+          <li class="page-item" [class.disabled]="currentPage === getTotalPages()">
+            <button class="page-link" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === getTotalPages()">
+              <i class="ki-duotone ki-right fs-2"></i>
+            </button>
+          </li>
+          <li class="page-item" [class.disabled]="currentPage === getTotalPages()">
+            <button class="page-link" (click)="goToPage(getTotalPages())" [disabled]="currentPage === getTotalPages()">
+              <i class="ki-duotone ki-double-right fs-2"></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+    <!--end::Pagination-->
+  </div>
+  <!--end::Card Body-->
+</div>
+<!--end::Card-->

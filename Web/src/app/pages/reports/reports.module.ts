@@ -7,6 +7,8 @@ import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-r
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
 import { OrderRequestComponent } from './order-request/order-request.component';
+import { OrderRequestStatusComponent } from './order-request-status/order-request-status.component';
+import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.component';
 
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
@@ -19,6 +21,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
     PartsRequestStatusComponent,
     PartReturnStatusComponent,
     OrderRequestComponent,
+    OrderRequestStatusComponent,
+    PartsTestInfoComponent,
 
   ],
   imports: [

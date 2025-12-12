@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Location } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 import { OrderRequestService, PartsTestListResponse, DataTable } from 'src/app/core/services/order-request.service';
 import { 
   OrderRequestDto, 
@@ -68,7 +69,9 @@ export class OrderRequestComponent implements OnInit {
     private orderRequestService: OrderRequestService,
     private fb: FormBuilder,
     private authService: AuthService,
-    private location: Location
+    private location: Location,
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.initializeForm();
   }
@@ -84,7 +87,71 @@ export class OrderRequestComponent implements OnInit {
     }
     
     this.generateAutoId();
-    this.loadMaxOrderRequestRowIndex();
+    
+    // Check for order request data from order request status navigation
+    this.route.queryParams.subscribe(params => {
+      console.log('Route query params received:', params);
+      
+      if (params['rowIndex'] || Object.keys(params).length > 0) {
+        const rowIndex = parseInt(params['rowIndex'], 10);
+        if (!isNaN(rowIndex) && rowIndex > 0) {
+          this.selectedRowIndex = rowIndex;
+          this.isEditMode = true;
+          
+          // Parse date strings if they exist - keep as strings for HTML date inputs
+          const orderDate = params['orderDate'] || null;
+          const arriveDate = params['arriveDate'] || null;
+          const qtyNeeded = params['qtyNeeded'] ? parseInt(params['qtyNeeded'], 10) : null;
+          
+          // Populate the form with the order request data
+          this.orderRequestForm.patchValue({
+            rowIndex: rowIndex,
+            orderType: (params['orderType'] || '').trim(),
+            requester: (params['requester'] || '').trim(),
+            dcgPartNo: (params['dcgPartNo'] || '').trim(),
+            manufPartNo: (params['manufPartNo'] || '').trim(),
+            qtyNeeded: (qtyNeeded !== null && !isNaN(qtyNeeded)) ? qtyNeeded : null,
+            vendor: (params['vendor'] || '').trim(),
+            poNumber: (params['poNumber'] || '').trim(),
+            orderDate: orderDate,
+            arriveDate: arriveDate,
+            status: (params['status'] || 'NEW').trim(),
+            notes: (params['notes'] || '').trim()
+          });
+          
+          // Debug: Log the values to see what's being set
+          console.log('All query params:', params);
+          console.log('Form patch values:', {
+            orderDate: orderDate,
+            arriveDate: arriveDate,
+            status: params['status'],
+            orderType: params['orderType'],
+            requester: params['requester'],
+            notes: params['notes']
+          });
+          console.log('Available status options:', this.statusOptions);
+          console.log('Available department options:', this.departmentOptions);
+          
+          // Add a timeout to check if form values are set correctly
+          setTimeout(() => {
+            console.log('Form values after patch:', this.orderRequestForm.value);
+            console.log('Form control values:');
+            console.log('- orderType:', this.orderRequestForm.get('orderType')?.value);
+            console.log('- orderDate:', this.orderRequestForm.get('orderDate')?.value);
+            console.log('- arriveDate:', this.orderRequestForm.get('arriveDate')?.value);
+            console.log('- status:', this.orderRequestForm.get('status')?.value);
+            console.log('- requester:', this.orderRequestForm.get('requester')?.value);
+            console.log('- notes:', this.orderRequestForm.get('notes')?.value);
+          }, 100);
+          
+          // Load max row index first, then load parts test data
+          this.loadMaxOrderRequestRowIndexAndThenLoadData();
+          return; // Don't call loadMaxOrderRequestRowIndex() again
+        }
+      }
+      // If no rowIndex parameter, load normally
+      this.loadMaxOrderRequestRowIndex();
+    });
   }
 
   /**
@@ -140,6 +207,29 @@ export class OrderRequestComponent implements OnInit {
         this.maxRowIndex = data;
         this.selectedRowIndex = Math.min(1, data || 1); // Set default row index
         this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading max order request row index:', error);
+        this.error = 'Failed to load Order Request data. Please try again.';
+        this.isLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Load max row index first, then load parts test data for the selected row
+   */
+  loadMaxOrderRequestRowIndexAndThenLoadData(): void {
+    this.isLoading = true;
+    this.error = null;
+
+    this.orderRequestService.getMaxOrderRequestRowIndex().subscribe({
+      next: (data: number) => {
+        this.maxRowIndex = data;
+        this.isLoading = false;
+        
+        // Now that we have maxRowIndex, we can safely load the parts test data
+        this.loadPartsTestList();
       },
       error: (error) => {
         console.error('Error loading max order request row index:', error);
@@ -650,5 +740,12 @@ export class OrderRequestComponent implements OnInit {
    */
   goBack(): void {
     this.location.back();
+  }
+
+  /**
+   * Navigate to Order Request Status page
+   */
+  goToOrderRequestStatus(): void {
+    this.router.navigate(['/reports/order-request-status']);
   }
 }
