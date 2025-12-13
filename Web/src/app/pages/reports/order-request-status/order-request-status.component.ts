@@ -185,6 +185,13 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
     return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
   }
 
+  getSortClass(column: string): string {
+    if (this.sortColumn === column) {
+      return this.sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc';
+    }
+    return '';
+  }
+
   // Pagination
   getPaginatedData(): OrderRequestStatusDto[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
