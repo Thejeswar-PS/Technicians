@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../core/services/report.service';
@@ -108,18 +108,20 @@ export class PartsTestInfoComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private reportService: ReportService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.editForm = this.createEditForm();
   }
 
   ngOnInit(): void {
     this.handleQueryParams();
-    this.setupFormSubscriptions();
     this.loadMaxRowIndex();
     this.loadEmployees(this.selectedDepartment);
     // Start in edit mode like the legacy form
     this.createNewItem();
+    // Setup subscriptions after form is created
+    this.setupFormSubscriptions();
   }
 
   handleQueryParams(): void {
@@ -140,6 +142,13 @@ export class PartsTestInfoComponent implements OnInit {
     this.filterForm.valueChanges.subscribe(() => {
       // Debounce the search to avoid too many API calls
       this.debounceSearch();
+    });
+
+    // Subscribe to job type changes in the edit form with immediate response
+    this.editForm.get('jobFrom')?.valueChanges.subscribe(jobType => {
+      if (jobType) {
+        this.onJobTypeChange(jobType);
+      }
     });
   }
 
@@ -713,6 +722,9 @@ export class PartsTestInfoComponent implements OnInit {
     
     // Populate the form with current item data
     this.populateEditForm(item);
+    
+    // Set conditional display based on job type
+    this.onJobTypeChange(item.jobFrom || '3');
   }
 
   populateEditForm(item: PartsTestInfo): void {
@@ -778,14 +790,15 @@ export class PartsTestInfoComponent implements OnInit {
       createdBy: '', // Will be selected from dropdown
       assignedTo: '', // Will be selected from dropdown
       boardStatus: '0',
+      boardSetupStatus: '0',
       partRepairStatus: '0',
       testWorkStatus: '0',
       assyWorkStatus: '0',
       qcWorkStatus: '0'
     });
     
-    // Set initial conditional display
-    this.onJobTypeChange('3'); // Default to Inventory logic
+    // Set initial conditional display - Default to Inventory which shows divGrp1 (Component Work)
+    this.onJobTypeChange('3');
   }
 
   saveItem(): void {
@@ -1194,43 +1207,76 @@ export class PartsTestInfoComponent implements OnInit {
   
   // Legacy form methods
   onJobTypeChange(jobType: string): void {
-    // Matching legacy JavaScript logic for conditional display
+    if (!jobType) return;
+    
+    // Matching legacy JavaScript OnChangeDDL() logic for conditional display
+    // Reset all flags first for clean state
+    this.showBoardSetup = false;
+    this.showComponentWork = false;
+    this.showAssemblyQC = false;
+
+    // Set the appropriate flag based on job type
     if (jobType === '7') { // Board Setup
       this.showBoardSetup = true;
-      this.showComponentWork = false;
-      this.showAssemblyQC = false;
     } else if (jobType === '1' || jobType === '2' || jobType === '4') { // Fan Rebuild, Cap Assy, Batt Module
-      this.showBoardSetup = false;
-      this.showComponentWork = false;
       this.showAssemblyQC = true;
-    } else { // Inventory, Retest
-      this.showBoardSetup = false;
+    } else if (jobType === '3' || jobType === '6') { // Inventory, Retest
       this.showComponentWork = true;
-      this.showAssemblyQC = false;
     }
     
-    // Update form validation based on job type
-    this.updateFormValidation(jobType);
+    // Trigger immediate change detection for instant UI update
+    this.cdr.detectChanges();
+    
+    // Update form validation asynchronously to not block UI updates
+    setTimeout(() => this.updateFormValidation(jobType), 0);
+  }
+
+  openTestProcedure(event?: Event): void {
+    // Prevent default navigation if this is called from an anchor tag
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    // Create a temporary anchor element and trigger download/view
+    const pdfUrl = '/DCG%20Procedures/DCG-QPM-FRM0065%20-%20ASSEMBLY-QUALITY%20CHECK%20LIST.pdf';
+    
+    // Try to open in new tab first
+    try {
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      
+      // Programmatically click the link
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      // Fallback: Direct window navigation  
+      window.open(pdfUrl, '_blank');
+    }
   }
   
   updateFormValidation(jobType: string): void {
-    // Add conditional validation based on job type
-    const formControls = this.editForm.controls;
+    // Add conditional validation based on job type - only update relevant fields
+    const completedByControl = this.editForm.get('completedBy');
+    const reviewedByControl = this.editForm.get('reviewedBy');
     
     if (jobType === '1' || jobType === '2' || jobType === '4') {
       // Fan Rebuild, Cap Assy, Batt Module require QC fields
-      formControls['completedBy'].setValidators([Validators.required]);
-      formControls['reviewedBy'].setValidators([Validators.required]);
+      completedByControl?.setValidators([Validators.required]);
+      reviewedByControl?.setValidators([Validators.required]);
     } else {
       // Other job types don't require these fields
-      formControls['completedBy'].clearValidators();
-      formControls['reviewedBy'].clearValidators();
+      completedByControl?.clearValidators();
+      reviewedByControl?.clearValidators();
     }
     
-    // Update validity
-    Object.keys(formControls).forEach(key => {
-      formControls[key].updateValueAndValidity();
-    });
+    // Only update validity for the changed controls, not all controls
+    completedByControl?.updateValueAndValidity({ emitEvent: false });
+    reviewedByControl?.updateValueAndValidity({ emitEvent: false });
   }
   
   onPassedCheck(): void {
