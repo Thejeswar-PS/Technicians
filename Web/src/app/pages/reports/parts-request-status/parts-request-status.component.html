@@ -214,26 +214,27 @@
               <tbody class="table-body">
                 <tr *ngFor="let request of displayedData; let i = index" 
                     class="table-row"
-                    [ngStyle]="getStatusRowStyle(request.status)"
-                    [ngClass]="getStatusRowClass(request.status)">
+                    [ngStyle]="getStatusRowStyle(request)"
+                    [ngClass]="getStatusRowClass(request)">
                   
-                  <td class="call-number-cell">
+                  <td class="call-number-cell" [ngStyle]="getCellStyle(request)">
                     <a class="call-link" (click)="navigateToJobParts(request)" 
                        [title]="'View parts for call ' + request.callNumber + ' (opens in new tab)'"
-                       role="button">
+                       role="button"
+                       [ngStyle]="getCellStyle(request)">
                       {{request.callNumber}}
                       <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
                     </a>
                   </td>
                   
-                  <td class="data-cell">
-                    <span class="cell-content">{{request.customerNumber}}</span>
+                  <td class="data-cell" [ngStyle]="getCellStyle(request)">
+                    <span class="cell-content" [ngStyle]="getCellStyle(request)">{{request.customerNumber}}</span>
                   </td>
                   
-                  <td class="data-cell">
-                    <div class="technician-info">
+                  <td class="data-cell" [ngStyle]="getCellStyle(request)">
+                    <div class="technician-info" [ngStyle]="getCellStyle(request)">
                       <i class="bi bi-person-badge me-1 text-muted"></i>
-                      <span class="cell-content">{{request.technician}}</span>
+                      <span class="cell-content" [ngStyle]="getCellStyle(request)">{{request.technician}}</span>
                     </div>
                   </td>
                   

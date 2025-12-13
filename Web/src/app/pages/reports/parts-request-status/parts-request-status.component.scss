@@ -1,4 +1,95 @@
 // Modern Parts Request Status Component - UPS Readings Inspired Design
+
+// Global urgent row styling - FORCE RED with maximum specificity and component penetration
+:host ::ng-deep tr.urgent-row,
+:host ::ng-deep .table-row.urgent-row,
+:host ::ng-deep .urgent-row,
+:host ::ng-deep tbody .urgent-row,
+:host ::ng-deep table .urgent-row,
+:host ::ng-deep .parts-request-container .urgent-row,
+tr.urgent-row,
+.table-row.urgent-row,
+.urgent-row,
+tbody .urgent-row,
+table .urgent-row,
+.parts-request-container .urgent-row {
+  color: #FF0000 !important;
+  font-weight: bold !important;
+  background: rgba(255, 0, 0, 0.1) !important;
+  border-left: 5px solid #FF0000 !important;
+  
+  td,
+  th,
+  span,
+  div,
+  a,
+  p,
+  strong,
+  em,
+  i,
+  b,
+  .cell-content,
+  * {
+    color: #FF0000 !important;
+    font-weight: bold !important;
+  }
+  
+  // Force all nested elements to be red with higher specificity
+  > * {
+    color: #FF0000 !important;
+  }
+  
+  // Ensure links are also red but clickable
+  a,
+  .call-link {
+    color: #FF0000 !important;
+    
+    &:hover {
+      color: #CC0000 !important;
+      text-decoration: underline !important;
+    }
+  }
+}
+
+// Even more specific targeting for table cells
+.parts-request-container table tbody tr.urgent-row td {
+  color: red !important;
+  font-weight: bold !important;
+}
+
+.parts-request-container table tbody tr.urgent-row td * {
+  color: red !important;
+  font-weight: bold !important;
+}
+
+// Ultra-specific targeting - this should override everything
+:host ::ng-deep .urgent-row {
+  color: red !important;
+  font-weight: bold !important;
+  
+  td, span, div, a, p, * {
+    color: red !important;
+    font-weight: bold !important;
+  }
+}
+
+// Alternative approach - target by attribute with maximum force
+[class*="urgent-row"] {
+  color: #FF0000 !important;
+  
+  * {
+    color: #FF0000 !important;
+  }
+}
+
+// Nuclear option - target all table rows with inline red styles
+table tr[style*="color: rgb(255, 0, 0)"],
+table tr[style*="color: #FF0000"] {
+  td, td *, span, div, a {
+    color: #FF0000 !important;
+  }
+}
+
 .parts-request-container {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
@@ -626,6 +717,51 @@
         &:last-child td {
           border-bottom: none;
         }
+        
+        // Urgent row styling - red text for entire row while preserving status background colors
+        &.urgent-row {
+          // Apply red color to all text in the row
+          color: #dc2626 !important;
+          font-weight: 600 !important;
+          
+          td {
+            color: #dc2626 !important; // Red text for urgent rows
+            font-weight: 600 !important; // Make urgent rows bolder
+            
+            // Apply red to all text content
+            * {
+              color: #dc2626 !important;
+            }
+            
+            // Ensure all text elements are red
+            span, div, p, strong, em, i, b {
+              color: #dc2626 !important;
+            }
+            
+            // Keep status cell background colors but ensure text remains readable
+            &.status-cell {
+              // Status backgrounds are preserved, but text color might need adjustment for contrast
+              .badge, .status-badge, [class*="badge"] {
+                // Preserve the badge background colors as they are
+                color: inherit !important;
+              }
+            }
+            
+            // Ensure links in urgent rows are also red but still clickable
+            a, .call-link {
+              color: #dc2626 !important;
+              
+              &:hover {
+                color: #991b1b !important; // Darker red on hover
+              }
+            }
+            
+            // Make sure cell content is red
+            .cell-content {
+              color: #dc2626 !important;
+            }
+          }
+        }
       }
     }
     
@@ -734,12 +870,12 @@
           color: #ff0000 !important;
         }
 
-         // Special override for ORDEREDTRACKINGREQ - use white text with strong shadow on pink background
+         // Special override for ORDEREDTRACKINGREQ - use RED text when urgent
         &.status-orderedtrackingreq.status-urgent-text,
         &.status-ordered-tracking-req.status-urgent-text {
-          color: white !important;
+          color: #ff0000 !important;
           font-weight: 900 !important;
-          text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.6) !important;
+          text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8), 0 0 4px rgba(255, 255, 255, 0.6) !important;
           letter-spacing: 0.5px !important;
         }
       }
@@ -858,6 +994,13 @@
   color: white !important;
 }
 
+// Urgent row override for ordered-tracking status
+.mydatagrid .rows tr.status-ordered-tracking.urgent-row td,
+.mydatagrid .rows tr.status-ordered-tracking.urgent-row td * {
+  color: #ff0000 !important;
+  font-weight: bold !important;
+}
+
 .mydatagrid .rows tr.status-in-assembly td {
   background-color: #FFC7CE !important;
 }
@@ -967,6 +1110,13 @@
   color: white !important;
   font-weight: 500;
   box-shadow: 0 2px 8px rgba(255, 0, 191, 0.3);
+}
+
+// Urgent row override for status-ordered-tracking class
+.status-ordered-tracking.urgent-row,
+.status-ordered-tracking.urgent-row * {
+  color: #ff0000 !important;
+  font-weight: bold !important;
 }
 
 .status-in-assembly {
@@ -1502,6 +1652,34 @@
     margin: 0 -0.25rem;
     padding: 0 0.25rem;
   }
+}
+
+// ULTIMATE OVERRIDE: Force urgent rows to be red regardless of status type
+// This must come last to override all other styles
+:host ::ng-deep table tbody tr.urgent-row.status-ordered-tracking td,
+:host ::ng-deep table tbody tr.urgent-row.status-orderedtrackingreq td,
+:host ::ng-deep .mydatagrid .rows tr.urgent-row.status-ordered-tracking td,
+:host ::ng-deep .mydatagrid .rows tr.urgent-row.status-orderedtrackingreq td,
+table tbody tr.urgent-row.status-ordered-tracking td,
+table tbody tr.urgent-row.status-orderedtrackingreq td,
+.mydatagrid .rows tr.urgent-row.status-ordered-tracking td,
+.mydatagrid .rows tr.urgent-row.status-orderedtrackingreq td {
+  color: #ff0000 !important;
+  font-weight: bold !important;
+  text-shadow: none !important;
+}
+
+:host ::ng-deep table tbody tr.urgent-row.status-ordered-tracking td *,
+:host ::ng-deep table tbody tr.urgent-row.status-orderedtrackingreq td *,
+:host ::ng-deep .mydatagrid .rows tr.urgent-row.status-ordered-tracking td *,
+:host ::ng-deep .mydatagrid .rows tr.urgent-row.status-orderedtrackingreq td *,
+table tbody tr.urgent-row.status-ordered-tracking td *,
+table tbody tr.urgent-row.status-orderedtrackingreq td *,
+.mydatagrid .rows tr.urgent-row.status-ordered-tracking td *,
+.mydatagrid .rows tr.urgent-row.status-orderedtrackingreq td * {
+  color: #ff0000 !important;
+  font-weight: bold !important;
+  text-shadow: none !important;
 }
 
 // Print styles
