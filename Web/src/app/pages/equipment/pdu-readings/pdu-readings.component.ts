@@ -7,6 +7,7 @@ import { PduService } from 'src/app/core/services/pdu.service';
 import { EquipmentService } from 'src/app/core/services/equipment.service';
 import { BatteryReadingsService } from 'src/app/core/services/battery-readings.service';
 import { PDUReadings, PDUReconciliationInfo, VOLTAGE_CONFIGS, OUTPUT_VOLTAGE_CONFIGS, VoltageConfiguration } from 'src/app/core/model/pdu-readings.model';
+import { EquipFilterCurrents } from 'src/app/core/model/ups-readings.model';
 
 @Component({
   selector: 'app-pdu-readings',
@@ -62,6 +63,16 @@ export class PduReadingsComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   
+  // Section visibility
+  showPowerVerification = true;
+  
+  // Filter Current and THD visibility
+  showInputFilterCurrent = false;
+  showInputTHD = false;
+  showOutputFilterCurrent = false;
+  showOutputTHD = false;
+  filterCurrentsData: EquipFilterCurrents | null = null;
+  
   // Current voltage selections
   selectedInputVoltage: string = '0';
   selectedOutputVoltage: string = '0';
@@ -95,6 +106,7 @@ export class PduReadingsComponent implements OnInit {
   ngOnInit(): void {
     this.loadRouteParams();
     this.initializeForms();
+    this.setupFilterCurrentCheckboxHandlers();
     this.loadManufacturers();
     this.loadData();
   }
@@ -248,6 +260,8 @@ export class PduReadingsComponent implements OnInit {
     // Input Power Form
     this.inputForm = this.fb.group({
       inputVoltage: ['0'],
+      inputFilterCurrent: [false],
+      inputThdPercent: [false],
       // 120V Input
       input120VoltA: ['120'],
       input120VoltA_PF: ['P'],
@@ -325,12 +339,30 @@ export class PduReadingsComponent implements OnInit {
       input600CurrC: [''],
       input600CurrC_PF: ['P'],
       input600Freq: ['60'],
-      input600Freq_PF: ['P']
+      input600Freq_PF: ['P'],
+
+      // Input Filter Current detail fields
+      filterCurrentA: [''],
+      filterCurrentA_PF: ['P'],
+      filterCurrentB: [''],
+      filterCurrentB_PF: ['P'],
+      filterCurrentC: [''],
+      filterCurrentC_PF: ['P'],
+
+      // Input THD detail fields
+      inputThdA: [''],
+      inputThdA_PF: ['P'],
+      inputThdB: [''],
+      inputThdB_PF: ['P'],
+      inputThdC: [''],
+      inputThdC_PF: ['P']
     });
 
     // Output Power Form
     this.outputForm = this.fb.group({
       outputVoltage: ['0'],
+      outputFilterCurrent: [false],
+      outputThdPercent: [false],
       // 120V Output
       output120VoltA: ['120'],
       output120VoltA_PF: ['P'],
@@ -444,7 +476,23 @@ export class PduReadingsComponent implements OnInit {
       load600B_PF: ['P'],
       load600C: [''],
       load600C_PF: ['P'],
-      total600Load: ['']
+      total600Load: [''],
+
+      // Output Filter Current detail fields
+      outputFilterCurrentA: [''],
+      outputFilterCurrentA_PF: ['P'],
+      outputFilterCurrentB: [''],
+      outputFilterCurrentB_PF: ['P'],
+      outputFilterCurrentC: [''],
+      outputFilterCurrentC_PF: ['P'],
+
+      // Output THD detail fields
+      outputThdA: [''],
+      outputThdA_PF: ['P'],
+      outputThdB: [''],
+      outputThdB_PF: ['P'],
+      outputThdC: [''],
+      outputThdC_PF: ['P']
     });
 
     // Comments Form
@@ -496,7 +544,8 @@ export class PduReadingsComponent implements OnInit {
     try {
       await Promise.all([
         this.loadPDUReadings(),
-        this.loadReconciliationInfo()
+        this.loadReconciliationInfo(),
+        this.loadFilterCurrentsData()
       ]);
     } catch (error: any) {
       console.error('Error loading data:', error);
@@ -523,6 +572,166 @@ export class PduReadingsComponent implements OnInit {
       // Try to load basic equipment info as fallback
       await this.loadEquipmentInfo();
     }
+  }
+
+  private setupFilterCurrentCheckboxHandlers(): void {
+    this.inputForm.get('inputFilterCurrent')?.valueChanges.subscribe(checked => {
+      this.showInputFilterCurrent = !!checked;
+    });
+
+    this.inputForm.get('inputThdPercent')?.valueChanges.subscribe(checked => {
+      this.showInputTHD = !!checked;
+    });
+
+    this.outputForm.get('outputFilterCurrent')?.valueChanges.subscribe(checked => {
+      this.showOutputFilterCurrent = !!checked;
+    });
+
+    this.outputForm.get('outputThdPercent')?.valueChanges.subscribe(checked => {
+      this.showOutputTHD = !!checked;
+    });
+  }
+
+  private async loadFilterCurrentsData(): Promise<void> {
+    try {
+      const response = await this.equipmentService.getEquipFilterCurrents(this.callNbr, this.equipId).toPromise();
+      if (response?.success && response.data) {
+        this.filterCurrentsData = response.data;
+        this.populateFilterCurrentsFromLegacyData(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading filter currents data:', error);
+    }
+  }
+
+  private populateFilterCurrentsFromLegacyData(data: EquipFilterCurrents): void {
+    if (!data) {
+      return;
+    }
+
+    // Input Filter Current data
+    if (data.chkIpFilter) {
+      this.inputForm.patchValue({
+        inputFilterCurrent: true,
+        filterCurrentA: this.convertZeroToEmpty(data.ipFilterCurrA_T),
+        filterCurrentA_PF: data.ipFilterCurrA_PF || 'P',
+        filterCurrentB: this.convertZeroToEmpty(data.ipFilterCurrB_T),
+        filterCurrentB_PF: data.ipFilterCurrB_PF || 'P',
+        filterCurrentC: this.convertZeroToEmpty(data.ipFilterCurrC_T),
+        filterCurrentC_PF: data.ipFilterCurrC_PF || 'P'
+      });
+      this.showInputFilterCurrent = true;
+    }
+
+    // Input THD data
+    if (data.chkIpThd) {
+      this.inputForm.patchValue({
+        inputThdPercent: true,
+        inputThdA: this.convertZeroToEmpty(data.ipFilterThdA_T),
+        inputThdA_PF: data.ipFilterThdA_PF || 'P',
+        inputThdB: this.convertZeroToEmpty(data.ipFilterThdB_T),
+        inputThdB_PF: data.ipFilterThdB_PF || 'P',
+        inputThdC: this.convertZeroToEmpty(data.ipFilterThdC_T),
+        inputThdC_PF: data.ipFilterThdC_PF || 'P'
+      });
+      this.showInputTHD = true;
+    }
+
+    // Output Filter Current data
+    if (data.chkOpFilter) {
+      this.outputForm.patchValue({
+        outputFilterCurrent: true,
+        outputFilterCurrentA: this.convertZeroToEmpty(data.opFilterCurrA_T),
+        outputFilterCurrentA_PF: data.opFilterCurrA_PF || 'P',
+        outputFilterCurrentB: this.convertZeroToEmpty(data.opFilterCurrB_T),
+        outputFilterCurrentB_PF: data.opFilterCurrB_PF || 'P',
+        outputFilterCurrentC: this.convertZeroToEmpty(data.opFilterCurrC_T),
+        outputFilterCurrentC_PF: data.opFilterCurrC_PF || 'P'
+      });
+      this.showOutputFilterCurrent = true;
+    }
+
+    // Output THD data
+    if (data.chkOpThd) {
+      this.outputForm.patchValue({
+        outputThdPercent: true,
+        outputThdA: this.convertZeroToEmpty(data.opFilterThdA_T),
+        outputThdA_PF: data.opFilterThdA_PF || 'P',
+        outputThdB: this.convertZeroToEmpty(data.opFilterThdB_T),
+        outputThdB_PF: data.opFilterThdB_PF || 'P',
+        outputThdC: this.convertZeroToEmpty(data.opFilterThdC_T),
+        outputThdC_PF: data.opFilterThdC_PF || 'P'
+      });
+      this.showOutputTHD = true;
+    }
+  }
+
+  private async saveFilterCurrentsData(): Promise<void> {
+    const hasInputFilterCurrent = !!this.inputForm.get('inputFilterCurrent')?.value;
+    const hasInputTHD = !!this.inputForm.get('inputThdPercent')?.value;
+    const hasOutputFilterCurrent = !!this.outputForm.get('outputFilterCurrent')?.value;
+    const hasOutputTHD = !!this.outputForm.get('outputThdPercent')?.value;
+
+    if (!hasInputFilterCurrent && !hasInputTHD && !hasOutputFilterCurrent && !hasOutputTHD) {
+      return;
+    }
+
+    const filterCurrentsData: EquipFilterCurrents = {
+      callNbr: this.callNbr,
+      equipId: this.equipId,
+
+      chkIpFilter: hasInputFilterCurrent,
+      ipFilterCurrA_T: this.convertToDouble(this.inputForm.get('filterCurrentA')?.value),
+      ipFilterCurrA_PF: this.inputForm.get('filterCurrentA_PF')?.value || 'P',
+      ipFilterCurrB_T: this.convertToDouble(this.inputForm.get('filterCurrentB')?.value),
+      ipFilterCurrB_PF: this.inputForm.get('filterCurrentB_PF')?.value || 'P',
+      ipFilterCurrC_T: this.convertToDouble(this.inputForm.get('filterCurrentC')?.value),
+      ipFilterCurrC_PF: this.inputForm.get('filterCurrentC_PF')?.value || 'P',
+
+      chkIpThd: hasInputTHD,
+      ipFilterThdA_T: this.convertToDouble(this.inputForm.get('inputThdA')?.value),
+      ipFilterThdA_PF: this.inputForm.get('inputThdA_PF')?.value || 'P',
+      ipFilterThdB_T: this.convertToDouble(this.inputForm.get('inputThdB')?.value),
+      ipFilterThdB_PF: this.inputForm.get('inputThdB_PF')?.value || 'P',
+      ipFilterThdC_T: this.convertToDouble(this.inputForm.get('inputThdC')?.value),
+      ipFilterThdC_PF: this.inputForm.get('inputThdC_PF')?.value || 'P',
+
+      chkOpFilter: hasOutputFilterCurrent,
+      opFilterCurrA_T: this.convertToDouble(this.outputForm.get('outputFilterCurrentA')?.value),
+      opFilterCurrA_PF: this.outputForm.get('outputFilterCurrentA_PF')?.value || 'P',
+      opFilterCurrB_T: this.convertToDouble(this.outputForm.get('outputFilterCurrentB')?.value),
+      opFilterCurrB_PF: this.outputForm.get('outputFilterCurrentB_PF')?.value || 'P',
+      opFilterCurrC_T: this.convertToDouble(this.outputForm.get('outputFilterCurrentC')?.value),
+      opFilterCurrC_PF: this.outputForm.get('outputFilterCurrentC_PF')?.value || 'P',
+
+      chkOpThd: hasOutputTHD,
+      opFilterThdA_T: this.convertToDouble(this.outputForm.get('outputThdA')?.value),
+      opFilterThdA_PF: this.outputForm.get('outputThdA_PF')?.value || 'P',
+      opFilterThdB_T: this.convertToDouble(this.outputForm.get('outputThdB')?.value),
+      opFilterThdB_PF: this.outputForm.get('outputThdB_PF')?.value || 'P',
+      opFilterThdC_T: this.convertToDouble(this.outputForm.get('outputThdC')?.value),
+      opFilterThdC_PF: this.outputForm.get('outputThdC_PF')?.value || 'P',
+
+      modifiedBy: this.authService.currentUserValue?.username || 'SYSTEM'
+    };
+
+    try {
+      await this.equipmentService.saveUpdateEquipFilterCurrents(filterCurrentsData).toPromise();
+    } catch (error) {
+      console.error('Error saving filter currents data:', error);
+    }
+  }
+
+  private convertToDouble(value: any): number {
+    const n = parseFloat(value);
+    return isNaN(n) ? 0 : n;
+  }
+
+  private convertZeroToEmpty(value: number | undefined): string {
+    if (value === undefined || value === null) {
+      return '';
+    }
+    return value === 0 ? '' : value.toString();
   }
 
   private async loadEquipmentInfo(): Promise<void> {
@@ -984,6 +1193,38 @@ export class PduReadingsComponent implements OnInit {
     
     const result = this.pduService.calculatePhaseToNeutralVoltage(volt);
     return result.toString();
+  }
+
+  // Get phase-to-neutral label
+  getPhaseToNeutralLabel(phase: string): string {
+    // For 3-phase voltage (208V, 480V, 575V, 600V), calculate P-N from line-to-line
+    return 'P-N';
+  }
+
+  // Get input voltage tolerance based on selected voltage
+  getInputVoltageTolerance(voltage: string): string {
+    switch(voltage) {
+      case '1': return '110V - 130V';  // 120V
+      case '2': return '228V - 252V';  // 240V
+      case '3': return '192V - 224V';  // 208V
+      case '4': return '455V - 505V';  // 480V
+      case '6': return '545V - 605V';  // 575V
+      case '5': return '570V - 630V';  // 600V
+      default: return '';
+    }
+  }
+
+  // Get output voltage tolerance based on selected voltage
+  getOutputVoltageTolerance(voltage: string): string {
+    switch(voltage) {
+      case '1': return '114V - 126V';  // 120V
+      case '2': return '228V - 252V';  // 240V
+      case '3': return '197V - 219V';  // 208V
+      case '4': return '460V - 500V';  // 480V
+      case '6': return '547V - 603V';  // 575V
+      case '5': return '580V - 620V';  // 600V
+      default: return '';
+    }
   }
 
   // Calculate load percentage
@@ -1484,6 +1725,9 @@ export class PduReadingsComponent implements OnInit {
       
       // 2. SaveUpdateReconciliationInfo()
       await this.batteryService.saveUpdateEquipReconciliationInfo(reconData).toPromise();
+
+      // 2b. Save Filter Currents / THD (matches UPS behavior)
+      await this.saveFilterCurrentsData();
 
       // 3. if (ddlStatus.SelectedValue != "Offline") { ddlStatus.SelectedValue = GetEquipStatus(); }
       let statusToSend = this.equipmentForm.value.status;
