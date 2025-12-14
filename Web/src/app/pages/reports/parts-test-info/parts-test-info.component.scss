@@ -340,3 +340,22 @@
     }
   }
 }
+
+// Auto-resize textarea styling for better resolution notes display
+.auto-resize-textarea {
+  min-height: 120px !important;
+  max-height: 400px;
+  resize: vertical;
+  overflow-y: auto;
+  line-height: 1.5;
+  word-wrap: break-word;
+  
+  &:focus {
+    box-shadow: 0 0 0 0.2rem rgba(84, 134, 255, 0.25);
+    border-color: #5486ff;
+  }
+  
+  // Ensure text is fully visible without horizontal scrolling
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}

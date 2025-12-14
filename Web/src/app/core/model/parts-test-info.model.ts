@@ -48,7 +48,7 @@ export interface PartsTestInfo {
   workType?: string;
   priority?: string;
   assignedTo?: string;
-  dueDate?: Date;
+  dueDate?: Date | string; // Can be Date object or string for HTML date inputs
   kva?: string;
   voltage?: string;
   problemNotes?: string;

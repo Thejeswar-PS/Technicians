@@ -607,7 +607,12 @@
               </div>
               <div class="card-body bg-white">
                 <div class="mb-0">
-                  <textarea class="form-control form-control-solid text-dark fw-semibold" formControlName="resolveNotes" rows="4" placeholder="Enter resolution notes..."></textarea>
+                  <textarea class="form-control form-control-solid text-dark fw-semibold auto-resize-textarea" 
+                           formControlName="resolveNotes" 
+                           rows="6" 
+                           placeholder="Enter resolution notes..." 
+                           style="min-height: 120px; resize: vertical; overflow-y: auto;"
+                           (input)="onTextareaInput($event)"></textarea>
                 </div>
               </div>
             </div>
