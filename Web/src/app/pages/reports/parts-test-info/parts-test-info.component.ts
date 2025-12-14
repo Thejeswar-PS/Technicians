@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ReportService } from '../../../core/services/report.service';
@@ -22,7 +22,7 @@ import {
   templateUrl: './parts-test-info.component.html',
   styleUrls: ['./parts-test-info.component.scss']
 })
-export class PartsTestInfoComponent implements OnInit {
+export class PartsTestInfoComponent implements OnInit, AfterViewInit {
 
   partsTestList: PartsTestInfo[] = [];
   rawApiResponse: PartsTestResponse | null = null;
@@ -108,18 +108,25 @@ export class PartsTestInfoComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private reportService: ReportService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
   ) {
     this.editForm = this.createEditForm();
   }
 
   ngOnInit(): void {
     this.handleQueryParams();
-    this.setupFormSubscriptions();
     this.loadMaxRowIndex();
-    this.loadEmployees(this.selectedDepartment);
+    this.loadAllEmployees(); // Load employees from all departments
     // Start in edit mode like the legacy form
     this.createNewItem();
+    // Setup subscriptions after form is created
+    this.setupFormSubscriptions();
+  }
+
+  ngAfterViewInit(): void {
+    // Set up auto-resize for resolution textarea
+    this.setupTextareaAutoResize();
   }
 
   handleQueryParams(): void {
@@ -131,9 +138,297 @@ export class PartsTestInfoComponent implements OnInit {
       
       if (params.has('rowIndex')) {
         const rowIndex = parseInt(params.get('rowIndex') || '0', 10);
-        this.filterForm.patchValue({ rowIndex });
+        const source = params.get('source') || 'PartsTest';
+        
+        this.filterForm.patchValue({ 
+          rowIndex: rowIndex,
+          source: source
+        });
+        
+        // Load the specific part's data for editing using just rowIndex
+        this.loadSpecificPartForEditing(rowIndex);
       }
     });
+  }
+
+  loadSpecificPartForEditing(rowIndex: number): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.saveMessage = '';
+    
+    // Try different API approaches to get the specific part data
+    const request: PartsTestRequest = {
+      rowIndex: rowIndex,
+      source: 'PartsTest'
+    };
+
+    this.reportService.getPartsTestList(request).subscribe({
+      next: (response: PartsTestResponse) => {
+        if (response.success && response.tables && response.tables.length > 0) {
+          let foundPart: PartsTestInfo | null = null;
+          
+          response.tables.forEach(table => {
+            if (table.rows) {
+              table.rows.forEach(row => {
+                const currentRowIndex = row.rowIndex || row.RowIndex || row.row_index;
+                if (currentRowIndex === rowIndex || currentRowIndex === rowIndex.toString()) {
+                  foundPart = this.convertRowToPartsTestInfo(row, table);
+                }
+              });
+            }
+          });
+          
+          if (foundPart) {
+            this.editingItem = foundPart;
+            this.editMode = true;
+            this.populateFormWithPartData(foundPart);
+            this.updateConditionalDisplay();
+          } else {
+            this.loadFromPartsTestStatusAPI(rowIndex);
+          }
+        } else {
+          this.loadFromPartsTestStatusAPI(rowIndex);
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.loadFromPartsTestStatusAPI(rowIndex);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  loadSpecificPartForEditingWithData(partData: any): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+    
+    const request: PartsTestRequest = {
+      rowIndex: partData.rowIndex,
+      source: partData.source
+    };
+
+    // Load the specific part data using comprehensive search criteria
+    this.reportService.getPartsTestList(request).subscribe({
+      next: (response: PartsTestResponse) => {
+        if (response.success && response.tables && response.tables.length > 0) {
+          // Find the specific part using multiple criteria for better matching
+          let foundPart: PartsTestInfo | null = null;
+          
+          response.tables.forEach(table => {
+            if (table.rows) {
+              table.rows.forEach(row => {
+                // Match using multiple criteria for more accurate identification
+                const matchesRowIndex = row.rowIndex === partData.rowIndex;
+                const matchesDcgPartNo = row.dcgPartNo === partData.dcgPartNo || row.dcgPartNumber === partData.dcgPartNo;
+                const matchesCallNbr = !partData.callNbr || row.callNbr === partData.callNbr || row.jobNumber === partData.callNbr;
+                const matchesUniqueID = !partData.uniqueID || row.uniqueID === partData.uniqueID;
+                
+                if (matchesRowIndex || (matchesDcgPartNo && matchesCallNbr)) {
+                  foundPart = this.convertRowToPartsTestInfo(row, table);
+                  // If we found a match, populate with the passed data to ensure accuracy
+                  this.enhancePartWithPassedData(foundPart, partData);
+                }
+              });
+            }
+          });
+          
+          if (foundPart) {
+            // Populate the form with the found part data
+            this.editingItem = foundPart;
+            this.editMode = true;
+            this.populateFormWithPartData(foundPart);
+          } else {
+            // If not found in API, create a new item with the passed data
+            this.createItemWithPassedData(partData);
+          }
+        } else {
+          // If API fails, create a new item with the passed data
+          this.createItemWithPassedData(partData);
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading specific part data:', error);
+        // If API fails, create a new item with the passed data
+        this.createItemWithPassedData(partData);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  enhancePartWithPassedData(part: PartsTestInfo, passedData: any): void {
+    // Enhance the found part with data passed from navigation to ensure accuracy
+    part.callNbr = passedData.callNbr || part.callNbr;
+    part.dcgPartNo = passedData.dcgPartNo || part.dcgPartNo;
+    part.siteID = passedData.siteID || part.siteID;
+    part.make = passedData.make || part.make;
+    part.model = passedData.model || part.model;
+    part.serialNo = passedData.serialNo || part.serialNo;
+    part.rowIndex = passedData.rowIndex || part.rowIndex;
+  }
+
+  createItemWithPassedData(partData: any): void {
+    // Create a new item with the passed data if not found in API
+    this.editingItem = null;
+    this.editMode = true;
+    this.saveMessage = '';
+    this.saveError = '';
+    
+    // Reset form and populate with passed data
+    this.editForm.reset();
+    this.generateAutoId();
+    
+    // Populate form with the data passed from parts-test-status using correct field names
+    this.editForm.patchValue({
+      jobFrom: '3', // Default to Inventory
+      jobNumber: partData.callNbr || '',
+      siteID: partData.siteID || '',
+      make: partData.make || '',
+      model: partData.model || '',
+      dcgPartNo: partData.dcgPartNo || '',
+      serialNo: partData.serialNo || '',
+      quantity: 1,
+      isPassed: false,
+      approved: false,
+      createdBy: '',
+      assignedTo: '',
+      boardStatus: '0',
+      testWorkStatus: '0'
+    });
+    
+    // Update conditional display
+    this.updateConditionalDisplay();
+
+  }
+
+  populateFormWithPartData(part: PartsTestInfo): void {
+    const rawCreatedBy = part.createdBy || (part as any).CreatedBy || '';
+    const mappedCreatedBy = this.mapEmployeeName(rawCreatedBy);
+    
+    const formData = {
+      jobFrom: part.jobFrom || '3',
+      jobNumber: part.callNbr || '',
+      siteID: part.siteID || '',
+      make: part.make || '',
+      model: part.model || '',
+      voltage: part.voltage || '',
+      kva: part.kva || '',
+      manufPartNo: part.partNumber || part.manufPartNo || '',
+      dcgPartNo: part.dcgPartNo || '',
+      quantity: part.quantity || 1,
+      serialNo: part.serialNo || '',
+      description: part.description || '',
+      problemNotes: part.problemNotes || '',
+      resolveNotes: part.resolveNotes || '',
+      createdBy: mappedCreatedBy,
+      assignedTo: part.assignedTo || (part as any).AssignedTo || '',
+      dueDate: this.formatDateForInput(part.dueDate || (part as any).DueDate),
+      boardStatus: part.boardStatus || '0',
+      testWorkStatus: part.testWorkStatus || '0',
+      isPassed: part.isPassed || false,
+      approved: part.approved || false,
+      // Assembly & QC fields
+      completedBy: part.completedBy || '',
+      reviewedBy: part.reviewedBy || '',
+      assyProcFollowed: part.assyProcFollowed || '',
+      assyWorkStatus: part.assyWorkStatus || '0',
+      qcProcFollowed: part.qcProcFollowed || '',
+      qcApproved: part.qcApproved || '',
+      qcWorkStatus: part.qcWorkStatus || '0'
+    };
+    
+    // Populate the edit form with the part data using correct field names
+    this.editForm.patchValue(formData);
+    
+
+    
+    // Handle work types if available (e.g., "2,7,8,11" -> set workType2, workType7, etc.)
+    if (part.workType) {
+
+      const workTypes = part.workType.toString().split(',').map(wt => wt.trim());
+      workTypes.forEach(wt => {
+        const workTypeControl = `workType${wt}`;
+        if (this.editForm.get(workTypeControl)) {
+
+          this.editForm.patchValue({ [workTypeControl]: true });
+        }
+      });
+    }
+
+    // Handle Assembly Work Done checkboxes (e.g., "1,2,4,5" -> set assyWork1, assyWork2, etc.)
+    if (part.assyWorkDone) {
+
+      const assyWorks = part.assyWorkDone.toString().split(',').map(aw => aw.trim());
+      assyWorks.forEach(aw => {
+        const assyWorkControl = `assyWork${aw}`;
+        if (this.editForm.get(assyWorkControl)) {
+
+          this.editForm.patchValue({ [assyWorkControl]: true });
+        }
+      });
+    }
+
+    // Handle QC Work Done checkboxes (e.g., "1,2,3" -> set qcWork1, qcWork2, etc.)
+    if (part.qcWorkDone) {
+
+      const qcWorks = part.qcWorkDone.toString().split(',').map(qw => qw.trim());
+      qcWorks.forEach(qw => {
+        const qcWorkControl = `qcWork${qw}`;
+        if (this.editForm.get(qcWorkControl)) {
+
+          this.editForm.patchValue({ [qcWorkControl]: true });
+        }
+      });
+    }
+    
+
+    
+    // Update conditional display based on job type
+    this.updateConditionalDisplay();
+  }
+
+  convertRowToPartsTestInfo(row: PartsTestRow, table: PartsTestTable): PartsTestInfo {
+    const converted = {
+      id: row.id || row.Id || 0,
+      rowIndex: row.rowIndex || row.RowIndex || 0,
+      jobFrom: row.jobFrom || row.JobFrom || '3',
+      callNbr: row.callNbr || row.CallNbr || row.jobNumber || '',
+      siteID: row.siteID || row.SiteID || row.siteId || '',
+      make: row.make || row.Make || '',
+      model: row.model || row.Model || '',
+      voltage: row.voltage || row.Voltage || '',
+      kva: row.kva || row.KVA || '',
+      partNumber: row.partNumber || row.manufPartNo || row.ManufPartNo || '',
+      manufPartNo: row.manufPartNo || row.ManufPartNo || '',
+      dcgPartNo: row.dcgPartNo || row.DCGPartNo || row.dcgPartNumber || '',
+      quantity: row.quantity || row.Quantity || 1,
+      serialNo: row.serialNo || row.SerialNo || row.serialNumber || '',
+      description: row.description || row.Description || '',
+      problemNotes: row.problemNotes || row.ProblemNotes || row.deficiencyNotes || '',
+      resolveNotes: row.resolveNotes || row.ResolveNotes || row.resolutionNotes || '',
+      createdBy: row.createdBy || row.CreatedBy || '',
+      assignedTo: row.assignedTo || row.AssignedTo || '',
+      dueDate: row.dueDate || row.DueDate || null,
+      priority: row.priority || row.Priority || '1',
+      boardStatus: row.boardStatus || row.BoardSetupStatus || '0',
+      testWorkStatus: row.testWorkStatus || row.TestWorkStatus || '0',
+      isPassed: row.isPassed || row.IsPassed || false,
+      approved: row.approved || row.Approved || false,
+      lastModifiedBy: row.lastModifiedBy || row.LastModifiedBy || '',
+      workType: row.workType || row.WorkType || '',
+      // Assembly & QC fields
+      completedBy: row.completedBy || row.CompletedBy || '',
+      reviewedBy: row.reviewedBy || row.ReviewedBy || '',
+      assyWorkDone: row.assyWorkDone || row.AssyWorkDone || '',
+      assyProcFollowed: row.assyProcFollowed || row.AssyProcFollowed || '',
+      assyWorkStatus: row.assyWorkStatus || row.AssyWorkStatus || '0',
+      qcWorkDone: row.qcWorkDone || row.QCWorkDone || '',
+      qcProcFollowed: row.qcProcFollowed || row.QCProcFollowed || '',
+      qcApproved: row.qcApproved || row.QCApproved || '',
+      qcWorkStatus: row.qcWorkStatus || row.QCWorkStatus || '0'
+    };
+    
+    return converted;
   }
 
   setupFormSubscriptions(): void {
@@ -141,6 +436,164 @@ export class PartsTestInfoComponent implements OnInit {
       // Debounce the search to avoid too many API calls
       this.debounceSearch();
     });
+
+    // Subscribe to job type changes in the edit form with immediate response
+    this.editForm.get('jobFrom')?.valueChanges.subscribe(jobType => {
+      if (jobType) {
+        this.onJobTypeChange(jobType);
+      }
+    });
+  }
+
+  updateConditionalDisplay(): void {
+    const jobType = this.editForm.get('jobFrom')?.value;
+    if (jobType) {
+      this.onJobTypeChange(jobType);
+    }
+  }
+
+  createNewItemWithRowIndex(rowIndex: number): void {
+    // Create a new item with the specific rowIndex for editing
+    this.editingItem = null;
+    this.editMode = true;
+    this.saveMessage = '';
+    this.saveError = '';
+    
+    // Reset form and set default values
+    this.editForm.reset();
+    this.generateAutoId();
+    
+    // Set the rowIndex in the filterForm to maintain context
+    this.filterForm.patchValue({ rowIndex: rowIndex });
+    
+    // Set default form values for new entry
+    this.editForm.patchValue({
+      jobFrom: '3', // Default to Inventory
+      quantity: 1,
+      isPassed: false,
+      approved: false,
+      createdBy: '', // Will be set when user selects
+      assignedTo: '',
+      dueDate: null, // Will be set when user selects
+      boardStatus: '0',
+      testWorkStatus: '0'
+    });
+    
+    this.updateConditionalDisplay();
+
+  }
+
+  loadFromPartsTestStatusAPI(rowIndex: number): void {
+    const statusRequest = {
+      jobType: 'All',
+      priority: 'All',
+      archive: false,
+      make: 'All',
+      model: 'All'
+    };
+    
+    this.reportService.getPartsTestStatus(statusRequest).subscribe({
+      next: (statusResponse) => {
+        if (statusResponse.success && statusResponse.data?.partsTestData) {
+          const matchingPart = statusResponse.data.partsTestData.find(
+            part => part.rowIndex === rowIndex || part.rowIndex?.toString() === rowIndex.toString()
+          );
+          
+          if (matchingPart) {
+            this.populateFormFromStatusData(matchingPart, rowIndex);
+          } else {
+            this.createNewItemWithRowIndex(rowIndex);
+          }
+        } else {
+          this.createNewItemWithRowIndex(rowIndex);
+        }
+      },
+      error: (error) => {
+        this.createNewItemWithRowIndex(rowIndex);
+      }
+    });
+  }
+
+  populateFormFromStatusData(statusPart: any, rowIndex: number): void {
+
+
+    
+    // Map job type from parts-test-status to parts-test-info format
+    let jobFromValue = '3'; // Default to Inventory
+    
+    // You may need to adjust this mapping based on your actual job type values
+    if (statusPart.callNbr && statusPart.callNbr.trim() !== '') {
+      jobFromValue = '1'; // Likely from a service call/job
+    }
+    
+
+    
+    this.editingItem = null;
+    this.editMode = true;
+    this.saveMessage = '';
+    this.saveError = '';
+    
+    // Check if editForm exists
+    if (!this.editForm) {
+      console.error('❌ editForm is not initialized!');
+      return;
+    }
+    
+    // Reset and populate form with status data
+    this.editForm.reset();
+    
+    this.generateAutoId();
+    
+    const formData = {
+      jobFrom: jobFromValue,
+      jobNumber: statusPart.callNbr || '',
+      siteID: statusPart.siteID || '',
+      make: statusPart.make || '',
+      model: statusPart.model || '',
+      manufPartNo: statusPart.manufPartNo || '',
+      dcgPartNo: statusPart.dcgPartNo || '',
+      quantity: statusPart.quantity || 1,
+      serialNo: statusPart.serialNo || '',
+      description: statusPart.description || '',
+      problemNotes: statusPart.problemNotes || '',
+      resolveNotes: statusPart.resolveNotes || '',
+      createdBy: (() => {
+        const rawValue = statusPart.createdBy || statusPart.CreatedBy || '';
+        const mappedValue = this.mapEmployeeName(rawValue);
+
+        return mappedValue;
+      })(),
+      assignedTo: statusPart.assignedTo || statusPart.AssignedTo || '',
+      dueDate: this.formatDateForInput(statusPart.dueDate || statusPart.DueDate),
+      isPassed: statusPart.isPassed || false,
+      approved: false,
+      boardStatus: '0',
+      testWorkStatus: '0'
+    };
+    
+
+    
+    // Check if each form control exists before patching
+    Object.keys(formData).forEach(key => {
+      const control = this.editForm.get(key);
+      if (!control) {
+        console.warn(`⚠️ Form control '${key}' not found in editForm`);
+      } else {
+
+      }
+    });
+    
+    this.editForm.patchValue(formData);
+    
+
+    
+    // Set the rowIndex in the filter form
+    this.filterForm.patchValue({ rowIndex: rowIndex });
+
+    
+    this.updateConditionalDisplay();
+    
+
   }
 
   private searchTimeout: any;
@@ -259,6 +712,7 @@ export class PartsTestInfoComponent implements OnInit {
       serialNo: row['SerialNo'] || row['serialNo'] || row['serial_no'],
       workType: row['WorkType'] || row['workType'] || row['work_type'],
       priority: row['Priority'] || row['priority'],
+      createdBy: row['CreatedBy'] || row['createdBy'] || row['created_by'],
       assignedTo: row['AssignedTo'] || row['assignedTo'] || row['assigned_to'],
       dueDate: this.parseDate(row['DueDate'] || row['dueDate'] || row['due_date']),
       kva: row['KVA'] || row['kva'],
@@ -281,7 +735,6 @@ export class PartsTestInfoComponent implements OnInit {
       qcProcFollowed: row['QCProcFollowed'] || row['qcProcFollowed'] || row['qc_proc_followed'],
       qcApproved: row['QCApproved'] || row['qcApproved'] || row['qc_approved'],
       qcWorkStatus: row['QCWorkStatus'] || row['qcWorkStatus'] || row['qc_work_status'],
-      createdBy: row['CreatedBy'] || row['createdBy'] || row['created_by'],
       approved: this.parseBoolean(row['Approved'] || row['approved']),
       lastModifiedBy: row['LastModifiedBy'] || row['lastModifiedBy'] || row['last_modified_by']
     };
@@ -297,6 +750,14 @@ export class PartsTestInfoComponent implements OnInit {
     if (!value) return undefined;
     const date = new Date(value);
     return isNaN(date.getTime()) ? undefined : date;
+  }
+
+  // Helper method to format date for HTML date input (YYYY-MM-DD format)
+  formatDateForInput(value: any): string | null {
+    if (!value) return null;
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return null;
+    return date.toISOString().split('T')[0];
   }
 
   parseBoolean(value: any): boolean {
@@ -586,12 +1047,12 @@ export class PartsTestInfoComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/reports']);
+    this.router.navigate(['/reports/parts-test-status']);
   }
 
   viewDetails(item: PartsTestInfo): void {
     // Navigate to detailed view or open modal
-    console.log('View details for:', item);
+
   }
 
   trackByFn(index: number, item: PartsTestInfo): any {
@@ -713,6 +1174,9 @@ export class PartsTestInfoComponent implements OnInit {
     
     // Populate the form with current item data
     this.populateEditForm(item);
+    
+    // Set conditional display based on job type
+    this.onJobTypeChange(item.jobFrom || '3');
   }
 
   populateEditForm(item: PartsTestInfo): void {
@@ -778,14 +1242,15 @@ export class PartsTestInfoComponent implements OnInit {
       createdBy: '', // Will be selected from dropdown
       assignedTo: '', // Will be selected from dropdown
       boardStatus: '0',
+      boardSetupStatus: '0',
       partRepairStatus: '0',
       testWorkStatus: '0',
       assyWorkStatus: '0',
       qcWorkStatus: '0'
     });
     
-    // Set initial conditional display
-    this.onJobTypeChange('3'); // Default to Inventory logic
+    // Set initial conditional display - Default to Inventory which shows divGrp1 (Component Work)
+    this.onJobTypeChange('3');
   }
 
   saveItem(): void {
@@ -1080,6 +1545,43 @@ export class PartsTestInfoComponent implements OnInit {
   }
 
   // Employee management methods
+  loadAllEmployees(): void {
+    this.isLoadingEmployees = true;
+    const departments = ['TC', 'QC', 'SM', 'PP', 'ALL'];
+    const allEmployees: EmployeeDto[] = [];
+    let completedRequests = 0;
+    
+    departments.forEach(department => {
+      this.reportService.getEmployeeNamesByDept(department).subscribe({
+        next: (response: EmployeeResponse) => {
+          if (response.success && response.employees) {
+            // Add employees from this department, avoiding duplicates
+            response.employees.forEach(emp => {
+              if (!allEmployees.find(existing => existing.empName === emp.empName)) {
+                allEmployees.push(emp);
+              }
+            });
+          }
+          completedRequests++;
+          
+          // When all departments are loaded, set the employees list
+          if (completedRequests === departments.length) {
+            this.employees = allEmployees.sort((a, b) => (a.empName || '').localeCompare(b.empName || ''));
+            this.isLoadingEmployees = false;
+          }
+        },
+        error: (error) => {
+          console.error(`Error loading employees from department ${department}:`, error);
+          completedRequests++;
+          if (completedRequests === departments.length) {
+            this.employees = allEmployees.sort((a, b) => (a.empName || '').localeCompare(b.empName || ''));
+            this.isLoadingEmployees = false;
+          }
+        }
+      });
+    });
+  }
+
   loadEmployees(department: string): void {
     if (!department) return;
     
@@ -1088,6 +1590,7 @@ export class PartsTestInfoComponent implements OnInit {
       next: (response: EmployeeResponse) => {
         if (response.success && response.employees) {
           this.employees = response.employees;
+
         } else {
           this.employees = [];
           console.warn('No employees found for department:', department);
@@ -1126,7 +1629,15 @@ export class PartsTestInfoComponent implements OnInit {
   }
 
   getEmployeeDisplayName(employee: EmployeeDto): string {
-    return `${employee.empName} (${employee.empID})`;
+    // The employee names from the system are already in good format, just capitalize properly
+    const empName = employee.empName || '';
+    
+    // Capitalize first letter of each word for better display
+    const capitalizedName = empName.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+    
+    return capitalizedName;
   }
 
   refreshEmployees(): void {
@@ -1189,48 +1700,81 @@ export class PartsTestInfoComponent implements OnInit {
 
   bulkDeleteSelected(): void {
     // Future implementation for bulk delete if needed
-    console.log('Bulk delete functionality can be implemented here');
+
   }
   
   // Legacy form methods
   onJobTypeChange(jobType: string): void {
-    // Matching legacy JavaScript logic for conditional display
+    if (!jobType) return;
+    
+    // Matching legacy JavaScript OnChangeDDL() logic for conditional display
+    // Reset all flags first for clean state
+    this.showBoardSetup = false;
+    this.showComponentWork = false;
+    this.showAssemblyQC = false;
+
+    // Set the appropriate flag based on job type
     if (jobType === '7') { // Board Setup
       this.showBoardSetup = true;
-      this.showComponentWork = false;
-      this.showAssemblyQC = false;
     } else if (jobType === '1' || jobType === '2' || jobType === '4') { // Fan Rebuild, Cap Assy, Batt Module
-      this.showBoardSetup = false;
-      this.showComponentWork = false;
       this.showAssemblyQC = true;
-    } else { // Inventory, Retest
-      this.showBoardSetup = false;
+    } else if (jobType === '3' || jobType === '6') { // Inventory, Retest
       this.showComponentWork = true;
-      this.showAssemblyQC = false;
     }
     
-    // Update form validation based on job type
-    this.updateFormValidation(jobType);
+    // Trigger immediate change detection for instant UI update
+    this.cdr.detectChanges();
+    
+    // Update form validation asynchronously to not block UI updates
+    setTimeout(() => this.updateFormValidation(jobType), 0);
+  }
+
+  openTestProcedure(event?: Event): void {
+    // Prevent default navigation if this is called from an anchor tag
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    // Create a temporary anchor element and trigger download/view
+    const pdfUrl = '/DCG%20Procedures/DCG-QPM-FRM0065%20-%20ASSEMBLY-QUALITY%20CHECK%20LIST.pdf';
+    
+    // Try to open in new tab first
+    try {
+      const link = document.createElement('a');
+      link.href = pdfUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      
+      // Programmatically click the link
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      // Fallback: Direct window navigation  
+      window.open(pdfUrl, '_blank');
+    }
   }
   
   updateFormValidation(jobType: string): void {
-    // Add conditional validation based on job type
-    const formControls = this.editForm.controls;
+    // Add conditional validation based on job type - only update relevant fields
+    const completedByControl = this.editForm.get('completedBy');
+    const reviewedByControl = this.editForm.get('reviewedBy');
     
     if (jobType === '1' || jobType === '2' || jobType === '4') {
       // Fan Rebuild, Cap Assy, Batt Module require QC fields
-      formControls['completedBy'].setValidators([Validators.required]);
-      formControls['reviewedBy'].setValidators([Validators.required]);
+      completedByControl?.setValidators([Validators.required]);
+      reviewedByControl?.setValidators([Validators.required]);
     } else {
       // Other job types don't require these fields
-      formControls['completedBy'].clearValidators();
-      formControls['reviewedBy'].clearValidators();
+      completedByControl?.clearValidators();
+      reviewedByControl?.clearValidators();
     }
     
-    // Update validity
-    Object.keys(formControls).forEach(key => {
-      formControls[key].updateValueAndValidity();
-    });
+    // Only update validity for the changed controls, not all controls
+    completedByControl?.updateValueAndValidity({ emitEvent: false });
+    reviewedByControl?.updateValueAndValidity({ emitEvent: false });
   }
   
   onPassedCheck(): void {
@@ -1302,5 +1846,124 @@ export class PartsTestInfoComponent implements OnInit {
     // Clear messages
     this.saveMessage = '';
     this.saveError = '';
+  }
+
+  // Event handler for textarea input to auto-resize
+  onTextareaInput(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+    }
+  }
+
+  // Map API employee names to actual employee names in the system
+  private mapEmployeeName(apiEmployeeName: string): string {
+    if (!apiEmployeeName) {
+      return '';
+    }
+    
+    // Special case mappings for names that don't follow the standard pattern
+    const specialCases: { [key: string]: string } = {
+      'ADAM.KEITH': 'adam keith',
+      'ANTHONY.KEITH': 'adam keith',
+      'PS': 'PS',
+      'DCGPARTS': 'DCGPARTS',
+      'TOU LEE. CHANG': 'Tou Lee Chang',
+      'ANTONIA.D\'HUYVETTER': 'Antonia D\'Huyvetter',
+      'BRUCE.BISTOL': 'Bruce Bristol', // Assuming this is same as BRUCE.BRISTOL
+      'BRUCE.BRISTOL': 'Bruce Bristol'
+    };
+    
+    // Check special cases first
+    const specialMatch = specialCases[apiEmployeeName.toUpperCase()];
+    if (specialMatch) {
+      return specialMatch;
+    }
+    
+    // Auto-convert FIRSTNAME.LASTNAME to Firstname Lastname format
+    if (apiEmployeeName.includes('.') && !apiEmployeeName.includes(' ')) {
+      const parts = apiEmployeeName.split('.');
+      if (parts.length === 2) {
+        const firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+        const lastName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase();
+        const convertedName = `${firstName} ${lastName}`;
+        
+        // Check if this converted name exists in employee list
+        const found = this.employees.find(emp => {
+          const empName = (emp.empName || '').toLowerCase();
+          const searchName = convertedName.toLowerCase();
+          return empName === searchName || empName.includes(searchName) || searchName.includes(empName);
+        });
+        
+        if (found) {
+          return found.empName || '';
+        }
+        
+        // If not found in employee list, return the converted name anyway
+        return convertedName;
+      }
+    }
+    
+    // Try to find partial matches in the employee list
+    const found = this.employees.find(emp => {
+      const empName = (emp.empName || '').toUpperCase();
+      const searchName = apiEmployeeName.toUpperCase();
+      
+      // Check if employee name contains parts of the search name
+      const tomMatch = empName.includes('TOM') && searchName.includes('TOM') ||
+                      empName.includes('PAREDES') && searchName.includes('PAREDES') ||
+                      empName.includes('TPADRES') && (searchName.includes('TOM') || searchName.includes('PAREDES'));
+      
+      const anthonyMatch = empName.includes('AKEITH') && (searchName.includes('ANTHONY') || searchName.includes('KEITH'));
+      
+      const generalMatch = empName.includes(searchName.replace(/[.\s]/g, '')) ||
+                          searchName.includes(empName.replace(/[.\s]/g, ''));
+      
+      return tomMatch || anthonyMatch || generalMatch;
+    });
+    
+    if (found) {
+      return found.empName || '';
+    }
+    
+    // Last resort: try to find any employee with similar name parts
+    if (apiEmployeeName.toUpperCase().includes('TOM')) {
+      const tomEmployee = this.employees.find(emp => 
+        (emp.empName || '').toUpperCase().includes('TOM') || 
+        (emp.empName || '').toUpperCase().includes('TPADRES')
+      );
+      if (tomEmployee) {
+        return tomEmployee.empName || '';
+      }
+    }
+    
+    return ''; // Return empty string so dropdown shows "Select Employee"
+  }
+
+  // Utility method to set up auto-resize for textareas
+  private setupTextareaAutoResize(): void {
+    // Use setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      const textarea = document.querySelector('.auto-resize-textarea') as HTMLTextAreaElement;
+      if (textarea) {
+        // Auto-resize function
+        const autoResize = () => {
+          textarea.style.height = 'auto';
+          textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+        };
+
+        // Initial resize
+        autoResize();
+
+        // Add event listeners for paste events
+        textarea.addEventListener('paste', () => setTimeout(autoResize, 0));
+
+        // Also listen to form value changes for programmatic updates
+        this.editForm.get('resolveNotes')?.valueChanges.subscribe(() => {
+          setTimeout(autoResize, 0);
+        });
+      }
+    }, 100);
   }
 }

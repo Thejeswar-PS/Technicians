@@ -41,6 +41,16 @@ import {
   EmployeeResponse,
   DeletePartsTestResponse
 } from '../model/parts-test-info.model';
+import { 
+  PartsTestStatusDto,
+  PartsTestStatusRequest,
+  PartsTestStatusResponse,
+  PartsTestStatusApiResponse,
+  MakeModelDto,
+  DistinctMakesResponse,
+  DistinctModelsResponse,
+  DistinctModelsByMakeResponse
+} from '../model/parts-test-status.model';
 
 @Injectable({
   providedIn: 'root'
@@ -620,6 +630,54 @@ export class ReportService {
     return this.http.delete<DeletePartsTestResponse>(`${this.API}/PartsTest/DeletePartsTestList`, { 
       headers: this.headers,
       params: params 
+    });
+  }
+
+  // Parts Test Status API methods
+  getPartsTestStatus(request?: PartsTestStatusRequest): Observable<PartsTestStatusApiResponse> {
+    // Always use POST method to avoid query parameter validation issues
+    const requestBody: PartsTestStatusRequest = {
+      jobType: request?.jobType || 'All',
+      priority: request?.priority || 'All', 
+      archive: request?.archive || false,
+      make: request?.make || 'All',
+      model: request?.model || 'All'
+    };
+
+    return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, requestBody, {
+      headers: this.headers
+    });
+  }
+
+  getPartsTestStatusPost(request: PartsTestStatusRequest): Observable<PartsTestStatusApiResponse> {
+    return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, request, {
+      headers: this.headers
+    });
+  }
+
+  getAllPartsTestStatus(): Observable<PartsTestStatusApiResponse> {
+    return this.http.get<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetAllPartsTestStatus`, {
+      headers: this.headers
+    });
+  }
+
+  getDistinctMakes(): Observable<DistinctMakesResponse> {
+    return this.http.get<DistinctMakesResponse>(`${this.API}/PartsTestStatus/GetDistinctMakes`, {
+      headers: this.headers
+    });
+  }
+
+  getDistinctModels(): Observable<DistinctModelsResponse> {
+    return this.http.get<DistinctModelsResponse>(`${this.API}/PartsTestStatus/GetDistinctModels`, {
+      headers: this.headers
+    });
+  }
+
+  getDistinctModelsByMake(make: string): Observable<DistinctModelsByMakeResponse> {
+    let params = new HttpParams().set('make', make);
+    return this.http.get<DistinctModelsByMakeResponse>(`${this.API}/PartsTestStatus/GetDistinctModelsByMake`, {
+      headers: this.headers,
+      params: params
     });
   }
 }

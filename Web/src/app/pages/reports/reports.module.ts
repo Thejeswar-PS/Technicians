@@ -13,6 +13,8 @@ import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.compon
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
 import { NgApexchartsModule } from 'ng-apexcharts';
+import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.component';
+import { SharedModule } from '../../components/shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -23,6 +25,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
     OrderRequestComponent,
     OrderRequestStatusComponent,
     PartsTestInfoComponent,
+    PartsTestStatusComponent,
 
   ],
   imports: [
@@ -32,7 +35,8 @@ import { NgApexchartsModule } from 'ng-apexcharts';
     RouterModule,
     ReportsRoutingModule,
     InlineSVGModule.forRoot(),
-    NgApexchartsModule
+    NgApexchartsModule,
+    SharedModule
   ]
 })
 export class ReportsModule { }

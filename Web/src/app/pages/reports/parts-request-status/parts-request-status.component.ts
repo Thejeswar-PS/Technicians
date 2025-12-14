@@ -841,10 +841,23 @@ export class PartsRequestStatusComponent implements OnInit {
     return Math.min(this.currentPage * this.pageSize, this.totalRecords);
   }
 
-  getStatusRowStyle(status: string): { [key: string]: string } {
+  getStatusRowStyle(request: PartsRequestStatusItem): { [key: string]: string } {
     const styles: { [key: string]: string } = {};
     
-    switch (status) {
+    // Check if request is urgent - apply red text to entire row if urgent
+    const isUrgent = this.isRequestUrgent(request.urgent);
+    
+    if (isUrgent) {
+      // Force red color with multiple CSS properties - use hex codes and stronger values
+      styles['color'] = '#FF0000';
+      styles['font-weight'] = 'bold';
+      styles['background'] = 'rgba(255, 0, 0, 0.1)';
+      styles['border-left'] = '5px solid #FF0000';
+      styles['border'] = '2px solid rgba(255, 0, 0, 0.3)';
+      console.log('Applied urgent styles:', styles);
+    }
+    
+    switch (request.status) {
       case 'Shipped':
       case 'Delivered':
         styles['background-color'] = '#00e47b !important';
@@ -879,27 +892,78 @@ export class PartsRequestStatusComponent implements OnInit {
     return styles;
   }
 
-  getStatusRowClass(status: string): string {
-    switch (status) {
+  getStatusRowClass(request: PartsRequestStatusItem): string {
+    let classNames = '';
+    
+    // Add urgent class if request is urgent
+    const isUrgent = this.isRequestUrgent(request.urgent);
+    console.log('Row class for', request.callNumber, 'urgent:', request.urgent, 'isUrgent:', isUrgent);
+    
+    if (isUrgent) {
+      classNames += 'urgent-row ';
+      console.log('Adding urgent-row class');
+    }
+    
+    // Add status-specific class
+    switch (request.status) {
       case 'Shipped':
       case 'Delivered':
-        return 'status-shipped';
+        classNames += 'status-shipped';
+        break;
       case 'Needs Attention':
-        return 'status-needs-attention';
+        classNames += 'status-needs-attention';
+        break;
       case 'Staging':
-        return 'status-staging';
+        classNames += 'status-staging';
+        break;
       case 'OrderedTrackingReq':
       case 'Ordered-Tracking Req':
-        return 'status-ordered-tracking';
+        classNames += 'status-ordered-tracking';
+        break;
       case 'InAssembly':
-        return 'status-in-assembly';
+        classNames += 'status-in-assembly';
+        break;
       case 'Initiated':
-        return 'status-initiated';
+        classNames += 'status-initiated';
+        break;
       case 'Submitted':
-        return 'status-submitted';
+        classNames += 'status-submitted';
+        break;
       default:
-        return 'status-default';
+        classNames += 'status-default';
+        break;
     }
+    
+    console.log('Final classes for', request.callNumber, ':', classNames.trim());
+    return classNames.trim();
+  }
+  
+  // Helper method to check if a request is urgent
+  private isRequestUrgent(urgent: string): boolean {
+    if (!urgent) return false;
+    
+    const urgentLower = urgent.toLowerCase().trim();
+    console.log('Checking urgent status:', urgent, 'normalized:', urgentLower);
+    
+    const isUrgent = urgentLower === 'yes' || 
+           urgentLower === 'true' || 
+           urgentLower === '3' || 
+           urgentLower === 'urgent';
+           
+    console.log('Is urgent result:', isUrgent);
+    return isUrgent;
+  }
+
+  // Helper method to get cell styles for urgent rows
+  getCellStyle(request: PartsRequestStatusItem): { [key: string]: string } {
+    const isUrgent = this.isRequestUrgent(request.urgent);
+    if (isUrgent) {
+      return {
+        'color': '#FF0000',
+        'font-weight': 'bold'
+      };
+    }
+    return {};
   }
 
   navigateToJobParts(request: any): void {

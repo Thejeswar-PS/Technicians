@@ -116,7 +116,7 @@
       </div>
 
       <!-- Data Display Section -->
-      <div class="card-body py-4">
+      <div class="card-body py-2">
         
         <!-- Messages -->
         <div class="order-request-status-messages" *ngIf="errorMessage && !isLoading">
@@ -133,10 +133,10 @@
         </div>
 
     <!--begin::Table-->
-    <div *ngIf="!isLoading && !errorMessage" class="table-responsive">
+    <div class="table-section" *ngIf="!isLoading && !errorMessage">
       <!--begin::Results Summary-->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="text-gray-700">
+      <div class="d-flex justify-content-between align-items-center mb-2 px-2">
+        <div class="text-gray-700 fw-semibold">
           Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to 
           {{ Math.min(currentPage * itemsPerPage, totalItems) }} of 
           {{ totalItems }} entries
@@ -148,70 +148,98 @@
         </div>
       </div>
       <!--end::Results Summary-->
+      
+      <div class="table-responsive">
 
-      <table class="table align-middle table-row-dashed fs-6 gy-5">
+      <table class="table modern-table">
         <!--begin::Table head-->
-        <thead>
-          <tr class="text-start text-muted fw-bold fs-7 text-uppercase gs-0">
-            <th class="min-w-70px cursor-pointer" (click)="sortData('rowIndex')">
-              Row #
-              <i class="fas ms-2" [ngClass]="getSortIcon('rowIndex')"></i>
+        <thead class="table-header">
+          <tr>
+            <th class="sortable header-cell" [ngClass]="getSortClass('rowIndex')" (click)="sortData('rowIndex')">
+              <div class="header-content">
+                <span class="header-text">Row #</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('rowIndex')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('orderType')">
-              Order Type
-              <i class="fas ms-2" [ngClass]="getSortIcon('orderType')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('orderType')" (click)="sortData('orderType')">
+              <div class="header-content">
+                <span class="header-text">Order Type</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('orderType')"></i>
+              </div>
             </th>
-            <th class="min-w-125px cursor-pointer" (click)="sortData('requester')">
-              Requester
-              <i class="fas ms-2" [ngClass]="getSortIcon('requester')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('requester')" (click)="sortData('requester')">
+              <div class="header-content">
+                <span class="header-text">Requester</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('requester')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('dcgPartNo')">
-              DCG Part #
-              <i class="fas ms-2" [ngClass]="getSortIcon('dcgPartNo')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('dcgPartNo')" (click)="sortData('dcgPartNo')">
+              <div class="header-content">
+                <span class="header-text">DCG Part #</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('dcgPartNo')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('manufPartNo')">
-              Manuf Part #
-              <i class="fas ms-2" [ngClass]="getSortIcon('manufPartNo')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('manufPartNo')" (click)="sortData('manufPartNo')">
+              <div class="header-content">
+                <span class="header-text">Manuf Part #</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('manufPartNo')"></i>
+              </div>
             </th>
-            <th class="min-w-80px cursor-pointer" (click)="sortData('qtyNeeded')">
-              Qty
-              <i class="fas ms-2" [ngClass]="getSortIcon('qtyNeeded')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('qtyNeeded')" (click)="sortData('qtyNeeded')">
+              <div class="header-content">
+                <span class="header-text">Qty</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('qtyNeeded')"></i>
+              </div>
             </th>
-            <th class="min-w-125px cursor-pointer" (click)="sortData('vendor')">
-              Vendor
-              <i class="fas ms-2" [ngClass]="getSortIcon('vendor')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('vendor')" (click)="sortData('vendor')">
+              <div class="header-content">
+                <span class="header-text">Vendor</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('vendor')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('poNumber')">
-              PO Number
-              <i class="fas ms-2" [ngClass]="getSortIcon('poNumber')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('poNumber')" (click)="sortData('poNumber')">
+              <div class="header-content">
+                <span class="header-text">PO Number</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('poNumber')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('orderDate')">
-              Order Date
-              <i class="fas ms-2" [ngClass]="getSortIcon('orderDate')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('orderDate')" (click)="sortData('orderDate')">
+              <div class="header-content">
+                <span class="header-text">Order Date</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('orderDate')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('arriveDate')">
-              Arrive Date
-              <i class="fas ms-2" [ngClass]="getSortIcon('arriveDate')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('arriveDate')" (click)="sortData('arriveDate')">
+              <div class="header-content">
+                <span class="header-text">Arrive Date</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('arriveDate')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('status')">
-              Status
-              <i class="fas ms-2" [ngClass]="getSortIcon('status')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('status')" (click)="sortData('status')">
+              <div class="header-content">
+                <span class="header-text">Status</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('status')"></i>
+              </div>
             </th>
-            <th class="min-w-125px cursor-pointer" (click)="sortData('createdOn')">
-              Created On
-              <i class="fas ms-2" [ngClass]="getSortIcon('createdOn')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('createdOn')" (click)="sortData('createdOn')">
+              <div class="header-content">
+                <span class="header-text">Created On</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('createdOn')"></i>
+              </div>
             </th>
-            <th class="min-w-100px cursor-pointer" (click)="sortData('createdBy')">
-              Created By
-              <i class="fas ms-2" [ngClass]="getSortIcon('createdBy')"></i>
+            <th class="sortable header-cell" [ngClass]="getSortClass('createdBy')" (click)="sortData('createdBy')">
+              <div class="header-content">
+                <span class="header-text">Created By</span>
+                <i class="sort-icon fas" [ngClass]="getSortIcon('createdBy')"></i>
+              </div>
             </th>
           </tr>
         </thead>
         <!--end::Table head-->
 
         <!--begin::Table body-->
-        <tbody class="text-gray-600 fw-semibold">
-          <tr *ngFor="let orderRequest of getPaginatedData(); trackBy: trackByRowIndex">
+        <tbody class="table-body">
+          <tr class="table-row" *ngFor="let orderRequest of getPaginatedData(); trackBy: trackByRowIndex">
             <td>
               <span class="badge badge-light-info">{{ orderRequest.rowIndex }}</span>
             </td>
@@ -274,6 +302,7 @@
         </button>
       </div>
       <!--end::Empty State-->
+      </div>
     </div>
     <!--end::Table-->
 

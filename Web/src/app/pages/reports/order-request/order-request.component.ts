@@ -103,10 +103,14 @@ export class OrderRequestComponent implements OnInit {
           const arriveDate = params['arriveDate'] || null;
           const qtyNeeded = params['qtyNeeded'] ? parseInt(params['qtyNeeded'], 10) : null;
           
+          // Handle orderType - show empty for std/standard to display placeholder
+          const orderType = (params['orderType'] || '').trim().toLowerCase();
+          const shouldShowPlaceholder = orderType === 'std' || orderType === 'standard';
+          
           // Populate the form with the order request data
           this.orderRequestForm.patchValue({
             rowIndex: rowIndex,
-            orderType: (params['orderType'] || '').trim(),
+            orderType: shouldShowPlaceholder ? '' : (params['orderType'] || '').trim(),
             requester: (params['requester'] || '').trim(),
             dcgPartNo: (params['dcgPartNo'] || '').trim(),
             manufPartNo: (params['manufPartNo'] || '').trim(),
@@ -160,18 +164,18 @@ export class OrderRequestComponent implements OnInit {
   initializeForm(): void {
     this.orderRequestForm = this.fb.group({
       rowIndex: [0],
-      orderType: ['', [Validators.required]], // Department - required, must not be "PS" or empty
-      requester: ['', [Validators.required]], // Required - cannot be empty or null
+      orderType: [''], // Department - optional for easier saving
+      requester: [''], // Requester - optional for easier saving
       dcgPartNo: [''], // DCG P/N# - optional
-      manufPartNo: ['', [Validators.required]], // Manuf P/N# - required, cannot be empty or null
+      manufPartNo: [''], // Manuf P/N# - optional for easier saving
       vendor: [''], // Vendor - optional
-      qtyNeeded: [null, [Validators.required]], // Qty Needed - required, must be numeric integer
+      qtyNeeded: [null], // Qty Needed - optional for easier saving
       poNumber: [''], // PO - optional
-      orderDate: [null, [Validators.required]], // Order Date - required, cannot be empty
+      orderDate: [null], // Order Date - optional for easier saving
       arriveDate: [null], // Arrive Date - optional
       notes: [''], // Notes - optional
       status: ['NEW'], // Default to 'NEW' status - optional
-      lastModifiedBy: ['', [Validators.required]]
+      lastModifiedBy: ['']
     });
 
     // Set the current user as the lastModifiedBy default value
@@ -736,10 +740,17 @@ export class OrderRequestComponent implements OnInit {
   }
 
   /**
-   * Navigate back to the previous page
+   * Navigate back to Order Request Status page
    */
   goBack(): void {
-    this.location.back();
+    this.router.navigate(['/reports/order-request-status']);
+  }
+
+  /**
+   * Navigate to Order Request Status page
+   */
+  goToOrderRequestStatus(): void {
+    this.router.navigate(['/reports/order-request-status']);
   }
 
   /**
