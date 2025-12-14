@@ -550,6 +550,13 @@
     color: #155724;
     border-left: 4px solid #28a745;
   }
+}
+
+// Alert Enhancements
+.alert {
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
   
   &.alert-danger {
     background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);

@@ -1,0 +1,645 @@
+<div class="container-fluid ups-readings-container">
+  <!-- Header: Back, Title, Save -->
+  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button type="button" class="btn btn-sm btn-primary ups-readings-header__back" (click)="goBack()" [disabled]="saving">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+
+    <div class="ups-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-lightning-charge me-2"></i>
+        Rectifier Readings & Verification
+      </h2>
+      <div class="text-dark mt-2">
+        <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | Rectifier ID: {{ rectifierId || 'N/A' }}</span>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-sm btn-primary ups-readings-header__action" (click)="saveRectifier()" [disabled]="saving">
+        <span *ngIf="saving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+        <i *ngIf="!saving" class="bi bi-check-circle me-2"></i>
+        {{ saving ? 'Saving...' : 'Save Rectifier' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="ups-readings-messages mb-3" *ngIf="errorMessage || successMessage">
+    <div *ngIf="errorMessage" class="alert alert-danger d-inline-flex align-items-center">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <span [innerHTML]="errorMessage"></span>
+    </div>
+    <div *ngIf="successMessage" class="alert alert-success d-inline-flex align-items-center">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <span>{{ successMessage }}</span>
+    </div>
+  </div>
+
+  
+
+      <div class="card shadow-sm ups-main-card">
+        <div class="card-body">
+          <div class="ups-readings-form">
+
+            <!-- Equipment Verification Section -->
+            <section class="ups-readings-section">
+              <div class="ups-section-card">
+                <div class="ups-section-header">
+                  <div class="ups-section-title">
+                    <i class="bi bi-clipboard-check me-2 text-primary"></i>
+                    <h5 class="mb-0">Equipment Verification</h5>
+                    <small class="text-muted">Verify rectifier equipment details and specifications</small>
+                  </div>
+                </div>
+
+                <div class="ups-section-content show">
+                  <form class="ups-form" [formGroup]="equipmentVerificationForm">
+                    <div class="row g-3">
+                      <div class="col-md-3">
+                        <div class="form-floating">
+                          <select class="form-select" formControlName="manufacturer" id="manufacturer">
+                            <option value="" disabled>Select manufacturer</option>
+                            <option *ngFor="let manuf of manufacturers" [value]="manuf.value">{{ manuf.label }}</option>
+                          </select>
+                          <label for="manufacturer">Make</label>
+                        </div>
+                      </div>
+
+                      <div class="col-md-3">
+                        <div class="form-floating">
+                          <input type="text" class="form-control" formControlName="modelNo" id="modelNo" placeholder="Model No" />
+                          <label for="modelNo">Model No</label>
+                        </div>
+                      </div>
+
+                      <div class="col-md-3">
+                        <div class="form-floating">
+                          <input type="text" class="form-control" formControlName="serialNo" id="serialNo" placeholder="Serial No" />
+                          <label for="serialNo">Serial No</label>
+                        </div>
+                      </div>
+
+                      <div class="col-md-3">
+                        <div class="form-floating">
+                          <input type="text" class="form-control" formControlName="location" id="location" placeholder="Location" />
+                          <label for="location">Location</label>
+                        </div>
+                      </div>
+
+                      <div class="col-md-3">
+                        <div class="form-floating">
+                          <input type="date" class="form-control" formControlName="dateCode" id="dateCode" placeholder="Date Code" />
+                          <label for="dateCode">Date Code</label>
+                        </div>
+                      </div>
+
+                      <div class="col-md-3">
+                        <div class="form-floating">
+                          <input type="number" class="form-control" formControlName="temperature" id="temperature" placeholder="Temperature" step="0.1" />
+                          <label for="temperature">Temperature (F)</label>
+                        </div>
+                      </div>
+
+                      <div class="col-md-3">
+                        <div class="form-floating">
+                          <select class="form-select" formControlName="status" id="status">
+                            <option *ngFor="let s of statusOptions" [value]="s.value">{{ s.label }}</option>
+                          </select>
+                          <label for="status">Status</label>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="form-floating">
+                          <textarea rows="3" class="form-control" formControlName="statusNotes" id="statusNotes" placeholder="Reason for Status"></textarea>
+                          <label for="statusNotes">Status Notes</label>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- Visual and Mechanical Verification Section -->
+            <section class="ups-readings-section mt-4">
+              <div class="ups-section-card">
+                <div class="ups-section-header">
+                  <div class="ups-section-title">
+                    <i class="bi bi-eye me-2 text-info"></i>
+                    <h5 class="mb-0">Rectifier Visual and Mechanical Verification</h5>
+                    <small class="text-muted">Capacitor details and verification checklist</small>
+                  </div>
+                </div>
+
+                <div class="ups-section-content show">
+                  <form class="ups-form" [formGroup]="visualMechanicalForm">
+                    <!-- Capacitors Table -->
+                    <div class="table-responsive mb-4">
+                      <table class="table table-bordered">
+                        <thead class="table-light">
+                          <tr>
+                            <th></th>
+                            <th>Make</th>
+                            <th>Quantity</th>
+                            <th>&lt; 7 Years</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td class="fw-semibold">DC BUS</td>
+                            <td>
+                              <select class="form-select" formControlName="dcBusManuf">
+                                <option value="">Select</option>
+                                <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
+                                  {{ manuf.label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <input type="number" class="form-control" formControlName="dcBusQuantity" />
+                            </td>
+                            <td>
+                              <select class="form-select" formControlName="dcBusYears">
+                                <option value="P">Pass</option>
+                                <option value="R">Replace</option>
+                              </select>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td class="fw-semibold">INPUT</td>
+                            <td>
+                              <select class="form-select" formControlName="inputManuf">
+                                <option value="">Select</option>
+                                <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
+                                  {{ manuf.label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <input type="number" class="form-control" formControlName="inputQuantity" />
+                            </td>
+                            <td>
+                              <select class="form-select" formControlName="inputYears">
+                                <option value="P">Pass</option>
+                                <option value="R">Replace</option>
+                              </select>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td class="fw-semibold">COMM</td>
+                            <td>
+                              <select class="form-select" formControlName="commManuf">
+                                <option value="">Select</option>
+                                <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
+                                  {{ manuf.label }}
+                                </option>
+                              </select>
+                            </td>
+                            <td>
+                              <input type="number" class="form-control" formControlName="commQuantity" />
+                            </td>
+                            <td>
+                              <select class="form-select" formControlName="commYears">
+                                <option value="P">Pass</option>
+                                <option value="R">Replace</option>
+                              </select>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <!-- Verification Checklist -->
+                    <div class="row g-3 mb-3">
+                      <div class="col-12">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <i class="bi bi-list-check text-primary"></i>
+                            <h6 class="mb-0 fw-semibold">Verification Checklist</h6>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-3">
+                              <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-3">
+                                  <label class="form-label text-muted mb-0 text-nowrap">1. Current Limit Alarm:</label>
+                                  <select class="form-select power-select flex-grow-1" formControlName="currentLimitAlarm">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-3">
+                                  <label class="form-label text-muted mb-0 text-nowrap">2. Hi Voltage Alarm:</label>
+                                  <select class="form-select power-select flex-grow-1" formControlName="hiVoltAlarm">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-3">
+                                  <label class="form-label text-muted mb-0 text-nowrap">3. Shutdown Alarm:</label>
+                                  <select class="form-select power-select flex-grow-1" formControlName="shutdownAlarm">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-3">
+                                  <label class="form-label text-muted mb-0 text-nowrap">4. Low Current Alarm:</label>
+                                  <select class="form-select power-select flex-grow-1" formControlName="lowCurrentAlarm">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-3">
+                                  <label class="form-label text-muted mb-0 text-nowrap">5. Check and align load sharing:</label>
+                                  <select class="form-select power-select flex-grow-1" formControlName="loadSharing">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-3">
+                                  <label class="form-label text-muted mb-0 text-nowrap">6. Perform Visual Inspection:</label>
+                                  <select class="form-select power-select flex-grow-1" formControlName="visualInspection">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="col-12">
+                        <div class="form-floating">
+                          <textarea rows="3" class="form-control" formControlName="comments" id="vmComments" placeholder="Comments"></textarea>
+                          <label for="vmComments">Comments</label>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- Power Verification Section -->
+            <section class="ups-readings-section mt-4">
+              <div class="ups-section-card">
+                <div class="ups-section-header">
+                  <div class="ups-section-title">
+                    <i class="bi bi-lightning me-2 text-warning"></i>
+                    <h5 class="mb-0">Power Verification</h5>
+                    <small class="text-muted">Voltage, current, and frequency measurements</small>
+                  </div>
+                </div>
+
+                <div class="ups-section-content show">
+                  <form class="ups-form" [formGroup]="powerVerificationForm">
+                    <div class="row g-3">
+                      <!-- Voltage A-B -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Voltage A-B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="voltAB" step="0.01" />
+                                  <label class="text-muted">Voltage (V)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="voltAB_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Current A -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Current A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="currentA" step="0.01" />
+                                  <label class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="currentA_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Voltage B-C -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Voltage B-C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="voltBC" step="0.01" />
+                                  <label class="text-muted">Voltage (V)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="voltBC_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Current B -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Current B</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="currentB" step="0.01" />
+                                  <label class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="currentB_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Voltage C-A -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Voltage C-A</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="voltCA" step="0.01" />
+                                  <label class="text-muted">Voltage (V)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="voltCA_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Current C -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Current C</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="currentC" step="0.01" />
+                                  <label class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="currentC_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Frequency -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Frequency</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="frequency" step="0.01" />
+                                  <label class="text-muted">Frequency (Hz)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="frequency_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Float Voltage -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Float Voltage</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="floatVoltage" step="0.01" />
+                                  <label class="text-muted">Voltage (V)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="floatVoltage_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Equalize Voltage -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Equalize Voltage</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="equalizeVoltage" step="0.01" />
+                                  <label class="text-muted">Voltage (V)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="equalizeVoltage_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Load Current -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Load Current</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="loadCurrent" step="0.01" />
+                                  <label class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="loadCurrent_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Filter Current -->
+                      <div class="col-xl-3 col-lg-4 col-md-6">
+                        <div class="power-measurement-card">
+                          <div class="power-card-header">
+                            <div class="power-card-title">
+                              <span class="fw-semibold text-dark">Filter Current</span>
+                            </div>
+                          </div>
+                          <div class="power-card-body">
+                            <div class="row g-2">
+                              <div class="col-8">
+                                <div class="form-floating">
+                                  <input type="number" class="form-control power-input" formControlName="filterCurrent" step="0.01" />
+                                  <label class="text-muted">Current (A)</label>
+                                </div>
+                              </div>
+                              <div class="col-4">
+                                <div class="form-floating">
+                                  <select class="form-select power-select" formControlName="filterCurrent_PF">
+                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                                  </select>
+                                  <label class="text-muted">Status</label>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
+            <!-- Save Button -->
+            <div class="text-end mt-4">
+              <button class="btn btn-primary btn-lg" (click)="saveRectifier()" [disabled]="saving">
+                <span *ngIf="saving" class="spinner-border spinner-border-sm me-2"></span>
+                <i *ngIf="!saving" class="bi bi-save me-2"></i>
+                Save Rectifier
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+  </div>
