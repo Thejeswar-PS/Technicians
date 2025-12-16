@@ -685,10 +685,11 @@ export class EquipmentService {
    * Get equipment details for editing
    * Matches your EditEquipInfo API endpoint
    */
-  getEditEquipmentInfo(callNbr: string, equipId: number): Observable<EditEquipmentInfo> {
+  getEditEquipmentInfo(callNbr: string, equipId: number, equipNo: string): Observable<EditEquipmentInfo> {
     const params = new HttpParams()
       .set('callNbr', callNbr)
-      .set('equipId', equipId.toString());
+      .set('equipId', equipId.toString())
+      .set('equipNo', equipNo);
     
     return this.http.get<EditEquipmentInfo>(`${this.apiUrl}/EquipmentDetails/EditEquipInfo`, { params });
   }
