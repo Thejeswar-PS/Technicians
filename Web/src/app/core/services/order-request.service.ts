@@ -167,4 +167,15 @@ export class OrderRequestService {
       params: params
     });
   }
+
+  /**
+   * Deletes an order request entry
+   * @param rowIndex - The order request row index to delete
+   * @returns Observable<any> - Delete result with message and rowIndex
+   */
+  deleteOrderRequest(rowIndex: number): Observable<any> {
+    return this.http.delete<any>(`${this.API}/OrderRequest/DeleteOrderRequest/${rowIndex}`, { 
+      headers: this.headers
+    });
+  }
 }

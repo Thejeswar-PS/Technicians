@@ -310,5 +310,30 @@ namespace Technicians.Api.Repository
                 return false; // Error occurred
             }
         }
+
+        /// <summary>
+        /// Deletes an order request entry by row index
+        /// </summary>
+        /// <param name="rowIndex">The row index of the order request to delete</param>
+        /// <returns>Result message from the stored procedure</returns>
+        public async Task<string> DeleteOrderRequestAsync(int rowIndex)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new SqlCommand("DeleteOrderRequest", connection);
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@RowIndex", rowIndex);
+
+                var result = await command.ExecuteScalarAsync();
+                return result?.ToString() ?? "Order request deleted successfully.";
+            }
+            catch (Exception ex)
+            {
+                return $"Error occurred while deleting order request: {ex.Message}";
+            }
+        }
     }
 }
