@@ -8,6 +8,7 @@ import { OrderRequestComponent } from './order-request/order-request.component';
 import { OrderRequestStatusComponent } from './order-request-status/order-request-status.component';
 import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.component';
 import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.component';
+import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
 
 const routes: Routes = [
   {
@@ -46,6 +47,10 @@ const routes: Routes = [
   {
     path: 'parts-test-status', 
     component: PartsTestStatusComponent
+  },
+  {
+    path: 'stripped-units-status', 
+    component: StrippedUnitsStatusComponent
   }
 ];
 

@@ -1,0 +1,666 @@
+<!-- Stripped Units Status Page -->
+<div class="container-fluid parts-request-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center parts-request-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="parts-request-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary parts-request-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="parts-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-pc-display-horizontal me-2"></i>
+        Stripped Units Status Report
+      </h2>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+
+    <!--begin::Make Distribution Chart Section-->
+    <div class="card shadow-sm parts-main-card mb-4">
+      <!-- Header -->
+      <div class="card-header border-0 py-4">
+        <h3 class="card-title">
+          <i class="bi bi-pie-chart me-2"></i>
+          Make Distribution
+        </h3>
+      </div>
+
+      <!--begin::Card body-->
+      <div class="card-body py-2">
+
+        <!-- Loading -->
+        <div *ngIf="isLoadingMakeChart || isLoadingMakeCounts" 
+             class="d-flex justify-content-center py-10 chart-loading">
+          <div class="d-flex flex-column align-items-center">
+            <div class="spinner-border text-primary mb-3"></div>
+            <span class="text-muted">
+              <span *ngIf="isLoadingMakeCounts">Loading make data...</span>
+              <span *ngIf="!isLoadingMakeCounts && isLoadingMakeChart">Preparing chart...</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div *ngIf="(makeChartErrorMessage || makeCountsErrorMessage) && !isLoadingMakeChart && !isLoadingMakeCounts"
+             class="alert alert-warning d-flex align-items-center p-5 mb-10">
+          <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
+          <div class="d-flex flex-column">
+            <h4 class="mb-1 text-warning">Chart Data Unavailable</h4>
+            <div *ngIf="makeCountsErrorMessage">{{ makeCountsErrorMessage }}</div>
+            <div *ngIf="makeChartErrorMessage">{{ makeChartErrorMessage }}</div>
+          </div>
+        </div>
+
+        <!-- Content -->
+        <div *ngIf="!isLoadingMakeChart && !isLoadingMakeCounts && hasChartData()">
+
+                        <!-- Chart and Summary Layout -->
+                        <div class="row g-4">
+                          <!-- Chart Section - Left Side -->
+                          <div class="col-lg-8">
+                            <div class="chart-container">
+
+                              <!-- Chart Type Selector -->
+                              <div class="chart-selector-section">
+                                <h4 class="chart-selector-title">Data Visualization</h4>
+
+                                <div class="chart-type-controls">
+                                  <input type="radio" class="btn-check" 
+                                         name="makeChartType" id="makeBarChart"
+                                         checked (change)="setMakeChartType('bar')">
+                                  <label class="chart-type-btn" for="makeBarChart">
+                                    <i class="bi bi-bar-chart"></i>
+                                    Bar Chart
+                                  </label>
+
+                                  <input type="radio" class="btn-check" 
+                                         name="makeChartType" id="makePieChart"
+                                         (change)="setMakeChartType('pie')">
+                                  <label class="chart-type-btn" for="makePieChart">
+                                    <i class="bi bi-pie-chart"></i>
+                                    Pie Chart
+                                  </label>
+                                </div>
+                              </div>
+
+              <!-- Interactive Bar Chart -->
+              <div *ngIf="currentMakeChartType === 'bar'" class="chart-wrapper">
+                <div class="interactive-bar-chart-container">
+                  <apx-chart
+                    [series]="barChartOptions.series"
+                    [chart]="barChartOptions.chart"
+                    [dataLabels]="barChartOptions.dataLabels"
+                    [plotOptions]="barChartOptions.plotOptions"
+                    [xaxis]="barChartOptions.xaxis"
+                    [yaxis]="barChartOptions.yaxis"
+                    [colors]="barChartOptions.colors"
+                    [tooltip]="barChartOptions.tooltip"
+                    [grid]="barChartOptions.grid"
+                    [theme]="barChartOptions.theme">
+                  </apx-chart>
+                </div>
+              </div>              <!-- Interactive Donut Chart -->
+              <div *ngIf="currentMakeChartType === 'pie'" class="chart-wrapper">
+                <div class="interactive-donut-chart-container">
+                  <apx-chart
+                    [series]="donutChartOptions.series"
+                    [chart]="donutChartOptions.chart"
+                    [labels]="donutChartOptions.labels"
+                    [colors]="donutChartOptions.colors"
+                    [legend]="donutChartOptions.legend"
+                    [tooltip]="donutChartOptions.tooltip"
+                    [plotOptions]="donutChartOptions.plotOptions"
+                    [dataLabels]="donutChartOptions.dataLabels"
+                    [responsive]="donutChartOptions.responsive">
+                  </apx-chart>
+                </div>
+              </div>
+
+                            </div>
+                            <!--end::Chart Container-->
+                          </div>
+
+                          <!-- Unit Summary Section - Right Side -->
+                          <div class="col-lg-4">
+                            <div class="parts-return-summary-sidebar">
+                              <div class="summary-header mb-3">
+                                <h5 class="summary-title">
+                                  <i class="bi bi-clipboard-data me-2"></i>
+                                  Unit Summary
+                                </h5>
+                                <p class="summary-subtitle">Overall stripped units overview</p>
+                              </div>
+
+                              <div class="summary-cards">
+                                <!-- Total Units -->
+                                <div class="summary-card total-units mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-boxes"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">Total Units</h6>
+                                        <div class="summary-value">{{ filteredUnitsList.length }}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Completed Units -->
+                                <div class="summary-card completed-units mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-check-circle-fill text-success"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">Completed</h6>
+                                        <div class="summary-value">{{ getStatusCount('Completed') }}</div>
+                                        <small class="text-muted">{{ getStatusPercentage('Completed') }}% of total</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- In Progress Units -->
+                                <div class="summary-card in-progress-units mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-clock-fill text-warning"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">In Progress</h6>
+                                        <div class="summary-value">{{ getStatusCount('In Progress') }}</div>
+                                        <small class="text-muted">{{ getStatusPercentage('In Progress') }}% of total</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Not Started Units -->
+                                <div class="summary-card not-started-units mb-3">
+                                  <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                      <div class="summary-icon me-3">
+                                        <i class="bi bi-circle text-secondary"></i>
+                                      </div>
+                                      <div class="summary-content flex-grow-1">
+                                        <h6 class="summary-label mb-1">Not Started</h6>
+                                        <div class="summary-value">{{ getStatusCount('Not Started') }}</div>
+                                        <small class="text-muted">{{ getStatusPercentage('Not Started') }}% of total</small>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Summary Totals -->
+                                <div class="summary-totals mt-4">
+                                  <div class="total-row filtered-count mb-2">
+                                    <span class="total-label">Filtered Results:</span>
+                                    <span class="total-value">{{ paginatedItems.length }} of {{ filteredUnitsList.length }}</span>
+                                  </div>
+                                  
+                                  <!-- Current Status Filter -->
+                                  <div class="total-row current-filter mb-2">
+                                    <span class="total-label">Current Filter:</span>
+                                    <span class="total-value text-primary">{{ filterForm.get('status')?.value || 'All' }}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!--end::Chart and Summary Layout-->
+
+                      </div>
+                      <!--end::Content-->
+
+      </div>
+      <!--end::Card body-->
+    </div>
+    <!--end::Charts Section-->
+
+    <!-- Filter & Data Section -->
+    <div class="card shadow-sm parts-main-card mt-3">
+      <!-- Filter Header -->
+      <div class="card-header border-0 py-4">
+        <div class="parts-filter-header">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-funnel me-2 text-primary"></i>
+                Filters & Search
+                <span class="badge ms-3 px-3 py-2 fs-6 fw-bold" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                  <i class="bi bi-check-circle me-1"></i>
+                  {{ totalItems }} Result{{ totalItems === 1 ? '' : 's' }}
+                </span>
+              </h5>
+              <small class="text-muted">Customize your view with filters below</small>
+            </div>
+          </div>
+
+          <!-- Filter Controls -->
+          <div class="filter-controls-section mt-3">
+            <form [formGroup]="filterForm" class="parts-filter-form">
+              <!-- First Row of Filters -->
+              <div class="row g-4 mb-3">
+                <!-- Status Filter -->
+                <div class="col-12">
+                  <div class="filter-group">
+                    <label class="filter-label">
+                      <i class="bi bi-tag me-1"></i>
+                      Status
+                    </label>
+                    <select class="form-select modern-select" 
+                            formControlName="status"
+                            (change)="onStatusChange()">
+                      <option *ngFor="let option of statusOptions" [value]="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+                
+
+              </div>
+
+
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Display Section -->
+      <div class="card-body py-4">
+        
+        <!-- Modern Pagination Controls at Top -->
+        <div *ngIf="filteredUnitsList.length > 0 && !isLoading" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+          <!-- Records Per Page -->
+          <div class="d-flex align-items-center">
+            <label class="form-label me-2 mb-0 fw-semibold text-dark">Records per page:</label>
+            <select class="form-select form-select-sm w-auto border-primary" 
+                    [value]="itemsPerPage" 
+                    (change)="changeItemsPerPage(+$any($event.target).value)"
+                    style="min-width: 70px;">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          
+          <!-- Results Summary Badge -->
+          <div class="badge px-4 py-2 fs-6 fw-semibold" 
+               style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 25px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);">
+            Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, filteredUnitsList.length) }} of {{ filteredUnitsList.length }} records
+          </div>
+          
+          <!-- Page Navigation -->
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" 
+                    [disabled]="currentPage <= 1"
+                    (click)="goToPage(currentPage - 1)"
+                    [class.disabled]="currentPage <= 1">
+              <i class="bi bi-chevron-left"></i>
+              Previous
+            </button>
+            
+            <span class="mx-2 fw-semibold text-dark">
+              Page {{ currentPage }} of {{ totalPages }}
+            </span>
+            
+            <button class="btn btn-sm btn-outline-secondary" 
+                    [disabled]="currentPage >= totalPages"
+                    (click)="goToPage(currentPage + 1)"
+                    [class.disabled]="currentPage >= totalPages">
+              Next
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Messages -->
+        <div class="parts-messages" *ngIf="errorMessage">
+          <div class="alert alert-danger d-inline-flex align-items-center">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+        </div>
+
+        <!-- Loading indicator for data processing -->
+        <div *ngIf="isLoading" class="text-center py-4">
+          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+          <span class="text-muted">Processing data...</span>
+        </div>
+
+        <!-- Data Table Section -->
+        <div *ngIf="viewMode === 'list'">
+        <!-- Error State -->
+        <div *ngIf="errorMessage" class="alert alert-danger">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          {{ errorMessage }}
+        </div>
+        
+        <!-- Modern Data Table -->
+        <div *ngIf="!errorMessage" class="parts-data-table-wrapper">
+          <div class="table-responsive modern-table-container rounded-3 overflow-hidden border">
+            <table class="table parts-data-table modern-table table-layout-fixed mb-0">
+              <thead>
+                <tr class="compact-header">
+                  <th class="ps-4 text-center cursor-pointer" (click)="sortBy('rowIndex')" style="width: 5%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-hash text-white me-2 small-icon"></i>
+                      <span class="d-none d-md-inline header-text">Row</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('rowIndex')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer text-center" (click)="sortBy('make')" style="width: 8%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-building text-white me-2 small-icon"></i>
+                      <span class="header-text">Make</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('make')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer text-center" (click)="sortBy('model')" style="width: 8%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-gear text-white me-2 small-icon"></i>
+                      <span class="header-text">Model</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('model')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer text-center" (click)="sortBy('serialNo')" style="width: 10%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-upc-scan text-white me-2 small-icon"></i>
+                      <span class="header-text">Serial</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('serialNo')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('kva')" style="width: 6%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-lightning text-white me-2 small-icon"></i>
+                      <span class="header-text">KVA</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('kva')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer d-none d-md-table-cell text-center" (click)="sortBy('poNumber')" style="width: 8%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-receipt text-white me-2 small-icon"></i>
+                      <span class="header-text">PO#</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('poNumber')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer d-none d-xl-table-cell text-center" (click)="sortBy('unitCost')" style="width: 8%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-currency-dollar text-white me-2 small-icon"></i>
+                      <span class="header-text">Cost</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('unitCost')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer d-none d-xl-table-cell text-center" (click)="sortBy('shipCost')" style="width: 8%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-truck text-white me-2 small-icon"></i>
+                      <span class="header-text">Ship</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('shipCost')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer text-center" (click)="sortBy('status')" style="width: 8%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-flag text-white me-2 small-icon"></i>
+                      <span class="header-text">Status</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('status')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('strippedBy')" style="width: 10%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-person-gear text-white me-2 small-icon"></i>
+                      <span class="header-text">Stripped</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('strippedBy')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('putAwayBy')" style="width: 10%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <i class="bi bi-person-check text-white me-2 small-icon"></i>
+                      <span class="header-text">Put Away</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('putAwayBy')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer d-none d-md-table-cell text-center" (click)="sortBy('createdOn')" style="width: 10%;">
+                    <div class="header-content-compact">
+                      <i class="bi bi-calendar-event text-white me-1 small-icon"></i>
+                      <span class="header-text">Created</span>
+                      <i class="bi ms-1 sort-icon" [ngClass]="getSortIcon('createdOn')"></i>
+                    </div>
+                  </th>
+                  <th class="text-center sticky-actions" style="width: 8%;">
+                    <div class="header-content-compact">
+                      <i class="bi bi-plus-circle text-white me-1 small-icon"></i>
+                      <span class="header-text">Add Parts</span>
+                    </div>
+                  </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let unit of paginatedItems; let i = index; trackBy: trackByRowIndex" 
+                  class="compact-row" 
+                  [class.striped]="i % 2 === 1"
+                  [class.row-stripped-exists]="hasStrippedParts(unit)">
+                <td class="ps-4 text-center compact-cell">
+                  <button class="btn btn-link btn-sm p-0 text-primary fw-bold link-primary" 
+                          (click)="viewUnitDetails(unit)" 
+                          [title]="'View details for row ' + unit.rowIndex">
+                    {{ unit.rowIndex }}
+                  </button>
+                </td>
+                <td class="compact-cell text-start single-line-text table-text-medium" [title]="unit.make">{{ unit.make }}</td>
+                <td class="compact-cell text-start multi-line-text table-text-medium" [title]="unit.model">{{ unit.model }}</td>
+                <td class="compact-cell text-start">
+                  <span class="fw-semibold serial-number" [title]="unit.serialNo">{{ unit.serialNo }}</span>
+                </td>
+                <td class="d-none d-lg-table-cell compact-cell text-end">{{ unit.kva }}</td>
+                <td class="d-none d-md-table-cell compact-cell text-start" [title]="unit.poNumber">{{ unit.poNumber }}</td>
+                <td class="d-none d-xl-table-cell compact-cell text-end">{{ formatCurrency(unit.unitCost) }}</td>
+                <td class="d-none d-xl-table-cell compact-cell text-end">{{ formatCurrency(unit.shipCost) }}</td>
+                <td class="compact-cell text-center">
+                  <span class="badge status-badge" [ngClass]="getStatusBadgeClass(unit.status)">
+                    {{ unit.displayStatus }}
+                  </span>
+                </td>
+                <td class="d-none d-lg-table-cell compact-cell text-start" [title]="unit.strippedBy">{{ unit.strippedBy }}</td>
+                <td class="d-none d-lg-table-cell compact-cell text-start" [title]="unit.putAwayBy">{{ unit.putAwayBy }}</td>
+                <td class="d-none d-md-table-cell compact-cell text-center" [title]="formatDateTimeTooltip(unit.createdOn)">{{ formatDateTime(unit.createdOn) }}</td>
+                <td class="text-center compact-cell sticky-actions-cell">
+                  <div class="action-buttons d-flex justify-content-center">
+                    <button class="btn btn-success btn-sm enhanced-add-btn" (click)="addParts(unit)" title="Add Parts">
+                      <i class="bi bi-plus-circle"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <!-- Enhanced Empty State -->
+          <div *ngIf="paginatedItems.length === 0 && !isLoading" class="empty-state">
+            <div class="empty-icon">
+              <i class="bi bi-inbox"></i>
+            </div>
+            <h5>No stripped units found</h5>
+            <p>Try adjusting your filters or check back later for new data.</p>
+            <button class="btn btn-outline-primary btn-sm mt-2" (click)="loadStrippedUnitsStatus()">
+              <i class="bi bi-arrow-clockwise me-1"></i>
+              Refresh Data
+            </button>
+          </div>
+          
+          <!-- Bottom Modern Pagination Navigation -->
+          <div *ngIf="filteredUnitsList.length > 0 && !isLoading && totalPages > 1" class="d-flex justify-content-center mt-4 p-3">
+            <div class="d-flex align-items-center gap-2 bg-light rounded px-4 py-2">
+              <button class="btn btn-sm btn-outline-primary" 
+                      [disabled]="currentPage <= 1"
+                      (click)="goToPage(currentPage - 1)"
+                      [class.disabled]="currentPage <= 1">
+                <i class="bi bi-chevron-left"></i>
+                Previous
+              </button>
+              
+              <!-- Page Numbers (show only a few around current page) -->
+              <div class="d-flex align-items-center gap-1 mx-2">
+                <button *ngFor="let page of [].constructor(totalPages); let i = index" 
+                        class="btn btn-sm"
+                        [class.btn-primary]="currentPage === i + 1"
+                        [class.btn-outline-secondary]="currentPage !== i + 1"
+                        [class.d-none]="!shouldShowPageNumber(i + 1)"
+                        (click)="goToPage(i + 1)">
+                  {{ i + 1 }}
+                </button>
+              </div>
+              
+              <button class="btn btn-sm btn-outline-primary" 
+                      [disabled]="currentPage >= totalPages"
+                      (click)="goToPage(currentPage + 1)"
+                      [class.disabled]="currentPage >= totalPages">
+                Next
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        </div>
+
+    <!-- Details View -->
+    <div class="card" *ngIf="isDetailsMode() && selectedUnit">
+      <div class="card-header">
+        <div class="card-title">
+          <h5 class="m-0">Unit Details - {{ selectedUnit!.make }} {{ selectedUnit!.model }}</h5>
+        </div>
+        <div class="card-toolbar">
+          <button class="btn btn-sm btn-light-secondary" (click)="backToList()">
+            <i class="fa fa-arrow-left"></i>
+            Back to List
+          </button>
+        </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Basic Information</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td class="fw-semibold w-50">Make:</td>
+                <td>{{ selectedUnit!.make }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Model:</td>
+                <td>{{ selectedUnit!.model }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Serial Number:</td>
+                <td class="text-primary fw-semibold">{{ selectedUnit!.serialNo }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">KVA:</td>
+                <td>{{ selectedUnit!.kva }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Voltage:</td>
+                <td>{{ selectedUnit!.voltage }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Row Index:</td>
+                <td>{{ selectedUnit!.rowIndex }}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Order & Cost Information</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td class="fw-semibold w-50">PO Number:</td>
+                <td>{{ selectedUnit!.poNumber }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Shipping PO:</td>
+                <td>{{ selectedUnit!.shippingPO }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Unit Cost:</td>
+                <td>{{ formatCurrency(selectedUnit!.unitCost) }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Ship Cost:</td>
+                <td>{{ formatCurrency(selectedUnit!.shipCost) }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Status:</td>
+                <td>
+                  <span class="badge fs-7" [ngClass]="getStatusBadgeClass(selectedUnit!.status)">
+                    {{ selectedUnit!.displayStatus }}
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Strip Exists:</td>
+                <td>
+                  <span class="badge" [class.badge-success]="selectedUnit!.stripExists === 1" [class.badge-secondary]="selectedUnit!.stripExists !== 1">
+                    {{ selectedUnit!.stripExists === 1 ? 'Yes' : 'No' }}
+                  </span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+        
+        <div class="row mt-4">
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Personnel Information</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td class="fw-semibold w-50">Stripped By:</td>
+                <td>{{ selectedUnit!.strippedBy }}</td>
+              </tr>
+              <tr>
+                <td class="fw-semibold">Put Away By:</td>
+                <td>{{ selectedUnit!.putAwayBy }}</td>
+              </tr>
+            </table>
+          </div>
+          
+          <div class="col-md-6">
+            <h6 class="fw-bold mb-3">Dates</h6>
+            <table class="table table-borderless">
+              <tr>
+                <td class="fw-semibold w-50">Created On:</td>
+                <td>{{ selectedUnit!.formattedCreatedOn }}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
