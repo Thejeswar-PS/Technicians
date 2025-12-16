@@ -24,6 +24,8 @@ import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-
 import { BatteryReadingsTempComponent } from '../equipment/battery-readings-temp/battery-readings-temp.component';
 import { PduReadingsComponent } from '../equipment/pdu-readings/pdu-readings.component';
 import { AtsReadingsComponent } from '../equipment/ats-readings/ats-readings.component';
+import { StsReadingsComponent } from '../equipment/sts-readings/sts-readings.component';
+import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rectifier-readings.component';
 
 
 
@@ -47,7 +49,9 @@ import { AtsReadingsComponent } from '../equipment/ats-readings/ats-readings.com
     BatteryReadingsComponent,
     BatteryReadingsTempComponent,
     PduReadingsComponent,
-    AtsReadingsComponent
+    AtsReadingsComponent,
+    StsReadingsComponent,
+    RectifierReadingsComponent
   ],
   imports: [
     CommonModule,

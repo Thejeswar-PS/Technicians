@@ -6370,6 +6370,26 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
             // Reload reconciliation data
             this.loadReconciliationDataAfterEquipment();
             
+            // Reload filter currents data
+            this.equipmentService.getEquipFilterCurrents(this.callNbr, this.equipId)
+              .pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: (response) => {
+                  if (response.success && response.data) {
+                    this.filterCurrentsData = response.data;
+                    // Delay filter current population to ensure it happens after all other form operations
+                    setTimeout(() => {
+                      if (response.data) {
+                        this.populateFilterCurrentsFromLegacyData(response.data);
+                      }
+                    }, 500);
+                  }
+                },
+                error: (error) => {
+                  // This is not a critical error, so we don't show a toast
+                }
+              });
+            
             // Recalculate any dynamic values
             this.calculatePhaseToNeutralForAll();
             

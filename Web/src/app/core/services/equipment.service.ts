@@ -380,6 +380,27 @@ export class EquipmentService {
   }
 
   /**
+   * Get Rectifier readings data
+   * Equivalent to da.GetRectifier_Verification(RCV, ref ErrMsg) in legacy code
+   */
+  getRectifierReadings(callNbr: string, equipId: number, rectifierId: string): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipId', equipId.toString())
+      .set('rectifierId', rectifierId);
+
+    return this.http.get<any>(`${this.apiUrl}/Readings/GetRectifierInfo`, { params });
+  }
+
+  /**
+   * Save or update Rectifier verification data
+   * Equivalent to da.SaveUpdateRectifier_Verification(RCV, ref ErrMsg) in legacy code
+   */
+  saveUpdateRectifierVerification(rectifierData: any): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/Readings/SaveUpdateRectifierVerification`, rectifierData);
+  }
+
+  /**
    * Save or update UPS readings data
    * Equivalent to da.SaveUpdateaaETechUPS(AEU, ref ErrMsg) in legacy code
    */

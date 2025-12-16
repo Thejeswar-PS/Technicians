@@ -752,4 +752,11 @@ export class OrderRequestComponent implements OnInit {
   goToOrderRequestStatus(): void {
     this.router.navigate(['/reports/order-request-status']);
   }
+
+  /**
+   * Navigate to Order Request Status page
+   */
+  goToOrderRequestStatus(): void {
+    this.router.navigate(['/reports/order-request-status']);
+  }
 }

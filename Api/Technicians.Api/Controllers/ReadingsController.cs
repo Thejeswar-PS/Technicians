@@ -422,5 +422,76 @@ namespace Technicians.Api.Controllers
             return Ok(new { message = "ATS updated successfully." });
         }
 
+        [HttpGet("GetSTSInfo")]
+        public async Task<IActionResult> GetStsVerification(
+        [FromQuery] string callNbr,
+        [FromQuery] int equipId,
+        [FromQuery] string stsId)
+        {
+            var sts = await _repository.GetStsInfoAsync(callNbr, equipId, stsId);
+
+            if (sts == null)
+            {
+                return NotFound(new { message = "No Readings Found" });
+            }
+
+            return Ok(sts);
+        }
+
+        [HttpPost("SaveUpdateSTSInfo")]
+        public async Task<IActionResult> UpdateStsVerification([FromBody] AaETechSTS dto)
+        {
+            if (dto == null)
+                return BadRequest("STS payload is required.");
+
+            await _repository.SaveOrUpdateStsAsync(dto);
+
+            return Ok(new
+            {
+                message = dto.SaveAsDraft
+                    ? "STS saved as draft successfully"
+                    : "STS updated successfully"
+            });
+        }
+
+        [HttpGet("GetRectifierInfo")]
+        public async Task<IActionResult> GetRectifierInfo(
+        [FromQuery] string callNbr,
+        [FromQuery] string rectifierId)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(rectifierId))
+            {
+                return BadRequest("callNbr and rectifierId are required.");
+            }
+
+            try
+            {
+                var result = await _repository.GetRectifierVerificationAsync(
+                    callNbr,
+                    rectifierId
+                );
+
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpPost("SaveUpdateRectifierVerification")]
+        public async Task<IActionResult> SaveOrUpdate([FromBody] RectifierVerification model)
+        {
+            if (model == null)
+                return BadRequest("Invalid payload");
+
+            await _repository.SaveOrUpdateRectifierVerificationAsync(model);
+            return Ok(new { message = "Rectifier Verification saved successfully" });
+        }
+
     }
 }

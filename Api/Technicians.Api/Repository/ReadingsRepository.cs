@@ -1028,5 +1028,251 @@ namespace Technicians.Api.Repository
             }
         }
 
+        public async Task<AaETechSTS?> GetStsInfoAsync(
+        string callNbr,
+        int equipId,
+        string stsId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CallNbr", callNbr);
+            parameters.Add("@STSId", stsId);
+            parameters.Add("@EquipId", equipId);
+
+            var result = await connection.QueryFirstOrDefaultAsync<AaETechSTS>(
+                "GetaaETechSTS",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return result;
+        }
+
+        public async Task SaveOrUpdateStsAsync(AaETechSTS sts)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var p = new DynamicParameters();
+
+            p.Add("@CallNbr", sts.CallNbr);
+            p.Add("@EquipId", sts.EquipId);
+            p.Add("@STSId", sts.STSId);
+            p.Add("@Manufacturer", sts.Manufacturer);
+            p.Add("@ModelNo", sts.ModelNo);
+            p.Add("@SerialNo", sts.SerialNo);
+            p.Add("@Location", sts.Location);
+            p.Add("@Month", sts.Month);
+            p.Add("@Year", sts.Year);
+            p.Add("@Temp", sts.Temp);
+            p.Add("@Status", sts.Status);
+
+            p.Add("@Busswork", sts.Busswork);
+            p.Add("@Transformers", sts.Transformers);
+            p.Add("@PowerConn", sts.PowerConn);
+            p.Add("@MainCirBreaks", sts.MainCirBreaks);
+            p.Add("@SubfeedCirBreaks", sts.SubfeedCirBreaks);
+            p.Add("@CurrentCTs", sts.CurrentCTs);
+            p.Add("@CircuitBoards", sts.CircuitBoards);
+            p.Add("@FanCapacitors", sts.FanCapacitors);
+            p.Add("@EPOConn", sts.EPOConn);
+            p.Add("@WiringConn", sts.WiringConn);
+            p.Add("@RibbonCables", sts.RibbonCables);
+            p.Add("@CompAirClean", sts.CompAirClean);
+            p.Add("@FrontPanel", sts.FrontPanel);
+            p.Add("@InternalPower", sts.InternalPower);
+            p.Add("@LocalMonitoring", sts.LocalMonitoring);
+            p.Add("@LocalEPO", sts.LocalEPO);
+
+            p.Add("@KVA", sts.KVA);
+            p.Add("@StatusNotes", sts.StatusNotes);
+            p.Add("@Comments", sts.Comments);
+            p.Add("@Comments5", sts.Comments5);
+
+            // INPUT
+            p.Add("@Input", sts.Input);
+            p.Add("@InputVoltA_T", sts.InputVoltA_T);
+            p.Add("@InputVoltA_PF", sts.InputVoltA_PF);
+            p.Add("@InputVoltB_T", sts.InputVoltB_T);
+            p.Add("@InputVoltB_PF", sts.InputVoltB_PF);
+            p.Add("@InputVoltC_T", sts.InputVoltC_T);
+            p.Add("@InputVoltC_PF", sts.InputVoltC_PF);
+            p.Add("@InputCurrA_T", sts.InputCurrA_T);
+            p.Add("@InputCurrA_PF", sts.InputCurrA_PF);
+            p.Add("@InputCurrB_T", sts.InputCurrB_T);
+            p.Add("@InputCurrB_PF", sts.InputCurrB_PF);
+            p.Add("@InputCurrC_T", sts.InputCurrC_T);
+            p.Add("@InputCurrC_PF", sts.InputCurrC_PF);
+            p.Add("@InputFreq_T", sts.InputFreq_T);
+            p.Add("@InputFreq_PF", sts.InputFreq_PF);
+
+            // OUTPUT
+            p.Add("@Output", sts.Output);
+            p.Add("@OutputVoltA_T", sts.OutputVoltA_T);
+            p.Add("@OutputVoltA_PF", sts.OutputVoltA_PF);
+            p.Add("@OutputVoltB_T", sts.OutputVoltB_T);
+            p.Add("@OutputVoltB_PF", sts.OutputVoltB_PF);
+            p.Add("@OutputVoltC_T", sts.OutputVoltC_T);
+            p.Add("@OutputVoltC_PF", sts.OutputVoltC_PF);
+            p.Add("@OutputCurrA_T", sts.OutputCurrA_T);
+            p.Add("@OutputCurrA_PF", sts.OutputCurrA_PF);
+            p.Add("@OutputCurrB_T", sts.OutputCurrB_T);
+            p.Add("@OutputCurrB_PF", sts.OutputCurrB_PF);
+            p.Add("@OutputCurrC_T", sts.OutputCurrC_T);
+            p.Add("@OutputCurrC_PF", sts.OutputCurrC_PF);
+            p.Add("@OutputFreq_T", sts.OutputFreq_T);
+            p.Add("@OutputFreq_PF", sts.OutputFreq_PF);
+            p.Add("@OutputLoadA", sts.OutputLoadA);
+            p.Add("@OutputLoadB", sts.OutputLoadB);
+            p.Add("@OutputLoadC", sts.OutputLoadC);
+            p.Add("@TotalLoad", sts.TotalLoad);
+            p.Add("@OutputLoadA_PF", sts.OutputLoadA_PF);
+            p.Add("@OutputLoadB_PF", sts.OutputLoadB_PF);
+            p.Add("@OutputLoadC_PF", sts.OutputLoadC_PF);
+
+            // SRC TWO
+            p.Add("@SrcTwo", sts.SrcTwo);
+            p.Add("@SrcTwoVoltA_T", sts.SrcTwoVoltA_T);
+            p.Add("@SrcTwoVoltA_PF", sts.SrcTwoVoltA_PF);
+            p.Add("@SrcTwoVoltB_T", sts.SrcTwoVoltB_T);
+            p.Add("@SrcTwoVoltB_PF", sts.SrcTwoVoltB_PF);
+            p.Add("@SrcTwoVoltC_T", sts.SrcTwoVoltC_T);
+            p.Add("@SrcTwoVoltC_PF", sts.SrcTwoVoltC_PF);
+            p.Add("@SrcTwoCurrA_T", sts.SrcTwoCurrA_T);
+            p.Add("@SrcTwoCurrA_PF", sts.SrcTwoCurrA_PF);
+            p.Add("@SrcTwoCurrB_T", sts.SrcTwoCurrB_T);
+            p.Add("@SrcTwoCurrB_PF", sts.SrcTwoCurrB_PF);
+            p.Add("@SrcTwoCurrC_T", sts.SrcTwoCurrC_T);
+            p.Add("@SrcTwoCurrC_PF", sts.SrcTwoCurrC_PF);
+            p.Add("@SrcTwoFreq_T", sts.SrcTwoFreq_T);
+            p.Add("@SrcTwoFreq_PF", sts.SrcTwoFreq_PF);
+
+            // VERIFICATION
+            p.Add("@TVerification", sts.TVerification);
+            p.Add("@PrefAlter", sts.PrefAlter);
+            p.Add("@TransByPass", sts.TransByPass);
+            p.Add("@STSByPass", sts.STSByPass);
+            p.Add("@VerifyAlarm", sts.VerifyAlarm);
+
+            p.Add("@SaveAsDraft", sts.SaveAsDraft);
+            p.Add("@ModifiedBy", sts.Maint_Auth_Id); // replace with auth user later
+
+            await connection.ExecuteAsync(
+                "SaveUpdateaaETechSTS",
+                p,
+                commandType: CommandType.StoredProcedure
+            );
+        }
+
+        public async Task<RectifierVerification> GetRectifierVerificationAsync(string callNbr, string rectifierId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CallNbr", callNbr);
+            parameters.Add("@RectifierId", rectifierId);
+
+            var result = await connection.QueryFirstOrDefaultAsync<RectifierVerification>(
+                "GetRectifier_Verification",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            if (result == null)
+            {
+                throw new KeyNotFoundException("No Rectifier Verification data found.");
+            }
+
+            return result;
+        }
+
+        public async Task SaveOrUpdateRectifierVerificationAsync(RectifierVerification rcv)
+        {
+            using SqlConnection con = new SqlConnection(_connectionString);
+            using SqlCommand cmd = new SqlCommand("SaveUpdateRectifierVerification", con);
+
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.AddWithValue("@CallNbr", rcv.CallNbr);
+            cmd.Parameters.AddWithValue("@EquipId", rcv.EquipId);
+            cmd.Parameters.AddWithValue("@RectifierId", rcv.RectifierId);
+
+            cmd.Parameters.AddWithValue("@Manufacturer", rcv.Manufacturer);
+            cmd.Parameters.AddWithValue("@ModelNo", rcv.ModelNo);
+            cmd.Parameters.AddWithValue("@SerialNo", rcv.SerialNo);
+            cmd.Parameters.AddWithValue("@Temp", rcv.Temp);
+            cmd.Parameters.AddWithValue("@Status", rcv.Status);
+
+            cmd.Parameters.AddWithValue("@DCBus_Make", rcv.DCBus_Make);
+            cmd.Parameters.AddWithValue("@DCBus_Quantity", rcv.DCBus_Quantity);
+            cmd.Parameters.AddWithValue("@DCBus_Age", rcv.DCBus_Age);
+
+            cmd.Parameters.AddWithValue("@Input_Make", rcv.Input_Make);
+            cmd.Parameters.AddWithValue("@Input_Quantity", rcv.Input_Quantity);
+            cmd.Parameters.AddWithValue("@Input_Age", rcv.Input_Age);
+
+            cmd.Parameters.AddWithValue("@Comm_Make", rcv.Comm_Make);
+            cmd.Parameters.AddWithValue("@Comm_Quantity", rcv.Comm_Quantity);
+            cmd.Parameters.AddWithValue("@Comm_Age", rcv.Comm_Age);
+
+            cmd.Parameters.AddWithValue("@CurrLimitAlarms", rcv.CurrLimitAlarms);
+            cmd.Parameters.AddWithValue("@HiVoltAlarm", rcv.HiVoltAlarm);
+            cmd.Parameters.AddWithValue("@ShutdownAlarm", rcv.ShutdownAlarm);
+            cmd.Parameters.AddWithValue("@LowCurrAlarm", rcv.LowCurrAlarm);
+            cmd.Parameters.AddWithValue("@LoadSharing", rcv.LoadSharing);
+            cmd.Parameters.AddWithValue("@VisualInspection", rcv.VisualInspection);
+            cmd.Parameters.AddWithValue("@Comments", rcv.Comments);
+
+            cmd.Parameters.AddWithValue("@Input208AVoltAtoB_T", rcv.Input208AVoltAtoB_T);
+            cmd.Parameters.AddWithValue("@Input208AVoltAtoB_PF", rcv.Input208AVoltAtoB_PF);
+            cmd.Parameters.AddWithValue("@Input208CurrA_T", rcv.Input208CurrA_T);
+            cmd.Parameters.AddWithValue("@Input208CurrA_PF", rcv.Input208CurrA_PF);
+
+            cmd.Parameters.AddWithValue("@Input208AVoltBtoC_T", rcv.Input208AVoltBtoC_T);
+            cmd.Parameters.AddWithValue("@Input208AVoltBtoC_PF", rcv.Input208AVoltBtoC_PF ?? (object)DBNull.Value);
+
+            cmd.Parameters.AddWithValue("@Input208CurrB_T", rcv.Input208CurrB_T);
+            cmd.Parameters.AddWithValue("@Input208CurrB_PF", rcv.Input208CurrB_PF ?? (object)DBNull.Value);
+
+            cmd.Parameters.AddWithValue("@Input208AVoltCtoA_T", rcv.Input208AVoltCtoA_T);
+            cmd.Parameters.AddWithValue("@Input208AVoltCtoA_PF", rcv.Input208AVoltCtoA_PF ?? (object)DBNull.Value);
+
+            cmd.Parameters.AddWithValue("@Input208CurrC_T", rcv.Input208CurrC_T);
+            cmd.Parameters.AddWithValue("@Input208CurrC_PF", rcv.Input208CurrC_PF ?? (object)DBNull.Value);
+
+            cmd.Parameters.AddWithValue("@FilterCurrent_T", rcv.FilterCurrent_T);
+            cmd.Parameters.AddWithValue("@FilterCurrent_PF", rcv.FilterCurrent_PF ?? (object)DBNull.Value);
+
+            cmd.Parameters.AddWithValue("@FloatVoltage_T", rcv.FloatVoltage_T);
+            cmd.Parameters.AddWithValue("@FloatVoltage_PF", rcv.FloatVoltage_PF ?? (object)DBNull.Value);
+
+            cmd.Parameters.AddWithValue("@LoadCurrent_T", rcv.LoadCurrent_T);
+            cmd.Parameters.AddWithValue("@LoadCurrent_PF", rcv.LoadCurrent_PF ?? (object)DBNull.Value);
+
+
+            cmd.Parameters.AddWithValue("@Frequency_T", rcv.Frequency_T);
+            cmd.Parameters.AddWithValue("@Frequency_PF", rcv.Frequency_PF);
+
+            cmd.Parameters.AddWithValue("@EqVoltage_T", rcv.EqVoltage_T);
+            cmd.Parameters.AddWithValue("@EqVoltage_PF", rcv.EqVoltage_PF);
+
+            cmd.Parameters.AddWithValue("@Used_PartsInstalled", rcv.Used_PartsInstalled);
+            cmd.Parameters.AddWithValue("@Used_PartsShipped", rcv.Used_PartsShipped);
+            cmd.Parameters.AddWithValue("@Used_FaultyCircuits", rcv.Used_FaultyCircuits);
+
+            cmd.Parameters.AddWithValue("@Add_Type", rcv.Add_Type);
+            cmd.Parameters.AddWithValue("@Add_Manuf", rcv.Add_Manuf);
+            cmd.Parameters.AddWithValue("@Add_Quantity", rcv.Add_Quantity);
+            cmd.Parameters.AddWithValue("@Add_ImmedAction", rcv.Add_ImmedAction);
+            cmd.Parameters.AddWithValue("@UpgNonCritical", rcv.UpgNonCritical);
+
+            cmd.Parameters.AddWithValue("@Comments1", rcv.Comments1);
+            cmd.Parameters.AddWithValue("@Maint_Auth_ID", rcv.Maint_Auth_Id);
+            cmd.Parameters.AddWithValue("@StatusNotes", rcv.StatusNotes);
+
+            await con.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
+        }
+
     }
 }
