@@ -338,5 +338,53 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, new { message = "An error occurred while saving the order request", error = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Deletes an order request entry by row index
+        /// </summary>
+        /// <param name="rowIndex">The row index of the order request to delete</param>
+        /// <returns>Deletion result message</returns>
+        [HttpDelete("DeleteOrderRequest/{rowIndex}")]
+        public async Task<ActionResult> DeleteOrderRequest(int rowIndex)
+        {
+            try
+            {
+                if (rowIndex <= 0)
+                {
+                    return BadRequest(new { message = "Invalid row index. Row index must be greater than 0." });
+                }
+
+                _logger.LogInformation("Deleting order request with RowIndex: {RowIndex}", rowIndex);
+
+                var result = await _orderRequestRepository.DeleteOrderRequestAsync(rowIndex);
+
+                if (result.Contains("successfully", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation("Successfully deleted order request with RowIndex: {RowIndex}", rowIndex);
+                    return Ok(new { message = result, rowIndex = rowIndex });
+                }
+                else if (result.Contains("not found", StringComparison.OrdinalIgnoreCase) || 
+                         result.Contains("does not exist", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Order request not found for RowIndex: {RowIndex}", rowIndex);
+                    return NotFound(new { message = result, rowIndex = rowIndex });
+                }
+                else
+                {
+                    _logger.LogError("Error deleting order request with RowIndex: {RowIndex}. Result: {Result}", rowIndex, result);
+                    return BadRequest(new { message = result, rowIndex = rowIndex });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception occurred while deleting order request with RowIndex: {RowIndex}", rowIndex);
+                return StatusCode(500, new 
+                { 
+                    message = "An error occurred while deleting the order request", 
+                    error = ex.Message,
+                    rowIndex = rowIndex
+                });
+            }
+        }
     }
 }

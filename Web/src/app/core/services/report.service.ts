@@ -27,6 +27,13 @@ import {
   PartsReturnDataByWeekNoApiResponseDto
 } from '../model/part-return-status.model';
 import { 
+  StrippedUnitsStatusDto,
+  MakeCountDto,
+  StrippedUnitsStatusRequest,
+  StrippedUnitsStatusResponse,
+  StrippedUnitsStatusApiResponse
+} from '../model/stripped-units-status.model';
+import { 
   OrderRequestStatusRequestDto, 
   OrderRequestStatusDto, 
   OrderRequestStatusResponse 
@@ -678,6 +685,100 @@ export class ReportService {
     return this.http.get<DistinctModelsByMakeResponse>(`${this.API}/PartsTestStatus/GetDistinctModelsByMake`, {
       headers: this.headers,
       params: params
+    });
+  }
+
+  // Stripped Units Status API methods
+  
+  /**
+   * Gets stripped units status data using GET with query parameters
+   */
+  getStrippedUnitsStatus(status: string = 'All', rowIndex: number = 0): Observable<StrippedUnitsStatusApiResponse> {
+    let params = new HttpParams()
+      .set('status', status)
+      .set('rowIndex', rowIndex.toString());
+
+    return this.http.get<StrippedUnitsStatusApiResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedUnitsStatus`, {
+      headers: this.headers,
+      params: params
+    });
+  }
+
+  /**
+   * Gets stripped units status data using POST with request body
+   */
+  getStrippedUnitsStatusPost(request: StrippedUnitsStatusRequest): Observable<StrippedUnitsStatusApiResponse> {
+    return this.http.post<StrippedUnitsStatusApiResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedUnitsStatus`, request, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Gets all stripped units status data with no filters
+   */
+  getAllStrippedUnitsStatus(): Observable<StrippedUnitsStatusApiResponse> {
+    return this.http.get<StrippedUnitsStatusApiResponse>(`${this.API}/StrippedUnitsStatus/GetAllStrippedUnitsStatus`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Gets a specific stripped unit by RowIndex
+   */
+  getStrippedUnitByRowIndex(rowIndex: number): Observable<StrippedUnitsStatusApiResponse> {
+    return this.http.get<StrippedUnitsStatusApiResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedUnit/${rowIndex}`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Gets stripped units filtered by status
+   */
+  getStrippedUnitsByStatus(status: string): Observable<StrippedUnitsStatusApiResponse> {
+    return this.http.get<StrippedUnitsStatusApiResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedUnitsByStatus/${status}`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Gets only make counts for incomplete units
+   */
+  getStrippedUnitsMakeCounts(): Observable<{success: boolean; makeCounts: MakeCountDto[]; count: number}> {
+    return this.http.get<{success: boolean; makeCounts: MakeCountDto[]; count: number}>(`${this.API}/StrippedUnitsStatus/GetMakeCounts`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Gets stripped units make counts formatted for chart display
+   */
+  getStrippedUnitsMakeCountsForChart(): Observable<{
+    success: boolean; 
+    chartData: {
+      labels: string[];
+      data: number[];
+      datasets: Array<{
+        label: string;
+        data: number[];
+        backgroundColor: string[];
+      }>;
+    };
+    rawData: MakeCountDto[];
+  }> {
+    return this.http.get<{
+      success: boolean; 
+      chartData: {
+        labels: string[];
+        data: number[];
+        datasets: Array<{
+          label: string;
+          data: number[];
+          backgroundColor: string[];
+        }>;
+      };
+      rawData: MakeCountDto[];
+    }>(`${this.API}/StrippedUnitsStatus/GetMakeCountsForChart`, {
+      headers: this.headers
     });
   }
 }

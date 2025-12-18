@@ -219,7 +219,7 @@ export class EditEquipmentComponent implements OnInit, OnDestroy {
     try {
       try {
         // Try to load equipment info
-        const equipmentInfo = await this.equipmentService.getEditEquipmentInfo(this.callNbr, this.equipId).toPromise();
+        const equipmentInfo = await this.equipmentService.getEditEquipmentInfo(this.callNbr, this.equipId, this.equipNo).toPromise();
         
         const boardDetails = await this.equipmentService.getEquipBoardInfo(this.equipNo, this.equipId).toPromise();
         

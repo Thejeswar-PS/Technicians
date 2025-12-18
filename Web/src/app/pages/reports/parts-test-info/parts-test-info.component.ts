@@ -51,6 +51,9 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   showComponentWork: boolean = true;
   showAssemblyQC: boolean = false;
   
+  // Dynamic button enabling
+  isAddEntryEnabled: boolean = false;
+  
   // Delete functionality
   isDeleting: boolean = false;
   deleteMessage: string = '';
@@ -122,6 +125,8 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
     this.createNewItem();
     // Setup subscriptions after form is created
     this.setupFormSubscriptions();
+    // Initialize button state
+    this.updateAddEntryButtonState();
   }
 
   ngAfterViewInit(): void {
@@ -442,6 +447,11 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
       if (jobType) {
         this.onJobTypeChange(jobType);
       }
+    });
+
+    // Subscribe to form value changes to update Add Entry button state
+    this.editForm.valueChanges.subscribe(() => {
+      this.updateAddEntryButtonState();
     });
   }
 
@@ -1251,6 +1261,9 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
     
     // Set initial conditional display - Default to Inventory which shows divGrp1 (Component Work)
     this.onJobTypeChange('3');
+    
+    // Update button state after form initialization
+    setTimeout(() => this.updateAddEntryButtonState(), 0);
   }
 
   saveItem(): void {
@@ -1343,6 +1356,12 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   validateLegacyForm(): boolean {
     const formValue = this.editForm.value;
     
+    // Job From validation (required field)
+    if (!formValue.jobFrom || formValue.jobFrom === '') {
+      alert('One or more of the required fields is incomplete.\nPlease select \'Job Type\' and resave your Part.');
+      return false;
+    }
+    
     // Required field validations matching legacy JavaScript
     if (!formValue.manufPartNo?.trim()) {
       alert('One or more of the required fields is incomplete.\nPlease enter \'Manuf Part Number\' and resave your Part.');
@@ -1354,8 +1373,59 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
       return false;
     }
     
+    // Quantity validation - must be numeric first
+    if (formValue.quantity && isNaN(Number(formValue.quantity))) {
+      alert('Please enter only numeric values for Quantity, Year, KVA, and other number fields.');
+      return false;
+    }
+    
     if (!formValue.quantity || formValue.quantity <= 0) {
       alert('One or more of the required fields is incomplete.\nPlease enter \'Quantity\' and resave your Part.');
+      return false;
+    }
+    
+    // Quantity range validation (typical enterprise limit)
+    if (formValue.quantity > 9999) {
+      alert('Quantity cannot exceed 9999. Please enter a valid quantity.');
+      return false;
+    }
+    
+    // Numeric field validations
+    if (formValue.kva && isNaN(Number(formValue.kva))) {
+      alert('Please enter only numeric values for Quantity, Year, KVA, and other number fields.');
+      return false;
+    }
+    
+    if (formValue.voltage && isNaN(Number(formValue.voltage))) {
+      alert('Please enter only numeric values for Quantity, Year, KVA, and other number fields.');
+      return false;
+    }
+    
+    // String length validations for data integrity
+    if (formValue.manufPartNo && formValue.manufPartNo.length > 50) {
+      alert('Manufacturer Part Number cannot exceed 50 characters.');
+      return false;
+    }
+    
+    if (formValue.dcgPartNo && formValue.dcgPartNo.length > 50) {
+      alert('DCG Part Number cannot exceed 50 characters.');
+      return false;
+    }
+    
+    if (formValue.serialNo && formValue.serialNo.length > 50) {
+      alert('Serial Number cannot exceed 50 characters.');
+      return false;
+    }
+    
+    // Special character validation for part numbers (common business rule)
+    const partNumberPattern = /^[A-Za-z0-9\-_#\/\s]+$/;
+    if (formValue.manufPartNo && !partNumberPattern.test(formValue.manufPartNo)) {
+      alert('Manufacturer Part Number contains invalid characters. Only alphanumeric, hyphens, underscores, hash, slash, and spaces are allowed.');
+      return false;
+    }
+    
+    if (formValue.dcgPartNo && !partNumberPattern.test(formValue.dcgPartNo)) {
+      alert('DCG Part Number contains invalid characters. Only alphanumeric, hyphens, underscores, hash, slash, and spaces are allowed.');
       return false;
     }
     
@@ -1392,35 +1462,64 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
       dueDate.setHours(0, 0, 0, 0);
       
       if (dueDate <= today) {
-        alert('Due Date must be greater than today\'s date for new entries.');
+        alert('Due Date must be greater than today\'s date.');
         return false;
       }
     }
 
-    // Priority vs Due Date validation
-    if (formValue.priority) {
-      const today = new Date();
-      const dueDate = new Date(formValue.dueDate);
-      const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (formValue.priority === 'Urgent' && daysDiff > 7) {
-        alert('Due date must be within 7 days for Urgent priority.');
-        return false;
-      } else if (formValue.priority === 'High' && daysDiff > 30) {
-        alert('Due date must be within 30 days for High priority.');
-        return false;
-      } else if (formValue.priority === 'Normal' && daysDiff > 90) {
-        alert('Due date must be within 90 days for Normal priority.');
-        return false;
-      }
+    // Priority vs Due Date validation - Calculate auto priority first
+    const autoPriority = this.getPriorityFromDueDate(new Date(formValue.dueDate));
+    const today = new Date();
+    const dueDate = new Date(formValue.dueDate);
+    const daysDiff = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Legacy priority validation with exact alert messages
+    if (autoPriority === 'Urgent' && daysDiff > 7) {
+      alert('If you select priority as Urgent then Due Date must be within 7 Days.');
+      return false;
+    } else if (autoPriority === 'High' && daysDiff > 30) {
+      alert('If you select priority as High then Due Date must be within 30 Days.');
+      return false;
+    } else if (autoPriority === 'Normal' && daysDiff > 90) {
+      alert('If you select priority as Normal then Due Date must be within 90 Days.');
+      return false;
     }
 
     // Conditional resolve notes validation (when status is completed)
     if (formValue.testWorkStatus === '1' || formValue.assyWorkStatus === '1' || formValue.qcWorkStatus === '1') {
       if (!formValue.resolveNotes?.trim()) {
-        alert('After Testing Notes are required when status is set to Completed.');
+        alert('Please enter \'after testing notes\' and resave your Part.');
         return false;
       }
+      
+      // Minimum length validation for resolve notes
+      if (formValue.resolveNotes.trim().length < 10) {
+        alert('After Testing Notes must be at least 10 characters long when status is Completed.');
+        return false;
+      }
+    }
+    
+    // Problem notes minimum length validation
+    if (formValue.problemNotes && formValue.problemNotes.trim().length < 5) {
+      alert('Deficiency notes must be at least 5 characters long.');
+      return false;
+    }
+    
+    // Text field length validations
+    if (formValue.problemNotes && formValue.problemNotes.length > 500) {
+      alert('Deficiency notes cannot exceed 500 characters.');
+      return false;
+    }
+    
+    if (formValue.resolveNotes && formValue.resolveNotes.length > 500) {
+      alert('After Testing Notes cannot exceed 500 characters.');
+      return false;
+    }
+    
+    // Description length validation
+    if (formValue.description && formValue.description.length > 255) {
+      alert('Description cannot exceed 255 characters.');
+      return false;
     }
     
     // QC validation for specific job types
@@ -1429,6 +1528,111 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
         if (!this.validateQCWorkSelection(formValue)) {
           return false;
         }
+      }
+    }
+    
+    // Approval validations - matching legacy logic
+    if (formValue.approved === true) {
+      // Board Setup jobs - different validation
+      if (formValue.jobFrom === '7') {
+        if (!formValue.boardSetupStatus || formValue.boardSetupStatus !== '1') {
+          alert('You cannot approve this because board setup dropdown is not completed.');
+          return false;
+        }
+      } else {
+        // Other job types - all statuses must be completed
+        if (formValue.testWorkStatus !== '1' || formValue.assyWorkStatus !== '1' || formValue.qcWorkStatus !== '1') {
+          alert('You cannot approve this because the status of this part is not completed.');
+          return false;
+        }
+      }
+    }
+    
+    // Passed validations - matching legacy logic
+    if (formValue.isPassed === true) {
+      if (!formValue.reviewedBy || formValue.reviewedBy === 'PS') {
+        alert('You cannot check this till you select the Reviewed By dropdown.');
+        return false;
+      }
+      
+      if (formValue.assyWorkStatus !== '1') {
+        alert('You cannot check this till you select the Assembly Status is completed.');
+        return false;
+      }
+      
+      if (!formValue.completedBy || formValue.completedBy === 'PS') {
+        alert('You cannot check this till you select the Completed By dropdown.');
+        return false;
+      }
+    }
+    
+    // Board Setup validation for Job Type 7 (Board Setup jobs)
+    if (formValue.jobFrom === '7') {
+      if (!formValue.boardSetupStatus || formValue.boardSetupStatus === '0') {
+        alert('Board Setup Status must be "Completed" for Board Setup jobs.');
+        return false;
+      }
+    }
+    
+    // Complete approval validation (for non-Board Setup jobs)
+    if (formValue.jobFrom !== '7') {
+      if (formValue.testWorkStatus === '1' || formValue.assyWorkStatus === '1' || formValue.qcWorkStatus === '1') {
+        // Ensure personnel dropdowns are not "Please Select"
+        if (!formValue.completedBy || formValue.completedBy === 'PS') {
+          alert('Please select "Completed By" personnel for approved entries.');
+          return false;
+        }
+        if (!formValue.reviewedBy || formValue.reviewedBy === 'PS') {
+          alert('Please select "Reviewed By" personnel for approved entries.');
+          return false;
+        }
+        
+        // Prevent same person from completing and reviewing (separation of duties)
+        if (formValue.completedBy === formValue.reviewedBy) {
+          alert('The same person cannot both complete and review the work. Please select different personnel.');
+          return false;
+        }
+      }
+    }
+    
+    // Assembly work validation - ensure at least one assy work is done if status is completed
+    if (formValue.assyWorkStatus === '1') {
+      if (!formValue.assyWork1 && !formValue.assyWork2 && !formValue.assyWork3) {
+        alert('You must check at least one Assembly Work Done option when Assembly Status is Completed.');
+        return false;
+      }
+      
+      if (!formValue.assyProcFollowed) {
+        alert('Assembly Procedures Followed must be selected when Assembly Status is Completed.');
+        return false;
+      }
+    }
+    
+    // Component work validation - ensure at least one comp work is done if status is completed
+    if (formValue.partRepairStatus === '1') {
+      if (!formValue.compWork1 && !formValue.compWork2 && !formValue.compWork3 && !formValue.compWork4 && !formValue.compWork5) {
+        alert('You must check at least one Component Work Done option when Part Repair Status is Ready For Test.');
+        return false;
+      }
+    }
+    
+    // Test work validation - ensure at least one test work is done if status is completed
+    if (formValue.testWorkStatus === '1') {
+      if (!formValue.testWork1 && !formValue.testWork2 && !formValue.testWork3 && !formValue.testWork4 && !formValue.testWork5) {
+        alert('You must check at least one Testing Work Done option when Test Work Status is Completed.');
+        return false;
+      }
+    }
+    
+    // Due date business logic - cannot be more than 1 year in future
+    if (formValue.dueDate) {
+      const dueDate = new Date(formValue.dueDate);
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+      
+      if (dueDate > oneYearFromNow) {
+        alert('Due date cannot be more than one year in the future.');
+        return false;
       }
     }
     
@@ -1816,6 +2020,118 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
     return workTypes.some(type => this.editForm.get(type)?.value);
   }
   
+  /**
+   * Check if all required fields are filled (matching legacy requirements)
+   */
+  checkRequiredFieldsForButtonEnable(): boolean {
+    if (!this.editForm) return false;
+    
+    const formValue = this.editForm.value;
+    
+    // Check all required fields based on legacy validation
+    const hasManufPartNo = formValue.manufPartNo?.trim();
+    const hasDcgPartNo = formValue.dcgPartNo?.trim();
+    const hasValidQuantity = formValue.quantity && formValue.quantity > 0;
+    const hasWorkType = this.validateWorkTypeSelection();
+    const hasCreatedBy = formValue.createdBy && formValue.createdBy !== 'PS' && formValue.createdBy !== '';
+    const hasAssignedTo = formValue.assignedTo && formValue.assignedTo !== 'PS' && formValue.assignedTo !== '';
+    const hasDueDate = formValue.dueDate;
+    const hasProblemNotes = formValue.problemNotes?.trim();
+    
+    return hasManufPartNo && hasDcgPartNo && hasValidQuantity && hasWorkType && 
+           hasCreatedBy && hasAssignedTo && hasDueDate && hasProblemNotes;
+  }
+  
+  /**
+   * Update the Add Entry button enabled state
+   */
+  updateAddEntryButtonState(): void {
+    this.isAddEntryEnabled = this.checkRequiredFieldsForButtonEnable();
+  }
+  
+  /**
+   * Allow only numeric input for integer fields (keypress event)
+   */
+  onlyNumbers(event: KeyboardEvent): boolean {
+    const charCode = (event.which) ? event.which : event.keyCode;
+    // Allow: backspace, delete, tab, escape, enter, home, end, left, right, down, up
+    if ([8, 9, 27, 13, 46, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+        (charCode === 65 && event.ctrlKey === true) || // Ctrl+A
+        (charCode === 67 && event.ctrlKey === true) || // Ctrl+C
+        (charCode === 86 && event.ctrlKey === true) || // Ctrl+V
+        (charCode === 88 && event.ctrlKey === true) || // Ctrl+X
+        (charCode === 90 && event.ctrlKey === true)) { // Ctrl+Z
+      return true;
+    }
+    // Ensure that it is a number and stop the keypress
+    if ((charCode < 48 || charCode > 57)) {
+      event.preventDefault();
+      return false;
+    }
+    return true;
+  }
+  
+  /**
+   * Allow only positive decimal numbers (for KVA, Voltage fields)
+   */
+  onlyNumbersAndDecimal(event: KeyboardEvent): boolean {
+    const charCode = (event.which) ? event.which : event.keyCode;
+    // Allow: backspace, delete, tab, escape, enter, home, end, left, right, down, up
+    if ([8, 9, 27, 13, 46, 35, 36, 37, 39, 38, 40].indexOf(charCode) !== -1 ||
+        // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+Z
+        (charCode === 65 && event.ctrlKey === true) || // Ctrl+A
+        (charCode === 67 && event.ctrlKey === true) || // Ctrl+C
+        (charCode === 86 && event.ctrlKey === true) || // Ctrl+V
+        (charCode === 88 && event.ctrlKey === true) || // Ctrl+X
+        (charCode === 90 && event.ctrlKey === true)) { // Ctrl+Z
+      return true;
+    }
+    
+    const inputElement = event.target as HTMLInputElement;
+    const currentValue = inputElement.value;
+    
+    // Allow decimal point only if there isn't one already
+    if (charCode === 46 && currentValue.indexOf('.') === -1) {
+      return true;
+    }
+    
+    // Ensure that it is a number and stop the keypress
+    if ((charCode < 48 || charCode > 57) && charCode !== 46) {
+      event.preventDefault();
+      return false;
+    }
+    return true;
+  }
+  
+  /**
+   * Handle paste event to ensure only numeric values are pasted
+   */
+  onPasteNumbers(event: ClipboardEvent): void {
+    const clipboardData = event.clipboardData;
+    const pastedText = clipboardData?.getData('text') || '';
+    
+    // Check if pasted text contains only numbers
+    if (!/^\d+$/.test(pastedText)) {
+      event.preventDefault();
+      return;
+    }
+  }
+  
+  /**
+   * Handle paste event for decimal numbers
+   */
+  onPasteDecimals(event: ClipboardEvent): void {
+    const clipboardData = event.clipboardData;
+    const pastedText = clipboardData?.getData('text') || '';
+    
+    // Check if pasted text is a valid decimal number
+    if (!/^\d+\.?\d*$/.test(pastedText)) {
+      event.preventDefault();
+      return;
+    }
+  }
+  
   generateAutoId(): void {
     // Generate auto ID similar to legacy form
     const now = new Date();
@@ -1846,6 +2162,128 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
     // Clear messages
     this.saveMessage = '';
     this.saveError = '';
+    
+    // Update button state after clearing form
+    setTimeout(() => this.updateAddEntryButtonState(), 0);
+  }
+
+  // Event handler for textarea input to auto-resize
+  onTextareaInput(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+    }
+  }
+
+  // Map API employee names to actual employee names in the system
+  private mapEmployeeName(apiEmployeeName: string): string {
+    if (!apiEmployeeName) {
+      return '';
+    }
+    
+    // Special case mappings for names that don't follow the standard pattern
+    const specialCases: { [key: string]: string } = {
+      'ADAM.KEITH': 'adam keith',
+      'ANTHONY.KEITH': 'adam keith',
+      'PS': 'PS',
+      'DCGPARTS': 'DCGPARTS',
+      'TOU LEE. CHANG': 'Tou Lee Chang',
+      'ANTONIA.D\'HUYVETTER': 'Antonia D\'Huyvetter',
+      'BRUCE.BISTOL': 'Bruce Bristol', // Assuming this is same as BRUCE.BRISTOL
+      'BRUCE.BRISTOL': 'Bruce Bristol'
+    };
+    
+    // Check special cases first
+    const specialMatch = specialCases[apiEmployeeName.toUpperCase()];
+    if (specialMatch) {
+      return specialMatch;
+    }
+    
+    // Auto-convert FIRSTNAME.LASTNAME to Firstname Lastname format
+    if (apiEmployeeName.includes('.') && !apiEmployeeName.includes(' ')) {
+      const parts = apiEmployeeName.split('.');
+      if (parts.length === 2) {
+        const firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+        const lastName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase();
+        const convertedName = `${firstName} ${lastName}`;
+        
+        // Check if this converted name exists in employee list
+        const found = this.employees.find(emp => {
+          const empName = (emp.empName || '').toLowerCase();
+          const searchName = convertedName.toLowerCase();
+          return empName === searchName || empName.includes(searchName) || searchName.includes(empName);
+        });
+        
+        if (found) {
+          return found.empName || '';
+        }
+        
+        // If not found in employee list, return the converted name anyway
+        return convertedName;
+      }
+    }
+    
+    // Try to find partial matches in the employee list
+    const found = this.employees.find(emp => {
+      const empName = (emp.empName || '').toUpperCase();
+      const searchName = apiEmployeeName.toUpperCase();
+      
+      // Check if employee name contains parts of the search name
+      const tomMatch = empName.includes('TOM') && searchName.includes('TOM') ||
+                      empName.includes('PAREDES') && searchName.includes('PAREDES') ||
+                      empName.includes('TPADRES') && (searchName.includes('TOM') || searchName.includes('PAREDES'));
+      
+      const anthonyMatch = empName.includes('AKEITH') && (searchName.includes('ANTHONY') || searchName.includes('KEITH'));
+      
+      const generalMatch = empName.includes(searchName.replace(/[.\s]/g, '')) ||
+                          searchName.includes(empName.replace(/[.\s]/g, ''));
+      
+      return tomMatch || anthonyMatch || generalMatch;
+    });
+    
+    if (found) {
+      return found.empName || '';
+    }
+    
+    // Last resort: try to find any employee with similar name parts
+    if (apiEmployeeName.toUpperCase().includes('TOM')) {
+      const tomEmployee = this.employees.find(emp => 
+        (emp.empName || '').toUpperCase().includes('TOM') || 
+        (emp.empName || '').toUpperCase().includes('TPADRES')
+      );
+      if (tomEmployee) {
+        return tomEmployee.empName || '';
+      }
+    }
+    
+    return ''; // Return empty string so dropdown shows "Select Employee"
+  }
+
+  // Utility method to set up auto-resize for textareas
+  private setupTextareaAutoResize(): void {
+    // Use setTimeout to ensure DOM is ready
+    setTimeout(() => {
+      const textarea = document.querySelector('.auto-resize-textarea') as HTMLTextAreaElement;
+      if (textarea) {
+        // Auto-resize function
+        const autoResize = () => {
+          textarea.style.height = 'auto';
+          textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+        };
+
+        // Initial resize
+        autoResize();
+
+        // Add event listeners for paste events
+        textarea.addEventListener('paste', () => setTimeout(autoResize, 0));
+
+        // Also listen to form value changes for programmatic updates
+        this.editForm.get('resolveNotes')?.valueChanges.subscribe(() => {
+          setTimeout(autoResize, 0);
+        });
+      }
+    }, 100);
   }
 
   // Event handler for textarea input to auto-resize

@@ -727,15 +727,49 @@ export class OrderRequestComponent implements OnInit {
    */
   deleteOrderRequest(): void {
     const department = this.orderRequestForm.get('orderType')?.value || 'Order Request';
+    const rowIndex = this.orderRequestForm.get('rowIndex')?.value;
     
-    if (confirm(`Are you sure you want to delete ${department}?\nBy clicking OK you will be directed to Order Request Page.`)) {
-      // Implementation would require a delete API endpoint
-      // For now, just reset the form
-      this.resetForm();
-      this.formSuccess = 'Order request deleted successfully';
-      setTimeout(() => {
-        this.formSuccess = null;
-      }, 3000);
+    // Validate that we have a valid row index to delete
+    if (!rowIndex || rowIndex <= 0) {
+      this.formError = 'Cannot delete: No valid order request selected or saved.';
+      return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${department}?\nThis action cannot be undone.`)) {
+      this.isFormSubmitting = true;
+      this.formError = null;
+      this.formSuccess = null;
+      
+      this.orderRequestService.deleteOrderRequest(rowIndex).subscribe({
+        next: (response: any) => {
+          this.formSuccess = response.message || 'Order request deleted successfully';
+          this.isFormSubmitting = false;
+          
+          // Reset form after successful deletion
+          this.resetForm();
+          
+          // Navigate back to the order request status page after a brief delay
+          setTimeout(() => {
+            this.router.navigate(['/reports/order-request-status']);
+          }, 2000);
+        },
+        error: (error) => {
+          console.error('Error deleting order request:', error);
+          
+          // Handle different error responses
+          let errorMessage = 'Failed to delete order request. Please try again.';
+          if (error.status === 404) {
+            errorMessage = 'Order request not found or already deleted.';
+          } else if (error.status === 400) {
+            errorMessage = error.error?.message || 'Invalid request. Please check the data.';
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
+          }
+          
+          this.formError = errorMessage;
+          this.isFormSubmitting = false;
+        }
+      });
     }
   }
 
