@@ -798,4 +798,26 @@ export class EquipmentService {
     return this.http.get<{ success: boolean; message: string; data?: JobSummarySampleResponse }>(`${this.apiUrl}/EquipmentDetails/GetJobSummarySample`, { params });
   }
 
+  // ========== SCC (SYSTEM CONTROL CABINET) METHODS ==========
+
+  /**
+   * Get SCC (System Control Cabinet) information
+   * Equivalent to da.GetSCCInfo() in legacy code
+   */
+  getSCCInfo(callNbr: string, sccId: string): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('sccId', sccId);
+    
+    return this.http.get<any>(`${this.apiUrl}/Readings/GetSCCInfo`, { params });
+  }
+
+  /**
+   * Save or update SCC information
+   * Equivalent to da.SaveUpdateSCC() in legacy code
+   */
+  saveUpdateSCC(sccData: any): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/Readings/SaveUpdateSCC`, sccData);
+  }
+
 }
