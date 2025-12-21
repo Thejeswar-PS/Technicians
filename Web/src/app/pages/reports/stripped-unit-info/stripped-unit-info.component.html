@@ -357,16 +357,16 @@
                   </thead>
                   <tbody>
                     <tr *ngFor="let part of strippedParts; trackBy: trackByPartRowIndex">
-                      <td>{{ part.rowIndex }}</td>
-                      <td>{{ part.dcgPartGroup }}</td>
-                      <td>{{ part.dcgPartNo }}</td>
-                      <td>{{ part.partDesc | slice:0:50 }}<span *ngIf="part.partDesc && part.partDesc.length > 50">...</span></td>
+                      <td>{{ part.DCGPartNo }}</td>
+                      <td>{{ part.GroupType }}</td>
+                      <td>{{ part.DCGPartNo }}</td>
+                      <td>{{ part.Description | slice:0:50 }}<span *ngIf="part.Description && part.Description.length > 50">...</span></td>
                       <td class="text-center">
-                        <span class="badge badge-light-info">{{ part.stripNo }}</span>
+                        <span class="badge badge-light-info">{{ part.Quantity }}</span>
                       </td>
                       <td>
-                        <span class="badge" [class]="part.keepThrow === 'Keep' ? 'badge-success' : 'badge-warning'">
-                          {{ part.keepThrow }}
+                        <span class="badge" [class]="part.PartStatus === 'KEEP' ? 'badge-success' : 'badge-warning'">
+                          {{ part.PartStatus }}
                         </span>
                       </td>
                       <td>

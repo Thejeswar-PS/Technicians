@@ -419,27 +419,36 @@ namespace Technicians.Api.Repository
                 var partsDetails = (await multi.ReadAsync<StrippedPartsDetailDto>()).ToList();
                 response.PartsDetails = partsDetails;
 
-                // Check if we have data - if the first result set has data, we expect more result sets
-                response.HasData = partsDetails.Any();
+                // Check if we have real data - filter out dummy records (MasterRowIndex = 000000 means no data)
+                response.HasData = partsDetails.Any() && !partsDetails.All(p => p.DCGPartNo == null || p.DCGPartNo == string.Empty);
 
                 if (response.HasData)
                 {
                     // Second result set: Group counts
                     response.GroupCounts = (await multi.ReadAsync<StrippedPartsGroupCountDto>()).ToList();
 
-                    // Third result set: Cost analysis
+                    // Third result set: Cost analysis - handle dynamic column names
                     var costAnalysisRaw = await multi.ReadAsync();
                     response.CostAnalysis = costAnalysisRaw.Select(row => new StrippedPartsCostAnalysisDto
                     {
-                        PartPercent = Convert.ToDecimal(row.PartPercent ?? 0),
-                        DollarOfTotal = Convert.ToDecimal(row.DollarOfTotal ?? 0),
-                        Quantity = Convert.ToInt32(row.Quantity ?? 0),
-                        DollarPerPart = Convert.ToDecimal(row.DollarPerPart ?? 0),
-                        PartsStripped = Convert.ToString(row.PartsStripped ?? string.Empty)
+                        // Handle the dynamic column names from SP
+                        PartPercent = TryConvertToDecimal(GetDynamicProperty(row, "Part %")),
+                        DollarOfTotal = TryConvertToDecimal(GetDynamicProperty(row, "$ of Total")),
+                        Quantity = TryConvertToInt(GetDynamicProperty(row, "Quantity")),
+                        DollarPerPart = TryConvertToDecimal(GetDynamicProperty(row, "$Per Part")),
+                        PartsStripped = GetDynamicProperty(row, "Parts Stripped")?.ToString() ?? string.Empty
                     }).ToList();
 
                     // Fourth result set: Parts location
                     response.PartsLocations = (await multi.ReadAsync<StrippedPartsLocationDto>()).ToList();
+                }
+                else
+                {
+                    // Initialize empty collections when no data
+                    response.GroupCounts = new List<StrippedPartsGroupCountDto>();
+                    response.CostAnalysis = new List<StrippedPartsCostAnalysisDto>();
+                    response.PartsLocations = new List<StrippedPartsLocationDto>();
+                    response.PartsDetails = new List<StrippedPartsDetailDto>();
                 }
 
                 return response;
@@ -450,6 +459,55 @@ namespace Technicians.Api.Repository
             }
         }
 
+        /// <summary>
+        /// Helper method to get dynamic property from Dapper result
+        /// </summary>
+        /// <param name="row">Dynamic row from Dapper</param>
+        /// <param name="propertyName">Property name to retrieve</param>
+        /// <returns>Property value or null</returns>
+        private static object? GetDynamicProperty(dynamic row, string propertyName)
+        {
+            try
+            {
+                var dictionary = row as IDictionary<string, object>;
+                return dictionary?.ContainsKey(propertyName) == true ? dictionary[propertyName] : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
 
+        /// <summary>
+        /// Helper method to safely convert to decimal
+        /// </summary>
+        /// <param name="value">Value to convert</param>
+        /// <returns>Decimal value or 0</returns>
+        private static decimal TryConvertToDecimal(object? value)
+        {
+            if (value == null || value == DBNull.Value)
+                return 0;
+
+            if (decimal.TryParse(value.ToString(), out decimal result))
+                return result;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Helper method to safely convert to int
+        /// </summary>
+        /// <param name="value">Value to convert</param>
+        /// <returns>Int value or 0</returns>
+        private static int TryConvertToInt(object? value)
+        {
+            if (value == null || value == DBNull.Value)
+                return 0;
+
+            if (int.TryParse(value.ToString(), out int result))
+                return result;
+
+            return 0;
+        }
     }
 }

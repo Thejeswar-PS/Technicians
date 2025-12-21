@@ -33,8 +33,10 @@ import {
   StrippedUnitsStatusResponse,
   StrippedUnitsStatusApiResponse,
   StrippedUnitApiResponse,
-  StrippedPartsInUnitDto,
+  StrippedPartsDetailDto,
+  StrippedPartsInUnitResponse,
   StrippedPartsInUnitApiResponse,
+  StrippedPartsInUnitDto,
   StrippedPartsInUnitListResponse,
   StripPartCodeDto,
   StripPartCodeApiResponse
@@ -828,10 +830,9 @@ export class ReportService {
 
   /**
    * Gets stripped parts for a specific unit by master row index
-   * Note: This endpoint may need to be added to the backend if not already available
    */
-  getStrippedPartsInUnit(masterRowIndex: number): Observable<StrippedPartsInUnitListResponse> {
-    return this.http.get<StrippedPartsInUnitListResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedPartsInUnit/${masterRowIndex}`, {
+  getStrippedPartsInUnit(masterRowIndex: number): Observable<StrippedPartsInUnitApiResponse> {
+    return this.http.get<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedPartsInUnit/${masterRowIndex}`, {
       headers: this.headers
     });
   }

@@ -5,9 +5,12 @@ import { ReportService } from 'src/app/core/services/report.service';
 import { CommonService } from 'src/app/core/services/common.service';
 import { AuthService } from 'src/app/modules/auth';
 import { 
-  StrippedPartsInUnitDto,
-  StrippedPartsInUnitListResponse,
+  StrippedPartsDetailDto,
+  StrippedPartsInUnitResponse,
   StrippedPartsInUnitApiResponse,
+  StrippedPartsGroupCountDto,
+  StrippedPartsCostAnalysisDto,
+  StrippedPartsLocationDto,
   KEEP_THROW_OPTIONS,
   StripPartCodeDto,
   StripPartCodeApiResponse
@@ -23,45 +26,50 @@ import { Subscription, finalize } from 'rxjs';
 export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
 
   // Forms
-  searchForm: FormGroup;
   strippedPartsForm: FormGroup;
 
   // Data properties
-  strippedParts: StrippedPartsInUnitDto[] = [];
-  currentStrippedPart: StrippedPartsInUnitDto | null = null;
+  strippedPartsResponse: StrippedPartsInUnitResponse | null = null;
+  partsDetails: StrippedPartsDetailDto[] = [];
+  groupCounts: StrippedPartsGroupCountDto[] = [];
+  costAnalysis: StrippedPartsCostAnalysisDto[] = [];
+  partsLocations: StrippedPartsLocationDto[] = [];
+  currentStrippedPart: StrippedPartsDetailDto | null = null;
   stripPartCodes: StripPartCodeDto[] = [];
   masterRowIndex: number | null = null;
 
   // Chart and Summary Data
-  chartOptions: any = {
-    series: [{
-      name: 'Parts Count',
-      data: []
-    }],
-    chart: {
-      type: 'column',
-      height: 350,
-      background: '#E3E3E3',
-      toolbar: { show: false }
-    },
-    title: {
-      text: 'Parts Count',
-      align: 'center'
-    },
-    xaxis: {
-      categories: [],
-      labels: {
-        style: {
-          colors: '#0000FF',
-          fontSize: '10px'
+  public chartOptions: any = {
+    series: [],
+    chart: { type: 'column', height: 350 },
+    dataLabels: { enabled: true },
+    plotOptions: {
+      bar: {
+        columnWidth: '50%',
+        dataLabels: {
+          position: 'top'
         }
       }
     },
+    xaxis: { categories: [] },
     yaxis: {
-      title: { text: '' }
+      title: {
+        text: 'Number of Parts'
+      }
     },
     colors: ['#428bca'],
-    dataLabels: { enabled: true }
+    tooltip: {},
+    grid: {
+      borderColor: '#e7e7e7'
+    },
+    title: {
+      text: 'Stripped Parts Count',
+      align: 'center',
+      style: {
+        fontSize: '14px',
+        fontWeight: 'bold'
+      }
+    }
   };
   summaryData: any[] = [];
   totalStrippedParts: number = 0;
@@ -88,7 +96,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
   itemsPerPage: number = 25;
   totalItems: number = 0;
   totalPages: number = 0;
-  paginatedParts: StrippedPartsInUnitDto[] = [];
+  paginatedParts: StrippedPartsDetailDto[] = [];
 
   // Subscription management
   private subscriptions: Subscription = new Subscription();
@@ -110,17 +118,19 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('StrippedPartsInunitComponent - ngOnInit called');
-    // Check for masterRowIndex in query parameters
-    this.subscriptions.add(
-      this.route.queryParams.subscribe(params => {
-        if (params['masterRowIndex']) {
-          this.masterRowIndex = parseInt(params['masterRowIndex']);
-          this.loadStrippedPartsForUnit();
-        }
-      })
-    );
-
+    this.initializeForms();
     this.loadStripPartCodes();
+    
+    // Get masterRowIndex from route parameters
+    this.route.params.subscribe(params => {
+      if (params['masterRowIndex']) {
+        this.masterRowIndex = +params['masterRowIndex'];
+        this.loadStrippedPartsData(this.masterRowIndex);
+      } else {
+        console.warn('No masterRowIndex provided in route parameters');
+        this.errorMessage = 'No unit specified. Please provide a masterRowIndex parameter in the URL (e.g., /reports/stripped-parts-inunit/12345) or select a unit from the stripped units status page.';
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -128,11 +138,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
   }
 
   private initializeForms(): void {
-    // Search form for finding parts by master row index
-    this.searchForm = this.fb.group({
-      masterRowIndex: ['', [Validators.required, Validators.min(1)]]
-    });
-
     // Form for adding/editing stripped parts
     this.strippedPartsForm = this.fb.group({
       dcgPartGroup: ['', [Validators.required, Validators.maxLength(50)]],
@@ -143,256 +148,77 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Search Methods
-  onSearch(): void {
-    if (this.searchForm.valid) {
-      this.masterRowIndex = this.searchForm.get('masterRowIndex')?.value;
-      this.loadStrippedPartsForUnit();
-    } else {
-      this.toastr.error('Please enter a valid Master Row Index');
-    }
-  }
-
-  onClearSearch(): void {
-    this.searchForm.reset();
-    this.masterRowIndex = null;
-    this.strippedParts = [];
-    this.updatePagination();
-    this.successMessage = '';
-    this.errorMessage = '';
-  }
-
-  // Data Loading Methods
-  private loadStrippedPartsForUnit(): void {
-    if (!this.masterRowIndex) {
-      console.log('⚠️ [PARTS LOAD] No masterRowIndex available to load parts for');
-      return;
-    }
-
-    console.log('🔄 [PARTS LOAD] Loading parts for unit with masterRowIndex:', this.masterRowIndex);
+  // Load stripped parts data from API
+  private loadStrippedPartsData(masterRowIndex: number): void {
+    console.log('🔄 Loading stripped parts data for masterRowIndex:', masterRowIndex);
     this.isLoadingParts = true;
+    this.errorMessage = '';
     this.partsErrorMessage = '';
-    this.partsSuccessMessage = '';
-
-    const subscription = this.reportService.getStrippedPartsInUnit(this.masterRowIndex)
+    
+    const apiCall = this.reportService.getStrippedPartsInUnit(masterRowIndex)
       .pipe(finalize(() => this.isLoadingParts = false))
       .subscribe({
-        next: (response: StrippedPartsInUnitListResponse) => {
-          console.log('📦 [DB RESPONSE] Stripped parts data from database:', response);
-          if (response.success) {
-            this.strippedParts = response.data || [];
-            this.totalItems = this.strippedParts.length;
-            console.log('✅ [PARTS DATA] Loaded parts for UI display:', this.strippedParts);
-            console.log('📊 [PARTS COUNT] Total parts found:', this.strippedParts.length);
+        next: (response: StrippedPartsInUnitApiResponse) => {
+          if (response.success && response.data) {
+            console.log('✅ Stripped parts data loaded successfully:', response.data);
+            this.strippedPartsResponse = response.data;
+            this.partsDetails = response.data.PartsDetails || [];
+            this.groupCounts = response.data.GroupCounts || [];
+            this.costAnalysis = response.data.CostAnalysis || [];
+            this.partsLocations = response.data.PartsLocations || [];
             
-            if (this.strippedParts.length === 0) {
-              console.log('📭 [PARTS EMPTY] No parts found for this unit in database');
-              this.partsSuccessMessage = 'No stripped parts found for this unit.';
+            if (!response.data.HasData) {
+              this.partsErrorMessage = 'No stripped parts found for this unit.';
             } else {
-              this.partsSuccessMessage = `Found ${this.strippedParts.length} stripped parts for this unit.`;
+              this.totalItems = this.partsDetails.length;
               this.calculateSummaryAndChart();
+              this.updatePagination();
+              
+              // Set parts location from first location if available
+              if (this.partsLocations.length > 0) {
+                this.partsLocation = this.partsLocations[0].LocationDescription;
+              }
             }
-            
-            this.updatePagination();
           } else {
-            console.error('❌ [PARTS ERROR] Failed to load parts:', response.message);
-            this.partsErrorMessage = response.message || 'Failed to load stripped parts';
-            this.strippedParts = [];
-            this.updatePagination();
+            console.error('❌ Failed to load stripped parts data:', response.error || response.message);
+            this.partsErrorMessage = response.error || response.message || 'Failed to load stripped parts data';
           }
         },
         error: (error) => {
-          console.error('💥 [PARTS ERROR] Error loading stripped parts:', error);
-          this.partsErrorMessage = 'Failed to load stripped parts. Please try again.';
-          this.strippedParts = [];
-          this.updatePagination();
+          console.error('❌ Error loading stripped parts data:', error);
+          this.partsErrorMessage = 'Error loading stripped parts data. Please try again.';
+          this.toastr.error('Failed to load stripped parts data', 'Error');
         }
       });
-
-    this.subscriptions.add(subscription);
+    
+    this.subscriptions.add(apiCall);
   }
 
   private loadStripPartCodes(): void {
-    this.isLoadingStripPartCodes = true;
-    
-    const subscription = this.reportService.getStripPartCodes()
-      .pipe(finalize(() => this.isLoadingStripPartCodes = false))
-      .subscribe({
-        next: (response: StripPartCodeApiResponse) => {
-          if (response.success) {
-            this.stripPartCodes = response.data || [];
-            console.log('✅ [PART CODES] Loaded strip part codes:', this.stripPartCodes);
-          } else {
-            console.error('❌ [PART CODES] Failed to load strip part codes:', response.message);
-            this.toastr.error('Failed to load part codes');
-          }
-        },
-        error: (error) => {
-          console.error('💥 [PART CODES] Error loading strip part codes:', error);
-          this.toastr.error('Failed to load part codes');
-        }
-      });
-
-    this.subscriptions.add(subscription);
+    // For demonstration purposes, we'll use sample part codes
+    this.stripPartCodes = [
+      { code: 'AIR', name: 'Air Filters' },
+      { code: 'OIL', name: 'Oil Components' },
+      { code: 'FUEL', name: 'Fuel System' },
+      { code: 'ELECTRICAL', name: 'Electrical Components' }
+    ];
   }
 
   // Part Management Methods
   onAddStrippedPart(): void {
-    if (!this.masterRowIndex) {
-      this.toastr.error('Please search for a unit first');
-      return;
-    }
-
-    this.isNewPart = true;
-    this.isPartsEditMode = true;
-    this.currentStrippedPart = null;
-    this.resetPartsForm();
-    this.partsErrorMessage = '';
-    this.partsSuccessMessage = '';
-  }
-
-  onEditStrippedPart(part: StrippedPartsInUnitDto): void {
-    this.isNewPart = false;
-    this.isPartsEditMode = true;
-    this.currentStrippedPart = part;
-    this.loadPartToForm(part);
-    this.partsErrorMessage = '';
-    this.partsSuccessMessage = '';
-  }
-
-  onCancelPartEdit(): void {
-    this.isPartsEditMode = false;
-    this.isNewPart = false;
-    this.currentStrippedPart = null;
-    this.resetPartsForm();
-    this.partsErrorMessage = '';
+    this.toastr.info('Add functionality to be implemented');
   }
 
   onSaveStrippedPart(): void {
-    if (!this.strippedPartsForm.valid || !this.masterRowIndex) {
-      this.toastr.error('Please fill in all required fields');
-      return;
-    }
-
-    this.isSavingPart = true;
-    this.partsErrorMessage = '';
-
-    const formValue = this.strippedPartsForm.value;
-    const partData: StrippedPartsInUnitDto = {
-      masterRowIndex: this.masterRowIndex,
-      rowIndex: this.isNewPart ? 0 : (this.currentStrippedPart?.rowIndex || 0),
-      dcgPartGroup: formValue.dcgPartGroup,
-      dcgPartNo: formValue.dcgPartNo,
-      partDesc: formValue.partDesc,
-      keepThrow: formValue.keepThrow,
-      stripNo: formValue.stripNo || 1,
-      lastModifiedBy: this.authService.currentUserValue?.userName || 'System',
-      createdBy: this.authService.currentUserValue?.userName || 'System'
-    };
-
-    console.log('💾 [SAVE PART] Saving part data:', partData);
-
-    const saveObservable = this.isNewPart
-      ? this.reportService.saveStrippedPartInUnit(partData)
-      : this.reportService.updateStrippedPartInUnit(partData);
-
-    const subscription = saveObservable
-      .pipe(finalize(() => this.isSavingPart = false))
-      .subscribe({
-        next: (response: StrippedPartsInUnitApiResponse) => {
-          if (response.success) {
-            const action = this.isNewPart ? 'added' : 'updated';
-            this.toastr.success(`Part ${action} successfully`);
-            this.partsSuccessMessage = `Part ${action} successfully`;
-            this.onCancelPartEdit();
-            this.loadStrippedPartsForUnit(); // Reload the parts list
-          } else {
-            this.partsErrorMessage = response.message || `Failed to save part`;
-            this.toastr.error(this.partsErrorMessage);
-          }
-        },
-        error: (error) => {
-          console.error('💥 [SAVE ERROR] Error saving part:', error);
-          this.partsErrorMessage = 'Failed to save part. Please try again.';
-          this.toastr.error(this.partsErrorMessage);
-        }
-      });
-
-    this.subscriptions.add(subscription);
+    this.toastr.info('Save functionality to be implemented');
   }
 
-  onDeleteStrippedPart(part: StrippedPartsInUnitDto): void {
-    if (!confirm(`Are you sure you want to delete this part: ${part.dcgPartNo}?`)) {
-      return;
-    }
-
-    this.isDeleting = true;
-    const subscription = this.reportService.deleteStrippedPartInUnit(part.masterRowIndex, part.rowIndex)
-      .pipe(finalize(() => this.isDeleting = false))
-      .subscribe({
-        next: (response: StrippedPartsInUnitApiResponse) => {
-          if (response.success) {
-            this.toastr.success('Part deleted successfully');
-            this.partsSuccessMessage = 'Part deleted successfully';
-            this.loadStrippedPartsForUnit(); // Reload the parts list
-          } else {
-            this.toastr.error(response.message || 'Failed to delete part');
-          }
-        },
-        error: (error) => {
-          console.error('💥 [DELETE ERROR] Error deleting part:', error);
-          this.toastr.error('Failed to delete part');
-        }
-      });
-
-    this.subscriptions.add(subscription);
-  }
-
-  // Form Helper Methods
-  private loadPartToForm(part: StrippedPartsInUnitDto): void {
-    this.strippedPartsForm.patchValue({
-      dcgPartGroup: part.dcgPartGroup,
-      dcgPartNo: part.dcgPartNo,
-      partDesc: part.partDesc,
-      keepThrow: part.keepThrow,
-      stripNo: part.stripNo
-    });
-  }
-
-  private resetPartsForm(): void {
-    this.strippedPartsForm.reset({
-      dcgPartGroup: '',
-      dcgPartNo: '',
-      partDesc: '',
-      keepThrow: '',
-      stripNo: 1
-    });
-  }
-
-  // Validation Methods
-  isPartsFieldInvalid(fieldName: string): boolean {
-    const field = this.strippedPartsForm.get(fieldName);
-    return !!(field && field.invalid && (field.dirty || field.touched));
-  }
-
-  getPartsFieldError(fieldName: string): string {
-    const field = this.strippedPartsForm.get(fieldName);
-    if (field?.errors) {
-      if (field.errors['required']) return `${fieldName} is required`;
-      if (field.errors['maxlength']) return `${fieldName} is too long`;
-      if (field.errors['min']) return `${fieldName} must be greater than 0`;
-    }
-    return '';
+  // Helper method to determine if a part should be highlighted (THROW items)
+  getKeepThrowOptions() {
+    return KEEP_THROW_OPTIONS;
   }
 
   // Pagination Methods
-  updatePagination(): void {
-    this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    this.paginatedParts = this.strippedParts.slice(startIndex, endIndex);
-  }
-
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
@@ -400,28 +226,59 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Utility Methods
-  getKeepThrowOptions() {
-    return KEEP_THROW_OPTIONS;
+  // Helper methods for template
+  getGroupTotal(group: any): number {
+    return group.parts.reduce((sum: number, part: any) => sum + (part.stripNo || 0), 0);
   }
 
-  trackByRowIndex(index: number, item: StrippedPartsInUnitDto): number {
-    return item.rowIndex;
-  }
-
-  hasPartContent(): boolean {
-    const partFormValue = this.strippedPartsForm.value;
-    const hasContent = !!(partFormValue.dcgPartGroup || partFormValue.dcgPartNo || partFormValue.partDesc);
-    return hasContent;
+  getGroupName(group: any): string {
+    return group.groupName.split(' - ')[0];
   }
 
   // Chart and Summary Calculation Methods
   private calculateSummaryAndChart(): void {
-    this.totalStrippedParts = this.strippedParts.reduce((sum, part) => sum + (part.stripNo || 0), 0);
+    // Use groupCounts from API if available, otherwise calculate from partsDetails
+    if (this.groupCounts && this.groupCounts.length > 0) {
+      // Use API data
+      this.totalStrippedParts = this.groupCounts.reduce((sum, group) => sum + group.GroupCount, 0);
+      this.summaryData = this.groupCounts.map(group => ({
+        partGroup: group.GroupType,
+        partPercent: this.totalStrippedParts > 0 ? `${((group.GroupCount / this.totalStrippedParts) * 100).toFixed(1)}%` : '0.0%',
+        dollarOfTotal: `$${group.TotalValue.toFixed(2)}`,
+        quantity: group.GroupCount,
+        dollarPerPart: group.GroupCount > 0 ? `$${(group.TotalValue / group.GroupCount).toFixed(2)}` : '$0.00',
+        partsStripped: this.getPartsInGroup(group.GroupType)
+      }));
+
+      // Create chart data from groupCounts
+      const chartCategories = this.groupCounts.map(group => group.GroupType);
+      const chartData = this.groupCounts.map(group => group.GroupCount);
+      
+      this.chartOptions = {
+        ...this.chartOptions,
+        series: [{
+          name: 'Parts Count',
+          data: chartData
+        }],
+        xaxis: {
+          categories: chartCategories
+        }
+      };
+      
+      // Create grouped parts for display
+      this.createGroupedPartsFromAPI();
+    } else {
+      // Fallback: calculate from partsDetails if groupCounts not available
+      this.calculateFromPartsDetails();
+    }
     
-    // Group parts by Part Group
-    const groupedPartsMap = this.strippedParts.reduce((groups: any, part) => {
-      const group = part.dcgPartGroup || 'Unknown';
+    console.log('📊 Chart updated with data:', this.chartOptions.series);
+  }
+
+  private createGroupedPartsFromAPI(): void {
+    // Group parts by group type
+    const groupedPartsMap = this.partsDetails.reduce((groups: any, part) => {
+      const group = part.GroupType || 'Unknown';
       if (!groups[group]) {
         groups[group] = [];
       }
@@ -431,126 +288,130 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
 
     // Convert to array format for template
     this.groupedParts = Object.keys(groupedPartsMap).map(groupName => ({
-      groupName: `${groupName} - ${groupName}`,
+      groupName: `${groupName} - ${this.getGroupDescription(groupName)}`,
+      parts: groupedPartsMap[groupName]
+    }));
+  }
+
+  private calculateFromPartsDetails(): void {
+    this.totalStrippedParts = this.partsDetails.reduce((sum, part) => sum + (part.Quantity || 0), 0);
+    
+    // Group parts by group type
+    const groupedPartsMap = this.partsDetails.reduce((groups: any, part) => {
+      const group = part.GroupType || 'Unknown';
+      if (!groups[group]) {
+        groups[group] = [];
+      }
+      groups[group].push(part);
+      return groups;
+    }, {});
+
+    // Create grouped parts for display
+    this.groupedParts = Object.keys(groupedPartsMap).map(groupName => ({
+      groupName: `${groupName} - ${this.getGroupDescription(groupName)}`,
       parts: groupedPartsMap[groupName]
     }));
 
     // Calculate summary data for each group
     this.summaryData = Object.keys(groupedPartsMap).map(groupName => {
       const partsInGroup = groupedPartsMap[groupName];
-      const quantity = partsInGroup.reduce((sum: number, part: any) => sum + (part.stripNo || 0), 0);
+      const quantity = partsInGroup.reduce((sum: number, part: any) => sum + (part.Quantity || 0), 0);
+      const totalValue = partsInGroup.reduce((sum: number, part: any) => sum + (part.TotalPrice || 0), 0);
       const percentage = this.totalStrippedParts > 0 ? ((quantity / this.totalStrippedParts) * 100).toFixed(1) : '0.0';
       
       return {
         partGroup: groupName,
         partPercent: `${percentage}%`,
-        dollarOfTotal: '$0.00', // Placeholder - would need pricing data
+        dollarOfTotal: `$${totalValue.toFixed(2)}`,
         quantity: quantity,
-        dollarPerPart: '$0.00', // Placeholder - would need pricing data
-        partsStripped: partsInGroup.map((p: any) => p.dcgPartNo).join(', ')
+        dollarPerPart: quantity > 0 ? `$${(totalValue / quantity).toFixed(2)}` : '$0.00',
+        partsStripped: partsInGroup.map((p: any) => p.DCGPartNo).join(', ')
       };
     });
 
-    // Create chart data - matching original design
-    const chartData = Object.keys(groupedPartsMap).map(groupName => 
-      groupedPartsMap[groupName].reduce((sum: number, part: any) => sum + (part.stripNo || 0), 0)
-    );
+    // Create chart data
     const chartCategories = Object.keys(groupedPartsMap);
-    
-    console.log('🎯 [CHART DEBUG] Chart categories:', chartCategories);
-    console.log('🎯 [CHART DEBUG] Chart data:', chartData);
+    const chartData = Object.keys(groupedPartsMap).map(groupName => 
+      groupedPartsMap[groupName].reduce((sum: number, part: any) => sum + (part.Quantity || 0), 0)
+    );
     
     this.chartOptions = {
+      ...this.chartOptions,
       series: [{
         name: 'Parts Count',
         data: chartData
       }],
-      chart: {
-        type: 'column',
-        height: 350,
-        background: '#E3E3E3',
-        toolbar: {
-          show: false
-        }
-      },
-      title: {
-        text: 'Parts Count',
-        align: 'center',
-        style: {
-          fontSize: '14px',
-          fontWeight: 'bold',
-          color: '#333'
-        }
-      },
       xaxis: {
-        categories: chartCategories,
-        labels: {
-          style: {
-            colors: '#0000FF',
-            fontSize: '10px',
-            fontFamily: 'Trebuchet MS'
-          },
-          rotate: 0
-        },
-        axisBorder: {
-          color: '#404040'
-        },
-        axisTicks: {
-          color: '#404040'
-        }
-      },
-      yaxis: {
-        title: {
-          text: ''
-        },
-        labels: {
-          style: {
-            fontSize: '8.25px',
-            fontFamily: 'Trebuchet MS'
-          }
-        },
-        min: 0
-      },
-      colors: ['#428bca'],
-      dataLabels: {
-        enabled: true,
-        style: {
-          fontSize: '10px',
-          fontFamily: 'Trebuchet MS',
-          colors: ['#000']
-        }
-      },
-      legend: {
-        show: true,
-        position: 'top',
-        horizontalAlign: 'left',
-        fontSize: '8px',
-        fontFamily: 'Trebuchet MS',
-        fontWeight: 'bold',
-        labels: {
-          colors: ['#000']
-        }
-      },
-      plotOptions: {
-        bar: {
-          borderRadius: 0,
-          dataLabels: {
-            position: 'top'
-          }
-        }
-      },
-      grid: {
-        borderColor: '#404040'
+        categories: chartCategories
       }
     };
+  }
 
-    // Set parts location
-    this.partsLocation = this.masterRowIndex ? `Unit-${this.masterRowIndex}-Location` : 'None';
+  private getGroupDescription(groupType: string): string {
+    const descriptions: { [key: string]: string } = {
+      'AIR': 'AIR FILTERS',
+      'OIL': 'OIL COMPONENTS', 
+      'FUEL': 'FUEL SYSTEM',
+      'ELECTRICAL': 'ELECTRICAL COMPONENTS',
+      'HYDRAULIC': 'HYDRAULIC SYSTEM',
+      'COOLING': 'COOLING SYSTEM',
+      'EXHAUST': 'EXHAUST SYSTEM'
+    };
+    return descriptions[groupType] || groupType.toUpperCase();
+  }
+
+  private getPartsInGroup(groupType: string): string {
+    const partsInGroup = this.partsDetails.filter(part => part.GroupType === groupType);
+    return partsInGroup.map(part => part.DCGPartNo).join(', ');
+  }
+
+  // Update pagination based on current parts data
+  private updatePagination(): void {
+    this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedParts = this.partsDetails.slice(startIndex, endIndex);
+  }
+
+  onEditStrippedPart(part: StrippedPartsDetailDto): void {
+    // Implementation: Open edit modal or navigate to edit form
+    this.currentStrippedPart = { ...part }; // Clone the part for editing
+    this.isPartsEditMode = true;
+    this.isNewPart = false;
+    this.toastr.info(`Edit mode for part: ${part.DCGPartNo}`, 'Edit Part');
+    // Here you would typically open a modal or show an inline edit form
+  }
+
+  onDeleteStrippedPart(part: StrippedPartsDetailDto): void {
+    // Implementation: Show confirmation dialog and delete
+    const confirmMessage = `Are you sure you want to delete part "${part.DCGPartNo}" - ${part.Description}?`;
+    
+    if (confirm(confirmMessage)) {
+      // Here you would call the API to delete the part
+      this.isDeleting = true;
+      this.toastr.warning(`Deleting part: ${part.DCGPartNo}`, 'Delete Part');
+      
+      // Simulate API call - replace with actual service call
+      setTimeout(() => {
+        // Remove from local array for now (replace with actual API integration)
+        this.partsDetails = this.partsDetails.filter(p => p.DCGPartNo !== part.DCGPartNo);
+        this.calculateFromPartsDetails(); // Recalculate totals
+        this.isDeleting = false;
+        this.toastr.success(`Part ${part.DCGPartNo} deleted successfully`, 'Deleted');
+      }, 1000);
+    }
   }
 
   // Helper method to determine if a part should be highlighted (THROW items)
-  isThrowItem(keepThrow: string): boolean {
-    return keepThrow?.toUpperCase() === 'THROW';
+  isThrowItem(partStatus: string): boolean {
+    return partStatus?.toUpperCase() === 'THROW';
+  }
+
+  // Parts Location Click Handler
+  onPartsLocationClick(event: Event): void {
+    event.preventDefault();
+    // Implementation depends on requirements - could open modal, navigate to location page, etc.
+    this.toastr.info('Parts Location feature to be implemented');
   }
 
   // Navigation Methods

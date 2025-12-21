@@ -48,6 +48,84 @@ export interface StrippedUnitsStatusApiResponse {
   error?: string;
 }
 
+// Legacy interface for backward compatibility
+export interface StrippedPartsInUnitDto {
+  rowIndex?: number;
+  dcgPartGroup?: string;
+  dcgPartNo?: string;
+  partDesc?: string;
+  keepThrow?: string;
+  stripNo?: number;
+  masterRowIndex?: number;
+  lastModifiedBy?: string;
+  lastModifiedOn?: Date;
+  createdBy?: string;
+  createdOn?: Date;
+}
+
+// Legacy response interface for backward compatibility
+export interface StrippedPartsInUnitListResponse {
+  success: boolean;
+  data: StrippedPartsInUnitDto[];
+  totalRecords: number;
+  message?: string;
+  error?: string;
+}
+export interface StrippedPartsDetailDto {
+  DCGPartNo: string;
+  BOMPartNo: string;
+  Description: string;
+  PartStatus: string;
+  Quantity: number;
+  UnitPrice: number;
+  TotalPrice: number;
+  GroupType: string;
+  PartLocation: string;
+  SupplierInfo?: string;
+  LastModifiedBy: string;
+  LastModifiedOn?: Date;
+  CreatedBy: string;
+  CreatedOn?: Date;
+}
+
+export interface StrippedPartsGroupCountDto {
+  GroupType: string;
+  GroupCount: number;
+  TotalValue: number;
+}
+
+export interface StrippedPartsCostAnalysisDto {
+  PartPercent: number;
+  DollarOfTotal: number;
+  Quantity: number;
+  DollarPerPart: number;
+  PartsStripped: string;
+}
+
+export interface StrippedPartsLocationDto {
+  LocationCode: string;
+  LocationDescription: string;
+  PartCount: number;
+  TotalValue: number;
+}
+
+export interface StrippedPartsInUnitResponse {
+  MasterRowIndex: number;
+  HasData: boolean;
+  PartsDetails: StrippedPartsDetailDto[];
+  GroupCounts: StrippedPartsGroupCountDto[];
+  CostAnalysis: StrippedPartsCostAnalysisDto[];
+  PartsLocations: StrippedPartsLocationDto[];
+}
+
+// API Response wrapper for Stripped Parts In Unit
+export interface StrippedPartsInUnitApiResponse {
+  success: boolean;
+  data: StrippedPartsInUnitResponse;
+  message?: string;
+  error?: string;
+}
+
 // API Response for single unit operations
 export interface StrippedUnitApiResponse {
   success: boolean;
@@ -73,28 +151,19 @@ export const STRIPPED_UNITS_STATUS_OPTIONS = [
   { value: 'Waiting On Someone else', label: 'Waiting On Someone else' }
 ];
 
-// Stripped Parts In Unit DTO matching backend
+// Legacy DTO for backward compatibility with existing components
 export interface StrippedPartsInUnitDto {
-  masterRowIndex: number;
-  rowIndex: number;
-  dcgPartGroup: string;
-  dcgPartNo: string;
-  partDesc: string;
-  keepThrow: string;
-  stripNo: number;
-  lastModifiedBy: string;
-  createdOn?: Date;
-  lastModifiedOn?: Date;
-  createdBy: string;
-}
-
-// API Response for stripped parts operations
-export interface StrippedPartsInUnitApiResponse {
-  success: boolean;
-  message: string;
   masterRowIndex?: number;
   rowIndex?: number;
-  error?: string;
+  dcgPartGroup?: string;
+  dcgPartNo?: string;
+  partDesc?: string;
+  keepThrow?: string;
+  stripNo?: number;
+  lastModifiedBy?: string;
+  createdOn?: Date;
+  lastModifiedOn?: Date;
+  createdBy?: string;
 }
 
 // API Response for getting stripped parts list

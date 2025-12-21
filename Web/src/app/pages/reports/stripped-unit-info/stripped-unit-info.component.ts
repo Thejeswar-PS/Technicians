@@ -7,9 +7,10 @@ import { AuthService } from 'src/app/modules/auth';
 import { 
   StrippedUnitsStatusDto,
   StrippedUnitApiResponse,
+  StrippedPartsDetailDto,
   StrippedPartsInUnitDto,
+  StrippedPartsInUnitResponse,
   StrippedPartsInUnitApiResponse,
-  StrippedPartsInUnitListResponse,
   KEEP_THROW_OPTIONS,
   StripPartCodeDto,
   StripPartCodeApiResponse
@@ -31,8 +32,8 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
 
   // Data properties
   currentUnit: StrippedUnitsStatusDto | null = null;
-  strippedParts: StrippedPartsInUnitDto[] = [];
-  currentStrippedPart: StrippedPartsInUnitDto | null = null;
+  strippedParts: StrippedPartsDetailDto[] = [];
+  currentStrippedPart: StrippedPartsDetailDto | null = null;
   stripPartCodes: StripPartCodeDto[] = [];
   currentStatusValue: string = '';
   isEditMode: boolean = false;
@@ -286,28 +287,30 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     const subscription = this.reportService.getStrippedPartsInUnit(this.currentUnit.rowIndex)
       .pipe(finalize(() => this.isLoadingParts = false))
       .subscribe({
-        next: (response: StrippedPartsInUnitListResponse) => {
+        next: (response: StrippedPartsInUnitApiResponse) => {
           console.log('📦 [DB RESPONSE] Stripped parts data from database:', response);
-          if (response.success) {
-            this.strippedParts = response.data || [];
+          if (response.success && response.data) {
+            // Use PartsDetails from the new API structure
+            this.strippedParts = response.data.PartsDetails || [];
             console.log('✅ [PARTS DATA] Loaded parts for UI display:', this.strippedParts);
             console.log('📊 [PARTS COUNT] Total parts found:', this.strippedParts.length);
             
-            if (this.strippedParts.length === 0) {
+            if (this.strippedParts.length === 0 || !response.data.HasData) {
               console.log('📭 [PARTS EMPTY] No parts found for this unit in database');
+              this.partsErrorMessage = 'No stripped parts found for this unit.';
             } else {
               console.log('📋 [PARTS DETAILS] Parts breakdown:', this.strippedParts.map(part => ({
-                rowIndex: part.rowIndex,
-                dcgPartGroup: part.dcgPartGroup,
-                dcgPartNo: part.dcgPartNo,
-                partDesc: part.partDesc,
-                stripNo: part.stripNo,
-                keepThrow: part.keepThrow
+                dcgPartNo: part.DCGPartNo,
+                bomPartNo: part.BOMPartNo,
+                description: part.Description,
+                quantity: part.Quantity,
+                partStatus: part.PartStatus,
+                groupType: part.GroupType
               })));
             }
           } else {
-            console.log('❌ [PARTS ERROR] Failed to load parts:', response.message);
-            this.partsErrorMessage = response.message || 'Failed to load stripped parts';
+            console.log('❌ [PARTS ERROR] Failed to load parts:', response.error || response.message);
+            this.partsErrorMessage = response.error || response.message || 'Failed to load stripped parts';
             this.strippedParts = [];
           }
         },
@@ -551,7 +554,7 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     });
   }
 
-  onEditStrippedPart(part: StrippedPartsInUnitDto): void {
+  onEditStrippedPart(part: StrippedPartsDetailDto): void {
     this.isNewPart = false;
     this.isPartsEditMode = true;
     this.currentStrippedPart = part;
@@ -618,13 +621,13 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
       stripNo: partsData.stripNo,
       lastModifiedBy: currentUser?.username || 'System',
       createdBy: currentUser?.username || 'System',
-      createdOn: this.currentStrippedPart?.createdOn || undefined,
+      createdOn: this.currentStrippedPart?.CreatedOn || undefined,
       lastModifiedOn: new Date()
     };
 
     const apiCall = this.isNewPart
       ? this.reportService.saveUpdateStrippedPartsInUnit(partData)
-      : this.reportService.updateStrippedPartsInUnit(partData.masterRowIndex, partData.rowIndex, partData);
+      : this.reportService.updateStrippedPartsInUnit(partData.masterRowIndex || 0, partData.rowIndex || 0, partData);
 
     console.log('💾 [SAVE REQUEST] Attempting to save part data:', partData);
     console.log('🔄 [SAVE REQUEST] API Call type:', this.isNewPart ? 'CREATE' : 'UPDATE');
@@ -660,8 +663,8 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
   }
 
-  onDeleteStrippedPart(part: StrippedPartsInUnitDto): void {
-    if (!confirm(`Are you sure you want to delete this part?\n\nPart: ${part.dcgPartGroup} - ${part.dcgPartNo}\nDescription: ${part.partDesc}`)) {
+  onDeleteStrippedPart(part: StrippedPartsDetailDto): void {
+    if (!confirm(`Are you sure you want to delete this part?\n\nPart: ${part.GroupType} - ${part.DCGPartNo}\nDescription: ${part.Description}`)) {
       return;
     }
 
@@ -669,7 +672,12 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.isDeleting = true;
     this.partsErrorMessage = '';
 
-    const subscription = this.reportService.deleteStrippedPartInUnit(part.masterRowIndex, part.rowIndex)
+    // Use current unit's masterRowIndex and find part index as rowIndex substitute
+    const masterRowIndex = this.currentUnit?.rowIndex || 0;
+    const partIndex = this.strippedParts.findIndex(p => p.DCGPartNo === part.DCGPartNo);
+    const rowIndexSubstitute = partIndex >= 0 ? partIndex + 1 : 0; // Use 1-based index as substitute
+    
+    const subscription = this.reportService.deleteStrippedPartInUnit(masterRowIndex, rowIndexSubstitute)
       .pipe(finalize(() => this.isDeleting = false))
       .subscribe({
         next: (response: StrippedPartsInUnitApiResponse) => {
@@ -692,19 +700,21 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.subscriptions.add(subscription);
   }
 
-  private loadPartToForm(part: StrippedPartsInUnitDto): void {
+  private loadPartToForm(part: StrippedPartsDetailDto): void {
     this.strippedPartsForm.patchValue({
-      masterRowIndex: part.masterRowIndex,
-      rowIndex: part.rowIndex,
-      dcgPartGroup: part.dcgPartGroup,
-      dcgPartNo: part.dcgPartNo,
-      partDesc: part.partDesc,
-      keepThrow: part.keepThrow,
-      stripNo: part.stripNo,
-      lastModifiedBy: part.lastModifiedBy,
-      createdBy: part.createdBy,
-      createdOn: part.createdOn ? new Date(part.createdOn).toLocaleString() : '',
-      lastModifiedOn: part.lastModifiedOn ? new Date(part.lastModifiedOn).toLocaleString() : ''
+      // Use current unit's masterRowIndex, not from part
+      masterRowIndex: this.currentUnit?.rowIndex || 0,
+      rowIndex: 0, // New parts will get rowIndex from backend
+      // Map new API properties to form fields
+      dcgPartGroup: part.GroupType,
+      dcgPartNo: part.DCGPartNo,
+      partDesc: part.Description,
+      keepThrow: part.PartStatus,
+      stripNo: part.Quantity,
+      lastModifiedBy: part.LastModifiedBy,
+      createdBy: part.CreatedBy,
+      createdOn: part.CreatedOn ? new Date(part.CreatedOn).toLocaleString() : '',
+      lastModifiedOn: part.LastModifiedOn ? new Date(part.LastModifiedOn).toLocaleString() : ''
     });
   }
 
@@ -809,12 +819,12 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     return '';
   }
 
-  trackByRowIndex(index: number, item: StrippedPartsInUnitDto): number {
-    return item.rowIndex;
+  trackByRowIndex(index: number, item: StrippedPartsDetailDto): string {
+    return item.DCGPartNo || index.toString();
   }
 
-  trackByPartRowIndex(index: number, item: StrippedPartsInUnitDto): number {
-    return item.rowIndex;
+  trackByPartRowIndex(index: number, item: StrippedPartsDetailDto): string {
+    return item.DCGPartNo || index.toString();
   }
 
   hasPartContent(): boolean {
