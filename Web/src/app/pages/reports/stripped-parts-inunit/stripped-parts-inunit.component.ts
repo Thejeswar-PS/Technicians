@@ -18,6 +18,14 @@ import {
 import { ToastrService } from 'ngx-toastr';
 import { Subscription, finalize } from 'rxjs';
 
+// Interface for unit information
+interface UnitInfo {
+  make: string;
+  model: string;
+  serialNo: string;
+  kva: string;
+}
+
 @Component({
   selector: 'app-stripped-parts-inunit',
   templateUrl: './stripped-parts-inunit.component.html', // Template file path
@@ -37,44 +45,193 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
   currentStrippedPart: StrippedPartsDetailDto | null = null;
   stripPartCodes: StripPartCodeDto[] = [];
   masterRowIndex: number | null = null;
+  unitInfo: UnitInfo | null = null;
 
   // Chart and Summary Data
   public chartOptions: any = {
     series: [],
-    chart: { type: 'column', height: 350 },
-    dataLabels: { enabled: true },
-    plotOptions: {
-      bar: {
-        columnWidth: '50%',
-        dataLabels: {
-          position: 'top'
+    chart: {
+      type: 'bar',
+      height: 350,
+      toolbar: {
+        show: true,
+        tools: {
+          download: true,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false
+        }
+      },
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: {
+          enabled: true,
+          delay: 150
+        },
+        dynamicAnimation: {
+          enabled: true,
+          speed: 350
+        }
+      },
+      events: {
+        dataPointSelection: (event: any, chartContext: any, config: any) => {
+          if (config.dataPointIndex >= 0 && this.groupCounts[config.dataPointIndex]) {
+            const item = this.groupCounts[config.dataPointIndex];
+            this.onChartItemClick(item);
+          }
         }
       }
     },
-    xaxis: { categories: [] },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: '55%',
+        borderRadius: 12,
+        borderRadiusApplication: 'end',
+        borderRadiusWhenStacked: 'last',
+        dataLabels: {
+          position: 'top'
+        },
+        distributed: true,
+        rangeBarOverlap: true,
+        rangeBarGroupRows: false
+      }
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: function (val: any) {
+        return val;
+      },
+      offsetY: -20,
+      style: {
+        fontSize: '12px',
+        fontFamily: 'inherit',
+        colors: ['#304758']
+      }
+    },
+    xaxis: {
+      categories: [],
+      labels: {
+        rotate: -45,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        showDuplicates: false,
+        trim: false,
+        minHeight: undefined,
+        maxHeight: 120,
+        style: {
+          colors: [],
+          fontSize: '11px',
+          fontFamily: 'inherit',
+          fontWeight: 400,
+          cssClass: 'apexcharts-xaxis-label'
+        },
+        offsetX: 0,
+        offsetY: 0,
+        format: undefined
+      },
+      axisBorder: {
+        show: false
+      },
+      axisTicks: {
+        show: false
+      }
+    },
     yaxis: {
       title: {
-        text: 'Number of Parts'
+        text: 'Number of Parts',
+        style: {
+          color: '#304758',
+          fontSize: '12px',
+          fontFamily: 'inherit',
+          fontWeight: 400
+        }
+      },
+      labels: {
+        style: {
+          colors: '#304758',
+          fontSize: '11px',
+          fontFamily: 'inherit',
+          fontWeight: 400
+        }
       }
     },
-    colors: ['#428bca'],
-    tooltip: {},
+    colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0', '#546E7A', '#26a69a', '#D10CE8'],
+    tooltip: {
+      enabled: true,
+      shared: false,
+      followCursor: false,
+      intersect: false,
+      inverseOrder: false,
+      custom: undefined,
+      fillSeriesColor: false,
+      theme: false,
+      style: {
+        fontSize: '12px',
+        fontFamily: 'inherit'
+      },
+      onDatasetHover: {
+        highlightDataSeries: false
+      },
+      x: {
+        show: true,
+        format: 'dd MMM',
+        formatter: undefined
+      },
+      y: {
+        formatter: function (val: any) {
+          return val + ' parts';
+        },
+        title: {
+          formatter: (seriesName: any) => seriesName + ': '
+        }
+      },
+      z: {
+        formatter: undefined,
+        title: 'Size: '
+      },
+      marker: {
+        show: true
+      }
+    },
     grid: {
-      borderColor: '#e7e7e7'
+      borderColor: '#e7e7e7',
+      row: {
+        colors: ['#f3f3f3', 'transparent'],
+        opacity: 0.5
+      }
     },
     title: {
-      text: 'Stripped Parts Count',
+      text: 'Stripped Parts Count by Category',
       align: 'center',
       style: {
-        fontSize: '14px',
-        fontWeight: 'bold'
+        fontSize: '16px',
+        fontWeight: 'bold',
+        fontFamily: 'inherit',
+        color: '#263238'
       }
+    },
+    legend: {
+      show: false
     }
   };
   summaryData: any[] = [];
   totalStrippedParts: number = 0;
   partsLocation: string = '';
   groupedParts: any[] = [];
+
+  // Chart colors - same as stripped units status
+  private chartColors = [
+    '#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0',
+    '#546E7A', '#26a69a', '#D10CE8', '#FF6C00', '#1E90FF',
+    '#FF1493', '#32CD32', '#FFD700', '#9370DB', '#FF6347',
+    '#14b8a6', '#f97316', '#a855f7', '#22c55e', '#3b82f6'
+  ];
 
   // Loading and error states
   isLoading: boolean = false;
@@ -117,18 +274,39 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log('StrippedPartsInunitComponent - ngOnInit called');
     this.initializeForms();
     this.loadStripPartCodes();
     
-    // Get masterRowIndex from route parameters
+    // Handle both route parameters and query parameters like legacy ASP.NET version
     this.route.params.subscribe(params => {
       if (params['masterRowIndex']) {
+        // Route parameter approach: /reports/stripped-parts-inunit/3637
         this.masterRowIndex = +params['masterRowIndex'];
         this.loadStrippedPartsData(this.masterRowIndex);
-      } else {
-        console.warn('No masterRowIndex provided in route parameters');
-        this.errorMessage = 'No unit specified. Please provide a masterRowIndex parameter in the URL (e.g., /reports/stripped-parts-inunit/12345) or select a unit from the stripped units status page.';
+      }
+    });
+    
+    // Also check query parameters like legacy ASP.NET version
+    this.route.queryParams.subscribe(params => {
+      // Extract unit information from query parameters
+      if (params['Make'] || params['Model'] || params['SNo'] || params['KVA']) {
+        this.unitInfo = {
+          make: params['Make'] || '',
+          model: params['Model'] || '',
+          serialNo: params['SNo'] || '',
+          kva: params['KVA'] || ''
+        };
+      }
+      
+      if (params['MasterRowIndex'] && !this.masterRowIndex) {
+        // Query parameter approach: /reports/stripped-parts-inunit?MasterRowIndex=3637&Make=POWERWARE...
+        this.masterRowIndex = +params['MasterRowIndex'];
+        this.loadStrippedPartsData(this.masterRowIndex);
+      }
+      
+      // If no masterRowIndex found in either route or query params
+      if (!this.masterRowIndex && !params['MasterRowIndex']) {
+        this.errorMessage = 'No unit specified. Please provide a MasterRowIndex parameter in the URL (e.g., /reports/stripped-parts-inunit?MasterRowIndex=12345) or select a unit from the stripped units status page.';
       }
     });
   }
@@ -150,7 +328,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
 
   // Load stripped parts data from API
   private loadStrippedPartsData(masterRowIndex: number): void {
-    console.log('🔄 Loading stripped parts data for masterRowIndex:', masterRowIndex);
     this.isLoadingParts = true;
     this.errorMessage = '';
     this.partsErrorMessage = '';
@@ -160,32 +337,32 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response: StrippedPartsInUnitApiResponse) => {
           if (response.success && response.data) {
-            console.log('✅ Stripped parts data loaded successfully:', response.data);
             this.strippedPartsResponse = response.data;
-            this.partsDetails = response.data.PartsDetails || [];
-            this.groupCounts = response.data.GroupCounts || [];
-            this.costAnalysis = response.data.CostAnalysis || [];
-            this.partsLocations = response.data.PartsLocations || [];
             
-            if (!response.data.HasData) {
+            // Map API response properties to component properties
+            this.partsDetails = response.data.partsDetails || [];
+            this.groupCounts = response.data.groupCounts || [];
+            this.costAnalysis = response.data.costAnalysis || [];
+            this.partsLocations = response.data.partsLocations || [];
+            
+            if (!response.data.hasData || this.partsDetails.length === 0) {
               this.partsErrorMessage = 'No stripped parts found for this unit.';
             } else {
               this.totalItems = this.partsDetails.length;
+              
               this.calculateSummaryAndChart();
               this.updatePagination();
               
               // Set parts location from first location if available
               if (this.partsLocations.length > 0) {
-                this.partsLocation = this.partsLocations[0].LocationDescription;
+                this.partsLocation = this.partsLocations[0].partsLocation || this.partsLocations[0].locationDescription || '';
               }
             }
           } else {
-            console.error('❌ Failed to load stripped parts data:', response.error || response.message);
             this.partsErrorMessage = response.error || response.message || 'Failed to load stripped parts data';
           }
         },
         error: (error) => {
-          console.error('❌ Error loading stripped parts data:', error);
           this.partsErrorMessage = 'Error loading stripped parts data. Please try again.';
           this.toastr.error('Failed to load stripped parts data', 'Error');
         }
@@ -226,33 +403,42 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Helper methods for template
-  getGroupTotal(group: any): number {
-    return group.parts.reduce((sum: number, part: any) => sum + (part.stripNo || 0), 0);
-  }
-
-  getGroupName(group: any): string {
-    return group.groupName.split(' - ')[0];
-  }
-
   // Chart and Summary Calculation Methods
   private calculateSummaryAndChart(): void {
     // Use groupCounts from API if available, otherwise calculate from partsDetails
     if (this.groupCounts && this.groupCounts.length > 0) {
-      // Use API data
-      this.totalStrippedParts = this.groupCounts.reduce((sum, group) => sum + group.GroupCount, 0);
-      this.summaryData = this.groupCounts.map(group => ({
-        partGroup: group.GroupType,
-        partPercent: this.totalStrippedParts > 0 ? `${((group.GroupCount / this.totalStrippedParts) * 100).toFixed(1)}%` : '0.0%',
-        dollarOfTotal: `$${group.TotalValue.toFixed(2)}`,
-        quantity: group.GroupCount,
-        dollarPerPart: group.GroupCount > 0 ? `$${(group.TotalValue / group.GroupCount).toFixed(2)}` : '$0.00',
-        partsStripped: this.getPartsInGroup(group.GroupType)
-      }));
+      // Use API data - handle both database and API property formats
+      this.totalStrippedParts = this.groupCounts.reduce((sum, group) => {
+        const count = group.count || group.PartsCount || group.GroupCount || 0;
+        return sum + count;
+      }, 0);
+      
+      this.summaryData = this.groupCounts.map(group => {
+        const partGroup = group.dcgPartGroup || group.DCGPartGroup || group.GroupType || 'Unknown';
+        const count = group.count || group.PartsCount || group.GroupCount || 0;
+        return {
+          partGroup: partGroup,
+          partPercent: this.totalStrippedParts > 0 ? `${((count / this.totalStrippedParts) * 100).toFixed(1)}%` : '0.0%',
+          dollarOfTotal: '$0.00',
+          quantity: count,
+          dollarPerPart: '$0.00',
+          partsStripped: this.getPartsInGroup(partGroup)
+        };
+      });
 
-      // Create chart data from groupCounts
-      const chartCategories = this.groupCounts.map(group => group.GroupType);
-      const chartData = this.groupCounts.map(group => group.GroupCount);
+      // Create chart data from groupCounts - handle both formats
+      const chartCategories = this.groupCounts.map(group => {
+        const partGroup = group.dcgPartGroup || group.DCGPartGroup || group.GroupType || 'Unknown';
+        return partGroup.split(' - ')[0]; // Get the short name (e.g., 'TRX' from 'TRX - TRANSFORMERS')
+      });
+      const chartData = this.groupCounts.map((group, index) => {
+        const count = group.count || group.PartsCount || group.GroupCount || 0;
+        return {
+          x: chartCategories[index],
+          y: count,
+          fillColor: this.chartColors[index % this.chartColors.length]
+        };
+      });
       
       this.chartOptions = {
         ...this.chartOptions,
@@ -261,6 +447,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
           data: chartData
         }],
         xaxis: {
+          ...this.chartOptions.xaxis,
           categories: chartCategories
         }
       };
@@ -271,14 +458,12 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
       // Fallback: calculate from partsDetails if groupCounts not available
       this.calculateFromPartsDetails();
     }
-    
-    console.log('📊 Chart updated with data:', this.chartOptions.series);
   }
 
   private createGroupedPartsFromAPI(): void {
-    // Group parts by group type
+    // Group parts by group type using both database and API property names
     const groupedPartsMap = this.partsDetails.reduce((groups: any, part) => {
-      const group = part.GroupType || 'Unknown';
+      const group = part.group || part.Group || part.GroupType || 'Unknown';
       if (!groups[group]) {
         groups[group] = [];
       }
@@ -288,17 +473,16 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
 
     // Convert to array format for template
     this.groupedParts = Object.keys(groupedPartsMap).map(groupName => ({
-      groupName: `${groupName} - ${this.getGroupDescription(groupName)}`,
+      groupName: groupName,
       parts: groupedPartsMap[groupName]
     }));
   }
 
   private calculateFromPartsDetails(): void {
-    this.totalStrippedParts = this.partsDetails.reduce((sum, part) => sum + (part.Quantity || 0), 0);
+    this.totalStrippedParts = this.partsDetails.reduce((sum, part) => sum + (part.stripNo || part.Quantity || 0), 0);
     
-    // Group parts by group type
     const groupedPartsMap = this.partsDetails.reduce((groups: any, part) => {
-      const group = part.GroupType || 'Unknown';
+      const group = part.group || part.Group || part.GroupType || 'Unknown';
       if (!groups[group]) {
         groups[group] = [];
       }
@@ -306,16 +490,14 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
       return groups;
     }, {});
 
-    // Create grouped parts for display
     this.groupedParts = Object.keys(groupedPartsMap).map(groupName => ({
       groupName: `${groupName} - ${this.getGroupDescription(groupName)}`,
       parts: groupedPartsMap[groupName]
     }));
 
-    // Calculate summary data for each group
     this.summaryData = Object.keys(groupedPartsMap).map(groupName => {
       const partsInGroup = groupedPartsMap[groupName];
-      const quantity = partsInGroup.reduce((sum: number, part: any) => sum + (part.Quantity || 0), 0);
+      const quantity = partsInGroup.reduce((sum: number, part: any) => sum + (part.stripNo || part.Quantity || 0), 0);
       const totalValue = partsInGroup.reduce((sum: number, part: any) => sum + (part.TotalPrice || 0), 0);
       const percentage = this.totalStrippedParts > 0 ? ((quantity / this.totalStrippedParts) * 100).toFixed(1) : '0.0';
       
@@ -361,8 +543,14 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
   }
 
   private getPartsInGroup(groupType: string): string {
-    const partsInGroup = this.partsDetails.filter(part => part.GroupType === groupType);
-    return partsInGroup.map(part => part.DCGPartNo).join(', ');
+    // Use correct property names from both database and API response formats
+    const partsInGroup = this.partsDetails.filter(part => {
+      const partGroup = part.group || part.Group || part.GroupType || '';
+      return partGroup === groupType;
+    });
+    return partsInGroup.map(part => {
+      return part.dcgPartNo || part.DCGPartNo || '';
+    }).join(', ');
   }
 
   // Update pagination based on current parts data
@@ -370,6 +558,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
     this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;
+    
     this.paginatedParts = this.partsDetails.slice(startIndex, endIndex);
   }
 
@@ -404,7 +593,20 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
 
   // Helper method to determine if a part should be highlighted (THROW items)
   isThrowItem(partStatus: string): boolean {
-    return partStatus?.toUpperCase() === 'THROW';
+    return partStatus?.trim().toUpperCase() === 'THROW';
+  }
+
+  // Chart interaction handler
+  onChartItemClick(item: StrippedPartsGroupCountDto): void {
+    // Scroll to the specific group section
+    const groupName = item.dcgPartGroup || item.DCGPartGroup || item.GroupType || 'Unknown';
+    const element = document.querySelector(`[data-group="${groupName}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    
+    // Optional: Show a toast message
+    this.toastr.info(`Showing ${item.count || item.PartsCount || item.GroupCount || 0} parts in ${groupName}`, 'Group Selected');
   }
 
   // Parts Location Click Handler

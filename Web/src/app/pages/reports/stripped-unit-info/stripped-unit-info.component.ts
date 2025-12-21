@@ -291,11 +291,11 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
           console.log('📦 [DB RESPONSE] Stripped parts data from database:', response);
           if (response.success && response.data) {
             // Use PartsDetails from the new API structure
-            this.strippedParts = response.data.PartsDetails || [];
+            this.strippedParts = response.data.partsDetails || [];
             console.log('✅ [PARTS DATA] Loaded parts for UI display:', this.strippedParts);
             console.log('📊 [PARTS COUNT] Total parts found:', this.strippedParts.length);
             
-            if (this.strippedParts.length === 0 || !response.data.HasData) {
+            if (this.strippedParts.length === 0 || !response.data.hasData) {
               console.log('📭 [PARTS EMPTY] No parts found for this unit in database');
               this.partsErrorMessage = 'No stripped parts found for this unit.';
             } else {

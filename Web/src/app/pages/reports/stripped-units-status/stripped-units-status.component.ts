@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonService } from 'src/app/core/services/common.service';
@@ -141,7 +141,8 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
     private fb: FormBuilder,
     private router: Router,
     private auth: AuthService,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private ngZone: NgZone
   ) {
     this.filterForm = this.fb.group({
       status: ['All'],
@@ -458,6 +459,45 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
     });
     
     console.log('🧭 [NAVIGATION] Navigating to stripped-unit-info with query params');
+  }
+
+  /**
+   * Redirects to the stripped parts in unit page with the unit parameters
+   * Matches the legacy ASP.NET URL format: /StrippedPartsInUnit.aspx?Make=POWERWARE&Model=9330&SNo=EX112AXX03&KVA=20&MasterRowIndex=3637
+   */
+  redirectToStrippedParts(event: Event, unit: StrippedUnitsStatusItem): void {
+    // Prevent default navigation behavior
+    event.preventDefault();
+    event.stopPropagation();
+    
+    console.log('🎯 [REDIRECT] User clicked on Make for unit:', unit);
+    console.log('📊 [REDIRECT] Unit details:', {
+      rowIndex: unit.rowIndex,
+      make: unit.make,
+      model: unit.model,
+      serialNo: unit.serialNo,
+      kva: unit.kva
+    });
+
+    // Navigate using query parameters exactly like legacy ASP.NET version
+    // Legacy URL: ../StrippedPartsInUnit.aspx?Make=POWERWARE&Model=9330&SNo=EX112AXX03&KVA=20&MasterRowIndex=3637
+    this.router.navigate(['/reports/stripped-parts-inunit'], {
+      queryParams: {
+        Make: unit.make,
+        Model: unit.model,
+        SNo: unit.serialNo,
+        KVA: unit.kva,
+        MasterRowIndex: unit.rowIndex
+      }
+    });
+    
+    console.log('🧭 [NAVIGATION] Navigating to /reports/stripped-parts-inunit with legacy-style query params:', {
+      Make: unit.make,
+      Model: unit.model,
+      SNo: unit.serialNo,
+      KVA: unit.kva,
+      MasterRowIndex: unit.rowIndex
+    });
   }
 
   backToList(): void {

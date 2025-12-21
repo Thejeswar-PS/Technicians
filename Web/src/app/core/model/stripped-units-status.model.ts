@@ -72,50 +72,80 @@ export interface StrippedPartsInUnitListResponse {
   error?: string;
 }
 export interface StrippedPartsDetailDto {
-  DCGPartNo: string;
-  BOMPartNo: string;
-  Description: string;
-  PartStatus: string;
-  Quantity: number;
-  UnitPrice: number;
-  TotalPrice: number;
-  GroupType: string;
-  PartLocation: string;
+  // Database format (uppercase)
+  DCGPartNo?: string;
+  PartDesc?: string;
+  KeepThrow?: string;
+  StripNo?: number;
+  RowIndex?: number;
+  Group?: string; // Note: this might be [Group] in SQL
+  // API format (lowercase)
+  dcgPartNo?: string;
+  partDesc?: string;
+  keepThrow?: string;
+  stripNo?: number;
+  rowIndex?: number;
+  group?: string;
+  // Legacy properties for compatibility
+  BOMPartNo?: string;
+  Description?: string;
+  PartStatus?: string;
+  Quantity?: number;
+  UnitPrice?: number;
+  TotalPrice?: number;
+  GroupType?: string;
+  PartLocation?: string;
   SupplierInfo?: string;
-  LastModifiedBy: string;
+  LastModifiedBy?: string;
   LastModifiedOn?: Date;
-  CreatedBy: string;
+  CreatedBy?: string;
   CreatedOn?: Date;
 }
 
 export interface StrippedPartsGroupCountDto {
-  GroupType: string;
-  GroupCount: number;
-  TotalValue: number;
+  // Database format (uppercase)
+  DCGPartGroup?: string;
+  PartsCount?: number;
+  KeepThrow?: string;
+  // API format (lowercase)
+  dcgPartGroup?: string;
+  count?: number;
+  keepThrow?: string;
+  // Legacy property names for compatibility
+  GroupType?: string;
+  GroupCount?: number;
+  TotalValue?: number;
 }
 
 export interface StrippedPartsCostAnalysisDto {
-  PartPercent: number;
-  DollarOfTotal: number;
-  Quantity: number;
-  DollarPerPart: number;
-  PartsStripped: string;
+  partPercent: number;
+  dollarOfTotal: number;
+  quantity: number;
+  dollarPerPart: number;
+  partsStripped: string;
+  // Legacy property names for compatibility
+  PartPercent?: number;
+  DollarOfTotal?: number;
+  Quantity?: number;
+  DollarPerPart?: number;
+  PartsStripped?: string;
 }
 
 export interface StrippedPartsLocationDto {
-  LocationCode: string;
-  LocationDescription: string;
-  PartCount: number;
-  TotalValue: number;
+  partsLocation: string; // matches actual API response
+  locationCode?: string;
+  locationDescription?: string;
+  partCount?: number;
+  totalValue?: number;
 }
 
 export interface StrippedPartsInUnitResponse {
-  MasterRowIndex: number;
-  HasData: boolean;
-  PartsDetails: StrippedPartsDetailDto[];
-  GroupCounts: StrippedPartsGroupCountDto[];
-  CostAnalysis: StrippedPartsCostAnalysisDto[];
-  PartsLocations: StrippedPartsLocationDto[];
+  masterRowIndex: number;
+  hasData: boolean;
+  partsDetails: StrippedPartsDetailDto[];
+  groupCounts: StrippedPartsGroupCountDto[];
+  costAnalysis: StrippedPartsCostAnalysisDto[];
+  partsLocations: StrippedPartsLocationDto[];
 }
 
 // API Response wrapper for Stripped Parts In Unit

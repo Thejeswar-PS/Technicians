@@ -472,7 +472,14 @@
                     {{ unit.rowIndex }}
                   </button>
                 </td>
-                <td class="compact-cell text-start single-line-text table-text-medium" [title]="unit.make">{{ unit.make }}</td>
+                <td class="compact-cell text-start single-line-text table-text-medium" [title]="unit.make">
+                  <button type="button" 
+                          class="btn btn-link btn-sm p-0 text-primary fw-bold link-primary" 
+                          (click)="redirectToStrippedParts($event, unit)" 
+                          [title]="'View stripped parts for ' + unit.make">
+                    {{ unit.make }}
+                  </button>
+                </td>
                 <td class="compact-cell text-start multi-line-text table-text-medium" [title]="unit.model">{{ unit.model }}</td>
                 <td class="compact-cell text-start">
                   <span class="fw-semibold serial-number" [title]="unit.serialNo">{{ unit.serialNo }}</span>
