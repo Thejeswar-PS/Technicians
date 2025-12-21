@@ -9,6 +9,8 @@ import { OrderRequestStatusComponent } from './order-request-status/order-reques
 import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.component';
 import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.component';
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
+import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
+import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 
 const routes: Routes = [
   {
@@ -51,6 +53,14 @@ const routes: Routes = [
   {
     path: 'stripped-units-status', 
     component: StrippedUnitsStatusComponent
+  },
+  {
+    path: 'stripped-unit-info', 
+    component: StrippedUnitInfoComponent
+  },
+  {
+    path: 'stripped-parts-inunit', 
+    component: StrippedPartsInunitComponent
   }
 ];
 

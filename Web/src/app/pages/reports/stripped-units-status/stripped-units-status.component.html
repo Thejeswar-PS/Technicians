@@ -105,7 +105,7 @@
               <!-- Interactive Bar Chart -->
               <div *ngIf="currentMakeChartType === 'bar'" class="chart-wrapper">
                 <div class="interactive-bar-chart-container">
-                  <apx-chart
+                  <apx-chart *ngIf="barChartOptions && barChartOptions.series"
                     [series]="barChartOptions.series"
                     [chart]="barChartOptions.chart"
                     [dataLabels]="barChartOptions.dataLabels"
@@ -121,7 +121,7 @@
               </div>              <!-- Interactive Donut Chart -->
               <div *ngIf="currentMakeChartType === 'pie'" class="chart-wrapper">
                 <div class="interactive-donut-chart-container">
-                  <apx-chart
+                  <apx-chart *ngIf="donutChartOptions && donutChartOptions.series"
                     [series]="donutChartOptions.series"
                     [chart]="donutChartOptions.chart"
                     [labels]="donutChartOptions.labels"

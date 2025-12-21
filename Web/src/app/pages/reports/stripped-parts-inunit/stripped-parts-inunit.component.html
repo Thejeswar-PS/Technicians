@@ -1,0 +1,215 @@
+﻿<!-- Stripped Parts In Unit Page -->
+<div class="container-fluid">
+  
+  <!-- Page Header -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="d-flex align-items-center">
+        <button 
+          type="button" 
+          class="btn btn-sm btn-outline-secondary me-3"
+          (click)="goBack()"
+          title="Back to Reports">
+          <i class="fa fa-arrow-left me-1"></i> Back
+        </button>
+        <h2 class="mb-0">Stripped Parts In Unit</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Section -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="row g-3">
+            <div class="col-md-4">
+              <label for="masterRowIndex" class="form-label">Master Row Index *</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="masterRowIndex"
+                formControlName="masterRowIndex"
+                placeholder="Enter Master Row Index"
+                [class.is-invalid]="searchForm.get('masterRowIndex')?.invalid && searchForm.get('masterRowIndex')?.touched">
+              <div class="invalid-feedback" *ngIf="searchForm.get('masterRowIndex')?.invalid && searchForm.get('masterRowIndex')?.touched">
+                Master Row Index is required and must be a positive number
+              </div>
+            </div>
+            <div class="col-md-8 d-flex align-items-end">
+              <button 
+                type="submit" 
+                class="btn btn-primary me-2"
+                [disabled]="isLoadingParts || !searchForm.valid">
+                <i class="fa fa-search me-1" *ngIf="!isLoadingParts"></i>
+                <span class="spinner-border spinner-border-sm me-1" role="status" *ngIf="isLoadingParts"></span>
+                {{ isLoadingParts ? 'Searching...' : 'Search' }}
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-outline-secondary"
+                (click)="onClearSearch()"
+                [disabled]="isLoadingParts">
+                <i class="fa fa-times me-1"></i>Clear
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div *ngIf="masterRowIndex && strippedParts.length > 0">
+    
+    <!-- Chart and Summary Row -->
+    <div class="row mb-4">
+      <!-- Chart Section (Left) -->
+      <div class="col-md-8">
+        <div style="border: 1px solid #ccc; padding: 15px; background: white; min-height: 380px;">
+          <div *ngIf="chartOptions?.series?.length > 0 && chartOptions.series[0].data.length > 0; else noChartData">
+            <apx-chart 
+              [series]="chartOptions.series"
+              [chart]="chartOptions.chart"
+              [title]="chartOptions.title"
+              [xaxis]="chartOptions.xaxis"
+              [yaxis]="chartOptions.yaxis"
+              [colors]="chartOptions.colors"
+              [dataLabels]="chartOptions.dataLabels"
+              [legend]="chartOptions.legend"
+              [plotOptions]="chartOptions.plotOptions"
+              [grid]="chartOptions.grid">
+            </apx-chart>
+          </div>
+          <ng-template #noChartData>
+            <div class="text-center py-5">
+              <div class="mb-3">
+                <i class="fa fa-chart-bar fa-3x text-muted"></i>
+              </div>
+              <h6 class="text-muted">No Chart Data Available</h6>
+              <p class="text-muted">Chart will appear when parts data is loaded</p>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+      
+      <!-- Summary Table Section (Right) -->
+      <div class="col-md-4">
+        <div style="border: 1px solid #ccc; background: white; height: 350px; overflow-y: auto;">
+          <table class="table table-sm table-striped mb-0" style="font-size: 11px;">
+            <thead style="background-color: #4a90e2; color: white;">
+              <tr>
+                <th style="padding: 8px; border: 1px solid #ccc;">Part %</th>
+                <th style="padding: 8px; border: 1px solid #ccc;">$ of Total</th>
+                <th style="padding: 8px; border: 1px solid #ccc;">Quantity</th>
+                <th style="padding: 8px; border: 1px solid #ccc;">$Per Part</th>
+                <th style="padding: 8px; border: 1px solid #ccc; width: 40%;">Parts Stripped</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let summary of summaryData" style="border-bottom: 1px solid #e0e0e0;">
+                <td style="padding: 6px; border: 1px solid #e0e0e0; text-align: center;">{{ summary.partPercent }}</td>
+                <td style="padding: 6px; border: 1px solid #e0e0e0; text-align: center;">{{ summary.dollarOfTotal }}</td>
+                <td style="padding: 6px; border: 1px solid #e0e0e0; text-align: center;">{{ summary.quantity }}</td>
+                <td style="padding: 6px; border: 1px solid #e0e0e0; text-align: center;">{{ summary.dollarPerPart }}</td>
+                <td style="padding: 6px; border: 1px solid #e0e0e0; font-size: 10px; word-wrap: break-word;">{{ summary.partsStripped }}</td>
+              </tr>
+              <tr *ngIf="summaryData.length === 0">
+                <td colspan="5" style="padding: 20px; text-align: center; color: #999;">There are no records available.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="padding: 10px; background-color: #f8f9fa; border-top: 1px solid #e0e0e0; text-align: center;">
+            <small>Parts Location: 
+              <a href="#" style="color: blue; font-size: 11px;">{{ partsLocation || 'None' }}</a>
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Data Table with Grouping -->
+    <div class="row">
+      <div class="col-12">
+        <div style="border: 1px solid #ccc; background: white;">
+          
+          <!-- Group Headers and Data -->
+          <div *ngFor="let group of groupedParts; let i = index">
+            <!-- Group Header -->
+            <div style="background: linear-gradient(to bottom, #e8f4f8, #d1e9f4); padding: 8px; border-bottom: 1px solid #ccc; font-weight: bold; color: #2c5aa0;">
+              <i class="fa fa-minus-square me-2"></i>Group: {{ group.groupName }}
+            </div>
+            
+            <!-- Group Table -->
+            <table class="table table-sm mb-0" style="font-size: 11px;">
+              <thead style="background-color: #4a90e2; color: white;">
+                <tr>
+                  <th style="padding: 8px; border: 1px solid #fff; width: 200px;">DCG Part No</th>
+                  <th style="padding: 8px; border: 1px solid #fff; width: 400px;">Description</th>
+                  <th style="padding: 8px; border: 1px solid #fff; width: 150px;">Strip No</th>
+                  <th style="padding: 8px; border: 1px solid #fff; width: 150px;">Keep or Throw</th>
+                  <th style="padding: 8px; border: 1px solid #fff; width: 120px;">Edit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let part of group.parts" 
+                    [style.color]="isThrowItem(part.keepThrow) ? '#dc3545' : 'inherit'"
+                    style="border-bottom: 1px solid #e0e0e0;">
+                  <td style="padding: 6px; border: 1px solid #e0e0e0;">{{ part.dcgPartNo }}</td>
+                  <td style="padding: 6px; border: 1px solid #e0e0e0;">{{ part.partDesc }}</td>
+                  <td style="padding: 6px; border: 1px solid #e0e0e0; text-align: center;">{{ part.stripNo }}</td>
+                  <td style="padding: 6px; border: 1px solid #e0e0e0; text-align: center; font-weight: bold;"
+                      [style.color]="isThrowItem(part.keepThrow) ? '#dc3545' : '#28a745'">
+                    {{ part.keepThrow }}
+                  </td>
+                  <td style="padding: 6px; border: 1px solid #e0e0e0; text-align: center;">
+                    <a href="#" (click)="onEditStrippedPart(part); $event.preventDefault()" 
+                       style="color: blue; text-decoration: none; font-size: 10px;">Edit</a>
+                    <span style="color: #ccc; margin: 0 4px;">|</span>
+                    <a href="#" (click)="onDeleteStrippedPart(part); $event.preventDefault()" 
+                       style="color: blue; text-decoration: none; font-size: 10px;">Delete</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Table Footer with Total -->
+          <div style="background-color: #f1f5f9; padding: 10px; border-top: 2px solid #4a90e2; font-weight: bold; text-align: center;">
+            Total Stripped Parts: {{ totalStrippedParts }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- No Results Message -->
+  <div *ngIf="masterRowIndex && strippedParts.length === 0 && !isLoadingParts" class="row">
+    <div class="col-12">
+      <div class="alert alert-info text-center">
+        <i class="fa fa-info-circle me-2"></i>
+        No stripped parts found for Master Row Index: <strong>{{ masterRowIndex }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoadingParts" class="row">
+    <div class="col-12 text-center py-5">
+      <div class="spinner-border text-primary me-3" role="status"></div>
+      <span class="fs-5">Loading parts data...</span>
+    </div>
+  </div>
+
+  <!-- Error Messages -->
+  <div *ngIf="errorMessage || partsErrorMessage" class="row">
+    <div class="col-12">
+      <div class="alert alert-danger" role="alert">
+        <i class="fa fa-exclamation-circle me-2"></i>
+        {{ errorMessage || partsErrorMessage }}
+      </div>
+    </div>
+  </div>
+
+</div>

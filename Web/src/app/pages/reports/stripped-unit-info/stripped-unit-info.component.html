@@ -1,0 +1,547 @@
+<div class="card">
+  <div class="card-header border-0 pt-5">
+    <div class="d-flex align-items-center">
+      <button 
+        type="button" 
+        class="btn btn-sm btn-light-primary me-3"
+        (click)="onBack()"
+        title="Back to Stripped Units Status">
+        <i class="fa fa-arrow-left me-1"></i> Back
+      </button>
+      <h3 class="card-title align-items-start flex-column mb-0">
+        <span class="card-label fw-bold fs-3 mb-1">Stripped Unit Information</span>
+        <span class="text-muted fs-7">View and manage individual stripped unit details</span>
+      </h3>
+    </div>
+  </div>
+
+  <div class="card-body py-3">
+    <!-- Success/Error Messages -->
+    <div class="row mb-4" *ngIf="successMessage || errorMessage">
+      <div class="col-12">
+        <div class="alert alert-success" *ngIf="successMessage" role="alert">
+          <i class="fa fa-check-circle me-2"></i>{{ successMessage }}
+        </div>
+        <div class="alert alert-danger" *ngIf="errorMessage" role="alert">
+          <i class="fa fa-exclamation-circle me-2"></i>{{ errorMessage }}
+        </div>
+      </div>
+    </div>
+
+    <!-- Unit Information Form -->
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="card card-flush">
+          <div class="card-header">
+            <h4 class="card-title">
+              <span *ngIf="isNewUnit">New Stripped Unit</span>
+              <span *ngIf="!isNewUnit && currentUnit">Unit Information - Row Index: {{ currentUnit.rowIndex }}</span>
+              <span *ngIf="!isNewUnit && !currentUnit">Unit Information</span>
+            </h4>
+            <div class="card-toolbar" *ngIf="currentUnit && !isNewUnit">
+              <button 
+                type="button" 
+                class="btn btn-sm btn-light-success me-2"
+                [routerLink]="['/reports/stripped-parts-inunit']"
+                [queryParams]="{ masterRowIndex: currentUnit.rowIndex }"
+                title="Manage Stripped Parts">
+                <i class="fa fa-cogs me-1"></i> Manage Parts
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-sm btn-light-primary me-2"
+                (click)="onSave()"
+                [disabled]="isLoading || isSaving || isDeleting">
+                <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+                <i class="fa fa-save me-1" *ngIf="!isSaving"></i> Update
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-sm btn-light-danger me-2"
+                (click)="onDelete()"
+                [disabled]="isLoading || isSaving || isDeleting">
+                <span *ngIf="isDeleting" class="spinner-border spinner-border-sm me-2"></span>
+                <i class="fa fa-trash me-1" *ngIf="!isDeleting"></i> Delete
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="unitInfoForm" (ngSubmit)="onSave()">
+              <div class="row g-4">
+                <!-- Basic Information -->
+                <div class="col-12">
+                  <h5 class="text-primary mb-3">Basic Information</h5>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Make</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="make"
+                    [readonly]="!isFieldEditable()"
+                    [class.is-invalid]="isFieldInvalid('make')"
+                    placeholder="Enter make">
+                  <div class="invalid-feedback" *ngIf="isFieldInvalid('make')">
+                    {{ getFieldError('make') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Model</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="model"
+                    [readonly]="!isFieldEditable()"
+                    [class.is-invalid]="isFieldInvalid('model')"
+                    placeholder="Enter model">
+                  <div class="invalid-feedback" *ngIf="isFieldInvalid('model')">
+                    {{ getFieldError('model') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Serial Number</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="serialNo"
+                    [readonly]="!isFieldEditable()"
+                    [class.is-invalid]="isFieldInvalid('serialNo')"
+                    placeholder="Enter serial number">
+                  <div class="invalid-feedback" *ngIf="isFieldInvalid('serialNo')">
+                    {{ getFieldError('serialNo') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">KVA</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="kva"
+                    [readonly]="!isFieldEditable()"
+                    placeholder="Enter KVA">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Voltage</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="voltage"
+                    [readonly]="!isFieldEditable()"
+                    placeholder="Enter voltage">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Status</label>
+                  <select 
+                    class="form-select"
+                    [value]="currentStatusValue"
+                    (change)="onStatusSelectChange($event)"
+                    [class.is-invalid]="isFieldInvalid('status')">
+                    <option value="">Select Status</option>
+                    <option *ngFor="let status of getStatusOptions()" 
+                            [value]="status.value"
+                            [selected]="status.value === currentStatusValue">
+                      {{ status.label }}
+                    </option>
+                  </select>
+                  
+
+
+                  <div class="invalid-feedback" *ngIf="isFieldInvalid('status')">
+                    {{ getFieldError('status') }}
+                  </div>
+                  
+
+                </div>
+
+                <!-- Purchase Order Information -->
+                <div class="col-12 mt-6">
+                  <h5 class="text-primary mb-3">Purchase Order Information</h5>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">PO Number</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="poNumber"
+                    readonly
+                    placeholder="PO Number (Read-only)">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Shipping PO</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="shippingPO"
+                    readonly
+                    placeholder="Shipping PO (Read-only)">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Unit Cost</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    formControlName="unitCost"
+                    readonly
+                    placeholder="Unit Cost (Read-only)"
+                    step="0.01"
+                    min="0">
+                  <div class="invalid-feedback" *ngIf="isFieldInvalid('unitCost')">
+                    {{ getFieldError('unitCost') }}
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Shipping Cost</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    formControlName="shipCost"
+                    readonly
+                    placeholder="Shipping Cost (Read-only)"
+                    step="0.01"
+                    min="0">
+                </div>
+
+                <!-- Personnel Information -->
+                <div class="col-12 mt-6">
+                  <h5 class="text-primary mb-3">Personnel Information</h5>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Stripped By</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="strippedBy"
+                    [readonly]="!isFieldEditable()"
+                    placeholder="Enter stripped by">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Put Away By</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="putAwayBy"
+                    [readonly]="!isFieldEditable()"
+                    placeholder="Enter put away by">
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Stripped Parts Location</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="partsLocation"
+                    [readonly]="!isFieldEditable()"
+                    placeholder="Enter stripped parts location">
+                </div>
+
+
+
+
+
+
+
+                <!-- Action Buttons for New Units Only -->
+                <div class="col-12 mt-6" *ngIf="isNewUnit && (!isLoading || isSaving)">
+                  <div class="d-flex justify-content-end gap-3">
+                    <button 
+                      type="button" 
+                      class="btn btn-light-secondary"
+                      (click)="onCancel()"
+                      [disabled]="isSaving">
+                      <i class="fa fa-times me-1"></i> Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      class="btn btn-primary"
+                      [disabled]="unitInfoForm.invalid || isSaving">
+                      <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+                      <i class="fa fa-save me-1" *ngIf="!isSaving"></i>
+                      Create Unit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <!-- Loading State -->
+            <div class="d-flex justify-content-center py-10" *ngIf="isLoading">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+
+            <!-- No Unit State -->
+            <div class="text-center py-10" *ngIf="!isLoading && !currentUnit && !isNewUnit">
+              <i class="fa fa-search fs-2x text-muted mb-3"></i>
+              <h5 class="text-muted">No unit selected</h5>
+              <p class="text-muted">Use the search form above to find a specific unit or create a new one.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Parts from Stripped Unit Form -->
+      <div class="col-lg-6">
+        <div class="card card-flush">
+          <div class="card-header">
+            <h4 class="card-title d-flex align-items-center">
+              <i class="fa fa-cogs me-2"></i>
+              Add Parts from Stripped Unit
+            </h4>
+            <div class="text-muted fs-7 mt-1">
+              This section can be used independently to add parts information
+            </div>
+            <div class="card-toolbar" *ngIf="currentUnit && !isNewUnit">
+              <button 
+                type="button" 
+                class="btn btn-sm btn-light-info me-2"
+                (click)="debugLoadParts()"
+                title="Debug: Force reload parts">
+                <i class="fa fa-bug me-1"></i> Debug Parts
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-sm btn-light-primary me-2"
+                (click)="togglePartsSection()"
+                [disabled]="isLoadingParts">
+                <i class="fa" [class.fa-chevron-down]="!showPartsSection" [class.fa-chevron-up]="showPartsSection"></i>
+                {{ showPartsSection ? 'Hide' : 'Show' }} Parts List
+              </button>
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <!-- Existing Parts Display Section -->
+            <div *ngIf="showPartsSection" class="mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-primary mb-0">Existing Stripped Parts</h5>
+                <span class="badge badge-light-primary">{{ strippedParts.length }} parts found</span>
+              </div>
+              
+              <!-- Loading State -->
+              <div *ngIf="isLoadingParts" class="text-center py-4">
+                <div class="spinner-border text-primary me-2" role="status"></div>
+                <span>Loading parts...</span>
+              </div>
+              
+              <!-- Error State -->
+              <div *ngIf="partsErrorMessage && !isLoadingParts" class="alert alert-danger">
+                <i class="fa fa-exclamation-circle me-2"></i>{{ partsErrorMessage }}
+              </div>
+              
+              <!-- Parts Table -->
+              <div *ngIf="!isLoadingParts && strippedParts.length > 0" class="table-responsive">
+                <table class="table table-striped table-hover">
+                  <thead class="table-dark">
+                    <tr>
+                      <th>Row #</th>
+                      <th>Part Group</th>
+                      <th>Part No</th>
+                      <th>Description</th>
+                      <th>Qty</th>
+                      <th>Keep/Throw</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let part of strippedParts; trackBy: trackByPartRowIndex">
+                      <td>{{ part.rowIndex }}</td>
+                      <td>{{ part.dcgPartGroup }}</td>
+                      <td>{{ part.dcgPartNo }}</td>
+                      <td>{{ part.partDesc | slice:0:50 }}<span *ngIf="part.partDesc && part.partDesc.length > 50">...</span></td>
+                      <td class="text-center">
+                        <span class="badge badge-light-info">{{ part.stripNo }}</span>
+                      </td>
+                      <td>
+                        <span class="badge" [class]="part.keepThrow === 'Keep' ? 'badge-success' : 'badge-warning'">
+                          {{ part.keepThrow }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="d-flex gap-2">
+                          <button 
+                            type="button" 
+                            class="btn btn-sm btn-light-primary"
+                            (click)="onEditStrippedPart(part)"
+                            title="Edit this part">
+                            <i class="fa fa-edit"></i>
+                          </button>
+                          <button 
+                            type="button" 
+                            class="btn btn-sm btn-light-danger"
+                            (click)="onDeleteStrippedPart(part)"
+                            title="Delete this part">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <!-- No Parts Found -->
+              <div *ngIf="!isLoadingParts && strippedParts.length === 0 && !partsErrorMessage" class="text-center py-4">
+                <div class="text-muted">
+                  <i class="fa fa-inbox fa-2x mb-3"></i>
+                  <h6>No stripped parts found</h6>
+                  <p>Add parts using the form below</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add Part Form - Always Visible -->
+            <form [formGroup]="strippedPartsForm" (ngSubmit)="onSaveStrippedPart()">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label required">DCG Part Group</label>
+                  <select 
+                    class="form-select"
+                    formControlName="dcgPartGroup"
+                    [class.is-invalid]="isPartsFieldInvalid('dcgPartGroup')"
+                    [disabled]="isLoadingStripPartCodes">
+                    <option value="">
+                      <span *ngIf="isLoadingStripPartCodes">Loading...</span>
+                      <span *ngIf="!isLoadingStripPartCodes">Select DCG Part Group</span>
+                    </option>
+                    <option *ngFor="let partCode of stripPartCodes" [value]="partCode.code">
+                      {{ partCode.name }}
+                    </option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('dcgPartGroup')">
+                    {{ getPartsFieldError('dcgPartGroup') }}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label required">DCG Part No</label>
+                  <input 
+                    type="text" 
+                    class="form-control"
+                    formControlName="dcgPartNo"
+                    [class.is-invalid]="isPartsFieldInvalid('dcgPartNo')"
+                    placeholder="Enter DCG part number">
+                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('dcgPartNo')">
+                    {{ getPartsFieldError('dcgPartNo') }}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label required">Number Stripped</label>
+                  <input 
+                    type="number" 
+                    class="form-control"
+                    formControlName="stripNo"
+                    [class.is-invalid]="isPartsFieldInvalid('stripNo')"
+                    placeholder="Enter strip number"
+                    min="1">
+                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('stripNo')">
+                    {{ getPartsFieldError('stripNo') }}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label required">Keep or Throw</label>
+                  <select 
+                    class="form-select"
+                    formControlName="keepThrow"
+                    [class.is-invalid]="isPartsFieldInvalid('keepThrow')">
+                    <option value="">Select Action</option>
+                    <option *ngFor="let option of getKeepThrowOptions()" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('keepThrow')">
+                    {{ getPartsFieldError('keepThrow') }}
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label required">Part Description</label>
+                  <textarea 
+                    class="form-control"
+                    formControlName="partDesc"
+                    [class.is-invalid]="isPartsFieldInvalid('partDesc')"
+                    placeholder="Enter part description"
+                    rows="3">
+                  </textarea>
+                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('partDesc')">
+                    {{ getPartsFieldError('partDesc') }}
+                  </div>
+                </div>
+
+                <!-- Hidden fields for system data -->
+                <input type="hidden" formControlName="masterRowIndex">
+                <input type="hidden" formControlName="rowIndex">
+                <input type="hidden" formControlName="createdBy">
+                <input type="hidden" formControlName="lastModifiedBy">
+                <input type="hidden" formControlName="createdOn">
+                <input type="hidden" formControlName="lastModifiedOn">
+
+                <!-- Action Buttons -->
+                <div class="col-12 mt-4">
+                  <div class="d-flex justify-content-center gap-3">
+                    <button 
+                      type="submit" 
+                      class="btn btn-primary px-4"
+                      [disabled]="isSavingPart"
+                      title="Add or Update stripped part">
+                      <span *ngIf="isSavingPart" class="spinner-border spinner-border-sm me-2"></span>
+                      <i class="fa fa-save me-1" *ngIf="!isSavingPart"></i>
+                      Update
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-light-secondary px-4"
+                      (click)="onClearPartForm()"
+                      title="Clear all form fields">
+                      <i class="fa fa-eraser me-1"></i> Clear
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-light-info px-4"
+                      (click)="debugLoadParts()"
+                      title="Debug parts loading">
+                      <i class="fa fa-bug me-1"></i> Debug Parts
+                    </button>
+                    <button 
+                      type="button" 
+                      class="btn btn-light-info px-4"
+                      (click)="debugFormStatus()"
+                      title="Debug form status">
+                      <i class="fa fa-cogs me-1"></i> Debug Form
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Disabled state message for new units -->
+                <div class="col-12 mt-3" *ngIf="isNewUnit">
+                  <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    Save the unit information first to add stripped parts.
+                  </div>
+                </div>
+
+
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+</div>

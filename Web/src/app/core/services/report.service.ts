@@ -31,7 +31,13 @@ import {
   MakeCountDto,
   StrippedUnitsStatusRequest,
   StrippedUnitsStatusResponse,
-  StrippedUnitsStatusApiResponse
+  StrippedUnitsStatusApiResponse,
+  StrippedUnitApiResponse,
+  StrippedPartsInUnitDto,
+  StrippedPartsInUnitApiResponse,
+  StrippedPartsInUnitListResponse,
+  StripPartCodeDto,
+  StripPartCodeApiResponse
 } from '../model/stripped-units-status.model';
 import { 
   OrderRequestStatusRequestDto, 
@@ -725,8 +731,8 @@ export class ReportService {
   /**
    * Gets a specific stripped unit by RowIndex
    */
-  getStrippedUnitByRowIndex(rowIndex: number): Observable<StrippedUnitsStatusApiResponse> {
-    return this.http.get<StrippedUnitsStatusApiResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedUnit/${rowIndex}`, {
+  getStrippedUnitByRowIndex(rowIndex: number): Observable<StrippedUnitApiResponse> {
+    return this.http.get<StrippedUnitApiResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedUnit/${rowIndex}`, {
       headers: this.headers
     });
   }
@@ -778,6 +784,100 @@ export class ReportService {
       };
       rawData: MakeCountDto[];
     }>(`${this.API}/StrippedUnitsStatus/GetMakeCountsForChart`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Saves or updates a stripping unit
+   */
+  saveUpdateStrippingUnit(dto: StrippedUnitsStatusDto): Observable<{success: boolean; message: string; rowIndex?: number}> {
+    return this.http.post<{success: boolean; message: string; rowIndex?: number}>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippingUnit`, dto, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Updates a stripping unit by RowIndex
+   */
+  updateStrippingUnitByRowIndex(rowIndex: number, dto: StrippedUnitsStatusDto): Observable<{success: boolean; message: string; rowIndex: number}> {
+    return this.http.put<{success: boolean; message: string; rowIndex: number}>(`${this.API}/StrippedUnitsStatus/UpdateStrippingUnit/${rowIndex}`, dto, {
+      headers: this.headers
+    });
+  }
+
+  // Stripped Parts In Unit methods
+
+  /**
+   * Saves or updates stripped parts in unit
+   */
+  saveUpdateStrippedPartsInUnit(dto: StrippedPartsInUnitDto): Observable<StrippedPartsInUnitApiResponse> {
+    return this.http.post<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippedPartsInUnit`, dto, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Updates stripped parts in unit by MasterRowIndex and RowIndex
+   */
+  updateStrippedPartsInUnit(masterRowIndex: number, rowIndex: number, dto: StrippedPartsInUnitDto): Observable<StrippedPartsInUnitApiResponse> {
+    return this.http.put<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/UpdateStrippedPartsInUnit/${masterRowIndex}/${rowIndex}`, dto, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Gets stripped parts for a specific unit by master row index
+   * Note: This endpoint may need to be added to the backend if not already available
+   */
+  getStrippedPartsInUnit(masterRowIndex: number): Observable<StrippedPartsInUnitListResponse> {
+    return this.http.get<StrippedPartsInUnitListResponse>(`${this.API}/StrippedUnitsStatus/GetStrippedPartsInUnit/${masterRowIndex}`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Deletes a stripped part from unit
+   * Note: This endpoint may need to be added to the backend if not already available
+   */
+  deleteStrippedPartInUnit(masterRowIndex: number, rowIndex: number): Observable<StrippedPartsInUnitApiResponse> {
+    return this.http.delete<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/DeleteStrippedPartInUnit/${masterRowIndex}/${rowIndex}`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Gets strip part codes for dropdown population
+   */
+  getStripPartCodes(): Observable<StripPartCodeApiResponse> {
+    return this.http.get<StripPartCodeApiResponse>(`${this.API}/StrippedUnitsStatus/GetStripPartCodes`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Deletes a stripped unit by RowIndex
+   */
+  deleteStrippedUnit(rowIndex: number): Observable<{success: boolean; message: string; rowIndex: number; source: string}> {
+    return this.http.delete<{success: boolean; message: string; rowIndex: number; source: string}>(`${this.API}/StrippedUnitsStatus/Delete/${rowIndex}?source=StrippingUnit`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Saves a new stripped part in unit
+   */
+  saveStrippedPartInUnit(partData: StrippedPartsInUnitDto): Observable<StrippedPartsInUnitApiResponse> {
+    return this.http.post<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/SaveStrippedPartInUnit`, partData, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Updates an existing stripped part in unit
+   */
+  updateStrippedPartInUnit(partData: StrippedPartsInUnitDto): Observable<StrippedPartsInUnitApiResponse> {
+    return this.http.put<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/UpdateStrippedPartInUnit`, partData, {
       headers: this.headers
     });
   }
