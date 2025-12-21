@@ -1274,5 +1274,27 @@ namespace Technicians.Api.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task<SCCDto> GetSccInfoAsync(string callNbr, string rectifierId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CallNbr", callNbr);
+            parameters.Add("@SCCId", rectifierId);
+
+            var result = await connection.QueryFirstOrDefaultAsync<SCCDto>(
+                "GetSCCInfo",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            if (result == null)
+            {
+                throw new KeyNotFoundException("No SCC data found.");
+            }
+
+            return result;
+        }
+
     }
 }

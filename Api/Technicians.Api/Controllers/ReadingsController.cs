@@ -493,5 +493,21 @@ namespace Technicians.Api.Controllers
             return Ok(new { message = "Rectifier Verification saved successfully" });
         }
 
+        [HttpGet("GetSCCInfo")]
+        public async Task<IActionResult> GetSccInfo(
+        [FromQuery] string callNbr,
+        [FromQuery] string sccId)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(sccId))
+                return BadRequest("callNbr and sccId are required");
+
+            var result = await _repository.GetSccInfoAsync(callNbr, sccId);
+
+            if (result == null)
+                return NotFound("No SCC data found");
+
+            return Ok(result);
+        }
+
     }
 }

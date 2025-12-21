@@ -19,6 +19,7 @@ import { PduReadingsComponent } from '../equipment/pdu-readings/pdu-readings.com
 import { AtsReadingsComponent } from '../equipment/ats-readings/ats-readings.component';
 import { StsReadingsComponent } from '../equipment/sts-readings/sts-readings.component';
 import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rectifier-readings.component';
+import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.component';
 
 const routes: Routes = [
   {
@@ -109,6 +110,11 @@ const routes: Routes = [
   {
     path: 'rectifier-readings',
     component: RectifierReadingsComponent
+  }
+  ,
+  {
+    path: 'scc-readings',
+    component: SccReadingsComponent
   }
   // Job summary sample route commented out for integration-only usage
   // {

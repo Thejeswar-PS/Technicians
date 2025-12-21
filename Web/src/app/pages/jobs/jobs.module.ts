@@ -26,6 +26,7 @@ import { PduReadingsComponent } from '../equipment/pdu-readings/pdu-readings.com
 import { AtsReadingsComponent } from '../equipment/ats-readings/ats-readings.component';
 import { StsReadingsComponent } from '../equipment/sts-readings/sts-readings.component';
 import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rectifier-readings.component';
+import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.component';
 
 
 
@@ -51,7 +52,8 @@ import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rect
     PduReadingsComponent,
     AtsReadingsComponent,
     StsReadingsComponent,
-    RectifierReadingsComponent
+    RectifierReadingsComponent,
+    SccReadingsComponent
   ],
   imports: [
     CommonModule,
