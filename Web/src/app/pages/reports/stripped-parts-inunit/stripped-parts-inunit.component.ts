@@ -609,17 +609,37 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     // Call API to save update
     this.isUpdating = true;
     
-    // TODO: Replace with actual API call to SaveUpdateStrippedPartsInUnit
-    // For now, simulate API call
-    setTimeout(() => {
-      this.editingParts.delete(part);
-      this.originalPartData.delete(part);
-      this.isUpdating = false;
-      this.toastr.success(`Part ${part.dcgPartNo} updated successfully`, 'Update Successful');
-      
-      // Refresh the data
-      this.calculateFromPartsDetails();
-    }, 1000);
+    // Make actual API call to SaveUpdateStrippedPartsInUnit
+    const dto = {
+      masterRowIndex: this.masterRowIndex || undefined,
+      dcgPartNo: part.dcgPartNo,
+      partDesc: part.partDesc,
+      stripNo: part.stripNo,
+      keepThrow: part.keepThrow
+    };
+    
+    const updateSubscription = this.reportService.saveUpdateStrippedPartsInUnit(dto)
+      .pipe(finalize(() => this.isUpdating = false))
+      .subscribe({
+        next: (response: StrippedPartsInUnitApiResponse) => {
+          if (response.success) {
+            this.editingParts.delete(part);
+            this.originalPartData.delete(part);
+            this.toastr.success(`Part ${part.dcgPartNo} updated successfully`, 'Update Successful');
+            
+            // Refresh the data
+            this.calculateFromPartsDetails();
+          } else {
+            this.toastr.error(response.error || 'Failed to update part', 'Update Failed');
+          }
+        },
+        error: (error: any) => {
+          console.error('Error updating part:', error);
+          this.toastr.error('Error updating part. Please try again.', 'Update Failed');
+        }
+      });
+    
+    this.subscriptions.add(updateSubscription);
   }
 
   // Cancel editing and restore original data
@@ -640,26 +660,41 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     if (confirm(confirmMessage)) {
       this.isDeleting = true;
       
-      // TODO: Replace with actual API call to DeleteStrippedPartsInUnit
-      // For now, simulate API call
-      setTimeout(() => {
-        // Remove from local arrays
-        this.partsDetails = this.partsDetails.filter((p: StrippedPartsDetailDto) => 
-          p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
-        );
-        
-        // Update grouped parts
-        this.groupedParts = this.groupedParts.map(group => ({
-          ...group,
-          parts: group.parts.filter((p: StrippedPartsDetailDto) => 
-            p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
-          )
-        })).filter(group => group.parts.length > 0);
-        
-        this.calculateFromPartsDetails(); // Recalculate totals
-        this.isDeleting = false;
-        this.toastr.success(`Part ${part.dcgPartNo} deleted successfully`, 'Deleted');
-      }, 1000);
+      // Make actual API call to DeleteStrippedPartInUnit
+      // Note: Need to determine rowIndex - using part's index in array for now
+      const partIndex = this.partsDetails.findIndex(p => p.dcgPartNo === part.dcgPartNo);
+      
+      const deleteSubscription = this.reportService.deleteStrippedPartInUnit(this.masterRowIndex || 0, partIndex)
+        .pipe(finalize(() => this.isDeleting = false))
+        .subscribe({
+          next: (response: StrippedPartsInUnitApiResponse) => {
+            if (response.success) {
+              // Remove from local arrays
+              this.partsDetails = this.partsDetails.filter((p: StrippedPartsDetailDto) => 
+                p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
+              );
+              
+              // Update grouped parts
+              this.groupedParts = this.groupedParts.map(group => ({
+                ...group,
+                parts: group.parts.filter((p: StrippedPartsDetailDto) => 
+                  p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
+                )
+              })).filter(group => group.parts.length > 0);
+              
+              this.calculateFromPartsDetails(); // Recalculate totals
+              this.toastr.success(`Part ${part.dcgPartNo} deleted successfully`, 'Deleted');
+            } else {
+              this.toastr.error(response.error || 'Failed to delete part', 'Delete Failed');
+            }
+          },
+          error: (error: any) => {
+            console.error('Error deleting part:', error);
+            this.toastr.error('Error deleting part. Please try again.', 'Delete Failed');
+          }
+        });
+      
+      this.subscriptions.add(deleteSubscription);
     }
   }
 
