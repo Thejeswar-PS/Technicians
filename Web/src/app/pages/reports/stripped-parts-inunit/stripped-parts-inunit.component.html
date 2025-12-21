@@ -148,77 +148,27 @@
             <div class="summary-section">
               <div class="modern-table-container">
                 <div class="table-wrapper">
-                  <table class="interactive-summary-table">
-                    <thead>
+                  <table class="table table-sm mb-0">
+                    <thead class="table-primary">
                       <tr>
-                        <th class="part-percent-col">
-                          <div class="header-content">
-                            <i class="bi bi-percent me-2"></i>
-                            <span>Part %</span>
-                          </div>
-                        </th>
-                        <th class="dollar-total-col">
-                          <div class="header-content">
-                            <i class="bi bi-currency-dollar me-2"></i>
-                            <span>$ Total</span>
-                          </div>
-                        </th>
-                        <th class="quantity-col">
-                          <div class="header-content">
-                            <i class="bi bi-hash me-2"></i>
-                            <span>Qty</span>
-                          </div>
-                        </th>
-                        <th class="dollar-per-part-col">
-                          <div class="header-content">
-                            <i class="bi bi-tag me-2"></i>
-                            <span>$/Part</span>
-                          </div>
-                        </th>
-                        <th class="parts-stripped-col">
-                          <div class="header-content">
-                            <i class="bi bi-list-ul me-2"></i>
-                            <span>Parts</span>
-                          </div>
-                        </th>
+                        <th class="fw-semibold">Part %</th>
+                        <th class="fw-semibold">$ Total</th>
+                        <th class="fw-semibold">Qty</th>
+                        <th class="fw-semibold">$/Part</th>
+                        <th class="fw-semibold">Parts</th>
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let summary of summaryData; let i = index" 
-                          class="summary-row"
-                          [style.animation-delay.ms]="i * 100">
-                        <td class="part-percent-cell">
-                          <div class="metric-badge percent-metric">
-                            <span class="metric-value">{{ summary.partPercent }}</span>
-                          </div>
-                        </td>
-                        <td class="dollar-total-cell">
-                          <div class="metric-badge dollar-metric">
-                            <span class="metric-value">{{ summary.dollarOfTotal }}</span>
-                          </div>
-                        </td>
-                        <td class="quantity-cell">
-                          <div class="metric-badge quantity-metric">
-                            <span class="metric-value">{{ summary.quantity }}</span>
-                          </div>
-                        </td>
-                        <td class="dollar-per-part-cell">
-                          <div class="metric-badge price-metric">
-                            <span class="metric-value">{{ summary.dollarPerPart }}</span>
-                          </div>
-                        </td>
-                        <td class="parts-stripped-cell">
-                          <div class="parts-list-preview" [title]="summary.partsStripped">
-                            {{ summary.partsStripped }}
-                          </div>
-                        </td>
+                      <tr *ngFor="let summary of summaryData; let i = index" class="align-middle">
+                        <td class="text-center">{{ summary.partPercent }}</td>
+                        <td class="text-center">{{ summary.dollarOfTotal }}</td>
+                        <td class="text-center">{{ summary.quantity }}</td>
+                        <td class="text-center">{{ summary.dollarPerPart }}</td>
+                        <td class="small">{{ summary.partsStripped }}</td>
                       </tr>
                       <tr *ngIf="summaryData.length === 0">
-                        <td colspan="5" class="no-data-row">
-                          <div class="no-data-content">
-                            <i class="bi bi-info-circle me-2"></i>
-                            No summary data available
-                          </div>
+                        <td colspan="5" class="text-center text-muted py-3">
+                          No summary data available
                         </td>
                       </tr>
                     </tbody>
@@ -269,104 +219,125 @@
       <div *ngIf="groupedParts && groupedParts.length > 0; else noPartsData" class="parts-groups-container">
         <!-- Group Headers and Data -->
         <div *ngFor="let group of groupedParts; let i = index" class="parts-group mb-3">
-          <!-- Modern Group Header -->
-          <div [attr.data-group]="group.groupName" class="group-header">
-            <div class="group-header-content">
-              <div class="group-icon">
-                <i class="bi bi-collection"></i>
+          <!-- Grey Group Header -->
+          <div [attr.data-group]="group.groupName" class="bg-secondary bg-opacity-10 border-start border-secondary border-4 p-3 mb-0 group-header">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center group-title">
+                <i class="bi bi-collection text-secondary me-2"></i>
+                <h6 class="mb-0 fw-semibold text-dark">Group: {{ group.groupName }}</h6>
+                <span class="badge bg-secondary ms-2">{{ group.parts.length }} parts</span>
               </div>
-              <div class="group-info">
-                <h6 class="group-title">{{ group.groupName }}</h6>
-                <span class="group-count">{{ group.parts.length }} parts</span>
-              </div>
-              <div class="group-actions">
-                <button class="btn btn-outline-primary btn-sm">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </div>
+              <button class="btn btn-outline-secondary btn-sm" 
+                      type="button" 
+                      (click)="toggleGroupCollapse(i)"
+                      [attr.aria-expanded]="isGroupExpanded(i)"
+                      [attr.aria-controls]="'group' + i"
+                      title="Click to expand/collapse group">
+                <i class="bi bi-chevron-down" 
+                   [class.rotate-collapsed]="!isGroupExpanded(i)"></i>
+              </button>
             </div>
           </div>
           
-          <!-- Modern Interactive Table -->
-          <div class="modern-parts-table-container">
-            <div class="table-wrapper">
-              <table class="interactive-parts-table">
-                <thead>
+          <!-- Collapsible Section with Column Headers and Data -->
+          <div *ngIf="isGroupExpanded(i)" 
+               [id]="'group' + i"
+               [@slideAnimation]
+               class="collapse-content">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead class="table-primary">
                   <tr>
-                    <th class="part-no-col">
-                      <div class="header-content">
-                        <i class="bi bi-upc-scan me-2"></i>
-                        <span>DCG Part No</span>
-                      </div>
-                    </th>
-                    <th class="description-col">
-                      <div class="header-content">
-                        <i class="bi bi-card-text me-2"></i>
-                        <span>Description</span>
-                      </div>
-                    </th>
-                    <th class="strip-no-col">
-                      <div class="header-content">
-                        <i class="bi bi-hash me-2"></i>
-                        <span>Strip No</span>
-                      </div>
-                    </th>
-                    <th class="status-col">
-                      <div class="header-content">
-                        <i class="bi bi-check-circle me-2"></i>
-                        <span>Status</span>
-                      </div>
-                    </th>
-                    <th class="actions-col">
-                      <div class="header-content">
-                        <i class="bi bi-gear me-2"></i>
-                        <span>Actions</span>
-                      </div>
-                    </th>
+                    <th class="fw-semibold">DCG Part No</th>
+                    <th class="fw-semibold">Description</th>
+                    <th class="fw-semibold text-center">Strip No</th>
+                    <th class="fw-semibold text-center">Keep or Throw</th>
+                    <th class="fw-semibold text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let part of group.parts; let j = index" 
-                      class="parts-row"
-                      [class.throw-item]="isThrowItem(part.keepThrow)"
-                      [style.animation-delay.ms]="j * 50">
-                    <td class="part-no-cell">
-                      <div class="part-info">
-                        <span class="part-number">{{ part.dcgPartNo }}</span>
+                      [class.table-danger]="isThrowItem(part.keepThrow)">
+                    <!-- DCG Part No - Editable -->
+                    <td class="align-middle">
+                      <div *ngIf="!isEditingPart(part); else editPartNoTemplate">
+                        <strong>{{ part.dcgPartNo }}</strong>
                       </div>
+                      <ng-template #editPartNoTemplate>
+                        <input type="text" class="form-control form-control-sm" 
+                               [(ngModel)]="part.dcgPartNo" 
+                               placeholder="DCG Part No">
+                      </ng-template>
                     </td>
-                    <td class="description-cell">
-                      <div class="description-content" [title]="part.partDesc">
+                    <!-- Description - Editable -->
+                    <td class="align-middle">
+                      <div *ngIf="!isEditingPart(part); else editDescTemplate">
                         {{ part.partDesc }}
                       </div>
+                      <ng-template #editDescTemplate>
+                        <input type="text" class="form-control form-control-sm" 
+                               [(ngModel)]="part.partDesc" 
+                               placeholder="Description">
+                      </ng-template>
                     </td>
-                    <td class="strip-no-cell">
-                      <div class="strip-badge">
-                        {{ part.stripNo }}
+                    <!-- Strip No - Editable -->
+                    <td class="align-middle text-center">
+                      <div *ngIf="!isEditingPart(part); else editStripNoTemplate">
+                        <span class="badge bg-primary text-white">{{ part.stripNo }}</span>
                       </div>
+                      <ng-template #editStripNoTemplate>
+                        <input type="number" class="form-control form-control-sm text-center" 
+                               [(ngModel)]="part.stripNo" 
+                               placeholder="Strip No" 
+                               min="1" style="width: 80px; margin: 0 auto;">
+                      </ng-template>
                     </td>
-                    <td class="status-cell">
-                      <div class="status-badge" [ngClass]="{
-                        'status-keep': !isThrowItem(part.keepThrow),
-                        'status-throw': isThrowItem(part.keepThrow)
-                      }">
-                        <i class="bi" [ngClass]="{
-                          'bi-check-circle-fill': !isThrowItem(part.keepThrow),
-                          'bi-x-circle-fill': isThrowItem(part.keepThrow)
-                        }"></i>
-                        <span>{{ part.keepThrow }}</span>
+                    <!-- Keep or Throw - Editable -->
+                    <td class="align-middle text-center">
+                      <div *ngIf="!isEditingPart(part); else editStatusTemplate">
+                        <span class="badge" [ngClass]="{
+                          'bg-success': !isThrowItem(part.keepThrow),
+                          'bg-danger': isThrowItem(part.keepThrow)
+                        }">
+                          {{ part.keepThrow }}
+                        </span>
                       </div>
+                      <ng-template #editStatusTemplate>
+                        <select class="form-select form-select-sm" [(ngModel)]="part.keepThrow" style="width: 100px; margin: 0 auto;">
+                          <option value="Keep">Keep</option>
+                          <option value="Throw">Throw</option>
+                        </select>
+                      </ng-template>
                     </td>
-                    <td class="actions-cell">
-                      <div class="action-buttons">
-                        <button class="btn btn-action btn-edit" 
-                                (click)="onEditStrippedPart(part)" 
+                    <!-- Actions -->
+                    <td class="align-middle text-center">
+                      <div class="btn-group btn-group-sm" role="group">
+                        <!-- Edit/Update Button -->
+                        <button *ngIf="!isEditingPart(part)" 
+                                class="btn btn-outline-primary btn-sm" 
+                                (click)="startEditingPart(part)" 
                                 title="Edit Part">
                           <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-action btn-delete" 
-                                (click)="onDeleteStrippedPart(part)" 
-                                title="Delete Part">
+                        <button *ngIf="isEditingPart(part)" 
+                                class="btn btn-success btn-sm" 
+                                (click)="savePartUpdate(part)" 
+                                title="Update Part"
+                                [disabled]="isUpdating">
+                          <i class="bi bi-check"></i> Update
+                        </button>
+                        <!-- Cancel Button (only during edit) -->
+                        <button *ngIf="isEditingPart(part)" 
+                                class="btn btn-outline-secondary btn-sm" 
+                                (click)="cancelEditingPart(part)" 
+                                title="Cancel">
+                          <i class="bi bi-x"></i>
+                        </button>
+                        <!-- Delete Button -->
+                        <button class="btn btn-outline-danger btn-sm" 
+                                (click)="deletePartConfirm(part)" 
+                                title="Delete Part"
+                                [disabled]="isDeleting">
                           <i class="bi bi-trash"></i>
                         </button>
                       </div>

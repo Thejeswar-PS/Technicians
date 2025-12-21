@@ -556,6 +556,20 @@
                   
                   &:hover {
                     background: #f8fafc;
+                    transform: translateX(2px);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+                    
+                    // Make edit button more prominent on row hover
+                    .action-buttons .btn-edit {
+                      background: #e6f7ff;
+                      border-color: #91d5ff;
+                      color: #1890ff;
+                      box-shadow: 0 2px 6px rgba(24, 144, 255, 0.15);
+                      
+                      i {
+                        color: #1890ff;
+                      }
+                    }
                   }
                   
                   &.throw-item {
@@ -563,6 +577,19 @@
                     
                     &:hover {
                       background: #fee2e2;
+                      transform: translateX(2px);
+                      box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+                      
+                      // Make edit button more prominent on throw item row hover
+                      .action-buttons .btn-edit {
+                        background: #fff5f5;
+                        border-color: #fca5a5;
+                        color: #dc2626;
+                        
+                        i {
+                          color: #dc2626;
+                        }
+                      }
                     }
                   }
                   
@@ -644,12 +671,32 @@
                         transition: all 0.2s ease;
                         
                         &.btn-edit {
-                          background: #e0f2fe;
-                          color: #0277bd;
+                          background: #f8f9fa;
+                          color: #6c757d;
+                          border: 1px solid #dee2e6;
+                          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+                          
+                          i {
+                            font-size: 0.875rem;
+                            font-weight: 600;
+                            color: #6c757d;
+                          }
                           
                           &:hover {
-                            background: #0277bd;
+                            background: #28a745;
                             color: white;
+                            border-color: #28a745;
+                            transform: translateY(-1px);
+                            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.25);
+                            
+                            i {
+                              color: white;
+                            }
+                          }
+                          
+                          &:active {
+                            transform: translateY(0px);
+                            box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
                           }
                         }
                         
@@ -670,6 +717,126 @@
             }
           }
         }
+      }
+    }
+    
+    // Group Header Expand/Collapse Styling
+    .group-header {
+      .btn[data-bs-toggle="collapse"] {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        padding: 0.375rem 0.5rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        
+        i {
+          transition: transform 0.2s ease;
+          font-size: 0.875rem;
+        }
+        
+        &:hover {
+          background: #e9ecef;
+          border-color: #adb5bd;
+          transform: translateY(-1px);
+        }
+        
+        &:focus {
+          box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        // Rotate arrow when collapsed
+        &[aria-expanded="false"] i {
+          transform: rotate(-90deg);
+        }
+        
+        &[aria-expanded="true"] i {
+          transform: rotate(0deg);
+        }
+      }
+      
+      .group-title {
+        .badge {
+          font-size: 0.75rem;
+          font-weight: 600;
+          padding: 0.375rem 0.75rem;
+        }
+      }
+    }
+    
+    // Collapse Content Styling
+    .collapse-content {
+      overflow: hidden;
+      
+      .table {
+        border-radius: 0 0 8px 8px;
+        margin-bottom: 0;
+      }
+    }
+    
+    // Group Header Styling
+    .group-header {
+      border-radius: 8px 8px 0 0;
+      
+      .btn[data-bs-toggle="collapse"] {
+        background: #ffffff;
+        border: 1px solid #6c757d;
+        color: #6c757d;
+        padding: 0.375rem 0.5rem;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        min-width: 32px;
+        height: 32px;
+        
+        i {
+          transition: transform 0.3s ease;
+          font-size: 0.875rem;
+          font-weight: 600;
+          
+          &.rotate-collapsed {
+            transform: rotate(-90deg);
+          }
+        }
+        
+        &:hover {
+          background: #6c757d;
+          color: white;
+          border-color: #6c757d;
+        }
+        
+        &:focus {
+          box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+          outline: none;
+        }
+        
+        // Rotate arrow when collapsed
+        &[aria-expanded="false"] i {
+          transform: rotate(-90deg);
+        }
+        
+        &[aria-expanded="true"] i {
+          transform: rotate(0deg);
+        }
+      }
+      
+      + .collapse {
+        .table {
+          border-radius: 0 0 8px 8px;
+          overflow: hidden;
+        }
+      }
+    }
+    
+    // Collapse Animation Enhancement
+    .collapse {
+      transition: all 0.3s ease;
+      
+      &:not(.show) {
+        opacity: 0;
+      }
+      
+      &.show {
+        opacity: 1;
       }
     }
     

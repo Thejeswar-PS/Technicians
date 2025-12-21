@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { ReportService } from 'src/app/core/services/report.service';
 import { CommonService } from 'src/app/core/services/common.service';
 import { AuthService } from 'src/app/modules/auth';
@@ -29,9 +30,21 @@ interface UnitInfo {
 @Component({
   selector: 'app-stripped-parts-inunit',
   templateUrl: './stripped-parts-inunit.component.html', // Template file path
-  styleUrls: ['./stripped-parts-inunit.component.scss']
+  styleUrls: ['./stripped-parts-inunit.component.scss'],
+  animations: [
+    trigger('slideAnimation', [
+      transition(':enter', [
+        style({ height: '0', overflow: 'hidden', opacity: 0 }),
+        animate('300ms ease-out', style({ height: '*', opacity: 1 }))
+      ]),
+      transition(':leave', [
+        style({ height: '*', overflow: 'hidden', opacity: 1 }),
+        animate('300ms ease-in', style({ height: '0', opacity: 0 }))
+      ])
+    ])
+  ]
 })
-export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
+export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Forms
   strippedPartsForm: FormGroup;
@@ -237,6 +250,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
   isLoading: boolean = false;
   isLoadingParts: boolean = false;
   isSavingPart: boolean = false;
+  isUpdating: boolean = false;
   isLoadingStripPartCodes: boolean = false;
   isDeleting: boolean = false;
   errorMessage: string = '';
@@ -476,6 +490,9 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
       groupName: groupName,
       parts: groupedPartsMap[groupName]
     }));
+
+    // Initialize collapse state after groupedParts is populated
+    this.initializeGroupCollapseState();
   }
 
   private calculateFromPartsDetails(): void {
@@ -494,6 +511,9 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
       groupName: `${groupName} - ${this.getGroupDescription(groupName)}`,
       parts: groupedPartsMap[groupName]
     }));
+
+    // Initialize collapse state after groupedParts is populated
+    this.initializeGroupCollapseState();
 
     this.summaryData = Object.keys(groupedPartsMap).map(groupName => {
       const partsInGroup = groupedPartsMap[groupName];
@@ -562,6 +582,87 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
     this.paginatedParts = this.partsDetails.slice(startIndex, endIndex);
   }
 
+  // Inline editing properties and methods
+  private editingParts = new Set<StrippedPartsDetailDto>();
+  private originalPartData = new Map<StrippedPartsDetailDto, StrippedPartsDetailDto>();
+
+  // Check if a specific part is being edited
+  isEditingPart(part: StrippedPartsDetailDto): boolean {
+    return this.editingParts.has(part);
+  }
+
+  // Start editing a specific part
+  startEditingPart(part: StrippedPartsDetailDto): void {
+    // Store original data for potential cancellation
+    this.originalPartData.set(part, { ...part });
+    this.editingParts.add(part);
+  }
+
+  // Save part update - calls SaveUpdateStrippedPartsInUnit API
+  savePartUpdate(part: StrippedPartsDetailDto): void {
+    // Validate required fields
+    if (!part.dcgPartNo?.trim() || !part.partDesc?.trim()) {
+      this.toastr.error('DCG Part No and Description are required', 'Validation Error');
+      return;
+    }
+
+    // Call API to save update
+    this.isUpdating = true;
+    
+    // TODO: Replace with actual API call to SaveUpdateStrippedPartsInUnit
+    // For now, simulate API call
+    setTimeout(() => {
+      this.editingParts.delete(part);
+      this.originalPartData.delete(part);
+      this.isUpdating = false;
+      this.toastr.success(`Part ${part.dcgPartNo} updated successfully`, 'Update Successful');
+      
+      // Refresh the data
+      this.calculateFromPartsDetails();
+    }, 1000);
+  }
+
+  // Cancel editing and restore original data
+  cancelEditingPart(part: StrippedPartsDetailDto): void {
+    const originalData = this.originalPartData.get(part);
+    if (originalData) {
+      // Restore original values
+      Object.assign(part, originalData);
+      this.originalPartData.delete(part);
+    }
+    this.editingParts.delete(part);
+  }
+
+  // Delete confirmation and API call - calls DeleteStrippedPartsInUnit API
+  deletePartConfirm(part: StrippedPartsDetailDto): void {
+    const confirmMessage = `Are you sure you want to delete part "${part.dcgPartNo}" - ${part.partDesc}?`;
+    
+    if (confirm(confirmMessage)) {
+      this.isDeleting = true;
+      
+      // TODO: Replace with actual API call to DeleteStrippedPartsInUnit
+      // For now, simulate API call
+      setTimeout(() => {
+        // Remove from local arrays
+        this.partsDetails = this.partsDetails.filter((p: StrippedPartsDetailDto) => 
+          p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
+        );
+        
+        // Update grouped parts
+        this.groupedParts = this.groupedParts.map(group => ({
+          ...group,
+          parts: group.parts.filter((p: StrippedPartsDetailDto) => 
+            p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
+          )
+        })).filter(group => group.parts.length > 0);
+        
+        this.calculateFromPartsDetails(); // Recalculate totals
+        this.isDeleting = false;
+        this.toastr.success(`Part ${part.dcgPartNo} deleted successfully`, 'Deleted');
+      }, 1000);
+    }
+  }
+
   onEditStrippedPart(part: StrippedPartsDetailDto): void {
     // Implementation: Open edit modal or navigate to edit form
     this.currentStrippedPart = { ...part }; // Clone the part for editing
@@ -619,5 +720,46 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy {
   // Navigation Methods
   goBack(): void {
     this.router.navigate(['/reports']);
+  }
+
+  // Group collapse state tracking
+  groupCollapseState: { [key: number]: boolean } = {};
+
+  // Initialize collapse state when grouped parts are loaded
+  private initializeGroupCollapseState(): void {
+    if (this.groupedParts && this.groupedParts.length > 0) {
+      this.groupedParts.forEach((group, index) => {
+        if (this.groupCollapseState[index] === undefined) {
+          this.groupCollapseState[index] = true; // Start expanded
+        }
+      });
+    }
+  }
+
+  // Expand/Collapse Group Functionality
+  ngAfterViewInit(): void {
+    // Initialize all groups as expanded
+    this.initializeGroupCollapseState();
+  }
+
+  // Toggle group collapse state
+  toggleGroupCollapse(groupIndex: number): void {
+    // Ensure state is initialized first
+    if (this.groupCollapseState[groupIndex] === undefined) {
+      this.groupCollapseState[groupIndex] = true;
+    }
+    
+    // Toggle the state
+    const currentState = this.groupCollapseState[groupIndex];
+    this.groupCollapseState[groupIndex] = !currentState;
+    
+    // Force change detection by creating a new object reference
+    this.groupCollapseState = { ...this.groupCollapseState };
+  }
+
+  // Check if group is expanded
+  isGroupExpanded(groupIndex: number): boolean {
+    // Default to true (expanded) if not initialized
+    return this.groupCollapseState[groupIndex] !== false;
   }
 }
