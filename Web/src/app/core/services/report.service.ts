@@ -731,6 +731,15 @@ export class ReportService {
   }
 
   /**
+   * Gets the most recently updated stripped unit
+   */
+  getMostRecentlyUpdatedUnit(): Observable<any> {
+    return this.http.get<any>(`${this.API}/StrippedUnitsStatus/GetMostRecentlyUpdatedUnit`, {
+      headers: this.headers
+    });
+  }
+
+  /**
    * Gets a specific stripped unit by RowIndex
    */
   getStrippedUnitByRowIndex(rowIndex: number): Observable<StrippedUnitApiResponse> {

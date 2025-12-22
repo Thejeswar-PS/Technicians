@@ -466,17 +466,18 @@
                   [class.striped]="i % 2 === 1"
                   [class.row-stripped-exists]="hasStrippedParts(unit)">
                 <td class="ps-4 text-center compact-cell">
-                  <button class="btn btn-link btn-sm p-0 text-primary fw-bold link-primary" 
-                          (click)="viewUnitDetails(unit)" 
-                          [title]="'View details for row ' + unit.rowIndex">
+                  <span class="text-muted fw-bold" 
+                          [title]="'Row ' + unit.rowIndex">
                     {{ unit.rowIndex }}
-                  </button>
+                  </span>
                 </td>
                 <td class="compact-cell text-start single-line-text table-text-medium" [title]="unit.make">
-                  <button type="button" 
-                          class="btn btn-link btn-sm p-0 text-primary fw-bold link-primary" 
-                          (click)="redirectToStrippedParts($event, unit)" 
-                          [title]="'View stripped parts for ' + unit.make">
+                  <button 
+                    type="button"
+                    class="btn btn-link p-0 text-primary fw-bold text-decoration-none"
+                    (click)="redirectToStrippedParts($event, unit)"
+                    [title]="'View stripped parts for ' + unit.make + ' ' + unit.model"
+                    style="border: none; background: none; font-size: inherit; line-height: inherit; cursor: pointer;">
                     {{ unit.make }}
                   </button>
                 </td>

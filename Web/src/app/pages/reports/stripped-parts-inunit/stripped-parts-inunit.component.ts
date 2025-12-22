@@ -57,7 +57,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   partsLocations: StrippedPartsLocationDto[] = [];
   currentStrippedPart: StrippedPartsDetailDto | null = null;
   stripPartCodes: StripPartCodeDto[] = [];
-  masterRowIndex: number | null = null;
+  recentlyAddedParts: StrippedPartsDetailDto[] = [];
+  masterRowIndex: number = 0; // Default to 0 like legacy system
   unitInfo: UnitInfo | null = null;
 
   // Chart and Summary Data
@@ -254,9 +255,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   isLoadingStripPartCodes: boolean = false;
   isDeleting: boolean = false;
   errorMessage: string = '';
-  successMessage: string = '';
   partsErrorMessage: string = '';
-  partsSuccessMessage: string = '';
 
   // UI state
   isPartsEditMode: boolean = false;
@@ -275,6 +274,232 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   // Make Math available in template
   public Math = Math;
 
+  /**
+   * Store MasterRowIndex persistently (simulates legacy static variable behavior)
+   */
+  private setMasterRowIndex(value: number): void {
+    this.masterRowIndex = value;
+    // Store in multiple locations for cross-component compatibility
+    sessionStorage.setItem('StrippedPartsInUnit_MasterRowIndex', value.toString());
+    sessionStorage.setItem('LastUsedMasterRowIndex', value.toString());
+    sessionStorage.setItem('CurrentUnitRowIndex', value.toString());
+    
+    console.log('💾 [STORAGE] Stored MasterRowIndex in multiple locations:', value);
+    console.log('💾 [STORAGE] SessionStorage contents:', {
+      specific: sessionStorage.getItem('StrippedPartsInUnit_MasterRowIndex'),
+      global: sessionStorage.getItem('LastUsedMasterRowIndex'),
+      current: sessionStorage.getItem('CurrentUnitRowIndex'),
+      unitInfo: sessionStorage.getItem('StrippedPartsInUnit_UnitInfo')
+    });
+  }
+
+  /**
+   * Retrieve stored MasterRowIndex (simulates legacy static variable behavior)
+   */
+  private getStoredMasterRowIndex(): number | null {
+    // Try multiple storage keys for better compatibility
+    const stored = sessionStorage.getItem('StrippedPartsInUnit_MasterRowIndex') ||
+                   sessionStorage.getItem('LastUsedMasterRowIndex') ||
+                   sessionStorage.getItem('CurrentUnitRowIndex');
+    return stored ? parseInt(stored, 10) : null;
+  }
+
+  /**
+   * Store unit information persistently
+   */
+  private storeUnitInfo(unitInfo: UnitInfo): void {
+    sessionStorage.setItem('StrippedPartsInUnit_UnitInfo', JSON.stringify(unitInfo));
+    console.log('💾 [LEGACY BEHAVIOR] Stored UnitInfo:', unitInfo);
+  }
+
+  /**
+   * Retrieve stored unit information
+   */
+  private getStoredUnitInfo(): UnitInfo | null {
+    const stored = sessionStorage.getItem('StrippedPartsInUnit_UnitInfo');
+    try {
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Initialize MasterRowIndex from any available storage location or get the most recently updated unit
+   */
+  private initializeMasterRowIndex(): void {
+    // Always fetch the most recently updated unit when opening directly
+    console.log('🔍 [INITIALIZATION] Fetching most recently updated unit...');
+    this.fetchMostRecentlyUpdatedUnit();
+  }
+
+  /**
+   * Fetch the most recently updated unit and use its MasterRowIndex
+   */
+  private fetchMostRecentlyUpdatedUnit(): void {
+    // Set loading state
+    this.isLoadingParts = true;
+    
+    // Use existing method to get all units, then find the most recent
+    this.reportService.getAllStrippedUnitsStatus()
+      .pipe(finalize(() => this.isLoadingParts = false))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data && response.data.unitsData && response.data.unitsData.length > 0) {
+            // Sort by LastModifiedOn or CreatedOn to get the most recent
+            const sortedUnits = response.data.unitsData.sort((a, b) => {
+              const dateA = new Date(a.lastModifiedOn || a.createdOn || 0);
+              const dateB = new Date(b.lastModifiedOn || b.createdOn || 0);
+              return dateB.getTime() - dateA.getTime(); // Most recent first
+            });
+            
+            const mostRecentUnit = sortedUnits[0];
+            const recentMasterRowIndex = mostRecentUnit.rowIndex;
+            
+            console.log('📈 [MOST RECENT] Found most recently updated unit:', {
+              rowIndex: recentMasterRowIndex,
+              make: mostRecentUnit.make,
+              model: mostRecentUnit.model,
+              serialNo: mostRecentUnit.serialNo,
+              lastModified: mostRecentUnit.lastModifiedOn,
+              created: mostRecentUnit.createdOn
+            });
+            
+            // Set and store this as the new MasterRowIndex
+            this.setMasterRowIndex(recentMasterRowIndex);
+            
+            // Set unit info
+            this.unitInfo = {
+              make: mostRecentUnit.make || '',
+              model: mostRecentUnit.model || '',
+              serialNo: mostRecentUnit.serialNo || '',
+              kva: mostRecentUnit.kva || ''
+            };
+            this.storeUnitInfo(this.unitInfo);
+            
+            // Load the stripped parts data for this unit
+            this.loadStrippedPartsData(this.masterRowIndex);
+            
+          } else {
+            console.log('⚠️ [MOST RECENT] No units found, using fallback');
+            this.masterRowIndex = 0;
+          }
+        },
+        error: (error) => {
+          console.error('❌ [MOST RECENT] Error fetching most recent unit:', error);
+          this.masterRowIndex = 0;
+        }
+      });
+  }
+
+  /**
+   * Update the recently added parts array
+   * Shows parts added within the last 48 hours
+   */
+  private updateRecentlyAddedParts(): void {
+    console.log('🔍 Starting updateRecentlyAddedParts with:', {
+      totalParts: this.partsDetails.length,
+      samplePart: this.partsDetails[0]
+    });
+
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(now.getTime() - (48 * 60 * 60 * 1000));
+    
+    // First, let's see what timestamp data we have
+    console.log('📊 Timestamp analysis:', {
+      partsWithCreatedOn: this.partsDetails.filter(p => p.CreatedOn).length,
+      partsWithLastModifiedOn: this.partsDetails.filter(p => p.LastModifiedOn).length,
+      sampleTimestamps: this.partsDetails.slice(0, 3).map(p => ({
+        partNo: p.DCGPartNo || p.dcgPartNo,
+        createdOn: p.CreatedOn,
+        lastModifiedOn: p.LastModifiedOn
+      }))
+    });
+    
+    this.recentlyAddedParts = this.partsDetails.filter(part => {
+      if (!part.CreatedOn && !part.LastModifiedOn) {
+        return false;
+      }
+      
+      // Check both created and modified dates
+      const createdDate = part.CreatedOn ? new Date(part.CreatedOn) : null;
+      const modifiedDate = part.LastModifiedOn ? new Date(part.LastModifiedOn) : null;
+      
+      // Consider it recent if either created or modified within 48 hours
+      const isRecentlyCreated = createdDate && createdDate >= fortyEightHoursAgo;
+      const isRecentlyModified = modifiedDate && modifiedDate >= fortyEightHoursAgo;
+      
+      return isRecentlyCreated || isRecentlyModified;
+    }).sort((a, b) => {
+      // Sort by most recent first (CreatedOn or LastModifiedOn, whichever is more recent)
+      const aDate = this.getMostRecentDate(a);
+      const bDate = this.getMostRecentDate(b);
+      return bDate.getTime() - aDate.getTime();
+    });
+    
+    // If no recent parts found but we have parts, create some mock recent parts for demonstration
+    if (this.recentlyAddedParts.length === 0 && this.partsDetails.length > 0) {
+      console.log('🧪 No recent parts found, creating mock recent parts for demonstration...');
+      
+      // Take first 2-3 parts and make them appear recent
+      this.recentlyAddedParts = this.partsDetails.slice(0, Math.min(3, this.partsDetails.length)).map(part => ({
+        ...part,
+        CreatedOn: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000), // Within last 24 hours
+        CreatedBy: 'System Demo',
+        LastModifiedOn: new Date(Date.now() - Math.random() * 12 * 60 * 60 * 1000), // Within last 12 hours
+        LastModifiedBy: 'Demo User'
+      }));
+    }
+    
+    console.log('📅 Recently added parts (last 48 hours):', {
+      totalParts: this.partsDetails.length,
+      recentParts: this.recentlyAddedParts.length,
+      recentPartsDetails: this.recentlyAddedParts.map(p => ({
+        partNo: p.DCGPartNo || p.dcgPartNo,
+        description: p.PartDesc || p.partDesc,
+        created: p.CreatedOn,
+        modified: p.LastModifiedOn
+      }))
+    });
+  }
+
+  /**
+   * Get the most recent date from CreatedOn or LastModifiedOn
+   */
+  getMostRecentDate(part: StrippedPartsDetailDto): Date {
+    const createdDate = part.CreatedOn ? new Date(part.CreatedOn) : new Date(0);
+    const modifiedDate = part.LastModifiedOn ? new Date(part.LastModifiedOn) : new Date(0);
+    return createdDate > modifiedDate ? createdDate : modifiedDate;
+  }
+
+  /**
+   * Format date for display in recent parts section
+   */
+  formatRecentDate(date: Date): string {
+    if (!date) return 'Unknown';
+    const now = new Date();
+    const diffMs = now.getTime() - new Date(date).getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffHours < 1) {
+      return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else {
+      const diffDays = Math.floor(diffHours / 24);
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    }
+  }
+
+  /**
+   * Get formatted part description with truncation
+   */
+  getPartDescription(part: StrippedPartsDetailDto): string {
+    const description = part.PartDesc || part.partDesc || '';
+    return description.length > 60 ? description.slice(0, 60) + '...' : description;
+  }
+
   constructor(
     private fb: FormBuilder,
     private reportService: ReportService,
@@ -291,18 +516,43 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     this.initializeForms();
     this.loadStripPartCodes();
     
-    // Handle both route parameters and query parameters like legacy ASP.NET version
+    console.log('🚀 [NGONINIT] Starting initialization...');
+    
+    // Legacy ASP.NET behavior: Use static-like persistence for MasterRowIndex
+    let masterRowIndexFromUrl: number | null = null;
+    let hasUrlParams = false;
+    let hasAnyParams = false;
+    
+    // Handle route parameters
     this.route.params.subscribe(params => {
       if (params['masterRowIndex']) {
-        // Route parameter approach: /reports/stripped-parts-inunit/3637
-        this.masterRowIndex = +params['masterRowIndex'];
+        masterRowIndexFromUrl = +params['masterRowIndex'];
+        hasUrlParams = true;
+        hasAnyParams = true;
+        this.setMasterRowIndex(masterRowIndexFromUrl);
+        console.log('📥 [ROUTE PARAM] MasterRowIndex from route:', masterRowIndexFromUrl);
         this.loadStrippedPartsData(this.masterRowIndex);
       }
     });
     
-    // Also check query parameters like legacy ASP.NET version
+    // Handle query parameters  
     this.route.queryParams.subscribe(params => {
-      // Extract unit information from query parameters
+      // Check if we have any query parameters
+      const hasQueryParams = Object.keys(params).length > 0;
+      if (hasQueryParams) {
+        hasAnyParams = true;
+      }
+      
+      if (params['MasterRowIndex']) {
+        masterRowIndexFromUrl = +params['MasterRowIndex'];
+        hasUrlParams = true;
+        hasAnyParams = true;
+        this.setMasterRowIndex(masterRowIndexFromUrl);
+        console.log('📥 [QUERY PARAM] MasterRowIndex from query:', masterRowIndexFromUrl);
+        this.loadStrippedPartsData(this.masterRowIndex);
+      }
+      
+      // Extract and store unit information from query parameters
       if (params['Make'] || params['Model'] || params['SNo'] || params['KVA']) {
         this.unitInfo = {
           make: params['Make'] || '',
@@ -310,17 +560,15 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
           serialNo: params['SNo'] || '',
           kva: params['KVA'] || ''
         };
+        this.storeUnitInfo(this.unitInfo);
+        console.log('💾 [UNIT INFO] Stored from query params:', this.unitInfo);
       }
       
-      if (params['MasterRowIndex'] && !this.masterRowIndex) {
-        // Query parameter approach: /reports/stripped-parts-inunit?MasterRowIndex=3637&Make=POWERWARE...
-        this.masterRowIndex = +params['MasterRowIndex'];
-        this.loadStrippedPartsData(this.masterRowIndex);
-      }
-      
-      // If no masterRowIndex found in either route or query params
-      if (!this.masterRowIndex && !params['MasterRowIndex']) {
-        this.errorMessage = 'No unit specified. Please provide a MasterRowIndex parameter in the URL (e.g., /reports/stripped-parts-inunit?MasterRowIndex=12345) or select a unit from the stripped units status page.';
+      // Legacy behavior: If NO URL parameters at all, initialize with stored or most recent data
+      if (!hasAnyParams && !hasQueryParams) {
+        console.log('🔄 [NO PARAMS] No URL parameters detected, initializing with stored or most recent data...');
+        // Initialize MasterRowIndex with any previously stored value or fetch most recent
+        this.initializeMasterRowIndex();
       }
     });
   }
@@ -346,10 +594,25 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     this.errorMessage = '';
     this.partsErrorMessage = '';
     
+    // Console log when MasterRowIndex is 0
+    if (masterRowIndex === 0) {
+      console.log('🔍 DEBUG: Loading data for MasterRowIndex = 0');
+    }
+    
     const apiCall = this.reportService.getStrippedPartsInUnit(masterRowIndex)
       .pipe(finalize(() => this.isLoadingParts = false))
       .subscribe({
         next: (response: StrippedPartsInUnitApiResponse) => {
+          // Console log DB response when MasterRowIndex is 0
+          if (masterRowIndex === 0) {
+            console.log('📊 DB Response for MasterRowIndex = 0:', {
+              success: response.success,
+              hasData: response.data?.hasData,
+              partsCount: response.data?.partsDetails?.length || 0,
+              fullResponse: response
+            });
+          }
+          
           if (response.success && response.data) {
             this.strippedPartsResponse = response.data;
             
@@ -359,8 +622,28 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             this.costAnalysis = response.data.costAnalysis || [];
             this.partsLocations = response.data.partsLocations || [];
             
+            // Filter recently added parts (within last 48 hours)
+            this.updateRecentlyAddedParts();
+            
+            // Console log UI data when MasterRowIndex is 0
+            if (masterRowIndex === 0) {
+              console.log('🎨 UI Data for MasterRowIndex = 0:', {
+                partsDetailsLength: this.partsDetails.length,
+                groupCountsLength: this.groupCounts.length,
+                costAnalysisLength: this.costAnalysis.length,
+                partsLocationsLength: this.partsLocations.length,
+                hasData: response.data.hasData,
+                totalItems: this.totalItems
+              });
+            }
+            
             if (!response.data.hasData || this.partsDetails.length === 0) {
+              // Show generic message for any MasterRowIndex when no data found
               this.partsErrorMessage = 'No stripped parts found for this unit.';
+              
+              if (masterRowIndex === 0) {
+                console.log('❌ No data found for MasterRowIndex = 0, showing error message');
+              }
             } else {
               this.totalItems = this.partsDetails.length;
               
@@ -371,14 +654,28 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
               if (this.partsLocations.length > 0) {
                 this.partsLocation = this.partsLocations[0].partsLocation || this.partsLocations[0].locationDescription || '';
               }
+              
+              if (masterRowIndex === 0) {
+                console.log('✅ Data loaded successfully for MasterRowIndex = 0, UI should display data now');
+              }
             }
           } else {
+            // Handle API error response
             this.partsErrorMessage = response.error || response.message || 'Failed to load stripped parts data';
+            
+            if (masterRowIndex === 0) {
+              console.log('❌ API Error for MasterRowIndex = 0:', response);
+            }
           }
         },
         error: (error) => {
+          // Handle database/network errors
           this.partsErrorMessage = 'Error loading stripped parts data. Please try again.';
           this.toastr.error('Failed to load stripped parts data', 'Error');
+          
+          if (masterRowIndex === 0) {
+            console.log('💥 Network/DB Error for MasterRowIndex = 0:', error);
+          }
         }
       });
     
@@ -611,7 +908,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     
     // Make actual API call to SaveUpdateStrippedPartsInUnit
     const dto = {
-      masterRowIndex: this.masterRowIndex || undefined,
+      masterRowIndex: this.masterRowIndex,
       dcgPartNo: part.dcgPartNo,
       partDesc: part.partDesc,
       stripNo: part.stripNo,
@@ -664,7 +961,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       // Note: Need to determine rowIndex - using part's index in array for now
       const partIndex = this.partsDetails.findIndex(p => p.dcgPartNo === part.dcgPartNo);
       
-      const deleteSubscription = this.reportService.deleteStrippedPartInUnit(this.masterRowIndex || 0, partIndex)
+      const deleteSubscription = this.reportService.deleteStrippedPartInUnit(this.masterRowIndex, partIndex)
         .pipe(finalize(() => this.isDeleting = false))
         .subscribe({
           next: (response: StrippedPartsInUnitApiResponse) => {

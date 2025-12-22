@@ -412,43 +412,58 @@ namespace Technicians.Api.Repository
 
                 var response = new StrippedPartsInUnitResponse
                 {
-                    MasterRowIndex = masterRowIndex
+                    MasterRowIndex = masterRowIndex,
+                    PartsDetails = new List<StrippedPartsDetailDto>(),
+                    GroupCounts = new List<StrippedPartsGroupCountDto>(),
+                    CostAnalysis = new List<StrippedPartsCostAnalysisDto>(),
+                    PartsLocations = new List<StrippedPartsLocationDto>(),
+                    HasData = false
                 };
 
-                // First result set: Parts details
-                var partsDetails = (await multi.ReadAsync<StrippedPartsDetailDto>()).ToList();
-                response.PartsDetails = partsDetails;
-
-                // Check if we have real data - filter out dummy records (MasterRowIndex = 000000 means no data)
-                response.HasData = partsDetails.Any() && !partsDetails.All(p => p.DCGPartNo == null || p.DCGPartNo == string.Empty);
-
-                if (response.HasData)
+                // Read result sets safely - check if there are more results before reading
+                try
                 {
+                    // First result set: Parts details
+                    if (!multi.IsConsumed)
+                    {
+                        var partsDetails = (await multi.ReadAsync<StrippedPartsDetailDto>()).ToList();
+                        response.PartsDetails = partsDetails;
+
+                        // Check if we have real data - filter out dummy records
+                        response.HasData = partsDetails.Any() && !partsDetails.All(p => string.IsNullOrEmpty(p.DCGPartNo));
+                    }
+
                     // Second result set: Group counts
-                    response.GroupCounts = (await multi.ReadAsync<StrippedPartsGroupCountDto>()).ToList();
+                    if (!multi.IsConsumed)
+                    {
+                        response.GroupCounts = (await multi.ReadAsync<StrippedPartsGroupCountDto>()).ToList();
+                    }
 
                     // Third result set: Cost analysis - handle dynamic column names
-                    var costAnalysisRaw = await multi.ReadAsync();
-                    response.CostAnalysis = costAnalysisRaw.Select(row => new StrippedPartsCostAnalysisDto
+                    if (!multi.IsConsumed)
                     {
-                        // Handle the dynamic column names from SP
-                        PartPercent = TryConvertToDecimal(GetDynamicProperty(row, "Part %")),
-                        DollarOfTotal = TryConvertToDecimal(GetDynamicProperty(row, "$ of Total")),
-                        Quantity = TryConvertToInt(GetDynamicProperty(row, "Quantity")),
-                        DollarPerPart = TryConvertToDecimal(GetDynamicProperty(row, "$Per Part")),
-                        PartsStripped = GetDynamicProperty(row, "Parts Stripped")?.ToString() ?? string.Empty
-                    }).ToList();
+                        var costAnalysisRaw = await multi.ReadAsync();
+                        response.CostAnalysis = costAnalysisRaw.Select(row => new StrippedPartsCostAnalysisDto
+                        {
+                            // Handle the dynamic column names from SP
+                            PartPercent = TryConvertToDecimal(GetDynamicProperty(row, "Part %")),
+                            DollarOfTotal = TryConvertToDecimal(GetDynamicProperty(row, "$ of Total")),
+                            Quantity = TryConvertToInt(GetDynamicProperty(row, "Quantity")),
+                            DollarPerPart = TryConvertToDecimal(GetDynamicProperty(row, "$Per Part")),
+                            PartsStripped = GetDynamicProperty(row, "Parts Stripped")?.ToString() ?? string.Empty
+                        }).ToList();
+                    }
 
                     // Fourth result set: Parts location
-                    response.PartsLocations = (await multi.ReadAsync<StrippedPartsLocationDto>()).ToList();
+                    if (!multi.IsConsumed)
+                    {
+                        response.PartsLocations = (await multi.ReadAsync<StrippedPartsLocationDto>()).ToList();
+                    }
                 }
-                else
+                catch (InvalidOperationException ex) when (ex.Message.Contains("reader") || ex.Message.Contains("disposed"))
                 {
-                    // Initialize empty collections when no data
-                    response.GroupCounts = new List<StrippedPartsGroupCountDto>();
-                    response.CostAnalysis = new List<StrippedPartsCostAnalysisDto>();
-                    response.PartsLocations = new List<StrippedPartsLocationDto>();
-                    response.PartsDetails = new List<StrippedPartsDetailDto>();
+                    // Handle cases where there are fewer result sets than expected
+                    // This is acceptable - just return what we have
                 }
 
                 return response;

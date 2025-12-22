@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { CommonService } from 'src/app/core/services/common.service';
 import { ReportService } from 'src/app/core/services/report.service';
 import { AuthService } from 'src/app/modules/auth';
@@ -17,6 +18,7 @@ import {
 } from 'src/app/core/model/stripped-units-status.model';
 import { ToastrService } from 'ngx-toastr';
 import { Subscription, finalize } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-stripped-unit-info',
@@ -69,14 +71,22 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     private toastr: ToastrService,
     private route: ActivatedRoute,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {
     this.initializeForms();
   }
 
   ngOnInit(): void {
     console.log('🚀 [COMPONENT INIT] StrippedUnitInfoComponent initialized');
+    
+    // Initialize forms first
     this.initializeForms();
+    
+    // Check authentication and set user info immediately
+    this.checkUserAuthentication();
+    
+    // Load necessary data
     this.loadStripPartCodes();
     this.checkRouteParams();
     
@@ -93,6 +103,22 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
         });
       }
     }, 10000); // Every 10 seconds when unit is loaded
+  }
+  
+  private checkUserAuthentication(): void {
+    const currentUser = this.authService.currentUserValue;
+    console.log('🔐 [AUTH] Checking user authentication:', currentUser?.username);
+    
+    if (!currentUser?.username) {
+      console.log('⚠️ [AUTH] No authenticated user found');
+      this.toastr.warning('Please ensure you are logged in');
+    } else {
+      console.log('✅ [AUTH] User authenticated:', currentUser.username);
+      // Immediately set user info in the form
+      setTimeout(() => {
+        this.initializePartsFormDefaults();
+      }, 100); // Small delay to ensure form is ready
+    }
   }
 
   ngOnDestroy(): void {
@@ -123,12 +149,12 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.strippedPartsForm = this.fb.group({
       masterRowIndex: [0],
       rowIndex: [0],
-      dcgPartGroup: [''], // Remove required - only validate when actually adding parts
-      dcgPartNo: [''],    // Remove required - only validate when actually adding parts
-      partDesc: [''],     // Remove required - only validate when actually adding parts
-      keepThrow: ['Keep'], // Remove required - only validate when actually adding parts
-      stripNo: [null, [Validators.min(1)]], // Keep min validation but remove required
-      lastModifiedBy: [''],
+      dcgPartGroup: ['', Validators.required], // Add required validation back
+      dcgPartNo: ['', Validators.required],    // Add required validation back
+      partDesc: ['', Validators.required],     // Add required validation back
+      keepThrow: ['Keep', Validators.required], // Add required validation back
+      stripNo: [null, [Validators.required, Validators.min(1)]], // Add required and min validation
+      lastModifiedBy: ['', Validators.required], // Add required validation
       createdBy: [''],
       createdOn: [''],
       lastModifiedOn: ['']
@@ -167,6 +193,31 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
       console.log('📝 [UI FORM] Complete form state:', value);
       console.log('✅ [UI FORM] Form valid:', this.strippedPartsForm.valid);
     });
+    
+    // Initialize form with default user info
+    this.initializePartsFormDefaults();
+  }
+  
+  private initializePartsFormDefaults(): void {
+    const currentUser = this.authService.currentUserValue;
+    console.log('🔧 [INIT] Initializing parts form defaults for user:', currentUser?.username);
+    
+    if (!currentUser?.username) {
+      console.log('⚠️ [INIT] No authenticated user found');
+      return;
+    }
+    
+    const defaultValues = {
+      lastModifiedBy: currentUser.username,
+      createdBy: currentUser.username,
+      keepThrow: 'Keep' // Set default value
+    };
+    
+    console.log('📝 [INIT] Setting default form values:', defaultValues);
+    this.strippedPartsForm.patchValue(defaultValues);
+    
+    // Ensure the form recognizes the changes
+    this.strippedPartsForm.updateValueAndValidity();
   }
 
   private checkRouteParams(): void {
@@ -255,7 +306,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
             this.loadUnitToForm();
             this.loadStrippedPartsForUnit(); // Load associated parts
             this.isEditMode = false;
-            this.successMessage = 'Unit loaded successfully';
           } else {
             console.log('❌ [DB ERROR] Unit not found or error:', response.message);
             this.errorMessage = response.message || 'Unit not found';
@@ -573,19 +623,64 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   }
 
   onSaveStrippedPart(): void {
-    // Flexible validation - only check if user provided some data
-    const partsFormValue = this.strippedPartsForm.value;
+    console.log('🔧 [SAVE] Starting save stripped part process');
     
-    const hasAnyData = partsFormValue.dcgPartGroup || partsFormValue.dcgPartNo || partsFormValue.partDesc || 
-                      partsFormValue.keepThrow || partsFormValue.stripNo;
+    // Get current user early to avoid redeclaration
+    const currentUser = this.authService.currentUserValue;
     
-    if (!hasAnyData) {
-      this.toastr.warning('Please provide at least some parts information to save');
+    // Clear previous messages
+    this.partsErrorMessage = '';
+    this.partsSuccessMessage = '';
+    
+    // Set user info first to ensure lastModifiedBy is populated
+    this.setPartsUserInfo();
+    
+    // Validate the form
+    if (this.strippedPartsForm.invalid) {
+      console.log('❌ [VALIDATION] Form is invalid:', this.strippedPartsForm.errors);
+      
+      // Mark all fields as touched to show validation errors
+      Object.keys(this.strippedPartsForm.controls).forEach(key => {
+        this.strippedPartsForm.get(key)?.markAsTouched();
+      });
+      
+      this.toastr.error('Please fill in all required fields');
       return;
     }
     
-    // Set user info without adding strict validation
-    this.setPartsUserInfo();
+    // Ensure dcgPartGroup is selected
+    const partsFormValue = this.strippedPartsForm.value;
+    const partsRawValue = this.strippedPartsForm.getRawValue();
+    
+    console.log('🔍 [VALIDATION] Current form value:', JSON.stringify(partsFormValue, null, 2));
+    console.log('🔍 [VALIDATION] Current form RAW value:', JSON.stringify(partsRawValue, null, 2));
+    console.log('🔍 [VALIDATION] Form valid status:', this.strippedPartsForm.valid);
+    console.log('🔍 [VALIDATION] Form errors:', this.strippedPartsForm.errors);
+    
+    // Check individual form controls
+    console.log('🔍 [CONTROLS] dcgPartGroup control:', this.strippedPartsForm.get('dcgPartGroup')?.value);
+    console.log('🔍 [CONTROLS] lastModifiedBy control:', this.strippedPartsForm.get('lastModifiedBy')?.value);
+    
+    if (!partsFormValue.dcgPartGroup || partsFormValue.dcgPartGroup.trim() === '') {
+      console.log('❌ [VALIDATION] DCG Part Group is missing or empty:', partsFormValue.dcgPartGroup);
+      console.log('❌ [VALIDATION] Available part codes:', this.stripPartCodes);
+      this.toastr.error('DCG Part Group is required - Please select from dropdown');
+      this.strippedPartsForm.get('dcgPartGroup')?.markAsTouched();
+      return;
+    }
+    
+    // Ensure lastModifiedBy is set - force it if necessary
+    if (!partsFormValue.lastModifiedBy || partsFormValue.lastModifiedBy.trim() === '') {
+      console.log('⚠️ [USER] LastModifiedBy is missing, forcing user info update');
+      const userToSet = currentUser?.username || 'System';
+      this.strippedPartsForm.patchValue({
+        lastModifiedBy: userToSet,
+        createdBy: userToSet
+      });
+      // Update the local variable to reflect the change
+      partsFormValue.lastModifiedBy = userToSet;
+      console.log('✅ [USER] Forced lastModifiedBy to:', userToSet);
+    }
 
     // Allow parts to be added independently, but get masterRowIndex from loaded unit or query params
     let masterRowIndex = 0;
@@ -609,53 +704,126 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.partsErrorMessage = '';
     this.partsSuccessMessage = '';
 
+    // Get fresh form data after any patches
     const partsData = this.strippedPartsForm.getRawValue();
-    const currentUser = this.authService.currentUserValue;
-    const partData: StrippedPartsInUnitDto = {
-      masterRowIndex: masterRowIndex, // Use the determined masterRowIndex
-      rowIndex: this.isNewPart ? 0 : partsData.rowIndex,
-      dcgPartGroup: partsData.dcgPartGroup,
-      dcgPartNo: partsData.dcgPartNo,
-      partDesc: partsData.partDesc,
-      keepThrow: partsData.keepThrow,
-      stripNo: partsData.stripNo,
-      lastModifiedBy: currentUser?.username || 'System',
-      createdBy: currentUser?.username || 'System',
-      createdOn: this.currentStrippedPart?.CreatedOn || undefined,
-      lastModifiedOn: new Date()
-    };
-
-    const apiCall = this.isNewPart
-      ? this.reportService.saveUpdateStrippedPartsInUnit(partData)
-      : this.reportService.updateStrippedPartsInUnit(partData.masterRowIndex || 0, partData.rowIndex || 0, partData);
-
-    console.log('💾 [SAVE REQUEST] Attempting to save part data:', partData);
-    console.log('🔄 [SAVE REQUEST] API Call type:', this.isNewPart ? 'CREATE' : 'UPDATE');
     
-    const subscription = apiCall
+    // Log form data for debugging
+    console.log('🔍 [DEBUG] Form raw value after validation:', JSON.stringify(partsData, null, 2));
+    console.log('🔍 [DEBUG] DCG Part Group value:', partsData.dcgPartGroup);
+    console.log('🔍 [DEBUG] Last Modified By value:', partsData.lastModifiedBy);
+    console.log('🔍 [DEBUG] Current user:', currentUser?.username);
+    
+    // CRITICAL: Ensure we have actual values, not just form validation
+    const actualDcgPartGroup = partsData.dcgPartGroup || partsFormValue.dcgPartGroup;
+    const actualLastModifiedBy = partsData.lastModifiedBy || partsFormValue.lastModifiedBy || currentUser?.username || 'System';
+    
+    console.log('🔍 [CRITICAL] Raw form dcgPartGroup:', partsData.dcgPartGroup);
+    console.log('🔍 [CRITICAL] Value form dcgPartGroup:', partsFormValue.dcgPartGroup);
+    console.log('🔍 [CRITICAL] Raw form lastModifiedBy:', partsData.lastModifiedBy);
+    console.log('🔍 [CRITICAL] Value form lastModifiedBy:', partsFormValue.lastModifiedBy);
+    console.log('🔍 [CRITICAL] Current user username:', currentUser?.username);
+    console.log('🔍 [CRITICAL] Actual DCG Part Group to send:', actualDcgPartGroup);
+    console.log('🔍 [CRITICAL] Actual LastModifiedBy to send:', actualLastModifiedBy);
+    
+    // Check if form controls themselves have values
+    const dcgControl = this.strippedPartsForm.get('dcgPartGroup');
+    const lastModControl = this.strippedPartsForm.get('lastModifiedBy');
+    console.log('🔍 [CONTROLS] DCG Part Group control value:', dcgControl?.value);
+    console.log('🔍 [CONTROLS] DCG Part Group control valid:', dcgControl?.valid);
+    console.log('🔍 [CONTROLS] LastModifiedBy control value:', lastModControl?.value);
+    console.log('🔍 [CONTROLS] LastModifiedBy control valid:', lastModControl?.valid);
+    
+    // Final validation - ensure required fields are not empty
+    if (!actualDcgPartGroup || actualDcgPartGroup.trim() === '') {
+      console.log('❌ [ERROR] DCG Part Group is still empty after all checks');
+      this.toastr.error('DCG Part Group must be selected from the dropdown');
+      return;
+    }
+    
+    if (!actualLastModifiedBy || actualLastModifiedBy.trim() === '') {
+      console.log('❌ [ERROR] No user information available for LastModifiedBy after all checks');
+      this.toastr.error('User authentication is required - please log in again');
+      return;
+    }
+    
+    console.log('✅ [VALIDATION] Final values - DCG Part Group:', actualDcgPartGroup, 'LastModifiedBy:', actualLastModifiedBy);
+    
+    // Create a clean payload that matches server expectations exactly
+    const cleanPayload = {
+      MasterRowIndex: masterRowIndex,
+      RowIndex: this.isNewPart ? 0 : (partsData.rowIndex || 0),
+      DCGPartGroup: actualDcgPartGroup,  // Use the verified value
+      DCGPartNo: partsData.dcgPartNo || '',
+      PartDesc: partsData.partDesc || '',
+      KeepThrow: partsData.keepThrow || 'Keep',
+      StripNo: parseInt(partsData.stripNo) || 1,
+      LastModifiedBy: actualLastModifiedBy,  // Use the verified value
+      CreatedBy: actualLastModifiedBy,
+      CreatedOn: new Date().toISOString(),
+      LastModifiedOn: new Date().toISOString()
+    };
+    
+    console.log('🧿 [CLEAN PAYLOAD] Final payload to send:', JSON.stringify(cleanPayload, null, 2));
+    console.log('🧿 [VALIDATION FINAL] DCGPartGroup in payload:', cleanPayload.DCGPartGroup);
+    console.log('🧿 [VALIDATION FINAL] LastModifiedBy in payload:', cleanPayload.LastModifiedBy);
+    console.log('🔄 [API ENDPOINT] Using UpdateStrippedPartsInUnit (PUT) with MasterRowIndex:', masterRowIndex, 'RowIndex:', cleanPayload.RowIndex);
+    
+    // ABSOLUTE FINAL CHECK - if these are still empty, something is very wrong
+    if (!cleanPayload.DCGPartGroup || !cleanPayload.LastModifiedBy) {
+      console.log('❌ [CRITICAL ERROR] Payload still missing required fields after all processing!');
+      console.log('❌ [CRITICAL ERROR] DCGPartGroup:', cleanPayload.DCGPartGroup);
+      console.log('❌ [CRITICAL ERROR] LastModifiedBy:', cleanPayload.LastModifiedBy);
+      this.toastr.error('CRITICAL: Unable to prepare data for saving. Please refresh and try again.');
+      this.isSavingPart = false;
+      return;
+    }
+    
+    // Use the clean payload for the API call
+    const finalApiCall = this.http.put<any>(`${environment.apiUrl}/StrippedUnitsStatus/UpdateStrippedPartsInUnit/${masterRowIndex}/${cleanPayload.RowIndex}`, cleanPayload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    const subscription = finalApiCall
       .pipe(finalize(() => this.isSavingPart = false))
       .subscribe({
-        next: (response: StrippedPartsInUnitApiResponse) => {
+        next: (response: any) => {
           console.log('📥 [SAVE RESPONSE] Save response from database:', response);
-          if (response.success) {
+          if (response && response.success) {
             console.log('✅ [SAVE SUCCESS] Part saved successfully');
             this.partsSuccessMessage = response.message || 'Stripped part saved successfully';
             this.toastr.success(this.partsSuccessMessage);
             this.isPartsEditMode = false;
             this.isNewPart = false;
             this.currentStrippedPart = null;
+            // Clear the form after successful save
+            this.onClearPartForm();
             // Reload stripped parts list
             this.loadStrippedPartsForUnit();
 
           } else {
-            console.log('❌ [SAVE ERROR] Failed to save part:', response.message);
-            this.partsErrorMessage = response.message || 'Failed to save stripped part';
+            console.log('❌ [SAVE ERROR] Failed to save part:', response?.message);
+            this.partsErrorMessage = response?.message || 'Failed to save stripped part';
             this.toastr.error(this.partsErrorMessage);
           }
         },
         error: (error) => {
           console.error('🔥 [SAVE ERROR] Network/Server error saving part:', error);
-          this.partsErrorMessage = error.error?.message || 'Failed to save stripped part';
+          console.log('🔍 [ERROR DETAILS] Status:', error.status);
+          console.log('🔍 [ERROR DETAILS] Error body:', error.error);
+          
+          let errorMessage = 'Failed to save stripped part';
+          if (error.error?.message) {
+            errorMessage = error.error.message;
+          } else if (error.error?.errors) {
+            errorMessage = 'Validation failed: ' + error.error.errors.join(', ');
+          } else if (error.message) {
+            errorMessage = error.message;
+          }
+          
+          this.partsErrorMessage = errorMessage;
           this.toastr.error(this.partsErrorMessage);
         }
       });
@@ -839,25 +1007,30 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
 
   private setPartsUserInfo(): void {
     const currentUser = this.authService.currentUserValue;
+    console.log('👤 [USER INFO] Setting parts user info, current user:', currentUser?.username);
     
-    // Set user information in form if not already present
+    if (!currentUser?.username) {
+      console.log('⚠️ [USER INFO] No current user found');
+      this.toastr.warning('User authentication required');
+      return;
+    }
+    
+    // Always ensure these fields are set for API validation
+    const patchData: any = {
+      lastModifiedBy: currentUser.username,
+      createdBy: currentUser.username
+    };
+    
     const userInfoFormValue = this.strippedPartsForm.value;
-    const patchData: any = {};
-    
-    if (!userInfoFormValue.lastModifiedBy) {
-      patchData.lastModifiedBy = currentUser?.username || '';
-    }
-    if (!userInfoFormValue.createdBy) {
-      patchData.createdBy = currentUser?.username || '';
-    }
     if (!userInfoFormValue.masterRowIndex && this.currentUnit) {
       patchData.masterRowIndex = this.currentUnit.rowIndex;
     }
     
-    // Only patch if we have data to patch
-    if (Object.keys(patchData).length > 0) {
-      this.strippedPartsForm.patchValue(patchData);
-    }
+    console.log('🔧 [PATCH] Patching form with user data:', patchData);
+    this.strippedPartsForm.patchValue(patchData);
+    
+    // Force form to recognize the changes
+    this.strippedPartsForm.updateValueAndValidity();
   }
 
   private addPartsValidation(): void {
@@ -897,6 +1070,88 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Test method to send hardcoded values to verify API works
+  testApiWithHardcodedValues(): void {
+    console.log('🧪 [TEST] Testing API with hardcoded values');
+    
+    const testPayload = {
+      MasterRowIndex: 1,
+      RowIndex: 0,
+      DCGPartGroup: "TEST_GROUP",
+      DCGPartNo: "TEST_PART_123",
+      PartDesc: "Test Description",
+      KeepThrow: "Keep",
+      StripNo: 1,
+      LastModifiedBy: "TEST_USER",
+      CreatedBy: "TEST_USER",
+      CreatedOn: new Date().toISOString(),
+      LastModifiedOn: new Date().toISOString()
+    };
+    
+    console.log('🧪 [TEST] Sending test payload:', JSON.stringify(testPayload, null, 2));
+    
+    this.http.put<any>(`${environment.apiUrl}/StrippedUnitsStatus/UpdateStrippedPartsInUnit/${testPayload.MasterRowIndex}/${testPayload.RowIndex}`, testPayload, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    }).subscribe({
+      next: (response) => {
+        console.log('🧪 [TEST SUCCESS] Test payload worked:', response);
+        this.toastr.success('Test API call successful - form values are the issue');
+      },
+      error: (error) => {
+        console.log('🧪 [TEST ERROR] Test payload failed:', error);
+        this.toastr.error('Test API call failed - API or server issue');
+      }
+    });
+  }
+
+  // Method to populate form with test values
+  populateTestValues(): void {
+    console.log('🧪 [TEST] Populating form with test values');
+    
+    this.strippedPartsForm.patchValue({
+      dcgPartGroup: 'TEST_GROUP',
+      dcgPartNo: 'TEST_PART_123', 
+      partDesc: 'Test Description for debugging',
+      keepThrow: 'Keep',
+      stripNo: 5,
+      lastModifiedBy: 'TEST_USER',
+      createdBy: 'TEST_USER'
+    });
+    
+    // Force form validation update
+    this.strippedPartsForm.updateValueAndValidity();
+    
+    console.log('🧪 [TEST] Form populated. Current form value:', this.strippedPartsForm.value);
+    this.toastr.info('Form populated with test values - try saving now');
+  }
+
+  // Debug method to check form state
+  debugFormState(): void {
+    console.log('🐛 [DEBUG] === FORM STATE DEBUG ===');
+    console.log('🐛 [DEBUG] Form valid:', this.strippedPartsForm.valid);
+    console.log('🐛 [DEBUG] Form value:', this.strippedPartsForm.value);
+    console.log('🐛 [DEBUG] Form raw value:', this.strippedPartsForm.getRawValue());
+    console.log('🐛 [DEBUG] Current user:', this.authService.currentUserValue);
+    console.log('🐛 [DEBUG] Strip part codes loaded:', this.stripPartCodes.length);
+    console.log('🐛 [DEBUG] Available part codes:', this.stripPartCodes);
+    
+    // Test each form control individually
+    Object.keys(this.strippedPartsForm.controls).forEach(key => {
+      const control = this.strippedPartsForm.get(key);
+      console.log(`🐛 [DEBUG] Control ${key}:`, {
+        value: control?.value,
+        valid: control?.valid,
+        errors: control?.errors,
+        touched: control?.touched
+      });
+    });
+    
+    this.toastr.info('Form state logged to console');
+  }
+
   onClearPartForm(): void {
     this.resetPartsForm();
     this.partsSuccessMessage = '';
@@ -921,5 +1176,10 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.partsErrorMessage = '';
     this.partsSuccessMessage = '';
     this.resetPartsForm();
+  }
+
+  // Track by function for ngFor performance
+  trackByPartIndex(index: number, part: StrippedPartsDetailDto): any {
+    return part.RowIndex || part.rowIndex || index;
   }
 }

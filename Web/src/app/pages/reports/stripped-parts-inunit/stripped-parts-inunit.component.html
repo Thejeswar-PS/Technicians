@@ -61,8 +61,8 @@
     </div>
   </div>
 
-  <!-- Main Analysis Section -->
-  <div class="card shadow-sm stripped-main-card mb-4">
+  <!-- Main Analysis Section - Hidden when error exists (matching legacy behavior) -->
+  <div *ngIf="!errorMessage && !partsErrorMessage" class="card shadow-sm stripped-main-card mb-4">
     <div class="card-header border-0 py-4">
       <div class="card-title-section">
         <h4 class="card-title mb-1">
@@ -195,8 +195,8 @@
     </div>
   </div>
 
-  <!-- Detailed Parts Grid Section -->
-  <div class="card shadow-sm parts-detail-card">
+  <!-- Detailed Parts Grid Section - Hidden when error exists (matching legacy behavior) -->
+  <div *ngIf="!errorMessage && !partsErrorMessage" class="card shadow-sm parts-detail-card">
     <div class="card-header border-0 py-4">
       <div class="card-title-section">
         <h4 class="card-title mb-1">
@@ -238,55 +238,55 @@
                [@slideAnimation]
                class="collapse-content">
             <div class="table-responsive">
-              <table class="table table-sm table-hover mb-0">
+              <table class="table table-sm table-hover mb-0 stripped-parts-table" style="table-layout: fixed; width: 100%;">
                 <thead class="table-primary">
                   <tr>
-                    <th class="fw-semibold">DCG Part No</th>
-                    <th class="fw-semibold">Description</th>
-                    <th class="fw-semibold text-center">Strip No</th>
-                    <th class="fw-semibold text-center">Keep or Throw</th>
-                    <th class="fw-semibold text-center">Actions</th>
+                    <th class="fw-semibold part-no-col" style="width: 18%; min-width: 120px;">DCG Part No</th>
+                    <th class="fw-semibold description-col" style="width: 40%; min-width: 200px;">Description</th>
+                    <th class="fw-semibold text-center strip-no-col" style="width: 12%; min-width: 80px;">Strip No</th>
+                    <th class="fw-semibold text-center status-col" style="width: 15%; min-width: 100px;">Keep or Throw</th>
+                    <th class="fw-semibold text-center actions-col" style="width: 15%; min-width: 120px;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let part of group.parts; let j = index" 
                       [class.table-danger]="isThrowItem(part.keepThrow)">
                     <!-- DCG Part No - Editable -->
-                    <td class="align-middle">
-                      <div *ngIf="!isEditingPart(part); else editPartNoTemplate">
+                    <td class="align-middle part-no-col" style="width: 18%; word-wrap: break-word; padding: 8px;">
+                      <div *ngIf="!isEditingPart(part); else editPartNoTemplate" class="text-truncate" [title]="part.dcgPartNo">
                         <strong>{{ part.dcgPartNo }}</strong>
                       </div>
                       <ng-template #editPartNoTemplate>
-                        <input type="text" class="form-control form-control-sm" 
+                        <input type="text" class="form-control form-control-sm w-100" 
                                [(ngModel)]="part.dcgPartNo" 
                                placeholder="DCG Part No">
                       </ng-template>
                     </td>
                     <!-- Description - Editable -->
-                    <td class="align-middle">
-                      <div *ngIf="!isEditingPart(part); else editDescTemplate">
+                    <td class="align-middle description-col" style="width: 40%; word-wrap: break-word; padding: 8px;">
+                      <div *ngIf="!isEditingPart(part); else editDescTemplate" class="text-truncate" [title]="part.partDesc">
                         {{ part.partDesc }}
                       </div>
                       <ng-template #editDescTemplate>
-                        <input type="text" class="form-control form-control-sm" 
+                        <input type="text" class="form-control form-control-sm w-100" 
                                [(ngModel)]="part.partDesc" 
                                placeholder="Description">
                       </ng-template>
                     </td>
                     <!-- Strip No - Editable -->
-                    <td class="align-middle text-center">
+                    <td class="align-middle text-center strip-no-col" style="width: 12%; padding: 8px;">
                       <div *ngIf="!isEditingPart(part); else editStripNoTemplate">
                         <span class="badge bg-primary text-white">{{ part.stripNo }}</span>
                       </div>
                       <ng-template #editStripNoTemplate>
-                        <input type="number" class="form-control form-control-sm text-center" 
+                        <input type="number" class="form-control form-control-sm text-center mx-auto" 
                                [(ngModel)]="part.stripNo" 
                                placeholder="Strip No" 
-                               min="1" style="width: 80px; margin: 0 auto;">
+                               min="1" style="width: 70px;">
                       </ng-template>
                     </td>
                     <!-- Keep or Throw - Editable -->
-                    <td class="align-middle text-center">
+                    <td class="align-middle text-center status-col" style="width: 15%; padding: 8px;">
                       <div *ngIf="!isEditingPart(part); else editStatusTemplate">
                         <span class="badge" [ngClass]="{
                           'bg-success': !isThrowItem(part.keepThrow),
@@ -296,14 +296,14 @@
                         </span>
                       </div>
                       <ng-template #editStatusTemplate>
-                        <select class="form-select form-select-sm" [(ngModel)]="part.keepThrow" style="width: 100px; margin: 0 auto;">
+                        <select class="form-select form-select-sm mx-auto" [(ngModel)]="part.keepThrow" style="width: 90px;">
                           <option value="Keep">Keep</option>
                           <option value="Throw">Throw</option>
                         </select>
                       </ng-template>
                     </td>
                     <!-- Actions -->
-                    <td class="align-middle text-center">
+                    <td class="align-middle text-center actions-col" style="width: 15%; padding: 8px;">
                       <div class="btn-group btn-group-sm" role="group">
                         <!-- Edit/Update Button -->
                         <button *ngIf="!isEditingPart(part)" 

@@ -507,9 +507,10 @@ namespace Technicians.Api.Controllers
             {
                 if (dto == null)
                 {
-                    return BadRequest(new { 
-                        success = false, 
-                        message = "Invalid request payload" 
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Invalid request payload"
                     });
                 }
 
@@ -517,51 +518,51 @@ namespace Technicians.Api.Controllers
                 var validationErrors = _repository.ValidateStrippedPartsInUnitRequest(dto);
                 if (validationErrors.Any())
                 {
-                    return BadRequest(new { 
-                        success = false, 
+                    return BadRequest(new
+                    {
+                        success = false,
                         message = "Validation failed",
                         errors = validationErrors
                     });
                 }
 
-                _logger.LogInformation("Saving/updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}, DCGPartNo: {DCGPartNo}", 
-                    dto.MasterRowIndex, dto.RowIndex, dto.DCGPartNo);
+                _logger.LogInformation("Saving/updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}, DCGPartNo: {DCGPartNo}",
+                    dto.MasterRowIndex, dto.DCGPartNo);
 
                 var success = await _repository.SaveUpdateStrippedPartsInUnitAsync(dto);
 
                 if (success)
                 {
-                    _logger.LogInformation("Successfully saved/updated stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}", 
-                        dto.MasterRowIndex, dto.RowIndex);
-                    
+                    _logger.LogInformation("Successfully saved/updated stripped parts in unit - MasterRowIndex: {MasterRowIndex}", dto.MasterRowIndex);
+
                     return Ok(new
                     {
                         success = true,
-                        message = dto.RowIndex > 0 ? "Stripped parts in unit updated successfully" : "Stripped parts in unit created successfully",
+                        message = dto.RowIndex > 0 ? "Stripped part updated successfully" : "Stripped part created successfully",
                         masterRowIndex = dto.MasterRowIndex,
                         rowIndex = dto.RowIndex
                     });
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to save/update stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}", 
-                        dto.MasterRowIndex, dto.RowIndex);
-                    
-                    return StatusCode(500, new { 
-                        success = false, 
-                        message = "Failed to save/update stripped parts in unit" 
+                    _logger.LogWarning("Failed to save/update stripped parts in unit - MasterRowIndex: {MasterRowIndex}", dto.MasterRowIndex);
+
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        message = "Failed to save/update stripped part"
                     });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving/updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}", 
-                    dto?.MasterRowIndex, dto?.RowIndex);
-                
-                return StatusCode(500, new { 
-                    success = false, 
-                    message = "Failed to save/update stripped parts in unit", 
-                    error = ex.Message 
+                _logger.LogError(ex, "Error saving/updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}", dto?.MasterRowIndex);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to save/update stripped part",
+                    error = ex.Message
                 });
             }
         }
@@ -767,19 +768,21 @@ namespace Technicians.Api.Controllers
         /// <summary>
         /// Gets stripped parts in unit details using the GetStrippedPartsInUnit stored procedure
         /// </summary>
-        /// <param name="masterRowIndex">The MasterRowIndex to retrieve parts for</param>
+        /// <param name="masterRowIndex">The MasterRowIndex to retrieve parts for (0 returns empty result set)</param>
         /// <returns>Complete stripped parts in unit data including parts details, group counts, cost analysis, and location</returns>
         [HttpGet("GetStrippedPartsInUnit/{masterRowIndex}")]
         public async Task<ActionResult<StrippedPartsInUnitResponse>> GetStrippedPartsInUnit(int masterRowIndex)
         {
             try
             {
-                if (masterRowIndex <= 0)
+                // Remove the validation that blocks masterRowIndex = 0
+                // The stored procedure handles masterRowIndex = 0 by returning dummy data
+                if (masterRowIndex < 0)
                 {
                     return BadRequest(new
                     {
                         success = false,
-                        message = "Invalid MasterRowIndex. MasterRowIndex must be greater than 0."
+                        message = "Invalid MasterRowIndex. MasterRowIndex cannot be negative."
                     });
                 }
 
@@ -787,7 +790,7 @@ namespace Technicians.Api.Controllers
 
                 var results = await _repository.GetStrippedPartsInUnitAsync(masterRowIndex);
 
-                if (!results.HasData)
+                if (!results.HasData && masterRowIndex > 0)
                 {
                     _logger.LogWarning("No stripped parts found for MasterRowIndex: {MasterRowIndex}", masterRowIndex);
                     return NotFound(new
