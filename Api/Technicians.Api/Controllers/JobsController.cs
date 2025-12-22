@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
+using System.Data;
+using Technicians.Api.Models;
 using Technicians.Api.Repository;
 
 namespace Technicians.Api.Controllers
@@ -65,6 +68,19 @@ namespace Technicians.Api.Controllers
                 // Log the exception (not implemented here for brevity)
                 return StatusCode(500, $"An error occurred while processing your request: {ex.Message}");
             }
+        }
+
+        [HttpGet("GetCalenderJobData")]
+        [SwaggerResponse(StatusCodes.Status200OK, "Return Calender Job data", typeof(List<GetCalenderJobDataVM>))]
+        public async Task<ActionResult> GetCalenderJobData([FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate,
+        [FromQuery] string ownerId,
+        [FromQuery] string tech,
+        [FromQuery] string state,
+        [FromQuery] string type)
+        {
+            var result = await _jobRepository.GetCalenderJobData(startDate, endDate, ownerId, tech, state, type);
+            return Ok(result);
         }
     }
 }

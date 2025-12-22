@@ -1,5 +1,6 @@
 export interface CalendarJobDetails {
     description: string;
+    status: string;
     startDate:    Date;
     startTime:   Date;
     endDate:     Date;
@@ -14,4 +15,17 @@ export interface CalendarJobDetails {
     foreColor:   string;
     callNbr:     string;
     techName:    string;
+}
+
+export interface CalendarStatistics {
+    overDue: number;
+    tomorrow: number;
+    due3: number;
+    due5: number;
+    due10: number;
+}
+
+export interface CalendarResponse {
+    jobDetails: CalendarJobDetails[];
+    statistics: CalendarStatistics;
 }

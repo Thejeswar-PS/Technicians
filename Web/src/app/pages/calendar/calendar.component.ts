@@ -6,18 +6,19 @@ import { FullCalendarComponent } from '@fullcalendar/angular';
 import { Calendar, CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import { Subject, map, takeUntil } from 'rxjs';
-import { CalendarJobDetails } from 'src/app/core/model/calendar-job-details.model';
+import { CalendarJobDetails, CalendarResponse, CalendarStatistics } from 'src/app/core/model/calendar-job-details.model';
 import { CommonService } from 'src/app/core/services/common.service';
 import { JobService } from 'src/app/core/services/job.service';
 import { DashboardFilterSharedService } from 'src/app/core/services/shared-service/dashboard-filter-shared.service';
+import { AuthService } from 'src/app/modules/auth';
 
 interface IEvent{
   title: string,
   start: string,
-  // end: string,
   color: string,
-  // forecolor: string,
-  allDay: boolean
+  allDay: boolean,
+  url?: string,
+  classNames?: string[]
 }
 @Component({
   selector: 'app-calendar',
@@ -28,6 +29,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit{
   @ViewChild('calendar') calendarComponent: FullCalendarComponent;
   destroy$ = new Subject<void>();
   jobDetailList: CalendarJobDetails[] = [];
+  statistics: CalendarStatistics | null = null;
   calendarOptions: CalendarOptions;
   accountManagers: any[] = [];
   technicians: any;
@@ -46,6 +48,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit{
 });
 payload : any;
 calendarEvent: Array<IEvent> =[];
+currentUser: any;
   constructor(@Inject(DOCUMENT) private document: Document,
   private fb: FormBuilder,
   private commonServices: CommonService,
@@ -54,10 +57,13 @@ calendarEvent: Array<IEvent> =[];
   private cdr: ChangeDetectorRef,
   private location: Location,
   private filterDashboardService: DashboardFilterSharedService,
-  private route: ActivatedRoute,) { }
+  private route: ActivatedRoute,
+  private authService: AuthService) { }
   ngAfterViewInit(): void {
     this.calendarApi = this.calendarComponent.getApi();
-    if (this.jobFilterForm.controls.ownerId.value !== 'All') {
+    // Load data if a specific filter is already set (e.g., for technicians)
+    if (this.jobFilterForm.controls.ownerId.value !== 'All' || 
+        this.jobFilterForm.controls.tech.value !== 'All') {
       this.SearchJobs();
     }
   }
@@ -67,9 +73,11 @@ calendarEvent: Array<IEvent> =[];
   }
 
   ngOnInit(): void {
+    console.log('[Calendar] ngOnInit called');
     this.initCalendar();
     this.InitFilters();
     this.filterDashboardService.setHomePage(false);
+    console.log('[Calendar] ngOnInit completed');
   }
 
 
@@ -122,18 +130,87 @@ calendarEvent: Array<IEvent> =[];
 }
 
    getCalendarData(payload: any){
-    if(payload.ownerId === 'All' && payload.tech === 'All' && payload.state === 'All' && payload.type === 'All')
+    if(payload.ownerId === 'All' && payload.tech === 'All' && payload.state === 'All')
     {
-      alert('Please select at least one filter');
+      alert('You must select at least one name');
       return;
     }
-    // conssole.log(this.calendarApi.view.currentStart.toDateString());
-    this.payload['startDate'] = this.calendarApi.view.currentStart.toDateString()
+    
+    // Calculate date range: previous month 15th to next month 15th (matching legacy)
+    const visibleDate = this.calendarApi.view.currentStart;
+    const currentYear = visibleDate.getFullYear();
+    const currentMonth = visibleDate.getMonth(); // 0-based
+    
+    let firstDate: Date;
+    if (currentMonth === 0) { // January
+      firstDate = new Date(currentYear - 1, 11, 15); // Previous year December 15
+    } else {
+      firstDate = new Date(currentYear, currentMonth - 1, 15); // Previous month 15th
+    }
+    
+    let lastDate: Date;
+    if (currentMonth === 11 || currentMonth === 10) { // November or December
+      lastDate = new Date(currentYear + 1, 0, 15); // Next year January 15
+    } else {
+      lastDate = new Date(currentYear, currentMonth + 1, 15); // Next month 15th
+    }
+    
+    payload['startDate'] = firstDate.toISOString().split('T')[0];
+    payload['endDate'] = lastDate.toISOString().split('T')[0];
+    
     this.jobService.getCalenderJobData(payload).pipe(takeUntil(this.destroy$),
     ).subscribe(res => {
-      this.jobDetailList = res;
-      this.formatEvents(this.jobDetailList)
+      // API should return CalendarResponse with jobDetails and statistics
+      if (res && (res as any).jobDetails) {
+        const response = res as any as CalendarResponse;
+        this.jobDetailList = response.jobDetails;
+        this.statistics = response.statistics;
+      } else {
+        // Fallback if API returns just array
+        this.jobDetailList = res as any;
+        this.statistics = null;
+      }
+      this.expandMultiDayEvents();
+      this.formatEvents(this.jobDetailList);
     })
+  }
+
+  // Legacy implementation: split multi-day events into separate rows for each day
+  expandMultiDayEvents() {
+    const expandedEvents: CalendarJobDetails[] = [];
+    
+    for (const event of this.jobDetailList) {
+      const startDate = new Date(event.startDate);
+      const endDate = new Date(event.endDate);
+      const endTime = new Date(event.endTime);
+      
+      const daysDiff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysDiff > 0) {
+        // Add original event
+        expandedEvents.push(event);
+        
+        // Create entries for each additional day
+        for (let j = 1; j <= daysDiff; j++) {
+          const newDate = new Date(startDate);
+          newDate.setDate(startDate.getDate() + j);
+          
+          const newEvent: CalendarJobDetails = {
+            ...event,
+            startDate: newDate,
+            startTime: new Date('1900-01-01T00:00:00'),
+            endDate: newDate,
+            endTime: j === daysDiff ? endTime : new Date('1900-01-01T23:59:00')
+          };
+          
+          expandedEvents.push(newEvent);
+        }
+      } else {
+        expandedEvents.push(event);
+      }
+    }
+    
+    this.jobDetailList = expandedEvents;
   }
 
   formatEvents(details: CalendarJobDetails[]){
@@ -141,23 +218,46 @@ calendarEvent: Array<IEvent> =[];
 
     for (const list of details) {
       let start = list.startDate.toString().split("T");
-      // let start = list.startDate.toISOString().replace(/T.*$/, '');
-      let end = list.endDate.toString().split("T");
-      // let formattedTitle = `${this.datePipe.transform(list.startTime,'h:mm a') as string} - ${this.datePipe.transform(list.endTime,'h:mm a') as string}
-      //                         ${list.custName}`;
       let formattedTitle = this.formatEventTitle(list.description);
-      let event = {
-        id: list.callNbr,
+      
+      // Determine color and CSS class based on status and callNbr
+      let color = '#6bc6e1'; // Default cellText color
+      let classNames: string[] = [];
+      
+      if (list.callNbr === 'Federal Holiday') {
+        color = '#76b007'; // fedtxt green
+        classNames = ['fedtxt'];
+      } else if (list.status === 'VACATION') {
+        color = '#fddbf9'; // vacationtxt pink
+        classNames = ['vacationtxt'];
+      } else if (list.status === 'DRUGTEST') {
+        color = '#e60000'; // drugtext red
+        classNames = ['drugtext'];
+      } else if (list.status === 'APPT') {
+        color = '#fddbf9'; // appttxt pink
+        classNames = ['appttxt'];
+      } else {
+        // Regular job - use cellText
+        classNames = ['cellText'];
+      }
+      
+      let event: IEvent = {
         title: formattedTitle,
-        start: start[0] ,
-        // end: start[0],
-        textColor: '#0000cd',
-        allDay : false,
-        color: formattedTitle.includes("FCD") ? '#0000cd' :'#ed143d',
-        url: formattedTitle.includes("FCD") ? this.document.location.origin + '/#/jobs?jobId=' + list.callNbr.trim() + '&techName=' + list.techName.trim() : ''
-        // time: (this.datePipe.transform(list.startTime,'h:mm a') as string)
-        // forecolor: list.foreColor
+        start: start[0],
+        color: color,
+        allDay: false,
+        classNames: classNames
       };
+      
+      // Add URL for regular jobs (not holidays/appointments)
+      if (list.callNbr !== 'Federal Holiday' && 
+          list.status !== 'VACATION' && 
+          list.status !== 'APPT' &&
+          list.status !== 'DRUGTEST') {
+        const techName = encodeURIComponent(list.techName.trim());
+        event.url = `${this.document.location.origin}/#/jobs/job-notes?CallNbr=${list.callNbr.trim()}&TechName=${techName}&Status=${list.status}`;
+      }
+      
       this.calendarEvent.push(event);
     }
     this.calendarOptions.events = this.calendarEvent;
@@ -168,35 +268,99 @@ calendarEvent: Array<IEvent> =[];
   }
 
   InitFilters(){
-    // this.commonServices.getAccountManagers().pipe(takeUntil(this.destroy$)).subscribe(managers => {
-    //   this.accountManagers = managers;
-    // })
-
-    let userData = JSON.parse(localStorage.getItem("userData")!);
-    if(this.accountManagers.length <= 0)
-    {
+    console.log('[Calendar] InitFilters called');
+    this.currentUser = this.authService.currentUserValue;
+    console.log('[Calendar] Current user:', this.currentUser);
+    
+    if(this.accountManagers.length <= 0) {
       this.accountManagers = JSON.parse(localStorage.getItem("AccountManagers")!);
     }
+    console.log('[Calendar] Account Managers loaded:', this.accountManagers);
+    console.log('[Calendar] First Account Manager:', this.accountManagers?.[0]);
+    console.log('[Calendar] Account Managers length:', this.accountManagers?.length);
 
-    var searchIndex = this.accountManagers.find((item : any) => item.empName.trim() === userData.empName.trim());
-    if(searchIndex === undefined)
-    {
-      this.jobFilterForm.patchValue({
-        ownerId: 'All'
-      });
-    }
-    else{
-      this.jobFilterForm.patchValue({
-        ownerId: userData.empID.trim()
-      });
-    }
-
+    // Load technicians and states
     this.commonServices.getTechnicians().pipe(takeUntil(this.destroy$)).subscribe(data=> {
+      console.log('[Calendar] Technicians API response:', data);
       this.technicians = data;
-    })
+      console.log('[Calendar] Technicians assigned:', this.technicians);
+      
+      // After loading techs, check employee status (matching legacy GetValue)
+      this.setDefaultFiltersBasedOnRole();
+    });
+    
     this.commonServices.getStates().subscribe(state => {
+      console.log('[Calendar] States API response:', state);
       this.locations = state;
-    })
+      console.log('[Calendar] Locations assigned:', this.locations);
+    });
+  }
+
+  // Legacy GetValue implementation: set defaults based on employee status
+  setDefaultFiltersBasedOnRole() {
+    console.log('[Calendar] setDefaultFiltersBasedOnRole called');
+    const empStatus = this.currentUser?.status || '';
+    const empID = (this.currentUser?.empID || '').trim();
+    console.log('[Calendar] Employee Status:', empStatus, 'Employee ID:', empID);
+    
+    if (empStatus === 'Technician') {
+      console.log('[Calendar] User is Technician, looking for match in:', this.technicians);
+      // Find tech in dropdown and select them (API returns techID)
+      const techExists = this.technicians?.find((t: any) => t.techID?.toString().trim() === empID.toString().trim());
+      console.log('[Calendar] Tech found:', techExists);
+      
+      if (techExists) {
+        console.log('[Calendar] Setting tech dropdown to:', empID.toString().trim());
+        this.jobFilterForm.patchValue({
+          tech: empID.toString().trim(),
+          ownerId: 'All',
+          state: 'All',
+          type: 'All'
+        });
+        
+        // Disable dropdowns for technicians (legacy behavior)
+        this.jobFilterForm.controls.tech.disable();
+        this.jobFilterForm.controls.ownerId.disable();
+      } else {
+        console.log('[Calendar] Tech not found, setting to All');
+        this.jobFilterForm.patchValue({
+          tech: 'All',
+          ownerId: 'All'
+        });
+      }
+    } else if (empStatus === 'Manager' || empStatus === 'Other') {
+      console.log('[Calendar] User is Manager/Other, looking in account managers:', this.accountManagers);
+      // Check if user is in account managers list
+      const mgrExists = this.accountManagers?.find((m: any) => {
+        const offid = m.offid?.toString().trim();
+        const managerEmpId = m.empID?.toString().trim();
+        return offid === empID || managerEmpId === empID;
+      });
+      console.log('[Calendar] Manager found:', mgrExists);
+      
+      if (mgrExists) {
+        console.log('[Calendar] Setting owner dropdown to:', empID.toString().trim());
+        this.jobFilterForm.patchValue({
+          ownerId: empID.toString().trim(),
+          tech: 'All',
+          state: 'All',
+          type: 'All'
+        });
+      } else {
+        console.log('[Calendar] Manager not found, setting all to All');
+        this.jobFilterForm.patchValue({
+          ownerId: 'All',
+          tech: 'All',
+          state: 'All',
+          type: 'All'
+        });
+      }
+      
+      // Enable both dropdowns for managers
+      this.jobFilterForm.controls.tech.enable();
+      this.jobFilterForm.controls.ownerId.enable();
+    }
+    console.log('[Calendar] Final form values:', this.jobFilterForm.getRawValue());
   }
 
   handleDateClick(arg:any) {
@@ -207,19 +371,18 @@ calendarEvent: Array<IEvent> =[];
 
   }
   SearchJobs(){
-    this.payload = {...this.calendarPayload, ...this.jobFilterForm.value}
+    // Get raw values to include disabled controls (for technicians)
+    const formValue = this.jobFilterForm.getRawValue();
+    this.payload = {...this.calendarPayload, ...formValue};
     this.getCalendarData(this.payload);
   }
-  checkOwnerValue() {
-    const { ownerId, tech, state, type } = this.jobFilterForm.controls;
   
-    if (
-      ownerId.value === 'All' &&
-      tech.value === 'All' &&
-      state.value === 'All' &&
-      type.value === 'All'
-    ) {
-      alert('Please select at least one filter');
+  checkOwnerValue() {
+    const formValue = this.jobFilterForm.getRawValue();
+    const { ownerId, tech, state } = formValue;
+  
+    if (ownerId === 'All' && tech === 'All' && state === 'All') {
+      alert('You must select at least one name');
       return false;
     }
   
@@ -227,13 +390,13 @@ calendarEvent: Array<IEvent> =[];
   }  
 }
 const appTypes : any[] = [
-  {Text : 'All',value:'All'}
- ,{Text : 'CON',value:'CON' }
- ,{Text : 'FCD',value:'FCD' }
- ,{Text : 'APPT',value:'3APPT' }
- ,{Text : 'VACATION',value:'VACATION' }
- ,{Text : 'TRAINING',value:'TRAINING' }
- ,{Text : 'CONFERENCE',value:'CONFERENCE' }
- ,{Text : 'SICK',value:'SICK' }
- ,{Text : 'TRAVEL',value:'TRAVEL' }
+  {Text : 'All', value:'All'},
+  {Text : 'CON', value:'CON'},
+  {Text : 'FCD', value:'FCD'},
+  {Text : 'APPT', value:'APPT'},
+  {Text : 'VACATION', value:'VACATION'},
+  {Text : 'TRAINING', value:'TRAINING'},
+  {Text : 'CONFERENCE', value:'CONFERENCE'},
+  {Text : 'SICK', value:'SICK'},
+  {Text : 'TRAVEL', value:'TRAVEL'}
 ];

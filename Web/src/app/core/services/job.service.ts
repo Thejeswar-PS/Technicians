@@ -7,7 +7,7 @@ import { EquipmentDetails } from '../model/equipment-detail.modal';
 import { ActivityDetailLog } from '../model/equipment-detail-log.modal';
 import { DCGBatteryPricingDetail } from '../model/dcg-battery-pricing-details.modal';
 import { GetServiceReportsDetails } from '../model/service-report-details-model';
-import { CalendarJobDetails } from '../model/calendar-job-details.model';
+import { CalendarJobDetails, CalendarResponse } from '../model/calendar-job-details.model';
 import { GetNotes } from '../model/get-notes.model';
 import { MobileReceipt } from '../model/mobile-receipt.model';
 @Injectable({
@@ -22,9 +22,9 @@ export class JobService {
   });
   API : string = environment.apiUrl;
 
-  getCalenderJobData(payload: any): Observable<CalendarJobDetails[]>{
+  getCalenderJobData(payload: any): Observable<CalendarResponse | CalendarJobDetails[]>{
     let params = new HttpParams({ fromObject: payload })
-    return this.http.get<CalendarJobDetails[]>(`${this.API}/Jobs/GetCalenderJobData?${params}`,{ headers : this.headers });
+    return this.http.get<CalendarResponse | CalendarJobDetails[]>(`${this.API}/Jobs/GetCalenderJobData?${params}`,{ headers : this.headers });
   }
   getDCGBatteryPricingDetails(ids: string, quantity: number): Observable<DCGBatteryPricingDetail[]>{
     return this.http.get<DCGBatteryPricingDetail[]>(`${this.API}/Jobs/GetPricingDetails?ids=${ids}&quantity=${quantity}`,{ headers : this.headers });

@@ -5,88 +5,85 @@
       <form [formGroup]="jobFilterForm" novalidate="" class="form">
         <table>
           <tr>
-            <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-3">Account Manager</label>
-            </td>
-            <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-3">Technicians</label>
-            </td>
-            <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-3">State</label>
-            </td>
-            <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-3">Appt Type</label>
-            </td>
-          </tr>
-          <tr>
-              <td>
+              <td style="border: 0px;">
                 <select
-                  class="form-select form-select-solid fw-bold text-dark fs-4 me-5"
-                  data-kt-select2="true"
-                  data-placeholder="Select option"
-                  data-allow-clear="true"
+                  class="form-select form-select-solid fw-bold text-dark"
                   formControlName="ownerId"
-                  style="font-size:10pt;width:150px;padding:4px;"
+                  style="font-size:9pt;width:150px;"
                 >
-                  <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
-                  <option class = "fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.empID.trim()">
-                    {{mgr.empName}}
+                  <option value="All" selected>All</option>
+                  <option *ngFor="let mgr of accountManagers" [value]="mgr.offid?.trim() || mgr.empID?.trim()">
+                    {{mgr.offname || mgr.empName}}
                   </option>
                 </select>
               </td>
               <td>
                 <select
-                  class="form-select form-select-solid fw-bold text-dark fs-4 me-5"
-                  data-kt-select2="true"
-                  data-placeholder="Select option"
-                  data-allow-clear="true"
+                  class="form-select form-select-solid fw-bold text-dark"
                   formControlName="tech"
-                  style="font-size:10pt;width:150px;padding: 4px;"
+                  style="font-size:9pt;width:150px;"
                 >
-                <option class = "fw-bold text-dark me-5" value="All">All</option>
-                <option class = "fw-bold text-dark me-5" *ngFor="let tech of technicians" [value]="tech.empID">{{tech.empName}}</option>
+                <option value="All">All</option>
+                <option *ngFor="let tech of technicians" [value]="tech.techID">{{tech.techname}}</option>
               </select>
               </td>
               <td>
                 <select
-                  class="form-select form-select-solid fw-bold text-dark fs-4 me-5"
-                  data-kt-select2="true"
-                  data-placeholder="Select option"
-                  data-allow-clear="true"
-                  style="font-size:10pt;width:150px;padding:4px;"
+                  class="form-select form-select-solid fw-bold text-dark"
+                  style="font-size:9pt;width:150px;"
                   formControlName="state"
                  >
-                 <option class = "fw-bold text-dark me-5" value="All" selected>All</option>
-                  <option class = "fw-bold text-dark me-5" *ngFor="let location of locations" [value]="location.stateCode">
+                 <option value="All" selected>All</option>
+                  <option *ngFor="let location of locations" [value]="location.stateCode">
                     {{location.stateName}}
                   </option>
                 </select>
               </td>
               <td>
                 <select
-                  class="form-select form-select-solid fw-bold text-dark fs-4 me-5"
-                  data-kt-select2="true"
-                  data-placeholder="Select option"
-                  data-allow-clear="true"
-                  style="font-size:10pt;width:150px;padding: 4px;"
+                  class="form-select form-select-solid fw-bold text-dark"
+                  style="font-size:9pt;width:150px;"
                   formControlName="type"
                  >
-                  <option class = "fw-bold text-dark me-5" *ngFor = "let type of appTypes" [value]="type.value">{{type.Text}}</option>
+                  <option *ngFor = "let type of appTypes" [value]="type.value">{{type.Text}}</option>
                 </select>
               </td>
 
             <td>
-              <div class="input-group fw-bold text-dark fs-3 me-5">
-                <div class="input-group-append">
-                  <button class="btn btn-primary" type="button" (click)="SearchJobs()">
-                    Get Jobs
-                  </button>
-                </div>
-              </div>
+              <button class="btn btn-primary" type="button" (click)="SearchJobs()" style="padding: 4px 12px;">
+                Get Jobs
+              </button>
             </td>
           </tr>
         </table>
       </form>
+
+      <!-- Statistics Bar matching legacy -->
+      <table style="width: 100%; margin-top: 10px;" *ngIf="statistics">
+        <tr>
+          <td class="tblmstrtd" style="background-color: #e60000; color: White">
+            <span class="statistics-title">OVERDUE</span>
+            <span class="statistics-no">{{statistics.overDue}}</span>
+          </td>
+          <td class="tblmstrtd" style="background-color: #E8A90E; color: White">
+            <span class="statistics-title">DUE TOMORROW</span>
+            <span class="statistics-no">{{statistics.tomorrow}}</span>
+          </td>
+          <td class="tblmstrtd" style="background-color: #f4d24e; color: White">
+            <span class="statistics-title">DUE 3 DAYS</span>
+            <span class="statistics-no">{{statistics.due3}}</span>
+          </td>
+          <td class="tblmstrtd" style="background-color: #b3b300; color: White">
+            <span class="statistics-title">DUE 5 DAYS</span>
+            <span class="statistics-no">{{statistics.due5}}</span>
+          </td>
+          <td class="tblmstrtd" style="background-color: #86b300; color: White">
+            <span class="statistics-title">DUE 10 DAYS</span>
+            <span class="statistics-no">{{statistics.due10}}</span>
+          </td>
+        </tr>
+      </table>
+
       </div>
       <full-calendar #calendar [options]="calendarOptions" class="ms-10 mb-10" style="width: 95%; font-size: large;"></full-calendar>
   </div>
