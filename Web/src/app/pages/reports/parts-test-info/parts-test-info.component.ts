@@ -2177,7 +2177,7 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   }
 
   // Map API employee names to actual employee names in the system
-  private mapEmployeeName(apiEmployeeName: string): string {
+  private mapEmployeeName1(apiEmployeeName: string): string {
     if (!apiEmployeeName) {
       return '';
     }
@@ -2261,39 +2261,39 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   }
 
   // Utility method to set up auto-resize for textareas
-  private setupTextareaAutoResize(): void {
-    // Use setTimeout to ensure DOM is ready
-    setTimeout(() => {
-      const textarea = document.querySelector('.auto-resize-textarea') as HTMLTextAreaElement;
-      if (textarea) {
-        // Auto-resize function
-        const autoResize = () => {
-          textarea.style.height = 'auto';
-          textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
-        };
+  // private setupTextareaAutoResize(): void {
+  //   // Use setTimeout to ensure DOM is ready
+  //   setTimeout(() => {
+  //     const textarea = document.querySelector('.auto-resize-textarea') as HTMLTextAreaElement;
+  //     if (textarea) {
+  //       // Auto-resize function
+  //       const autoResize = () => {
+  //         textarea.style.height = 'auto';
+  //         textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+  //       };
 
-        // Initial resize
-        autoResize();
+  //       // Initial resize
+  //       autoResize();
 
-        // Add event listeners for paste events
-        textarea.addEventListener('paste', () => setTimeout(autoResize, 0));
+  //       // Add event listeners for paste events
+  //       textarea.addEventListener('paste', () => setTimeout(autoResize, 0));
 
-        // Also listen to form value changes for programmatic updates
-        this.editForm.get('resolveNotes')?.valueChanges.subscribe(() => {
-          setTimeout(autoResize, 0);
-        });
-      }
-    }, 100);
-  }
+  //       // Also listen to form value changes for programmatic updates
+  //       this.editForm.get('resolveNotes')?.valueChanges.subscribe(() => {
+  //         setTimeout(autoResize, 0);
+  //       });
+  //     }
+  //   }, 100);
+  // }
 
   // Event handler for textarea input to auto-resize
-  onTextareaInput(event: Event): void {
-    const textarea = event.target as HTMLTextAreaElement;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
-    }
-  }
+  // onTextareaInput(event: Event): void {
+  //   const textarea = event.target as HTMLTextAreaElement;
+  //   if (textarea) {
+  //     textarea.style.height = 'auto';
+  //     textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+  //   }
+  // }
 
   // Map API employee names to actual employee names in the system
   private mapEmployeeName(apiEmployeeName: string): string {

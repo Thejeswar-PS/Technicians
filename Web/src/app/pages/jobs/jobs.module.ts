@@ -27,6 +27,7 @@ import { AtsReadingsComponent } from '../equipment/ats-readings/ats-readings.com
 import { StsReadingsComponent } from '../equipment/sts-readings/sts-readings.component';
 import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rectifier-readings.component';
 import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.component';
+import { OtherEquipmentComponent } from '../equipment/other-equipment/other-equipment.component';
 
 
 
@@ -53,7 +54,8 @@ import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.com
     AtsReadingsComponent,
     StsReadingsComponent,
     RectifierReadingsComponent,
-    SccReadingsComponent
+    SccReadingsComponent,
+    OtherEquipmentComponent
   ],
   imports: [
     CommonModule,

@@ -817,7 +817,7 @@ export class EquipmentService {
    * Equivalent to da.SaveUpdateSCC() in legacy code
    */
   saveUpdateSCC(sccData: any): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/Readings/SaveUpdateSCC`, sccData);
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/Readings/SaveUpdateSCCInfo`, sccData);
   }
 
 }

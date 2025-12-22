@@ -1296,5 +1296,54 @@ namespace Technicians.Api.Repository
             return result;
         }
 
+        public async Task SaveUpdateSccAsync(SCCDto scc)
+        {
+            using var con = new SqlConnection(_connectionString);
+            await con.OpenAsync();
+
+            using var cmd = new SqlCommand(
+                scc.SprocName == "SaveUpdateSCC" ? "SaveUpdateSCC" : "SaveUpdateOther",
+                con)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            // Common params
+            cmd.Parameters.AddWithValue("@CallNbr", scc.CallNbr);
+            cmd.Parameters.AddWithValue("@EquipId", scc.EquipId);
+            cmd.Parameters.AddWithValue("@SCCId", scc.SCCId);
+            cmd.Parameters.AddWithValue("@Manufacturer", scc.Manufacturer ?? "");
+            cmd.Parameters.AddWithValue("@ModelNo", scc.ModelNo ?? "");
+            cmd.Parameters.AddWithValue("@SerialNo", scc.SerialNo ?? "");
+            cmd.Parameters.AddWithValue("@Status", scc.Status ?? "");
+            cmd.Parameters.AddWithValue("@Comments", scc.Comments ?? "");
+            cmd.Parameters.AddWithValue("@Maint_Auth_ID", scc.Maint_Auth_ID);
+            cmd.Parameters.AddWithValue("@StatusNotes", scc.StatusNotes ?? "");
+
+            if (scc.SprocName == "SaveUpdateSCC")
+            {
+                cmd.Parameters.AddWithValue("@Temp", scc.Temp);
+
+                cmd.Parameters.AddWithValue("@BypassVoltA", scc.BypassVoltA ?? "");
+                cmd.Parameters.AddWithValue("@BypassVoltB", scc.BypassVoltB ?? "");
+                cmd.Parameters.AddWithValue("@BypassVoltC", scc.BypassVoltC ?? "");
+
+                cmd.Parameters.AddWithValue("@SupplyVoltA", scc.SupplyVoltA ?? "");
+                cmd.Parameters.AddWithValue("@SupplyVoltB", scc.SupplyVoltB ?? "");
+                cmd.Parameters.AddWithValue("@SupplyVoltC", scc.SupplyVoltC ?? "");
+
+                cmd.Parameters.AddWithValue("@OutputVoltA", scc.OutputVoltA ?? "");
+                cmd.Parameters.AddWithValue("@OutputVoltB", scc.OutputVoltB ?? "");
+                cmd.Parameters.AddWithValue("@OutputVoltC", scc.OutputVoltC ?? "");
+
+                cmd.Parameters.AddWithValue("@FirmwareVersion", scc.FirmwareVersion ?? "");
+                cmd.Parameters.AddWithValue("@PhaseError", scc.PhaseError ?? "");
+                cmd.Parameters.AddWithValue("@PartNos", scc.PartNos ?? "");
+                cmd.Parameters.AddWithValue("@LoadCurrent", scc.LoadCurrent ?? "");
+            }
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
     }
 }

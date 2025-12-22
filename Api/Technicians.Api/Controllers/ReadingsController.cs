@@ -509,5 +509,23 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+        [HttpPost("SaveUpdateSCCInfo")]
+        public async Task<IActionResult> UpdateSccInfo([FromBody] SCCDto request)
+        {
+            if (request == null)
+                return BadRequest("SCC payload is required");
+
+            try
+            {
+                await _repository.SaveUpdateSccAsync(request);
+
+                return Ok(new { message = "Update Successful." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
     }
 }
