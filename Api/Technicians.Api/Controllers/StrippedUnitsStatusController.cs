@@ -587,11 +587,12 @@ namespace Technicians.Api.Controllers
                     });
                 }
 
-                if (masterRowIndex <= 0)
+                // Change this validation to allow MasterRowIndex = 0
+                if (masterRowIndex < 0)
                 {
                     return BadRequest(new { 
                         success = false, 
-                        message = "Invalid MasterRowIndex. MasterRowIndex must be greater than 0." 
+                        message = "Invalid MasterRowIndex. MasterRowIndex cannot be negative." 
                     });
                 }
 

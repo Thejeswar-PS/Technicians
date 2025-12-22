@@ -7,6 +7,7 @@ import { CommonService } from 'src/app/core/services/common.service';
 import { AuthService } from 'src/app/modules/auth';
 import { 
   StrippedPartsDetailDto,
+  StrippedPartsInUnitDto,
   StrippedPartsInUnitResponse,
   StrippedPartsInUnitApiResponse,
   StrippedPartsGroupCountDto,
@@ -309,7 +310,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
    */
   private storeUnitInfo(unitInfo: UnitInfo): void {
     sessionStorage.setItem('StrippedPartsInUnit_UnitInfo', JSON.stringify(unitInfo));
-    console.log('💾 [LEGACY BEHAVIOR] Stored UnitInfo:', unitInfo);
+
   }
 
   /**
@@ -329,7 +330,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
    */
   private initializeMasterRowIndex(): void {
     // Always fetch the most recently updated unit when opening directly
-    console.log('🔍 [INITIALIZATION] Fetching most recently updated unit...');
+
     this.fetchMostRecentlyUpdatedUnit();
   }
 
@@ -337,57 +338,143 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
    * Fetch the most recently updated unit and use its MasterRowIndex
    */
   private fetchMostRecentlyUpdatedUnit(): void {
-    // Set loading state
+    // First, check if there are parts with Master Row Index = 0 (direct entries)
     this.isLoadingParts = true;
     
-    // Use existing method to get all units, then find the most recent
-    this.reportService.getAllStrippedUnitsStatus()
-      .pipe(finalize(() => this.isLoadingParts = false))
+    // Check for parts with Master Row Index = 0 first
+    this.reportService.getStrippedPartsInUnit(0)
       .subscribe({
         next: (response) => {
-          if (response.success && response.data && response.data.unitsData && response.data.unitsData.length > 0) {
-            // Sort by LastModifiedOn or CreatedOn to get the most recent
-            const sortedUnits = response.data.unitsData.sort((a, b) => {
-              const dateA = new Date(a.lastModifiedOn || a.createdOn || 0);
-              const dateB = new Date(b.lastModifiedOn || b.createdOn || 0);
-              return dateB.getTime() - dateA.getTime(); // Most recent first
-            });
-            
-            const mostRecentUnit = sortedUnits[0];
-            const recentMasterRowIndex = mostRecentUnit.rowIndex;
-            
-            console.log('📈 [MOST RECENT] Found most recently updated unit:', {
-              rowIndex: recentMasterRowIndex,
-              make: mostRecentUnit.make,
-              model: mostRecentUnit.model,
-              serialNo: mostRecentUnit.serialNo,
-              lastModified: mostRecentUnit.lastModifiedOn,
-              created: mostRecentUnit.createdOn
-            });
-            
-            // Set and store this as the new MasterRowIndex
-            this.setMasterRowIndex(recentMasterRowIndex);
-            
-            // Set unit info
+          if (response.success && response.data && response.data.partsDetails && response.data.partsDetails.length > 0) {
+            console.log('🎯 [MASTER ROW 0] Found parts with Master Row Index = 0, using as default');
+            this.setMasterRowIndex(0);
             this.unitInfo = {
-              make: mostRecentUnit.make || '',
-              model: mostRecentUnit.model || '',
-              serialNo: mostRecentUnit.serialNo || '',
-              kva: mostRecentUnit.kva || ''
+              make: 'Direct Entry',
+              model: 'Independent Parts',
+              serialNo: 'N/A',
+              kva: 'N/A'
             };
             this.storeUnitInfo(this.unitInfo);
-            
-            // Load the stripped parts data for this unit
-            this.loadStrippedPartsData(this.masterRowIndex);
-            
-          } else {
-            console.log('⚠️ [MOST RECENT] No units found, using fallback');
-            this.masterRowIndex = 0;
+            this.loadStrippedPartsData(0);
+            this.isLoadingParts = false;
+            return;
           }
+          
+          // If no parts with Master Row Index = 0, get the most recent unit
+          this.reportService.getAllStrippedUnitsStatus()
+            .pipe(finalize(() => this.isLoadingParts = false))
+            .subscribe({
+              next: (response) => {
+                if (response.success && response.data && response.data.unitsData && response.data.unitsData.length > 0) {
+                  // Sort by LastModifiedOn or CreatedOn to get the most recent
+                  const sortedUnits = response.data.unitsData.sort((a, b) => {
+                    const dateA = new Date(a.lastModifiedOn || a.createdOn || 0);
+                    const dateB = new Date(b.lastModifiedOn || b.createdOn || 0);
+                    return dateB.getTime() - dateA.getTime(); // Most recent first
+                  });
+                  
+                  const mostRecentUnit = sortedUnits[0];
+                  const recentMasterRowIndex = mostRecentUnit.rowIndex;
+                  
+                  console.log('📈 [MOST RECENT] Found most recently updated unit:', {
+                    rowIndex: recentMasterRowIndex,
+                    make: mostRecentUnit.make,
+                    model: mostRecentUnit.model,
+                    serialNo: mostRecentUnit.serialNo,
+                    lastModified: mostRecentUnit.lastModifiedOn,
+                    created: mostRecentUnit.createdOn
+                  });
+                  
+                  // Set and store this as the new MasterRowIndex
+                  this.setMasterRowIndex(recentMasterRowIndex);
+                  
+                  // Set unit info
+                  this.unitInfo = {
+                    make: mostRecentUnit.make || '',
+                    model: mostRecentUnit.model || '',
+                    serialNo: mostRecentUnit.serialNo || '',
+                    kva: mostRecentUnit.kva || ''
+                  };
+                  this.storeUnitInfo(this.unitInfo);
+                  
+                  // Load the stripped parts data for this unit
+                  this.loadStrippedPartsData(this.masterRowIndex);
+                  
+                } else {
+                  console.log('⚠️ [MOST RECENT] No units found, defaulting to Master Row Index = 0');
+                  this.setMasterRowIndex(0);
+                  this.unitInfo = {
+                    make: 'Direct Entry',
+                    model: 'Independent Parts', 
+                    serialNo: 'N/A',
+                    kva: 'N/A'
+                  };
+                  this.storeUnitInfo(this.unitInfo);
+                  this.loadStrippedPartsData(0);
+                }
+              },
+              error: (error) => {
+                console.error('❌ [MOST RECENT] Error fetching most recent unit:', error);
+                this.setMasterRowIndex(0);
+                this.unitInfo = {
+                  make: 'Direct Entry',
+                  model: 'Independent Parts',
+                  serialNo: 'N/A', 
+                  kva: 'N/A'
+                };
+                this.storeUnitInfo(this.unitInfo);
+                this.loadStrippedPartsData(0);
+              }
+            });
         },
         error: (error) => {
-          console.error('❌ [MOST RECENT] Error fetching most recent unit:', error);
-          this.masterRowIndex = 0;
+          console.log('⚠️ [MASTER ROW 0] No parts found with Master Row Index = 0, checking recent units');
+          // Continue with normal flow to get most recent unit
+          this.reportService.getAllStrippedUnitsStatus()
+            .pipe(finalize(() => this.isLoadingParts = false))
+            .subscribe({
+              next: (response) => {
+                if (response.success && response.data && response.data.unitsData && response.data.unitsData.length > 0) {
+                  const sortedUnits = response.data.unitsData.sort((a, b) => {
+                    const dateA = new Date(a.lastModifiedOn || a.createdOn || 0);
+                    const dateB = new Date(b.lastModifiedOn || b.createdOn || 0);
+                    return dateB.getTime() - dateA.getTime();
+                  });
+                  
+                  const mostRecentUnit = sortedUnits[0];
+                  this.setMasterRowIndex(mostRecentUnit.rowIndex);
+                  this.unitInfo = {
+                    make: mostRecentUnit.make || '',
+                    model: mostRecentUnit.model || '',
+                    serialNo: mostRecentUnit.serialNo || '',
+                    kva: mostRecentUnit.kva || ''
+                  };
+                  this.storeUnitInfo(this.unitInfo);
+                  this.loadStrippedPartsData(this.masterRowIndex);
+                } else {
+                  this.setMasterRowIndex(0);
+                  this.unitInfo = {
+                    make: 'Direct Entry',
+                    model: 'Independent Parts',
+                    serialNo: 'N/A',
+                    kva: 'N/A'
+                  };
+                  this.storeUnitInfo(this.unitInfo);
+                  this.loadStrippedPartsData(0);
+                }
+              },
+              error: () => {
+                this.setMasterRowIndex(0);
+                this.unitInfo = {
+                  make: 'Direct Entry',
+                  model: 'Independent Parts',
+                  serialNo: 'N/A',
+                  kva: 'N/A'
+                };
+                this.storeUnitInfo(this.unitInfo);
+                this.loadStrippedPartsData(0);
+              }
+            });
         }
       });
   }
@@ -638,8 +725,12 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             }
             
             if (!response.data.hasData || this.partsDetails.length === 0) {
-              // Show generic message for any MasterRowIndex when no data found
-              this.partsErrorMessage = 'No stripped parts found for this unit.';
+              // Show specific message for Master Row Index = 0 vs other units
+              if (masterRowIndex === 0) {
+                this.partsErrorMessage = 'No direct part entries found. Add parts using the "Add Parts" functionality to see them here.';
+              } else {
+                this.partsErrorMessage = 'No stripped parts found for this unit.';
+              }
               
               if (masterRowIndex === 0) {
                 console.log('❌ No data found for MasterRowIndex = 0, showing error message');
@@ -897,23 +988,52 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Save part update - calls SaveUpdateStrippedPartsInUnit API
   savePartUpdate(part: StrippedPartsDetailDto): void {
+    // Get DCGPartGroup from available properties (group or Group)
+    const dcgPartGroup = part.group || part.Group || 'DEFAULT_GROUP';
+    
     // Validate required fields
-    if (!part.dcgPartNo?.trim() || !part.partDesc?.trim()) {
-      this.toastr.error('DCG Part No and Description are required', 'Validation Error');
+    if (!dcgPartGroup || dcgPartGroup.trim() === '' || dcgPartGroup === 'DEFAULT_GROUP') {
+      this.toastr.error('DCG Part Group is missing. Cannot update part without group information.', 'Validation Error');
       return;
     }
+    
+    if (!part.dcgPartNo?.trim()) {
+      this.toastr.error('DCG Part No is required', 'Validation Error');
+      return;
+    }
+    
+    if (!part.partDesc?.trim()) {
+      this.toastr.error('Part Description is required', 'Validation Error');
+      return;
+    }
+
+    // Get current username for LastModifiedBy
+    const username = this.authService.currentUserValue?.username || 'System';
 
     // Call API to save update
     this.isUpdating = true;
     
-    // Make actual API call to SaveUpdateStrippedPartsInUnit
-    const dto = {
+    // Create proper DTO structure matching the StrippedPartsInUnitDto interface
+    const dto: StrippedPartsInUnitDto = {
       masterRowIndex: this.masterRowIndex,
+      rowIndex: part.rowIndex || part.RowIndex || 0,
+      dcgPartGroup: dcgPartGroup.trim(),
+      dcgPartNo: part.dcgPartNo?.trim() || '',
+      partDesc: part.partDesc?.trim() || '',
+      keepThrow: part.keepThrow || 'Keep',
+      stripNo: part.stripNo ? parseInt(part.stripNo.toString()) : 1,
+      lastModifiedBy: username
+    };
+    
+    console.log('📤 Updating part with payload:', dto);
+    console.log('🔍 Original part data:', {
+      group: part.group,
+      Group: part.Group,
       dcgPartNo: part.dcgPartNo,
       partDesc: part.partDesc,
-      stripNo: part.stripNo,
-      keepThrow: part.keepThrow
-    };
+      rowIndex: part.rowIndex,
+      RowIndex: part.RowIndex
+    });
     
     const updateSubscription = this.reportService.saveUpdateStrippedPartsInUnit(dto)
       .pipe(finalize(() => this.isUpdating = false))
@@ -924,15 +1044,22 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             this.originalPartData.delete(part);
             this.toastr.success(`Part ${part.dcgPartNo} updated successfully`, 'Update Successful');
             
-            // Refresh the data
-            this.calculateFromPartsDetails();
+            // Refresh the data to reflect changes
+            this.loadStrippedPartsData(this.masterRowIndex);
           } else {
             this.toastr.error(response.error || 'Failed to update part', 'Update Failed');
           }
         },
         error: (error: any) => {
           console.error('Error updating part:', error);
-          this.toastr.error('Error updating part. Please try again.', 'Update Failed');
+          let errorMessage = 'Error updating part. Please try again.';
+          if (error.error?.message) {
+            errorMessage = error.error.message;
+          } else if (error.error?.errors) {
+            const errors = Object.values(error.error.errors).flat();
+            errorMessage = errors.join(', ');
+          }
+          this.toastr.error(errorMessage, 'Update Failed');
         }
       });
     

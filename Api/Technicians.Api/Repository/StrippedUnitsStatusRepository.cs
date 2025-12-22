@@ -299,8 +299,9 @@ namespace Technicians.Api.Repository
                 return errors;
             }
 
-            if (dto.MasterRowIndex <= 0)
-                errors.Add("MasterRowIndex is required and must be greater than 0");
+            // Change this validation to allow MasterRowIndex = 0
+            if (dto.MasterRowIndex < 0)
+                errors.Add("MasterRowIndex cannot be negative");
 
             if (string.IsNullOrWhiteSpace(dto.DCGPartGroup))
                 errors.Add("DCGPartGroup is required");
