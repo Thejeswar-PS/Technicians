@@ -527,5 +527,20 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("GetBatteryReadingsGraphData")]
+        public async Task<IActionResult> GetBatteryReadingsGraphData([FromQuery] string callNbr, [FromQuery] string equipNo)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(equipNo))
+                return BadRequest("callNbr and equipNo are required");
+
+            var data = await _repository.GetBatteryReadingsGraphData(callNbr, equipNo);
+
+            if (data == null || data.Count == 0)
+                return NotFound("No battery graph data found");
+
+            return Ok(data);
+        }
+
+
     }
 }

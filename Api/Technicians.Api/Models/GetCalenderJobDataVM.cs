@@ -17,6 +17,7 @@
         public string? ForeColor { get; set; }
         public string? CallNbr { get; set; }
         public string? TechName { get; set; }
+        public string? Status { get; set; }
         public object Clone()
         {
             return this.MemberwiseClone();

@@ -84,9 +84,9 @@ currentUser: any;
   initCalendar(){
    this.calendarOptions  = {
     headerToolbar: {
-      right: "today prev,next",
+      right: "prev,next",
       center: "title",
-      left: "dayGridMonth",
+      left: "today",
     },
       initialView: 'dayGridMonth',
       plugins: [dayGridPlugin],
@@ -158,17 +158,25 @@ currentUser: any;
     payload['startDate'] = firstDate.toISOString().split('T')[0];
     payload['endDate'] = lastDate.toISOString().split('T')[0];
     
+    // Match legacy sproc selection: use Updated version if account manager dropdown is enabled
+    const isAccMgrEnabled = !this.jobFilterForm.controls.ownerId.disabled;
+    payload['sproc'] = isAccMgrEnabled ? 'aaTechCalendar_Module_Updated' : 'aaTechCalendar_Module';
+    
+    console.log('[Calendar] API payload', { startDate: payload['startDate'], endDate: payload['endDate'], sproc: payload['sproc'], tech: payload['tech'], ownerId: payload['ownerId'] });
+    
     this.jobService.getCalenderJobData(payload).pipe(takeUntil(this.destroy$),
     ).subscribe(res => {
-      // API should return CalendarResponse with jobDetails and statistics
-      if (res && (res as any).jobDetails) {
-        const response = res as any as CalendarResponse;
-        this.jobDetailList = response.jobDetails;
-        this.statistics = response.statistics;
-      } else {
-        // Fallback if API returns just array
-        this.jobDetailList = res as any;
-        this.statistics = null;
+      const response = res as CalendarResponse | any;
+
+      // Support both legacy (jobDetails/statistics) and current (calendarJobs/summary) payloads
+      const jobs = response?.calendarJobs || response?.jobDetails || res;
+      const stats = response?.summary || response?.statistics || null;
+
+      this.jobDetailList = jobs;
+      this.statistics = stats;
+
+      if (this.statistics) {
+        console.log('[Calendar] Summary statistics', this.statistics);
       }
       this.expandMultiDayEvents();
       this.formatEvents(this.jobDetailList);
@@ -217,47 +225,62 @@ currentUser: any;
     this.calendarEvent = [];
 
     for (const list of details) {
-      let start = list.startDate.toString().split("T");
-      let formattedTitle = this.formatEventTitle(list.description);
-      
-      // Determine color and CSS class based on status and callNbr
-      let color = '#6bc6e1'; // Default cellText color
+      const rawStart = list.startDate as any;
+      const startDate = new Date(rawStart);
+      const startIso = isNaN(startDate.getTime())
+        ? (typeof rawStart === 'string' ? rawStart.split('T')[0] : '')
+        : startDate.toISOString().slice(0, 10);
+
+      const description = list.description || '';
+      const formattedTitle = this.formatEventTitle(description);
+      const call = (list.callNbr || '').toString().trim();
+      const isNumericCall = /^\d+$/.test(call);
+
+      // Determine color and CSS class based on call/description
+      let color = '#6bc6e1';
       let classNames: string[] = [];
-      
-      if (list.callNbr === 'Federal Holiday') {
-        color = '#76b007'; // fedtxt green
-        classNames = ['fedtxt'];
-      } else if (list.status === 'VACATION') {
-        color = '#fddbf9'; // vacationtxt pink
-        classNames = ['vacationtxt'];
-      } else if (list.status === 'DRUGTEST') {
-        color = '#e60000'; // drugtext red
-        classNames = ['drugtext'];
-      } else if (list.status === 'APPT') {
-        color = '#fddbf9'; // appttxt pink
-        classNames = ['appttxt'];
+
+      const descUpper = description.toUpperCase();
+      if (!isNumericCall) {
+        if (call.toUpperCase() === 'FEDERAL HOLIDAY' || descUpper.includes('FED HOLIDAY') || descUpper.includes('FEDERAL HOLIDAY')) {
+          color = '#76b007';
+          classNames = ['fedtxt'];
+        } else if (descUpper.includes('VACATION')) {
+          color = '#fddbf9';
+          classNames = ['vacationtxt'];
+        } else if (descUpper.includes('DRUGTEST') || descUpper.includes('DRUG TEST')) {
+          color = '#e60000';
+          classNames = ['drugtext'];
+        } else if (descUpper.includes('APPT')) {
+          color = '#fddbf9';
+          classNames = ['appttxt'];
+        } else {
+          classNames = ['cellText'];
+        }
       } else {
-        // Regular job - use cellText
+        // Numeric call numbers -> regular jobs
         classNames = ['cellText'];
       }
-      
-      let event: IEvent = {
-        title: formattedTitle,
-        start: start[0],
-        color: color,
+
+      const safeTitle = (formattedTitle || '').trim() || (!isNumericCall ? (call || 'Special Event') : 'Job');
+
+      const event: IEvent = {
+        title: safeTitle,
+        start: startIso,
+        color,
         allDay: false,
-        classNames: classNames
+        classNames
       };
-      
-      // Add URL for regular jobs (not holidays/appointments)
-      if (list.callNbr !== 'Federal Holiday' && 
-          list.status !== 'VACATION' && 
-          list.status !== 'APPT' &&
-          list.status !== 'DRUGTEST') {
-        const techName = encodeURIComponent(list.techName.trim());
-        event.url = `${this.document.location.origin}/#/jobs/job-notes?CallNbr=${list.callNbr.trim()}&TechName=${techName}&Status=${list.status}`;
+
+      // Add URL only for numeric call numbers (real jobs)
+      if (isNumericCall) {
+        const techName = encodeURIComponent(((list.techName as any) || '').toString().trim());
+        event.url = `${this.document.location.origin}/#/jobs/job-notes-info?CallNbr=${call}&TechName=${techName}`;
       }
-      
+
+      if (!isNumericCall) {
+        console.log('[Calendar] Non-numeric callNbr event', { call, startIso, classNames, title: safeTitle });
+      }
       this.calendarEvent.push(event);
     }
     this.calendarOptions.events = this.calendarEvent;
@@ -363,7 +386,13 @@ currentUser: any;
     console.log('[Calendar] Final form values:', this.jobFilterForm.getRawValue());
   }
 
-  handleDateClick(arg:any) {
+  handleDateClick(arg: any) {
+    const url = arg?.event?.url;
+    if (url) {
+      window.open(url, '_blank');
+      arg.jsEvent?.preventDefault();
+      return;
+    }
     console.log(this.document.location.origin);
   }
 
@@ -373,7 +402,11 @@ currentUser: any;
   SearchJobs(){
     // Get raw values to include disabled controls (for technicians)
     const formValue = this.jobFilterForm.getRawValue();
-    this.payload = {...this.calendarPayload, ...formValue};
+    
+    // Match legacy: convert tech 'All' to '0'
+    const tech = formValue.tech === 'All' ? '0' : formValue.tech;
+    
+    this.payload = {...this.calendarPayload, ...formValue, tech};
     this.getCalendarData(this.payload);
   }
   

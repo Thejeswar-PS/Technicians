@@ -1,20 +1,20 @@
 export interface CalendarJobDetails {
     description: string;
     status: string;
-    startDate:    Date;
-    startTime:   Date;
-    endDate:     Date;
-    endTime:     Date;
-    address1:    string;
+    startDate: Date;
+    startTime: Date;
+    endDate: Date;
+    endTime: Date;
+    address1: string;
     siteContact: string;
-    sitePhone:   string;
-    offname:     string;
-    custName:    string;
-    jobNotes:    string;
-    backColor:   string;
-    foreColor:   string;
-    callNbr:     string;
-    techName:    string;
+    sitePhone: string;
+    offname: string;
+    custName: string;
+    jobNotes: string;
+    backColor: string;
+    foreColor: string;
+    callNbr: string;
+    techName: string;
 }
 
 export interface CalendarStatistics {
@@ -26,6 +26,10 @@ export interface CalendarStatistics {
 }
 
 export interface CalendarResponse {
-    jobDetails: CalendarJobDetails[];
-    statistics: CalendarStatistics;
+    // Legacy shape
+    jobDetails?: CalendarJobDetails[];
+    statistics?: CalendarStatistics;
+    // Current API shape
+    calendarJobs?: CalendarJobDetails[];
+    summary?: CalendarStatistics;
 }

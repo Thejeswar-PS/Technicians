@@ -1345,5 +1345,68 @@ namespace Technicians.Api.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
+        public async Task<List<BatteryReadingGraphDto>> GetBatteryReadingsGraphData(string callNbr, string equipNo)
+        {
+            var result = new List<BatteryReadingGraphDto>();
+
+            await using var connection = new SqlConnection(_connectionString);
+            await using var command = new SqlCommand("BatteryReadingsGraph", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            command.Parameters.Add("@CallNbr", SqlDbType.VarChar, 21).Value = callNbr;
+            command.Parameters.Add("@EquipNo", SqlDbType.VarChar, 21).Value = equipNo;
+
+            await connection.OpenAsync();
+
+            await using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                result.Add(new BatteryReadingGraphDto
+                {
+                    EquipID = reader.GetInt32(reader.GetOrdinal("EquipID")),
+                    BatteryId = reader.GetInt32(reader.GetOrdinal("BatteryId")),
+                    CallNbr = reader.GetString(reader.GetOrdinal("CallNbr")),
+
+                    Status1 = reader["Status1"] as string,
+                    Status2 = reader["Status2"] as string,
+
+                    ErrorVDC = reader["ErrorVDC"] as decimal?,
+                    LowErrorVDC = reader["LowErrorVDC"] as decimal?,
+                    WarningVDC = reader["WarningVDC"] as decimal?,
+                    LowWarningVDC = reader["LowWarningVDC"] as decimal?,
+
+                    VDC = reader["VDC"] as decimal?,
+                    NVDC = reader["NVDC"] as decimal?,
+
+                    RefValue = reader["RefValue"] as decimal?,
+                    RefPercent = reader["RefPercent"] as decimal?,
+                    WarRef = reader["WarRef"] as decimal?,
+                    ErrorRef = reader["ErrorRef"] as decimal?,
+
+                    ReplacementNeeded = reader["ReplacementNeeded"] as string,
+                    MonitoringBattery = reader["MonitoringBattery"] as string,
+                    Cracks = reader["Cracks"] as string,
+
+                    SpGravity = reader["SpGravity"] as decimal?,
+                    Strap1 = reader["Strap1"] as decimal?,
+                    Strap2 = reader["Strap2"] as decimal?,
+
+                    ActionPlan = reader["ActionPlan"] as string,
+                    ReadingType = reader["ReadingType"] is DBNull ? 0 : Convert.ToInt32(reader["ReadingType"]),
+                    FloatVoltS = reader["FloatVoltS"] as string,
+
+                    BatteryTypeName = reader["BatteryTypeName"] as string,
+                    ChkmVAC = reader["chkmVAC"] as string,
+                    ChkStrap = reader["chkStrap"] as string
+                });
+            }
+
+            return result;
+        }
+
+
     }
 }

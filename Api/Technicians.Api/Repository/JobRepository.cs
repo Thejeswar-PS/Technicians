@@ -64,14 +64,14 @@ namespace Technicians.Api.Repository
             return jobs;
         }
 
-        public async Task<List<GetCalenderJobDataVM>> GetCalenderJobData(DateTime startDate, DateTime endDate, string ownerId, string tech, string state, string type)
+        public async Task<CalendarDataResponseDto> GetCalenderJobData(DateTime startDate, DateTime endDate, string ownerId, string tech, string state, string type, string sproc)
         {
             try
             {
                 var parameter = new DynamicParameters();
 
-                var daysInMonth = DateTime.DaysInMonth(startDate.Year, endDate.Month);
-                endDate = startDate.AddDays(daysInMonth - 1);
+                //var daysInMonth = DateTime.DaysInMonth(startDate.Year, endDate.Month);
+                //endDate = startDate.AddDays(daysInMonth - 1);
                 if (tech == "All")
                 {
                     tech = "0";
@@ -83,14 +83,27 @@ namespace Technicians.Api.Repository
                 parameter.Add("@pOffFilter", ownerId.Trim(), DbType.String, ParameterDirection.Input);
                 parameter.Add("@State", state, DbType.String, ParameterDirection.Input);
                 parameter.Add("@Status", type, DbType.String, ParameterDirection.Input);
+                
                 using (var connection = new SqlConnection(_eTechConnectionString))
                 {
-
                     await connection.OpenAsync();
-                    var results = await connection.QueryAsync<GetCalenderJobDataVM>("aaTechCalendar_Module_Updated", parameter, commandType: CommandType.StoredProcedure);
-                    connection.Close();
-
-                    return results.ToList();
+                    
+                    using (var multi = await connection.QueryMultipleAsync(sproc, parameter, commandType: CommandType.StoredProcedure))
+                    {
+                        // Read first result set - Calendar job data
+                        var calendarJobs = (await multi.ReadAsync<GetCalenderJobDataVM>()).ToList();
+                        
+                        // Read second result set - Summary counts
+                        var summary = await multi.ReadFirstOrDefaultAsync<CalendarSummaryDto>();
+                        
+                        connection.Close();
+                        
+                        return new CalendarDataResponseDto
+                        {
+                            CalendarJobs = calendarJobs,
+                            Summary = summary ?? new CalendarSummaryDto()
+                        };
+                    }
                 }
             }
             catch (Exception ex)
@@ -98,6 +111,5 @@ namespace Technicians.Api.Repository
                 throw ex;
             }
         }
-
     }
 }

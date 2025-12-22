@@ -71,15 +71,16 @@ namespace Technicians.Api.Controllers
         }
 
         [HttpGet("GetCalenderJobData")]
-        [SwaggerResponse(StatusCodes.Status200OK, "Return Calender Job data", typeof(List<GetCalenderJobDataVM>))]
+        [SwaggerResponse(StatusCodes.Status200OK, "Return Calender Job data", typeof(CalendarDataResponseDto))]
         public async Task<ActionResult> GetCalenderJobData([FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate,
         [FromQuery] string ownerId,
         [FromQuery] string tech,
         [FromQuery] string state,
-        [FromQuery] string type)
+        [FromQuery] string type,
+        [FromQuery] string sproc)
         {
-            var result = await _jobRepository.GetCalenderJobData(startDate, endDate, ownerId, tech, state, type);
+            var result = await _jobRepository.GetCalenderJobData(startDate, endDate, ownerId, tech, state, type, sproc);
             return Ok(result);
         }
     }

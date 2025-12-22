@@ -1,0 +1,252 @@
+<!-- Battery Readings Graph Page -->
+<div class="container-fluid battery-graph-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="loading"
+    class="d-flex justify-content-center align-items-center battery-graph-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="battery-graph-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary battery-graph-header__back"
+      (click)="goBack()"
+      [disabled]="loading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="battery-page-title">
+      <h2 class="fw-bold mb-0" style="color: #00a8ff !important;">
+        <i class="bi bi-graph-up me-2"></i>
+        Battery Readings Graph
+      </h2>
+      <!-- Filter Information -->
+      <div class="text-dark mt-2" *ngIf="!loading && chartDataPoints.length > 0">
+        <span class="fw-semibold">Call #{{ callNbr }} | Equipment: {{ equipNo }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>Error:</strong> {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!loading">
+
+    <!--begin::Charts Section with Tabs-->
+    <div class="card shadow-sm battery-main-card mb-4" *ngIf="chartDataPoints.length > 0">
+      
+
+      <!--begin::Card body-->
+      <div class="card-body py-2">
+
+        <!--begin::Tab Content-->
+        <div class="tab-content">
+
+          <!--begin::VDC Tab-->
+          <div class="tab-pane fade"
+               [class.show]="activeGraphTab === 'vdc'"
+               [class.active]="activeGraphTab === 'vdc'">
+
+            <div class="row g-5">
+              <div class="col-12">
+
+                <!--begin::Chart Section-->
+                <div class="chart-section">
+
+                  <!--begin::Chart Header with Type Selector-->
+                  <div class="chart-header-controls">
+                    <h4 class="chart-selector-title">DC Voltage Readings</h4>
+                    
+                    <div class="chart-type-controls">
+                      <input type="radio" class="btn-check" 
+                             name="vdcChartType" id="vdcBarChart"
+                             [checked]="currentChartType === 'bar'" 
+                             (change)="setChartType('bar')">
+                      <label class="chart-type-btn" for="vdcBarChart">
+                        <i class="bi bi-bar-chart-fill"></i>
+                        Bar Chart
+                      </label>
+
+                      <input type="radio" class="btn-check" 
+                             name="vdcChartType" id="vdcDataTable"
+                             [checked]="currentChartType === 'table'" 
+                             (change)="setChartType('table')">
+                      <label class="chart-type-btn" for="vdcDataTable">
+                        <i class="bi bi-table"></i>
+                        Table
+                      </label>
+                    </div>
+                  </div>
+                  <!--end::Chart Header-->
+
+                  <!--begin::Card body-->
+                  <div class="card-body">
+
+                    <!-- Bar Chart View -->
+                    <div *ngIf="currentChartType === 'bar'" class="chart-wrapper">
+                      <canvas #vdcChartCanvas class="chart-canvas"></canvas>
+                    </div>
+
+                    <!-- Table View -->
+                    <div *ngIf="currentChartType === 'table'" class="modern-table-container">
+                      <div class="table-wrapper">
+                        <table class="interactive-chart-table">
+                          <thead>
+                            <tr>
+                              <th>Battery ID</th>
+                              <th>VDC Reading</th>
+                              <th>Error Threshold</th>
+                              <th>Warning Threshold</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let point of chartDataPoints; let i = index" 
+                                [style.animation-delay.ms]="i * 50">
+                              <td><strong>Battery {{ point.batteryId }}</strong></td>
+                              <td>{{ point.vdc.toFixed(2) }} V</td>
+                              <td>{{ point.errorVdc.toFixed(2) }} V</td>
+                              <td>{{ point.warningVdc.toFixed(2) }} V</td>
+                              <td>
+                                <span class="status-badge" [style.background-color]="getStatusColor(point.status1)">
+                                  {{ point.status1 }}
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                  </div>
+                  <!--end::Card body-->
+
+                </div>
+                <!--end::Chart Section-->
+
+              </div>
+            </div>
+
+          </div>
+          <!--end::VDC Tab-->
+
+          <!--begin::MHOS Tab-->
+          <div class="tab-pane fade"
+               *ngIf="chkEnablemVAC || readingType === '2'"
+               [class.show]="activeGraphTab === 'mhos'"
+               [class.active]="activeGraphTab === 'mhos'">
+
+            <div class="row g-5">
+              <div class="col-12">
+
+                <!--begin::Chart Section-->
+                <div class="chart-section">
+
+                  <!--begin::Chart Header with Type Selector-->
+                  <div class="chart-header-controls">
+                    <h4 class="chart-selector-title">Data Visualization</h4>
+                    
+                    <div class="chart-type-controls">
+                      <input type="radio" class="btn-check" 
+                             name="mhosChartType" id="mhosBarChart"
+                             [checked]="currentChartType === 'bar'" 
+                             (change)="setChartType('bar')">
+                      <label class="chart-type-btn" for="mhosBarChart">
+                        <i class="bi bi-bar-chart-fill"></i>
+                        Bar Chart
+                      </label>
+
+                      <input type="radio" class="btn-check" 
+                             name="mhosChartType" id="mhosDataTable"
+                             [checked]="currentChartType === 'table'" 
+                             (change)="setChartType('table')">
+                      <label class="chart-type-btn" for="mhosDataTable">
+                        <i class="bi bi-table"></i>
+                        Table
+                      </label>
+                    </div>
+                  </div>
+                  <!--end::Chart Header-->
+
+                  <!--begin::Card body-->
+                  <div class="card-body">
+
+                    <!-- Bar Chart View -->
+                    <div *ngIf="currentChartType === 'bar'" class="chart-wrapper">
+                      <canvas #mhosChartCanvas class="chart-canvas"></canvas>
+                    </div>
+
+                    <!-- Table View -->
+                    <div *ngIf="currentChartType === 'table'" class="modern-table-container">
+                      <div class="table-wrapper">
+                        <table class="interactive-chart-table">
+                          <thead>
+                            <tr>
+                              <th>Battery ID</th>
+                              <th>MHOS/VAC Reading</th>
+                              <th>Error Reference</th>
+                              <th>Warning Reference</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let point of chartDataPoints; let i = index" 
+                                [style.animation-delay.ms]="i * 50">
+                              <td><strong>Battery {{ point.batteryId }}</strong></td>
+                              <td>{{ point.nvdc.toFixed(2) }}</td>
+                              <td>{{ point.errorRef.toFixed(2) }}</td>
+                              <td>{{ point.warRef.toFixed(2) }}</td>
+                              <td>
+                                <span class="status-badge" [style.background-color]="getStatusColor(point.status2)">
+                                  {{ point.status2 }}
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                  </div>
+                  <!--end::Card body-->
+
+                </div>
+                <!--end::Chart Section-->
+
+              </div>
+            </div>
+
+          </div>
+          <!--end::MHOS Tab-->
+
+        </div>
+        <!--end::Tab Content-->
+
+      </div>
+      <!--end::Card body-->
+
+    </div>
+    <!--end::Charts Section-->
+
+    <!-- No Data Message -->
+    <div *ngIf="chartDataPoints.length === 0 && !errorMessage" class="alert alert-info d-flex align-items-center">
+      <i class="bi bi-info-circle me-2"></i>
+      No battery data available for the selected equipment.
+    </div>
+
+  </div>
+
+</div>
