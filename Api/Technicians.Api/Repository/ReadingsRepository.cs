@@ -1296,5 +1296,143 @@ namespace Technicians.Api.Repository
             return result;
         }
 
+        public async Task SaveUpdateSccAsync(SCCDto scc)
+        {
+            using var con = new SqlConnection(_connectionString);
+            await con.OpenAsync();
+
+            using var cmd = new SqlCommand(
+                scc.SprocName == "SaveUpdateSCC" ? "SaveUpdateSCC" : "SaveUpdateOther",
+                con)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            // Common params
+            cmd.Parameters.AddWithValue("@CallNbr", scc.CallNbr);
+            cmd.Parameters.AddWithValue("@EquipId", scc.EquipId);
+            cmd.Parameters.AddWithValue("@SCCId", scc.SCCId);
+            cmd.Parameters.AddWithValue("@Manufacturer", scc.Manufacturer ?? "");
+            cmd.Parameters.AddWithValue("@ModelNo", scc.ModelNo ?? "");
+            cmd.Parameters.AddWithValue("@SerialNo", scc.SerialNo ?? "");
+            cmd.Parameters.AddWithValue("@Status", scc.Status ?? "");
+            cmd.Parameters.AddWithValue("@Comments", scc.Comments ?? "");
+            cmd.Parameters.AddWithValue("@Maint_Auth_ID", scc.Maint_Auth_ID);
+            cmd.Parameters.AddWithValue("@StatusNotes", scc.StatusNotes ?? "");
+
+            if (scc.SprocName == "SaveUpdateSCC")
+            {
+                cmd.Parameters.AddWithValue("@Temp", scc.Temp);
+
+                cmd.Parameters.AddWithValue("@BypassVoltA", scc.BypassVoltA ?? "");
+                cmd.Parameters.AddWithValue("@BypassVoltB", scc.BypassVoltB ?? "");
+                cmd.Parameters.AddWithValue("@BypassVoltC", scc.BypassVoltC ?? "");
+
+                cmd.Parameters.AddWithValue("@SupplyVoltA", scc.SupplyVoltA ?? "");
+                cmd.Parameters.AddWithValue("@SupplyVoltB", scc.SupplyVoltB ?? "");
+                cmd.Parameters.AddWithValue("@SupplyVoltC", scc.SupplyVoltC ?? "");
+
+                cmd.Parameters.AddWithValue("@OutputVoltA", scc.OutputVoltA ?? "");
+                cmd.Parameters.AddWithValue("@OutputVoltB", scc.OutputVoltB ?? "");
+                cmd.Parameters.AddWithValue("@OutputVoltC", scc.OutputVoltC ?? "");
+
+                cmd.Parameters.AddWithValue("@FirmwareVersion", scc.FirmwareVersion ?? "");
+                cmd.Parameters.AddWithValue("@PhaseError", scc.PhaseError ?? "");
+                cmd.Parameters.AddWithValue("@PartNos", scc.PartNos ?? "");
+                cmd.Parameters.AddWithValue("@LoadCurrent", scc.LoadCurrent ?? "");
+            }
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        public async Task<List<BatteryReadingGraphDto>> GetBatteryReadingsGraphData(string callNbr,string equipNo)
+        {
+            var result = new List<BatteryReadingGraphDto>();
+
+            await using var connection = new SqlConnection(_connectionString);
+            await using var command = new SqlCommand("BatteryReadingsGraph", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            command.Parameters.Add("@CallNbr", SqlDbType.VarChar, 21).Value = callNbr;
+            command.Parameters.Add("@EquipNo", SqlDbType.VarChar, 21).Value = equipNo;
+
+            await connection.OpenAsync();
+
+            await using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                result.Add(new BatteryReadingGraphDto
+                {
+                    EquipID = reader.GetInt32(reader.GetOrdinal("EquipID")),
+                    BatteryId = reader.GetInt32(reader.GetOrdinal("BatteryId")),
+                    CallNbr = reader.GetString(reader.GetOrdinal("CallNbr")),
+
+                    Status1 = reader["Status1"] as string,
+                    Status2 = reader["Status2"] as string,
+
+                    ErrorVDC = reader["ErrorVDC"] as decimal?,
+                    LowErrorVDC = reader["LowErrorVDC"] as decimal?,
+                    WarningVDC = reader["WarningVDC"] as decimal?,
+                    LowWarningVDC = reader["LowWarningVDC"] as decimal?,
+
+                    VDC = reader["VDC"] as decimal?,
+                    NVDC = reader["NVDC"] as decimal?,
+
+                    RefValue = reader["RefValue"] as decimal?,
+                    RefPercent = reader["RefPercent"] as decimal?,
+                    WarRef = reader["WarRef"] as decimal?,
+                    ErrorRef = reader["ErrorRef"] as decimal?,
+
+                    ReplacementNeeded = reader["ReplacementNeeded"] as string,
+                    MonitoringBattery = reader["MonitoringBattery"] as string,
+                    Cracks = reader["Cracks"] as string,
+
+                    SpGravity = reader["SpGravity"] as decimal?,
+                    Strap1 = reader["Strap1"] as decimal?,
+                    Strap2 = reader["Strap2"] as decimal?,
+
+                    ActionPlan = reader["ActionPlan"] as string,
+                    ReadingType = reader["ReadingType"] is DBNull ? 0 : Convert.ToInt32(reader["ReadingType"]),
+                    FloatVoltS = reader["FloatVoltS"] as string,
+
+                    BatteryTypeName = reader["BatteryTypeName"] as string,
+                    ChkmVAC = reader["chkmVAC"] as string,
+                    ChkStrap = reader["chkStrap"] as string
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<GeneratorInfoDto> GetGeneratorInfoAsync(string callNbr, string equipNo, int equipId)
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await using var command = new SqlCommand("etechGeneratorForm", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CallId", callNbr);
+            parameters.Add("@EquipId", equipId);
+            parameters.Add("CodeId", equipNo);
+
+            var result = await connection.QueryFirstOrDefaultAsync<GeneratorInfoDto>(
+                "etechGeneratorForm",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            if (result == null)
+            {
+                throw new KeyNotFoundException("No SCC data found.");
+            }
+
+            return result;
+        }
+
     }
 }

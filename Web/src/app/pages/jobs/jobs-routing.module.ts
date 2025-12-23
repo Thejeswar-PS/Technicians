@@ -15,11 +15,14 @@ import { JobPartsComponent } from './job-parts/job-parts.component';
 import { EditPartsComponent } from './edit-parts/edit-parts.component';
 import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
 import { BatteryReadingsTempComponent } from '../equipment/battery-readings-temp/battery-readings-temp.component';
+import { BatteryReadingsGraphComponent } from '../equipment/battery-readings-graph/battery-readings-graph.component';
 import { PduReadingsComponent } from '../equipment/pdu-readings/pdu-readings.component';
 import { AtsReadingsComponent } from '../equipment/ats-readings/ats-readings.component';
 import { StsReadingsComponent } from '../equipment/sts-readings/sts-readings.component';
 import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rectifier-readings.component';
 import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.component';
+import { OtherEquipmentComponent } from '../equipment/other-equipment/other-equipment.component';
+import { GeneratorReadingsComponent } from '../equipment/generator-readings/generator-readings.component';
 
 const routes: Routes = [
   {
@@ -90,6 +93,10 @@ const routes: Routes = [
   {
     path: 'battery-readings-temp',
     component: BatteryReadingsTempComponent
+  },
+  {
+    path: 'battery-readings-graph',
+    component: BatteryReadingsGraphComponent
   }
   ,
   {
@@ -115,6 +122,14 @@ const routes: Routes = [
   {
     path: 'scc-readings',
     component: SccReadingsComponent
+  },
+  {
+    path: 'generator-readings',
+    component: GeneratorReadingsComponent
+  },
+  {
+    path: 'other-equipment',
+    component: OtherEquipmentComponent
   }
   // Job summary sample route commented out for integration-only usage
   // {

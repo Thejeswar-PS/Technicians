@@ -22,11 +22,14 @@ import { JobSummarySampleComponent } from './job-summary-sample/job-summary-samp
 import { UpsReadingsModule } from '../ups-readings/ups-readings.module';
 import { BatteryReadingsComponent } from '../equipment/battery-readings/battery-readings.component';
 import { BatteryReadingsTempComponent } from '../equipment/battery-readings-temp/battery-readings-temp.component';
+import { BatteryReadingsGraphComponent } from '../equipment/battery-readings-graph/battery-readings-graph.component';
 import { PduReadingsComponent } from '../equipment/pdu-readings/pdu-readings.component';
 import { AtsReadingsComponent } from '../equipment/ats-readings/ats-readings.component';
 import { StsReadingsComponent } from '../equipment/sts-readings/sts-readings.component';
 import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rectifier-readings.component';
 import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.component';
+import { OtherEquipmentComponent } from '../equipment/other-equipment/other-equipment.component';
+import { GeneratorReadingsComponent } from '../equipment/generator-readings/generator-readings.component';
 
 
 
@@ -49,11 +52,14 @@ import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.com
     JobSummarySampleComponent,
     BatteryReadingsComponent,
     BatteryReadingsTempComponent,
+    BatteryReadingsGraphComponent,
     PduReadingsComponent,
     AtsReadingsComponent,
     StsReadingsComponent,
     RectifierReadingsComponent,
-    SccReadingsComponent
+    SccReadingsComponent,
+    GeneratorReadingsComponent,
+    OtherEquipmentComponent
   ],
   imports: [
     CommonModule,

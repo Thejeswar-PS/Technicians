@@ -15,11 +15,13 @@ namespace Technicians.Api.Repository
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly string _eTechConnectionString;
 
         public JobRepository(IConfiguration configuration)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
+            _eTechConnectionString = _configuration.GetConnectionString("ETechGreatPlainsConnString");
 
         }
 
@@ -62,5 +64,52 @@ namespace Technicians.Api.Repository
             return jobs;
         }
 
+        public async Task<CalendarDataResponseDto> GetCalenderJobData(DateTime startDate, DateTime endDate, string ownerId, string tech, string state, string type, string sproc)
+        {
+            try
+            {
+                var parameter = new DynamicParameters();
+
+                //var daysInMonth = DateTime.DaysInMonth(startDate.Year, endDate.Month);
+                //endDate = startDate.AddDays(daysInMonth - 1);
+                if (tech == "All")
+                {
+                    tech = "0";
+                }
+                parameter.Add("@pStartDate", startDate, DbType.String, ParameterDirection.Input);
+                parameter.Add("@pEndDate", endDate, DbType.String, ParameterDirection.Input);
+                parameter.Add("@pCalendarSelect", "Tech", DbType.String, ParameterDirection.Input);
+                parameter.Add("@pTechFilter", tech, DbType.String, ParameterDirection.Input);
+                parameter.Add("@pOffFilter", ownerId.Trim(), DbType.String, ParameterDirection.Input);
+                parameter.Add("@State", state, DbType.String, ParameterDirection.Input);
+                parameter.Add("@Status", type, DbType.String, ParameterDirection.Input);
+                
+                using (var connection = new SqlConnection(_eTechConnectionString))
+                {
+                    await connection.OpenAsync();
+                    
+                    using (var multi = await connection.QueryMultipleAsync(sproc, parameter, commandType: CommandType.StoredProcedure))
+                    {
+                        // Read first result set - Calendar job data
+                        var calendarJobs = (await multi.ReadAsync<GetCalenderJobDataVM>()).ToList();
+                        
+                        // Read second result set - Summary counts
+                        var summary = await multi.ReadFirstOrDefaultAsync<CalendarSummaryDto>();
+                        
+                        connection.Close();
+                        
+                        return new CalendarDataResponseDto
+                        {
+                            CalendarJobs = calendarJobs,
+                            Summary = summary ?? new CalendarSummaryDto()
+                        };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

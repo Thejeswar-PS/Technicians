@@ -509,5 +509,58 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+        [HttpPost("SaveUpdateSCCInfo")]
+        public async Task<IActionResult> UpdateSccInfo([FromBody] SCCDto request)
+        {
+            if (request == null)
+                return BadRequest("SCC payload is required");
+
+            try
+            {
+                await _repository.SaveUpdateSccAsync(request);
+
+                return Ok(new { message = "Update Successful." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("GetBatteryReadingsGraphData")]
+        public async Task<IActionResult> GetBatteryReadingsGraphData([FromQuery] string callNbr, [FromQuery] string equipNo)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(equipNo))
+                return BadRequest("callNbr and equipNo are required");
+
+            var data = await _repository.GetBatteryReadingsGraphData(callNbr, equipNo);
+
+            if (data == null || data.Count == 0)
+                return NotFound("No battery graph data found");
+
+            return Ok(data);
+        }
+
+        [HttpGet("GetGeneratorInfo")]
+        public async Task<IActionResult> GetGeneratorInfo(
+        [FromQuery] string callNbr,
+        [FromQuery] string equipNo,
+        [FromQuery] int equipId)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) ||
+                string.IsNullOrWhiteSpace(equipNo))
+            {
+                return BadRequest("callNbr, equipNo and equipId are required.");
+            }
+
+            var data = await _repository.GetGeneratorInfoAsync(callNbr, equipNo, equipId);
+
+            if (data == null)
+                return NotFound("Generator info not found.");
+
+            return Ok(data);
+        }
+
+
     }
 }

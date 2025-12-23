@@ -1,5 +1,5 @@
-// Import shared UPS readings styles
-@import '../../ups-readings/ups-readings.component.scss';
+// Import ATS readings styles for card-like design parity
+@import '../ats-readings/ats-readings.component.scss';
 
 // SCC-specific styles (if any additional customization needed)
 .scc-voltage-section {

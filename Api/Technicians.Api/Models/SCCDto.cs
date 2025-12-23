@@ -32,6 +32,7 @@
         public string Comments { get; set; }
         public string StatusNotes { get; set; }
         public string Maint_Auth_ID { get; set; }
+        public string SprocName { get; set; }
     }
 
 }

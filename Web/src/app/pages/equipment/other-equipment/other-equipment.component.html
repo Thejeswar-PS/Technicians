@@ -1,0 +1,222 @@
+<!-- Other Equipment Page -->
+<div class="container-fluid ups-readings-container">
+  
+  <!-- Header with Back and Save buttons -->
+  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__back"
+      (click)="goBack()"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="ups-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-gear me-2"></i>
+        Other Equipment
+      </h2>
+      <!-- Job and Equipment Information -->
+      <div class="text-dark mt-2">
+        <span class="fw-semibold">Job ID: {{ callNbr }} | Equipment No: {{ equipNo }} | Equipment ID: {{ equipId }}</span>
+      </div>
+    </div>
+    
+    <button
+      type="button"
+      class="btn btn-sm btn-primary ups-readings-header__action"
+      (click)="saveEquipment()"
+      [disabled]="!equipmentVerificationForm.valid"
+    >
+      <i class="bi bi-check-circle me-2"></i>
+      Save Equipment
+    </button>
+  </div>
+
+  <!-- Main content -->
+  <div class="card shadow-sm ups-main-card">
+    <div class="card-body">
+      <div class="ups-readings-form">
+        
+        <!-- Equipment Verification Section -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div
+              class="ups-section-header"
+              (click)="showEquipmentVerification = !showEquipmentVerification"
+            >
+              <div class="ups-section-title">
+                <i class="bi bi-check-square me-2 text-primary"></i>
+                <h5 class="mb-0">Equipment Verification</h5>
+              </div>
+              <i
+                class="bi transition-transform"
+                [class.bi-chevron-down]="showEquipmentVerification"
+                [class.bi-chevron-right]="!showEquipmentVerification"
+              ></i>
+            </div>
+
+            <div
+              class="ups-section-content"
+              [class.show]="showEquipmentVerification"
+              *ngIf="showEquipmentVerification"
+            >
+              <form [formGroup]="equipmentVerificationForm" class="ups-form">
+                <!-- Manufacturer, Model, Serial Row -->
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <select 
+                          class="form-select" 
+                          formControlName="manufacturer" 
+                          [class.is-invalid]="equipmentVerificationForm.get('manufacturer')?.invalid && equipmentVerificationForm.get('manufacturer')?.touched"
+                          id="manufacturer">
+                          <option value="">Choose manufacturer...</option>
+                          <option *ngFor="let mfg of manufacturers" [value]="mfg.value">{{ mfg.label }}</option>
+                        </select>
+                        <label for="manufacturer">Make <span class="text-danger">*</span></label>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="equipmentVerificationForm.get('manufacturer')?.invalid && equipmentVerificationForm.get('manufacturer')?.touched"
+                        >
+                          Manufacturer is required
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input 
+                          type="text" 
+                          class="form-control" 
+                          formControlName="modelNo" 
+                          [class.is-invalid]="equipmentVerificationForm.get('modelNo')?.invalid && equipmentVerificationForm.get('modelNo')?.touched"
+                          id="modelNo" 
+                          placeholder="Model No">
+                        <label for="modelNo">Model No <span class="text-danger">*</span></label>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="equipmentVerificationForm.get('modelNo')?.invalid && equipmentVerificationForm.get('modelNo')?.touched"
+                        >
+                          Model No is required
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input 
+                          type="text" 
+                          class="form-control" 
+                          formControlName="serialNo" 
+                          [class.is-invalid]="equipmentVerificationForm.get('serialNo')?.invalid && equipmentVerificationForm.get('serialNo')?.touched"
+                          id="serialNo" 
+                          placeholder="Serial No">
+                        <label for="serialNo">Serial No <span class="text-danger">*</span></label>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="equipmentVerificationForm.get('serialNo')?.invalid && equipmentVerificationForm.get('serialNo')?.touched"
+                        >
+                          Serial No is required
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Location & Date Code Row -->
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input 
+                          type="text" 
+                          class="form-control" 
+                          formControlName="location" 
+                          id="location" 
+                          placeholder="Location">
+                        <label for="location">Location</label>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <input 
+                          type="date" 
+                          class="form-control" 
+                          formControlName="dateCode" 
+                          id="dateCode">
+                        <label for="dateCode">Date Code</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status Row -->
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <div class="form-floating">
+                        <select 
+                          class="form-select" 
+                          formControlName="status" 
+                          [class.is-invalid]="equipmentVerificationForm.get('status')?.invalid && equipmentVerificationForm.get('status')?.touched"
+                          id="status">
+                          <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+                        </select>
+                        <label for="status">Status <span class="text-danger">*</span></label>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="equipmentVerificationForm.get('status')?.invalid && equipmentVerificationForm.get('status')?.touched"
+                        >
+                          Status is required
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Status Notes Row -->
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea 
+                          class="form-control" 
+                          formControlName="statusNotes" 
+                          id="statusNotes" 
+                          placeholder="Status Notes" 
+                          style="height: 100px;"></textarea>
+                        <label for="statusNotes">Status Notes</label>
+                      </div>
+                      <small class="form-text text-muted">Required if status is not Online</small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Comments Row -->
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea 
+                          class="form-control" 
+                          formControlName="comments" 
+                          id="comments" 
+                          placeholder="Comments / Description" 
+                          style="height: 120px;"></textarea>
+                        <label for="comments">Comments / Description</label>
+                      </div>
+                      <small class="form-text text-muted">Please enter the description</small>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>

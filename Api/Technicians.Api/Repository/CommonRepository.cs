@@ -89,7 +89,7 @@ namespace Technicians.Api.Repository
                 await using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                using var command = new SqlCommand("SpGetTechnicians", connection);
+                using var command = new SqlCommand("etechTechNames", connection);
                 command.CommandType = System.Data.CommandType.StoredProcedure;
 
                 using var reader = await command.ExecuteReaderAsync();
@@ -97,8 +97,8 @@ namespace Technicians.Api.Repository
                 {
                     technicians.Add(new GetTechniciansVM
                     {
-                        EmpID = reader["EmpID"].ToString(),
-                        EmpName = reader["EmpName"].ToString()
+                        TechID = reader["TechID"].ToString(),
+                        Techname = reader["Techname"].ToString()
                     });
                 }
             }
