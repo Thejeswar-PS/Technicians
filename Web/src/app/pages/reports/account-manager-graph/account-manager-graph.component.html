@@ -1,0 +1,556 @@
+<div class="d-flex flex-column">
+  <!-- Header -->
+  <div class="card card-custom card-stretch">
+    <div class="card-header align-items-center border-0 mt-4">
+      <h3 class="card-title align-items-start flex-column">
+        <span class="fw-bolder mb-2 text-dark">Account Manager Graphs</span>
+        <span class="text-muted fw-bold fs-7">Dashboard for Account Status & Management Analytics</span>
+      </h3>
+      <div class="card-toolbar">
+        <button type="button" 
+                class="btn btn-sm btn-icon btn-color-primary btn-active-light-primary" 
+                (click)="refreshData()"
+                title="Refresh Data">
+          <span class="svg-icon svg-icon-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M14.5 20.7259C14.6 21.2259 14.2 21.7259 13.7 21.7259C12.2 21.7259 10.9 21.7259 9.60001 21.2259C6.90001 20.2259 4.50001 18.2259 3.10001 15.7259C1.30001 12.2259 1.49999 8.22595 3.89999 4.82595C5.49999 2.52595 7.89999 1.22595 10.5 0.925954C13.4 0.525954 16.2 1.25595 18.6 3.05595C18.9 3.25595 18.9 3.75595 18.6 4.05595L16.8 5.85595C16.5 6.15595 16 6.15595 15.8 5.85595C14.5 4.85595 12.9 4.25595 11.3 4.25595C9.39999 4.25595 7.59999 5.05595 6.39999 6.55595C4.59999 8.75595 4.3 11.7259 5.8 14.2259C7.1 16.2259 9.39999 17.5259 11.8 17.8259C12.3 17.9259 12.7 18.3259 12.7 18.8259V20.7259C12.7 21.2259 13.1 21.2259 14.5 20.7259Z" fill="currentColor"/>
+              <path opacity="0.3" d="M15.8 5.85595L18.6 3.05595C18.9 2.75595 19.4 2.75595 19.6 3.05595L21.9 5.35595C22.2 5.65595 22.2 6.15595 21.9 6.45595L19.1 9.25595C18.8 9.55595 18.3 9.55595 18.1 9.25595L15.8 6.95595C15.5 6.65595 15.5 6.15595 15.8 5.85595Z" fill="currentColor"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-5 g-xl-8 mt-2">
+    <!-- Account Status Graph Card -->
+    <div class="col-xl-6">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark">DC GROUP - SERVICE CALL STATUS</span>
+            <span class="text-muted fw-bold fs-7">Job costing and invoice status metrics</span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingAcctStatus" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="acctStatusError && !isLoadingAcctStatus" class="alert alert-danger">
+            <div class="alert-text">{{ acctStatusError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingAcctStatus && !acctStatusError && acctStatusData" class="chart-container">
+            <apx-chart
+              [series]="acctStatusChartOptions.series"
+              [chart]="acctStatusChartOptions.chart"
+              [xaxis]="acctStatusChartOptions.xaxis"
+              [yaxis]="acctStatusChartOptions.yaxis"
+              [dataLabels]="acctStatusChartOptions.dataLabels"
+              [stroke]="acctStatusChartOptions.stroke"
+              [legend]="acctStatusChartOptions.legend"
+              [fill]="acctStatusChartOptions.fill"
+              [colors]="acctStatusChartOptions.colors"
+              [plotOptions]="acctStatusChartOptions.plotOptions"
+              [grid]="acctStatusChartOptions.grid"
+              [tooltip]="acctStatusChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- Summary Cards -->
+          <div *ngIf="!isLoadingAcctStatus && !acctStatusError && acctStatusData" class="row g-3 mt-3">
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-primary">
+                    <span class="svg-icon svg-icon-1 svg-icon-primary">📊</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ acctStatusData.completedcosting }}</span>
+                  <span class="text-muted fw-semibold">Completed Costing</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-success">
+                    <span class="svg-icon svg-icon-1 svg-icon-success">💰</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ acctStatusData.invoicedtoday }}</span>
+                  <span class="text-muted fw-semibold">Invoiced Today</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-warning">
+                    <span class="svg-icon svg-icon-1 svg-icon-warning">📋</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ acctStatusData.completedparts }}</span>
+                  <span class="text-muted fw-semibold">Completed Parts</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-danger">
+                    <span class="svg-icon svg-icon-1 svg-icon-danger">❗</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ acctStatusData.missingData }}</span>
+                  <span class="text-muted fw-semibold">Missing Data</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Account Management Graph Card -->
+    <div class="col-xl-6">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark">Account Management</span>
+            <span class="text-muted fw-bold fs-7">Scheduling and completion status metrics</span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingAccMgmt" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-success" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="accMgmtError && !isLoadingAccMgmt" class="alert alert-danger">
+            <div class="alert-text">{{ accMgmtError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingAccMgmt && !accMgmtError && accMgmtData" class="chart-container">
+            <apx-chart
+              [series]="accMgmtChartOptions.series"
+              [chart]="accMgmtChartOptions.chart"
+              [xaxis]="accMgmtChartOptions.xaxis"
+              [yaxis]="accMgmtChartOptions.yaxis"
+              [dataLabels]="accMgmtChartOptions.dataLabels"
+              [stroke]="accMgmtChartOptions.stroke"
+              [legend]="accMgmtChartOptions.legend"
+              [fill]="accMgmtChartOptions.fill"
+              [colors]="accMgmtChartOptions.colors"
+              [plotOptions]="accMgmtChartOptions.plotOptions"
+              [grid]="accMgmtChartOptions.grid"
+              [tooltip]="accMgmtChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- Summary Cards -->
+          <div *ngIf="!isLoadingAccMgmt && !accMgmtError && accMgmtData" class="row g-3 mt-3">
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-info">
+                    <span class="svg-icon svg-icon-1 svg-icon-info">📅</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ accMgmtData.scheduledtoday }}</span>
+                  <span class="text-muted fw-semibold">Scheduled Today</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-success">
+                    <span class="svg-icon svg-icon-1 svg-icon-success">✅</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ accMgmtData.completedreturned }}</span>
+                  <span class="text-muted fw-semibold">Completed Returned</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-warning">
+                    <span class="svg-icon svg-icon-1 svg-icon-warning">⏰</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ accMgmtData.pastUnscheduled }}</span>
+                  <span class="text-muted fw-semibold">Past Unscheduled</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-danger">
+                    <span class="svg-icon svg-icon-1 svg-icon-danger">⚠️</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ accMgmtData.downSites }}</span>
+                  <span class="text-muted fw-semibold">Down Sites</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Manager Paperwork Section -->
+  <div class="row g-5 g-xl-8 mt-2">
+    <div class="col-xl-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark">ACCOUNT MANAGER PAPERWORK TO BE PROCESSED</span>
+            <span class="text-muted fw-bold fs-7">Jobs count by office ID</span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingPaperwork" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-info" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="paperworkError && !isLoadingPaperwork" class="alert alert-danger">
+            <div class="alert-text">{{ paperworkError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingPaperwork && !paperworkError && paperworkData && paperworkData.length > 0" class="chart-container">
+            <apx-chart
+              [series]="paperworkChartOptions.series"
+              [chart]="paperworkChartOptions.chart"
+              [xaxis]="paperworkChartOptions.xaxis"
+              [yaxis]="paperworkChartOptions.yaxis"
+              [dataLabels]="paperworkChartOptions.dataLabels"
+              [stroke]="paperworkChartOptions.stroke"
+              [legend]="paperworkChartOptions.legend"
+              [fill]="paperworkChartOptions.fill"
+              [colors]="paperworkChartOptions.colors"
+              [plotOptions]="paperworkChartOptions.plotOptions"
+              [grid]="paperworkChartOptions.grid"
+              [tooltip]="paperworkChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!isLoadingPaperwork && !paperworkError && (!paperworkData || paperworkData.length === 0)" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No paperwork data available</h5>
+            </div>
+          </div>
+          
+          <!-- Summary Stats -->
+          <div *ngIf="!isLoadingPaperwork && !paperworkError && paperworkData && paperworkData.length > 0" class="row g-3 mt-3">
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-info">
+                    <span class="svg-icon svg-icon-1 svg-icon-info">🏢</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ paperworkData.length }}</span>
+                  <span class="text-muted fw-semibold">Total Offices</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-success">
+                    <span class="svg-icon svg-icon-1 svg-icon-success">📋</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getTotalJobs() }}</span>
+                  <span class="text-muted fw-semibold">Total Jobs</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-warning">
+                    <span class="svg-icon svg-icon-1 svg-icon-warning">📈</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getAverageJobs() }}</span>
+                  <span class="text-muted fw-semibold">Avg Jobs/Office</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-primary">
+                    <span class="svg-icon svg-icon-1 svg-icon-primary">🏆</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getTopOffice() }}</span>
+                  <span class="text-muted fw-semibold">Top Office</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Manager Quote Graph Section -->
+  <div class="row g-5 g-xl-8 mt-2">
+    <div class="col-xl-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark">ACCOUNT MANAGERS - QUOTES TO BE PROCESSED</span>
+            <span class="text-muted fw-bold fs-7">Quotes count by office ID</span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingQuoteGraph" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-warning" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="quoteGraphError && !isLoadingQuoteGraph" class="alert alert-danger">
+            <div class="alert-text">{{ quoteGraphError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingQuoteGraph && !quoteGraphError && quoteGraphData && quoteGraphData.length > 0" class="chart-container">
+            <apx-chart
+              [series]="quoteGraphChartOptions.series"
+              [chart]="quoteGraphChartOptions.chart"
+              [xaxis]="quoteGraphChartOptions.xaxis"
+              [yaxis]="quoteGraphChartOptions.yaxis"
+              [dataLabels]="quoteGraphChartOptions.dataLabels"
+              [stroke]="quoteGraphChartOptions.stroke"
+              [legend]="quoteGraphChartOptions.legend"
+              [fill]="quoteGraphChartOptions.fill"
+              [colors]="quoteGraphChartOptions.colors"
+              [plotOptions]="quoteGraphChartOptions.plotOptions"
+              [grid]="quoteGraphChartOptions.grid"
+              [tooltip]="quoteGraphChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!isLoadingQuoteGraph && !quoteGraphError && (!quoteGraphData || quoteGraphData.length === 0)" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No quote graph data available</h5>
+            </div>
+          </div>
+          
+          <!-- Summary Stats -->
+          <div *ngIf="!isLoadingQuoteGraph && !quoteGraphError && quoteGraphData && quoteGraphData.length > 0" class="row g-3 mt-3">
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-warning">
+                    <span class="svg-icon svg-icon-1 svg-icon-warning">🏢</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ quoteGraphData.length }}</span>
+                  <span class="text-muted fw-semibold">Total Offices</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-success">
+                    <span class="svg-icon svg-icon-1 svg-icon-success">💰</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getTotalQuotes() }}</span>
+                  <span class="text-muted fw-semibold">Total Quotes</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-info">
+                    <span class="svg-icon svg-icon-1 svg-icon-info">📈</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getAverageQuotes() }}</span>
+                  <span class="text-muted fw-semibold">Avg Quotes/Office</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-primary">
+                    <span class="svg-icon svg-icon-1 svg-icon-primary">🏆</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getTopQuoteOffice() }}</span>
+                  <span class="text-muted fw-semibold">Top Quote Office</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Managers - Unscheduled Job Status Section -->
+  <div class="row g-5 g-xl-8 mt-2">
+    <div class="col-xl-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark">ACCOUNT MANAGERS - UNSCHEDULED JOB STATUS</span>
+            <span class="text-muted fw-bold fs-7">Unscheduled jobs count by office ID</span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingUnscheduled" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-danger" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="unscheduledError && !isLoadingUnscheduled" class="alert alert-danger">
+            <div class="alert-text">{{ unscheduledError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingUnscheduled && !unscheduledError && unscheduledData && unscheduledData.length > 0" class="chart-container">
+            <apx-chart
+              [series]="unscheduledChartOptions.series"
+              [chart]="unscheduledChartOptions.chart"
+              [xaxis]="unscheduledChartOptions.xaxis"
+              [yaxis]="unscheduledChartOptions.yaxis"
+              [dataLabels]="unscheduledChartOptions.dataLabels"
+              [stroke]="unscheduledChartOptions.stroke"
+              [legend]="unscheduledChartOptions.legend"
+              [fill]="unscheduledChartOptions.fill"
+              [colors]="unscheduledChartOptions.colors"
+              [plotOptions]="unscheduledChartOptions.plotOptions"
+              [grid]="unscheduledChartOptions.grid"
+              [tooltip]="unscheduledChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!isLoadingUnscheduled && !unscheduledError && (!unscheduledData || unscheduledData.length === 0)" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No unscheduled job data available</h5>
+            </div>
+          </div>
+          
+          <!-- Summary Stats -->
+          <div *ngIf="!isLoadingUnscheduled && !unscheduledError && unscheduledData && unscheduledData.length > 0" class="row g-3 mt-3">
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-danger">
+                    <span class="svg-icon svg-icon-1 svg-icon-danger">🏢</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ unscheduledData.length }}</span>
+                  <span class="text-muted fw-semibold">Total Offices</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-warning">
+                    <span class="svg-icon svg-icon-1 svg-icon-warning">⏰</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getTotalUnscheduled() }}</span>
+                  <span class="text-muted fw-semibold">Total Unscheduled</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-info">
+                    <span class="svg-icon svg-icon-1 svg-icon-info">📈</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getAverageUnscheduled() }}</span>
+                  <span class="text-muted fw-semibold">Avg/Office</span>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="d-flex align-items-center">
+                <div class="symbol symbol-40px me-3">
+                  <div class="symbol-label bg-light-primary">
+                    <span class="svg-icon svg-icon-1 svg-icon-primary">⚠️</span>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-start flex-column">
+                  <span class="text-dark fw-bold text-hover-primary fs-6">{{ getTopUnscheduledOffice() }}</span>
+                  <span class="text-muted fw-semibold">Highest Unscheduled</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

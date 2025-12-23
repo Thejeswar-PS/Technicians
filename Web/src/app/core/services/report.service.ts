@@ -66,6 +66,12 @@ import {
   DistinctModelsResponse,
   DistinctModelsByMakeResponse
 } from '../model/parts-test-status.model';
+import { 
+  AcctStatusGraphDto,
+  AccMgmtGraphDto,
+  AccountManagerPaperworkDto,
+  AccountManagerGraphResponse
+} from '../model/account-manager-graph.model';
 
 @Injectable({
   providedIn: 'root'
@@ -888,6 +894,37 @@ export class ReportService {
    */
   updateStrippedPartInUnit(partData: StrippedPartsInUnitDto): Observable<StrippedPartsInUnitApiResponse> {
     return this.http.put<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/UpdateStrippedPartInUnit`, partData, {
+      headers: this.headers
+    });
+  }
+
+  // Account Manager Graph API methods
+  getAcctStatusGraph(): Observable<AcctStatusGraphDto> {
+    return this.http.get<AcctStatusGraphDto>(`${this.API}/calls-graph/acct-status`, {
+      headers: this.headers
+    });
+  }
+
+  getAccMgmtGraph(): Observable<AccMgmtGraphDto> {
+    return this.http.get<AccMgmtGraphDto>(`${this.API}/calls-graph/acct-management`, {
+      headers: this.headers
+    });
+  }
+
+  getAccountManagerPaperwork(): Observable<AccountManagerPaperworkDto[]> {
+    return this.http.get<AccountManagerPaperworkDto[]>(`${this.API}/calls-graph/account-manager-paperwork`, {
+      headers: this.headers
+    });
+  }
+
+  getAccountManagerQuoteGraph(): Observable<AccountManagerPaperworkDto[]> {
+    return this.http.get<AccountManagerPaperworkDto[]>(`${this.API}/calls-graph/account-manager-quote-graph`, {
+      headers: this.headers
+    });
+  }
+
+  getAccountManagerUnscheduled(): Observable<AccountManagerPaperworkDto[]> {
+    return this.http.get<AccountManagerPaperworkDto[]>(`${this.API}/calls-graph/account-manager-unscheduled`, {
       headers: this.headers
     });
   }

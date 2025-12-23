@@ -32,8 +32,7 @@ import { SharedModule } from '../../components/shared/shared.module';
     PartsTestStatusComponent,
     StrippedUnitsStatusComponent,
     StrippedUnitInfoComponent,
-    StrippedPartsInunitComponent,
-
+    StrippedPartsInunitComponent
   ],
   imports: [
     CommonModule,
