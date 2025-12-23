@@ -89,7 +89,7 @@ namespace Technicians.Api.Repository
         /// <summary>
         /// Gets stripped units filtered by status
         /// </summary>
-        /// <param name="status">Status filter (Inp, Def, Com, Wos, or All)</param>
+        /// <param name="status">Status filter (INP, NCR, MPJ, COM, Inp, Def, Wos, or All)</param>
         /// <returns>Filtered units data with make counts</returns>
         public async Task<StrippedUnitsStatusResponse> GetStrippedUnitsByStatusAsync(string status)
         {
@@ -133,6 +133,397 @@ namespace Technicians.Api.Repository
             {
                 throw new Exception($"Error retrieving make counts: {ex.Message}", ex);
             }
+        }
+
+       
+        /// <summary>
+        /// Saves or updates a stripping unit using the SaveUpdateStrippingUnit stored procedure
+        /// </summary>
+        /// <param name="dto">The stripping unit data to save or update</param>
+        /// <returns>True if successful</returns>
+        public async Task<bool> SaveUpdateStrippingUnitAsync(StrippedUnitsStatusDto dto)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@RowIndex", dto.RowIndex, DbType.Int32);
+                parameters.Add("@Make", dto.Make, DbType.AnsiString, size: 50);
+                parameters.Add("@Model", dto.Model, DbType.AnsiString, size: 50);
+                parameters.Add("@KVA", dto.KVA, DbType.AnsiStringFixedLength, size: 10);
+                parameters.Add("@Voltage", dto.Voltage, DbType.AnsiStringFixedLength, size: 10);
+                parameters.Add("@SerialNo", dto.SerialNo, DbType.AnsiString, size: 50);
+                parameters.Add("@PONumber", dto.PONumber, DbType.AnsiStringFixedLength, size: 10);
+                parameters.Add("@ShippingPO", dto.ShippingPO, DbType.AnsiStringFixedLength, size: 10);
+                parameters.Add("@UnitCost", dto.UnitCost, DbType.Decimal);
+                parameters.Add("@ShipCost", dto.ShipCost, DbType.Decimal);
+                parameters.Add("@StrippedBy", dto.StrippedBy, DbType.AnsiString, size: 100);
+                parameters.Add("@PutAwayBy", dto.PutAwayBy, DbType.AnsiString, size: 100);
+                parameters.Add("@Status", dto.Status, DbType.AnsiStringFixedLength, size: 3);
+                parameters.Add("@PartsLocation", dto.PartsLocation, DbType.AnsiString, size: 120);
+                parameters.Add("@LastModifiedBy", dto.LastModifiedBy, DbType.AnsiString, size: 100);
+
+                await connection.ExecuteAsync("SaveUpdateStrippingUnit", parameters, commandType: CommandType.StoredProcedure);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error saving/updating stripping unit: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Saves or updates stripped parts in unit using the SaveUpdateStrippedPartsInUnit stored procedure
+        /// </summary>
+        /// <param name="dto">The stripped parts in unit data to save or update</param>
+        /// <returns>True if successful</returns>
+        public async Task<bool> SaveUpdateStrippedPartsInUnitAsync(StrippedPartsInUnitDto dto)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@MasterRowIndex", dto.MasterRowIndex, DbType.Int32);
+                parameters.Add("@RowIndex", dto.RowIndex, DbType.Int32);
+                parameters.Add("@DCGPartGroup", dto.DCGPartGroup, DbType.AnsiStringFixedLength, size: 30);
+                parameters.Add("@DCGPartNo", dto.DCGPartNo, DbType.AnsiString, size: 50);
+                parameters.Add("@PartDesc", dto.PartDesc, DbType.AnsiString, size: 500);
+                parameters.Add("@KeepThrow", dto.KeepThrow, DbType.AnsiStringFixedLength, size: 10);
+                parameters.Add("@StripNo", dto.StripNo, DbType.Int32);
+                parameters.Add("@LastModifiedBy", dto.LastModifiedBy, DbType.AnsiString, size: 100);
+
+                await connection.ExecuteAsync("SaveUpdateStrippedPartsInUnit", parameters, commandType: CommandType.StoredProcedure);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error saving/updating stripped parts in unit: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Maps full status names to database status codes
+        /// </summary>
+        /// <param name="status">Full status name or code</param>
+        /// <returns>Database status code</returns>
+        public string MapStatusToCode(string status)
+        {
+            if (string.IsNullOrEmpty(status))
+                return "All";
+
+            return status.ToLower().Trim() switch
+            {
+                "in progress" => "INP",
+                "inp" => "INP",
+                "needs components for repairs" => "NCR",
+                "ncr" => "NCR",
+                "missing parts from job" => "MPJ",
+                "mpj" => "MPJ",
+                "completed" => "COM",
+                "com" => "COM",
+                // Legacy status mappings for backward compatibility
+                "deferred" => "Def",
+                "deffered" => "Def", // Handle the typo in your SP
+                "def" => "Def",
+                "waiting on someone else" => "Wos",
+                "wos" => "Wos",
+                "all" => "All",
+                _ => status // Return as-is if no mapping found
+            };
+        }
+
+        /// <summary>
+        /// Validates the StrippedUnitsStatusDto for save/update operations
+        /// </summary>
+        /// <param name="dto">DTO to validate</param>
+        /// <returns>List of validation errors</returns>
+        public List<string> ValidateSaveUpdateRequest(StrippedUnitsStatusDto dto)
+        {
+            var errors = new List<string>();
+
+            if (dto == null)
+            {
+                errors.Add("Request cannot be null");
+                return errors;
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.SerialNo))
+                errors.Add("SerialNo is required");
+
+            if (string.IsNullOrWhiteSpace(dto.Make))
+                errors.Add("Make is required");
+
+            if (string.IsNullOrWhiteSpace(dto.Status))
+                errors.Add("Status is required");
+
+            if (!string.IsNullOrWhiteSpace(dto.Status))
+            {
+                var validStatuses = new[] { "INP", "NCR", "MPJ", "COM", "Inp", "Def", "Wos" };
+                if (!validStatuses.Contains(dto.Status, StringComparer.OrdinalIgnoreCase))
+                {
+                    errors.Add($"Invalid status. Valid values are: {string.Join(", ", validStatuses)}");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.LastModifiedBy))
+                errors.Add("LastModifiedBy is required");
+
+            // Validate decimal fields if provided
+            if (dto.UnitCost.HasValue && dto.UnitCost < 0)
+                errors.Add("UnitCost cannot be negative");
+
+            if (dto.ShipCost.HasValue && dto.ShipCost < 0)
+                errors.Add("ShipCost cannot be negative");
+
+            return errors;
+        }
+
+        /// <summary>
+        /// Validates the StrippedPartsInUnitDto for save/update operations
+        /// </summary>
+        /// <param name="dto">DTO to validate</param>
+        /// <returns>List of validation errors</returns>
+        public List<string> ValidateStrippedPartsInUnitRequest(StrippedPartsInUnitDto dto)
+        {
+            var errors = new List<string>();
+
+            if (dto == null)
+            {
+                errors.Add("Request cannot be null");
+                return errors;
+            }
+
+            // Change this validation to allow MasterRowIndex = 0
+            if (dto.MasterRowIndex < 0)
+                errors.Add("MasterRowIndex cannot be negative");
+
+            if (string.IsNullOrWhiteSpace(dto.DCGPartGroup))
+                errors.Add("DCGPartGroup is required");
+
+            if (string.IsNullOrWhiteSpace(dto.DCGPartNo))
+                errors.Add("DCGPartNo is required");
+
+            if (string.IsNullOrWhiteSpace(dto.PartDesc))
+                errors.Add("PartDesc is required");
+
+            if (string.IsNullOrWhiteSpace(dto.KeepThrow))
+                errors.Add("KeepThrow is required");
+
+            if (!string.IsNullOrWhiteSpace(dto.KeepThrow))
+            {
+                var validKeepThrowValues = new[] { "Keep", "Throw", "K", "T" };
+                if (!validKeepThrowValues.Contains(dto.KeepThrow, StringComparer.OrdinalIgnoreCase))
+                {
+                    errors.Add($"Invalid KeepThrow value. Valid values are: {string.Join(", ", validKeepThrowValues)}");
+                }
+            }
+
+            if (dto.StripNo < 0)
+                errors.Add("StripNo cannot be negative");
+
+            if (string.IsNullOrWhiteSpace(dto.LastModifiedBy))
+                errors.Add("LastModifiedBy is required");
+
+            return errors;
+        }
+
+        /// <summary>
+        /// Gets strip part codes for dropdown population
+        /// </summary>
+        /// <returns>List of strip part codes with Code and Name</returns>
+        public async Task<IEnumerable<StripPartCodeDto>> GetStripPartCodesAsync()
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = @"
+                    SELECT DISTINCT RTRIM(Code) AS Code, RTRIM(Name) AS Name 
+                    FROM [StripPartCodes] 
+                    ORDER BY Name";
+
+                var stripPartCodes = await connection.QueryAsync<StripPartCodeDto>(query);
+                return stripPartCodes;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving strip part codes: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Deletes an entry using the appropriate delete stored procedure based on source
+        /// </summary>
+        /// <param name="rowIndex">Row index of the entry to delete</param>
+        /// <param name="source">Source type: PartsTest, UnitTest, OrderRequest, or other for StrippingUnit</param>
+        /// <returns>Result message from the stored procedure</returns>
+        public async Task<string> DeleteBySourceAsync(int rowIndex, string source)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Determine stored procedure name based on source
+                string storedProcedureName = source switch
+                {
+                    "PartsTest" => "DeletePartsTestList",
+                    "UnitTest" => "DeleteNewUnitTest",
+                    "OrderRequest" => "DeleteOrderRequest",
+                    _ => "DeleteStrippingUnit"
+                };
+
+                using var command = new SqlCommand(storedProcedureName, connection);
+                command.CommandType = CommandType.StoredProcedure;
+                command.Parameters.AddWithValue("@RowIndex", rowIndex);
+
+                var result = await command.ExecuteScalarAsync();
+                return result?.ToString() ?? "Delete operation completed successfully";
+            }
+            catch (Exception ex)
+            {
+                return $"Error Occured : <br/>{ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Gets stripped parts in unit details using the GetStrippedPartsInUnit stored procedure
+        /// </summary>
+        /// <param name="masterRowIndex">The MasterRowIndex to retrieve parts for</param>
+        /// <returns>Complete response with parts details, group counts, cost analysis, and parts location</returns>
+        public async Task<StrippedPartsInUnitResponse> GetStrippedPartsInUnitAsync(int masterRowIndex)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@MasterRowIndex", masterRowIndex, DbType.Int32);
+
+                // Execute stored procedure and get multiple result sets
+                using var multi = await connection.QueryMultipleAsync("GetStrippedPartsInUnit", parameters, commandType: CommandType.StoredProcedure);
+
+                var response = new StrippedPartsInUnitResponse
+                {
+                    MasterRowIndex = masterRowIndex,
+                    PartsDetails = new List<StrippedPartsDetailDto>(),
+                    GroupCounts = new List<StrippedPartsGroupCountDto>(),
+                    CostAnalysis = new List<StrippedPartsCostAnalysisDto>(),
+                    PartsLocations = new List<StrippedPartsLocationDto>(),
+                    HasData = false
+                };
+
+                // Read result sets safely - check if there are more results before reading
+                try
+                {
+                    // First result set: Parts details
+                    if (!multi.IsConsumed)
+                    {
+                        var partsDetails = (await multi.ReadAsync<StrippedPartsDetailDto>()).ToList();
+                        response.PartsDetails = partsDetails;
+
+                        // Check if we have real data - filter out dummy records
+                        response.HasData = partsDetails.Any() && !partsDetails.All(p => string.IsNullOrEmpty(p.DCGPartNo));
+                    }
+
+                    // Second result set: Group counts
+                    if (!multi.IsConsumed)
+                    {
+                        response.GroupCounts = (await multi.ReadAsync<StrippedPartsGroupCountDto>()).ToList();
+                    }
+
+                    // Third result set: Cost analysis - handle dynamic column names
+                    if (!multi.IsConsumed)
+                    {
+                        var costAnalysisRaw = await multi.ReadAsync();
+                        response.CostAnalysis = costAnalysisRaw.Select(row => new StrippedPartsCostAnalysisDto
+                        {
+                            // Handle the dynamic column names from SP
+                            PartPercent = TryConvertToDecimal(GetDynamicProperty(row, "Part %")),
+                            DollarOfTotal = TryConvertToDecimal(GetDynamicProperty(row, "$ of Total")),
+                            Quantity = TryConvertToInt(GetDynamicProperty(row, "Quantity")),
+                            DollarPerPart = TryConvertToDecimal(GetDynamicProperty(row, "$Per Part")),
+                            PartsStripped = GetDynamicProperty(row, "Parts Stripped")?.ToString() ?? string.Empty
+                        }).ToList();
+                    }
+
+                    // Fourth result set: Parts location
+                    if (!multi.IsConsumed)
+                    {
+                        response.PartsLocations = (await multi.ReadAsync<StrippedPartsLocationDto>()).ToList();
+                    }
+                }
+                catch (InvalidOperationException ex) when (ex.Message.Contains("reader") || ex.Message.Contains("disposed"))
+                {
+                    // Handle cases where there are fewer result sets than expected
+                    // This is acceptable - just return what we have
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving stripped parts in unit: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to get dynamic property from Dapper result
+        /// </summary>
+        /// <param name="row">Dynamic row from Dapper</param>
+        /// <param name="propertyName">Property name to retrieve</param>
+        /// <returns>Property value or null</returns>
+        private static object? GetDynamicProperty(dynamic row, string propertyName)
+        {
+            try
+            {
+                var dictionary = row as IDictionary<string, object>;
+                return dictionary?.ContainsKey(propertyName) == true ? dictionary[propertyName] : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to safely convert to decimal
+        /// </summary>
+        /// <param name="value">Value to convert</param>
+        /// <returns>Decimal value or 0</returns>
+        private static decimal TryConvertToDecimal(object? value)
+        {
+            if (value == null || value == DBNull.Value)
+                return 0;
+
+            if (decimal.TryParse(value.ToString(), out decimal result))
+                return result;
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Helper method to safely convert to int
+        /// </summary>
+        /// <param name="value">Value to convert</param>
+        /// <returns>Int value or 0</returns>
+        private static int TryConvertToInt(object? value)
+        {
+            if (value == null || value == DBNull.Value)
+                return 0;
+
+            if (int.TryParse(value.ToString(), out int result))
+                return result;
+
+            return 0;
         }
     }
 }

@@ -34,8 +34,8 @@ namespace Technicians.Api.Controllers
             {
                 _logger.LogInformation("Getting stripped units status - Status: {Status}, RowIndex: {RowIndex}", status, rowIndex);
 
-                // Map full status names to codes
-                string mappedStatus = MapStatusToCode(status);
+                // Map full status names to codes using repository method
+                string mappedStatus = _repository.MapStatusToCode(status);
 
                 var request = new StrippedUnitsStatusRequest
                 {
@@ -224,7 +224,7 @@ namespace Technicians.Api.Controllers
                     });
                 }
 
-                var validStatuses = new[] { "Inp", "Def", "Com", "Wos", "All" };
+                var validStatuses = new[] { "INP", "NCR", "MPJ", "COM", "Inp", "Def", "Wos", "All" };
                 if (!validStatuses.Contains(status, StringComparer.OrdinalIgnoreCase))
                 {
                     return BadRequest(new { 
@@ -293,6 +293,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        
+
         /// <summary>
         /// Gets make count data formatted for chart/graph display
         /// </summary>
@@ -348,29 +350,489 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Maps full status names to database status codes
+        /// Saves or updates a stripping unit
         /// </summary>
-        /// <param name="status">Full status name or code</param>
-        /// <returns>Database status code</returns>
-        private string MapStatusToCode(string status)
+        /// <param name="dto">The stripping unit data to save or update</param>
+        /// <returns>Success response</returns>
+        [HttpPost("SaveUpdateStrippingUnit")]
+        public async Task<ActionResult> SaveUpdateStrippingUnit([FromBody] StrippedUnitsStatusDto dto)
         {
-            if (string.IsNullOrEmpty(status))
-                return "All";
-
-            return status.ToLower().Trim() switch
+            try
             {
-                "in progress" => "Inp",
-                "inp" => "Inp",
-                "deferred" => "Def",
-                "deffered" => "Def", // Handle the typo in your SP
-                "def" => "Def",
-                "completed" => "Com",
-                "com" => "Com",
-                "waiting on someone else" => "Wos",
-                "wos" => "Wos",
-                "all" => "All",
-                _ => status // Return as-is if no mapping found
-            };
+                if (dto == null)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid request payload" 
+                    });
+                }
+
+                // Basic validation using repository method
+                var validationErrors = _repository.ValidateSaveUpdateRequest(dto);
+                if (validationErrors.Any())
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Validation failed",
+                        errors = validationErrors
+                    });
+                }
+
+                _logger.LogInformation("Saving/updating stripping unit - RowIndex: {RowIndex}, SerialNo: {SerialNo}", 
+                    dto.RowIndex, dto.SerialNo);
+
+                var success = await _repository.SaveUpdateStrippingUnitAsync(dto);
+
+                if (success)
+                {
+                    _logger.LogInformation("Successfully saved/updated stripping unit - RowIndex: {RowIndex}", dto.RowIndex);
+                    
+                    return Ok(new
+                    {
+                        success = true,
+                        message = dto.RowIndex > 0 ? "Stripping unit updated successfully" : "Stripping unit created successfully",
+                        rowIndex = dto.RowIndex
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to save/update stripping unit - RowIndex: {RowIndex}", dto.RowIndex);
+                    
+                    return StatusCode(500, new { 
+                        success = false, 
+                        message = "Failed to save/update stripping unit" 
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving/updating stripping unit - RowIndex: {RowIndex}", dto?.RowIndex);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to save/update stripping unit", 
+                    error = ex.Message 
+                });
+            }
         }
+
+        /// <summary>
+        /// Updates a stripping unit by RowIndex
+        /// </summary>
+        /// <param name="rowIndex">The RowIndex of the unit to update</param>
+        /// <param name="dto">The updated stripping unit data</param>
+        /// <returns>Success response</returns>
+        [HttpPut("UpdateStrippingUnit/{rowIndex}")]
+        public async Task<ActionResult> UpdateStrippingUnit(int rowIndex, [FromBody] StrippedUnitsStatusDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid request payload" 
+                    });
+                }
+
+                if (rowIndex <= 0)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid RowIndex. RowIndex must be greater than 0." 
+                    });
+                }
+
+                // Ensure the RowIndex in the URL matches the request body
+                dto.RowIndex = rowIndex;
+
+                // Basic validation using repository method
+                var validationErrors = _repository.ValidateSaveUpdateRequest(dto);
+                if (validationErrors.Any())
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Validation failed",
+                        errors = validationErrors
+                    });
+                }
+
+                _logger.LogInformation("Updating stripping unit - RowIndex: {RowIndex}, SerialNo: {SerialNo}", 
+                    rowIndex, dto.SerialNo);
+
+                var success = await _repository.SaveUpdateStrippingUnitAsync(dto);
+
+                if (success)
+                {
+                    _logger.LogInformation("Successfully updated stripping unit - RowIndex: {RowIndex}", rowIndex);
+                    
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Stripping unit updated successfully",
+                        rowIndex = rowIndex
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to update stripping unit - RowIndex: {RowIndex}", rowIndex);
+                    
+                    return StatusCode(500, new { 
+                        success = false, 
+                        message = "Failed to update stripping unit" 
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating stripping unit - RowIndex: {RowIndex}", rowIndex);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to update stripping unit", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Saves or updates stripped parts in unit
+        /// </summary>
+        /// <param name="dto">The stripped parts in unit data to save or update</param>
+        /// <returns>Success response</returns>
+        [HttpPost("SaveUpdateStrippedPartsInUnit")]
+        public async Task<ActionResult> SaveUpdateStrippedPartsInUnit([FromBody] StrippedPartsInUnitDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Invalid request payload"
+                    });
+                }
+
+                // Basic validation using repository method
+                var validationErrors = _repository.ValidateStrippedPartsInUnitRequest(dto);
+                if (validationErrors.Any())
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Validation failed",
+                        errors = validationErrors
+                    });
+                }
+
+                _logger.LogInformation("Saving/updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}, DCGPartNo: {DCGPartNo}",
+                    dto.MasterRowIndex, dto.DCGPartNo);
+
+                var success = await _repository.SaveUpdateStrippedPartsInUnitAsync(dto);
+
+                if (success)
+                {
+                    _logger.LogInformation("Successfully saved/updated stripped parts in unit - MasterRowIndex: {MasterRowIndex}", dto.MasterRowIndex);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = dto.RowIndex > 0 ? "Stripped part updated successfully" : "Stripped part created successfully",
+                        masterRowIndex = dto.MasterRowIndex,
+                        rowIndex = dto.RowIndex
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to save/update stripped parts in unit - MasterRowIndex: {MasterRowIndex}", dto.MasterRowIndex);
+
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        message = "Failed to save/update stripped part"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving/updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}", dto?.MasterRowIndex);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to save/update stripped part",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Updates stripped parts in unit by MasterRowIndex and RowIndex
+        /// </summary>
+        /// <param name="masterRowIndex">The MasterRowIndex of the unit</param>
+        /// <param name="rowIndex">The RowIndex of the parts record to update</param>
+        /// <param name="dto">The updated stripped parts in unit data</param>
+        /// <returns>Success response</returns>
+        [HttpPut("UpdateStrippedPartsInUnit/{masterRowIndex}/{rowIndex}")]
+        public async Task<ActionResult> UpdateStrippedPartsInUnit(int masterRowIndex, int rowIndex, [FromBody] StrippedPartsInUnitDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid request payload" 
+                    });
+                }
+
+                // Change this validation to allow MasterRowIndex = 0
+                if (masterRowIndex < 0)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid MasterRowIndex. MasterRowIndex cannot be negative." 
+                    });
+                }
+
+                if (rowIndex <= 0)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid RowIndex. RowIndex must be greater than 0." 
+                    });
+                }
+
+                // Ensure the parameters in the URL match the request body
+                dto.MasterRowIndex = masterRowIndex;
+                dto.RowIndex = rowIndex;
+
+                // Basic validation using repository method
+                var validationErrors = _repository.ValidateStrippedPartsInUnitRequest(dto);
+                if (validationErrors.Any())
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Validation failed",
+                        errors = validationErrors
+                    });
+                }
+
+                _logger.LogInformation("Updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}, DCGPartNo: {DCGPartNo}", 
+                    masterRowIndex, rowIndex, dto.DCGPartNo);
+
+                var success = await _repository.SaveUpdateStrippedPartsInUnitAsync(dto);
+
+                if (success)
+                {
+                    _logger.LogInformation("Successfully updated stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}", 
+                        masterRowIndex, rowIndex);
+                    
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Stripped parts in unit updated successfully",
+                        masterRowIndex = masterRowIndex,
+                        rowIndex = rowIndex
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to update stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}", 
+                        masterRowIndex, rowIndex);
+                    
+                    return StatusCode(500, new { 
+                        success = false, 
+                        message = "Failed to update stripped parts in unit" 
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}", 
+                    masterRowIndex, rowIndex);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to update stripped parts in unit", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets strip part codes for dropdown population
+        /// </summary>
+        /// <returns>List of strip part codes with Code and Name</returns>
+        [HttpGet("GetStripPartCodes")]
+        public async Task<ActionResult<IEnumerable<StripPartCodeDto>>> GetStripPartCodes()
+        {
+            try
+            {
+                _logger.LogInformation("Getting strip part codes for dropdown");
+
+                var stripPartCodes = await _repository.GetStripPartCodesAsync();
+
+                _logger.LogInformation("Successfully retrieved {Count} strip part codes", stripPartCodes.Count());
+
+                return Ok(new
+                {
+                    success = true,
+                    data = stripPartCodes,
+                    count = stripPartCodes.Count()
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting strip part codes");
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to retrieve strip part codes", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Deletes an entry by RowIndex and Source without using DTO
+        /// </summary>
+        /// <param name="rowIndex">The RowIndex of the entry to delete</param>
+        /// <param name="source">Source type: PartsTest, UnitTest, OrderRequest, or other for StrippingUnit</param>
+        /// <returns>Delete operation result</returns>
+        [HttpDelete("Delete/{rowIndex}")]
+        public async Task<ActionResult> DeleteBySource(int rowIndex, [FromQuery] string source = "StrippingUnit")
+        {
+            try
+            {
+                if (rowIndex <= 0)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid RowIndex. RowIndex must be greater than 0." 
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(source))
+                {
+                    source = "StrippingUnit"; // Default to StrippingUnit if not provided
+                }
+
+                _logger.LogInformation("Deleting entry - RowIndex: {RowIndex}, Source: {Source}", rowIndex, source);
+
+                var result = await _repository.DeleteBySourceAsync(rowIndex, source);
+
+                // Check if result indicates success (no error message)
+                bool isSuccess = !result.Contains("Error Occured");
+
+                if (isSuccess)
+                {
+                    _logger.LogInformation("Successfully deleted entry - RowIndex: {RowIndex}, Source: {Source}", rowIndex, source);
+                    
+                    return Ok(new
+                    {
+                        success = true,
+                        message = result,
+                        rowIndex = rowIndex,
+                        source = source
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Delete operation returned error - RowIndex: {RowIndex}, Source: {Source}, Error: {Error}", 
+                        rowIndex, source, result);
+            
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = result,
+                        rowIndex = rowIndex,
+                        source = source
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting entry - RowIndex: {RowIndex}, Source: {Source}", rowIndex, source);
+        
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to delete entry", 
+                    error = ex.Message,
+                    rowIndex = rowIndex,
+                    source = source
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets stripped parts in unit details using the GetStrippedPartsInUnit stored procedure
+        /// </summary>
+        /// <param name="masterRowIndex">The MasterRowIndex to retrieve parts for (0 returns empty result set)</param>
+        /// <returns>Complete stripped parts in unit data including parts details, group counts, cost analysis, and location</returns>
+        [HttpGet("GetStrippedPartsInUnit/{masterRowIndex}")]
+        public async Task<ActionResult<StrippedPartsInUnitResponse>> GetStrippedPartsInUnit(int masterRowIndex)
+        {
+            try
+            {
+                // Remove the validation that blocks masterRowIndex = 0
+                // The stored procedure handles masterRowIndex = 0 by returning dummy data
+                if (masterRowIndex < 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Invalid MasterRowIndex. MasterRowIndex cannot be negative."
+                    });
+                }
+
+                _logger.LogInformation("Getting stripped parts in unit for MasterRowIndex: {MasterRowIndex}", masterRowIndex);
+
+                var results = await _repository.GetStrippedPartsInUnitAsync(masterRowIndex);
+
+                if (!results.HasData && masterRowIndex > 0)
+                {
+                    _logger.LogWarning("No stripped parts found for MasterRowIndex: {MasterRowIndex}", masterRowIndex);
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "No stripped parts found for the specified MasterRowIndex",
+                        masterRowIndex = masterRowIndex
+                    });
+                }
+
+                _logger.LogInformation("Successfully retrieved stripped parts in unit - PartsCount: {PartsCount}, GroupCountsCount: {GroupCountsCount}, CostAnalysisCount: {CostAnalysisCount}, LocationsCount: {LocationsCount}",
+                    results.PartsDetails.Count, results.GroupCounts.Count, results.CostAnalysis.Count, results.PartsLocations.Count);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = results,
+                    masterRowIndex = masterRowIndex,
+                    summary = new
+                    {
+                        totalParts = results.PartsDetails.Count,
+                        totalGroups = results.GroupCounts.Count,
+                        totalCostAnalysisItems = results.CostAnalysis.Count,
+                        totalLocations = results.PartsLocations.Count,
+                        hasData = results.HasData
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting stripped parts in unit for MasterRowIndex: {MasterRowIndex}", masterRowIndex);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to retrieve stripped parts in unit",
+                    error = ex.Message,
+                    masterRowIndex = masterRowIndex
+                });
+            }
+        }
+
     }
 }

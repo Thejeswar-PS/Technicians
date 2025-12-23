@@ -105,7 +105,7 @@
               <!-- Interactive Bar Chart -->
               <div *ngIf="currentMakeChartType === 'bar'" class="chart-wrapper">
                 <div class="interactive-bar-chart-container">
-                  <apx-chart
+                  <apx-chart *ngIf="barChartOptions && barChartOptions.series"
                     [series]="barChartOptions.series"
                     [chart]="barChartOptions.chart"
                     [dataLabels]="barChartOptions.dataLabels"
@@ -121,7 +121,7 @@
               </div>              <!-- Interactive Donut Chart -->
               <div *ngIf="currentMakeChartType === 'pie'" class="chart-wrapper">
                 <div class="interactive-donut-chart-container">
-                  <apx-chart
+                  <apx-chart *ngIf="donutChartOptions && donutChartOptions.series"
                     [series]="donutChartOptions.series"
                     [chart]="donutChartOptions.chart"
                     [labels]="donutChartOptions.labels"
@@ -466,13 +466,21 @@
                   [class.striped]="i % 2 === 1"
                   [class.row-stripped-exists]="hasStrippedParts(unit)">
                 <td class="ps-4 text-center compact-cell">
-                  <button class="btn btn-link btn-sm p-0 text-primary fw-bold link-primary" 
-                          (click)="viewUnitDetails(unit)" 
-                          [title]="'View details for row ' + unit.rowIndex">
+                  <span class="text-muted fw-bold" 
+                          [title]="'Row ' + unit.rowIndex">
                     {{ unit.rowIndex }}
+                  </span>
+                </td>
+                <td class="compact-cell text-start single-line-text table-text-medium" [title]="unit.make">
+                  <button 
+                    type="button"
+                    class="btn btn-link p-0 text-primary fw-bold text-decoration-none"
+                    (click)="redirectToStrippedParts($event, unit)"
+                    [title]="'View stripped parts for ' + unit.make + ' ' + unit.model"
+                    style="border: none; background: none; font-size: inherit; line-height: inherit; cursor: pointer;">
+                    {{ unit.make }}
                   </button>
                 </td>
-                <td class="compact-cell text-start single-line-text table-text-medium" [title]="unit.make">{{ unit.make }}</td>
                 <td class="compact-cell text-start multi-line-text table-text-medium" [title]="unit.model">{{ unit.model }}</td>
                 <td class="compact-cell text-start">
                   <span class="fw-semibold serial-number" [title]="unit.serialNo">{{ unit.serialNo }}</span>

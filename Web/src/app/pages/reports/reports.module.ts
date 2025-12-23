@@ -10,12 +10,14 @@ import { OrderRequestComponent } from './order-request/order-request.component';
 import { OrderRequestStatusComponent } from './order-request-status/order-request-status.component';
 import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.component';
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
+import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
 import { NgApexchartsModule } from 'ng-apexcharts';
 // Using simple canvas charts instead of ng2-charts
 import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.component';
+import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 import { SharedModule } from '../../components/shared/shared.module';
 
 @NgModule({
@@ -29,6 +31,8 @@ import { SharedModule } from '../../components/shared/shared.module';
     PartsTestInfoComponent,
     PartsTestStatusComponent,
     StrippedUnitsStatusComponent,
+    StrippedUnitInfoComponent,
+    StrippedPartsInunitComponent,
 
   ],
   imports: [

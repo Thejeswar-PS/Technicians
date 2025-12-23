@@ -1,0 +1,368 @@
+<!-- Stripped Parts In Unit Page -->
+<div class="stripped-parts-container">
+  
+  <!-- Modern Header -->
+  <div class="modern-header card shadow-sm mb-4">
+    <div class="card-body py-3">
+      <div class="header-content">
+        <div class="header-main-row">
+          <div class="header-left">
+            <!-- Back button removed -->
+          </div>
+          
+          <div class="header-center">
+            <div class="page-title-section">
+              <h1 class="page-title">
+                <i class="bi bi-cpu me-2"></i>
+                Stripped Parts In Unit
+              </h1>
+              <p class="page-subtitle">Detailed parts analysis and management</p>
+            </div>
+          </div>
+          
+          <div class="header-right">
+            <!-- Future: Additional actions can go here -->
+          </div>
+        </div>
+        
+        <div class="header-info-row" *ngIf="unitInfo">
+          <div class="info-section">
+            <span class="info-label">Make:</span>
+            <span class="info-value">{{ unitInfo.make }}</span>
+          </div>
+          <div class="info-section">
+            <span class="info-label">Model:</span>
+            <span class="info-value">{{ unitInfo.model }}</span>
+          </div>
+          <div class="info-section">
+            <span class="info-label">Serial No:</span>
+            <span class="info-value">{{ unitInfo.serialNo }}</span>
+          </div>
+          <div class="info-section">
+            <span class="info-label">KVA:</span>
+            <span class="info-value">{{ unitInfo.kva }}</span>
+          </div>
+          <div class="status-indicators">
+            <div class="status-chip success">
+              <span class="chip-label">Total Parts</span>
+              <span class="chip-value">{{ totalStrippedParts }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message Area -->
+  <div *ngIf="errorMessage || partsErrorMessage" class="alert alert-modern alert-danger mb-4" role="alert">
+    <div class="alert-content">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <span>{{ errorMessage || partsErrorMessage }}</span>
+    </div>
+  </div>
+
+  <!-- Main Analysis Section - Hidden when error exists (matching legacy behavior) -->
+  <div *ngIf="!errorMessage && !partsErrorMessage" class="card shadow-sm stripped-main-card mb-4">
+    <div class="card-header border-0 py-4">
+      <div class="card-title-section">
+        <h4 class="card-title mb-1">
+          <i class="bi bi-bar-chart-fill me-2 text-primary"></i>
+          Parts Analysis Dashboard
+        </h4>
+        <p class="card-subtitle text-muted">Interactive visualization and summary data</p>
+      </div>
+    </div>
+    
+    <div class="card-body py-2">
+      <div class="row">
+        <!-- Chart Section -->
+        <div class="col-lg-8">
+          <div class="chart-container">
+            <!-- Chart Selector Tabs -->
+            <div class="chart-selector-section mb-3">
+              <div class="chart-type-options d-flex align-items-center justify-content-center gap-3">
+                <input type="radio" 
+                       name="chartType" id="barChart"
+                       checked
+                       class="d-none">
+                <label class="chart-type-btn active" for="barChart">
+                  <i class="bi bi-bar-chart"></i>
+                  Chart View
+                </label>
+              </div>
+            </div>
+            
+            <!-- Chart Content -->
+            <div class="chart-content">
+              <!-- Show chart if we have data, otherwise show placeholder -->
+              <div *ngIf="groupedParts && groupedParts.length > 0; else noChartData" class="chart-wrapper">
+                <!-- Interactive ApexChart -->
+                <apx-chart
+                  [series]="chartOptions.series"
+                  [chart]="chartOptions.chart"
+                  [dataLabels]="chartOptions.dataLabels"
+                  [plotOptions]="chartOptions.plotOptions"
+                  [xaxis]="chartOptions.xaxis"
+                  [yaxis]="chartOptions.yaxis"
+                  [colors]="chartOptions.colors"
+                  [tooltip]="chartOptions.tooltip"
+                  [grid]="chartOptions.grid"
+                  [title]="chartOptions.title"
+                  [legend]="chartOptions.legend">
+                </apx-chart>
+              </div>
+              
+              <!-- Placeholder when no chart data -->
+              <ng-template #noChartData>
+                <div class="no-data-placeholder">
+                  <div class="no-data-content">
+                    <i class="bi bi-bar-chart display-1 mb-3 text-muted"></i>
+                    <h5 class="text-muted">No Parts Data Available</h5>
+                    <p class="text-muted mb-0">Chart will appear when parts data is loaded</p>
+                  </div>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Summary Sidebar -->
+        <div class="col-lg-4">
+          <div class="stripped-parts-summary-sidebar">
+            <div class="summary-header mb-3">
+              <h5 class="summary-title">
+                <i class="bi bi-graph-up-arrow me-2"></i>
+                Parts Summary
+              </h5>
+              <p class="summary-subtitle">Financial breakdown overview</p>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-section">
+              <div class="modern-table-container">
+                <div class="table-wrapper">
+                  <table class="table table-sm mb-0">
+                    <thead class="table-primary">
+                      <tr>
+                        <th class="fw-semibold">Part %</th>
+                        <th class="fw-semibold">$ Total</th>
+                        <th class="fw-semibold">Qty</th>
+                        <th class="fw-semibold">$/Part</th>
+                        <th class="fw-semibold">Parts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let summary of summaryData; let i = index" class="align-middle">
+                        <td class="text-center">{{ summary.partPercent }}</td>
+                        <td class="text-center">{{ summary.dollarOfTotal }}</td>
+                        <td class="text-center">{{ summary.quantity }}</td>
+                        <td class="text-center">{{ summary.dollarPerPart }}</td>
+                        <td class="small">{{ summary.partsStripped }}</td>
+                      </tr>
+                      <tr *ngIf="summaryData.length === 0">
+                        <td colspan="5" class="text-center text-muted py-3">
+                          No summary data available
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              <!-- Parts Location Card -->
+              <div class="parts-location-card mt-3">
+                <div class="location-header">
+                  <i class="bi bi-geo-alt-fill me-2"></i>
+                  <strong>Parts Location</strong>
+                </div>
+                <div class="location-content">
+                  <a *ngIf="partsLocations && partsLocations.length > 0" 
+                     href="#" 
+                     (click)="onPartsLocationClick($event)" 
+                     class="location-link">
+                    {{ partsLocations[0]?.locationDescription || partsLocations[0]?.partsLocation || 'View Locations' }}
+                  </a>
+                  <span *ngIf="!partsLocations || partsLocations.length === 0" 
+                        class="no-location">
+                    No location assigned
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed Parts Grid Section - Hidden when error exists (matching legacy behavior) -->
+  <div *ngIf="!errorMessage && !partsErrorMessage" class="card shadow-sm parts-detail-card">
+    <div class="card-header border-0 py-4">
+      <div class="card-title-section">
+        <h4 class="card-title mb-1">
+          <i class="bi bi-list-check me-2 text-primary"></i>
+          Detailed Parts Inventory
+        </h4>
+        <p class="card-subtitle text-muted">Complete parts breakdown by groups</p>
+      </div>
+    </div>
+    
+    <div class="card-body py-2">
+      <!-- Show grouped parts if available -->
+      <div *ngIf="groupedParts && groupedParts.length > 0; else noPartsData" class="parts-groups-container">
+        <!-- Group Headers and Data -->
+        <div *ngFor="let group of groupedParts; let i = index" class="parts-group mb-3">
+          <!-- Grey Group Header -->
+          <div [attr.data-group]="group.groupName" class="bg-secondary bg-opacity-10 border-start border-secondary border-4 p-3 mb-0 group-header">
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center group-title">
+                <i class="bi bi-collection text-secondary me-2"></i>
+                <h6 class="mb-0 fw-semibold text-dark">Group: {{ group.groupName }}</h6>
+                <span class="badge bg-secondary ms-2">{{ group.parts.length }} parts</span>
+              </div>
+              <button class="btn btn-outline-secondary btn-sm" 
+                      type="button" 
+                      (click)="toggleGroupCollapse(i)"
+                      [attr.aria-expanded]="isGroupExpanded(i)"
+                      [attr.aria-controls]="'group' + i"
+                      title="Click to expand/collapse group">
+                <i class="bi bi-chevron-down" 
+                   [class.rotate-collapsed]="!isGroupExpanded(i)"></i>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Collapsible Section with Column Headers and Data -->
+          <div *ngIf="isGroupExpanded(i)" 
+               [id]="'group' + i"
+               [@slideAnimation]
+               class="collapse-content">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0 stripped-parts-table" style="table-layout: fixed; width: 100%;">
+                <thead class="table-primary">
+                  <tr>
+                    <th class="fw-semibold part-no-col" style="width: 18%; min-width: 120px;">DCG Part No</th>
+                    <th class="fw-semibold description-col" style="width: 40%; min-width: 200px;">Description</th>
+                    <th class="fw-semibold text-center strip-no-col" style="width: 12%; min-width: 80px;">Strip No</th>
+                    <th class="fw-semibold text-center status-col" style="width: 15%; min-width: 100px;">Keep or Throw</th>
+                    <th class="fw-semibold text-center actions-col" style="width: 15%; min-width: 120px;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let part of group.parts; let j = index" 
+                      [class.table-danger]="isThrowItem(part.keepThrow)">
+                    <!-- DCG Part No - Editable -->
+                    <td class="align-middle part-no-col" style="width: 18%; word-wrap: break-word; padding: 8px;">
+                      <div *ngIf="!isEditingPart(part); else editPartNoTemplate" class="text-truncate" [title]="part.dcgPartNo">
+                        <strong>{{ part.dcgPartNo }}</strong>
+                      </div>
+                      <ng-template #editPartNoTemplate>
+                        <input type="text" class="form-control form-control-sm w-100" 
+                               [(ngModel)]="part.dcgPartNo" 
+                               placeholder="DCG Part No">
+                      </ng-template>
+                    </td>
+                    <!-- Description - Editable -->
+                    <td class="align-middle description-col" style="width: 40%; word-wrap: break-word; padding: 8px;">
+                      <div *ngIf="!isEditingPart(part); else editDescTemplate" class="text-truncate" [title]="part.partDesc">
+                        {{ part.partDesc }}
+                      </div>
+                      <ng-template #editDescTemplate>
+                        <input type="text" class="form-control form-control-sm w-100" 
+                               [(ngModel)]="part.partDesc" 
+                               placeholder="Description">
+                      </ng-template>
+                    </td>
+                    <!-- Strip No - Editable -->
+                    <td class="align-middle text-center strip-no-col" style="width: 12%; padding: 8px;">
+                      <div *ngIf="!isEditingPart(part); else editStripNoTemplate">
+                        <span class="badge bg-primary text-white">{{ part.stripNo }}</span>
+                      </div>
+                      <ng-template #editStripNoTemplate>
+                        <input type="number" class="form-control form-control-sm text-center mx-auto" 
+                               [(ngModel)]="part.stripNo" 
+                               placeholder="Strip No" 
+                               min="1" style="width: 70px;">
+                      </ng-template>
+                    </td>
+                    <!-- Keep or Throw - Editable -->
+                    <td class="align-middle text-center status-col" style="width: 15%; padding: 8px;">
+                      <div *ngIf="!isEditingPart(part); else editStatusTemplate">
+                        <span class="badge" [ngClass]="{
+                          'bg-success': !isThrowItem(part.keepThrow),
+                          'bg-danger': isThrowItem(part.keepThrow)
+                        }">
+                          {{ part.keepThrow }}
+                        </span>
+                      </div>
+                      <ng-template #editStatusTemplate>
+                        <select class="form-select form-select-sm mx-auto" [(ngModel)]="part.keepThrow" style="width: 90px;">
+                          <option value="Keep">Keep</option>
+                          <option value="Throw">Throw</option>
+                        </select>
+                      </ng-template>
+                    </td>
+                    <!-- Actions -->
+                    <td class="align-middle text-center actions-col" style="width: 15%; padding: 8px;">
+                      <div class="btn-group btn-group-sm" role="group">
+                        <!-- Edit/Update Button -->
+                        <button *ngIf="!isEditingPart(part)" 
+                                class="btn btn-outline-primary btn-sm" 
+                                (click)="startEditingPart(part)" 
+                                title="Edit Part">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                        <button *ngIf="isEditingPart(part)" 
+                                class="btn btn-success btn-sm" 
+                                (click)="savePartUpdate(part)" 
+                                title="Update Part"
+                                [disabled]="isUpdating">
+                          <i class="bi bi-check"></i> Update
+                        </button>
+                        <!-- Cancel Button (only during edit) -->
+                        <button *ngIf="isEditingPart(part)" 
+                                class="btn btn-outline-secondary btn-sm" 
+                                (click)="cancelEditingPart(part)" 
+                                title="Cancel">
+                          <i class="bi bi-x"></i>
+                        </button>
+                        <!-- Delete Button -->
+                        <button class="btn btn-outline-danger btn-sm" 
+                                (click)="deletePartConfirm(part)" 
+                                title="Delete Part"
+                                [disabled]="isDeleting">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Placeholder when no parts data -->
+      <ng-template #noPartsData>
+        <div class="no-parts-placeholder">
+          <div class="no-data-content">
+            <i class="bi bi-inbox display-1 mb-3 text-muted"></i>
+            <h5 class="text-muted">No Parts Data Available</h5>
+            <p class="text-muted mb-0">Stripped parts information will appear here when available</p>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+    
+    <!-- Modern Totals Footer -->
+    <div class="card-footer bg-light border-0">
+      <div class="totals-summary">
+        <div class="total-info">
+          <i class="bi bi-calculator me-2 text-primary"></i>
+          <span class="total-label">Total Stripped Parts:</span>
+          <span class="total-value">{{ totalStrippedParts }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
