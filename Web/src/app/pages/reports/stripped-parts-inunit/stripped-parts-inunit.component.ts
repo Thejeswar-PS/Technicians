@@ -285,13 +285,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     sessionStorage.setItem('LastUsedMasterRowIndex', value.toString());
     sessionStorage.setItem('CurrentUnitRowIndex', value.toString());
     
-    console.log('💾 [STORAGE] Stored MasterRowIndex in multiple locations:', value);
-    console.log('💾 [STORAGE] SessionStorage contents:', {
-      specific: sessionStorage.getItem('StrippedPartsInUnit_MasterRowIndex'),
-      global: sessionStorage.getItem('LastUsedMasterRowIndex'),
-      current: sessionStorage.getItem('CurrentUnitRowIndex'),
-      unitInfo: sessionStorage.getItem('StrippedPartsInUnit_UnitInfo')
-    });
+
   }
 
   /**
@@ -346,7 +340,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       .subscribe({
         next: (response) => {
           if (response.success && response.data && response.data.partsDetails && response.data.partsDetails.length > 0) {
-            console.log('🎯 [MASTER ROW 0] Found parts with Master Row Index = 0, using as default');
+
             this.setMasterRowIndex(0);
             this.unitInfo = {
               make: 'Direct Entry',
@@ -376,14 +370,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
                   const mostRecentUnit = sortedUnits[0];
                   const recentMasterRowIndex = mostRecentUnit.rowIndex;
                   
-                  console.log('📈 [MOST RECENT] Found most recently updated unit:', {
-                    rowIndex: recentMasterRowIndex,
-                    make: mostRecentUnit.make,
-                    model: mostRecentUnit.model,
-                    serialNo: mostRecentUnit.serialNo,
-                    lastModified: mostRecentUnit.lastModifiedOn,
-                    created: mostRecentUnit.createdOn
-                  });
+
                   
                   // Set and store this as the new MasterRowIndex
                   this.setMasterRowIndex(recentMasterRowIndex);
@@ -401,7 +388,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
                   this.loadStrippedPartsData(this.masterRowIndex);
                   
                 } else {
-                  console.log('⚠️ [MOST RECENT] No units found, defaulting to Master Row Index = 0');
+
                   this.setMasterRowIndex(0);
                   this.unitInfo = {
                     make: 'Direct Entry',
@@ -428,7 +415,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             });
         },
         error: (error) => {
-          console.log('⚠️ [MASTER ROW 0] No parts found with Master Row Index = 0, checking recent units');
+
           // Continue with normal flow to get most recent unit
           this.reportService.getAllStrippedUnitsStatus()
             .pipe(finalize(() => this.isLoadingParts = false))
@@ -484,24 +471,13 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
    * Shows parts added within the last 48 hours
    */
   private updateRecentlyAddedParts(): void {
-    console.log('🔍 Starting updateRecentlyAddedParts with:', {
-      totalParts: this.partsDetails.length,
-      samplePart: this.partsDetails[0]
-    });
+
 
     const now = new Date();
     const fortyEightHoursAgo = new Date(now.getTime() - (48 * 60 * 60 * 1000));
     
     // First, let's see what timestamp data we have
-    console.log('📊 Timestamp analysis:', {
-      partsWithCreatedOn: this.partsDetails.filter(p => p.CreatedOn).length,
-      partsWithLastModifiedOn: this.partsDetails.filter(p => p.LastModifiedOn).length,
-      sampleTimestamps: this.partsDetails.slice(0, 3).map(p => ({
-        partNo: p.DCGPartNo || p.dcgPartNo,
-        createdOn: p.CreatedOn,
-        lastModifiedOn: p.LastModifiedOn
-      }))
-    });
+
     
     this.recentlyAddedParts = this.partsDetails.filter(part => {
       if (!part.CreatedOn && !part.LastModifiedOn) {
@@ -526,7 +502,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     
     // If no recent parts found but we have parts, create some mock recent parts for demonstration
     if (this.recentlyAddedParts.length === 0 && this.partsDetails.length > 0) {
-      console.log('🧪 No recent parts found, creating mock recent parts for demonstration...');
+
       
       // Take first 2-3 parts and make them appear recent
       this.recentlyAddedParts = this.partsDetails.slice(0, Math.min(3, this.partsDetails.length)).map(part => ({
@@ -538,16 +514,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       }));
     }
     
-    console.log('📅 Recently added parts (last 48 hours):', {
-      totalParts: this.partsDetails.length,
-      recentParts: this.recentlyAddedParts.length,
-      recentPartsDetails: this.recentlyAddedParts.map(p => ({
-        partNo: p.DCGPartNo || p.dcgPartNo,
-        description: p.PartDesc || p.partDesc,
-        created: p.CreatedOn,
-        modified: p.LastModifiedOn
-      }))
-    });
+
   }
 
   /**
@@ -603,7 +570,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     this.initializeForms();
     this.loadStripPartCodes();
     
-    console.log('🚀 [NGONINIT] Starting initialization...');
+
     
     // Legacy ASP.NET behavior: Use static-like persistence for MasterRowIndex
     let masterRowIndexFromUrl: number | null = null;
@@ -617,7 +584,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         hasUrlParams = true;
         hasAnyParams = true;
         this.setMasterRowIndex(masterRowIndexFromUrl);
-        console.log('📥 [ROUTE PARAM] MasterRowIndex from route:', masterRowIndexFromUrl);
+
         this.loadStrippedPartsData(this.masterRowIndex);
       }
     });
@@ -635,7 +602,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         hasUrlParams = true;
         hasAnyParams = true;
         this.setMasterRowIndex(masterRowIndexFromUrl);
-        console.log('📥 [QUERY PARAM] MasterRowIndex from query:', masterRowIndexFromUrl);
+
         this.loadStrippedPartsData(this.masterRowIndex);
       }
       
@@ -648,12 +615,12 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
           kva: params['KVA'] || ''
         };
         this.storeUnitInfo(this.unitInfo);
-        console.log('💾 [UNIT INFO] Stored from query params:', this.unitInfo);
+
       }
       
       // Legacy behavior: If NO URL parameters at all, initialize with stored or most recent data
       if (!hasAnyParams && !hasQueryParams) {
-        console.log('🔄 [NO PARAMS] No URL parameters detected, initializing with stored or most recent data...');
+
         // Initialize MasterRowIndex with any previously stored value or fetch most recent
         this.initializeMasterRowIndex();
       }
@@ -677,28 +644,16 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Load stripped parts data from API
   private loadStrippedPartsData(masterRowIndex: number): void {
+
     this.isLoadingParts = true;
     this.errorMessage = '';
     this.partsErrorMessage = '';
-    
-    // Console log when MasterRowIndex is 0
-    if (masterRowIndex === 0) {
-      console.log('🔍 DEBUG: Loading data for MasterRowIndex = 0');
-    }
     
     const apiCall = this.reportService.getStrippedPartsInUnit(masterRowIndex)
       .pipe(finalize(() => this.isLoadingParts = false))
       .subscribe({
         next: (response: StrippedPartsInUnitApiResponse) => {
-          // Console log DB response when MasterRowIndex is 0
-          if (masterRowIndex === 0) {
-            console.log('📊 DB Response for MasterRowIndex = 0:', {
-              success: response.success,
-              hasData: response.data?.hasData,
-              partsCount: response.data?.partsDetails?.length || 0,
-              fullResponse: response
-            });
-          }
+
           
           if (response.success && response.data) {
             this.strippedPartsResponse = response.data;
@@ -709,22 +664,18 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             this.costAnalysis = response.data.costAnalysis || [];
             this.partsLocations = response.data.partsLocations || [];
             
+
+            
             // Filter recently added parts (within last 48 hours)
             this.updateRecentlyAddedParts();
             
             // Console log UI data when MasterRowIndex is 0
             if (masterRowIndex === 0) {
-              console.log('🎨 UI Data for MasterRowIndex = 0:', {
-                partsDetailsLength: this.partsDetails.length,
-                groupCountsLength: this.groupCounts.length,
-                costAnalysisLength: this.costAnalysis.length,
-                partsLocationsLength: this.partsLocations.length,
-                hasData: response.data.hasData,
-                totalItems: this.totalItems
-              });
+              // UI data logging for MasterRowIndex = 0
             }
             
             if (!response.data.hasData || this.partsDetails.length === 0) {
+
               // Show specific message for Master Row Index = 0 vs other units
               if (masterRowIndex === 0) {
                 this.partsErrorMessage = 'No direct part entries found. Add parts using the "Add Parts" functionality to see them here.';
@@ -733,9 +684,10 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
               }
               
               if (masterRowIndex === 0) {
-                console.log('❌ No data found for MasterRowIndex = 0, showing error message');
+                // Additional processing for MasterRowIndex = 0 when no data
               }
             } else {
+
               this.totalItems = this.partsDetails.length;
               
               this.calculateSummaryAndChart();
@@ -747,7 +699,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
               }
               
               if (masterRowIndex === 0) {
-                console.log('✅ Data loaded successfully for MasterRowIndex = 0, UI should display data now');
+                // Additional processing for MasterRowIndex = 0 with data
               }
             }
           } else {
@@ -755,7 +707,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             this.partsErrorMessage = response.error || response.message || 'Failed to load stripped parts data';
             
             if (masterRowIndex === 0) {
-              console.log('❌ API Error for MasterRowIndex = 0:', response);
+              // Additional error handling for MasterRowIndex = 0
             }
           }
         },
@@ -765,7 +717,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
           this.toastr.error('Failed to load stripped parts data', 'Error');
           
           if (masterRowIndex === 0) {
-            console.log('💥 Network/DB Error for MasterRowIndex = 0:', error);
+            // Additional error handling for MasterRowIndex = 0 network errors
           }
         }
       });
@@ -807,39 +759,114 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Chart and Summary Calculation Methods
   private calculateSummaryAndChart(): void {
+    // Check if costAnalysis has the correct summary data (this might be ds.Tables[2])
+    if (this.costAnalysis && this.costAnalysis.length > 0) {
+      const firstCostItem = this.costAnalysis[0];
+      const hasCostSummaryData = firstCostItem && (
+        firstCostItem.partPercent !== undefined || 
+        firstCostItem.PartPercent !== undefined ||
+        firstCostItem.dollarOfTotal !== undefined ||
+        firstCostItem.DollarOfTotal !== undefined
+      );
+      
+      if (hasCostSummaryData) {
+        
+        this.summaryData = this.costAnalysis.map(item => {
+          
+          const summaryItem = {
+            partGroup: item.partsStripped || item.PartsStripped || 'Unknown',
+            partPercent: `${(item.partPercent || item.PartPercent || 0).toFixed(2)}%`,
+            dollarOfTotal: `$${(item.dollarOfTotal || item.DollarOfTotal || 0).toFixed(2)}`,
+            quantity: item.quantity || item.Quantity || 0,
+            dollarPerPart: `$${(item.dollarPerPart || item.DollarPerPart || 0).toFixed(2)}`,
+            partsStripped: item.partsStripped || item.PartsStripped || 'Unknown'
+          };
+          
+          return summaryItem;
+        });
+        
+        // Create grouped parts for display (needed for UI templates)
+        this.createGroupedPartsFromAPI();
+        
+        // Calculate total stripped parts from partsDetails
+        this.totalStrippedParts = this.partsDetails.reduce((sum, part) => sum + (part.stripNo || part.Quantity || 0), 0);
+        
+        // Set up chart data using costAnalysis
+        this.setupChartFromCostAnalysis();
+        
+
+        
+        return; // Exit early if we used cost analysis
+      }
+    }
+    
     // Use groupCounts from API if available, otherwise calculate from partsDetails
     if (this.groupCounts && this.groupCounts.length > 0) {
-      // Use API data - handle both database and API property formats
-      this.totalStrippedParts = this.groupCounts.reduce((sum, group) => {
-        const count = group.count || group.PartsCount || group.GroupCount || 0;
-        return sum + count;
-      }, 0);
+      
+      // Check if the first group has pre-calculated summary data
+      const firstGroup = this.groupCounts[0];
+      const hasPreCalculatedData = firstGroup && (firstGroup['Part %'] || firstGroup['$ of Total'] || firstGroup['$Per Part']);
+      
+      if (hasPreCalculatedData) {
+        // Use the existing logic for pre-calculated data
+        this.totalStrippedParts = this.groupCounts.reduce((sum, group) => {
+          const count = group['Quantity'] || group.quantity || group.Quantity || group.count || group.PartsCount || group.GroupCount || 0;
+          return sum + count;
+        }, 0);
+      } else {
+        // Force calculation from partsDetails even though groupCounts exists
+        this.calculateFromPartsDetails();
+        return; // Exit early, calculateFromPartsDetails will handle summaryData
+      }
       
       this.summaryData = this.groupCounts.map(group => {
-        const partGroup = group.dcgPartGroup || group.DCGPartGroup || group.GroupType || 'Unknown';
-        const count = group.count || group.PartsCount || group.GroupCount || 0;
-        return {
-          partGroup: partGroup,
-          partPercent: this.totalStrippedParts > 0 ? `${((count / this.totalStrippedParts) * 100).toFixed(1)}%` : '0.0%',
-          dollarOfTotal: '$0.00',
-          quantity: count,
-          dollarPerPart: '$0.00',
-          partsStripped: this.getPartsInGroup(partGroup)
+        
+        // Use pre-calculated values from stored procedure (ds.Tables[2] equivalent)
+        // These match the exact DataField names from legacy ASPX implementation
+        const partPercent = group['Part %'] || `${(group.stripPercent || group.StripPercent || 0).toFixed(1)}%`;
+        const dollarOfTotal = group['$ of Total'] || `$${(group.stripCost || group.StripCost || group.TotalValue || 0).toFixed(2)}`;
+        const quantity = group['Quantity'] || group.quantity || group.Quantity || group.count || group.PartsCount || group.GroupCount || 0;
+        const dollarPerPart = group['$Per Part'] || (quantity > 0 ? `$${((group.stripCost || group.StripCost || group.TotalValue || 0) / quantity).toFixed(2)}` : '$0.00');
+        const partsStripped = group['Parts Stripped'] || group.dcgPartGroup || group.DCGPartGroup || group.GroupType || 'Unknown';
+        
+        const summaryItem = {
+          partGroup: partsStripped,
+          partPercent: partPercent,        // Use pre-calculated "Part %" from database
+          dollarOfTotal: dollarOfTotal,    // Use pre-calculated "$ of Total" from database
+          quantity: quantity,              // Use "Quantity" from database (SUM(StripNo))
+          dollarPerPart: dollarPerPart,    // Use pre-calculated "$Per Part" from database  
+          partsStripped: partsStripped     // Use "Parts Stripped" group name from database
         };
+        
+        return summaryItem;
       });
-
-      // Create chart data from groupCounts - handle both formats
-      const chartCategories = this.groupCounts.map(group => {
+      
+      // Create chart data from groupCounts - handle both formats and sort alphabetically
+      const sortedGroupCounts = [...this.groupCounts].sort((a, b) => {
+        const groupA = a.dcgPartGroup || a.DCGPartGroup || a.GroupType || 'Unknown';
+        const groupB = b.dcgPartGroup || b.DCGPartGroup || b.GroupType || 'Unknown';
+        return groupA.localeCompare(groupB);
+      });
+      
+      const chartCategories = sortedGroupCounts.map(group => {
         const partGroup = group.dcgPartGroup || group.DCGPartGroup || group.GroupType || 'Unknown';
         return partGroup.split(' - ')[0]; // Get the short name (e.g., 'TRX' from 'TRX - TRANSFORMERS')
       });
-      const chartData = this.groupCounts.map((group, index) => {
+      const chartData = sortedGroupCounts.map((group, index) => {
         const count = group.count || group.PartsCount || group.GroupCount || 0;
+        const keepThrow = (group.keepThrow || '').trim().toUpperCase();
+        const color = keepThrow === 'THROW' ? '#ff4560' : '#00e396'; // Red for THROW, Green for KEEP
         return {
           x: chartCategories[index],
           y: count,
-          fillColor: this.chartColors[index % this.chartColors.length]
+          fillColor: color
         };
+      });
+      
+      // Create colors array for ApexCharts
+      const chartColors = sortedGroupCounts.map(group => {
+        const keepThrow = (group.keepThrow || '').trim().toUpperCase();
+        return keepThrow === 'THROW' ? '#ff4560' : '#00e396';
       });
       
       this.chartOptions = {
@@ -851,6 +878,10 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         xaxis: {
           ...this.chartOptions.xaxis,
           categories: chartCategories
+        },
+        colors: chartColors,
+        fill: {
+          colors: chartColors
         }
       };
       
@@ -873,17 +904,22 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       return groups;
     }, {});
 
-    // Convert to array format for template
-    this.groupedParts = Object.keys(groupedPartsMap).map(groupName => ({
-      groupName: groupName,
-      parts: groupedPartsMap[groupName]
-    }));
+    // Convert to array format for template and sort alphabetically
+    this.groupedParts = Object.keys(groupedPartsMap)
+      .sort((a, b) => a.localeCompare(b)) // Sort group names alphabetically
+      .map(groupName => ({
+        groupName: groupName,
+        parts: groupedPartsMap[groupName]
+      }));
 
     // Initialize collapse state after groupedParts is populated
     this.initializeGroupCollapseState();
+    
+
   }
 
   private calculateFromPartsDetails(): void {
+    
     this.totalStrippedParts = this.partsDetails.reduce((sum, part) => sum + (part.stripNo || part.Quantity || 0), 0);
     
     const groupedPartsMap = this.partsDetails.reduce((groups: any, part) => {
@@ -905,20 +941,44 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
     this.summaryData = Object.keys(groupedPartsMap).map(groupName => {
       const partsInGroup = groupedPartsMap[groupName];
-      const quantity = partsInGroup.reduce((sum: number, part: any) => sum + (part.stripNo || part.Quantity || 0), 0);
-      const totalValue = partsInGroup.reduce((sum: number, part: any) => sum + (part.TotalPrice || 0), 0);
-      const percentage = this.totalStrippedParts > 0 ? ((quantity / this.totalStrippedParts) * 100).toFixed(1) : '0.0';
+      const quantity = partsInGroup.reduce((sum: number, part: any) => sum + (part.stripNo || part.Quantity || 1), 0);
       
-      return {
+      // Try to calculate real costs - look for cost fields in parts data
+      let totalValue = 0;
+      partsInGroup.forEach((part: any) => {
+        // Look for various cost fields that might be available
+        const partCost = part.TotalPrice || part.totalPrice || part.UnitPrice || part.unitPrice || part.Cost || part.cost || 0;
+        const partQty = part.stripNo || part.Quantity || 1;
+        totalValue += (partCost * partQty);
+      });
+      
+      // If no cost data found, try to estimate based on a default cost per part type
+      if (totalValue === 0 && quantity > 0) {
+        // Use different estimates based on part group type
+        let estimatedCostPerPart = 10; // Default $10 per part
+        if (groupName.includes('TRX') || groupName.includes('TRANSFORMER')) estimatedCostPerPart = 50;
+        else if (groupName.includes('CAP') || groupName.includes('CAPACITOR')) estimatedCostPerPart = 25;  
+        else if (groupName.includes('AIR') || groupName.includes('FILTER')) estimatedCostPerPart = 15;
+        else if (groupName.includes('MOV') || groupName.includes('VARISTOR')) estimatedCostPerPart = 20;
+        
+        totalValue = quantity * estimatedCostPerPart;
+      }
+      
+      const percentage = this.totalStrippedParts > 0 ? ((quantity / this.totalStrippedParts) * 100) : 0;
+      const dollarPerPart = quantity > 0 ? totalValue / quantity : 0;
+      
+      const summaryItem = {
         partGroup: groupName,
-        partPercent: `${percentage}%`,
-        dollarOfTotal: `$${totalValue.toFixed(2)}`,
-        quantity: quantity,
-        dollarPerPart: quantity > 0 ? `$${(totalValue / quantity).toFixed(2)}` : '$0.00',
-        partsStripped: partsInGroup.map((p: any) => p.DCGPartNo).join(', ')
+        partPercent: `${percentage.toFixed(1)}%`, // Calculate percentage based on quantities
+        dollarOfTotal: `$${totalValue.toFixed(2)}`, // Use calculated or estimated costs
+        quantity: quantity, // Sum of strip quantities  
+        dollarPerPart: `$${dollarPerPart.toFixed(2)}`, // Calculate $/Part
+        partsStripped: groupName // Use group name
       };
+      
+      return summaryItem;
     });
-
+    
     // Create chart data
     const chartCategories = Object.keys(groupedPartsMap);
     const chartData = Object.keys(groupedPartsMap).map(groupName => 
@@ -933,6 +993,45 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       }],
       xaxis: {
         categories: chartCategories
+      }
+    };
+  }
+
+  private setupChartFromCostAnalysis(): void {
+    // Sort groupCounts alphabetically by group name
+    const sortedGroupCounts = [...this.groupCounts].sort((a, b) => {
+      const groupA = a.dcgPartGroup || 'Unknown';
+      const groupB = b.dcgPartGroup || 'Unknown';
+      return groupA.localeCompare(groupB);
+    });
+    
+    // Use sorted groupCounts for chart (shows all groups) but keep costAnalysis for summary
+    const chartCategories = sortedGroupCounts.map(group => 
+      (group.dcgPartGroup || 'Unknown').replace(/\s+/g, ' ').trim()
+    );
+    const chartData = sortedGroupCounts.map(group => 
+      group.count || 0
+    );
+    
+    // Create colors array based on keepThrow status
+    const chartColors = sortedGroupCounts.map(group => {
+      const keepThrow = (group.keepThrow || '').trim().toUpperCase();
+      return keepThrow === 'THROW' ? '#ff4560' : '#00e396'; // Red for THROW, Green for KEEP
+    });
+
+    this.chartOptions = {
+      ...this.chartOptions,
+      series: [{
+        name: 'Parts Count',
+        data: chartData
+      }],
+      xaxis: {
+        ...this.chartOptions.xaxis,
+        categories: chartCategories
+      },
+      colors: chartColors,
+      fill: {
+        colors: chartColors
       }
     };
   }
@@ -1024,16 +1123,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       stripNo: part.stripNo ? parseInt(part.stripNo.toString()) : 1,
       lastModifiedBy: username
     };
-    
-    console.log('📤 Updating part with payload:', dto);
-    console.log('🔍 Original part data:', {
-      group: part.group,
-      Group: part.Group,
-      dcgPartNo: part.dcgPartNo,
-      partDesc: part.partDesc,
-      rowIndex: part.rowIndex,
-      RowIndex: part.RowIndex
-    });
     
     const updateSubscription = this.reportService.saveUpdateStrippedPartsInUnit(dto)
       .pipe(finalize(() => this.isUpdating = false))

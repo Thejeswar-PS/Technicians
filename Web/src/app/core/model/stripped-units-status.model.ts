@@ -103,14 +103,28 @@ export interface StrippedPartsDetailDto {
 }
 
 export interface StrippedPartsGroupCountDto {
-  // Database format (uppercase)
+  // Legacy ASPX DataField mappings (exact column names from stored procedure ds.Tables[2])
+  'Part %'?: string;          // Pre-calculated percentage from database
+  '$ of Total'?: string;      // Pre-calculated dollar percentage from database  
+  'Quantity'?: number;        // SUM(StripNo) from database
+  '$Per Part'?: string;       // Pre-calculated cost per part from database
+  'Parts Stripped'?: string;  // Part group names from database
+  
+  // Database format (uppercase) - for compatibility
   DCGPartGroup?: string;
   PartsCount?: number;
   KeepThrow?: string;
-  // API format (lowercase)
+  StripPercent?: number;      // Raw percentage value
+  StripCost?: number;         // Raw cost value
+  
+  // API format (lowercase) - for compatibility
   dcgPartGroup?: string;
   count?: number;
   keepThrow?: string;
+  stripPercent?: number;      // Raw percentage value (lowercase)
+  stripCost?: number;         // Raw cost value (lowercase)
+  quantity?: number;          // Raw quantity value (lowercase)
+  
   // Legacy property names for compatibility
   GroupType?: string;
   GroupCount?: number;

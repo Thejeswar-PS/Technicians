@@ -92,9 +92,7 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   private checkUserAuthentication(): void {
     const currentUser = this.authService.currentUserValue;
     
-    if (!currentUser?.username) {
-      this.toastr.warning('Please ensure you are logged in');
-    } else {
+    if (currentUser?.username) {
       // Immediately set user info in the form
       setTimeout(() => {
         this.initializePartsFormDefaults();
