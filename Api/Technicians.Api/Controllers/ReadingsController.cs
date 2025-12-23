@@ -541,6 +541,26 @@ namespace Technicians.Api.Controllers
             return Ok(data);
         }
 
+        [HttpGet("GetGeneratorInfo")]
+        public async Task<IActionResult> GetGeneratorInfo(
+        [FromQuery] string callNbr,
+        [FromQuery] string equipNo,
+        [FromQuery] int equipId)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr) ||
+                string.IsNullOrWhiteSpace(equipNo))
+            {
+                return BadRequest("callNbr, equipNo and equipId are required.");
+            }
+
+            var data = await _repository.GetGeneratorInfoAsync(callNbr, equipNo, equipId);
+
+            if (data == null)
+                return NotFound("Generator info not found.");
+
+            return Ok(data);
+        }
+
 
     }
 }

@@ -1345,7 +1345,7 @@ namespace Technicians.Api.Repository
             await cmd.ExecuteNonQueryAsync();
         }
 
-        public async Task<List<BatteryReadingGraphDto>> GetBatteryReadingsGraphData(string callNbr, string equipNo)
+        public async Task<List<BatteryReadingGraphDto>> GetBatteryReadingsGraphData(string callNbr,string equipNo)
         {
             var result = new List<BatteryReadingGraphDto>();
 
@@ -1407,6 +1407,32 @@ namespace Technicians.Api.Repository
             return result;
         }
 
+        public async Task<GeneratorInfoDto> GetGeneratorInfoAsync(string callNbr, string equipNo, int equipId)
+        {
+            await using var connection = new SqlConnection(_connectionString);
+            await using var command = new SqlCommand("etechGeneratorForm", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CallId", callNbr);
+            parameters.Add("@EquipId", equipId);
+            parameters.Add("CodeId", equipNo);
+
+            var result = await connection.QueryFirstOrDefaultAsync<GeneratorInfoDto>(
+                "etechGeneratorForm",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            if (result == null)
+            {
+                throw new KeyNotFoundException("No SCC data found.");
+            }
+
+            return result;
+        }
 
     }
 }

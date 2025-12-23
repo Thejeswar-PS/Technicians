@@ -22,6 +22,7 @@ import { StsReadingsComponent } from '../equipment/sts-readings/sts-readings.com
 import { RectifierReadingsComponent } from '../equipment/rectifier-readings/rectifier-readings.component';
 import { SccReadingsComponent } from '../equipment/scc-readings/scc-readings.component';
 import { OtherEquipmentComponent } from '../equipment/other-equipment/other-equipment.component';
+import { GeneratorReadingsComponent } from '../equipment/generator-readings/generator-readings.component';
 
 const routes: Routes = [
   {
@@ -121,6 +122,10 @@ const routes: Routes = [
   {
     path: 'scc-readings',
     component: SccReadingsComponent
+  },
+  {
+    path: 'generator-readings',
+    component: GeneratorReadingsComponent
   },
   {
     path: 'other-equipment',
