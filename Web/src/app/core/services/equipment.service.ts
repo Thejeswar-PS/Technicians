@@ -817,7 +817,30 @@ export class EquipmentService {
    * Equivalent to da.SaveUpdateSCC() in legacy code
    */
   saveUpdateSCC(sccData: any): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/Readings/SaveUpdateSCC`, sccData);
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/Readings/SaveUpdateSCCInfo`, sccData);
+  }
+
+  // ========== GENERATOR READINGS METHODS ==========
+
+  /**
+   * Get generator information for PM readings
+   * Equivalent to da.GetGeneratorInfo() in legacy code
+   */
+  getGeneratorInfo(callNbr: string, equipNo: string, equipId: number): Observable<any> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipNo', equipNo)
+      .set('equipId', equipId.toString());
+    
+    return this.http.get<any>(`${this.apiUrl}/Readings/GetGeneratorInfo`, { params });
+  }
+
+  /**
+   * Save or update generator PM readings information
+   * Equivalent to da.SaveUpdateGeneratorInfo() in legacy code
+   */
+  updateGeneratorInfo(generatorData: any): Observable<{ success: boolean; message: string }> {
+    return this.http.post<{ success: boolean; message: string }>(`${this.apiUrl}/Readings/SaveUpdateGeneratorInfo`, generatorData);
   }
 
 }

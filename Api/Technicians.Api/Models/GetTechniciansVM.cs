@@ -2,7 +2,7 @@
 {
     public class GetTechniciansVM
     {
-        public string EmpName { get; set; }
-        public string EmpID { get; set; }
+        public string Techname { get; set; }
+        public string TechID { get; set; }
     }
 }

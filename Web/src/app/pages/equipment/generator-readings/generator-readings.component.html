@@ -1,0 +1,1488 @@
+<!-- Generator Readings Page (modern card layout like UPS/PDU/ATS) -->
+<div class="container-fluid ups-readings-container" *ngIf="generatorInfo">
+  <!-- Header: Back, Title, Save -->
+  <div class="ups-readings-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button type="button" class="btn btn-sm btn-primary ups-readings-header__back" (click)="goBack()" [disabled]="isSaving || isLoading">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+
+    <div class="ups-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-speedometer2 me-2"></i>
+        Generator Readings & Verification
+      </h2>
+      <div class="text-dark mt-2">
+        <span class="fw-semibold">Job ID: {{ callNbr || 'N/A' }} | Equipment ID: {{ equipId || 'N/A' }} | Gen ID: {{ equipNo || 'N/A' }}</span>
+      </div>
+    </div>
+
+    <button type="button" class="btn btn-sm btn-primary ups-readings-header__action" (click)="saveGeneratorData()" [disabled]="isSaving || isLoading">
+      <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+      <i *ngIf="!isSaving" class="bi bi-check-circle me-2"></i>
+      {{ isSaving ? 'Saving...' : 'Save Generator Data' }}
+    </button>
+  </div>
+
+  <!-- Messages -->
+  <div class="ups-readings-messages mb-3" *ngIf="errorMessage || successMessage">
+    <div *ngIf="errorMessage" class="alert alert-danger d-inline-flex align-items-center">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <span>{{ errorMessage }}</span>
+    </div>
+    <div *ngIf="successMessage" class="alert alert-success d-inline-flex align-items-center">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <span>{{ successMessage }}</span>
+    </div>
+  </div>
+
+  <!-- Main card wrapper -->
+  <div class="card shadow-sm ups-main-card">
+    <div class="card-body">
+      <div class="ups-readings-form">
+
+        <!-- Equipment Verification -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-gear-wide-connected me-2 text-primary"></i>
+                <h5 class="mb-0">Equipment Verification</h5>
+                <small class="text-muted">Verify generator details and specifications</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.status" name="status">
+                          <option value="" disabled>Select status</option>
+                          <option *ngFor="let opt of statusOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Status</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.genDateCodeMonth" name="genDateCodeMonth">
+                          <option value="">Month </option>
+                          <option value="January">January</option>
+                          <option value="February">February</option>
+                          <option value="March">March</option>
+                          <option value="April">April</option>
+                          <option value="May">May</option>
+                          <option value="June">June</option>
+                          <option value="July">July</option>
+                          <option value="August">August</option>
+                          <option value="September">September</option>
+                          <option value="October">October</option>
+                          <option value="November">November</option>
+                          <option value="December">December</option>
+                        </select>
+                        <label>Generator Date Code (Month)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.genDateCodeYear" name="genDateCodeYear">
+                          <option value="0">Year</option>
+                          <option value="1960">1960</option>
+                          <option value="1961">1961</option>
+                          <option value="1962">1962</option>
+                          <option value="1963">1963</option>
+                          <option value="1964">1964</option>
+                          <option value="1965">1965</option>
+                          <option value="1966">1966</option>
+                          <option value="1967">1967</option>
+                          <option value="1968">1968</option>
+                          <option value="1969">1969</option>
+                          <option value="1970">1970</option>
+                          <option value="1971">1971</option>
+                          <option value="1972">1972</option>
+                          <option value="1973">1973</option>
+                          <option value="1974">1974</option>
+                          <option value="1975">1975</option>
+                          <option value="1976">1976</option>
+                          <option value="1977">1977</option>
+                          <option value="1978">1978</option>
+                          <option value="1979">1979</option>
+                          <option value="1980">1980</option>
+                          <option value="1981">1981</option>
+                          <option value="1982">1982</option>
+                          <option value="1983">1983</option>
+                          <option value="1984">1984</option>
+                          <option value="1985">1985</option>
+                          <option value="1986">1986</option>
+                          <option value="1987">1987</option>
+                          <option value="1988">1988</option>
+                          <option value="1989">1989</option>
+                          <option value="1990">1990</option>
+                          <option value="1991">1991</option>
+                          <option value="1992">1992</option>
+                          <option value="1993">1993</option>
+                          <option value="1994">1994</option>
+                          <option value="1995">1995</option>
+                          <option value="1996">1996</option>
+                          <option value="1997">1997</option>
+                          <option value="1998">1998</option>
+                          <option value="1999">1999</option>
+                          <option value="2000">2000</option>
+                          <option value="2001">2001</option>
+                          <option value="2002">2002</option>
+                          <option value="2003">2003</option>
+                          <option value="2004">2004</option>
+                          <option value="2005">2005</option>
+                          <option value="2006">2006</option>
+                          <option value="2007">2007</option>
+                          <option value="2008">2008</option>
+                          <option value="2009">2009</option>
+                          <option value="2010">2010</option>
+                          <option value="2011">2011</option>
+                          <option value="2012">2012</option>
+                          <option value="2013">2013</option>
+                          <option value="2014">2014</option>
+                          <option value="2015">2015</option>
+                          <option value="2016">2016</option>
+                          <option value="2017">2017</option>
+                          <option value="2018">2018</option>
+                          <option value="2019">2019</option>
+                          <option value="2020">2020</option>
+                        </select>
+                        <label>Generator Date Code (Year)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.genLocation" name="genLocation" placeholder="Location" />
+                        <label>Generator Location</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.siteIDNum" name="siteIDNum" placeholder="Site ID" />
+                        <label>Site ID Number</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.engineModel" name="engineModel" placeholder="Engine Model" />
+                        <label>Engine Model Number</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.engineSN" name="engineSN" placeholder="Engine Serial" />
+                        <label>Engine Serial Number</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.manufacturer" name="manufacturer" placeholder="Manufacturer" />
+                        <label>Manufacturer</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group-modern">
+                  <h6 class="fw-bold text-primary mb-3">Filters / Fluids</h6>
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.oilFilterPartNum" name="oilFilterPartNum" placeholder="" />
+                        <label>Oil Filter Part  Number</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.numOilFilters" name="numOilFilters" placeholder="" />
+                        <label>Number of Oil Filters</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.fuelFilterPartNum" name="fuelFilterPartNum" placeholder="" />
+                        <label>Fuel Filter Part Number</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.numFuelFilters" name="numFuelFilters" placeholder="" />
+                        <label>Number of Fuel Filters</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.coolantFilterPartNum" name="coolantFilterPartNum" placeholder="" />
+                        <label>Coolant Filter Part Number</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.numCoolantFilters" name="numCoolantFilters" placeholder="" />
+                        <label>Number of Coolant Filters</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.airFilterPartNum" name="airFilterPartNum" placeholder="" />
+                        <label>Air Filter Part Number</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.numAirFilters" name="numAirFilters" placeholder="" />
+                        <label>Number of Air Filters</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.waterSepPartNum" name="waterSepPartNum" placeholder="" />
+                        <label>Fuel/Water Seperator Part Numbers</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.numWaterSepFilters" name="numWaterSepFilters" placeholder="" />
+                        <label>Number of Fuel/Water Seperator Filters</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.amtOil" name="amtOil" placeholder="" />
+                        <label>Amount and Type of Oil Needed</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.amtCoolant" name="amtCoolant" placeholder="" />
+                        <label>Amount and Type of Coolant Needed</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Battery Maintenance -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-battery-charging me-2 text-primary"></i>
+                <h5 class="mb-0">Annual/Semi Annaul PM Batteries</h5>
+                <small class="text-muted">General maintenance checks and readings</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.batDateCodeMonth" name="batDateCodeMonth">
+                          <option value=" ">Month </option>
+                          <option value="January">January</option>
+                          <option value="February">February</option>
+                          <option value="March">March</option>
+                          <option value="April">April</option>
+                          <option value="May">May</option>
+                          <option value="June">June</option>
+                          <option value="July">July</option>
+                          <option value="August">August</option>
+                          <option value="September">September</option>
+                          <option value="October">October</option>
+                          <option value="November">November</option>
+                          <option value="December">December</option>
+                        </select>
+                        <label>Battery Date Code (Month)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.batDateCodeYear" name="batDateCodeYear">
+                          <option value=" ">Year </option>
+                          <option value="1960">1960</option>
+                          <option value="1961">1961</option>
+                          <option value="1962">1962</option>
+                          <option value="1963">1963</option>
+                          <option value="1964">1964</option>
+                          <option value="1965">1965</option>
+                          <option value="1966">1966</option>
+                          <option value="1967">1967</option>
+                          <option value="1968">1968</option>
+                          <option value="1969">1969</option>
+                          <option value="1970">1970</option>
+                          <option value="1971">1971</option>
+                          <option value="1972">1972</option>
+                          <option value="1973">1973</option>
+                          <option value="1974">1974</option>
+                          <option value="1975">1975</option>
+                          <option value="1976">1976</option>
+                          <option value="1977">1977</option>
+                          <option value="1978">1978</option>
+                          <option value="1979">1979</option>
+                          <option value="1980">1980</option>
+                          <option value="1981">1981</option>
+                          <option value="1982">1982</option>
+                          <option value="1983">1983</option>
+                          <option value="1984">1984</option>
+                          <option value="1985">1985</option>
+                          <option value="1986">1986</option>
+                          <option value="1987">1987</option>
+                          <option value="1988">1988</option>
+                          <option value="1989">1989</option>
+                          <option value="1990">1990</option>
+                          <option value="1991">1991</option>
+                          <option value="1992">1992</option>
+                          <option value="1993">1993</option>
+                          <option value="1994">1994</option>
+                          <option value="1995">1995</option>
+                          <option value="1996">1996</option>
+                          <option value="1997">1997</option>
+                          <option value="1998">1998</option>
+                          <option value="1999">1999</option>
+                          <option value="2000">2000</option>
+                          <option value="2001">2001</option>
+                          <option value="2002">2002</option>
+                          <option value="2003">2003</option>
+                          <option value="2004">2004</option>
+                          <option value="2005">2005</option>
+                          <option value="2006">2006</option>
+                          <option value="2007">2007</option>
+                          <option value="2008">2008</option>
+                          <option value="2009">2009</option>
+                          <option value="2010">2010</option>
+                          <option value="2011">2011</option>
+                          <option value="2012">2012</option>
+                          <option value="2013">2013</option>
+                          <option value="2014">2014</option>
+                          <option value="2015">2015</option>
+                          <option value="2016">2016</option>
+                          <option value="2017">2017</option>
+                          <option value="2018">2018</option>
+                          <option value="2019">2019</option>
+                          <option value="2020">2020</option>
+                        </select>
+                        <label>Battery Date Code (Year)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.batCleanliness" name="batCleanliness">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Clealiness of batteries</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.electrolyteLevel" name="electrolyteLevel">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Electrolyte Level</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.clampTightness" name="clampTightness">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Cable Clamp Tightness</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkBatCharger" name="checkBatCharger">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Battery Charger</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkCables" name="checkCables">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check/Clean Cables</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkBatPosts" name="checkBatPosts">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check/Clean Battery Posts</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkBatLugs" name="checkBatLugs">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check/Clean Battery Lugs</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.applyCorrInhibitor" name="applyCorrInhibitor">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Apply Corrosion Inhibitor</label>
+                      </div>
+                    </div>
+
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.alternatorVoltage" name="alternatorVoltage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Alternator Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.bat1Voltage" name="bat1Voltage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Battery 1 Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.bat2Voltage" name="bat2Voltage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Battery 2 Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.bat3Voltage" name="bat3Voltage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Battery 3 Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.bat4Voltage" name="bat4Voltage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Battery 4 Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.chargingVoltageOffline" name="chargingVoltageOffline">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Charging Voltage (Offline)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.chargingVoltageOnline" name="chargingVoltageOnline">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Charging Voltage (Online)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.chargingCurrentOffline" name="chargingCurrentOffline">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Charging Current (Offline)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.chargingCurrentOnline" name="chargingCurrentOnline">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Charging Current (Online)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkAlarms" name="checkAlarms">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check All Alarms</label>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea rows="2" class="form-control" [(ngModel)]="generatorInfo.batNotes" name="batNotes" placeholder=""></textarea>
+                        <label>Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group-modern">
+                  <h6 class="fw-bold text-primary mb-3">Battery Readings</h6>
+                  <div class="row g-3">
+                    <!-- Battery1 -->
+                    <div class="col-12">
+                      <h6 style="font-size:10pt;font-weight:bold;color:#428bca;font-family:calibri">Battery1</h6>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat1VDC" name="bat1VDC" placeholder="" />
+                        <label>Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat1Cond" name="bat1Cond" placeholder="" />
+                        <label>Conductance</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat1SG" name="bat1SG" placeholder="" />
+                        <label>Specific Gravity-Cell 1</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat1SG2" name="bat1SG2" placeholder="" />
+                        <label>Specific Gravity-Cell 2</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat2VDC" name="bat2VDC" placeholder="" />
+                        <label>Specific Gravity-Cell 3</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat1SG4" name="bat1SG4" placeholder="" />
+                        <label>Specific Gravity-Cell 4</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat2Cond" name="bat2Cond" placeholder="" />
+                        <label>Specific Gravity-Cell 5</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat2SG" name="bat2SG" placeholder="" />
+                        <label>Specific Gravity-Cell 6</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                    <!-- Battery2 -->
+                    <div class="col-12 mt-4">
+                      <h6 style="font-size:10pt;font-weight:bold;color:#428bca;font-family:calibri">Battery2</h6>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat3VDC" name="bat3VDC" placeholder="" />
+                        <label>Voltage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat3Cond" name="bat3Cond" placeholder="" />
+                        <label>Conductance</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat3SG" name="bat3SG" placeholder="" />
+                        <label>Specific Gravity-Cell 1</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat3SG2" name="bat3SG2" placeholder="" />
+                        <label>Specific Gravity-Cell 2</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat4VDC" name="bat4VDC" placeholder="" />
+                        <label>Specific Gravity-Cell 3</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat3SG4" name="bat3SG4" placeholder="" />
+                        <label>Specific Gravity-Cell 4</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat4Cond" name="bat4Cond" placeholder="" />
+                        <label>Specific Gravity-Cell 5</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.bat4SG" name="bat4SG" placeholder="" />
+                        <label>Specific Gravity-Cell 6</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3"></div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Cooling System -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-thermometer-half me-2 text-primary"></i>
+                <h5 class="mb-0">Cooling System</h5>
+                <small class="text-muted">Cooling inspections and notes</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkCoolantLeaks" name="checkCoolantLeaks">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check for Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkCoolantLevel" name="checkCoolantLevel">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Coolant Level</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.testCoolant" name="testCoolant">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Test Coolant w/Refractometer</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkFanBelts" name="checkFanBelts">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check & Tighten Fan Belts</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkRadiatorDamage" name="checkRadiatorDamage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Radiator for Damage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.radiatorCap" name="radiatorCap">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Radiator Cap</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkWaterPump" name="checkWaterPump">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Water Pump</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkEngBlockHeater" name="checkEngBlockHeater">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Engine Block Heater</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkCoolantHoses" name="checkCoolantHoses">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Coolant Hoses</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.lubeDrivePulley" name="lubeDrivePulley">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Lubricate Drive Pulley</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.coolantReading" name="coolantReading">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Coolant Reading</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.coolantAdded" name="coolantAdded">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Coolant Added/Changed</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.engHtrTemp" name="engHtrTemp">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Eng Block Htr Temp</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.changeFilter" name="changeFilter">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Change Filter</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.coolingMinorLeaks" name="coolingMinorLeaks">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Repair Minor Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkRadiator" name="checkRadiator">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Radiator for Obstructions & Flow</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.pressTestSys" name="pressTestSys">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Pressure Test System</label>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea rows="2" class="form-control" [(ngModel)]="generatorInfo.coolingSysNotes" name="coolingSysNotes" placeholder=""></textarea>
+                        <label>Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Fuel System -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-fuel-pump me-2 text-primary"></i>
+                <h5 class="mb-0">Fuel System</h5>
+                <small class="text-muted">Fuel checks and maintenance</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkFuelLeaks" name="checkFuelLeaks">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check For Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkRemotePump" name="checkRemotePump">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Remote Pump Operation</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkDayTank" name="checkDayTank">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Day Tank Operation</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkTransferPump" name="checkTransferPump">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Transfer Pump</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.changeDayTankFilter" name="changeDayTankFilter">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Change Day Tank Filter I/A</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkLinkage" name="checkLinkage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Linkage and Thottle Body</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.changeFuelFilter" name="changeFuelFilter">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Change Fuel Filter</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.changeWaterSeperator" name="changeWaterSeperator">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Change Fuel/Water Seperator</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.fuelMinorLeaks" name="fuelMinorLeaks">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Repair Minor Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.lubricateGovLinkage" name="lubricateGovLinkage">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Lubricate Governor Linkage</label>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea rows="2" class="form-control" [(ngModel)]="generatorInfo.fuelNotes" name="fuelNotes" placeholder=""></textarea>
+                        <label>Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Lubrication -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-droplet-half me-2 text-primary"></i>
+                <h5 class="mb-0">Lubrication System</h5>
+                <small class="text-muted">Oil checks and notes</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.takeOilSample" name="takeOilSample">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Take Oil Sample</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.changeLubeOil" name="changeLubeOil">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Change Lubrication Oil</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.changeLubeOilFilter" name="changeLubeOilFilter">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Change Lubrication Oil Filters</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkLubeLeaks" name="checkLubeLeaks">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check For Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkOilLevel" name="checkOilLevel">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Oil Level</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.disposeUsedOil" name="disposeUsedOil">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Dispose of used Oil</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.wipeEngine" name="wipeEngine">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Wipe down Engine</label>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea rows="2" class="form-control" [(ngModel)]="generatorInfo.lubeNotes" name="lubeNotes" placeholder=""></textarea>
+                        <label>Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Intake / Exhaust -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-wind me-2 text-primary"></i>
+                <h5 class="mb-0">Intake/Exhaust System</h5>
+                <small class="text-muted">Intake and exhaust inspections</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkExhaustSystem" name="checkExhaustSystem">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Exhaust System</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkAirInductionSys" name="checkAirInductionSys">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Air Induction System</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkAirIntakeFilter" name="checkAirIntakeFilter">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Air Intake Filter</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkCrankcase" name="checkCrankcase">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check/Clean Crankcase Breather</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkLouvers" name="checkLouvers">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Louvers & Duct Work</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkFlexConnection" name="checkFlexConnection">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Flex Connections</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkRainCap" name="checkRainCap">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Rain Cap</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkExhaustLeaks" name="checkExhaustLeaks">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check for Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.repairExhaustLeaks" name="repairExhaustLeaks">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Repair Minor Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkBoxDrain" name="checkBoxDrain">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Box Drain</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.drainCondensationTrap" name="drainCondensationTrap">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Drain Condensation Trap</label>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea rows="2" class="form-control" [(ngModel)]="generatorInfo.exhaustNotes" name="exhaustNotes" placeholder=""></textarea>
+                        <label>Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Generator / Control Panel -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-sliders me-2 text-primary"></i>
+                <h5 class="mb-0">Generator/Control Panel</h5>
+                <small class="text-muted">Panel checks and notes</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkGenBrushes" name="checkGenBrushes">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Generator Brushes</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkGenConnection" name="checkGenConnection">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Generator Connections</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkGenBreaker" name="checkGenBreaker">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Generator Breakers</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkControlWire" name="checkControlWire">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Control Wiring</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkFaultLamps" name="checkFaultLamps">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Fault Lamps</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkGenBearing" name="checkGenBearing">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Generator Bearings</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.cleanControlPanel" name="cleanControlPanel">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Clean Control Panel</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.cleanGenVent" name="cleanGenVent">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Clean Generator Vent</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.lubeCircuitBreaker" name="lubeCircuitBreaker">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Lube Circuit Breaker</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkLubeGenBearing" name="checkLubeGenBearing">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Lube Gen Bearings</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <select class="form-select" [(ngModel)]="generatorInfo.checkAccuracy" name="checkAccuracy">
+                          <option value="">--Select--</option>
+                          <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                        </select>
+                        <label>Check Accuracy of all Instruments</label>
+                      </div>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="form-floating">
+                        <textarea rows="2" class="form-control" [(ngModel)]="generatorInfo.controlPanelNotes" name="controlPanelNotes" placeholder=""></textarea>
+                        <label>Comments</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Engine Performance -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-speedometer me-2 text-primary"></i>
+                <h5 class="mb-0">Engine Peformance</h5>
+                <small class="text-muted">Engine metrics and alarm checks</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.engHours" name="engHours" placeholder="" />
+                        <label>Engine Hours</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.waterTemp" name="waterTemp" placeholder="" />
+                        <label>Water Temp</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.tachometer" name="tachometer" placeholder="" />
+                        <label>Tachometer</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.testOvercrank" name="testOvercrank" placeholder="" />
+                        <label>Test Overcrank</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.oilPressureCold" name="oilPressureCold" placeholder="" />
+                        <label>Oil Pressure (Cold)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.oilPressureHot" name="oilPressureHot" placeholder="" />
+                        <label>Oil Pressure (Hot)</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.checkEngLeaks" name="checkEngLeaks" placeholder="" />
+                        <label>Check for Leaks</label>
+                      </div>
+                    </div>
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.checkAllAlarms" name="checkAllAlarms" placeholder="" />
+                        <label>Check all Alarms</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Generator Performance -->
+        <section class="ups-readings-section">
+          <div class="ups-section-card">
+            <div class="ups-section-header">
+              <div class="ups-section-title">
+                <i class="bi bi-graph-up-arrow me-2 text-primary"></i>
+                <h5 class="mb-0">Generator Performance</h5>
+                <small class="text-muted">AC current and voltage readings</small>
+              </div>
+            </div>
+            <div class="ups-section-content show">
+              <form class="ups-form">
+                <div class="form-group-modern">
+                  <div class="row g-3">
+                    <div class="col-md-3">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.freq" name="freq" placeholder="" />
+                        <label>Frequency</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group-modern">
+                  <h6 class="fw-bold text-primary mb-2">Current</h6>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.currentA" name="currentA" placeholder="" />
+                        <label>A</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.currentB" name="currentB" placeholder="" />
+                        <label>B</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.currentC" name="currentC" placeholder="" />
+                        <label>C</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group-modern">
+                  <h6 class="fw-bold text-primary mb-2">Voltage</h6>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.voltageAB" name="voltageAB" placeholder="" />
+                        <label>A-B</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.voltageBC" name="voltageBC" placeholder="" />
+                        <label>B-C</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.voltageCA" name="voltageCA" placeholder="" />
+                        <label>C-A</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group-modern">
+                  <h6 class="fw-bold text-primary mb-2">Voltage</h6>
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.voltageAN" name="voltageAN" placeholder="" />
+                        <label>A-N</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.voltageBN" name="voltageBN" placeholder="" />
+                        <label>B-N</label>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="form-floating">
+                        <input type="text" class="form-control" [(ngModel)]="generatorInfo.voltageCN" name="voltageCN" placeholder="" />
+                        <label>C-N</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer actions -->
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button type="button" class="btn btn-light-primary" (click)="goBack()">
+            <i class="bi bi-x-circle me-2"></i>
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" (click)="saveGeneratorData()" [disabled]="isSaving || isLoading">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2" role="status"></span>
+            <i *ngIf="!isSaving" class="bi bi-check-circle me-2"></i>
+            {{ isSaving ? 'Saving...' : 'Save Generator Data' }}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

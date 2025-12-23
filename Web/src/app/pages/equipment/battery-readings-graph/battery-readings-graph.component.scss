@@ -1,0 +1,478 @@
+// Modern Battery Readings Graph Component - Matching Part Return Status Design
+.battery-graph-container {
+  background: #f8f9fa;
+  min-height: 100vh;
+  padding: 1.5rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  position: relative;
+  contain: layout;
+  
+  // Allow full-width layout
+  > * {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+// Loading overlay
+.battery-graph-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 9999;
+  
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+// Header styling
+.battery-graph-header__top {
+  position: relative;
+  padding: 1rem 0;
+  
+  .battery-graph-header__back {
+    background: #6f42c1;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: #5a2d91;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(111, 66, 193, 0.3);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+  
+  .battery-page-title {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    
+    h2 {
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      i {
+        font-size: 1.75rem;
+      }
+    }
+    
+    .text-dark {
+      font-size: 0.95rem;
+      color: #6c757d !important;
+    }
+  }
+}
+
+// Main card
+.battery-main-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  
+  .card-header {
+    background: white;
+    border-bottom: 1px solid #e9ecef;
+    
+    .chart-tabs-wrapper {
+      width: 100%;
+      
+      .modern-tabs {
+        border-bottom: none;
+        display: flex;
+        gap: 0.25rem;
+        
+        .nav-item {
+          .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #6c757d;
+            border: 1px solid transparent;
+            border-radius: 0.5rem 0.5rem 0 0;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            cursor: pointer;
+            
+            i {
+              color: inherit;
+              transition: color 0.3s ease;
+            }
+            
+            &:hover {
+              color: #495057;
+              background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+              border-color: #dee2e6;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+              
+              i {
+                color: #5486ff;
+              }
+            }
+            
+            &.active {
+              color: #5486ff;
+              background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+              border-color: #dee2e6 #dee2e6 #ffffff;
+              border-bottom-color: #ffffff;
+              position: relative;
+              z-index: 1;
+              
+              i {
+                color: #5486ff;
+              }
+              
+              &::after {
+                content: '';
+                position: absolute;
+                bottom: -1px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: #ffffff;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .card-body {
+    padding: 1.5rem;
+  }
+}
+
+// Tab content
+.tab-content {
+  .tab-pane {
+    &.fade {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    &.show {
+      opacity: 1;
+    }
+    
+    .chart-section {
+      background: #ffffff;
+      border: 1px solid #e4e6ea;
+      border-radius: 0.75rem;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+      padding: 1.5rem;
+      margin-bottom: 0;
+      
+      .card-body {
+        padding: 0;
+      }
+      
+      .chart-wrapper {
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+        background: #fafafa;
+        border-radius: 0.5rem;
+        
+        .chart-canvas {
+          max-width: 100%;
+          height: auto;
+          display: block;
+          border-radius: 0.5rem;
+          background: white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+      }
+    }
+  }
+}
+
+// Chart Header Controls (matching reference design)
+.chart-header-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  
+  .chart-selector-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+  }
+  
+  .chart-type-controls {
+    display: flex;
+    gap: 0.5rem;
+    
+    .btn-check {
+      position: absolute;
+      clip: rect(0, 0, 0, 0);
+      pointer-events: none;
+      
+      &:checked + .chart-type-btn {
+        background: linear-gradient(135deg, #5B93FF 0%, #4A7FE8 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(91, 147, 255, 0.3);
+        transform: translateY(-1px);
+        
+        i {
+          color: white;
+        }
+      }
+    }
+    
+    .chart-type-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #6c757d;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      
+      i {
+        font-size: 1.1rem;
+        color: #6c757d;
+        transition: color 0.3s ease;
+      }
+      
+      &:hover {
+        background: #e9ecef;
+        border-color: #dee2e6;
+        color: #495057;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      }
+    }
+  }
+}
+
+// Modern Table Styling
+.modern-table-container {
+  padding: 1.5rem;
+  
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    background: white;
+    
+    .interactive-chart-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      
+      thead {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        
+        tr {
+          th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #1a1a2e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #dee2e6;
+            
+            &:first-child {
+              border-top-left-radius: 12px;
+            }
+            
+            &:last-child {
+              border-top-right-radius: 12px;
+            }
+          }
+        }
+      }
+      
+      tbody {
+        tr {
+          transition: all 0.2s ease;
+          animation: fadeInUp 0.4s ease-out backwards;
+          
+          &:hover {
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+            transform: translateX(4px);
+            box-shadow: 0 2px 8px rgba(91, 147, 255, 0.15);
+          }
+          
+          &:last-child {
+            td {
+              &:first-child {
+                border-bottom-left-radius: 12px;
+              }
+              
+              &:last-child {
+                border-bottom-right-radius: 12px;
+              }
+            }
+          }
+          
+          td {
+            padding: 1rem 1.5rem;
+            color: #495057;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #f0f0f0;
+            
+            strong {
+              color: #1a1a2e;
+              font-weight: 600;
+            }
+            
+            .status-badge {
+              display: inline-block;
+              padding: 0.4rem 1rem;
+              border-radius: 20px;
+              font-weight: 600;
+              font-size: 0.85rem;
+              color: white;
+              text-transform: capitalize;
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Alert styling
+.alert {
+  border-radius: 0.75rem;
+  border: none;
+  
+  &.alert-danger {
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+    color: #dc3545;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15);
+    
+    .bi {
+      font-size: 1.25rem;
+    }
+  }
+  
+  &.alert-info {
+    background: linear-gradient(135deg, #e7f3ff 0%, #cfe8ff 100%);
+    color: #0d6efd;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+    
+    .bi {
+      font-size: 1.25rem;
+    }
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 991.98px) {
+  .battery-graph-header__top {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+    
+    .battery-page-title {
+      position: relative;
+      left: 0;
+      top: 0;
+      transform: none;
+      text-align: left;
+      
+      h2 {
+        font-size: 1.5rem;
+        justify-content: flex-start;
+      }
+    }
+  }
+}
+
+@media (max-width: 767.98px) {
+  .battery-graph-container {
+    padding: 1rem;
+  }
+  
+  .battery-main-card {
+    .card-header {
+      .modern-tabs {
+        flex-direction: column;
+        
+        .nav-item {
+          width: 100%;
+          
+          .nav-link {
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            
+            &.active::after {
+              display: none;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  .tab-content {
+    .tab-pane {
+      .chart-section {
+        padding: 1rem;
+        
+        .chart-wrapper {
+          padding: 0.5rem;
+          
+          .chart-canvas {
+            max-width: 100%;
+          }
+        }
+      }
+    }
+  }
+}

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { EquipmentService } from 'src/app/core/services/equipment.service';
 import { SCCReadings, SCCReconciliationInfo } from 'src/app/core/model/scc-readings.model';
+import { AuthService } from 'src/app/modules/auth/services/auth.service';
 import { forkJoin } from 'rxjs';
 
 @Component({
@@ -48,6 +49,11 @@ export class SccReadingsComponent implements OnInit {
   saving = false;
   errorMessage = '';
   successMessage = '';
+  // Section toggles (match ATS UX)
+  showEquipmentVerification = true;
+  showReconciliation = true;
+  showVoltageSettings = true;
+  showComments = true;
   
   // Cache for reconciliation data
   private sccDataCache: any = null;
@@ -57,6 +63,7 @@ export class SccReadingsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private equipmentService: EquipmentService,
+    private authService: AuthService,
     private toastr: ToastrService
   ) {
     this.initializeForms();
@@ -64,11 +71,9 @@ export class SccReadingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadRouteParams();
-    // Match legacy page load sequence exactly
-    this.loadManufacturers();      // BindManufs()
-    this.loadEquipmentInfo();       // GetEquipInfo()
-    this.loadSCCInfo();             // DisplaySCCInfo()
-    this.loadReconciliationInfo();  // DisplayReconciliationInfo()
+    // Match legacy page load sequence exactly - must be sequential, not parallel
+    // Legacy order: BindManufs() → GetEquipInfo() → DisplaySCCInfo() → DisplayReconciliationInfo()
+    this.loadManufacturers();
   }
 
   private initializeForms(): void {
@@ -203,39 +208,53 @@ export class SccReadingsComponent implements OnInit {
           value,
           label
         }));
+
+        // Once manufacturers are loaded, proceed to next step in sequence
+        this.loadEquipmentInfo();
       },
       error: (error) => {
         console.error('Error loading manufacturers:', error);
         this.toastr.error('Failed to load manufacturers');
+        // Even on error, continue the sequence
+        this.loadEquipmentInfo();
       }
     });
   }
 
   private loadEquipmentInfo(): void {
     // Legacy: GetEquipInfo() - Maps from EditEquipInfo response
+    console.log('[SCC Load] Step 2: loadEquipmentInfo started');
     this.equipmentService.editEquipInfo(this.callNbr, this.equipId, this.equipNo).subscribe({
       next: (data) => {
+        console.log('[SCC Load] EditEquipInfo response:', data);
         if (data) {
           // Legacy mapping: txtSerialNo.Text = dr["SerialID"].ToString().Trim();
           const serialId = (data.SerialID || data.serialID || '').toString().trim();
+          console.log('[SCC Load] Mapping SerialID:', data.SerialID, '→', serialId);
           this.equipmentVerificationForm.patchValue({
             serialNo: serialId
           });
           this.reconciliationForm.patchValue({
             recSerialNo: serialId
           });
+          console.log('[SCC Load] After patch - equipmentVerificationForm.serialNo:', this.equipmentVerificationForm.get('serialNo')?.value);
+          console.log('[SCC Load] After patch - reconciliationForm.recSerialNo:', this.reconciliationForm.get('recSerialNo')?.value);
 
           // Legacy mapping: txtModel.Text = dr["Version"].ToString().Trim();
           const version = (data.Version || data.version || '').toString().trim();
+          console.log('[SCC Load] Mapping Version:', data.Version, '→', version);
           this.equipmentVerificationForm.patchValue({
             modelNo: version
           });
           this.reconciliationForm.patchValue({
             recModel: version
           });
+          console.log('[SCC Load] After patch - equipmentVerificationForm.modelNo:', this.equipmentVerificationForm.get('modelNo')?.value);
+          console.log('[SCC Load] After patch - reconciliationForm.recModel:', this.reconciliationForm.get('recModel')?.value);
 
           // Legacy mapping: txtLocation.Text = dr["Location"].ToString().Trim();
           const location = (data.Location || data.location || '').toString().trim();
+          console.log('[SCC Load] Mapping Location:', data.Location, '→', location);
           this.equipmentVerificationForm.patchValue({
             location: location
           });
@@ -243,15 +262,21 @@ export class SccReadingsComponent implements OnInit {
           // Legacy mapping: Date Code from EquipYear and EquipMonth
           // if (cvt2Int(dr["EquipYear"].ToString()) > 0 && dr["EquipMonth"].ToString() != string.Empty)
           // DateCode.Text = (Convert.ToDateTime(dr["EquipMonth"] + "/01/" + cvt2Int(dr["EquipYear"].ToString()))).ToString("MM/dd/yyyy");
+          // Note: equipMonth comes as month name string like "December", not a number
           const equipYear = this.parseIntSafe(data.EquipYear || data.equipYear);
-          const equipMonth = (data.EquipMonth || data.equipMonth || '').toString();
+          const equipMonth = (data.EquipMonth || data.equipMonth || '').toString().trim();
+          console.log('[SCC Load] Mapping DateCode - Month:', equipMonth, 'Year:', equipYear);
           
           if (equipYear > 0 && equipMonth !== '') {
-            const monthNum = this.parseIntSafe(equipMonth);
-            if (monthNum > 0 && monthNum <= 12) {
-              const dateStr = `${equipMonth}/01/${equipYear}`;
-              const date = new Date(dateStr);
+            // Construct date from month name and year (e.g., "December/01/2025")
+            const dateStr = `${equipMonth} 1, ${equipYear}`;
+            const date = new Date(dateStr);
+            console.log('[SCC Load] DateCode string:', dateStr, '→ Date:', date);
+            
+            // Validate the date was parsed correctly
+            if (!isNaN(date.getTime())) {
               const dateCode = this.formatDate(date);
+              console.log('[SCC Load] DateCode formatted:', dateCode);
               this.equipmentVerificationForm.patchValue({
                 dateCode: dateCode
               });
@@ -263,34 +288,48 @@ export class SccReadingsComponent implements OnInit {
           // if (item.Value.ToString().Trim() == dr["VendorId"].ToString().Trim())
           // ddlmanufacturer.SelectedValue = dr["VendorId"].ToString().Trim();
           const vendorId = (data.VendorId || data.vendorId || '').toString().trim();
+          console.log('[SCC Load] Mapping Manufacturer - VendorId:', vendorId, 'Available manufacturers:', this.manufacturers.length);
           const manufacturer = this.manufacturers.find(m => m.value.trim() === vendorId);
           if (manufacturer) {
+            console.log('[SCC Load] Manufacturer found:', manufacturer);
             this.equipmentVerificationForm.patchValue({
               manufacturer: manufacturer.value
             });
           } else {
+            console.log('[SCC Load] Manufacturer NOT found for VendorId:', vendorId);
             this.equipmentVerificationForm.patchValue({
               manufacturer: ''
             });
           }
+          console.log('[SCC Load] After patch - equipmentVerificationForm.manufacturer:', this.equipmentVerificationForm.get('manufacturer')?.value);
         }
+
+        // Once equipment info is loaded, proceed to next step in sequence
+        console.log('[SCC Load] equipmentVerificationForm complete state:', this.equipmentVerificationForm.value);
+        console.log('[SCC Load] reconciliationForm state after editEquipInfo:', this.reconciliationForm.value);
+        this.loadSCCInfo();
       },
       error: (error) => {
         console.error('Error loading equipment info:', error);
         // Don't show error toast on load - matches legacy behavior
+        // Even on error, continue the sequence
+        this.loadSCCInfo();
       }
     });
   }
 
   private loadSCCInfo(): void {
     // Legacy: DisplaySCCInfo() - reads SCC data and populates form fields
+    console.log('[SCC Load] Step 3: loadSCCInfo started');
     this.equipmentService.getSCCInfo(this.callNbr, this.equipNo).subscribe({
       next: (response) => {
+        console.log('[SCC Load] GetSCCInfo response:', response);
         // Cache the response for later use
         this.sccDataCache = response;
 
         if (response) {
           const data = Array.isArray(response) ? response[0] : response;
+          console.log('[SCC Load] SCC data to map:', data);
           
           // Legacy mappings from DisplaySCCInfo:
           // txtModel.Text = dr["ModelNo"].ToString();
@@ -300,46 +339,56 @@ export class SccReadingsComponent implements OnInit {
           // txtVoltageA.Text = dr["BypassVoltA"].ToString();
           // ... and so on
           
+          console.log('[SCC Load] Mapping SCC fields - ModelNo:', data.modelNo, 'SerialNo:', data.serialNo);
           this.equipmentVerificationForm.patchValue({
-            modelNo: (data.ModelNo || '').toString().trim(),
-            serialNo: (data.SerialNo || '').toString().trim(),
-            temperature: (data.Temp || '').toString().trim(),
-            status: (data.Status || 'Online').toString().trim(),
-            statusNotes: (data.StatusNotes || '').toString().trim()
+            modelNo: (data.modelNo || data.ModelNo || '').toString().trim(),
+            serialNo: (data.serialNo || data.SerialNo || '').toString().trim(),
+            temperature: (data.temp || data.Temp || '').toString().trim(),
+            status: (data.status || data.Status || 'Online').toString().trim(),
+            statusNotes: (data.statusNotes || data.StatusNotes || '').toString().trim()
           });
+          console.log('[SCC Load] After SCC patch - modelNo:', this.equipmentVerificationForm.get('modelNo')?.value, 'serialNo:', this.equipmentVerificationForm.get('serialNo')?.value);
 
           this.voltageSettingsForm.patchValue({
-            bypassVoltA: (data.BypassVoltA || '').toString().trim(),
-            bypassVoltB: (data.BypassVoltB || '').toString().trim(),
-            bypassVoltC: (data.BypassVoltC || '').toString().trim(),
-            supplyVoltA: (data.SupplyVoltA || '').toString().trim(),
-            supplyVoltB: (data.SupplyVoltB || '').toString().trim(),
-            supplyVoltC: (data.SupplyVoltC || '').toString().trim(),
-            outputVoltA: (data.OutputVoltA || '').toString().trim(),
-            outputVoltB: (data.OutputVoltB || '').toString().trim(),
-            outputVoltC: (data.OutputVoltC || '').toString().trim(),
-            firmwareVersion: (data.FirmwareVersion || '').toString().trim(),
-            phaseError: (data.PhaseError || '').toString().trim(),
-            partNos: (data.PartNos || '').toString().trim(),
-            loadCurrent: (data.LoadCurrent || '').toString().trim()
+            bypassVoltA: (data.bypassVoltA || data.BypassVoltA || '').toString().trim(),
+            bypassVoltB: (data.bypassVoltB || data.BypassVoltB || '').toString().trim(),
+            bypassVoltC: (data.bypassVoltC || data.BypassVoltC || '').toString().trim(),
+            supplyVoltA: (data.supplyVoltA || data.SupplyVoltA || '').toString().trim(),
+            supplyVoltB: (data.supplyVoltB || data.SupplyVoltB || '').toString().trim(),
+            supplyVoltC: (data.supplyVoltC || data.SupplyVoltC || '').toString().trim(),
+            outputVoltA: (data.outputVoltA || data.OutputVoltA || '').toString().trim(),
+            outputVoltB: (data.outputVoltB || data.OutputVoltB || '').toString().trim(),
+            outputVoltC: (data.outputVoltC || data.OutputVoltC || '').toString().trim(),
+            firmwareVersion: (data.firmwareVersion || data.FirmwareVersion || '').toString().trim(),
+            phaseError: (data.phaseError || data.PhaseError || '').toString().trim(),
+            partNos: (data.partNos || data.PartNos || '').toString().trim(),
+            loadCurrent: (data.loadCurrent || data.LoadCurrent || '').toString().trim()
           });
 
           this.commentsForm.patchValue({
-            comments: (data.Comments || '').toString().trim()
+            comments: (data.comments || data.Comments || '').toString().trim()
           });
         }
+
+        // Once SCC info is loaded, proceed to next step in sequence
+        this.loadReconciliationInfo();
       },
       error: (error) => {
         console.error('Error loading SCC info:', error);
         // Don't show error toast on load - matches legacy behavior (no lblErrMsg update on 404)
+        // Even on error, continue the sequence
+        this.loadReconciliationInfo();
       }
     });
   }
 
   private loadReconciliationInfo(): void {
     // Legacy: DisplayReconciliationInfo() - reads reconciliation data from ETechEquipmentData.GetEquipReconciliationInfo
+    console.log('[SCC Load] Step 4: loadReconciliationInfo started');
+    console.log('[SCC Load] equipmentVerificationForm at start of reconciliation:', this.equipmentVerificationForm.value);
     this.equipmentService.getEquipReconciliationInfo(this.callNbr, this.equipId).subscribe({
       next: (response) => {
+        console.log('[SCC Load] GetEquipReconciliation response:', response);
         if (response?.success && response.data) {
           const data = response.data;
           
@@ -349,17 +398,32 @@ export class SccReadingsComponent implements OnInit {
           // txtActModel.Text = ARI.ActModel.Trim();
           // ... and so on
           
+          // Get trimmed values from API
+          const apiModel = (data.model || '').toString().trim();
+          const apiSerialNo = (data.serialNo || '').toString().trim();
+          console.log('[SCC Load] Reconciliation API values - Model:', apiModel, 'SerialNo:', apiSerialNo);
+          
+          // If reconciliation data is empty (first load or not saved), pre-populate with current equipment values
+          // This helps user verify the information without manual copying
+          const currentModel = this.equipmentVerificationForm.get('modelNo')?.value || '';
+          const currentSerial = this.equipmentVerificationForm.get('serialNo')?.value || '';
+          console.log('[SCC Load] Current form values - Model:', currentModel, 'SerialNo:', currentSerial);
+          
+          const recModel = apiModel || currentModel;
+          const recSerialNo = apiSerialNo || currentSerial;
+          console.log('[SCC Load] Final reconciliation values - Model:', recModel, 'SerialNo:', recSerialNo);
+          
           this.reconciliationForm.patchValue({
-            recModel: (data.model || '').toString().trim(),
-            recModelCorrect: data.modelCorrect || 'YS',
+            recModel: recModel,
+            recModelCorrect: data.modelCorrect?.trim() || 'YS',
             actModel: (data.actModel || '').toString().trim(),
             
-            recSerialNo: (data.serialNo || '').toString().trim(),
-            recSerialNoCorrect: data.serialNoCorrect || 'YS',
+            recSerialNo: recSerialNo,
+            recSerialNoCorrect: data.serialNoCorrect?.trim() || 'YS',
             actSerialNo: (data.actSerialNo || '').toString().trim(),
             
             recTotalEquips: data.totalEquips ? data.totalEquips.toString() : '',
-            recTotalEquipsCorrect: data.totalEquipsCorrect || 'YS',
+            recTotalEquipsCorrect: data.totalEquipsCorrect?.trim() || 'YS',
             actTotalEquips: data.actTotalEquips ? data.actTotalEquips.toString() : '',
             
             verified: data.verified || false
@@ -390,12 +454,17 @@ export class SccReadingsComponent implements OnInit {
 
     this.saving = true;
 
+    // Get logged-in user's empId for Maint_Auth_ID (convert to string)
+    const currentUser = this.authService.currentUserValue;
+    const empId = currentUser?.empId ? currentUser.empId.toString() : '';
+
     // Prepare SCC data
     const sccData = {
       sprocName: 'SaveUpdateSCC',
       sccId: this.equipNo,
       callNbr: this.callNbr,
       equipId: this.equipId,
+      maint_Auth_ID: empId,  // Include Maint_Auth_ID from logged-in user
       manufacturer: this.equipmentVerificationForm.value.manufacturer,
       modelNo: this.equipmentVerificationForm.value.modelNo,
       serialNo: this.equipmentVerificationForm.value.serialNo,
@@ -419,32 +488,37 @@ export class SccReadingsComponent implements OnInit {
       comments: this.commentsForm.value.comments
     };
 
-    // Prepare reconciliation data
+    // Prepare reconciliation data (match SaveUpdateEquipReconciliationDto with PascalCase)
+    const modifiedBy = currentUser?.username || 'SYSTEM';
+
     const reconciliationData = {
-      callNbr: this.callNbr,
-      equipId: this.equipId,
-      make: this.equipmentVerificationForm.value.manufacturer,
-      makeCorrect: '',
-      actMake: '',
-      model: this.reconciliationForm.value.recModel,
-      modelCorrect: this.reconciliationForm.value.recModelCorrect,
-      actModel: this.reconciliationForm.value.actModel,
-      serialNo: this.reconciliationForm.value.recSerialNo,
-      serialNoCorrect: this.reconciliationForm.value.recSerialNoCorrect,
-      actSerialNo: this.reconciliationForm.value.actSerialNo,
-      kva: '',
-      kvaCorrect: '',
-      actKva: '',
-      ascStringsNo: 0,
-      ascStringsCorrect: '',
-      actAscStringNo: 0,
-      battPerString: 0,
-      battPerStringCorrect: '',
-      actBattPerString: 0,
-      totalEquips: this.parseIntSafe(this.reconciliationForm.value.recTotalEquips),
-      totalEquipsCorrect: this.reconciliationForm.value.recTotalEquipsCorrect,
-      actTotalEquips: this.parseIntSafe(this.reconciliationForm.value.actTotalEquips),
-      verified: this.reconciliationForm.value.verified
+      CallNbr: this.callNbr,
+      EquipID: this.equipId,
+      Make: this.equipmentVerificationForm.value.manufacturer || '',
+      MakeCorrect: '',
+      ActMake: '',
+      Model: this.reconciliationForm.value.recModel || '',
+      ModelCorrect: this.reconciliationForm.value.recModelCorrect || 'YS',
+      ActModel: this.reconciliationForm.value.actModel || '',
+      SerialNo: this.reconciliationForm.value.recSerialNo || '',
+      SerialNoCorrect: this.reconciliationForm.value.recSerialNoCorrect || 'YS',
+      ActSerialNo: this.reconciliationForm.value.actSerialNo || '',
+      KVA: '',
+      KVACorrect: '',
+      ActKVA: '',
+      ASCStringsNo: 0,
+      ASCStringsCorrect: '',
+      ActASCStringNo: 0,
+      BattPerString: 0,
+      BattPerStringCorrect: '',
+      ActBattPerString: 0,
+      TotalEquips: this.parseIntSafe(this.reconciliationForm.value.recTotalEquips),
+      TotalEquipsCorrect: this.reconciliationForm.value.recTotalEquipsCorrect || 'YS',
+      ActTotalEquips: this.parseIntSafe(this.reconciliationForm.value.actTotalEquips),
+      NewEquipment: '',
+      EquipmentNotes: '',
+      Verified: this.reconciliationForm.value.verified || false,
+      ModifiedBy: modifiedBy
     };
 
     // Save both SCC info and reconciliation info
@@ -537,6 +611,14 @@ export class SccReadingsComponent implements OnInit {
   }
 
   private updateEquipmentStatus(calculatedStatus: string): void {
+    // Legacy validation: if status is not Online, StatusNotes is required
+    if (calculatedStatus !== 'Online' && !this.equipmentVerificationForm.value.statusNotes) {
+      this.saving = false;
+      this.errorMessage = 'Please enter the reason for Equipment Status.';
+      this.toastr.error(this.errorMessage);
+      return;
+    }
+
     // Get manufacturer text from dropdown
     const manufacturerValue = this.equipmentVerificationForm.value.manufacturer;
     const manufacturer = this.manufacturers.find(m => m.value === manufacturerValue);
@@ -554,6 +636,10 @@ export class SccReadingsComponent implements OnInit {
       monthName = monthNames[dateCode.getUTCMonth()];
       year = dateCode.getUTCFullYear();
     }
+
+    // Get current user for MaintAuthID
+    const currentUser = this.authService.currentUserValue;
+    const maintAuthId = currentUser?.id || this.techId || '';
     
     const updateData = {
       callNbr: this.callNbr,
@@ -570,7 +656,9 @@ export class SccReadingsComponent implements OnInit {
       readingType: '1',
       batteriesPerString: 0,
       batteriesPerPack: 0,
-      vfSelection: ''
+      vfSelection: '',
+      Notes: this.equipmentVerificationForm.value.statusNotes || '',
+      MaintAuthID: maintAuthId
     };
     
     this.equipmentService.updateEquipStatus(updateData).subscribe({

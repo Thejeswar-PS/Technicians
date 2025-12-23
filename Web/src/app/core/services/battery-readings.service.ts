@@ -223,6 +223,28 @@ export class BatteryReadingsService {
   }
 
   /**
+   * Get battery readings graph data (legacy: BatteryReadingsGraph stored procedure)
+   * Used by BatteryReadingsGraphComponent to render VDC and MHOS charts
+   */
+  getBatteryReadingsGraphData(
+    callNbr: string,
+    equipNo: string
+  ): Observable<any[]> {
+    const params = new HttpParams()
+      .set('callNbr', callNbr)
+      .set('equipNo', equipNo);
+
+    return this.http
+      .get<any[]>(`${this.apiUrl}/Readings/GetBatteryReadingsGraphData`, { params })
+      .pipe(
+        catchError((error) => {
+          console.error('Error fetching battery readings graph data:', error);
+          return throwError(() => error);
+        })
+      );
+  }
+
+  /**
    * Get battery type values for calculations
    */
   getBatteryTypeValues(

@@ -509,8 +509,16 @@ export class EquipmentDetailsComponent implements OnInit {
         
       case 'GENERATOR':
         route = '/equipment/generator-readings';
+        params = {
+          CallNbr: this.params.callNbr,
+          EquipNo: equipment.equipNo,
+          EquipId: equipment.equipId.toString(),
+          Tech: this.params.techId,
+          TechName: this.params.techName,
+          Archive: this.params.archive || 'N',
+          Year: this.params.year || new Date().getFullYear().toString()
+        };
         break;
-        
       case 'ATS':
         route = '/equipment/ats-readings';
         break;

@@ -2106,6 +2106,33 @@ export class BatteryReadingsComponent implements OnInit {
     };
   }
 
+  openReadingsGraph(): void {
+    try {
+      const callNbr = (this.callNbr || '').trim();
+      const equipNoRaw = this.batStrId || '';
+      const enablemVAC = this.batteryStringForm.get('mvacCheck')?.value ? 'true' : 'false';
+      const readingType = this.batteryStringForm.get('readingType')?.value || this.readingType || '';
+
+      if (!callNbr || !equipNoRaw) {
+        this.handleError('Missing CallNbr or EquipNo for graph view.');
+        return;
+      }
+
+      // Navigate to battery-readings-graph component with query params
+      this.router.navigate(['/jobs/battery-readings-graph'], {
+        queryParams: {
+          CallNbr: callNbr,
+          EquipID: callNbr,
+          EquipNo: equipNoRaw,
+          chkEnablemVAC: enablemVAC,
+          ReadingType: readingType
+        }
+      });
+    } catch (error) {
+      this.handleError('Error opening battery readings graph.');
+    }
+  }
+
   /**
    * Navigate back to equipment details
    */

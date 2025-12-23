@@ -2177,6 +2177,125 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   }
 
   // Map API employee names to actual employee names in the system
+  private mapEmployeeName1(apiEmployeeName: string): string {
+    if (!apiEmployeeName) {
+      return '';
+    }
+    
+    // Special case mappings for names that don't follow the standard pattern
+    const specialCases: { [key: string]: string } = {
+      'ADAM.KEITH': 'adam keith',
+      'ANTHONY.KEITH': 'adam keith',
+      'PS': 'PS',
+      'DCGPARTS': 'DCGPARTS',
+      'TOU LEE. CHANG': 'Tou Lee Chang',
+      'ANTONIA.D\'HUYVETTER': 'Antonia D\'Huyvetter',
+      'BRUCE.BISTOL': 'Bruce Bristol', // Assuming this is same as BRUCE.BRISTOL
+      'BRUCE.BRISTOL': 'Bruce Bristol'
+    };
+    
+    // Check special cases first
+    const specialMatch = specialCases[apiEmployeeName.toUpperCase()];
+    if (specialMatch) {
+      return specialMatch;
+    }
+    
+    // Auto-convert FIRSTNAME.LASTNAME to Firstname Lastname format
+    if (apiEmployeeName.includes('.') && !apiEmployeeName.includes(' ')) {
+      const parts = apiEmployeeName.split('.');
+      if (parts.length === 2) {
+        const firstName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1).toLowerCase();
+        const lastName = parts[1].charAt(0).toUpperCase() + parts[1].slice(1).toLowerCase();
+        const convertedName = `${firstName} ${lastName}`;
+        
+        // Check if this converted name exists in employee list
+        const found = this.employees.find(emp => {
+          const empName = (emp.empName || '').toLowerCase();
+          const searchName = convertedName.toLowerCase();
+          return empName === searchName || empName.includes(searchName) || searchName.includes(empName);
+        });
+        
+        if (found) {
+          return found.empName || '';
+        }
+        
+        // If not found in employee list, return the converted name anyway
+        return convertedName;
+      }
+    }
+    
+    // Try to find partial matches in the employee list
+    const found = this.employees.find(emp => {
+      const empName = (emp.empName || '').toUpperCase();
+      const searchName = apiEmployeeName.toUpperCase();
+      
+      // Check if employee name contains parts of the search name
+      const tomMatch = empName.includes('TOM') && searchName.includes('TOM') ||
+                      empName.includes('PAREDES') && searchName.includes('PAREDES') ||
+                      empName.includes('TPADRES') && (searchName.includes('TOM') || searchName.includes('PAREDES'));
+      
+      const anthonyMatch = empName.includes('AKEITH') && (searchName.includes('ANTHONY') || searchName.includes('KEITH'));
+      
+      const generalMatch = empName.includes(searchName.replace(/[.\s]/g, '')) ||
+                          searchName.includes(empName.replace(/[.\s]/g, ''));
+      
+      return tomMatch || anthonyMatch || generalMatch;
+    });
+    
+    if (found) {
+      return found.empName || '';
+    }
+    
+    // Last resort: try to find any employee with similar name parts
+    if (apiEmployeeName.toUpperCase().includes('TOM')) {
+      const tomEmployee = this.employees.find(emp => 
+        (emp.empName || '').toUpperCase().includes('TOM') || 
+        (emp.empName || '').toUpperCase().includes('TPADRES')
+      );
+      if (tomEmployee) {
+        return tomEmployee.empName || '';
+      }
+    }
+    
+    return ''; // Return empty string so dropdown shows "Select Employee"
+  }
+
+  // Utility method to set up auto-resize for textareas
+  // private setupTextareaAutoResize(): void {
+  //   // Use setTimeout to ensure DOM is ready
+  //   setTimeout(() => {
+  //     const textarea = document.querySelector('.auto-resize-textarea') as HTMLTextAreaElement;
+  //     if (textarea) {
+  //       // Auto-resize function
+  //       const autoResize = () => {
+  //         textarea.style.height = 'auto';
+  //         textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+  //       };
+
+  //       // Initial resize
+  //       autoResize();
+
+  //       // Add event listeners for paste events
+  //       textarea.addEventListener('paste', () => setTimeout(autoResize, 0));
+
+  //       // Also listen to form value changes for programmatic updates
+  //       this.editForm.get('resolveNotes')?.valueChanges.subscribe(() => {
+  //         setTimeout(autoResize, 0);
+  //       });
+  //     }
+  //   }, 100);
+  // }
+
+  // Event handler for textarea input to auto-resize
+  // onTextareaInput(event: Event): void {
+  //   const textarea = event.target as HTMLTextAreaElement;
+  //   if (textarea) {
+  //     textarea.style.height = 'auto';
+  //     textarea.style.height = Math.max(120, textarea.scrollHeight) + 'px';
+  //   }
+  // }
+
+  // Map API employee names to actual employee names in the system
   private mapEmployeeName(apiEmployeeName: string): string {
     if (!apiEmployeeName) {
       return '';

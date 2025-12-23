@@ -1,0 +1,97 @@
+@import '../../ups-readings/ups-readings.component.scss';
+
+// Form styling to match ATS/UPS pages exactly
+.ups-form {
+  .form-group-modern {
+    margin-bottom: 1.5rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .form-floating {
+    position: relative;
+    margin-bottom: 0;
+
+    > .form-control,
+    > .form-select {
+      padding-top: 1.625rem;
+      padding-bottom: 0.625rem;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      font-size: 0.95rem;
+
+      &:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        z-index: 3;
+      }
+
+      &.is-invalid {
+        border-color: #dc3545;
+
+        &:focus {
+          border-color: #dc3545;
+          box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+      }
+
+      &:not(:placeholder-shown) ~ label {
+        opacity: 0.65;
+      }
+
+      &::placeholder {
+        color: transparent;
+      }
+    }
+
+    > label {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      padding: 1rem 0.75rem;
+      pointer-events: none;
+      border: 1px solid transparent;
+      transform-origin: 0 0;
+      transition: opacity 0.1s ease-in-out;
+      color: #666;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    > .form-control::-webkit-input-placeholder {
+      color: transparent;
+    }
+  }
+
+  .invalid-feedback {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #dc3545;
+  }
+
+  .form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+}
+
+.text-danger {
+  color: #dc3545;
+  margin-left: 2px;
+}
+
+.text-primary {
+  color: #5486ff !important;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+

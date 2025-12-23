@@ -26,3 +26,99 @@
     }
     }
 }
+
+/* Statistics Bar Styling matching legacy */
+.tblmstrtd {
+    background-color: #F5F5F5;
+    color: #2984c5;
+    width: 10%;
+    height: 70px;
+    text-align: center;
+    font-family: Arial;
+    font-size: 10pt;
+    border-left: 1px solid #e1e1e1;
+}
+
+.statistics-title {
+    display: block;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.statistics-no {
+    display: block;
+    text-align: center;
+    font-size: 40px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Legacy event cell styles */
+.cellText {
+    display: block;
+    text-decoration: none;
+    overflow: auto;
+    background-color: #6bc6e1;
+    border: solid 1px #9CA2DF;
+    font-family: verdana;
+    cursor: pointer;
+}
+
+.cellText:hover {
+    background: #15b765;
+}
+
+.cellTextNB {
+    display: block;
+    text-decoration: none;
+    overflow: auto;
+    background-color: #6bc6e1;
+    border: solid 1px #9CA2DF;
+    font-family: verdana;
+    cursor: pointer;
+}
+
+.cellTextNB:hover {
+    background: #15b765;
+    color: #fff;
+}
+
+.vacationtxt {
+    display: block;
+    text-decoration: none;
+    overflow: auto;
+    background-color: #fddbf9;
+    border: solid 1px #aeb5f8;
+    font-family: verdana;
+}
+
+.appttxt {
+    display: block;
+    text-decoration: none;
+    color: #232b33;
+    overflow: auto;
+    background-color: #fddbf9;
+    border: solid 1px #aeb5f8;
+    font-family: verdana;
+}
+
+.drugtext {
+    display: block;
+    text-decoration: none;
+    color: #fff;
+    overflow: auto;
+    background-color: #e60000;
+    border: solid 1px #aeb5f8;
+    font-family: verdana;
+}
+
+.fedtxt {
+    display: block;
+    text-decoration: none;
+    overflow: auto;
+    background-color: #76b007;
+    border: solid 1px #aeb5f8;
+    font-family: verdana;
+}
