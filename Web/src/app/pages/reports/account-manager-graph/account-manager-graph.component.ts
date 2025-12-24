@@ -177,7 +177,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
   private initializeAcctStatusChart(): void {
     if (!this.acctStatusData) return;
 
-    const labelColor = getCSSVariableValue('--kt-gray-500');
+    const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
     const baseColor = getCSSVariableValue('--kt-primary');
     const lightColor = getCSSVariableValue('--kt-primary-light');
@@ -223,22 +223,93 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
     this.acctStatusChartOptions = {
       series: [{
-        name: 'Count',
-        data: values
+        name: 'Job Count',
+        data: values,
+        type: 'column'
       }],
       chart: {
-        fontFamily: 'inherit',
+        fontFamily: 'Inter, sans-serif',
         type: 'bar',
-        height: 500,
+        height: 520,
+        foreColor: '#000000',
+        selection: {
+          enabled: true,
+          type: 'x',
+          fill: {
+            color: baseColor,
+            opacity: 0.1
+          }
+        },
         toolbar: {
-          show: false
+          show: true,
+          offsetX: 0,
+          offsetY: 0,
+          tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          },
+          export: {
+            csv: {
+              filename: 'Account_Status_Analytics',
+              columnDelimiter: ',',
+              headerCategory: 'Category',
+              headerValue: 'Jobs'
+            },
+            svg: {
+              filename: 'Account_Status_Chart'
+            },
+            png: {
+              filename: 'Account_Status_Chart'
+            }
+          }
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 1800,
+          animateGradually: {
+            enabled: true,
+            delay: 200
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 400
+          }
+        },
+        background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 100%)',
+        dropShadow: {
+          enabled: true,
+          color: '#1e293b',
+          top: 4,
+          left: 3,
+          blur: 6,
+          opacity: 0.12
+        },
+        sparkline: {
+          enabled: false
+        },
+        zoom: {
+          enabled: true,
+          type: 'x',
+          autoScaleYaxis: true
         }
       },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '50%',
-          borderRadius: 5
+          columnWidth: '65%',
+          borderRadius: 8,
+          borderRadiusApplication: 'end',
+          borderRadiusWhenStacked: 'last',
+          dataLabels: {
+            position: 'top'
+          },
+          distributed: false
         }
       },
       legend: {
@@ -246,10 +317,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       dataLabels: {
         enabled: true,
+        formatter: function (val: any, opts: any) {
+          return val > 0 ? val : '';
+        },
         style: {
           fontSize: '12px',
-          fontWeight: 'bold'
-        }
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '700',
+          colors: ['#1f2937']
+        },
+        background: {
+          enabled: true,
+          foreColor: '#ffffff',
+          borderRadius: 8,
+          padding: 6,
+          opacity: 0.95,
+          borderWidth: 1,
+          borderColor: '#e5e7eb',
+          dropShadow: {
+            enabled: true,
+            top: 1,
+            left: 1,
+            blur: 3,
+            color: '#000000',
+            opacity: 0.15
+          }
+        },
+        offsetY: -8
       },
       stroke: {
         show: true,
@@ -266,60 +360,105 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
+            colors: ['#000000'],
+            fontSize: '16px',
+            fontWeight: '900'
           },
-          rotate: -45
+          rotate: -65,
+          rotateAlways: true,
+          hideOverlappingLabels: true,
+          maxHeight: 180,
+          trim: false,
+          offsetY: 20
         }
       },
       yaxis: {
         title: {
           text: 'Count',
           style: {
-            color: labelColor,
-            fontSize: '13px',
-            fontWeight: 500
+            color: '#000000',
+            fontSize: '18px',
+            fontWeight: 600
           }
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
+            colors: '#000000',
+            fontSize: '13px',
+            fontWeight: '600'
           }
         }
       },
       fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'light',
-          type: 'vertical',
-          shadeIntensity: 0.3,
-          gradientToColors: [lightColor],
-          inverseColors: false,
-          opacityFrom: 1,
-          opacityTo: 0.8,
-          stops: [0, 100]
-        }
+        type: 'solid',
+        opacity: 1,
+        colors: ['#3b82f6']
       },
-      colors: [baseColor],
+      colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
       grid: {
-        borderColor: borderColor,
-        strokeDashArray: 4,
+        show: true,
+        borderColor: '#e5e7eb',
+        strokeDashArray: 2,
+        position: 'back',
+        xaxis: {
+          lines: {
+            show: false
+          }
+        },
         yaxis: {
           lines: {
             show: true
           }
+        },
+        row: {
+          colors: ['transparent', 'transparent'],
+          opacity: 0.05
+        },
+        column: {
+          colors: ['transparent', 'transparent'],
+          opacity: 0.05
+        },
+        padding: {
+          top: 10,
+          right: 10,
+          bottom: 60,
+          left: 10
         }
       },
       tooltip: {
         enabled: true,
+        shared: false,
+        intersect: false,
         style: {
-          fontSize: '12px'
+          fontSize: '13px',
+          fontFamily: 'inherit'
+        },
+        theme: 'light',
+        marker: {
+          show: true
         },
         y: {
           formatter: function (val: number) {
-            return val.toString();
+            return val + ' jobs';
+          },
+          title: {
+            formatter: function (seriesName: string) {
+              return seriesName + ': ';
+            }
           }
+        },
+        x: {
+          formatter: function (val: any) {
+            return 'Category: ' + val;
+          }
+        },
+        custom: function({series, seriesIndex, dataPointIndex, w}: any) {
+          const value = series[seriesIndex][dataPointIndex];
+          const category = w.globals.labels[dataPointIndex];
+          return '<div class="custom-tooltip">' +
+                 '<div class="tooltip-title">' + category + '</div>' +
+                 '<div class="tooltip-value">' + value + ' jobs</div>' +
+                 '</div>';
         }
       }
     };
@@ -331,7 +470,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
   private initializeAccMgmtChart(): void {
     if (!this.accMgmtData) return;
 
-    const labelColor = getCSSVariableValue('--kt-gray-500');
+    const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
     const successColor = getCSSVariableValue('--kt-success');
     const lightSuccessColor = getCSSVariableValue('--kt-success-light');
@@ -373,22 +512,78 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
     this.accMgmtChartOptions = {
       series: [{
-        name: 'Count',
+        name: 'Management Pipeline',
         data: values
       }],
       chart: {
-        fontFamily: 'inherit',
+        fontFamily: 'Inter, sans-serif',
         type: 'bar',
-        height: 500,
+        height: 520,
+        foreColor: '#000000',
         toolbar: {
-          show: false
+          show: true,
+          offsetX: 0,
+          offsetY: 0,
+          tools: {
+            download: true,
+            selection: true,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          },
+          export: {
+            csv: {
+              filename: 'Management_Pipeline_Analytics'
+            },
+            svg: {
+              filename: 'Management_Pipeline_Chart'
+            },
+            png: {
+              filename: 'Management_Pipeline_Chart'
+            }
+          }
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 1600,
+          animateGradually: {
+            enabled: true,
+            delay: 180
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 380
+          }
+        },
+        background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)',
+        dropShadow: {
+          enabled: true,
+          color: '#16a34a',
+          top: 4,
+          left: 3,
+          blur: 6,
+          opacity: 0.08
+        },
+        zoom: {
+          enabled: true,
+          type: 'xy',
+          autoScaleYaxis: true
         }
       },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '50%',
-          borderRadius: 5
+          columnWidth: '65%',
+          borderRadius: 8,
+          borderRadiusApplication: 'end',
+          borderRadiusWhenStacked: 'last',
+          dataLabels: {
+            position: 'top'
+          },
+          distributed: false
         }
       },
       legend: {
@@ -396,10 +591,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       dataLabels: {
         enabled: true,
+        formatter: function (val: any, opts: any) {
+          return val > 0 ? val : '';
+        },
         style: {
           fontSize: '12px',
-          fontWeight: 'bold'
-        }
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '700',
+          colors: ['#047857']
+        },
+        background: {
+          enabled: true,
+          foreColor: '#f0fdf4',
+          borderRadius: 8,
+          padding: 6,
+          opacity: 0.95,
+          borderWidth: 1,
+          borderColor: '#bbf7d0',
+          dropShadow: {
+            enabled: true,
+            top: 1,
+            left: 1,
+            blur: 3,
+            color: '#000000',
+            opacity: 0.1
+          }
+        },
+        offsetY: -8
       },
       stroke: {
         show: true,
@@ -416,19 +634,25 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
+            colors: ['#000000'],
+            fontSize: '16px',
+            fontWeight: '900'
           },
-          rotate: -45
+          rotate: -65,
+          rotateAlways: true,
+          hideOverlappingLabels: true,
+          maxHeight: 180,
+          trim: false,
+          offsetY: 20
         }
       },
       yaxis: {
         title: {
           text: 'Count',
           style: {
-            color: labelColor,
-            fontSize: '13px',
-            fontWeight: 500
+            color: '#000000',
+            fontSize: '18px',
+            fontWeight: 600
           }
         },
         labels: {
@@ -439,19 +663,10 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         }
       },
       fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'light',
-          type: 'vertical',
-          shadeIntensity: 0.3,
-          gradientToColors: [lightSuccessColor],
-          inverseColors: false,
-          opacityFrom: 1,
-          opacityTo: 0.8,
-          stops: [0, 100]
-        }
+        type: 'solid',
+        opacity: 1
       },
-      colors: [successColor],
+      colors: ['#10b981'],
       grid: {
         borderColor: borderColor,
         strokeDashArray: 4,
@@ -459,6 +674,12 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           lines: {
             show: true
           }
+        },
+        padding: {
+          top: 10,
+          right: 10,
+          bottom: 60,
+          left: 10
         }
       },
       tooltip: {
@@ -481,7 +702,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
   private initializePaperworkChart(): void {
     if (!this.paperworkData || this.paperworkData.length === 0) return;
 
-    const labelColor = getCSSVariableValue('--kt-gray-500');
+    const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
     const infoColor = getCSSVariableValue('--kt-info');
     const lightInfoColor = getCSSVariableValue('--kt-info-light');
@@ -492,22 +713,73 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
     this.paperworkChartOptions = {
       series: [{
-        name: 'Jobs Count',
+        name: 'Paperwork Jobs',
         data: values
       }],
       chart: {
-        fontFamily: 'inherit',
+        fontFamily: 'Inter, sans-serif',
         type: 'bar',
-        height: 400,
+        height: 570,
+        foreColor: '#000000',
         toolbar: {
-          show: false
+          show: true,
+          offsetX: 0,
+          offsetY: 0,
+          tools: {
+            download: true,
+            selection: false,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          },
+          export: {
+            csv: {
+              filename: 'Paperwork_Distribution_Data'
+            },
+            svg: {
+              filename: 'Paperwork_Distribution_Chart'
+            },
+            png: {
+              filename: 'Paperwork_Distribution_Chart'
+            }
+          }
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 2000,
+          animateGradually: {
+            enabled: true,
+            delay: 120
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 300
+          }
+        },
+        background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)',
+        dropShadow: {
+          enabled: true,
+          color: '#0ea5e9',
+          top: 4,
+          left: 3,
+          blur: 6,
+          opacity: 0.1
         }
       },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '60%',
-          borderRadius: 5
+          columnWidth: '70%',
+          borderRadius: 8,
+          borderRadiusApplication: 'end',
+          borderRadiusWhenStacked: 'last',
+          dataLabels: {
+            position: 'top'
+          },
+          distributed: true
         }
       },
       legend: {
@@ -515,10 +787,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       dataLabels: {
         enabled: true,
+        formatter: function (val: number, opts: any) {
+          return val > 0 ? val.toString() : '';
+        },
         style: {
           fontSize: '12px',
-          fontWeight: 'bold'
-        }
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '700',
+          colors: ['#0369a1']
+        },
+        background: {
+          enabled: true,
+          foreColor: '#f0f9ff',
+          borderRadius: 8,
+          padding: 6,
+          opacity: 0.95,
+          borderWidth: 1,
+          borderColor: '#bae6fd',
+          dropShadow: {
+            enabled: true,
+            top: 1,
+            left: 1,
+            blur: 3,
+            color: '#000000',
+            opacity: 0.1
+          }
+        },
+        offsetY: -8
       },
       stroke: {
         show: true,
@@ -535,10 +830,16 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
+            colors: ['#000000'],
+            fontSize: '16px',
+            fontWeight: '900'
           },
-          rotate: -45
+          rotate: -65,
+          rotateAlways: true,
+          hideOverlappingLabels: true,
+          maxHeight: 180,
+          trim: false,
+          offsetY: 20
         }
       },
       yaxis: {
@@ -558,19 +859,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         }
       },
       fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'light',
-          type: 'vertical',
-          shadeIntensity: 0.3,
-          gradientToColors: [lightInfoColor],
-          inverseColors: false,
-          opacityFrom: 1,
-          opacityTo: 0.8,
-          stops: [0, 100]
-        }
+        type: 'solid',
+        opacity: 1,
+        colors: ['#0ea5e9']
       },
-      colors: [infoColor],
+      colors: ['#0ea5e9'],
       grid: {
         borderColor: borderColor,
         strokeDashArray: 4,
@@ -578,6 +871,12 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           lines: {
             show: true
           }
+        },
+        padding: {
+          top: 10,
+          right: 10,
+          bottom: 60,
+          left: 10
         }
       },
       tooltip: {
@@ -600,7 +899,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
   private initializeQuoteGraphChart(): void {
     if (!this.quoteGraphData || this.quoteGraphData.length === 0) return;
 
-    const labelColor = getCSSVariableValue('--kt-gray-500');
+    const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
     const warningColor = getCSSVariableValue('--kt-warning');
     const lightWarningColor = getCSSVariableValue('--kt-warning-light');
@@ -611,22 +910,73 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
     this.quoteGraphChartOptions = {
       series: [{
-        name: 'Quotes Count',
+        name: 'Quotes Pipeline',
         data: values
       }],
       chart: {
-        fontFamily: 'inherit',
+        fontFamily: 'Inter, sans-serif',
         type: 'bar',
-        height: 400,
+        height: 610,
+        foreColor: '#000000',
         toolbar: {
-          show: false
+          show: true,
+          offsetX: 0,
+          offsetY: 0,
+          tools: {
+            download: true,
+            selection: false,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          },
+          export: {
+            csv: {
+              filename: 'Quotes_Pipeline_Analytics'
+            },
+            svg: {
+              filename: 'Quotes_Pipeline_Chart'
+            },
+            png: {
+              filename: 'Quotes_Pipeline_Chart'
+            }
+          }
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 1400,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        },
+        background: 'linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)',
+        dropShadow: {
+          enabled: true,
+          color: '#f59e0b',
+          top: 4,
+          left: 3,
+          blur: 6,
+          opacity: 0.1
         }
       },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '60%',
-          borderRadius: 5
+          columnWidth: '70%',
+          borderRadius: 8,
+          borderRadiusApplication: 'end',
+          borderRadiusWhenStacked: 'last',
+          dataLabels: {
+            position: 'top'
+          },
+          distributed: true
         }
       },
       legend: {
@@ -634,10 +984,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       dataLabels: {
         enabled: true,
+        formatter: function (val: number, opts: any) {
+          return val > 0 ? val.toString() : '';
+        },
         style: {
           fontSize: '12px',
-          fontWeight: 'bold'
-        }
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '700',
+          colors: ['#92400e']
+        },
+        background: {
+          enabled: true,
+          foreColor: '#fffbeb',
+          borderRadius: 8,
+          padding: 6,
+          opacity: 0.95,
+          borderWidth: 1,
+          borderColor: '#fde68a',
+          dropShadow: {
+            enabled: true,
+            top: 1,
+            left: 1,
+            blur: 3,
+            color: '#000000',
+            opacity: 0.1
+          }
+        },
+        offsetY: -8
       },
       stroke: {
         show: true,
@@ -654,10 +1027,16 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
+            colors: ['#000000'],
+            fontSize: '16px',
+            fontWeight: '900'
           },
-          rotate: -45
+          rotate: -65,
+          rotateAlways: true,
+          hideOverlappingLabels: true,
+          maxHeight: 180,
+          trim: false,
+          offsetY: 20
         }
       },
       yaxis: {
@@ -677,19 +1056,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         }
       },
       fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'light',
-          type: 'vertical',
-          shadeIntensity: 0.3,
-          gradientToColors: [lightWarningColor],
-          inverseColors: false,
-          opacityFrom: 1,
-          opacityTo: 0.8,
-          stops: [0, 100]
-        }
+        type: 'solid',
+        opacity: 1,
+        colors: ['#f59e0b']
       },
-      colors: [warningColor],
+      colors: ['#f59e0b'],
       grid: {
         borderColor: borderColor,
         strokeDashArray: 4,
@@ -697,6 +1068,12 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           lines: {
             show: true
           }
+        },
+        padding: {
+          top: 10,
+          right: 10,
+          bottom: 60,
+          left: 10
         }
       },
       tooltip: {
@@ -719,7 +1096,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
   private initializeUnscheduledChart(): void {
     if (!this.unscheduledData || this.unscheduledData.length === 0) return;
 
-    const labelColor = getCSSVariableValue('--kt-gray-500');
+    const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
     const dangerColor = getCSSVariableValue('--kt-danger');
     const lightDangerColor = getCSSVariableValue('--kt-danger-light');
@@ -736,16 +1113,54 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       chart: {
         fontFamily: 'inherit',
         type: 'bar',
-        height: 400,
+        height: 540,
+        foreColor: '#000000',
         toolbar: {
-          show: false
-        }
+          show: true,
+          tools: {
+            download: true,
+            selection: false,
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true
+          },
+          export: {
+            csv: {
+              filename: 'Unscheduled_Jobs_Data'
+            },
+            png: {
+              filename: 'Unscheduled_Jobs_Chart'
+            }
+          }
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 1100,
+          animateGradually: {
+            enabled: true,
+            delay: 130
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 320
+          }
+        },
+        background: 'transparent'
       },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '60%',
-          borderRadius: 5
+          columnWidth: '70%',
+          borderRadius: 8,
+          borderRadiusApplication: 'end',
+          borderRadiusWhenStacked: 'last',
+          dataLabels: {
+            position: 'top'
+          },
+          distributed: true
         }
       },
       legend: {
@@ -753,10 +1168,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       dataLabels: {
         enabled: true,
+        formatter: function (val: number, opts: any) {
+          return val > 0 ? val.toString() : '';
+        },
         style: {
           fontSize: '12px',
-          fontWeight: 'bold'
-        }
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '700',
+          colors: ['#dc2626']
+        },
+        background: {
+          enabled: true,
+          foreColor: '#fef2f2',
+          borderRadius: 8,
+          padding: 6,
+          opacity: 0.95,
+          borderWidth: 1,
+          borderColor: '#fecaca',
+          dropShadow: {
+            enabled: true,
+            top: 1,
+            left: 1,
+            blur: 3,
+            color: '#000000',
+            opacity: 0.1
+          }
+        },
+        offsetY: -8
       },
       stroke: {
         show: true,
@@ -773,10 +1211,16 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
+            colors: ['#000000'],
+            fontSize: '16px',
+            fontWeight: '900'
           },
-          rotate: -45
+          rotate: -65,
+          rotateAlways: true,
+          hideOverlappingLabels: true,
+          maxHeight: 180,
+          trim: false,
+          offsetY: 20
         }
       },
       yaxis: {
@@ -796,19 +1240,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         }
       },
       fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'light',
-          type: 'vertical',
-          shadeIntensity: 0.3,
-          gradientToColors: [lightDangerColor],
-          inverseColors: false,
-          opacityFrom: 1,
-          opacityTo: 0.8,
-          stops: [0, 100]
-        }
+        type: 'solid',
+        opacity: 1,
+        colors: ['#ef4444']
       },
-      colors: [dangerColor],
+      colors: ['#ef4444'],
       grid: {
         borderColor: borderColor,
         strokeDashArray: 4,
@@ -816,6 +1252,12 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           lines: {
             show: true
           }
+        },
+        padding: {
+          top: 10,
+          right: 10,
+          bottom: 60,
+          left: 10
         }
       },
       tooltip: {
@@ -910,5 +1352,20 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       (prev.jobs > current.jobs) ? prev : current
     );
     return `${topOffice.offid} (${topOffice.jobs})`;
+  }
+
+  /**
+   * Get current formatted time for dashboard header
+   */
+  getCurrentTime(): string {
+    const now = new Date();
+    return now.toLocaleString('en-US', {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 }
