@@ -75,7 +75,8 @@ builder.Services.AddScoped<PartsTestRepository>();
 builder.Services.AddScoped<PartsTestStatusRepository>();
 builder.Services.AddScoped<StrippedUnitsStatusRepository>();
 builder.Services.AddScoped<NewDisplayCallsGraphRepository>();
-
+builder.Services.AddScoped<IDisplayCallsDetailRepository, NewDisplayCallsDetailRepository>();
+builder.Services.AddScoped<IPartsSearchRepository, PartsSearchRepository>();
 
 var app = builder.Build();
 

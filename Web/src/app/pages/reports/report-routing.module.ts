@@ -11,6 +11,7 @@ import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
+import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
 
 const routes: Routes = [
   {
@@ -65,6 +66,10 @@ const routes: Routes = [
   {
     path: 'stripped-parts-inunit/:masterRowIndex', 
     component: StrippedPartsInunitComponent
+  },
+  {
+    path: 'dcg-display-report-details',
+    component: DcgDisplayReportDetailsComponent
   }
 ];
 

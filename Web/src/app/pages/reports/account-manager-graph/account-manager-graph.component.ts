@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { ReportService } from 'src/app/core/services/report.service';
 import { AcctStatusGraphDto, AccMgmtGraphDto, AccountManagerPaperworkDto } from 'src/app/core/model/account-manager-graph.model';
 import { getCSSVariableValue } from 'src/app/_metronic/kt/_utils';
@@ -42,7 +43,10 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
   // Subscriptions
   private subscriptions: Subscription[] = [];
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.loadAccountStatusData();
@@ -297,6 +301,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           enabled: true,
           type: 'x',
           autoScaleYaxis: true
+        },
+        events: {
+          dataPointSelection: (event: any, chartContext: any, config: any) => {
+            this.handleChartClick('acct-status', config);
+          }
         }
       },
       plotOptions: {
@@ -571,6 +580,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           enabled: true,
           type: 'xy',
           autoScaleYaxis: true
+        },
+        events: {
+          dataPointSelection: (event: any, chartContext: any, config: any) => {
+            this.handleChartClick('account-management', config);
+          }
         }
       },
       plotOptions: {
@@ -767,6 +781,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           left: 3,
           blur: 6,
           opacity: 0.1
+        },
+        events: {
+          dataPointSelection: (event: any, chartContext: any, config: any) => {
+            this.handleChartClick('paperwork', config);
+          }
         }
       },
       plotOptions: {
@@ -964,6 +983,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           left: 3,
           blur: 6,
           opacity: 0.1
+        },
+        events: {
+          dataPointSelection: (event: any, chartContext: any, config: any) => {
+            this.handleQuoteGraphClick(config);
+          }
         }
       },
       plotOptions: {
@@ -1148,7 +1172,12 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
             speed: 320
           }
         },
-        background: 'transparent'
+        background: 'transparent',
+        events: {
+          dataPointSelection: (event: any, chartContext: any, config: any) => {
+            this.handleUnscheduledJobsClick(config);
+          }
+        }
       },
       plotOptions: {
         bar: {
@@ -1366,6 +1395,242 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
+    });
+  }
+
+  /**
+   * Handle chart click events and navigate to detailed report
+   */
+  handleChartClick(chartType: string, config: any): void {
+    if (!config || config.dataPointIndex === undefined) return;
+
+    const dataPointIndex = config.dataPointIndex;
+    let page = '';
+    let dataSetName = '';
+    let officeId = '';
+
+    // Map chart clicks to appropriate report pages
+    switch (chartType) {
+      case 'acct-status':
+        page = this.getAcctStatusPageType(dataPointIndex);
+        dataSetName = this.getAcctStatusDataSetName(dataPointIndex);
+        break;
+      case 'account-management':
+        page = this.getAccMgmtPageType(dataPointIndex);
+        dataSetName = this.getAccMgmtDataSetName(dataPointIndex);
+        break;
+      case 'paperwork':
+        page = 'jobs-paperwork';
+        dataSetName = this.getPaperworkDataSetName(dataPointIndex);
+        officeId = this.getPaperworkOfficeId(dataPointIndex);
+        break;
+    }
+
+    if (page) {
+      this.navigateToReportDetails(page, dataSetName, officeId);
+    }
+  }
+
+  /**
+   * Get page type for account status chart clicks
+   */
+  private getAcctStatusPageType(dataPointIndex: number): string {
+    const pageMapping = [
+      'jobs-completed-costing',     // Completed Costing
+      'invoices-yesterday',         // Invoiced Yesterday
+      'jobs-completed-fs-costing',  // Completed FS Costing
+      'invoices-today',             // Invoiced Today
+      'invoices-month-to-date',     // Invoiced Month to Date
+      'contract-invoice',           // Contract Invoice Month to Date
+      'jobs-completed-parts',       // Completed Parts
+      'jobs-tech-review',           // Completed Tech Review
+      'jobs-manager-review',        // Completed Manager Review
+      'jobs-missing-data',          // Missing Data
+      'liebert-jobs',               // Liebert Jobs to Invoice
+      'non-fs-jobs',                // Non-FS Jobs to Invoice
+      'fs-jobs',                    // FS Jobs to Invoice
+      'waiting-contract',           // Waiting for Contract
+      'misc-pos',                   // MISC POS
+      'pos'                         // POS
+    ];
+
+    return pageMapping[dataPointIndex] || 'jobs-to-process';
+  }
+
+  /**
+   * Get data set name for account status chart clicks
+   */
+  private getAcctStatusDataSetName(dataPointIndex: number): string {
+    const dataSetMapping = [
+      'Completed Costing',
+      'Invoiced Yesterday',
+      'Completed FS Costing',
+      'Invoiced Today',
+      'Invoice Month to Date',
+      'Contract Invoice Month to Date',
+      'Completed Parts',
+      'Completed Tech Review',
+      'Completed Manager Review',
+      'Missing Data',
+      'Liebert Jobs to Invoice',
+      'Non-FS Jobs to Invoice',
+      'FS Jobs to Invoice',
+      'Waiting for Contract',
+      'MISC POS',
+      'POS'
+    ];
+
+    return dataSetMapping[dataPointIndex] || 'Unknown';
+  }
+
+  /**
+   * Get page type for account management chart clicks
+   */
+  private getAccMgmtPageType(dataPointIndex: number): string {
+    const pageMapping = [
+      'unscheduled-past',           // Past Unscheduled
+      'unscheduled-90',             // Unscheduled Next 90
+      'jobs-pending-30',            // Pending 30
+      'jobs-scheduled-30',          // Scheduled 30
+      'jobs-scheduled-60',          // Scheduled 60
+      'jobs-scheduled-7',           // Scheduled 7 Days
+      'jobs-scheduled-72',          // Scheduled 72 Hours
+      'jobs-scheduled-today',       // Scheduled Today
+      'jobs-completed-not-returned', // Completed Not Returned
+      'jobs-completed-returned',    // Completed Returned
+      'jobs-missing-data',          // Missing Data
+      'quote',                      // Quotes to Complete
+      'down-sites',                 // Down Sites
+      'problem-sites'               // Problem Down Sites
+    ];
+
+    return pageMapping[dataPointIndex] || 'jobs-to-process';
+  }
+
+  /**
+   * Get data set name for account management chart clicks
+   */
+  private getAccMgmtDataSetName(dataPointIndex: number): string {
+    const dataSetMapping = [
+      'Past Unscheduled',
+      'Unscheduled Next 90',
+      'Pending 30',
+      'Scheduled 30',
+      'Scheduled 60',
+      'Scheduled 7 Days',
+      'Scheduled 72 Hours',
+      'Scheduled Today',
+      'Completed Not Returned',
+      'Completed Returned',
+      'Missing Data',
+      'Quotes to Complete',
+      'Down Sites',
+      'Problem Down Sites'
+    ];
+
+    return dataSetMapping[dataPointIndex] || 'Unknown';
+  }
+
+  /**
+   * Navigate to the report details page
+   */
+  private navigateToReportDetails(page: string, dataSetName: string, officeId: string = ''): void {
+    const queryParams: any = {
+      Page: page,
+      dataSetName: encodeURIComponent(dataSetName),
+      backbutton: 'AccMgmtGraph.aspx'
+    };
+
+    if (officeId) {
+      queryParams.officeId = officeId;
+    }
+
+    this.router.navigate(['/reports/dcg-display-report-details'], {
+      queryParams: queryParams
+    });
+  }
+
+  /**
+   * Get data set name for paperwork chart clicks
+   */
+  private getPaperworkDataSetName(dataPointIndex: number): string {
+    if (!this.paperworkData || dataPointIndex >= this.paperworkData.length) return 'Unknown';
+    return this.paperworkData[dataPointIndex].offid;
+  }
+
+  /**
+   * Get office ID for paperwork chart clicks
+   */
+  private getPaperworkOfficeId(dataPointIndex: number): string {
+    if (!this.paperworkData || dataPointIndex >= this.paperworkData.length) return '';
+    return this.paperworkData[dataPointIndex].offid;
+  }
+
+  /**
+   * Handle quote graph chart clicks
+   */
+  handleQuoteGraphClick(config: any): void {
+    console.log('Quote graph clicked:', config);
+    
+    if (!config || config.dataPointIndex === undefined) {
+      console.log('Invalid config or dataPointIndex');
+      return;
+    }
+
+    const dataPointIndex = config.dataPointIndex;
+    
+    if (!this.quoteGraphData || dataPointIndex >= this.quoteGraphData.length) {
+      console.log('Invalid data or index out of bounds');
+      return;
+    }
+
+    // Get the office ID from the clicked bar
+    const officeId = this.quoteGraphData[dataPointIndex].offid;
+    const dataSetName = officeId.trim();
+    
+    console.log('Navigating with office ID:', officeId);
+
+    // Navigate to the report details page
+    this.router.navigate(['/reports/dcg-display-report-details'], {
+      queryParams: {
+        Page: 'quote',
+        dataSetName: encodeURIComponent(dataSetName),
+        backbutton: 'AccMgmtGraph.aspx'
+      }
+    });
+  }
+
+  /**
+   * Handle unscheduled jobs chart clicks
+   */
+  handleUnscheduledJobsClick(config: any): void {
+    console.log('Unscheduled jobs chart clicked:', config);
+    
+    if (!config || config.dataPointIndex === undefined) {
+      console.log('Invalid config or dataPointIndex');
+      return;
+    }
+
+    const dataPointIndex = config.dataPointIndex;
+    
+    if (!this.unscheduledData || dataPointIndex >= this.unscheduledData.length) {
+      console.log('Invalid data or index out of bounds');
+      return;
+    }
+
+    // Get the office ID from the clicked bar
+    const officeId = this.unscheduledData[dataPointIndex].offid;
+    const dataSetName = officeId.trim();
+    
+    console.log('Navigating with office ID:', officeId);
+
+    // Navigate to the report details page
+    this.router.navigate(['/reports/dcg-display-report-details'], {
+      queryParams: {
+        Page: 'job',
+        dataSetName: encodeURIComponent(dataSetName),
+        backbutton: 'AccMgmtGraph.aspx'
+      }
     });
   }
 }
