@@ -72,6 +72,11 @@ import {
   AccountManagerPaperworkDto,
   AccountManagerGraphResponse
 } from '../model/account-manager-graph.model';
+import {
+  PartsSearchRequestDto,
+  PartsSearchDataDto,
+  PartsSearchDataResponse
+} from '../model/parts-search.model';
 
 @Injectable({
   providedIn: 'root'
@@ -926,6 +931,39 @@ export class ReportService {
   getAccountManagerUnscheduled(): Observable<AccountManagerPaperworkDto[]> {
     return this.http.get<AccountManagerPaperworkDto[]>(`${this.API}/calls-graph/account-manager-unscheduled`, {
       headers: this.headers
+    });
+  }
+
+  // Parts Search API methods
+  searchPartsData(request: PartsSearchRequestDto): Observable<PartsSearchDataResponse> {
+    return this.http.post<PartsSearchDataResponse>(`${this.API}/PartsSearch/search`, request, {
+      headers: this.headers
+    });
+  }
+
+  searchPartsDataByQuery(params: {
+    address?: string;
+    status?: string;
+    siteId?: string;
+    make?: string;
+    model?: string;
+    kva?: string;
+    ipVoltage?: string;
+    opVoltage?: string;
+    manufPartNo?: string;
+    dcgPartNo?: string;
+  }): Observable<PartsSearchDataResponse> {
+    let httpParams = new HttpParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        httpParams = httpParams.set(key, value);
+      }
+    });
+
+    return this.http.get<PartsSearchDataResponse>(`${this.API}/PartsSearch/search`, {
+      headers: this.headers,
+      params: httpParams
     });
   }
 }

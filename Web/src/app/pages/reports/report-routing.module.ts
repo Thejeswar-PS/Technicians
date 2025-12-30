@@ -12,6 +12,7 @@ import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-u
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
+import { PartsSearchComponent } from './parts-search/parts-search.component';
 
 const routes: Routes = [
   {
@@ -70,6 +71,10 @@ const routes: Routes = [
   {
     path: 'dcg-display-report-details',
     component: DcgDisplayReportDetailsComponent
+  },
+  {
+    path: 'parts-search',
+    component: PartsSearchComponent
   }
 ];
 

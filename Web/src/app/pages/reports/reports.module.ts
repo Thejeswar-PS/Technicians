@@ -19,6 +19,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 // Using simple canvas charts instead of ng2-charts
 import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
+import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { SharedModule } from '../../components/shared/shared.module';
 
 @NgModule({
@@ -34,7 +35,8 @@ import { SharedModule } from '../../components/shared/shared.module';
     StrippedUnitsStatusComponent,
     StrippedUnitInfoComponent,
     StrippedPartsInunitComponent,
-    DcgDisplayReportDetailsComponent
+    DcgDisplayReportDetailsComponent,
+    PartsSearchComponent
   ],
   imports: [
     CommonModule,
