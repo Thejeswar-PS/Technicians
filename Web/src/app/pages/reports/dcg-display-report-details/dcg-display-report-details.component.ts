@@ -4,13 +4,26 @@ import { Subscription } from 'rxjs';
 import { NewDisplayCallsDetailService } from 'src/app/core/services/new-display-calls-detail.service';
 import {
   NewDisplayCallsDetailResponseDto,
+  ReportResponseDto,
+  ContractInvoiceDto,
+  QuoteDto,
+  JobProcessingDto,
+  JobSchedulingDto,
+  QuoteManagementDto,
+  InvoiceDto,
+  ContractBillingDto,
+  PartsTrackingDto,
+  PartsRequestDto,
+  SiteStatusDto,
+  JobStatusDetailDto,
+  JobPerformanceDto,
+  CompleteQuoteDto,
+  ManagerReviewDto,
+  DisplayCallsDetailDto,
   JobDetailDto,
   QuoteDetailDto,
   InvoiceDetailDto,
-  UnscheduledJobDetailDto,
-  SiteStatusDto,
-  ContractBillingDto,
-  ContractInvoiceDto
+  UnscheduledJobDetailDto
 } from 'src/app/core/model/new-display-calls-detail.model';
 
 @Component({
@@ -32,6 +45,7 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
   reportData: any[] = [];
   totalData: any = null;
   reportTitle: string = '';
+  reportType: string = '';
   
   // Pagination
   currentPage = 1;
@@ -59,7 +73,17 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
       this.page = params['Page'] || '';
       this.dataSetName = params['dataSetName'] || '';
       this.backButton = params['backbutton'] || 'account-manager-graph';
-      this.officeId = params['officeId'] || params['dataSetName'] || ''; // Use dataSetName as officeId if officeId is not provided
+      
+      // Handle officeId - decode dataSetName if using it as fallback
+      if (params['officeId']) {
+        this.officeId = params['officeId'].trim();
+      } else if (params['dataSetName']) {
+        this.officeId = decodeURIComponent(params['dataSetName']).trim();
+      } else {
+        this.officeId = '';
+      }
+      
+      console.log('DCG Component - Page:', this.page, 'DataSetName:', this.dataSetName, 'OfficeId:', this.officeId);
       
       this.setReportTitle();
       this.loadReportData();
@@ -80,7 +104,8 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
       'open-quotes': 'Open Quotes', 
       'expired-quotes': 'Expired Quotes',
       'jobs-to-process': 'Jobs to be Processed',
-      'jobs-processed': 'Jobs Processed',
+      'jobs-processed': 'Paperwork Processing Jobs',
+      'jobs-paperwork': 'Paperwork Processing Jobs',
       'jobs-scheduled': 'Jobs Scheduled by Account Managers',
       'down-sites': 'Down Sites',
       'problem-sites': 'Sites with Equipment Problems',
@@ -109,11 +134,14 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
       return;
     }
 
+    console.log('Loading report data for page:', this.page, 'with officeId:', this.officeId);
+
     this.isLoading = true;
     this.error = null;
 
     let observable;
 
+    // Use the new structured endpoints
     switch (this.page) {
       case 'quote':
       case 'quotes':
@@ -129,10 +157,14 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
         observable = this.newDisplayCallsDetailService.getExpiredQuotes();
         break;
       case 'jobs-to-process':
-        observable = this.newDisplayCallsDetailService.getJobsToBeProcessedThisWeek();
+        observable = this.newDisplayCallsDetailService.getJobsToBeProcessedThisWeek(this.officeId);
         break;
       case 'jobs-processed':
-        observable = this.newDisplayCallsDetailService.getJobsProcessedThisWeek();
+        observable = this.newDisplayCallsDetailService.getJobsProcessedThisWeek(this.officeId);
+        break;
+      case 'jobs-paperwork':
+        // Use Service Call Invoice Month to Date from SP
+        observable = this.newDisplayCallsDetailService.getContractInvoiceMonthToDate();
         break;
       case 'jobs-scheduled':
         observable = this.newDisplayCallsDetailService.getJobsScheduledByAccountManagers();
@@ -162,7 +194,7 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
         observable = this.newDisplayCallsDetailService.getInvoicesByAge('91+');
         break;
       default:
-        // Try generic approach
+        // Try generic approach with legacy API for backward compatibility
         const detailPage = this.newDisplayCallsDetailService.getDetailPageForChart(this.page, this.dataSetName);
         observable = this.newDisplayCallsDetailService.getDisplayCallsDetailByParams(detailPage, this.officeId);
         break;
@@ -179,8 +211,6 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
         console.log('🔍 Frontend received response:', response);
         console.log('🔍 Response type:', typeof response);
         console.log('🔍 Response keys:', Object.keys(response || {}));
-        console.log('🔍 Response.details:', response?.details);
-        console.log('🔍 Response stringified:', JSON.stringify(response, null, 2));
         this.handleDataResponse(response);
         this.isLoading = false;
       },
@@ -195,37 +225,63 @@ export class DcgDisplayReportDetailsComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle the API response data
+   * Handle the API response data - Updated for new ReportResponseDto structure
    */
   private handleDataResponse(response: any): void {
     console.log('🔄 Processing response in handleDataResponse:', response);
     
-    if (response.success === false) {
+    if (response && response.success === false) {
       this.error = response.message || 'Failed to load data';
       return;
     }
 
-    // Handle the new backend structure: {details: [], totalAmount: null}
-    if (response && response.details) {
-      this.reportData = response.details || [];
+    // Handle the new ReportResponseDto structure
+    if (response && response.data && Array.isArray(response.data)) {
+      // New structured response from typed endpoints
+      this.reportData = response.data;
       this.totalData = response.totalAmount;
-      console.log('✅ Extracted data from response.details:', this.reportData.length, 'records');
-    } else if (response.data) {
-      // Legacy format with data wrapper
-      this.reportData = Array.isArray(response.data) ? response.data : [response.data];
-      console.log('✅ Extracted data from response.data:', this.reportData.length, 'records');
-    } else if (Array.isArray(response)) {
-      // Direct array response
+      this.reportType = response.reportType || '';
+      console.log('✅ Extracted data from ReportResponseDto:', this.reportData.length, 'records');
+      console.log('✅ Report type:', this.reportType);
+      console.log('✅ Total amount:', this.totalData);
+    } 
+    // Handle legacy NewDisplayCallsDetailResponseDto structure
+    else if (response && response.data && response.success !== false) {
+      if (Array.isArray(response.data)) {
+        this.reportData = response.data;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        // Handle nested data structure
+        this.reportData = response.data.data;
+        this.totalData = response.data.totalAmount;
+      } else if (response.data.details && Array.isArray(response.data.details)) {
+        // Handle details structure
+        this.reportData = response.data.details;
+        this.totalData = response.data.totalAmount;
+      } else {
+        // Single object or other structure
+        this.reportData = [response.data];
+      }
+      
+      if (response.totalData) {
+        this.totalData = response.totalData;
+      }
+      
+      console.log('✅ Extracted data from legacy response:', this.reportData.length, 'records');
+    }
+    // Handle direct array response (legacy)
+    else if (Array.isArray(response)) {
       this.reportData = response;
       console.log('✅ Direct array response:', this.reportData.length, 'records');
-    } else {
-      // Single object response
-      this.reportData = response ? [response] : [];
+    }
+    // Handle single object response
+    else if (response && typeof response === 'object') {
+      this.reportData = [response];
       console.log('✅ Single object wrapped:', this.reportData.length, 'record');
     }
-
-    if (response.total || response.totalData) {
-      this.totalData = response.total || response.totalData;
+    // No data
+    else {
+      this.reportData = [];
+      console.log('⚠️ No data found in response');
     }
 
     this.totalRecords = this.reportData.length;

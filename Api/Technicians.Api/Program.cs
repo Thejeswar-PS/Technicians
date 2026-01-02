@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.IIS;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Technicians.Api.Repository;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Server.IIS;
 using System.Text.Json;
+using Technicians.Api.Repositories;
+using Technicians.Api.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,8 +76,9 @@ builder.Services.AddScoped<PartsTestRepository>();
 builder.Services.AddScoped<PartsTestStatusRepository>();
 builder.Services.AddScoped<StrippedUnitsStatusRepository>();
 builder.Services.AddScoped<NewDisplayCallsGraphRepository>();
-builder.Services.AddScoped<IDisplayCallsDetailRepository, NewDisplayCallsDetailRepository>();
+builder.Services.AddScoped<IDisplayCallsDetailRepository, DisplayCallsDetailRepository>();
 builder.Services.AddScoped<IPartsSearchRepository, PartsSearchRepository>();
+builder.Services.AddScoped<IAccMgrPerformanceReportRepository, AccMgrPerformanceReportRepository>();
 
 var app = builder.Build();
 

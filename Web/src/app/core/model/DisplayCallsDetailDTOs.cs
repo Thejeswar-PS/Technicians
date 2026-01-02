@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 
 namespace Technicians.Api.Models
@@ -438,7 +438,7 @@ namespace Technicians.Api.Models
     /// <summary>
     /// Parts Request DTO for parts requisition tracking
     /// </summary>
-    public class PartRequestDto
+    public class PartsRequestDto
     {
         [JsonPropertyName("serviceCallId")]
         public string ServiceCallId { get; set; } = string.Empty;

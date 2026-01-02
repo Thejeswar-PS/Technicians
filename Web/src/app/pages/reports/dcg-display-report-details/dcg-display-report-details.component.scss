@@ -120,7 +120,7 @@
 
 // Override for table header hover (already handled above)
 .table th.cursor-pointer:hover {
-  // Handled in the main th styling above
+  background-color: #f1f3f4;
 }
 
 // Filter section styling to match parts request status

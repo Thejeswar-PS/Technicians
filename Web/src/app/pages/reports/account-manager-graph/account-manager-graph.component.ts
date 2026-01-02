@@ -1420,7 +1420,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         dataSetName = this.getAccMgmtDataSetName(dataPointIndex);
         break;
       case 'paperwork':
-        page = 'jobs-paperwork';
+        page = 'jobs-processed';
         dataSetName = this.getPaperworkDataSetName(dataPointIndex);
         officeId = this.getPaperworkOfficeId(dataPointIndex);
         break;
@@ -1555,7 +1555,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
    */
   private getPaperworkDataSetName(dataPointIndex: number): string {
     if (!this.paperworkData || dataPointIndex >= this.paperworkData.length) return 'Unknown';
-    return this.paperworkData[dataPointIndex].offid;
+    return this.paperworkData[dataPointIndex].offid.trim();
   }
 
   /**
@@ -1563,7 +1563,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
    */
   private getPaperworkOfficeId(dataPointIndex: number): string {
     if (!this.paperworkData || dataPointIndex >= this.paperworkData.length) return '';
-    return this.paperworkData[dataPointIndex].offid;
+    return this.paperworkData[dataPointIndex].offid.trim();
   }
 
   /**
