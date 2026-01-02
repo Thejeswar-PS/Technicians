@@ -134,6 +134,12 @@ const Routing: Routes = [
     data: { layout: 'light-sidebar' },
   },
   {
+    path: 'tools',
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./tools/tools.module').then((m) => m.ToolsModule),
+    data: { layout: 'light-sidebar' },
+  },
+  {
     path: '**',
     redirectTo: 'error/404',
   },

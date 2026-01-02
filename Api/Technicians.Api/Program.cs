@@ -74,6 +74,7 @@ builder.Services.AddScoped<OrderRequestStatusRepository>();
 builder.Services.AddScoped<PartsTestRepository>();
 builder.Services.AddScoped<PartsTestStatusRepository>();
 builder.Services.AddScoped<StrippedUnitsStatusRepository>();
+builder.Services.AddScoped<TechToolsRepository>();
 
 var app = builder.Build();
 

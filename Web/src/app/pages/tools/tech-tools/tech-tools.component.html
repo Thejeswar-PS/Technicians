@@ -1,0 +1,703 @@
+<div class="container-fluid ups-readings-container tech-tools-container">
+  <div class="card shadow-sm ups-main-card">
+    <div class="card-header border-0 py-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <button type="button" class="btn btn-sm btn-primary" (click)="goBack()" [disabled]="isSaving">
+          <i class="bi bi-arrow-left me-2"></i>Back
+        </button>
+        <div class="text-center flex-grow-1">
+          <h3 class="fw-bold text-primary text-light mb-0">Tech Tools</h3>
+        </div>
+        <div class="d-flex gap-2">
+          <button 
+            type="button" 
+            class="btn btn-sm btn-secondary"
+            (click)="saveAsDraft()"
+            [disabled]="isSaving || !showToolsPanel">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+            Save As Draft
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-sm btn-primary"
+            (click)="saveInfo()"
+            [disabled]="isSaving || !showToolsPanel">
+            <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
+            Save Info
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card-body">
+      <!-- Messages -->
+      <div class="mb-3" *ngIf="errorMessage || successMessage">
+        <div *ngIf="errorMessage" class="alert alert-danger d-inline-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <span>{{ errorMessage }}</span>
+        </div>
+        <div *ngIf="successMessage" class="alert alert-success d-inline-flex align-items-center">
+          <i class="bi bi-check-circle-fill me-2"></i>
+          <span>{{ successMessage }}</span>
+        </div>
+      </div>
+
+      <!-- Top Control Panel: Technician Dropdown + Buttons -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Select Technician:</label>
+          <select 
+            class="form-select" 
+            [(ngModel)]="selectedTech" 
+            (change)="onTechnicianChange()">
+            <option value="">-- Select --</option>
+            <option *ngFor="let tech of technicians" [value]="tech.techID">
+              {{ tech.techname }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="alert alert-success" role="alert">
+        {{ successMessage }}
+      </div>
+
+      <!-- Loading Indicator -->
+      <div *ngIf="isLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+
+        <!-- Technician Details Panel -->
+        <div *ngIf="showTechPanel" class="ups-section-card mb-4">
+          <div class="ups-section-header">
+            <div class="ups-section-title">
+              <i class="bi bi-person-badge-fill me-2 text-primary"></i>
+              <h5 class="mb-0">Technician Details</h5>
+              <small class="text-muted">Assigned technician contact information</small>
+            </div>
+          </div>
+          <div class="ups-section-content show">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Technician</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">{{ techName }}</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Address</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">{{ techAddress }}</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Phone</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">{{ techPhone }}</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Tech Email</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">{{ techEmail }}</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Tech Manager</label>
+                <div class="form-control-plaintext border rounded px-3 py-2 bg-light">{{ techManager }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      <!-- Tools Panel -->
+    <div *ngIf="showToolsPanel" class="ups-form">
+      <div class="row">
+        <!-- Left Column: Forms (75%) -->
+        <div class="col-lg-9">
+      <!-- Badges Section -->
+      <div class="ups-section-card mb-4">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-shield-check me-2 text-primary"></i>
+            <h5 class="mb-0">Badges</h5>
+            <small class="text-muted">Compliance and credential dates</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="rapidGate" [(ngModel)]="rapidGate">
+                  <option *ngFor="let opt of rapidGateOptions" [value]="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+                <label for="rapidGate">Rapid Gate</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="twicDueDate" placeholder="TWIC Due Date" [(ngModel)]="twicDueDate">
+                <label for="twicDueDate">TWIC Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="mineSafetyDueDate" placeholder="Mine Safety Due Date" [(ngModel)]="mineSafetyDueDate">
+                <label for="mineSafetyDueDate">Mine Safety Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="cprFaAedDueDate" placeholder="CPR/FA/AED Due Date" [(ngModel)]="cprFaAedDueDate">
+                <label for="cprFaAedDueDate">CPR/FA/AED Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="osha10DueDate" placeholder="OSHA 10 Due Date" [(ngModel)]="osha10DueDate">
+                <label for="osha10DueDate">OSHA 10 Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="swacDueDate" placeholder="SWAC Due Date" [(ngModel)]="swacDueDate">
+                <label for="swacDueDate">SWAC Due Date</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meters and Due Dates Section -->
+      <div class="ups-section-card mb-4">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-speedometer me-2 text-primary"></i>
+            <h5 class="mb-0">Meters and Due Dates</h5>
+            <small class="text-muted">Equipment calibration details</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="clampMeter" placeholder="Clamp Meter" [(ngModel)]="clampMeter">
+                <label for="clampMeter">Clamp Meter</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="clampMeterDueDate" placeholder="Clamp Meter Due Date" [(ngModel)]="clampMeterDueDate">
+                <label for="clampMeterDueDate">Clamp Meter Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="multiMeter" placeholder="Multi Meter" [(ngModel)]="multiMeter">
+                <label for="multiMeter">Multi Meter</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="multiMeterDueDate" placeholder="Multi Meter Due Date" [(ngModel)]="multiMeterDueDate">
+                <label for="multiMeterDueDate">Multi Meter Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="torqueWrench" placeholder="Torque Wrench" [(ngModel)]="torqueWrench">
+                <label for="torqueWrench">Torque Wrench</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="torqueWrenchDueDate" placeholder="Torque Wrench Due Date" [(ngModel)]="torqueWrenchDueDate">
+                <label for="torqueWrenchDueDate">Torque Wrench Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="irGun" placeholder="IR Gun" [(ngModel)]="irGun">
+                <label for="irGun">IR Gun</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="irGunDueDate" placeholder="IR Gun Due Date" [(ngModel)]="irGunDueDate">
+                <label for="irGunDueDate">IR Gun Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="midtronics6000" placeholder="Midtronics 6000" [(ngModel)]="midtronics6000">
+                <label for="midtronics6000">Midtronics 6000</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="midtronics6000DueDate" placeholder="Midtronics 6000 Due Date" [(ngModel)]="midtronics6000DueDate">
+                <label for="midtronics6000DueDate">Midtronics 6000 Due Date</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="text" class="form-control" id="phaseSeqTester" placeholder="Phase Seq Tester" [(ngModel)]="phaseSeqTester">
+                <label for="phaseSeqTester">Phase Seq Tester</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="phaseSeqTesterDueDate" placeholder="Phase Seq Tester Due Date" [(ngModel)]="phaseSeqTesterDueDate">
+                <label for="phaseSeqTesterDueDate">Phase Seq Tester Due Date</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PPE/Clothing Section -->
+      <div class="ups-section-card mb-4">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-person-hearts me-2 text-primary"></i>
+            <h5 class="mb-0">PPE / Clothing</h5>
+            <small class="text-muted">Personal protective equipment</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="arcFlashSuitSize" [(ngModel)]="arcFlashSuitSize">
+                  <option *ngFor="let opt of sizeOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="arcFlashSuitSize">Arc Flash Suit (Size)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="arcFlashSuitRecDate" placeholder="Arc Flash Suit Rec Date" [(ngModel)]="arcFlashSuitRecDate">
+                <label for="arcFlashSuitRecDate">Arc Flash Suit (Rec Date)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="arc40FlashSuitSize" [(ngModel)]="arc40FlashSuitSize">
+                  <option *ngFor="let opt of sizeOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="arc40FlashSuitSize">Arc 40 Flash Suit (Size)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="arc40FlashSuitRecDate" placeholder="Arc 40 Flash Suit Rec Date" [(ngModel)]="arc40FlashSuitRecDate">
+                <label for="arc40FlashSuitRecDate">Arc 40 Flash Suit (Rec Date)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="gloveSizeValue" [(ngModel)]="gloveSizeValue">
+                  <option *ngFor="let opt of gloveSizeOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="gloveSizeValue">Glove Size (Value)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="gloveSizeRecDate" placeholder="Glove Size Rec Date" [(ngModel)]="gloveSizeRecDate">
+                <label for="gloveSizeRecDate">Glove Size (Rec Date)</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <select class="form-select" id="carharttFrJacket" [(ngModel)]="carharttFrJacket">
+                  <option *ngFor="let opt of sizeOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="carharttFrJacket">Carhartt FR Jacket</label>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-floating">
+                <input type="date" class="form-control" id="carharttFrJacketRecDate" placeholder="Carhartt FR Jacket Rec Date" [(ngModel)]="carharttFrJacketRecDate">
+                <label for="carharttFrJacketRecDate">Carhartt FR Jacket (Rec Date)</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="kleinProTechBP" [(ngModel)]="kleinProTechBP">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="kleinProTechBP">Klein Pro Tech BP</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="cal12IUSoftHood" [(ngModel)]="cal12IUSoftHood">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="cal12IUSoftHood">Cal 12 IU Soft Hood</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="linemanSleeves" [(ngModel)]="linemanSleeves">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="linemanSleeves">Lineman Sleeves</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="linemanSlStraps" [(ngModel)]="linemanSlStraps">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="linemanSlStraps">Lineman Sl Straps</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="nitrileGloves" [(ngModel)]="nitrileGloves">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="nitrileGloves">Nitrile Gloves</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="hardHatFaceSh" [(ngModel)]="hardHatFaceSh">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="hardHatFaceSh">Hard Hat Face Sh</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="rubberGloves" [(ngModel)]="rubberGloves">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="rubberGloves">Rubber Gloves</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="acidApron" [(ngModel)]="acidApron">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="acidApron">Acid Apron</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="acidFaceShield" [(ngModel)]="acidFaceShield">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="acidFaceShield">Acid Face Shield</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="acidFaceHdGear" [(ngModel)]="acidFaceHdGear">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="acidFaceHdGear">Acid Face Hd Gear</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="acidSleeves" [(ngModel)]="acidSleeves">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="acidSleeves">Acid Sleeves</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="bagGloves" [(ngModel)]="bagGloves">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="bagGloves">Bag Gloves</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="bagFaceShield" [(ngModel)]="bagFaceShield">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="bagFaceShield">Bag Face Shield</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Misc Items Section -->
+      <div class="ups-section-card mb-4">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-box-seam me-2 text-primary"></i>
+            <h5 class="mb-0">Misc Items</h5>
+            <small class="text-muted">Additional issued gear</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="tsaLocks" [(ngModel)]="tsaLocks">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="tsaLocks">TSA Locks</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="dcgCarMagnet" [(ngModel)]="dcgCarMagnet">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="dcgCarMagnet">DCG Car Magnet</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="chickenWire" [(ngModel)]="chickenWire">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="chickenWire">Chicken Wire</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="potentiometer" [(ngModel)]="potentiometer">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="potentiometer">Potentiometer</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="dewaltKit" [(ngModel)]="dewaltKit">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="dewaltKit">Dewalt Kit</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="techToolBox" [(ngModel)]="techToolBox">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="techToolBox">Tech Tool Box</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="meterKit" [(ngModel)]="meterKit">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="meterKit">Meter Kit</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="flukeSet" [(ngModel)]="flukeSet">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="flukeSet">Fluke Set</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="fuseKit" [(ngModel)]="fuseKit">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="fuseKit">Fuse Kit</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="panduit" [(ngModel)]="panduit">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="panduit">Panduit</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="neikoTools" [(ngModel)]="neikoTools">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="neikoTools">Neiko Tools</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="usbCamera" [(ngModel)]="usbCamera">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="usbCamera">USB Camera</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="vacuum" [(ngModel)]="vacuum">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="vacuum">Vacuum</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="lockoutKit" [(ngModel)]="lockoutKit">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="lockoutKit">Lockout Kit</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="batteryKit" [(ngModel)]="batteryKit">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="batteryKit">Battery Kit</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="heatPaste" [(ngModel)]="heatPaste">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="heatPaste">Heat Paste</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="gfciCord" [(ngModel)]="gfciCord">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="gfciCord">GFCI Cord</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="miniGrabber" [(ngModel)]="miniGrabber">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="miniGrabber">Mini Grabber</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="miniGrabber4" [(ngModel)]="miniGrabber4">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="miniGrabber4">Mini Grabber 4</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="firstAidKit" [(ngModel)]="firstAidKit">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="firstAidKit">First Aid Kit</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="insMagTool" [(ngModel)]="insMagTool">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="insMagTool">Ins Mag Tool</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="mattedFloor" [(ngModel)]="mattedFloor">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="mattedFloor">Matted Floor</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="clearPVC" [(ngModel)]="clearPVC">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="clearPVC">Clear PVC</label>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="form-floating">
+                <select class="form-select" id="insMirror" [(ngModel)]="insMirror">
+                  <option *ngFor="let opt of yesNoNAOptions" [value]="opt.value">{{ opt.label }}</option>
+                </select>
+                <label for="insMirror">Ins Mirror</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes Section -->
+      <div class="ups-section-card mb-4">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-journal-text me-2 text-primary"></i>
+            <h5 class="mb-0">Notes</h5>
+            <small class="text-muted">Additional remarks</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="row">
+            <div class="col-12">
+              <label class="form-label">Notes:</label>
+              <textarea 
+                class="form-control" 
+                [(ngModel)]="notes" 
+                rows="4">
+              </textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool Kit Grid -->
+      <div class="ups-section-card mb-4" *ngIf="techToolsGrid.length > 0">
+        <div class="ups-section-header">
+          <div class="ups-section-title">
+            <i class="bi bi-tools me-2 text-primary"></i>
+            <h5 class="mb-0">Tool Kit</h5>
+            <small class="text-muted">Issued toolkit items</small>
+          </div>
+        </div>
+        <div class="ups-section-content show">
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover table-sm">
+              <thead>
+                <tr>
+                  <th>Tool Kit PN</th>
+                  <th>Description</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of techToolsGrid">
+                  <td>{{ item.toolKitPNMisc }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>
+                    <select class="form-select form-select-sm" [(ngModel)]="item.techValue">
+                      <option value="NO">No</option>
+                      <option value="YS">Yes</option>
+                      <option value="NA">N/A</option>
+                    </select>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+        </div>
+        <!-- Right Column: Tool Kit Grid (25%) -->
+        <div class="col-lg-3">
+          <!-- This column will be populated by the left column's Tool Kit Grid if needed -->
+        </div>
+      </div>    </div>
+  </div>
+</div>
