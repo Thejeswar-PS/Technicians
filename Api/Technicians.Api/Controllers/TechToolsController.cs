@@ -83,6 +83,21 @@ namespace Technicians.Api.Controllers
             return Ok(new { message = "Tech tools misc kit updated successfully" });
         }
 
+        [HttpGet("GetDCGDiplayReportDetails")]
+        public async Task<IActionResult> GetDCGDiplayReportDetails(
+        [FromQuery] string reportName,
+        [FromQuery] string title)
+        {
+            if (string.IsNullOrWhiteSpace(reportName))
+                return BadRequest("reportName is required.");
+
+            var result = await _toolsRepository.GetDCGDiplayReportDetailsAsync(
+                reportName,
+                title ?? string.Empty);
+
+            return Ok(result);
+        }
+
 
 
     }

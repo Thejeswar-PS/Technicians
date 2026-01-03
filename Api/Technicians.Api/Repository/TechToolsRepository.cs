@@ -229,6 +229,52 @@ namespace Technicians.Api.Repository
             }
         }
 
+        public async Task<List<DcgDisplayReportDto>> GetDCGDiplayReportDetailsAsync(
+    string reportName,
+    string title)
+        {
+            using var connection = new SqlConnection(_gpconnectionString);
+
+            string sql = title != null && title.Contains("Purchase", StringComparison.OrdinalIgnoreCase)
+                ? "EXEC NewDisplayPODetail @ReportName"
+                : "EXEC NewDisplayCallsDetail @ReportName";
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@ReportName", reportName);
+
+            var rows = await connection.QueryAsync(sql, parameters);
+
+            var result = rows
+                .Select(r =>
+                {
+                    var row = (IDictionary<string, object>)r;
+
+                    return new DcgDisplayReportDto
+                    {
+                        CustomerNo = row["Customer No"]?.ToString(),
+                        CustomerName = row["Customer Name"]?.ToString(),
+                        Address = row["Address"]?.ToString(),
+                        SalesPerson = row["SalesPerson"]?.ToString(),
+                        ContractNo = row["Contract No"]?.ToString(),
+                        Type = row["Type"]?.ToString(),
+                        InvoicedOn = row["Invoiced On"] == null
+                                        ? null
+                                        : Convert.ToDateTime(row["Invoiced On"]),
+                        Amount = row["Amount"] == null
+                                        ? 0
+                                        : Convert.ToDecimal(row["Amount"]),
+                        MailingDt = row["Mailing Dt"] == null
+                                        ? null
+                                        : Convert.ToDateTime(row["Mailing Dt"]),
+                        PORDNMBR = row["PORDNMBR"]?.ToString()
+                    };
+                })
+                .ToList();
+
+            return result;
+        }
+
+
 
 
         public static class DateNormalizer

@@ -19,6 +19,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 import { SharedModule } from '../../components/shared/shared.module';
+import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
 
 @NgModule({
   declarations: [
@@ -33,6 +34,7 @@ import { SharedModule } from '../../components/shared/shared.module';
     StrippedUnitsStatusComponent,
     StrippedUnitInfoComponent,
     StrippedPartsInunitComponent,
+    ContractDetailsReportComponent,
 
   ],
   imports: [
