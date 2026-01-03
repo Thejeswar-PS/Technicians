@@ -98,6 +98,17 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("GetPastDueContracts")]
+        public async Task<IActionResult> GetPastDueContracts([FromQuery] string status)
+        {
+            if (string.IsNullOrWhiteSpace(status))
+                return BadRequest("Status is required (30 / 60 / ALL)");
+
+            var result = await _toolsRepository.GetPastDueContractDetailsAsync(status);
+
+            return Ok(result);
+        }
+
 
 
     }

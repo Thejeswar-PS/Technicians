@@ -12,6 +12,7 @@ import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-u
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
+import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 
 const routes: Routes = [
   {
@@ -70,6 +71,10 @@ const routes: Routes = [
   {
     path: 'contract-details-report',
     component: ContractDetailsReportComponent
+  },
+  {
+    path: 'past-due-contract-details',
+    component: PastDueContractDetailsComponent
   }
 ];
 

@@ -20,6 +20,7 @@ import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 import { SharedModule } from '../../components/shared/shared.module';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
+import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 
 @NgModule({
   declarations: [
@@ -35,6 +36,7 @@ import { ContractDetailsReportComponent } from './contract-details-report/contra
     StrippedUnitInfoComponent,
     StrippedPartsInunitComponent,
     ContractDetailsReportComponent,
+    PastDueContractDetailsComponent,
 
   ],
   imports: [

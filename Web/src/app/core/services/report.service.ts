@@ -88,6 +88,12 @@ export class ReportService {
   {
     return this.http.get<any[]>(`${this.API}/TechTools/GetDCGDiplayReportDetails?reportName=${category}&title=""`, { headers: this.headers });
   }
+
+  getPastDueContractDetails(status: string): Observable<any>
+  {
+    return this.http.get<any>(`${this.API}/TechTools/GetPastDueContracts?status=${status}`, { headers: this.headers });
+  }
+
   getJobScheduleReport(queryType : any) : Observable<Job[]>
   {
     return this.http.get<Job[]>(`${this.API}/report/GetServiceMasterSearch?ueryType=${queryType}`,{ headers : this.headers });

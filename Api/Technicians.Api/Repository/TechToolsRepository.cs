@@ -229,9 +229,7 @@ namespace Technicians.Api.Repository
             }
         }
 
-        public async Task<List<DcgDisplayReportDto>> GetDCGDiplayReportDetailsAsync(
-    string reportName,
-    string title)
+        public async Task<List<DcgDisplayReportDto>> GetDCGDiplayReportDetailsAsync(string reportName, string title)
         {
             using var connection = new SqlConnection(_gpconnectionString);
 
@@ -274,6 +272,48 @@ namespace Technicians.Api.Repository
             return result;
         }
 
+        public async Task<PastDueContractResponse> GetPastDueContractDetailsAsync(string status)
+        {
+            using var connection = new SqlConnection(_gpconnectionString);
+
+            await connection.OpenAsync();
+
+            using var multi = await connection.QueryMultipleAsync(
+                "GetPastDueContractDetails",
+                new { Status = status },
+                commandType: CommandType.StoredProcedure
+            );
+
+            // ---------- Result Set 1 (Strongly typed) ----------
+            var details = (await multi.ReadAsync<PastDueContractDto>()).ToList();
+
+            // ---------- Result Set 2 (Dynamic with spaces) ----------
+            var summaryRaw = await multi.ReadAsync<dynamic>();
+
+            var summary = summaryRaw
+                .Select(row =>
+                {
+                    var dict = (IDictionary<string, object>)row;
+
+                    return new PastDueAccountManagerSummaryDto
+                    {
+                        AccountManager = dict.ContainsKey("Account Manager")
+                            ? dict["Account Manager"]?.ToString()
+                            : null,
+
+                        ContractNo = dict.ContainsKey("ContractNo")
+                            ? Convert.ToInt32(dict["ContractNo"])
+                            : 0
+                    };
+                })
+                .ToList();
+
+            return new PastDueContractResponse
+            {
+                Details = details,
+                Summary = summary
+            };
+        }
 
 
 
