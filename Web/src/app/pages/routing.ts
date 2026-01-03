@@ -140,6 +140,12 @@ const Routing: Routes = [
     data: { layout: 'light-sidebar' },
   },
   {
+    path: 'miscellaneous-tasks',
+    canActivate: [AuthGuard],
+    loadChildren: () => import('./miscellaneous-tasks/miscellaneous-tasks.module').then((m) => m.MiscellaneousTasksModule),
+    data: { layout: 'light-sidebar' },
+  },
+  {
     path: '**',
     redirectTo: 'error/404',
   },

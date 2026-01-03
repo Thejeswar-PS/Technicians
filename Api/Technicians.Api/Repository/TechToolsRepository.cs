@@ -315,6 +315,60 @@ namespace Technicians.Api.Repository
             };
         }
 
+        public async Task<PMNotesSearchResponse> SearchPMNotesAsync(string query, int page, int pageSize)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return new PMNotesSearchResponse
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalMatches = 0,
+                    TotalPages = 0
+                };
+            }
+
+            // Stored proc is 1-based page index
+            int spPage = page < 1 ? 1 : page;
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var multi = await connection.QueryMultipleAsync(
+                "dbo.SearchPMNotesInETechJobList",
+                new
+                {
+                    q = query,
+                    page = spPage,
+                    pageSize = pageSize
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            // ---------- Result Set 1 ----------
+            var results = (await multi.ReadAsync<PMNotesSearchResultDto>()).ToList();
+
+            // ---------- Result Set 2 ----------
+            int totalMatches = 0;
+            var totalRow = await multi.ReadFirstOrDefaultAsync<dynamic>();
+            if (totalRow != null)
+            {
+                var dict = (IDictionary<string, object>)totalRow;
+                totalMatches = dict.ContainsKey("TotalMatches") ? Convert.ToInt32(dict["TotalMatches"]) : 0;
+            }
+
+            int totalPages = pageSize > 0 ? (int)Math.Ceiling((double)totalMatches / pageSize) : 0;
+
+            return new PMNotesSearchResponse
+            {
+                Page = spPage,
+                PageSize = pageSize,
+                TotalMatches = totalMatches,
+                TotalPages = totalPages,
+                Results = results
+            };
+        }
+
 
 
         public static class DateNormalizer

@@ -109,6 +109,22 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("SearchPMNotes")]
+        public async Task<IActionResult> SearchPMNotes([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            if (string.IsNullOrWhiteSpace(q))
+                return Ok(new PMNotesSearchResponse
+                {
+                    Page = page,
+                    PageSize = pageSize,
+                    TotalMatches = 0,
+                    TotalPages = 0
+                });
+
+            var result = await _toolsRepository.SearchPMNotesAsync(q, page, pageSize);
+            return Ok(result);
+        }
+
 
 
     }

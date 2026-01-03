@@ -94,6 +94,26 @@ export class ReportService {
     return this.http.get<any>(`${this.API}/TechTools/GetPastDueContracts?status=${status}`, { headers: this.headers });
   }
 
+  searchPMNotes(query: string, page: number, pageSize: number): Observable<any>
+  {
+    return this.http.get<any>(`${this.API}/TechTools/SearchPMNotes?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`, { headers: this.headers });
+  }
+
+  handleMiscTask(operation: string, jobNo: string): Observable<any>
+  {
+    return this.http.post<any>(`${this.API}/TechTools/MiscTask`, { operation, jobNo }, { headers: this.headers });
+  }
+
+  getSiteHistory(siteID: string): Observable<any>
+  {
+    return this.http.get<any>(`${this.API}/TechTools/GetSiteHistory?siteID=${encodeURIComponent(siteID)}`, { headers: this.headers });
+  }
+
+  checkJobExists(jobNo: string, jobStatus: string): Observable<any>
+  {
+    return this.http.get<any>(`${this.API}/TechTools/CheckJobExists?jobNo=${encodeURIComponent(jobNo)}&jobStatus=${jobStatus}`, { headers: this.headers });
+  }
+
   getJobScheduleReport(queryType : any) : Observable<Job[]>
   {
     return this.http.get<Job[]>(`${this.API}/report/GetServiceMasterSearch?ueryType=${queryType}`,{ headers : this.headers });

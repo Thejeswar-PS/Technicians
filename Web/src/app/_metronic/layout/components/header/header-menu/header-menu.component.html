@@ -370,6 +370,17 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
 
 </div>
 
+<!-- Miscellaneous Tasks Menu -->
+<div class="menu-item menu-lg-down-accordion me-lg-1">
+  <a id="misctasks"
+    routerLinkActive="active menu-here"
+    [routerLink]="['/miscellaneous-tasks']"
+    class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/miscellaneous-tasks')">
+    
+    <span class="menu-title fs-2 fw-bold text-dark">Miscellaneous Tasks</span>
+  </a>
+</div>
+
 <!-- Tools Menu -->
 <div class="menu-item menu-lg-down-accordion me-lg-1 menu-dropdown"
   data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start">
@@ -389,6 +400,15 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
         class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/tools/tech-tools')">
         <span class="menu-icon"><i class="bi fs-3 bi-tools"></i></span>
         <span class="menu-title fs-4 text-dark">Tech Tools</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="notessearch"
+        routerLinkActive="active menu-here"
+        [routerLink]="['/tools/notes-search']"
+        class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/tools/notes-search')">
+        <span class="menu-icon"><i class="bi fs-3 bi-search"></i></span>
+        <span class="menu-title fs-4 text-dark">Notes Search</span>
       </a>
     </div>
   </div>

@@ -1,0 +1,180 @@
+<div class="notes-search-container">
+  <div *ngIf="loading" class="d-flex justify-content-center align-items-center notes-search-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="notes-header mb-4">
+    <div class="header-content">
+      <div class="title-section">
+        <i class="bi bi-search fs-1 text-primary"></i>
+        <h2 class="fw-bold text-primary mb-0">PM Notes Search</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm notes-main-card">
+    <div class="card-body">
+      <!-- Search Section -->
+      <div class="search-section mb-4">
+        <div class="row align-items-end">
+          <div class="col-md-8">
+            <label class="form-label fw-semibold">Search Query</label>
+            <input 
+              type="text" 
+              class="form-control modern-input" 
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearch()"
+              placeholder="Enter keywords to search PM notes..."
+              [disabled]="loading">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Page Size</label>
+            <select 
+              class="form-select modern-select" 
+              [(ngModel)]="pageSize"
+              (change)="onPageSizeChange()"
+              [disabled]="loading">
+              <option *ngFor="let size of pageSizeOptions" [value]="size">{{ size }}</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button 
+              type="button" 
+              class="btn btn-primary w-100 search-btn"
+              (click)="onSearch()"
+              [disabled]="loading || !searchQuery.trim()">
+              <i class="bi bi-search me-2"></i>
+              Search
+            </button>
+          </div>
+        </div>
+        
+        <div class="meta-text mt-3" *ngIf="searchQuery.trim() && !loading">
+          {{ getMetaText() }}
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Loading Indicator -->
+      <div *ngIf="loading" class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+        <span class="text-muted">Searching...</span>
+      </div>
+
+      <!-- Results Table -->
+      <div class="table-section" *ngIf="!loading && results.length > 0">
+        <div class="table-responsive">
+          <table class="table modern-table">
+            <thead class="table-header">
+              <tr>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Job No</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Site ID</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Customer</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Technician</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Start Date</span>
+                  </div>
+                </th>
+                <th class="header-cell notes-column">
+                  <div class="header-content">
+                    <span class="header-text">Notes</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody class="table-body">
+              <tr class="table-row" *ngFor="let result of results; trackBy: trackByResult">
+                <td class="fw-bold text-primary">{{ result.jobNo || 'N/A' }}</td>
+                <td>{{ result.siteId || 'N/A' }}</td>
+                <td>{{ result.customer || 'N/A' }}</td>
+                <td>{{ result.technician || 'N/A' }}</td>
+                <td>{{ result.startDate | date: 'dd-MMM-yyyy' }}</td>
+                <td class="notes-cell">
+                  <div class="notes-content" [innerHTML]="result.snippet"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-section d-flex justify-content-between align-items-center mt-4" *ngIf="totalPages > 1">
+          <div class="pagination-info text-muted">
+            Showing page {{ currentPage }} of {{ totalPages }}
+          </div>
+          <nav>
+            <ul class="pagination mb-0">
+              <li class="page-item" [class.disabled]="currentPage === 1">
+                <a class="page-link" (click)="onPageChange(1)" tabindex="-1">
+                  <i class="bi bi-chevron-double-left"></i>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === 1">
+                <a class="page-link" (click)="onPageChange(currentPage - 1)" tabindex="-1">
+                  <i class="bi bi-chevron-left"></i>
+                </a>
+              </li>
+              
+              <li 
+                *ngFor="let page of getPageNumbers()" 
+                class="page-item" 
+                [class.active]="page === currentPage"
+                [class.disabled]="page === -1">
+                <a class="page-link" (click)="page !== -1 && onPageChange(page)">
+                  {{ page === -1 ? '...' : page }}
+                </a>
+              </li>
+              
+              <li class="page-item" [class.disabled]="currentPage === totalPages">
+                <a class="page-link" (click)="onPageChange(currentPage + 1)">
+                  <i class="bi bi-chevron-right"></i>
+                </a>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === totalPages">
+                <a class="page-link" (click)="onPageChange(totalPages)">
+                  <i class="bi bi-chevron-double-right"></i>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+      <!-- No Results Message -->
+      <div *ngIf="!loading && searchQuery.trim() && results.length === 0 && !errorMessage" class="text-center py-5">
+        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+        <p class="text-muted mt-3">No results found for "{{ searchQuery }}"</p>
+      </div>
+
+      <!-- Initial State -->
+      <div *ngIf="!loading && !searchQuery.trim() && results.length === 0" class="text-center py-5">
+        <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+        <p class="text-muted mt-3">Enter keywords to search PM notes</p>
+      </div>
+    </div>
+  </div>
+</div>
