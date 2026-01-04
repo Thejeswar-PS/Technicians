@@ -1,0 +1,176 @@
+.table-responsive {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.nav-line-tabs-2x .nav-item .nav-link.active {
+  border-bottom: 2px solid var(--kt-primary);
+}
+
+.card-title .nav-stretch {
+  border-bottom: 1px solid var(--kt-border-color);
+}
+
+.badge-light-primary {
+  background-color: rgba(0, 123, 255, 0.1);
+  color: var(--kt-primary);
+}
+
+.badge-light-warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: var(--kt-warning);
+}
+
+.badge-light-success {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: var(--kt-success);
+}
+
+.badge-light-info {
+  background-color: rgba(23, 162, 184, 0.1);
+  color: var(--kt-info);
+}
+
+.badge-light-danger {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: var(--kt-danger);
+}
+
+.badge-light-secondary {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: var(--kt-gray-700);
+}
+
+.indicator-progress {
+  display: flex;
+  align-items: center;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--kt-card-bg);
+  z-index: 10;
+}
+
+.fs-1 {
+  font-size: 2.5rem;
+}
+
+.lh-1 {
+  line-height: 1;
+}
+
+.ls-n2 {
+  letter-spacing: -0.025em;
+}
+
+// Legacy color coding system to match ASP.NET AccMgrPerformance.aspx.cs
+
+// Critical sections (Completed Not Returned, Returned for Processing, Returned Incomplete)
+.critical-section {
+  color: white !important;
+  background-color: #dc3545 !important; // Red background
+}
+
+.critical-with-amount {
+  color: white !important;
+  background-color: #dc3545 !important; // Red background
+  
+  .amount-column {
+    font-weight: bold !important;
+  }
+}
+
+// Today's jobs sections (Jobs Today, Customer Confirmed)
+.today-section {
+  color: #dc3545 !important; // Red text
+  background-color: transparent !important;
+}
+
+// Unscheduled jobs sections (Past Due, Monthly 1-5)
+.unscheduled-section {
+  color: black !important;
+  background-color: #ffa500 !important; // Orange background
+}
+
+.unscheduled-with-amount {
+  color: black !important;
+  background-color: #ffa500 !important; // Orange background
+  
+  .amount-column {
+    font-weight: bold !important;
+  }
+}
+
+// Special "Bill After PM" styling
+.bill-after-pm-critical {
+  color: white !important;
+  background-color: #dc3545 !important; // Red background
+  
+  .status-column {
+    font-weight: bold !important;
+  }
+}
+
+.bill-after-pm-warning {
+  color: black !important;
+  background-color: #ffa500 !important; // Orange background
+  
+  .status-column {
+    font-weight: bold !important;
+  }
+}
+
+// Expired jobs (over 30 days with quoted amount)
+.expired-critical {
+  .age-column {
+    font-weight: bold !important;
+  }
+}
+
+// Normal email reports section
+.normal-section {
+  color: inherit;
+  background-color: inherit;
+}
+
+// Row-level color classes
+tr.critical-section,
+tr.critical-with-amount {
+  color: white !important;
+  background-color: #dc3545 !important;
+}
+
+tr.today-section {
+  color: #dc3545 !important;
+}
+
+tr.unscheduled-section,
+tr.unscheduled-with-amount {
+  color: black !important;
+  background-color: #ffa500 !important;
+}
+
+tr.bill-after-pm-critical {
+  color: white !important;
+  background-color: #dc3545 !important;
+}
+
+tr.bill-after-pm-warning {
+  color: black !important;
+  background-color: #ffa500 !important;
+}
+
+// Bold styling for specific columns
+.bold-amount {
+  font-weight: bold !important;
+}
+
+.bold-age {
+  font-weight: bold !important;
+}
+
+.bold-status {
+  font-weight: bold !important;
+}

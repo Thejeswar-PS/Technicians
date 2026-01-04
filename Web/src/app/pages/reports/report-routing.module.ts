@@ -13,6 +13,7 @@ import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-in
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
 import { PartsSearchComponent } from './parts-search/parts-search.component';
+import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
 
 const routes: Routes = [
   {
@@ -75,6 +76,10 @@ const routes: Routes = [
   {
     path: 'parts-search',
     component: PartsSearchComponent
+  },
+  {
+    path: 'acc-mgr-performance-report',
+    component: AccMgrPerformanceReportComponent
   }
 ];
 

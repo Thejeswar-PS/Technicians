@@ -47,6 +47,13 @@ import {
   OrderRequestStatusResponse 
 } from '../model/order-request-status.model';
 import { 
+  AccMgrPerformanceReportResponseDto,
+  AccMgrPerformanceReportSummaryDto,
+  AccMgrCallStatusDto,
+  AccMgrReturnedForProcessingDto,
+  AccMgrUnscheduledJobDto
+} from '../model/account-manager-performance-report.model';
+import { 
   PartsTestRequest, 
   PartsTestResponse,
   SaveUpdatePartsTestDto,
@@ -964,6 +971,143 @@ export class ReportService {
     return this.http.get<PartsSearchDataResponse>(`${this.API}/PartsSearch/search`, {
       headers: this.headers,
       params: httpParams
+    });
+  }
+
+  // Account Manager Performance Report API methods
+  /**
+   * Get comprehensive Account Manager Performance Report data for a specific office
+   */
+  getAccMgrPerformanceReport(officeId: string, roJobs: string = ''): Observable<AccMgrPerformanceReportResponseDto> {
+    const params: any = { officeId };
+    if (roJobs) {
+      params.roJobs = roJobs;
+    }
+    
+    return this.http.get<AccMgrPerformanceReportResponseDto>(`${this.API}/AccMgrPerformanceReport/report`, {
+      params,
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Get Account Manager Performance Report summary statistics (calculated client-side)
+   */
+  getAccMgrPerformanceReportSummary(officeId: string, roJobs: string = ''): Observable<AccMgrPerformanceReportSummaryDto> {
+    return this.getAccMgrPerformanceReport(officeId, roJobs).pipe(
+      map(data => ({
+        completedNotReturnedCount: data.completedNotReturned.length,
+        returnedForProcessingCount: data.returnedForProcessing.length,
+        jobsScheduledTodayCount: data.jobsScheduledToday.length,
+        jobsConfirmedNext120HoursCount: data.jobsConfirmedNext120Hours.length,
+        returnedWithIncompleteDataCount: data.returnedWithIncompleteData.length,
+        pastDueUnscheduledCount: data.pastDueUnscheduled.length,
+        monthlyScheduledCounts: {
+          'FirstMonth': data.firstMonth.length,
+          'SecondMonth': data.secondMonth.length,
+          'ThirdMonth': data.thirdMonth.length,
+          'FourthMonth': data.fourthMonth.length,
+          'FifthMonth': data.fifthMonth.length
+        },
+        totalJobs: data.completedNotReturned.length + 
+                  data.returnedForProcessing.length + 
+                  data.jobsScheduledToday.length + 
+                  data.jobsConfirmedNext120Hours.length + 
+                  data.returnedWithIncompleteData.length + 
+                  data.pastDueUnscheduled.length + 
+                  data.firstMonth.length + 
+                  data.secondMonth.length + 
+                  data.thirdMonth.length + 
+                  data.fourthMonth.length + 
+                  data.fifthMonth.length,
+        officeId: officeId,
+        roJobsFilter: roJobs,
+        generatedAt: new Date().toISOString()
+      }))
+    );
+  }
+
+  /**
+   * Get completed jobs not returned from technician
+   */
+  getCompletedNotReturned(officeId: string, roJobs: string = ''): Observable<AccMgrCallStatusDto[]> {
+    const params: any = { officeId };
+    if (roJobs) {
+      params.roJobs = roJobs;
+    }
+    
+    return this.http.get<AccMgrCallStatusDto[]>(`${this.API}/AccMgrPerformanceReport/completed-not-returned`, {
+      params,
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Get jobs returned from technician for processing by account manager
+   */
+  getReturnedForProcessing(officeId: string, roJobs: string = ''): Observable<AccMgrReturnedForProcessingDto[]> {
+    const params: any = { officeId };
+    if (roJobs) {
+      params.roJobs = roJobs;
+    }
+    
+    return this.http.get<AccMgrReturnedForProcessingDto[]>(`${this.API}/AccMgrPerformanceReport/returned-for-processing`, {
+      params,
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Get jobs scheduled today
+   */
+  getJobsScheduledToday(officeId: string, roJobs: string = ''): Observable<AccMgrReturnedForProcessingDto[]> {
+    const params: any = { officeId };
+    if (roJobs) {
+      params.roJobs = roJobs;
+    }
+    
+    return this.http.get<AccMgrReturnedForProcessingDto[]>(`${this.API}/AccMgrPerformanceReport/jobs-today`, {
+      params,
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Get jobs confirmed for next 120 hours
+   */
+  getJobsConfirmedNext120Hours(officeId: string, roJobs: string = ''): Observable<AccMgrReturnedForProcessingDto[]> {
+    const params: any = { officeId };
+    if (roJobs) {
+      params.roJobs = roJobs;
+    }
+    
+    return this.http.get<AccMgrReturnedForProcessingDto[]>(`${this.API}/AccMgrPerformanceReport/confirmed-next-120-hours`, {
+      params,
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Get past due unscheduled jobs
+   */
+  getPastDueUnscheduled(officeId: string, roJobs: string = ''): Observable<AccMgrUnscheduledJobDto[]> {
+    const params: any = { officeId };
+    if (roJobs) {
+      params.roJobs = roJobs;
+    }
+    
+    return this.http.get<AccMgrUnscheduledJobDto[]>(`${this.API}/AccMgrPerformanceReport/past-due-unscheduled`, {
+      params,
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Health check endpoint for Account Manager Performance Report
+   */
+  accMgrPerformanceReportHealthCheck(): Observable<string> {
+    return this.http.get<string>(`${this.API}/AccMgrPerformanceReport/health`, {
+      headers: this.headers
     });
   }
 }

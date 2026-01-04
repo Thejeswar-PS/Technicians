@@ -824,6 +824,8 @@ namespace Technicians.Api.Repositories
 }
 
 
+//old code below
+
 //using Dapper;
 //using Microsoft.Data.SqlClient;
 //using System.Data;

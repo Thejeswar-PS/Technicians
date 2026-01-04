@@ -12,6 +12,7 @@ import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.compon
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
+import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
 
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
@@ -36,7 +37,8 @@ import { SharedModule } from '../../components/shared/shared.module';
     StrippedUnitInfoComponent,
     StrippedPartsInunitComponent,
     DcgDisplayReportDetailsComponent,
-    PartsSearchComponent
+    PartsSearchComponent,
+    AccMgrPerformanceReportComponent
   ],
   imports: [
     CommonModule,

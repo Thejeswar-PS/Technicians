@@ -900,10 +900,12 @@ namespace Technicians.Api.Controllers
                 Service = "DisplayCallsDetailController"
             });
         }
-
-        #endregion
     }
+    #endregion
 }
+
+
+///old code below
 //    public class NewDisplayCallsDetailController : ControllerBase
 //    {
 //        private readonly NewDisplayCallsDetailRepository _repository;
