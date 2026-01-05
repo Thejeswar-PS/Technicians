@@ -1,495 +1,356 @@
 <div class="d-flex flex-column flex-lg-row">
   <div class="flex-column flex-lg-row-auto w-100">
-    <div class="card mb-5 mb-xl-10">
-      <!-- Header -->
-      <div class="card-header border-0 pt-5">
-        <h3 class="card-title align-items-start flex-column">
-          <span class="card-label fw-bolder fs-3 mb-1">Account Manager Performance Report</span>
-          <span class="text-muted mt-1 fw-bold fs-7">Comprehensive performance analytics for account managers</span>
-        </h3>
-        <div class="card-toolbar">
+    <!-- Modern Header Card -->
+    <div class="performance-card mb-4">
+      <div class="report-header">
+        <h1 class="report-title text-center text-white">Account Manager Performance Dashboard</h1>
+        <div class="position-absolute top-0 end-0 p-3" *ngIf="reportData">
           <button 
             type="button" 
-            class="btn btn-sm btn-light-primary"
-            (click)="clearReport()"
-            *ngIf="reportData">
-            <span class="svg-icon svg-icon-2">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M14.5 20.7259C14.6 21.2259 14.2 21.7259 13.7 21.7259C13.2 21.7259 12.7 21.2259 12.8 20.7259L13.4 17.7259H8.00001C7.90001 17.7259 7.80001 17.6259 7.80001 17.5259L7.90001 16.7259C7.90001 16.6259 8.00001 16.5259 8.10001 16.5259H13.6L14.2 13.5259H8.70001C8.60001 13.5259 8.50001 13.4259 8.50001 13.3259L8.60001 12.5259C8.60001 12.4259 8.70001 12.3259 8.80001 12.3259H14.4L15 9.32592C15.1 8.82592 14.7 8.32592 14.2 8.32592C13.7 8.32592 13.2 8.82592 13.3 9.32592L12.9 11.3259H9.90001L10.5 8.32592C10.6 7.82592 10.2 7.32592 9.70001 7.32592C9.20001 7.32592 8.70001 7.82592 8.80001 8.32592L9.2 10.3259H5.80001C5.70001 10.3259 5.60001 10.4259 5.60001 10.5259L5.70001 11.3259C5.70001 11.4259 5.80001 11.5259 5.90001 11.5259H9.4L8.80001 14.5259H5.40001C5.30001 14.5259 5.20001 14.6259 5.20001 14.7259L5.30001 15.5259C5.30001 15.6259 5.40001 15.7259 5.50001 15.7259H8.6L8 18.7259C7.9 19.2259 8.3 19.7259 8.8 19.7259C9.3 19.7259 9.8 19.2259 9.7 18.7259L10.1 16.7259H13.1L12.5 19.7259C12.4 20.2259 12.8 20.7259 13.3 20.7259C13.8 20.7259 14.3 20.2259 14.2 19.7259L14.6 17.7259H18C18.1 17.7259 18.2 17.6259 18.2 17.5259L18.1 16.7259C18.1 16.6259 18 16.5259 17.9 16.5259H14.8L15.4 13.5259H18.8C18.9 13.5259 19 13.4259 19 13.3259L18.9 12.5259C18.9 12.4259 18.8 12.3259 18.7 12.3259H15.6L16.2 9.32592C16.3 8.82592 15.9 8.32592 15.4 8.32592C14.9 8.32592 14.4 8.82592 14.5 9.32592L14.1 11.3259H11.1L11.7 8.32592C11.8 7.82592 11.4 7.32592 10.9 7.32592C10.4 7.32592 9.90001 7.82592 10 8.32592L10.4 10.3259H7C6.9 10.3259 6.8 10.4259 6.8 10.5259L6.9 11.3259C6.9 11.4259 7 11.5259 7.1 11.5259H10.6L10 14.5259H6.6C6.5 14.5259 6.4 14.6259 6.4 14.7259L6.5 15.5259C6.5 15.6259 6.6 15.7259 6.7 15.7259H9.8L9.2 18.7259C9.1 19.2259 9.5 19.7259 10 19.7259C10.5 19.7259 11 19.2259 10.9 18.7259L11.3 16.7259H14.3L13.7 19.7259C13.6 20.2259 14 20.7259 14.5 20.7259Z" fill="currentColor"/>
-              </svg>
-            </span>
+            class="btn btn-modern btn-light"
+            (click)="clearReport()">
+            <i class="fas fa-times me-2"></i>
             Clear Report
           </button>
         </div>
       </div>
 
-      <!-- Report Generation Form -->
-      <div class="card-body pt-0">
+      <!-- Modern Report Generation Form -->
+      <div class="card-body p-4">
         <form [formGroup]="reportForm" (ngSubmit)="generateReport()">
-          <div class="row mb-6">
-            <div class="col-lg-6">
-              <label class="required fw-bold fs-6 mb-2">Office/Account Manager</label>
-              <select 
-                class="form-select form-select-solid mb-3 mb-lg-0"
-                formControlName="officeId"
-                [class.is-invalid]="hasError('officeId')"
-                [disabled]="isLoadingAccountManagers">
-                <option value="" disabled>
-                  {{ isLoadingAccountManagers ? 'Loading account managers...' : 'Select Office/Account Manager' }}
-                </option>
-                <option 
-                  *ngFor="let manager of accountManagers" 
-                  [value]="manager.OFFID || manager.empId">
-                  {{ manager.OFFNAME || manager.empName }} ({{ manager.OFFID || manager.empId }})
-                </option>
-              </select>
-              <div class="invalid-feedback" *ngIf="hasError('officeId')">
-                {{ getErrorMessage('officeId') }}
-              </div>
+          <div class="modern-form-group">
+            <label class="form-label required">Office/Account Manager</label>
+            <select 
+              class="form-select"
+              formControlName="officeId"
+              [class.is-invalid]="hasError('officeId')"
+              [disabled]="isLoadingAccountManagers">
+              <option value="" disabled>
+                {{ isLoadingAccountManagers ? 'Loading account managers...' : 'Select Office/Account Manager' }}
+              </option>
+              <option 
+                *ngFor="let manager of accountManagers" 
+                [value]="manager.OFFID || manager.empId">
+                {{ manager.OFFNAME || manager.empName }} ({{ manager.OFFID || manager.empId }})
+              </option>
+            </select>
+            <div class="invalid-feedback" *ngIf="hasError('officeId')">
+              {{ getErrorMessage('officeId') }}
             </div>
           </div>
           
-          <div class="d-flex justify-content-end">
+          <div class="d-flex justify-content-end mt-4">
             <button
               type="button"
-              class="btn btn-primary"
+              class="btn-modern btn-primary position-relative"
               [disabled]="isLoading || isLoadingAccountManagers"
               (click)="generateReport()">
-              <span class="indicator-label" *ngIf="!isLoading && !isLoadingAccountManagers">
-                <span class="svg-icon svg-icon-2">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="currentColor"/>
-                    <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="currentColor"/>
-                  </svg>
-                </span>
+              <span *ngIf="!isLoading && !isLoadingAccountManagers">
+                <i class="fas fa-chart-line me-2"></i>
                 {{ reportData ? 'Refresh Report' : 'Generate Report' }}
               </span>
-              <span class="indicator-progress" *ngIf="isLoading">
-                Please wait...
-                <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-              </span>
-              <span class="indicator-progress" *ngIf="isLoadingAccountManagers">
-                Loading Account Managers...
-                <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-              </span>
+              <div class="loading-overlay" *ngIf="isLoading || isLoadingAccountManagers">
+                <div class="spinner-modern"></div>
+              </div>
             </button>
           </div>
         </form>
 
-        <!-- Error Message -->
-        <div class="alert alert-danger mt-4" *ngIf="errorMessage">
-          <div class="alert-text">{{ errorMessage }}</div>
+        <!-- Enhanced Error Message -->
+        <div class="alert-modern alert-danger mt-4" *ngIf="errorMessage">
+          <div class="alert-text">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ errorMessage }}
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Report Results -->
-    <div class="card" *ngIf="reportData">
-      <!-- Navigation Tabs -->
-      <div class="card-header border-0 pt-5">
-        <div class="card-title">
-          <ul class="nav nav-stretch nav-line-tabs nav-line-tabs-2x border-transparent fs-5 fw-bolder">
-            <li class="nav-item mt-2">
-              <a class="nav-link text-active-primary ms-0 me-10 py-5" 
-                 [class.active]="activeSection === 'summary'"
-                 (click)="setActiveSection('summary')">
-                Summary
-              </a>
-            </li>
-            <li class="nav-item mt-2">
-              <a class="nav-link text-active-primary me-10 py-5"
-                 [class.active]="activeSection === 'completedNotReturned'"
-                 (click)="setActiveSection('completedNotReturned')">
-                Completed Not Returned ({{ (reportData.CompletedNotReturned || reportData.completedNotReturned || []).length }})
-              </a>
-            </li>
-            <li class="nav-item mt-2">
-              <a class="nav-link text-active-primary me-10 py-5"
-                 [class.active]="activeSection === 'returnedForProcessing'"
-                 (click)="setActiveSection('returnedForProcessing')">
-                Returned for Processing ({{ (reportData.ReturnedForProcessing || reportData.returnedForProcessing || []).length }})
-              </a>
-            </li>
-            <li class="nav-item mt-2">
-              <a class="nav-link text-active-primary me-10 py-5"
-                 [class.active]="activeSection === 'jobsScheduledToday'"
-                 (click)="setActiveSection('jobsScheduledToday')">
-                Scheduled Today ({{ reportData.jobsScheduledToday.length }})
-              </a>
-            </li>
-            <li class="nav-item mt-2">
-              <a class="nav-link text-active-primary me-10 py-5"
-                 [class.active]="activeSection === 'returnedWithIncompleteData'"
-                 (click)="setActiveSection('returnedWithIncompleteData')">
-                Returned with Incomplete Data ({{ reportData.returnedWithIncompleteData.length }})
-              </a>
-            </li>
-            <li class="nav-item mt-2">
-              <a class="nav-link text-active-primary me-10 py-5"
-                 [class.active]="activeSection === 'jobsConfirmedNext120Hours'"
-                 (click)="setActiveSection('jobsConfirmedNext120Hours')">
-                Customer Confirmed Next 120 Hours ({{ reportData.jobsConfirmedNext120Hours.length }})
-              </a>
-            </li>
-            <li class="nav-item mt-2">
-              <a class="nav-link text-active-primary me-10 py-5"
-                 [class.active]="activeSection === 'pastDueUnscheduled'"
-                 (click)="setActiveSection('pastDueUnscheduled')">
-                Past Due Unscheduled ({{ (reportData.PastDueUnscheduled || reportData.pastDueUnscheduled || []).length }})
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-active-primary pb-4"
-                 [class.active]="activeSection === 'firstMonth'"
-                 (click)="setActiveSection('firstMonth')">
-                January Unscheduled Jobs ({{ (reportData.FirstMonth || reportData.firstMonth || []).length }})
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-active-primary pb-4"
-                 [class.active]="activeSection === 'secondMonth'"
-                 (click)="setActiveSection('secondMonth')">
-                February Unscheduled Jobs ({{ (reportData.SecondMonth || reportData.secondMonth || []).length }})
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-active-primary pb-4"
-                 [class.active]="activeSection === 'thirdMonth'"
-                 (click)="setActiveSection('thirdMonth')">
-                March Unscheduled Jobs ({{ (reportData.ThirdMonth || reportData.thirdMonth || []).length }})
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-active-primary pb-4"
-                 [class.active]="activeSection === 'fourthMonth'"
-                 (click)="setActiveSection('fourthMonth')">
-                April Unscheduled Jobs ({{ (reportData.FourthMonth || reportData.fourthMonth || []).length }})
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link text-active-primary pb-4"
-                 [class.active]="activeSection === 'fifthMonth'"
-                 (click)="setActiveSection('fifthMonth')">
-                May Unscheduled Jobs ({{ (reportData.FifthMonth || reportData.fifthMonth || []).length }})
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div class="card-toolbar">
-          <div class="me-4">
-            <span class="badge badge-light-info fs-7">
-              Office: {{ reportData.officeId }}
-            </span>
-          </div>
-          <div class="me-4">
-            <button 
-              class="btn btn-sm btn-warning"
-              (click)="generateReport('RedOrange')"
-              [disabled]="isLoading">
-              Red/Orange Jobs Only
+    <!-- Modern Report Results -->
+    <div class="performance-card" *ngIf="reportData">
+      <!-- Modern Navigation Tabs -->
+      <div class="modern-tabs">
+        <nav>
+          <div class="nav nav-tabs" id="nav-tab" role="tablist">
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'completedNotReturned'"
+                    (click)="setActiveSection('completedNotReturned')"
+                    type="button">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Completed Not Returned
+              <span class="badge-modern badge-danger">{{ (reportData.CompletedNotReturned || reportData.completedNotReturned || []).length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'returnedForProcessing'"
+                    (click)="setActiveSection('returnedForProcessing')"
+                    type="button">
+              <i class="fas fa-redo me-2"></i>
+              Returned for Processing
+              <span class="badge-modern badge-warning">{{ (reportData.ReturnedForProcessing || reportData.returnedForProcessing || []).length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'jobsScheduledToday'"
+                    (click)="setActiveSection('jobsScheduledToday')"
+                    type="button">
+              <i class="fas fa-calendar-day me-2"></i>
+              Scheduled Today
+              <span class="badge-modern badge-info">{{ reportData.jobsScheduledToday.length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'returnedWithIncompleteData'"
+                    (click)="setActiveSection('returnedWithIncompleteData')"
+                    type="button">
+              <i class="fas fa-incomplete me-2"></i>
+              Incomplete Data
+              <span class="badge-modern badge-warning">{{ reportData.returnedWithIncompleteData.length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'jobsConfirmedNext120Hours'"
+                    (click)="setActiveSection('jobsConfirmedNext120Hours')"
+                    type="button">
+              <i class="fas fa-clock me-2"></i>
+              Confirmed Next 120H
+              <span class="badge-modern badge-success">{{ reportData.jobsConfirmedNext120Hours.length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'pastDueUnscheduled'"
+                    (click)="setActiveSection('pastDueUnscheduled')"
+                    type="button">
+              <i class="fas fa-calendar-times me-2"></i>
+              Past Due
+              <span class="badge-modern badge-danger">{{ (reportData.PastDueUnscheduled || reportData.pastDueUnscheduled || []).length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'firstMonth'"
+                    (click)="setActiveSection('firstMonth')"
+                    type="button">
+              <i class="fas fa-calendar-alt me-2"></i>
+              January
+              <span class="badge-modern badge-info">{{ (reportData.FirstMonth || reportData.firstMonth || []).length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'secondMonth'"
+                    (click)="setActiveSection('secondMonth')"
+                    type="button">
+              <i class="fas fa-calendar-alt me-2"></i>
+              February
+              <span class="badge-modern badge-info">{{ (reportData.SecondMonth || reportData.secondMonth || []).length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'thirdMonth'"
+                    (click)="setActiveSection('thirdMonth')"
+                    type="button">
+              <i class="fas fa-calendar-alt me-2"></i>
+              March
+              <span class="badge-modern badge-info">{{ (reportData.ThirdMonth || reportData.thirdMonth || []).length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'fourthMonth'"
+                    (click)="setActiveSection('fourthMonth')"
+                    type="button">
+              <i class="fas fa-calendar-alt me-2"></i>
+              April
+              <span class="badge-modern badge-info">{{ (reportData.FourthMonth || reportData.fourthMonth || []).length }}</span>
+            </button>
+            <button class="nav-link" 
+                    [class.active]="activeSection === 'fifthMonth'"
+                    (click)="setActiveSection('fifthMonth')"
+                    type="button">
+              <i class="fas fa-calendar-alt me-2"></i>
+              May
+              <span class="badge-modern badge-info">{{ (reportData.FifthMonth || reportData.fifthMonth || []).length }}</span>
             </button>
           </div>
-          <div>
-            <span class="badge badge-light-success fs-7">
-              Total Records: {{ getTotalRecords() }}
-            </span>
-          </div>
+        </nav>
+      </div>
+
+      <!-- Modern Toolbar -->
+      <div class="modern-toolbar">
+        <div class="toolbar-actions">
+          <button 
+            class="btn-modern btn-warning"
+            (click)="generateReport('RedOrange')"
+            [disabled]="isLoading">
+            <i class="fas fa-filter me-2"></i>
+            Critical Jobs Only
+          </button>
         </div>
       </div>
 
-      <!-- Report Content -->
-      <div class="card-body pt-0">
-        <!-- Summary Section -->
-        <div *ngIf="activeSection === 'summary' && summaryData" class="row g-6 g-xl-9">
-          <div class="col-sm-6 col-xl-4">
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column justify-content-between">
-                <div class="fw-bolder d-flex align-items-center fs-5">
-                  <span class="badge badge-light-primary fs-7 me-2">Completed</span>
-                  Not Returned
-                </div>
-                <div class="d-flex align-items-center">
-                  <span class="fs-1 fw-bolder text-gray-800 me-2 lh-1 ls-n2">{{ summaryData.completedNotReturnedCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-sm-6 col-xl-4">
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column justify-content-between">
-                <div class="fw-bolder d-flex align-items-center fs-5">
-                  <span class="badge badge-light-warning fs-7 me-2">Returned</span>
-                  For Processing
-                </div>
-                <div class="d-flex align-items-center">
-                  <span class="fs-1 fw-bolder text-gray-800 me-2 lh-1 ls-n2">{{ summaryData.returnedForProcessingCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-sm-6 col-xl-4">
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column justify-content-between">
-                <div class="fw-bolder d-flex align-items-center fs-5">
-                  <span class="badge badge-light-success fs-7 me-2">Scheduled</span>
-                  Today
-                </div>
-                <div class="d-flex align-items-center">
-                  <span class="fs-1 fw-bolder text-gray-800 me-2 lh-1 ls-n2">{{ summaryData.jobsScheduledTodayCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-sm-6 col-xl-4">
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column justify-content-between">
-                <div class="fw-bolder d-flex align-items-center fs-5">
-                  <span class="badge badge-light-info fs-7 me-2">Confirmed</span>
-                  Next 120 Hours
-                </div>
-                <div class="d-flex align-items-center">
-                  <span class="fs-1 fw-bolder text-gray-800 me-2 lh-1 ls-n2">{{ summaryData.jobsConfirmedNext120HoursCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-sm-6 col-xl-4">
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column justify-content-between">
-                <div class="fw-bolder d-flex align-items-center fs-5">
-                  <span class="badge badge-light-danger fs-7 me-2">Past Due</span>
-                  Unscheduled
-                </div>
-                <div class="d-flex align-items-center">
-                  <span class="fs-1 fw-bolder text-gray-800 me-2 lh-1 ls-n2">{{ summaryData.pastDueUnscheduledCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-sm-6 col-xl-4">
-            <div class="card h-100">
-              <div class="card-body d-flex flex-column justify-content-between">
-                <div class="fw-bolder d-flex align-items-center fs-5">
-                  <span class="badge badge-light-secondary fs-7 me-2">Total</span>
-                  Jobs
-                </div>
-                <div class="d-flex align-items-center">
-                  <span class="fs-1 fw-bolder text-gray-800 me-2 lh-1 ls-n2">{{ summaryData.totalJobs }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Data Tables for each section -->
-        
+      <!-- Report Content with Modern Tables -->
+      <div class="card-body p-0">        
         <!-- Completed Not Returned -->
-        <div *ngIf="activeSection === 'completedNotReturned'" class="table-responsive">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>Completed Jobs Not Returned from Technician</h4>
-            <button class="btn btn-sm btn-light-primary" (click)="exportToCSV('completedNotReturned')">
-              Export CSV
-            </button>
-          </div>
-          <table class="table table-rounded table-striped border gy-7 gs-7">
-            <thead>
-              <tr class="fw-bolder fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                <th>Call Number</th>
-                <th>Customer ID</th>
-                <th>Customer Name</th>
-                <th>Status</th>
-                <th>Technician</th>
-                <th>Job Completion Date</th>
-                <th>No Of Days Tech Holding</th>
-                <th>Description</th>
-                <th>Contract No</th>
-                <th>Quoted Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of (reportData.CompletedNotReturned || reportData.completedNotReturned)" 
-                  [class]="getRowColorClass(item, 'completedNotReturned')">
-                <td>{{ item.callNbr }}</td>
-                <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
-                <td class="status-column">
-                  <span class="badge badge-light-primary" 
-                        [class.bold-status]="getStatusText(item) === 'Bill After PM'">
-                    {{ getStatusText(item) }}
-                  </span>
-                </td>
-                <td>{{ item.techName }}</td>
-                <td>{{ formatDate(item.responseDate) }}</td>
-                <td class="age-column" [class.bold-age]="shouldBoldAge(item)">{{ item.changeAge }}</td>
-                <td>{{ item.description }}</td>
-                <td>{{ getContractNumber(item) }}</td>
-                <td class="amount-column" [class.bold-amount]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Returned for Processing -->
-        <div *ngIf="activeSection === 'returnedForProcessing'" class="table-responsive">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>Jobs Returned from Technician for Processing</h4>
-            <button class="btn btn-sm btn-light-primary" (click)="exportToCSV('returnedForProcessing')">
-              Export CSV
-            </button>
-          </div>
-          <table class="table table-rounded table-striped border gy-7 gs-7">
-            <thead>
-              <tr class="fw-bolder fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                <th>Call Number</th>
-                <th>Customer ID</th>
-                <th>Customer Name</th>
-                <th>Status</th>
-                <th>Technician</th>
-                <th>Job Scheduled On</th>
-                <th>Job Returned On</th>
-                <th>No Of Days Acc Mgr Holding</th>
-                <th>Description</th>
-                <th>Contract No</th>
-                <th>Quoted Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of (reportData.ReturnedForProcessing || reportData.returnedForProcessing)"
-                  [class]="getRowColorClass(item, 'returnedForProcessing')">
-                <td>{{ item.callNbr }}</td>
-                <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
-                <td class="status-column">
-                  <span class="badge badge-light-warning"
-                        [class.bold-status]="getStatusText(item) === 'Bill After PM'">
-                    {{ getStatusText(item) }}
-                  </span>
-                </td>
-                <td>{{ item.techName }}</td>
-                <td>{{ formatDate(item.scheduledStart) }}</td>
-                <td>{{ formatDate(item.responseDate) }}</td>
-                <td class="age-column" [class.bold-age]="shouldBoldAge(item)">{{ item.changeAge }}</td>
-                <td>{{ item.description }}</td>
-                <td>{{ getContractNumber(item) }}</td>
-                <td class="amount-column" [class.bold-amount]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Jobs Scheduled Today -->
-        <div *ngIf="activeSection === 'jobsScheduledToday'" class="table-responsive">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>Jobs Scheduled Today</h4>
-            <button class="btn btn-sm btn-light-primary" (click)="exportToCSV('jobsScheduledToday')">
-              Export CSV
-            </button>
-          </div>
-          <table class="table table-rounded table-striped border gy-7 gs-7">
-            <thead>
-              <tr class="fw-bolder fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                <th>Call Number</th>
-                <th>Customer</th>
-                <th>Job Status</th>
-                <th>Scheduled Start</th>
-                <th>Scheduled End</th>
-                <th>Tech Name</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of reportData.jobsScheduledToday">
-                <td>{{ item.callNbr }}</td>
-                <td>{{ item.custName }}</td>
-                <td><span class="badge badge-light-success">{{ item.jobStatus }}</span></td>
-                <td>{{ formatDate(item.scheduledStart) }}</td>
-                <td>{{ formatDate(item.scheduledEnd) }}</td>
-                <td>{{ item.techName }}</td>
-                <td>{{ item.description }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Past Due Unscheduled -->
-        <div *ngIf="activeSection === 'pastDueUnscheduled'" class="table-responsive">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4>Past Due Unscheduled Jobs</h4>
-            <button class="btn btn-sm btn-light-primary" (click)="exportToCSV('pastDueUnscheduled')">
-              Export CSV
-            </button>
-          </div>
-          <table class="table table-rounded table-striped border gy-7 gs-7">
-            <thead>
-              <tr class="fw-bolder fs-6 text-gray-800 border-bottom-2 border-gray-200">
-                <th>Call Number</th>
-                <th>Customer ID</th>
-                <th>Customer Name</th>
-                <th>Status</th>
-                <th>Site Contact</th>
-                <th>City</th>
-                <th>Job Due On</th>
-                <th>No Of Days</th>
-                <th>Original Age</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of (reportData.PastDueUnscheduled || reportData.pastDueUnscheduled)">
-                <td>{{ item.callNbr }}</td>
-                <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
-                <td><span class="badge badge-light-danger">{{ item.jobStatus }}</span></td>
-                <td>{{ item.siteContact }}</td>
-                <td>{{ item.city }}</td>
-                <td>{{ formatDate(item.scheduledStart) }}</td>
-                <td>{{ item.changeAge }}</td>
-                <td>{{ item.origAge }}</td>
-                <td>{{ item.description }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Returned with Incomplete Data -->
-        <div *ngIf="activeSection === 'returnedIncomplete'" class="mt-6">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="text-gray-900 fw-bolder">Returned with Incomplete Data</h5>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-light-primary" 
-              (click)="exportToCSV('returnedIncomplete')">
-              Export CSV
-            </button>
+        <div *ngIf="activeSection === 'completedNotReturned'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-exclamation-triangle text-danger me-2"></i>Completed Jobs Not Returned from Technician</h4>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm">
-              <thead class="table-dark">
+            <table class="modern-table table">
+              <thead>
                 <tr>
-                  <th>Contract No</th>
-                  <th>Date Completed</th>
-                  <th>Technician</th>
-                  <th>Customer Name</th>
-                  <th>Status</th>
-                  <th>Call Type</th>
-                  <th>Product Type</th>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-tools me-2"></i>Technician</th>
+                  <th><i class="fas fa-calendar-check me-2"></i>Job Completion Date</th>
+                  <th><i class="fas fa-clock me-2"></i>Days Tech Holding</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
+                  <th><i class="fas fa-file-contract me-2"></i>Contract No</th>
+                  <th><i class="fas fa-dollar-sign me-2"></i>Quoted Amount</th>
                 </tr>
               </thead>
               <tbody>
-                <tr 
-                  *ngFor="let item of reportData.returnedIncompleteData" 
-                  [ngClass]="getRowClass(item.jobStatus)">
-                  <td>{{ item.contnbr || item.callNbr }}</td>
-                  <td>{{ item.responseDate | date:'short' }}</td>
-                  <td>{{ item.techName }}</td>
+                <tr *ngFor="let item of (reportData.CompletedNotReturned || reportData.completedNotReturned)" 
+                    [class]="getRowColorClass(item, 'completedNotReturned')">
+                  <td class="fw-bold">{{ item.callNbr }}</td>
+                  <td>{{ item.custNmbr }}</td>
                   <td>{{ item.custName }}</td>
-                  <td>
-                    <span [ngClass]="getStatusBadgeClass(item.jobStatus)">
-                      {{ item.jobStatus }}
+                  <td class="status-column">
+                    <span class="badge-modern badge-warning" 
+                          [class.bold-status]="getStatusText(item) === 'Bill After PM'">
+                      {{ getStatusText(item) }}
                     </span>
                   </td>
-                  <td>{{ item.jobType }}</td>
-                  <td>{{ item.custClas }}</td>
+                  <td>{{ item.techName }}</td>
+                  <td>{{ formatDate(item.responseDate) }}</td>
+                  <td class="age-column" [class.bold-age]="shouldBoldAge(item)">{{ item.changeAge }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ getContractNumber(item) }}</td>
+                  <td class="amount-column" [class.bold-amount]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Returned for Processing -->
+        <div *ngIf="activeSection === 'returnedForProcessing'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-redo text-warning me-2"></i>Jobs Returned from Technician for Processing</h4>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="modern-table table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-tools me-2"></i>Technician</th>
+                  <th><i class="fas fa-calendar me-2"></i>Job Scheduled On</th>
+                  <th><i class="fas fa-calendar-check me-2"></i>Job Returned On</th>
+                  <th><i class="fas fa-clock me-2"></i>Days Acc Mgr Holding</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
+                  <th><i class="fas fa-file-contract me-2"></i>Contract No</th>
+                  <th><i class="fas fa-dollar-sign me-2"></i>Quoted Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of (reportData.ReturnedForProcessing || reportData.returnedForProcessing)"
+                    [class]="getRowColorClass(item, 'returnedForProcessing')">
+                  <td class="fw-bold">{{ item.callNbr }}</td>
+                  <td>{{ item.custNmbr }}</td>
+                  <td>{{ item.custName }}</td>
+                  <td class="status-column">
+                    <span class="badge-modern badge-warning"
+                          [class.bold-status]="getStatusText(item) === 'Bill After PM'">
+                      {{ getStatusText(item) }}
+                    </span>
+                  </td>
+                  <td>{{ item.techName }}</td>
+                  <td>{{ formatDate(item.scheduledStart) }}</td>
+                  <td>{{ formatDate(item.responseDate) }}</td>
+                  <td class="age-column" [class.bold-age]="shouldBoldAge(item)">{{ item.changeAge }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ getContractNumber(item) }}</td>
+                  <td class="amount-column" [class.bold-amount]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Jobs Scheduled Today -->
+        <div *ngIf="activeSection === 'jobsScheduledToday'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-calendar-day text-info me-2"></i>Jobs Scheduled Today</h4>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="modern-table table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Job Status</th>
+                  <th><i class="fas fa-play me-2"></i>Scheduled Start</th>
+                  <th><i class="fas fa-stop me-2"></i>Scheduled End</th>
+                  <th><i class="fas fa-tools me-2"></i>Tech Name</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of reportData.jobsScheduledToday">
+                  <td class="fw-bold">{{ item.callNbr }}</td>
+                  <td>{{ item.custName }}</td>
+                  <td><span class="badge-modern badge-success">{{ item.jobStatus }}</span></td>
+                  <td>{{ formatDate(item.scheduledStart) }}</td>
+                  <td>{{ formatDate(item.scheduledEnd) }}</td>
+                  <td>{{ item.techName }}</td>
+                  <td>{{ item.description }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Returned with Incomplete Data -->
+        <div *ngIf="activeSection === 'returnedWithIncompleteData'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-exclamation-circle text-warning me-2"></i>Returned with Incomplete Data</h4>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="modern-table table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-tools me-2"></i>Technician</th>
+                  <th><i class="fas fa-calendar-check me-2"></i>Job Completion Date</th>
+                  <th><i class="fas fa-clock me-2"></i>Days Tech Holding</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
+                  <th><i class="fas fa-file-contract me-2"></i>Contract No</th>
+                  <th><i class="fas fa-dollar-sign me-2"></i>Quoted Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of reportData.returnedWithIncompleteData"
+                    [class]="getRowColorClass(item, 'returnedWithIncompleteData')">
+                  <td class="fw-bold">{{ item.callNbr }}</td>
+                  <td>{{ item.custNmbr }}</td>
+                  <td>{{ item.custName }}</td>
+                  <td class="status-column">
+                    <span class="badge-modern badge-warning"
+                          [class.bold-status]="getStatusText(item) === 'Bill After PM'">
+                      {{ getStatusText(item) }}
+                    </span>
+                  </td>
+                  <td>{{ item.techName }}</td>
+                  <td>{{ formatDate(item.responseDate) }}</td>
+                  <td class="age-column" [class.bold-age]="shouldBoldAge(item)">{{ item.changeAge }}</td>
+                  <td>{{ item.description }}</td>
+                  <td>{{ getContractNumber(item) }}</td>
+                  <td class="amount-column" [class.bold-amount]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -497,93 +358,113 @@
         </div>
 
         <!-- Customer Confirmed Next 120 Hours -->
-        <div *ngIf="activeSection === 'customerConfirmed'" class="mt-6">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="text-gray-900 fw-bolder">Customer Confirmed Next 120 Hours</h5>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-light-primary" 
-              (click)="exportToCSV('customerConfirmed')">
-              Export CSV
-            </button>
+        <div *ngIf="activeSection === 'jobsConfirmedNext120Hours'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-clock text-success me-2"></i>Customer Confirmed Next 120 Hours</h4>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm">
-              <thead class="table-dark">
+            <table class="modern-table table">
+              <thead>
                 <tr>
-                  <th>Contract No</th>
-                  <th>Scheduled Date</th>
-                  <th>Customer Name</th>
-                  <th>Technician Assigned</th>
-                  <th>Call Type</th>
-                  <th>Priority</th>
-                  <th>Confirmation Status</th>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-calendar me-2"></i>Scheduled Date</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-tools me-2"></i>Technician Assigned</th>
+                  <th><i class="fas fa-tag me-2"></i>Call Type</th>
+                  <th><i class="fas fa-check-circle me-2"></i>Confirmation Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr 
-                  *ngFor="let item of reportData.customerConfirmedData" 
-                  [ngClass]="getRowClass(item.priority)">
-                  <td>{{ item.contractNo }}</td>
-                  <td>{{ item.scheduledDate | date:'short' }}</td>
-                  <td>{{ item.customerName }}</td>
-                  <td>{{ item.technicianAssigned }}</td>
-                  <td>{{ item.callType }}</td>
-                  <td>
-                    <span [ngClass]="getPriorityBadgeClass(item.priority)">
-                      {{ item.priority }}
-                    </span>
-                  </td>
-                  <td>{{ item.confirmationStatus }}</td>
+                <tr *ngFor="let item of reportData.jobsConfirmedNext120Hours">
+                  <td class="fw-bold">{{ item.callNbr }}</td>
+                  <td>{{ formatDate(item.scheduledStart) }}</td>
+                  <td>{{ item.custName }}</td>
+                  <td>{{ item.techName }}</td>
+                  <td>{{ item.jobType }}</td>
+                  <td><span class="badge-modern badge-success">Confirmed</span></td>
                 </tr>
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- First Month -->
-        <div *ngIf="activeSection === 'firstMonth'" class="mt-6">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="text-gray-900 fw-bolder">January Unscheduled Jobs</h5>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-light-primary" 
-              (click)="exportToCSV('firstMonth')">
-              Export CSV
-            </button>
+        <!-- Past Due Unscheduled -->
+        <div *ngIf="activeSection === 'pastDueUnscheduled'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-calendar-times text-danger me-2"></i>Past Due Unscheduled Jobs</h4>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm">
-              <thead class="table-light">
+            <table class="modern-table table">
+              <thead>
                 <tr>
-                  <th>Call Number</th>
-                  <th>Customer ID</th>
-                  <th>Customer Name</th>
-                  <th>Status</th>
-                  <th>Site Contact</th>
-                  <th>City</th>
-                  <th>Job Due On</th>
-                  <th>Current Age</th>
-                  <th>Original Age</th>
-                  <th>Description</th>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-address-card me-2"></i>Site Contact</th>
+                  <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                  <th><i class="fas fa-calendar me-2"></i>Job Due On</th>
+                  <th><i class="fas fa-clock me-2"></i>No Of Days</th>
+                  <th><i class="fas fa-history me-2"></i>Original Age</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of (reportData.PastDueUnscheduled || reportData.pastDueUnscheduled)">
+                  <td class="fw-bold">{{ item.callNbr }}</td>
+                  <td>{{ item.custNmbr }}</td>
+                  <td>{{ item.custName }}</td>
+                  <td><span class="badge-modern badge-danger">{{ item.jobStatus }}</span></td>
+                  <td>{{ item.siteContact }}</td>
+                  <td>{{ item.city }}</td>
+                  <td>{{ formatDate(item.scheduledStart) }}</td>
+                  <td>{{ item.changeAge }}</td>
+                  <td>{{ item.origAge }}</td>
+                  <td>{{ item.description }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Monthly Unscheduled Jobs (January) -->
+        <div *ngIf="activeSection === 'firstMonth'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-calendar-alt text-info me-2"></i>January Unscheduled Jobs</h4>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="modern-table table">
+              <thead>
+                <tr>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-address-card me-2"></i>Site Contact</th>
+                  <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                  <th><i class="fas fa-calendar me-2"></i>Job Due On</th>
+                  <th><i class="fas fa-clock me-2"></i>Current Age</th>
+                  <th><i class="fas fa-history me-2"></i>Original Age</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of (reportData.FirstMonth || reportData.firstMonth)"
                     [class]="getRowColorClass(item, 'firstMonth')">
-                  <td>{{ item.callNbr }}</td>
+                  <td class="fw-bold">{{ item.callNbr }}</td>
                   <td>{{ item.custNmbr }}</td>
                   <td>{{ item.custName }}</td>
-                  <td class="status-column">
-                    <span class="badge badge-light-warning"
-                          [class.bold-status]="getStatusText(item) === 'Bill After PM'">
-                      {{ getStatusText(item) }}
-                    </span>
-                  </td>
+                  <td><span class="badge-modern badge-danger">{{ item.jobStatus }}</span></td>
                   <td>{{ item.siteContact }}</td>
                   <td>{{ item.city }}</td>
                   <td>{{ formatDate(item.scheduledStart) }}</td>
-                  <td class="age-column" [class.bold-age]="shouldBoldAge(item)">{{ item.changeAge }}</td>
+                  <td>{{ item.changeAge }}</td>
                   <td>{{ item.origAge }}</td>
                   <td>{{ item.description }}</td>
                 </tr>
@@ -592,41 +473,35 @@
           </div>
         </div>
 
-        <!-- Second Month -->
-        <div *ngIf="activeSection === 'secondMonth'" class="mt-6">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="text-gray-900 fw-bolder">February Unscheduled Jobs</h5>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-light-primary" 
-              (click)="exportToCSV('secondMonth')">
-              Export CSV
-            </button>
+        <!-- Monthly Unscheduled Jobs (February) -->
+        <div *ngIf="activeSection === 'secondMonth'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-calendar-alt text-info me-2"></i>February Unscheduled Jobs</h4>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm">
-              <thead class="table-light">
+            <table class="modern-table table">
+              <thead>
                 <tr>
-                  <th>Call Number</th>
-                  <th>Customer ID</th>
-                  <th>Customer Name</th>
-                  <th>Status</th>
-                  <th>Site Contact</th>
-                  <th>City</th>
-                  <th>Job Due On</th>
-                  <th>Current Age</th>
-                  <th>Original Age</th>
-                  <th>Description</th>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-address-card me-2"></i>Site Contact</th>
+                  <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                  <th><i class="fas fa-calendar me-2"></i>Job Due On</th>
+                  <th><i class="fas fa-clock me-2"></i>Current Age</th>
+                  <th><i class="fas fa-history me-2"></i>Original Age</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of (reportData.SecondMonth || reportData.secondMonth)">
-                  <td>{{ item.callNbr }}</td>
+                  <td class="fw-bold">{{ item.callNbr }}</td>
                   <td>{{ item.custNmbr }}</td>
                   <td>{{ item.custName }}</td>
-                  <td>
-                    <span class="badge badge-light-info">{{ item.jobStatus }}</span>
-                  </td>
+                  <td><span class="badge-modern badge-danger">{{ item.jobStatus }}</span></td>
                   <td>{{ item.siteContact }}</td>
                   <td>{{ item.city }}</td>
                   <td>{{ formatDate(item.scheduledStart) }}</td>
@@ -639,41 +514,35 @@
           </div>
         </div>
 
-        <!-- Third Month -->
-        <div *ngIf="activeSection === 'thirdMonth'" class="mt-6">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="text-gray-900 fw-bolder">March Unscheduled Jobs</h5>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-light-primary" 
-              (click)="exportToCSV('thirdMonth')">
-              Export CSV
-            </button>
+        <!-- Monthly Unscheduled Jobs (March) -->
+        <div *ngIf="activeSection === 'thirdMonth'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-calendar-alt text-info me-2"></i>March Unscheduled Jobs</h4>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm">
-              <thead class="table-light">
+            <table class="modern-table table">
+              <thead>
                 <tr>
-                  <th>Call Number</th>
-                  <th>Customer ID</th>
-                  <th>Customer Name</th>
-                  <th>Status</th>
-                  <th>Site Contact</th>
-                  <th>City</th>
-                  <th>Job Due On</th>
-                  <th>Current Age</th>
-                  <th>Original Age</th>
-                  <th>Description</th>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-address-card me-2"></i>Site Contact</th>
+                  <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                  <th><i class="fas fa-calendar me-2"></i>Job Due On</th>
+                  <th><i class="fas fa-clock me-2"></i>Current Age</th>
+                  <th><i class="fas fa-history me-2"></i>Original Age</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of (reportData.ThirdMonth || reportData.thirdMonth)">
-                  <td>{{ item.callNbr }}</td>
+                  <td class="fw-bold">{{ item.callNbr }}</td>
                   <td>{{ item.custNmbr }}</td>
                   <td>{{ item.custName }}</td>
-                  <td>
-                    <span class="badge badge-light-secondary">{{ item.jobStatus }}</span>
-                  </td>
+                  <td><span class="badge-modern badge-danger">{{ item.jobStatus }}</span></td>
                   <td>{{ item.siteContact }}</td>
                   <td>{{ item.city }}</td>
                   <td>{{ formatDate(item.scheduledStart) }}</td>
@@ -686,41 +555,35 @@
           </div>
         </div>
 
-        <!-- Fourth Month -->
-        <div *ngIf="activeSection === 'fourthMonth'" class="mt-6">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="text-gray-900 fw-bolder">April Unscheduled Jobs</h5>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-light-primary" 
-              (click)="exportToCSV('fourthMonth')">
-              Export CSV
-            </button>
+        <!-- Monthly Unscheduled Jobs (April) -->
+        <div *ngIf="activeSection === 'fourthMonth'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-calendar-alt text-info me-2"></i>April Unscheduled Jobs</h4>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm">
-              <thead class="table-light">
+            <table class="modern-table table">
+              <thead>
                 <tr>
-                  <th>Call Number</th>
-                  <th>Customer ID</th>
-                  <th>Customer Name</th>
-                  <th>Status</th>
-                  <th>Site Contact</th>
-                  <th>City</th>
-                  <th>Job Due On</th>
-                  <th>Current Age</th>
-                  <th>Original Age</th>
-                  <th>Description</th>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-address-card me-2"></i>Site Contact</th>
+                  <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                  <th><i class="fas fa-calendar me-2"></i>Job Due On</th>
+                  <th><i class="fas fa-clock me-2"></i>Current Age</th>
+                  <th><i class="fas fa-history me-2"></i>Original Age</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of (reportData.FourthMonth || reportData.fourthMonth)">
-                  <td>{{ item.callNbr }}</td>
+                  <td class="fw-bold">{{ item.callNbr }}</td>
                   <td>{{ item.custNmbr }}</td>
                   <td>{{ item.custName }}</td>
-                  <td>
-                    <span class="badge badge-light-dark">{{ item.jobStatus }}</span>
-                  </td>
+                  <td><span class="badge-modern badge-danger">{{ item.jobStatus }}</span></td>
                   <td>{{ item.siteContact }}</td>
                   <td>{{ item.city }}</td>
                   <td>{{ formatDate(item.scheduledStart) }}</td>
@@ -733,41 +596,35 @@
           </div>
         </div>
 
-        <!-- Fifth Month -->
-        <div *ngIf="activeSection === 'fifthMonth'" class="mt-6">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="text-gray-900 fw-bolder">May Unscheduled Jobs</h5>
-            <button 
-              type="button" 
-              class="btn btn-sm btn-light-primary" 
-              (click)="exportToCSV('fifthMonth')">
-              Export CSV
-            </button>
+        <!-- Monthly Unscheduled Jobs (May) -->
+        <div *ngIf="activeSection === 'fifthMonth'" class="modern-table-container">
+          <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+              <h4><i class="fas fa-calendar-alt text-info me-2"></i>May Unscheduled Jobs</h4>
+            </div>
           </div>
           <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm">
-              <thead class="table-light">
+            <table class="modern-table table">
+              <thead>
                 <tr>
-                  <th>Call Number</th>
-                  <th>Customer ID</th>
-                  <th>Customer Name</th>
-                  <th>Status</th>
-                  <th>Site Contact</th>
-                  <th>City</th>
-                  <th>Job Due On</th>
-                  <th>Current Age</th>
-                  <th>Original Age</th>
-                  <th>Description</th>
+                  <th><i class="fas fa-phone me-2"></i>Call Number</th>
+                  <th><i class="fas fa-user me-2"></i>Customer ID</th>
+                  <th><i class="fas fa-building me-2"></i>Customer Name</th>
+                  <th><i class="fas fa-info-circle me-2"></i>Status</th>
+                  <th><i class="fas fa-address-card me-2"></i>Site Contact</th>
+                  <th><i class="fas fa-map-marker-alt me-2"></i>City</th>
+                  <th><i class="fas fa-calendar me-2"></i>Job Due On</th>
+                  <th><i class="fas fa-clock me-2"></i>Current Age</th>
+                  <th><i class="fas fa-history me-2"></i>Original Age</th>
+                  <th><i class="fas fa-file-text me-2"></i>Description</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of (reportData.FifthMonth || reportData.fifthMonth)">
-                  <td>{{ item.callNbr }}</td>
+                  <td class="fw-bold">{{ item.callNbr }}</td>
                   <td>{{ item.custNmbr }}</td>
                   <td>{{ item.custName }}</td>
-                  <td>
-                    <span class="badge badge-light-danger">{{ item.jobStatus }}</span>
-                  </td>
+                  <td><span class="badge-modern badge-danger">{{ item.jobStatus }}</span></td>
                   <td>{{ item.siteContact }}</td>
                   <td>{{ item.city }}</td>
                   <td>{{ formatDate(item.scheduledStart) }}</td>
@@ -780,10 +637,13 @@
           </div>
         </div>
 
-        <!-- Empty state -->
-        <div *ngIf="activeSection !== 'summary' && reportData && getActiveData().length === 0" 
-             class="text-center py-10">
-          <div class="text-gray-600 fs-4">No data available for this section</div>
+        <!-- Modern Empty State -->
+        <div *ngIf="reportData && getActiveData().length === 0" class="empty-state">
+          <div class="empty-icon">
+            <i class="fas fa-inbox"></i>
+          </div>
+          <div class="empty-title">No Data Available</div>
+          <div class="empty-subtitle">No records found for the selected section</div>
         </div>
       </div>
     </div>

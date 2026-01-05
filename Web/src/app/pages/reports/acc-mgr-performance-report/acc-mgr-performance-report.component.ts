@@ -10,8 +10,7 @@ import {
 
 @Component({
   selector: 'app-acc-mgr-performance-report',
-    templateUrl: './acc-mgr-performance-report.component.html',
-
+  templateUrl: './acc-mgr-performance-report.component.html',
   styleUrls: ['./acc-mgr-performance-report.component.scss']
 })
 export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
