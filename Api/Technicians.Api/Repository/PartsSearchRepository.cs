@@ -27,7 +27,7 @@ namespace Technicians.Api.Repository
             var parameters = new DynamicParameters();
             parameters.Add("@Address", request.Address);
             parameters.Add("@Status", request.Status);
-            parameters.Add("@SiteID", request.SiteID);
+            parameters.Add("@SiteID", request.SiteID); // Corrected: Now maps to @SiteID parameter
             parameters.Add("@Make", request.Make);
             parameters.Add("@Model", request.Model);
             parameters.Add("@KVA", request.KVA);

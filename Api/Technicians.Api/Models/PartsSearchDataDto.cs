@@ -19,21 +19,22 @@ namespace Technicians.Api.Models
 
     /// <summary>
     /// Response DTO for GetPartsSearchData stored procedure results
+    /// Matches the actual SP output columns
     /// </summary>
     public class PartsSearchDataDto
     {
         public string CallNbr { get; set; } = string.Empty;
-        public string CUSTNMBR { get; set; } = string.Empty;
+        public string CUSTNMBR { get; set; } = string.Empty; // Maps to SiteID from SP
         public string Status { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string Make { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
         public string KVA { get; set; } = string.Empty;
-        public string IOVolt { get; set; } = string.Empty; // I/OVolt column
+        public string IOVolt { get; set; } = string.Empty; // Maps to 'I/OVolt' (IPVoltage+'/'+OPVoltage)
         public string ManufPartNo { get; set; } = string.Empty;
         public string DCGPartNo { get; set; } = string.Empty;
         public string TechName { get; set; } = string.Empty;
-        public string JobType { get; set; } = string.Empty;
+        public string JobType { get; set; } = string.Empty; // Maps to SvcDescr from SP
         public DateTime? RequestedDate { get; set; }
     }
 

@@ -56,13 +56,14 @@
                 novalidate="novalidate"
                 (ngSubmit)="searchParts()">
 
-            <!-- Form Fields Section -->
+            <!-- Form Fields Section - Three Columns Layout -->
             <div class="form-fields-section">
               <div class="row g-4">
 
-                <!-- Address -->
-                <div class="col-md-6">
-                  <div class="filter-group">
+                <!-- Column 1 -->
+                <div class="col-lg-4 col-md-12">
+                  <!-- Address -->
+                  <div class="filter-group mb-3">
                     <label class="filter-label">
                       <i class="bi bi-geo-alt me-1"></i>
                       Address
@@ -70,20 +71,65 @@
                     <input 
                       type="text" 
                       class="form-control modern-input" 
+                      style="max-width: 300px;"
                       formControlName="address"
                       placeholder="Enter address">
                   </div>
+
+                  <!-- Make -->
+                  <div class="filter-group mb-3">
+                    <label class="filter-label">
+                      <i class="bi bi-tag me-1"></i>
+                      Make
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control modern-input" 
+                      style="max-width: 300px;"
+                      formControlName="make"
+                      placeholder="Enter make">
+                  </div>
+
+                  <!-- Site ID -->
+                  <div class="filter-group mb-3">
+                    <label class="filter-label">
+                      <i class="bi bi-building me-1"></i>
+                      Site ID
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control modern-input" 
+                      style="max-width: 300px;"
+                      formControlName="siteID"
+                      placeholder="Enter site ID">
+                  </div>
+
+                  <!-- Manuf Part No -->
+                  <div class="filter-group mb-3">
+                    <label class="filter-label">
+                      <i class="bi bi-wrench me-1"></i>
+                      Manuf Part No
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control modern-input" 
+                      style="max-width: 300px;"
+                      formControlName="manufPartNo"
+                      placeholder="Enter manufacturer part number">
+                  </div>
                 </div>
 
-                <!-- Status -->
-                <div class="col-md-6">
-                  <div class="filter-group">
+                <!-- Column 2 -->
+                <div class="col-lg-4 col-md-12">
+                  <!-- Status -->
+                  <div class="filter-group mb-3">
                     <label class="filter-label">
                       <i class="bi bi-flag me-1"></i>
                       Status
                     </label>
                     <select 
                       class="form-select modern-select" 
+                      style="max-width: 300px;"
                       formControlName="status">
                       <option value="">All</option>
                       <option value="Initiated">Initiated</option>
@@ -97,26 +143,9 @@
                       <option value="Canceled">Canceled</option>
                     </select>
                   </div>
-                </div>
 
-                <!-- Make -->
-                <div class="col-md-6">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-tag me-1"></i>
-                      Make
-                    </label>
-                    <input 
-                      type="text" 
-                      class="form-control modern-input" 
-                      formControlName="make"
-                      placeholder="Enter make">
-                  </div>
-                </div>
-
-                <!-- Model -->
-                <div class="col-md-6">
-                  <div class="filter-group">
+                  <!-- Model -->
+                  <div class="filter-group mb-3">
                     <label class="filter-label">
                       <i class="bi bi-cpu me-1"></i>
                       Model
@@ -124,44 +153,13 @@
                     <input 
                       type="text" 
                       class="form-control modern-input" 
+                      style="max-width: 300px;"
                       formControlName="model"
                       placeholder="Enter model">
                   </div>
-                </div>
 
-                <!-- KVA -->
-                <div class="col-md-6">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-lightning me-1"></i>
-                      KVA
-                    </label>
-                    <input 
-                      type="text" 
-                      class="form-control modern-input" 
-                      formControlName="kva"
-                      placeholder="Enter KVA">
-                  </div>
-                </div>
-
-                <!-- Site ID -->
-                <div class="col-md-6">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-building me-1"></i>
-                      Site ID
-                    </label>
-                    <input 
-                      type="text" 
-                      class="form-control modern-input" 
-                      formControlName="siteID"
-                      placeholder="Enter site ID">
-                  </div>
-                </div>
-
-                <!-- I/P Voltage -->
-                <div class="col-md-6">
-                  <div class="filter-group">
+                  <!-- I/P Voltage -->
+                  <div class="filter-group mb-3">
                     <label class="filter-label">
                       <i class="bi bi-outlet me-1"></i>
                       I/P Voltage
@@ -169,44 +167,13 @@
                     <input 
                       type="text" 
                       class="form-control modern-input" 
+                      style="max-width: 300px;"
                       formControlName="ipVoltage"
                       placeholder="Enter input voltage">
                   </div>
-                </div>
 
-                <!-- O/P Voltage -->
-                <div class="col-md-6">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-plug me-1"></i>
-                      O/P Voltage
-                    </label>
-                    <input 
-                      type="text" 
-                      class="form-control modern-input" 
-                      formControlName="opVoltage"
-                      placeholder="Enter output voltage">
-                  </div>
-                </div>
-
-                <!-- Manuf Part No -->
-                <div class="col-md-6">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-wrench me-1"></i>
-                      Manuf Part No
-                    </label>
-                    <input 
-                      type="text" 
-                      class="form-control modern-input" 
-                      formControlName="manufPartNo"
-                      placeholder="Enter manufacturer part number">
-                  </div>
-                </div>
-
-                <!-- DCG Part No -->
-                <div class="col-md-6">
-                  <div class="filter-group">
+                  <!-- DCG Part No -->
+                  <div class="filter-group mb-3">
                     <label class="filter-label">
                       <i class="bi bi-hash me-1"></i>
                       DCG Part No
@@ -214,29 +181,74 @@
                     <input 
                       type="text" 
                       class="form-control modern-input" 
+                      style="max-width: 300px;"
                       formControlName="dcgPartNo"
                       placeholder="Enter DCG part number">
                   </div>
                 </div>
 
-              </div>
-            </div>
+                <!-- Column 3 -->
+                <div class="col-lg-4 col-md-12">
+                  <!-- KVA -->
+                  <div class="filter-group mb-3">
+                    <label class="filter-label">
+                      <i class="bi bi-lightning me-1"></i>
+                      KVA
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control modern-input" 
+                      style="max-width: 300px;"
+                      formControlName="kva"
+                      placeholder="Enter KVA">
+                  </div>
 
-            <!-- Action Buttons -->
-            <div class="d-flex justify-content-start gap-3 mt-4 mb-3">
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                [disabled]="isLoading">
-                <span *ngIf="isLoading" class="indicator-label">
-                  <span class="spinner-border spinner-border-sm align-middle me-2"></span>
-                  Searching...
-                </span>
-                <span *ngIf="!isLoading" class="indicator-label">
-                  <i class="bi bi-search me-2"></i>
-                  Search Parts
-                </span>
-              </button>
+                  <!-- O/P Voltage -->
+                  <div class="filter-group mb-3">
+                    <label class="filter-label">
+                      <i class="bi bi-plug me-1"></i>
+                      O/P Voltage
+                    </label>
+                    <input 
+                      type="text" 
+                      class="form-control modern-input" 
+                      style="max-width: 300px;"
+                      formControlName="opVoltage"
+                      placeholder="Enter output voltage">
+                  </div>
+
+                  <!-- Action Buttons - Positioned in Column 3 -->
+                  <div class="filter-group mb-3">
+                    <label class="filter-label d-block mb-2">&nbsp;</label>
+                    <button 
+                      type="submit" 
+                      class="btn btn-primary"
+                      style="max-width: 300px; width: 100%;"
+                      [disabled]="isLoading">
+                      <span *ngIf="isLoading" class="indicator-label">
+                        <span class="spinner-border spinner-border-sm align-middle me-2"></span>
+                        Searching...
+                      </span>
+                      <span *ngIf="!isLoading" class="indicator-label">
+                        <i class="bi bi-search me-2"></i>
+                        Search Parts
+                      </span>
+                    </button>
+                  </div>
+
+                  <div class="filter-group mb-3">
+                    <button 
+                      type="button" 
+                      class="btn btn-outline-secondary"
+                      style="max-width: 300px; width: 100%;"
+                      (click)="clearFilters()">
+                      <i class="bi bi-arrow-clockwise me-2"></i>
+                      Clear Filters
+                    </button>
+                  </div>
+                </div>
+
+              </div>
             </div>
 
           </form>
@@ -332,7 +344,9 @@
                       {{ item.callNbr }}
                     </a>
                   </td>
-                  <td class="table-cell-small">{{ item.custNmbr }}</td>
+                  <td class="table-cell-small">
+                    <span class="fw-bold text-dark">{{ item.custnmbr || '—' }}</span>
+                  </td>
                   <td class="table-cell-small">
                     <span class="badge badge-small" [ngClass]="getStatusBadgeClass(item.status)">
                       {{ item.status }}

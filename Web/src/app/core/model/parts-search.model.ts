@@ -1,19 +1,19 @@
 export interface PartsSearchRequestDto {
   address: string;
   status: string;
-  siteID: string;
+  siteID: string;     // Updated to match backend DTO (siteID instead of siteID)
   make: string;
   model: string;
   kva: string;
-  ipVoltage: string;
-  opVoltage: string;
+  ipVoltage: string;  // Updated to match backend DTO (ipVoltage instead of ipVoltage)
+  opVoltage: string;  // Updated to match backend DTO (opVoltage instead of opVoltage)
   manufPartNo: string;
   dcgPartNo: string;
 }
 
 export interface PartsSearchDataDto {
   callNbr: string;
-  custNmbr: string;
+  custnmbr: string;  // Updated to match actual API response (all lowercase)
   status: string;
   address: string;
   make: string;

@@ -275,7 +275,7 @@ export class PartsSearchComponent implements OnInit, OnDestroy {
       headers.join(','),
       ...this.filteredPartsSearchData.map(item => [
         item.callNbr,
-        item.custNmbr,
+        item.custnmbr,
         item.status,
         `"${item.address}"`,
         item.make,
@@ -331,19 +331,23 @@ export class PartsSearchComponent implements OnInit, OnDestroy {
       case 'initiated':
       case 'submitted':
       case 'delivered':
-        return 'success';
+        return 'badge-light-success';
       case 'canceled':
-        return 'danger';
+        return 'badge-light-danger';
       case 'needs attention':
       case 'staging':
-        return 'warning';
+        return 'badge-light-warning';
       case 'shipped':
       case 'inassembly':
       case 'orderedtrackingreq':
-        return 'info';
+        return 'badge-light-info';
       default:
-        return 'secondary';
+        return 'badge-light-secondary';
     }
+  }
+
+  getObjectKeys(obj: any): string {
+    return Object.keys(obj).join(', ');
   }
 
   onJobIdClick(callNbr: string, techName: string): void {

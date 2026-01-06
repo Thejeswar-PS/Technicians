@@ -157,13 +157,14 @@
     .modern-select {
       border: 2px solid #e9ecef;
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       background: white;
       font-weight: 500;
-      font-size: 0.8rem;
+      font-size: 0.875rem;
+      color: #000000;
       line-height: 1.4;
       transition: all 0.3s ease;
-      min-height: 36px;
+      min-height: 40px;
       
       &:focus {
         border-color: #5486ff;
@@ -175,7 +176,7 @@
       &::placeholder {
         color: #9ca3af;
         font-weight: 400;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
       }
     }
     
@@ -259,24 +260,30 @@
   }
   
   .table-cell-small {
-    padding: 6px 12px !important;
+    padding: 8px 12px !important;
     vertical-align: middle;
     border-bottom: 1px solid #e9ecef;
     text-align: left;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    color: #000000 !important;
     
     .job-link-small {
-      font-size: 0.7rem;
+      font-size: 0.875rem !important;
       font-weight: 600;
       padding-left: 2px;
+      color: #000000 !important;
       
       &:hover {
         text-decoration: underline !important;
+        color: #333333 !important;
       }
     }
     
     .badge-small {
-      font-size: 0.65rem;
-      padding: 3px 6px;
+      font-size: 0.75rem !important;
+      padding: 4px 8px !important;
+      font-weight: 600 !important;
     }
   }
 }
@@ -577,11 +584,13 @@
 
 // Form control improvements
 .form-control, .form-select {
-  font-size: 0.8rem !important;
-  padding: 8px 12px !important;
+  font-size: 0.875rem !important;
+  color: #000000 !important;
+  font-weight: 500 !important;
+  padding: 10px 14px !important;
   border-radius: 6px !important;
   border: 2px solid #e9ecef !important;
-  min-height: 36px !important;
+  min-height: 40px !important;
   transition: all 0.3s ease !important;
   
   &:focus {
@@ -590,7 +599,7 @@
   }
   
   &::placeholder {
-    font-size: 0.75rem !important;
+    font-size: 0.8rem !important;
     color: #9ca3af !important;
   }
 }
