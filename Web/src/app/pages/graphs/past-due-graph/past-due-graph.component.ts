@@ -70,9 +70,9 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
   callStatusByAgeChartOptions: Partial<ChartOptions> = {};
 
   // Default chart configurations for fallbacks
-  defaultBarChart: ApexChart = { type: 'bar', height: 350 };
-  defaultPieChart: ApexChart = { type: 'pie', height: 350 };
-  defaultLineChart: ApexChart = { type: 'line', height: 350 };
+  defaultBarChart: ApexChart = { type: 'bar', height: 250 };
+  defaultPieChart: ApexChart = { type: 'pie', height: 250 };
+  defaultLineChart: ApexChart = { type: 'line', height: 250 };
 
   // Table pagination
   currentPage = 1;
@@ -152,14 +152,41 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
     this.setupSummaryChart();
     this.setupScheduledPercentageChart();
     this.setupJobsComparisonChart();
-    this.setupCallStatusByAgeChart();
   }
 
   /**
    * Setup past due jobs summary chart
    */
+  /**
+   * Break long names into 2 lines for better display and clean up text
+   */
+  private formatLongNames(names: string[]): string[] {
+    return names.map(name => {
+      // Clean up the name by removing "DCG" prefix
+      let cleanName = name;
+      if (name && name.startsWith('DCG ')) {
+        cleanName = name.substring(4); // Remove "DCG " from the beginning
+      }
+      
+      if (cleanName && cleanName.length > 8) { // Lowered threshold from 12 to 8
+        const words = cleanName.split(' ');
+        if (words.length > 1) {
+          const mid = Math.ceil(words.length / 2);
+          const firstLine = words.slice(0, mid).join(' ');
+          const secondLine = words.slice(mid).join(' ');
+          return `${firstLine}\n${secondLine}`;
+        } else {
+          const mid = Math.ceil(cleanName.length / 2);
+          return `${cleanName.substring(0, mid)}\n${cleanName.substring(mid)}`;
+        }
+      }
+      return cleanName;
+    });
+  }
+
   private setupSummaryChart(): void {
-    const categories = this.summaryData.map(item => item.accMgr);
+    const originalCategories = this.summaryData.map(item => item.accMgr);
+    const categories = this.formatLongNames(originalCategories);
     const pastDueData = this.summaryData.map(item => item.pastDueJobs);
     const billableData = this.summaryData.map(item => item.couldBeBilled);
 
@@ -170,10 +197,14 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
       ],
       chart: {
         type: 'bar',
-        height: 600,
+        height: 500,
         toolbar: { show: true },
         fontFamily: 'Inter, sans-serif',
-        foreColor: '#000000'
+        foreColor: '#000000',
+        offsetY: 0,
+        sparkline: {
+          enabled: false
+        }
       },
       plotOptions: {
         bar: {
@@ -189,22 +220,117 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
       dataLabels: {
         enabled: true,
         formatter: function (val: any, opts: any) {
-          return val > 0 ? val : '';
+          return val.toString();
         },
         style: {
-          fontSize: '12px',
+          fontSize: '10px',
           fontFamily: 'Inter, sans-serif',
+          fontWeight: '500',
+          colors: ['#ec4899']
+        },
+        background: {
+          enabled: true,
+          foreColor: '#ffffff',
+          borderRadius: 4,
+          padding: 2,
+          opacity: 0.8,
+          borderWidth: 1,
+          borderColor: '#e5e7eb'
+        },
+        offsetY: -5
+      },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: ['transparent']
+      },
+      xaxis: {
+        categories: categories,
+        title: { text: '' },
+        labels: {
+          rotate: -45,
+          style: {
+            fontSize: '10px',
+            fontWeight: '500'
+          },
+          trim: false,
+          maxHeight: 180,
+          offsetY: 0,
+          hideOverlappingLabels: false
+        }
+      },
+      yaxis: {
+        title: { text: 'Number of Jobs' }
+      },
+      title: {
+        text: 'Past Due/ Bill After PM Unscheduled Jobs by Account Manager',
+        align: 'center',
+        style: {
+          fontSize: '18px',
           fontWeight: '700',
+          fontFamily: 'Inter, sans-serif',
+          color: '#1f2937'
+        }
+      },
+      colors: ['#f64aa3ff', '#ec4899'],
+      legend: {
+        position: 'top'
+      }
+    };
+  }
+
+  /**
+   * Setup scheduled percentage chart as bar chart
+   */
+  private setupScheduledPercentageChart(): void {
+    const originalOffices = this.scheduledPercentageData.map(item => item.offId);
+    const offices = this.formatLongNames(originalOffices);
+    const percentages = this.scheduledPercentageData.map(item => item.scheduledPercentage);
+
+    this.scheduledPercentageChartOptions = {
+      series: [
+        { name: 'Scheduled Percentage', data: percentages }
+      ],
+      chart: {
+        type: 'bar',
+        height: 400,
+        toolbar: { show: true },
+        fontFamily: 'Inter, sans-serif',
+        foreColor: '#000000'
+      },
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: '70%',
+          borderRadius: 8,
+          dataLabels: {
+            position: 'top'
+          },
+          distributed: true
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: function (val: any) {
+          if (val === 0) {
+            return '0';
+          }
+          return val.toFixed(1) + '%';
+        },
+        style: {
+          fontSize: '10px',
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: '600',
           colors: ['#ffffff']
         },
         background: {
           enabled: true,
-          foreColor: '#ec4899',
+          foreColor: '#10b981',
           borderRadius: 8,
           padding: 6,
           opacity: 0.95,
           borderWidth: 1,
-          borderColor: '#f472b6',
+          borderColor: '#34d399',
           dropShadow: {
             enabled: true,
             top: 1,
@@ -222,59 +348,44 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
         colors: ['transparent']
       },
       xaxis: {
-        categories: categories,
-        title: { text: 'Account Managers' }
+        categories: offices,
+        title: { text: '' },
+        labels: {
+          rotate: -45,
+          style: {
+            fontSize: '10px',
+            fontWeight: '500'
+          },
+          trim: false,
+          maxHeight: 160,
+          offsetY: 0,
+          hideOverlappingLabels: false
+        }
       },
       yaxis: {
-        title: { text: 'Number of Jobs' }
+        title: { text: 'Scheduled Percentage (%)' },
+        max: 100,
+        labels: {
+          formatter: function (val: number) {
+            return val.toFixed(0) + '%';
+          }
+        }
       },
       title: {
-        text: 'Past Due Jobs Summary by Account Manager'
-      },
-      colors: ['#f64aa3ff', '#ec4899'],
-      legend: {
-        position: 'top'
-      }
-    };
-  }
-
-  /**
-   * Setup scheduled percentage chart
-   */
-  private setupScheduledPercentageChart(): void {
-    const offices = this.scheduledPercentageData.map(item => item.offId);
-    const percentages = this.scheduledPercentageData.map(item => item.scheduledPercentage);
-
-    this.scheduledPercentageChartOptions = {
-      series: percentages,
-      chart: {
-        type: 'pie',
-        height: 450
-      },
-      labels: offices,
-      title: {
-        text: 'Scheduled Percentage by Office'
+        text: ''
       },
       colors: [
-        getCSSVariableValue('--bs-primary'),
-        getCSSVariableValue('--bs-success'),
-        getCSSVariableValue('--bs-warning'),
-        getCSSVariableValue('--bs-info'),
-        getCSSVariableValue('--bs-secondary')
+        '#f472b6', '#ec4899', '#db2777', '#be185d', '#9d174d',
+        '#831843', '#701a75', '#581c87', '#4c1d95', '#3730a3'
       ],
       legend: {
-        position: 'bottom'
+        show: false
       },
-      dataLabels: {
-        enabled: true,
-        style: {
-          fontSize: '14px',
-          fontWeight: 'bold'
-        },
-        formatter: function (val: any, opts: any) {
-          const percentage = val.toFixed(1);
-          const value = opts.w.config.series[opts.seriesIndex];
-          return percentage + '%\n(' + value.toFixed(1) + ')';
+      tooltip: {
+        y: {
+          formatter: function(value: number) {
+            return value.toFixed(1) + '%';
+          }
         }
       }
     };
@@ -284,17 +395,19 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
    * Setup jobs comparison chart (scheduled vs unscheduled)
    */
   private setupJobsComparisonChart(): void {
-    const offices = [...new Set([
+    const originalOffices = [...new Set([
       ...this.scheduledJobsData.map(item => item.offId),
       ...this.unscheduledJobsData.map(item => item.offId)
     ])];
 
-    const scheduledData = offices.map(office => {
+    const offices = this.formatLongNames(originalOffices);
+
+    const scheduledData = originalOffices.map(office => {
       const item = this.scheduledJobsData.find(x => x.offId === office);
       return item ? item.totalJobs : 0;
     });
 
-    const unscheduledData = offices.map(office => {
+    const unscheduledData = originalOffices.map(office => {
       const item = this.unscheduledJobsData.find(x => x.offId === office);
       return item ? item.totalJobs : 0;
     });
@@ -306,18 +419,19 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
       ],
       chart: {
         type: 'bar',
-        height: 800,
-        stacked: true,
+        height: 450,
+        stacked: false,
         fontFamily: 'Inter, sans-serif',
-        foreColor: '#000000'
+        foreColor: '#000000',
+        toolbar: { show: true }
       },
       plotOptions: {
         bar: {
-          horizontal: true,
-          columnWidth: '90%',
+          horizontal: false,
+          columnWidth: '70%',
           borderRadius: 8,
           dataLabels: {
-            position: 'center'
+            position: 'top'
           },
           distributed: false
         }
@@ -325,21 +439,52 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
       dataLabels: {
         enabled: true,
         formatter: function (val: number, opts: any) {
-          return val > 0 ? val.toString() : '';
+          return val.toString();
         },
         style: {
           fontSize: '10px',
           fontFamily: 'Inter, sans-serif',
-          fontWeight: '600',
-          colors: ['#ffffff']
+          fontWeight: '500',
+          colors: ['#f97316']
         },
         background: {
-          enabled: false
+          enabled: true,
+          foreColor: '#ffffff',
+          borderRadius: 4,
+          padding: 2,
+          opacity: 0.8,
+          borderWidth: 1,
+          borderColor: '#e5e7eb'
         },
-        offsetX: 0
+        offsetY: -5
+      },
+      stroke: {
+        show: true,
+        width: 2,
+        colors: ['transparent']
       },
       xaxis: {
         categories: offices,
+        title: { 
+          text: '',
+          style: {
+            fontSize: '14px',
+            fontWeight: '600'
+          }
+        },
+        labels: {
+          style: {
+            fontSize: '10px',
+            fontWeight: '500'
+          },
+          rotate: -45,
+          trim: false,
+          maxHeight: 180,
+          offsetY: 0,
+          hideOverlappingLabels: false
+        }
+      },
+      yaxis: {
         title: { 
           text: 'Number of Jobs',
           style: {
@@ -351,31 +496,18 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
           style: {
             fontSize: '12px',
             fontWeight: '500'
-          }
-        }
-      },
-      yaxis: {
-        title: { 
-          text: 'Offices',
-          style: {
-            fontSize: '14px',
-            fontWeight: '600'
-          }
-        },
-        labels: {
-          style: {
-            fontSize: '11px',
-            fontWeight: '500'
           },
-          maxWidth: 120
+          formatter: function (val: number) {
+            return Math.floor(val).toString();
+          }
         }
       },
       title: {
-        text: 'Scheduled vs Unscheduled Jobs by Office'
+        text: ''
       },
-      colors: ['#f472b6', '#fbbf24'],
+      colors: ['#f97316'],
       legend: {
-        position: 'top'
+        show: false
       }
     };
   }
@@ -401,7 +533,7 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
       ],
       chart: {
         type: 'line',
-        height: 350
+        height: 300
       },
       xaxis: {
         categories: ageRanges,

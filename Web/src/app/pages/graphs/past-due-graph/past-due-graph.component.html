@@ -13,10 +13,8 @@
           Past Due Jobs Analytics Dashboard
         </span>
         <span class="text-muted fw-bold fs-5 d-flex align-items-center justify-content-center">
-          <span class="badge badge-light-danger me-2" *ngIf="!isLoading && !error">Live Data</span>
           <span class="badge badge-light-warning me-2" *ngIf="isLoading">Loading...</span>
           <span class="badge badge-light-danger me-2" *ngIf="error">Error</span>
-          Comprehensive insights for overdue job management and performance tracking
         </span>
       </h1>
     </div>
@@ -70,11 +68,7 @@
                   <path d="M1 15.4C1 14.7 1.6 14.1 2.3 14.1H4.4C5.1 14.1 5.7 14.7 5.7 15.4V16.6C5.7 17.3 5.1 17.9 4.4 17.9H2.3C1.6 17.9 1 17.3 1 16.6V15.4Z" fill="currentColor"/>
                 </svg>
               </span>
-              Past Due Jobs by Account Manager
-            </span>
-            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
-              <span class="badge badge-light-primary me-2">Performance</span>
-              Past due jobs and billable items breakdown by account manager
+              Past Due/ Bill After PM Unscheduled Jobs by Account Manager
             </span>
           </h3>
         </div>
@@ -108,9 +102,9 @@
     </div>
   </div>
 
-  <!-- Office Scheduled Percentage Section -->
+  <!-- Account Manager - Scheduled Percentage Section -->
   <div *ngIf="!isLoading && !error && pastDueData" class="row g-6 g-xl-10 mt-4">
-    <div class="col-xl-8">
+    <div class="col-12">
       <div class="card card-custom card-stretch">
         <div class="card-header align-items-center border-0 mt-4">
           <h3 class="card-title align-items-start flex-column">
@@ -121,11 +115,9 @@
                   <path opacity="0.3" d="M21 19H3C2.4 19 2 18.6 2 18V6C2 5.4 2.4 5 3 5H21C21.6 5 22 5.4 22 6V18C22 18.6 21.6 19 21 19ZM14 14C14 11.8 12.2 10 10 10C7.8 10 6 11.8 6 14C6 16.2 7.8 18 10 18C12.2 18 14 16.2 14 14ZM10 15.5C9.2 15.5 8.5 14.8 8.5 14C8.5 13.2 9.2 12.5 10 12.5C10.8 12.5 11.5 13.2 11.5 14C11.5 14.8 10.8 15.5 10 15.5Z" fill="currentColor"/>
                 </svg>
               </span>
-              Office Scheduled Percentage
+              Account Manager - Scheduled Percentage
             </span>
             <span class="text-muted fw-bold fs-7 d-flex align-items-center">
-              <span class="badge badge-light-success me-2">Efficiency</span>
-              Scheduling performance by office locations
             </span>
           </h3>
         </div>
@@ -135,12 +127,16 @@
           <div *ngIf="scheduledPercentageData && scheduledPercentageData.length > 0" class="chart-container">
             <apx-chart
               [series]="scheduledPercentageChartOptions.series || []"
-              [chart]="scheduledPercentageChartOptions.chart || defaultPieChart"
-              [labels]="scheduledPercentageChartOptions.labels || []"
+              [chart]="scheduledPercentageChartOptions.chart || defaultBarChart"
+              [dataLabels]="scheduledPercentageChartOptions.dataLabels || {}"
+              [plotOptions]="scheduledPercentageChartOptions.plotOptions || {}"
+              [xaxis]="scheduledPercentageChartOptions.xaxis || {}"
+              [yaxis]="scheduledPercentageChartOptions.yaxis || {}"
+              [stroke]="scheduledPercentageChartOptions.stroke || {}"
               [title]="scheduledPercentageChartOptions.title || {}"
               [colors]="scheduledPercentageChartOptions.colors || []"
               [legend]="scheduledPercentageChartOptions.legend || {}"
-              [dataLabels]="scheduledPercentageChartOptions.dataLabels || {}">
+              [tooltip]="scheduledPercentageChartOptions.tooltip || {}">
             </apx-chart>
           </div>
           
@@ -154,9 +150,11 @@
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Jobs Comparison Section -->
-    <div class="col-xl-4">
+  <!-- Jobs Comparison Section -->
+  <div *ngIf="!isLoading && !error && pastDueData" class="row g-6 g-xl-10 mt-4">
+    <div class="col-12">
       <div class="card card-custom card-stretch">
         <div class="card-header align-items-center border-0 mt-4">
           <h3 class="card-title align-items-start flex-column">
@@ -168,11 +166,10 @@
                   <path d="M12 6C13.1046 6 14 5.10457 14 4C14 2.89543 13.1046 2 12 2C10.8954 2 10 2.89543 10 4C10 5.10457 10.8954 6 12 6Z" fill="currentColor"/>
                 </svg>
               </span>
-              Scheduled vs Unscheduled Jobs
+              Total Jobs to be Scheduled
             </span>
             <span class="text-muted fw-bold fs-7 d-flex align-items-center">
-              <span class="badge badge-light-warning me-2">Comparison</span>
-              Job scheduling status by office locations
+              Scheduled vs Unscheduled Jobs
             </span>
           </h3>
         </div>
@@ -184,11 +181,14 @@
               [series]="jobsComparisonChartOptions.series || []"
               [chart]="jobsComparisonChartOptions.chart || defaultBarChart"
               [plotOptions]="jobsComparisonChartOptions.plotOptions || {}"
+              [dataLabels]="jobsComparisonChartOptions.dataLabels || {}"
               [xaxis]="jobsComparisonChartOptions.xaxis || {}"
               [yaxis]="jobsComparisonChartOptions.yaxis || {}"
+              [stroke]="jobsComparisonChartOptions.stroke || {}"
               [title]="jobsComparisonChartOptions.title || {}"
               [colors]="jobsComparisonChartOptions.colors || []"
-              [legend]="jobsComparisonChartOptions.legend || {}">
+              [legend]="jobsComparisonChartOptions.legend || {}"
+              [tooltip]="jobsComparisonChartOptions.tooltip || {}">
             </apx-chart>
           </div>
           
@@ -203,10 +203,6 @@
       </div>
     </div>
   </div>
-
-
-
-
 
   <!-- No Data Message -->
   <div *ngIf="!isLoading && !error && !pastDueData" class="row">
