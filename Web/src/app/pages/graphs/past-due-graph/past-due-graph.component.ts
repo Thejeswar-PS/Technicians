@@ -226,7 +226,7 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
           fontSize: '10px',
           fontFamily: 'Inter, sans-serif',
           fontWeight: '500',
-          colors: ['#ec4899']
+          colors: ['#f64aa3ff', '#f97316']
         },
         background: {
           enabled: true,
@@ -272,7 +272,7 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
           color: '#1f2937'
         }
       },
-      colors: ['#f64aa3ff', '#ec4899'],
+      colors: ['#f64aa3ff', '#f97316'],
       legend: {
         position: 'top'
       }
@@ -414,8 +414,8 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
 
     this.jobsComparisonChartOptions = {
       series: [
-        { name: 'Scheduled Jobs', data: scheduledData },
-        { name: 'Unscheduled Jobs', data: unscheduledData }
+        { name: 'Scheduled Jobs', data: scheduledData, color: '#f64aa3ff' },
+        { name: 'Unscheduled Jobs', data: unscheduledData, color: '#f97316' }
       ],
       chart: {
         type: 'bar',
@@ -445,7 +445,7 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
           fontSize: '10px',
           fontFamily: 'Inter, sans-serif',
           fontWeight: '500',
-          colors: ['#f97316']
+          colors: ['#f64aa3ff', '#f97316']
         },
         background: {
           enabled: true,
@@ -505,9 +505,10 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
       title: {
         text: ''
       },
-      colors: ['#f97316'],
+      colors: ['#f64aa3ff', '#f97316'],
       legend: {
-        show: false
+        show: true,
+        position: 'top'
       }
     };
   }
