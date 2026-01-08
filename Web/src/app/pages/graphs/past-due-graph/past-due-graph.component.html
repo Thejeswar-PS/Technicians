@@ -1,0 +1,232 @@
+<div class="d-flex flex-column">
+  <!-- Enhanced Header with Modern Design -->
+  <div class="card card-custom card-stretch mb-5">
+    <div class="card-header justify-content-center align-items-center border-0 mt-4">
+      <h1 class="card-title text-center flex-column">
+        <span class="fw-bolder mb-3 text-dark d-flex align-items-center justify-content-center fs-1">
+          <span class="svg-icon svg-icon-3x me-4 text-danger">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path opacity="0.3" d="M12 22C13.6569 22 15 20.6569 15 19C15 17.3431 13.6569 16 12 16C10.3431 16 9 17.3431 9 19C9 20.6569 10.3431 22 12 22Z" fill="currentColor"/>
+              <path d="M19 15V18C19 18.6 18.6 19 18 19H6C5.4 19 5 18.6 5 18V15C6.1 15 7 14.1 7 13V10C7 7.6 8.7 5.6 11 5.1V3C11 2.4 11.4 2 12 2C12.6 2 13 2.4 13 3V5.1C15.3 5.6 17 7.6 17 10V13C17 14.1 17.9 15 19 15ZM11 10C11 9.4 11.4 9 12 9C12.6 9 13 9.4 13 10V13C13 13.6 12.6 14 12 14C11.4 14 11 13.6 11 13V10Z" fill="currentColor"/>
+            </svg>
+          </span>
+          Past Due Jobs Analytics Dashboard
+        </span>
+        <span class="text-muted fw-bold fs-5 d-flex align-items-center justify-content-center">
+          <span class="badge badge-light-danger me-2" *ngIf="!isLoading && !error">Live Data</span>
+          <span class="badge badge-light-warning me-2" *ngIf="isLoading">Loading...</span>
+          <span class="badge badge-light-danger me-2" *ngIf="error">Error</span>
+          Comprehensive insights for overdue job management and performance tracking
+        </span>
+      </h1>
+    </div>
+  </div>
+
+  <!-- Global Loading State -->
+  <div *ngIf="isLoading" class="row">
+    <div class="col-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-body text-center py-10">
+          <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="text-muted mt-3 fs-4">Loading past due jobs data...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global Error State -->
+  <div *ngIf="error && !isLoading" class="row">
+    <div class="col-12">
+      <div class="alert alert-danger d-flex align-items-center">
+        <span class="svg-icon svg-icon-2hx text-danger me-4">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path opacity="0.3" d="M12 22C13.6569 22 15 20.6569 15 19C15 17.3431 13.6569 16 12 16C10.3431 16 9 17.3431 9 19C9 20.6569 10.3431 22 12 22Z" fill="currentColor"/>
+            <path d="M19 15V18C19 18.6 18.6 19 18 19H6C5.4 19 5 18.6 5 18V15C6.1 15 7 14.1 7 13V10C7 7.6 8.7 5.6 11 5.1V3C11 2.4 11.4 2 12 2C12.6 2 13 2.4 13 3V5.1C15.3 5.6 17 7.6 17 10V13C17 14.1 17.9 15 19 15ZM11 10C11 9.4 11.4 9 12 9C12.6 9 13 9.4 13 10V13C13 13.6 12.6 14 12 14C11.4 14 11 13.6 11 13V10Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <div class="d-flex flex-column">
+          <h4 class="mb-1 text-danger">Error Loading Data</h4>
+          <span>{{ error }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Sections -->
+  <div *ngIf="!isLoading && !error && pastDueData" class="row g-6 g-xl-10 mt-3">
+
+    <!-- Account Manager Summary Chart Card -->
+    <div class="col-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 11.4C8 10.7 8.6 10.1 9.3 10.1H11.4C12.1 10.1 12.7 10.7 12.7 11.4V16.6C12.7 17.3 12.1 17.9 11.4 17.9H9.3C8.6 17.9 8 17.3 8 16.6V11.4Z" fill="currentColor"/>
+                  <path opacity="0.3" d="M15 8.39999C15 7.69999 15.6 7.09999 16.3 7.09999H18.4C19.1 7.09999 19.7 7.69999 19.7 8.39999V16.6C19.7 17.3 19.1 17.9 18.4 17.9H16.3C15.6 17.9 15 17.3 15 16.6V8.39999Z" fill="currentColor"/>
+                  <path d="M1 15.4C1 14.7 1.6 14.1 2.3 14.1H4.4C5.1 14.1 5.7 14.7 5.7 15.4V16.6C5.7 17.3 5.1 17.9 4.4 17.9H2.3C1.6 17.9 1 17.3 1 16.6V15.4Z" fill="currentColor"/>
+                </svg>
+              </span>
+              Past Due Jobs by Account Manager
+            </span>
+            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-primary me-2">Performance</span>
+              Past due jobs and billable items breakdown by account manager
+            </span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Chart -->
+          <div *ngIf="summaryData && summaryData.length > 0" class="chart-container" style="margin-bottom: 30px;">
+            <apx-chart
+              [series]="summaryChartOptions.series || []"
+              [chart]="summaryChartOptions.chart || defaultBarChart"
+              [dataLabels]="summaryChartOptions.dataLabels || {}"
+              [plotOptions]="summaryChartOptions.plotOptions || {}"
+              [xaxis]="summaryChartOptions.xaxis || {}"
+              [yaxis]="summaryChartOptions.yaxis || {}"
+              [stroke]="summaryChartOptions.stroke || {}"
+              [title]="summaryChartOptions.title || {}"
+              [colors]="summaryChartOptions.colors || []"
+              [legend]="summaryChartOptions.legend || {}">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!summaryData || summaryData.length === 0" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted text-center">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No account manager data available</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Office Scheduled Percentage Section -->
+  <div *ngIf="!isLoading && !error && pastDueData" class="row g-6 g-xl-10 mt-4">
+    <div class="col-xl-8">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 7H2V9H22V7Z" fill="currentColor"/>
+                  <path opacity="0.3" d="M21 19H3C2.4 19 2 18.6 2 18V6C2 5.4 2.4 5 3 5H21C21.6 5 22 5.4 22 6V18C22 18.6 21.6 19 21 19ZM14 14C14 11.8 12.2 10 10 10C7.8 10 6 11.8 6 14C6 16.2 7.8 18 10 18C12.2 18 14 16.2 14 14ZM10 15.5C9.2 15.5 8.5 14.8 8.5 14C8.5 13.2 9.2 12.5 10 12.5C10.8 12.5 11.5 13.2 11.5 14C11.5 14.8 10.8 15.5 10 15.5Z" fill="currentColor"/>
+                </svg>
+              </span>
+              Office Scheduled Percentage
+            </span>
+            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-success me-2">Efficiency</span>
+              Scheduling performance by office locations
+            </span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Chart -->
+          <div *ngIf="scheduledPercentageData && scheduledPercentageData.length > 0" class="chart-container">
+            <apx-chart
+              [series]="scheduledPercentageChartOptions.series || []"
+              [chart]="scheduledPercentageChartOptions.chart || defaultPieChart"
+              [labels]="scheduledPercentageChartOptions.labels || []"
+              [title]="scheduledPercentageChartOptions.title || {}"
+              [colors]="scheduledPercentageChartOptions.colors || []"
+              [legend]="scheduledPercentageChartOptions.legend || {}"
+              [dataLabels]="scheduledPercentageChartOptions.dataLabels || {}">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!scheduledPercentageData || scheduledPercentageData.length === 0" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted text-center">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No scheduled percentage data available</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Jobs Comparison Section -->
+    <div class="col-xl-4">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18.3 5.71c0-1.25.2-2.58-.2-3.62-.5-1.06-1.84-1.84-3.7-1.84H9.6c-1.86 0-3.2.78-3.7 1.84-.4 1.04-.2 2.37-.2 3.62 0 .48.1.95.26 1.41L9.8 19.94c.18.45.52.72.93.72.41 0 .75-.27.93-.72L15.54 7.12c.16-.46.26-.93.26-1.41Z" fill="currentColor"/>
+                  <path opacity="0.3" d="M12 16C13.1046 16 14 15.1046 14 14C14 12.8954 13.1046 12 12 12C10.8954 12 10 12.8954 10 14C10 15.1046 10.8954 16 12 16Z" fill="currentColor"/>
+                  <path d="M12 6C13.1046 6 14 5.10457 14 4C14 2.89543 13.1046 2 12 2C10.8954 2 10 2.89543 10 4C10 5.10457 10.8954 6 12 6Z" fill="currentColor"/>
+                </svg>
+              </span>
+              Scheduled vs Unscheduled Jobs
+            </span>
+            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-warning me-2">Comparison</span>
+              Job scheduling status by office locations
+            </span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Chart -->
+          <div *ngIf="(scheduledJobsData && scheduledJobsData.length > 0) || (unscheduledJobsData && unscheduledJobsData.length > 0)" class="chart-container">
+            <apx-chart
+              [series]="jobsComparisonChartOptions.series || []"
+              [chart]="jobsComparisonChartOptions.chart || defaultBarChart"
+              [plotOptions]="jobsComparisonChartOptions.plotOptions || {}"
+              [xaxis]="jobsComparisonChartOptions.xaxis || {}"
+              [yaxis]="jobsComparisonChartOptions.yaxis || {}"
+              [title]="jobsComparisonChartOptions.title || {}"
+              [colors]="jobsComparisonChartOptions.colors || []"
+              [legend]="jobsComparisonChartOptions.legend || {}">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="(!scheduledJobsData || scheduledJobsData.length === 0) && (!unscheduledJobsData || unscheduledJobsData.length === 0)" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted text-center">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No job comparison data available</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+  <!-- No Data Message -->
+  <div *ngIf="!isLoading && !error && !pastDueData" class="row">
+    <div class="col-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-body text-center py-10">
+          <span class="svg-icon svg-icon-4x text-muted mb-4">📊</span>
+          <h4 class="text-muted">No Past Due Data Available</h4>
+          <p class="text-muted">There is no past due jobs data available at the moment.</p>
+          <button class="btn btn-primary" (click)="refreshData()">
+            <span class="svg-icon svg-icon-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M15.2 12.4C15.2 13.3 14.5 14 13.6 14H11.4C10.5 14 9.8 13.3 9.8 12.4V8.6C9.8 7.7 10.5 7 11.4 7H13.6C14.5 7 15.2 7.7 15.2 8.6V12.4Z" fill="currentColor"/>
+                <path opacity="0.3" d="M12 22C13.6569 22 15 20.6569 15 19C15 17.3431 13.6569 16 12 16C10.3431 16 9 17.3431 9 19C9 20.6569 10.3431 22 12 22Z" fill="currentColor"/>
+              </svg>
+            </span>
+            Refresh Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

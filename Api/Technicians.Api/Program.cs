@@ -109,6 +109,7 @@ builder.Services.AddScoped<NewDisplayCallsGraphRepository>();
 builder.Services.AddScoped<IDisplayCallsDetailRepository, DisplayCallsDetailRepository>();
 builder.Services.AddScoped<IPartsSearchRepository, PartsSearchRepository>();
 builder.Services.AddScoped<IAccMgrPerformanceReportRepository, AccMgrPerformanceReportRepository>();
+builder.Services.AddScoped<IPastDueGraphRepository, PastDueGraphRepository>();
 
 var app = builder.Build();
 

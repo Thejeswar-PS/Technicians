@@ -7,6 +7,7 @@ import { TrendingReportTeamsComponent } from './trending-report-teams/trending-r
 import { GraphsRoutingModule } from './graphs-routing.module';
 import { TeamGridComponent } from './shared/team-grid/team-grid.component';
 import { AccountManagerGraphComponent } from '../reports/account-manager-graph/account-manager-graph.component';
+import { PastDueGraphComponent } from './past-due-graph/past-due-graph.component';
 import { SharedModule } from '../../components/shared/shared.module';
 
 
@@ -14,7 +15,8 @@ import { SharedModule } from '../../components/shared/shared.module';
   declarations: [
     TrendingReportTeamsComponent,
     TeamGridComponent,
-    AccountManagerGraphComponent
+    AccountManagerGraphComponent,
+    PastDueGraphComponent
   ],
   imports: [
     CommonModule,

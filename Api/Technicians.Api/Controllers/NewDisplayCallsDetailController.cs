@@ -883,25 +883,8 @@ namespace Technicians.Api.Controllers
 
         #endregion
 
-        #region Health Check
-
-        /// <summary>
-        /// Health check endpoint
-        /// </summary>
-        [HttpGet("health")]
-        [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult HealthCheck()
-        {
-            return Ok(new
-            {
-                Status = "Healthy",
-                Timestamp = DateTime.UtcNow,
-                Service = "DisplayCallsDetailController"
-            });
-        }
+        
     }
-    #endregion
 }
 
 
