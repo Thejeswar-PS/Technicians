@@ -46,6 +46,7 @@ import {
   OrderRequestStatusDto, 
   OrderRequestStatusResponse 
 } from '../model/order-request-status.model';
+import { EmergencyJobsResponseDto } from '../model/emergency-jobs.model';
 import { 
   AccMgrPerformanceReportResponseDto,
   AccMgrPerformanceReportSummaryDto,
@@ -1107,6 +1108,15 @@ export class ReportService {
    */
   accMgrPerformanceReportHealthCheck(): Observable<string> {
     return this.http.get<string>(`${this.API}/AccMgrPerformanceReport/health`, {
+      headers: this.headers
+    });
+  }
+
+  /**
+   * Get emergency jobs for display
+   */
+  getEmergencyJobs(): Observable<EmergencyJobsResponseDto> {
+    return this.http.get<EmergencyJobsResponseDto>(`${this.API}/EmergencyJobs`, {
       headers: this.headers
     });
   }

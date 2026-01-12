@@ -14,6 +14,7 @@ import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-p
 import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
 import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
+import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
 
 const routes: Routes = [
   {
@@ -80,6 +81,10 @@ const routes: Routes = [
   {
     path: 'acc-mgr-performance-report',
     component: AccMgrPerformanceReportComponent
+  },
+  {
+    path: 'emergency-jobs',
+    component: EmergencyJobsComponent
   }
 ];
 

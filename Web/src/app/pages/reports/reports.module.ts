@@ -13,6 +13,7 @@ import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-u
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
 import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
+import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
 
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
@@ -38,7 +39,8 @@ import { SharedModule } from '../../components/shared/shared.module';
     StrippedPartsInunitComponent,
     DcgDisplayReportDetailsComponent,
     PartsSearchComponent,
-    AccMgrPerformanceReportComponent
+    AccMgrPerformanceReportComponent,
+    EmergencyJobsComponent
   ],
   imports: [
     CommonModule,
