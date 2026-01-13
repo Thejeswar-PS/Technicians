@@ -31,23 +31,20 @@ export interface OrderRequestStatusResponse {
   data: OrderRequestStatusDto[];
 }
 
-// Status options for dropdown
+// Status options for dropdown - matching legacy ASP.NET values
 export const ORDER_STATUS_OPTIONS = [
   { value: 'All', label: 'All' },
   { value: 'NEW', label: 'New' },
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'ORDERED', label: 'Ordered' },
-  { value: 'RECEIVED', label: 'Received' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-  { value: 'COMPLETED', label: 'Completed' }
+  { value: 'ORD', label: 'Ordered' },
+  { value: 'SHI', label: 'Shipped' },
+  { value: 'BOR', label: 'Back Ordered' },
+  { value: 'CAN', label: 'Cancelled' },
+  { value: 'COM', label: 'Completed' }
 ];
 
-// Order type options for dropdown
+// Order type options for dropdown - matching legacy ASP.NET values
 export const ORDER_TYPE_OPTIONS = [
   { value: 'All', label: 'All' },
-  { value: 'PARTS', label: 'Parts' },
-  { value: 'EQUIPMENT', label: 'Equipment' },
-  { value: 'SERVICE', label: 'Service' },
-  { value: 'MAINTENANCE', label: 'Maintenance' },
-  { value: 'OTHER', label: 'Other' }
+  { value: 'Repair', label: 'Repair' },
+  { value: 'ASSY', label: 'ASSY' }
 ];

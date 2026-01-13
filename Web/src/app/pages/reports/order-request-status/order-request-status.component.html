@@ -48,7 +48,7 @@
             <form class="order-request-status-filter-form" [formGroup]="orderStatusFilterForm">
               <div class="row g-3">
                 <!-- Status Filter -->
-                <div class="col-md-4">
+                <div class="col-md-5">
                   <div class="filter-group">
                     <label class="filter-label">
                       <i class="bi bi-tag me-1"></i>
@@ -65,7 +65,7 @@
                 </div>
                 
                 <!-- Order Type Filter -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <div class="filter-group">
                     <label class="filter-label">
                       <i class="bi bi-box me-1"></i>
@@ -139,85 +139,85 @@
       </div>
       <!--end::Results Summary-->
       
-      <div class="table-responsive">
+      <div class="table-container">
 
-      <table class="table modern-table">
+      <table class="table modern-table table-responsive-flex">
         <!--begin::Table head-->
         <thead class="table-header">
           <tr>
-            <th class="sortable header-cell" [ngClass]="getSortClass('rowIndex')" (click)="sortData('rowIndex')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('rowIndex')" (click)="sortData('rowIndex')">
               <div class="header-content">
                 <span class="header-text">Row #</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('rowIndex')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('orderType')" (click)="sortData('orderType')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('orderType')" (click)="sortData('orderType')">
               <div class="header-content">
                 <span class="header-text">Order Type</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('orderType')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('requester')" (click)="sortData('requester')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('requester')" (click)="sortData('requester')">
               <div class="header-content">
                 <span class="header-text">Requester</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('requester')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('dcgPartNo')" (click)="sortData('dcgPartNo')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('dcgPartNo')" (click)="sortData('dcgPartNo')">
               <div class="header-content">
                 <span class="header-text">DCG Part #</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('dcgPartNo')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('manufPartNo')" (click)="sortData('manufPartNo')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('manufPartNo')" (click)="sortData('manufPartNo')">
               <div class="header-content">
                 <span class="header-text">Manuf Part #</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('manufPartNo')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('qtyNeeded')" (click)="sortData('qtyNeeded')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('qtyNeeded')" (click)="sortData('qtyNeeded')">
               <div class="header-content">
                 <span class="header-text">Qty</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('qtyNeeded')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('vendor')" (click)="sortData('vendor')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('vendor')" (click)="sortData('vendor')">
               <div class="header-content">
                 <span class="header-text">Vendor</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('vendor')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('poNumber')" (click)="sortData('poNumber')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('poNumber')" (click)="sortData('poNumber')">
               <div class="header-content">
                 <span class="header-text">PO Number</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('poNumber')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('orderDate')" (click)="sortData('orderDate')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('orderDate')" (click)="sortData('orderDate')">
               <div class="header-content">
                 <span class="header-text">Order Date</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('orderDate')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('arriveDate')" (click)="sortData('arriveDate')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('arriveDate')" (click)="sortData('arriveDate')">
               <div class="header-content">
                 <span class="header-text">Arrive Date</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('arriveDate')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('status')" (click)="sortData('status')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('status')" (click)="sortData('status')">
               <div class="header-content">
                 <span class="header-text">Status</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('status')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('createdOn')" (click)="sortData('createdOn')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('createdOn')" (click)="sortData('createdOn')">
               <div class="header-content">
                 <span class="header-text">Created On</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('createdOn')"></i>
               </div>
             </th>
-            <th class="sortable header-cell" [ngClass]="getSortClass('createdBy')" (click)="sortData('createdBy')">
+            <th class="sortable header-cell col-auto" [ngClass]="getSortClass('createdBy')" (click)="sortData('createdBy')">
               <div class="header-content">
                 <span class="header-text">Created By</span>
                 <i class="sort-icon fas" [ngClass]="getSortIcon('createdBy')"></i>
@@ -230,7 +230,7 @@
         <!--begin::Table body-->
         <tbody class="table-body">
           <tr class="table-row" *ngFor="let orderRequest of getPaginatedData(); trackBy: trackByRowIndex">
-            <td>
+            <td class="text-nowrap">
               <span class="badge badge-light-info">{{ orderRequest.rowIndex }}</span>
             </td>
             <td>
@@ -240,36 +240,40 @@
                 {{ orderRequest.orderType || 'N/A' }}
               </span>
             </td>
-            <td>{{ orderRequest.requester || 'N/A' }}</td>
-            <td>{{ orderRequest.dcgPartNo || 'N/A' }}</td>
-            <td class="fw-bold text-primary">{{ orderRequest.manufPartNo || 'N/A' }}</td>
             <td>
+              <span class="text-gray-800 fw-bold fs-7">{{ orderRequest.requester || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="text-gray-800 fw-bold fs-7">{{ orderRequest.dcgPartNo || 'N/A' }}</span>
+            </td>
+            <td class="fw-bold text-primary">{{ orderRequest.manufPartNo || 'N/A' }}</td>
+            <td class="text-center">
               <span class="badge badge-light-success">{{ orderRequest.qtyNeeded || 0 }}</span>
             </td>
-            <td>{{ orderRequest.vendor || 'N/A' }}</td>
-            <td>{{ orderRequest.poNumber || 'N/A' }}</td>
-            <td>{{ formatDate(orderRequest.orderDate) || 'N/A' }}</td>
-            <td>{{ formatDate(orderRequest.arriveDate) || 'N/A' }}</td>
             <td>
-              <span class="badge" 
-                    [ngClass]="{
-                      'badge-light-success': orderRequest.status === 'COMPLETED',
-                      'badge-light-warning': orderRequest.status === 'PENDING' || orderRequest.status === 'ORDERED',
-                      'badge-light-primary': orderRequest.status === 'NEW',
-                      'badge-light-info': orderRequest.status === 'RECEIVED',
-                      'badge-light-danger': orderRequest.status === 'CANCELLED',
-                      'badge-light-secondary': !orderRequest.status || orderRequest.status === 'N/A'
-                    }">
+              <span class="text-gray-800 fw-bold fs-7">{{ orderRequest.vendor || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="text-gray-800 fw-bold fs-7">{{ orderRequest.poNumber || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="text-gray-800 fw-bold fs-7">{{ formatDate(orderRequest.orderDate) || 'N/A' }}</span>
+            </td>
+            <td>
+              <span class="text-gray-800 fw-bold fs-7">{{ formatDate(orderRequest.arriveDate) || 'N/A' }}</span>
+            </td>
+            <td class="text-center">
+              <span class="status-pill" 
+                    [ngClass]="getStatusPillClass(orderRequest.status)">
                 {{ orderRequest.status || 'N/A' }}
               </span>
             </td>
             <td>
-              <div class="d-flex flex-column">
-                <span class="text-gray-800 fw-bold fs-7">{{ formatDate(orderRequest.createdOn) || 'N/A' }}</span>
-                <span class="text-muted fs-8">{{ (formatDateTime(orderRequest.createdOn) || '').slice(11, 19) || 'N/A' }}</span>
-              </div>
+              <span class="text-gray-800 fw-bold fs-7">{{ formatDateTime(orderRequest.createdOn) || 'N/A' }}</span>
             </td>
-            <td>{{ orderRequest.createdBy || 'N/A' }}</td>
+            <td>
+              <span class="text-gray-800 fw-bold fs-8.1">{{ orderRequest.createdBy || 'N/A' }}</span>
+            </td>
           </tr>
         </tbody>
         <!--end::Table body-->
