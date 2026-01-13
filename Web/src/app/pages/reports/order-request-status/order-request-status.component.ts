@@ -387,9 +387,4 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   getFilterBadgeClass(): string {
     return 'badge-info-custom';
   }
-
-  // Go back navigation
-  goBack(): void {
-    this.router.navigate(['/reports/order-request']);
-  }
 }
