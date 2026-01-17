@@ -1,9 +1,9 @@
 <!-- Stripped Units Status Page -->
-<div class="container-fluid parts-request-container">
+<div class="container-fluid order-request-container">
   <!-- Loading spinner -->
   <div
     *ngIf="isLoading"
-    class="d-flex justify-content-center align-items-center parts-request-loading"
+    class="d-flex justify-content-center align-items-center order-request-loading"
   >
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -11,7 +11,16 @@
   </div>
 
   <!-- Header Section -->
-  <div class="parts-request-header__top mb-4 d-flex justify-content-center align-items-center">
+  <div class="order-request-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary order-request-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
     <!-- Page Title - Centered -->
     <div class="order-request-page-title">
       <h2 class="fw-bold text-primary mb-0">
@@ -28,7 +37,7 @@
   <div *ngIf="!isLoading">
 
     <!--begin::Make Distribution Chart Section-->
-    <div class="card shadow-sm parts-main-card mb-4">
+    <div class="card shadow-sm order-main-card mb-4">
       <!-- Header -->
       <div class="card-header border-0 py-4">
         <h3 class="card-title">
@@ -235,29 +244,25 @@
     <!--end::Charts Section-->
 
     <!-- Filter & Data Section -->
-    <div class="card shadow-sm parts-main-card mt-3">
+    <div class="card shadow-sm order-main-card mt-3">
       <!-- Filter Header -->
-      <div class="card-header border-0 py-4">
+      <div class="card-header border-0 py-2 bg-white">
         <div class="parts-filter-header">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-funnel me-2 text-primary"></i>
-                Filters & Search
-                <span class="badge ms-3 px-3 py-2 fs-6 fw-bold" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
-                  <i class="bi bi-check-circle me-1"></i>
-                  {{ totalItems }} Result{{ totalItems === 1 ? '' : 's' }}
-                </span>
-              </h5>
-              <small class="text-muted">Customize your view with filters below</small>
-            </div>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+              <i class="bi bi-funnel me-2 text-primary"></i>
+              Filters & Search
+              <span class="badge ms-2 px-2 py-1 fs-7 fw-bold" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white; border-radius: 15px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                {{ totalItems }} Result{{ totalItems === 1 ? '' : 's' }}
+              </span>
+            </h6>
           </div>
 
           <!-- Filter Controls -->
-          <div class="filter-controls-section mt-3">
+          <div class="filter-controls-section">
             <form [formGroup]="filterForm" class="parts-filter-form">
               <!-- First Row of Filters -->
-              <div class="row g-4 mb-3">
+              <div class="row g-3 mb-2">
                 <!-- Status Filter -->
                 <div class="col-12">
                   <div class="filter-group">
@@ -285,7 +290,7 @@
       </div>
 
       <!-- Data Display Section -->
-      <div class="card-body py-4">
+      <div class="card-body py-2">
         
         <!-- Modern Pagination Controls at Top -->
         <div *ngIf="filteredUnitsList.length > 0 && !isLoading" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
@@ -499,7 +504,7 @@
                 <td class="compact-cell text-center multi-line-text table-text-medium" [title]="formatDateTimeTooltip(unit.createdOn)">
                   <div class="d-flex flex-column">
                     <span class="fw-semibold" style="font-size: 0.9em;">{{ formatDate(unit.createdOn) }}</span>
-                    <span class="text-muted" style="font-size: 0.8em;">{{ formatTime(unit.createdOn) }}</span>
+                    <span class="text-dark" style="font-size: 0.8em;">{{ formatTime(unit.createdOn) }}</span>
                   </div>
                 </td>
 

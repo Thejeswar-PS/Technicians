@@ -1,8 +1,8 @@
-// Modern Stripped Units Status Component - Matching Parts Return Status Design
-.parts-request-container {
-  background: #f8f9fa;
+// Order Request Container Styling - Matching Order Request Design
+.order-request-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   min-height: 100vh;
-  padding: 1.5rem;
+  padding: 2rem 1rem;
   max-width: 100%;
   overflow-x: hidden;
   box-sizing: border-box;
@@ -15,88 +15,66 @@
     max-width: 100%;
   }
 
-  // Modern Header Styles
-  .modern-header {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    margin-bottom: 2rem;
-    border: 1px solid #e9ecef;
+  .order-request-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border-width: 3px;
+      border-color: #5486ff;
+      border-right-color: transparent;
+    }
+  }
+
+  // Header styling - matching order request
+  .order-request-header__top {
+    width: 100%;
+    margin: 0;
     
-    .header-container {
-      padding: 2rem;
-      max-width: 100%;
+    .order-request-header__back {
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
       
-      .header-top-row {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1.5rem;
-        position: relative;
-        
-        .btn-modern-back {
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          background: #6f42c1;
-          color: white;
-          border: none;
-          padding: 0.75rem 1.5rem;
-          border-radius: 8px;
-          font-weight: 600;
-          font-size: 0.875rem;
-          letter-spacing: 0.5px;
-          transition: all 0.2s ease;
-          
-          &:hover {
-            background: #5a2d91;
-            transform: translateY(-50%) translateY(-2px);
-          }
-        }
-        
-        .header-title-section {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          
-          .title-icon {
-            background: rgba(255, 193, 7, 0.1);
-            border-radius: 50%;
-            width: 56px;
-            height: 56px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1.25rem;
-            
-            i {
-              font-size: 1.5rem;
-              color: #ffc107;
-            }
-          }
-          
-          .header-title {
-            font-size: 2rem;
-            font-weight: 600;
-            color: #ffc107 !important;
-            margin: 0;
-            letter-spacing: -0.02em;
-            text-align: center;
-          }
-        }
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
       }
     }
   }
 
-.cursor-pointer {
-  cursor: pointer;
-}
-
-// Header styling - matching parts request status
-.parts-request-header__top {
-  width: 100%;
-  margin: 0;
+  // Page title - matching order request
+  .order-request-page-title {
+    text-align: center;
+    flex: 1;
+    
+    h2 {
+      color: #5486ff;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0;
+      
+      i {
+        color: #5486ff;
+        font-size: 2rem;
+      }
+    }
+  }
   
   .parts-request-header__back {
     border: 2px solid transparent;
@@ -117,7 +95,7 @@
 }
 
 // Page title - matching parts request status
-.parts-page-title {
+.order-request-page-title {
   text-align: center;
   flex: 1;
   
@@ -319,27 +297,6 @@
   &.badge-primary {
     background-color: #0d6efd;
     color: #fff;
-  }
-}
-
-  // Loading overlay
-  .parts-request-loading {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(5px);
-    z-index: 9999;
-
-    .spinner-border {
-      width: 3rem;
-      height: 3rem;
-      border-width: 3px;
-      border-color: #ffc107;
-      border-right-color: transparent;
-    }
   }
 }
 
@@ -662,32 +619,61 @@
   }
 }
 
-// Main card - Full-width responsive layout
-.parts-main-card {
-  max-width: 100%;
-  width: 100%;
-  margin: 0 0 0.5rem 0;
-  border: none;
+// Main card - matching order request design
+.order-main-card {
+  background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 2rem;
   
   .card-header {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding: 1rem 1.5rem 0.75rem 1.5rem;
-    min-height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 1.5rem 2rem;
     
-    h5 {
-      color: #495057;
+    .card-title {
+      color: white;
       font-weight: 600;
+      font-size: 1.25rem;
+      margin: 0;
+      
+      i {
+        color: rgba(255, 255, 255, 0.9);
+      }
+    }
+    
+    h3 {
+      color: white;
+      font-weight: 600;
+      font-size: 1.25rem;
+      margin: 0;
+      
+      i {
+        color: rgba(255, 255, 255, 0.9);
+      }
+    }
+  }
+  
+  .card-body {
+    padding: 2rem;
+  }
+  
+  // Override header styling for filter section to be compact and white
+  &:nth-child(2) .card-header,
+  .card-header.bg-white {
+    background: white !important;
+    padding: 1rem 2rem !important;
+    border-bottom: 1px solid #e9ecef;
+    
+    h6, .fw-bold {
+      color: #2d3748 !important;
+      font-size: 1rem !important;
+      
+      i {
+        color: #667eea !important;
+      }
     }
   }
 }
