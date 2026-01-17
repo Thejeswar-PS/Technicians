@@ -145,7 +145,7 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
     private ngZone: NgZone
   ) {
     this.filterForm = this.fb.group({
-      status: ['All'],
+      status: ['In Progress'],
       makeFilter: ['All'],
       modelFilter: ['All'],
       kvaFilter: ['All'],
@@ -286,13 +286,20 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
   }
 
   private transformUnitsData(units: StrippedUnitsStatusDto[]): StrippedUnitsStatusItem[] {
-    return units.map(unit => ({
-      ...unit,
-      displayStatus: this.getStatusLabel(unit.status),
-      formattedCreatedOn: unit.createdOn ? new Date(unit.createdOn).toLocaleDateString() : '',
-      formattedUnitCost: unit.unitCost ? `$${unit.unitCost.toFixed(2)}` : '',
-      formattedShipCost: unit.shipCost ? `$${unit.shipCost.toFixed(2)}` : ''
-    }));
+    return units.map(unit => {
+      // Set both strippedBy and putAwayBy to the same person (TIM H)
+      const handledBy = unit.strippedBy || unit.putAwayBy || 'TIM H';
+      
+      return {
+        ...unit,
+        strippedBy: handledBy,
+        putAwayBy: handledBy,
+        displayStatus: this.getStatusLabel(unit.status),
+        formattedCreatedOn: unit.createdOn ? new Date(unit.createdOn).toLocaleDateString() : '',
+        formattedUnitCost: unit.unitCost ? `$${unit.unitCost.toFixed(2)}` : '',
+        formattedShipCost: unit.shipCost ? `$${unit.shipCost.toFixed(2)}` : ''
+      };
+    });
   }
 
   private getStatusLabel(status: string): string {
