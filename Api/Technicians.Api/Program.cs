@@ -1,14 +1,45 @@
+using Dapper;                        
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.IIS;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Technicians.Api.Repository;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.AspNetCore.Server.IIS;
+using System.Reflection;
 using System.Text.Json;
+using Technicians.Api.Models;
+using Technicians.Api.Repositories;
+using Technicians.Api.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
+
+static void RegisterContractNoMapping<T>()
+{
+    SqlMapper.SetTypeMap(
+        typeof(T),
+        new CustomPropertyTypeMap(
+            typeof(T),
+            (type, columnName) =>
+            {
+                if (columnName.Equals("Contract No", StringComparison.OrdinalIgnoreCase))
+                    return type.GetProperty("ContractNo");
+
+                return type.GetProperties()
+                           .FirstOrDefault(p =>
+                               p.Name.Equals(columnName, StringComparison.OrdinalIgnoreCase));
+            }
+        )
+    );
+}
+
+// Register for ALL DTOs that read from @CallStatus
+RegisterContractNoMapping<AccMgrCallStatusDto>();
+RegisterContractNoMapping<AccMgrReturnedForProcessingDto>();
+RegisterContractNoMapping<AccMgrJobsScheduledTodayDto>();
+RegisterContractNoMapping<AccMgrJobsConfirmedNext120HoursDto>();
+//RegisterContractNoMapping<AccMgrReturnedWithIncompleteDataDto>();
+
 
 // --- Configure Logging ---
 Log.Logger = new LoggerConfiguration()
@@ -74,7 +105,12 @@ builder.Services.AddScoped<OrderRequestStatusRepository>();
 builder.Services.AddScoped<PartsTestRepository>();
 builder.Services.AddScoped<PartsTestStatusRepository>();
 builder.Services.AddScoped<StrippedUnitsStatusRepository>();
-builder.Services.AddScoped<TechToolsRepository>();
+builder.Services.AddScoped<NewDisplayCallsGraphRepository>();
+builder.Services.AddScoped<IDisplayCallsDetailRepository, DisplayCallsDetailRepository>();
+builder.Services.AddScoped<IPartsSearchRepository, PartsSearchRepository>();
+builder.Services.AddScoped<IAccMgrPerformanceReportRepository, AccMgrPerformanceReportRepository>();
+builder.Services.AddScoped<IPastDueGraphRepository, PastDueGraphRepository>();
+builder.Services.AddScoped<EmergencyJobsRepository>();
 
 var app = builder.Build();
 

@@ -1,0 +1,334 @@
+<div class="d-flex flex-column">
+  <!-- Enhanced Header with Modern Design -->
+  <div class="card card-custom card-stretch mb-5">
+    <div class="card-header justify-content-center align-items-center border-0 mt-4">
+      <h1 class="card-title text-center flex-column">
+        <span class="fw-bolder mb-3 text-dark d-flex align-items-center justify-content-center fs-1">
+          <span class="svg-icon svg-icon-3x me-4 text-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none">
+              <path d="M3 13C3 12.4 3.4 12 4 12H6C6.6 12 7 12.4 7 13V16C7 16.6 6.6 17 6 17H4C3.4 17 3 16.6 3 16V13Z" fill="currentColor"/>
+              <path opacity="0.3" d="M10.5 2H13.5C14.3 2 15 2.7 15 3.5V5.5C15 6.3 14.3 7 13.5 7H10.5C9.7 7 9 6.3 9 5.5V3.5C9 2.7 9.7 2 10.5 2Z" fill="currentColor"/>
+              <path d="M17 13C17 12.4 17.4 12 18 12H20C20.6 12 21 12.4 21 13V16C21 16.6 20.6 17 20 17H18C17.4 17 17 16.6 17 16V13Z" fill="currentColor"/>
+              <path opacity="0.3" d="M12.5 8H15.5C16.3 8 17 8.7 17 9.5V11.5C17 12.3 16.3 13 15.5 13H12.5C11.7 13 11 12.3 11 11.5V9.5C11 8.7 11.7 8 12.5 8Z" fill="currentColor"/>
+              <path d="M9 13C9 12.4 9.4 12 10 12H12C12.6 12 13 12.4 13 13V16C13 16.6 12.6 17 12 17H10C9.4 17 9 16.6 9 16V13Z" fill="currentColor"/>
+            </svg>
+          </span>
+          Account Manager Analytics Dashboard
+        </span>
+        <span class="text-muted fw-bold fs-5 d-flex align-items-center justify-content-center">
+          <span class="badge badge-light-primary me-2">Live Data</span>
+          Comprehensive insights for account status & management performance
+        </span>
+      </h1>
+    </div>
+  </div>
+
+  <div class="row g-6 g-xl-10 mt-3">
+    <!-- Account Status Graph Card -->
+    <!-- <div class="col-xl-6">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 11.4C8 10.7 8.6 10.1 9.3 10.1H11.4C12.1 10.1 12.7 10.7 12.7 11.4V16.6C12.7 17.3 12.1 17.9 11.4 17.9H9.3C8.6 17.9 8 17.3 8 16.6V11.4Z" fill="currentColor"/>
+                  <path opacity="0.3" d="M15 8.39999C15 7.69999 15.6 7.09999 16.3 7.09999H18.4C19.1 7.09999 19.7 7.69999 19.7 8.39999V16.6C19.7 17.3 19.1 17.9 18.4 17.9H16.3C15.6 17.9 15 17.3 15 16.6V8.39999Z" fill="currentColor"/>
+                  <path d="M1 15.4C1 14.7 1.6 14.1 2.3 14.1H4.4C5.1 14.1 5.7 14.7 5.7 15.4V16.6C5.7 17.3 5.1 17.9 4.4 17.9H2.3C1.6 17.9 1 17.3 1 16.6V15.4Z" fill="currentColor"/> -->
+                <!-- </svg> -->
+              <!-- </span> -->
+              <!-- Service Call Status Overview
+            </span> -->
+            <!-- <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-info me-2">Real-time</span>
+              Job costing, invoicing and completion metrics breakdown
+            </span>
+          </h3>
+        </div>
+      </div>
+        <div class="card-body">
+          Loading State
+          <div *ngIf="isLoadingAcctStatus" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          Error State
+          <div *ngIf="acctStatusError && !isLoadingAcctStatus" class="alert alert-danger">
+            <div class="alert-text">{{ acctStatusError }}</div>
+          </div>
+          
+          Chart
+          <div *ngIf="!isLoadingAcctStatus && !acctStatusError && acctStatusData" class="chart-container" style="margin-bottom: 30px;">
+            <apx-chart
+              [series]="acctStatusChartOptions.series"
+              [chart]="acctStatusChartOptions.chart"
+              [xaxis]="acctStatusChartOptions.xaxis"
+              [yaxis]="acctStatusChartOptions.yaxis"
+              [dataLabels]="acctStatusChartOptions.dataLabels"
+              [stroke]="acctStatusChartOptions.stroke"
+              [legend]="acctStatusChartOptions.legend"
+              [fill]="acctStatusChartOptions.fill"
+              [colors]="acctStatusChartOptions.colors"
+              [plotOptions]="acctStatusChartOptions.plotOptions"
+              [grid]="acctStatusChartOptions.grid"
+              [tooltip]="acctStatusChartOptions.tooltip">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <! Account Management Graph Card -->
+    <div class="col-xl-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-success">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M22 7H2V9H22V7Z" fill="currentColor"/>
+                  <path opacity="0.3" d="M21 19H3C2.4 19 2 18.6 2 18V6C2 5.4 2.4 5 3 5H21C21.6 5 22 5.4 22 6V18C22 18.6 21.6 19 21 19ZM14 14C14 11.8 12.2 10 10 10C7.8 10 6 11.8 6 14C6 16.2 7.8 18 10 18C12.2 18 14 16.2 14 14ZM10 15.5C9.2 15.5 8.5 14.8 8.5 14C8.5 13.2 9.2 12.5 10 12.5C10.8 12.5 11.5 13.2 11.5 14C11.5 14.8 10.8 15.5 10 15.5Z" fill="currentColor"/>
+                </svg>
+              </span>
+              Account Management Pipeline
+            </span>
+            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-success me-2">Dashboard</span>
+              Scheduling, completion status and workflow metrics
+            </span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingAccMgmt" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-success" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="accMgmtError && !isLoadingAccMgmt" class="alert alert-danger">
+            <div class="alert-text">{{ accMgmtError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingAccMgmt && !accMgmtError && accMgmtData" class="chart-container" style="margin-bottom: 30px;">
+            <apx-chart
+              [series]="accMgmtChartOptions.series"
+              [chart]="accMgmtChartOptions.chart"
+              [xaxis]="accMgmtChartOptions.xaxis"
+              [yaxis]="accMgmtChartOptions.yaxis"
+              [dataLabels]="accMgmtChartOptions.dataLabels"
+              [stroke]="accMgmtChartOptions.stroke"
+              [legend]="accMgmtChartOptions.legend"
+              [fill]="accMgmtChartOptions.fill"
+              [colors]="accMgmtChartOptions.colors"
+              [plotOptions]="accMgmtChartOptions.plotOptions"
+              [grid]="accMgmtChartOptions.grid"
+              [tooltip]="accMgmtChartOptions.tooltip">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Manager Paperwork Section -->
+  <div class="row g-6 g-xl-10 mt-4">
+    <div class="col-xl-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-info">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path opacity="0.3" d="M19 22H5C4.4 22 4 21.6 4 21V3C4 2.4 4.4 2 5 2H14L20 8V21C20 21.6 19.6 22 19 22ZM15 17C15 16.4 14.6 16 14 16H8C7.4 16 7 16.4 7 17C7 17.6 7.4 18 8 18H14C14.6 18 15 17.6 15 17ZM17 12C17 11.4 16.6 11 16 11H8C7.4 11 7 11.4 7 12C7 12.6 7.4 13 8 13H16C16.6 13 17 12.6 17 12ZM17 7C17 6.4 16.6 6 16 6H8C7.4 6 7 6.4 7 7C7 7.6 7.4 8 8 8H16C16.6 8 17 7.6 17 7Z" fill="currentColor"/>
+                  <path d="M15 8H20L14 2V7C14 7.6 14.4 8 15 8Z" fill="currentColor"/>
+                </svg>
+              </span>
+              Paperwork Processing Status
+            </span>
+            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-info me-2">Office Analytics</span>
+              Pending paperwork distribution by office locations
+            </span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingPaperwork" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-info" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="paperworkError && !isLoadingPaperwork" class="alert alert-danger">
+            <div class="alert-text">{{ paperworkError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingPaperwork && !paperworkError && paperworkData && paperworkData.length > 0" class="chart-container">
+            <apx-chart
+              [series]="paperworkChartOptions.series"
+              [chart]="paperworkChartOptions.chart"
+              [xaxis]="paperworkChartOptions.xaxis"
+              [yaxis]="paperworkChartOptions.yaxis"
+              [dataLabels]="paperworkChartOptions.dataLabels"
+              [stroke]="paperworkChartOptions.stroke"
+              [legend]="paperworkChartOptions.legend"
+              [fill]="paperworkChartOptions.fill"
+              [colors]="paperworkChartOptions.colors"
+              [plotOptions]="paperworkChartOptions.plotOptions"
+              [grid]="paperworkChartOptions.grid"
+              [tooltip]="paperworkChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!isLoadingPaperwork && !paperworkError && (!paperworkData || paperworkData.length === 0)" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No paperwork data available</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Manager Quote Graph Section -->
+  <div class="row g-6 g-xl-10 mt-4">
+    <div class="col-xl-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-warning">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M18.3 5.71c0-1.25.2-2.58-.2-3.62-.5-1.06-1.84-1.84-3.7-1.84H9.6c-1.86 0-3.2.78-3.7 1.84-.4 1.04-.2 2.37-.2 3.62 0 .48.1.95.26 1.41L9.8 19.94c.18.45.52.72.93.72.41 0 .75-.27.93-.72L15.54 7.12c.16-.46.26-.93.26-1.41Z" fill="currentColor"/>
+                  <path opacity="0.3" d="M12 16C13.1046 16 14 15.1046 14 14C14 12.8954 13.1046 12 12 12C10.8954 12 10 12.8954 10 14C10 15.1046 10.8954 16 12 16Z" fill="currentColor"/>
+                  <path d="M12 6C13.1046 6 14 5.10457 14 4C14 2.89543 13.1046 2 12 2C10.8954 2 10 2.89543 10 4C10 5.10457 10.8954 6 12 6Z" fill="currentColor"/>
+                </svg>
+              </span>
+              Quotes Processing Pipeline
+            </span>
+            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-warning me-2">Revenue Track</span>
+              Pending quote processing by office locations
+            </span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingQuoteGraph" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-warning" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="quoteGraphError && !isLoadingQuoteGraph" class="alert alert-danger">
+            <div class="alert-text">{{ quoteGraphError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingQuoteGraph && !quoteGraphError && quoteGraphData && quoteGraphData.length > 0" class="chart-container">
+            <apx-chart
+              [series]="quoteGraphChartOptions.series"
+              [chart]="quoteGraphChartOptions.chart"
+              [xaxis]="quoteGraphChartOptions.xaxis"
+              [yaxis]="quoteGraphChartOptions.yaxis"
+              [dataLabels]="quoteGraphChartOptions.dataLabels"
+              [stroke]="quoteGraphChartOptions.stroke"
+              [legend]="quoteGraphChartOptions.legend"
+              [fill]="quoteGraphChartOptions.fill"
+              [colors]="quoteGraphChartOptions.colors"
+              [plotOptions]="quoteGraphChartOptions.plotOptions"
+              [grid]="quoteGraphChartOptions.grid"
+              [tooltip]="quoteGraphChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!isLoadingQuoteGraph && !quoteGraphError && (!quoteGraphData || quoteGraphData.length === 0)" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No quote graph data available</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Managers - Unscheduled Job Status Section -->
+  <div class="row g-6 g-xl-10 mt-4">
+    <div class="col-xl-12">
+      <div class="card card-custom card-stretch">
+        <div class="card-header align-items-center border-0 mt-4">
+          <h3 class="card-title align-items-start flex-column">
+            <span class="fw-bolder mb-2 text-dark d-flex align-items-center">
+              <span class="svg-icon svg-icon-2 me-2 text-danger">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path opacity="0.3" d="M12 22C13.6569 22 15 20.6569 15 19C15 17.3431 13.6569 16 12 16C10.3431 16 9 17.3431 9 19C9 20.6569 10.3431 22 12 22Z" fill="currentColor"/>
+                  <path d="M19 15V18C19 18.6 18.6 19 18 19H6C5.4 19 5 18.6 5 18V15C6.1 15 7 14.1 7 13V10C7 7.6 8.7 5.6 11 5.1V3C11 2.4 11.4 2 12 2C12.6 2 13 2.4 13 3V5.1C15.3 5.6 17 7.6 17 10V13C17 14.1 17.9 15 19 15ZM11 10C11 9.4 11.4 9 12 9C12.6 9 13 9.4 13 10V13C13 13.6 12.6 14 12 14C11.4 14 11 13.6 11 13V10Z" fill="currentColor"/>
+                </svg>
+              </span>
+              Unscheduled Jobs Analysis
+            </span>
+            <span class="text-muted fw-bold fs-7 d-flex align-items-center">
+              <span class="badge badge-light-danger me-2">Critical Items</span>
+              Distribution of unscheduled work across offices
+            </span>
+          </h3>
+        </div>
+        
+        <div class="card-body">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingUnscheduled" class="d-flex align-items-center justify-content-center" style="height: 300px;">
+            <div class="spinner-border text-danger" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+          
+          <!-- Error State -->
+          <div *ngIf="unscheduledError && !isLoadingUnscheduled" class="alert alert-danger">
+            <div class="alert-text">{{ unscheduledError }}</div>
+          </div>
+          
+          <!-- Chart -->
+          <div *ngIf="!isLoadingUnscheduled && !unscheduledError && unscheduledData && unscheduledData.length > 0" class="chart-container">
+            <apx-chart
+              [series]="unscheduledChartOptions.series"
+              [chart]="unscheduledChartOptions.chart"
+              [xaxis]="unscheduledChartOptions.xaxis"
+              [yaxis]="unscheduledChartOptions.yaxis"
+              [dataLabels]="unscheduledChartOptions.dataLabels"
+              [stroke]="unscheduledChartOptions.stroke"
+              [legend]="unscheduledChartOptions.legend"
+              [fill]="unscheduledChartOptions.fill"
+              [colors]="unscheduledChartOptions.colors"
+              [plotOptions]="unscheduledChartOptions.plotOptions"
+              [grid]="unscheduledChartOptions.grid"
+              [tooltip]="unscheduledChartOptions.tooltip">
+            </apx-chart>
+          </div>
+          
+          <!-- No Data State -->
+          <div *ngIf="!isLoadingUnscheduled && !unscheduledError && (!unscheduledData || unscheduledData.length === 0)" class="d-flex align-items-center justify-content-center" style="height: 200px;">
+            <div class="text-muted">
+              <span class="svg-icon svg-icon-3x svg-icon-muted mb-3">📊</span>
+              <h5>No unscheduled job data available</h5>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

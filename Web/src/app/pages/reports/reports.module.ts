@@ -11,6 +11,9 @@ import { OrderRequestStatusComponent } from './order-request-status/order-reques
 import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.component';
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
+import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
+import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
+import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
 
 import { ReportsRoutingModule } from './report-routing.module';
 import { InlineSVGModule } from 'ng-inline-svg-2';
@@ -18,6 +21,7 @@ import { NgApexchartsModule } from 'ng-apexcharts';
 // Using simple canvas charts instead of ng2-charts
 import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
+import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { SharedModule } from '../../components/shared/shared.module';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
@@ -35,9 +39,10 @@ import { PastDueContractDetailsComponent } from './past-due-contract-details/pas
     StrippedUnitsStatusComponent,
     StrippedUnitInfoComponent,
     StrippedPartsInunitComponent,
-    ContractDetailsReportComponent,
-    PastDueContractDetailsComponent,
-
+    DcgDisplayReportDetailsComponent,
+    PartsSearchComponent,
+    AccMgrPerformanceReportComponent,
+    EmergencyJobsComponent
   ],
   imports: [
     CommonModule,

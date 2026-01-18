@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { QuotesService } from './services/quotes.service';
 import { HttpClientModule } from '@angular/common/http';
 import { DashboardService } from './services/dashboard.service';
+import { NewDisplayCallsDetailService } from './services/new-display-calls-detail.service';
 
 
 
@@ -13,7 +14,8 @@ import { DashboardService } from './services/dashboard.service';
     HttpClientModule
   ],
   providers : [
-    QuotesService
+    QuotesService,
+    NewDisplayCallsDetailService
   ]
 
 })

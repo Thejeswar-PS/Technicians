@@ -11,8 +11,10 @@ import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
-import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
-import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
+import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
+import { PartsSearchComponent } from './parts-search/parts-search.component';
+import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
+import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
 
 const routes: Routes = [
   {
@@ -69,12 +71,20 @@ const routes: Routes = [
     component: StrippedPartsInunitComponent
   },
   {
-    path: 'contract-details-report',
-    component: ContractDetailsReportComponent
+    path: 'dcg-display-report-details',
+    component: DcgDisplayReportDetailsComponent
   },
   {
-    path: 'past-due-contract-details',
-    component: PastDueContractDetailsComponent
+    path: 'parts-search',
+    component: PartsSearchComponent
+  },
+  {
+    path: 'acc-mgr-performance-report',
+    component: AccMgrPerformanceReportComponent
+  },
+  {
+    path: 'emergency-jobs',
+    component: EmergencyJobsComponent
   }
 ];
 

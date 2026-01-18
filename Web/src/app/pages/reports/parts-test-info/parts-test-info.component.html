@@ -221,9 +221,9 @@
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-user-tick me-1 text-primary"></i>Created By <span class="text-danger">*</span>
                 </label>
-                <select class="form-select form-select-solid text-dark fw-semibold" formControlName="createdBy" [class.is-invalid]="isFieldInvalid('createdBy')">
-                  <option value="">Select Employee</option>
-                  <option *ngFor="let employee of getEmployeeOptions()" [value]="employee.empName">
+                <select class="form-select form-select-solid text-dark fw-semibold" formControlName="createdBy" [class.is-invalid]="isFieldInvalid('createdBy')" [disabled]="isLoadingCreatedByEmployees">
+                  <option value="">{{ isLoadingCreatedByEmployees ? 'Loading P & T Employees...' : 'Select Employee' }}</option>
+                  <option *ngFor="let employee of getCreatedByEmployeeOptions()" [value]="employee.empName">
                     {{ getEmployeeDisplayName(employee) }}
                   </option>
                 </select>
@@ -233,8 +233,8 @@
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-profile-user me-1 text-primary"></i>Assigned To <span class="text-danger">*</span>
                 </label>
-                <select class="form-select form-select-solid text-dark fw-semibold" formControlName="assignedTo" [class.is-invalid]="isFieldInvalid('assignedTo')">
-                  <option value="">Select Employee</option>
+                <select class="form-select form-select-solid text-dark fw-semibold" formControlName="assignedTo" [class.is-invalid]="isFieldInvalid('assignedTo')" [disabled]="isLoadingEmployees">
+                  <option value="">{{ isLoadingEmployees ? 'Loading TC Employees...' : 'Select Employee' }}</option>
                   <option *ngFor="let employee of getEmployeeOptions()" [value]="employee.empName">
                     {{ getEmployeeDisplayName(employee) }}
                   </option>
@@ -282,13 +282,13 @@
                 <span class="spinner-border spinner-border-sm me-2" *ngIf="isSaving"></span>
                 {{ editingItem ? 'Update Entry' : 'Add Entry' }}
               </button>
+              <button type="button" class="btn btn-success btn-lg fw-bold" (click)="createNewItem()" *ngIf="editingItem && saveMessage">
+                <i class="ki-outline ki-plus fs-3 me-2"></i>
+                Create New Entry
+              </button>
               <button type="button" class="btn btn-secondary btn-lg fw-bold" (click)="clearForm()">
                 <i class="ki-outline ki-eraser fs-3 me-2"></i>
-                Clear Form
-              </button>
-              <button type="button" class="btn btn-light-danger btn-lg fw-bold" (click)="cancelEdit()">
-                <i class="ki-outline ki-cross fs-3 me-2"></i>
-                Cancel
+                {{ editingItem && saveMessage ? 'Clear & Start New' : 'Clear Form' }}
               </button>
               <button type="button" class="btn btn-danger" (click)="confirmDeleteItem(editingItem)" *ngIf="editingItem">
                 <i class="ki-outline ki-trash fs-4 me-1"></i>

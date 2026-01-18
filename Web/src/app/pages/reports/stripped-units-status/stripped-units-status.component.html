@@ -1,9 +1,9 @@
 <!-- Stripped Units Status Page -->
-<div class="container-fluid parts-request-container">
+<div class="container-fluid order-request-container">
   <!-- Loading spinner -->
   <div
     *ngIf="isLoading"
-    class="d-flex justify-content-center align-items-center parts-request-loading"
+    class="d-flex justify-content-center align-items-center order-request-loading"
   >
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -11,31 +11,33 @@
   </div>
 
   <!-- Header Section -->
-  <div class="parts-request-header__top mb-4 d-flex justify-content-between align-items-center">
+  <div class="order-request-header__top mb-4 d-flex justify-content-between align-items-center">
     <button
       type="button"
-      class="btn btn-sm btn-primary parts-request-header__back"
+      class="btn btn-sm btn-primary order-request-header__back"
       (click)="goBack()"
-      [disabled]="isLoading"
-    >
+      [disabled]="isLoading">
       <i class="bi bi-arrow-left me-2"></i>
       Back
     </button>
     
-    <!-- Page Title - Centered between buttons -->
-    <div class="parts-page-title">
+    <!-- Page Title - Centered -->
+    <div class="order-request-page-title">
       <h2 class="fw-bold text-primary mb-0">
         <i class="bi bi-pc-display-horizontal me-2"></i>
         Stripped Units Status Report
       </h2>
     </div>
+    
+    <!-- Empty div for spacing balance -->
+    <div></div>
   </div>
 
   <!-- Main content -->
   <div *ngIf="!isLoading">
 
     <!--begin::Make Distribution Chart Section-->
-    <div class="card shadow-sm parts-main-card mb-4">
+    <div class="card shadow-sm order-main-card mb-4">
       <!-- Header -->
       <div class="card-header border-0 py-4">
         <h3 class="card-title">
@@ -242,29 +244,25 @@
     <!--end::Charts Section-->
 
     <!-- Filter & Data Section -->
-    <div class="card shadow-sm parts-main-card mt-3">
+    <div class="card shadow-sm order-main-card mt-3">
       <!-- Filter Header -->
-      <div class="card-header border-0 py-4">
+      <div class="card-header border-0 py-2 bg-white">
         <div class="parts-filter-header">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-funnel me-2 text-primary"></i>
-                Filters & Search
-                <span class="badge ms-3 px-3 py-2 fs-6 fw-bold" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white; border-radius: 20px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
-                  <i class="bi bi-check-circle me-1"></i>
-                  {{ totalItems }} Result{{ totalItems === 1 ? '' : 's' }}
-                </span>
-              </h5>
-              <small class="text-muted">Customize your view with filters below</small>
-            </div>
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
+              <i class="bi bi-funnel me-2 text-primary"></i>
+              Filters & Search
+              <span class="badge ms-2 px-2 py-1 fs-7 fw-bold" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white; border-radius: 15px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+                {{ totalItems }} Result{{ totalItems === 1 ? '' : 's' }}
+              </span>
+            </h6>
           </div>
 
           <!-- Filter Controls -->
-          <div class="filter-controls-section mt-3">
+          <div class="filter-controls-section">
             <form [formGroup]="filterForm" class="parts-filter-form">
               <!-- First Row of Filters -->
-              <div class="row g-4 mb-3">
+              <div class="row g-3 mb-2">
                 <!-- Status Filter -->
                 <div class="col-12">
                   <div class="filter-group">
@@ -292,7 +290,7 @@
       </div>
 
       <!-- Data Display Section -->
-      <div class="card-body py-4">
+      <div class="card-body py-2">
         
         <!-- Modern Pagination Controls at Top -->
         <div *ngIf="filteredUnitsList.length > 0 && !isLoading" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
@@ -368,14 +366,13 @@
             <table class="table parts-data-table modern-table table-layout-fixed mb-0">
               <thead>
                 <tr class="compact-header">
-                  <th class="ps-4 text-center cursor-pointer" (click)="sortBy('rowIndex')" style="width: 5%;">
+                  <th class="ps-4 text-center cursor-pointer" (click)="sortBy('rowIndex')" style="width: 3%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <i class="bi bi-hash text-white me-2 small-icon"></i>
-                      <span class="d-none d-md-inline header-text">Row</span>
-                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('rowIndex')"></i>
+                      <span class="header-text">Row</span>
+                      <i class="bi ms-1 sort-icon fs-7 text-warning" [ngClass]="getSortIcon('rowIndex')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('make')" style="width: 8%;">
+                  <th class="cursor-pointer text-center" (click)="sortBy('make')" style="width: 7%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
                       <i class="bi bi-building text-white me-2 small-icon"></i>
                       <span class="header-text">Make</span>
@@ -389,70 +386,73 @@
                       <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('model')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('serialNo')" style="width: 10%;">
+                  <th class="cursor-pointer text-center" (click)="sortBy('serialNo')" style="width: 3%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
                       <i class="bi bi-upc-scan text-white me-2 small-icon"></i>
                       <span class="header-text">Serial</span>
                       <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('serialNo')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('kva')" style="width: 6%;">
+                  <th class="cursor-pointer d-none d-xl-table-cell text-center" (click)="sortBy('kva')" style="width: 4%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <i class="bi bi-lightning text-white me-2 small-icon"></i>
                       <span class="header-text">KVA</span>
-                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('kva')"></i>
+                      <i class="bi ms-1 sort-icon fs-7 text-warning" [ngClass]="getSortIcon('kva')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer d-none d-md-table-cell text-center" (click)="sortBy('poNumber')" style="width: 8%;">
+                  <th class="cursor-pointer text-center" (click)="sortBy('poNumber')" style="width: 5%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <i class="bi bi-receipt text-white me-2 small-icon"></i>
                       <span class="header-text">PO#</span>
-                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('poNumber')"></i>
+                      <i class="bi ms-1 sort-icon fs-7 text-warning" [ngClass]="getSortIcon('poNumber')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer d-none d-xl-table-cell text-center" (click)="sortBy('unitCost')" style="width: 8%;">
+                  <th class="cursor-pointer text-center" (click)="sortBy('shippingPO')" style="width: 5%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <i class="bi bi-currency-dollar text-white me-2 small-icon"></i>
-                      <span class="header-text">Cost</span>
-                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('unitCost')"></i>
+                      <span class="header-text">Shipping PO#</span>
+                      <i class="bi ms-1 sort-icon fs-7 text-warning" [ngClass]="getSortIcon('shippingPO')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer d-none d-xl-table-cell text-center" (click)="sortBy('shipCost')" style="width: 8%;">
+                  <th class="cursor-pointer d-none d-xl-table-cell text-center" (click)="sortBy('unitCost')" style="width: 5%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <i class="bi bi-truck text-white me-2 small-icon"></i>
-                      <span class="header-text">Ship</span>
-                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('shipCost')"></i>
+                      <span class="header-text">Unit Cost</span>
+                      <i class="bi ms-1 sort-icon fs-7 text-warning" [ngClass]="getSortIcon('unitCost')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('status')" style="width: 8%;">
+                  <th class="cursor-pointer text-center" (click)="sortBy('shipCost')" style="width: 5%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
+                      <span class="header-text">Shipping Cost</span>
+                      <i class="bi ms-1 sort-icon fs-7 text-warning" [ngClass]="getSortIcon('shipCost')"></i>
+                    </div>
+                  </th>
+                  <th class="cursor-pointer text-center" (click)="sortBy('status')" style="width: 9%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
                       <i class="bi bi-flag text-white me-2 small-icon"></i>
                       <span class="header-text">Status</span>
                       <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('status')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('strippedBy')" style="width: 10%;">
+                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('strippedBy')" style="width: 6%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <i class="bi bi-person-gear text-white me-2 small-icon"></i>
-                      <span class="header-text">Stripped</span>
+                      <i class="bi bi-person text-white me-2 small-icon"></i>
+                      <span class="header-text">Stripped By</span>
                       <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('strippedBy')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('putAwayBy')" style="width: 10%;">
+                  <th class="cursor-pointer d-none d-lg-table-cell text-center" (click)="sortBy('putAwayBy')" style="width: 6%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
                       <i class="bi bi-person-check text-white me-2 small-icon"></i>
-                      <span class="header-text">Put Away</span>
+                      <span class="header-text">Put Away By</span>
                       <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('putAwayBy')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer d-none d-md-table-cell text-center" (click)="sortBy('createdOn')" style="width: 10%;">
-                    <div class="header-content-compact">
+                  <th class="cursor-pointer text-center" (click)="sortBy('createdOn')" style="width: 10%;">
+                    <div class="header-content-compact d-flex align-items-center justify-content-center">
                       <i class="bi bi-calendar-event text-white me-1 small-icon"></i>
-                      <span class="header-text">Created</span>
-                      <i class="bi ms-1 sort-icon" [ngClass]="getSortIcon('createdOn')"></i>
+                      <span class="header-text">Created On</span>
+                      <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('createdOn')"></i>
                     </div>
                   </th>
-                  <th class="text-center sticky-actions" style="width: 8%;">
+
+                  <th class="text-center sticky-actions" style="width: 6%;">
                     <div class="header-content-compact">
                       <i class="bi bi-plus-circle text-white me-1 small-icon"></i>
                       <span class="header-text">Add Parts</span>
@@ -465,9 +465,9 @@
                   class="compact-row" 
                   [class.striped]="i % 2 === 1"
                   [class.row-stripped-exists]="hasStrippedParts(unit)">
-                <td class="ps-4 text-center compact-cell">
-                  <span class="text-muted fw-bold" 
-                          [title]="'Row ' + unit.rowIndex">
+                <td class="ps-4 text-center compact-cell numeric-cell table-text-medium">
+                  <span class="text-dark fw-bold" 
+                          [title]="'Row ' + unit.rowIndex" style="font-size: 1em;">
                     {{ unit.rowIndex }}
                   </span>
                 </td>
@@ -477,26 +477,37 @@
                     class="btn btn-link p-0 text-primary fw-bold text-decoration-none"
                     (click)="redirectToStrippedParts($event, unit)"
                     [title]="'View stripped parts for ' + unit.make + ' ' + unit.model"
-                    style="border: none; background: none; font-size: inherit; line-height: inherit; cursor: pointer;">
+                    style="border: none; background: none; font-size: 1em; line-height: inherit; cursor: pointer;">
                     {{ unit.make }}
                   </button>
                 </td>
-                <td class="compact-cell text-start multi-line-text table-text-medium" [title]="unit.model">{{ unit.model }}</td>
-                <td class="compact-cell text-start">
-                  <span class="fw-semibold serial-number" [title]="unit.serialNo">{{ unit.serialNo }}</span>
+                <td class="compact-cell text-start multi-line-text table-text-medium" [title]="unit.model" style="font-size: 0.8em;">{{ unit.model }}</td>
+                <td class="compact-cell text-start table-text-medium">
+                  <span class="serial-number" [title]="unit.serialNo" style="font-size: 1em;">{{ unit.serialNo }}</span>
                 </td>
-                <td class="d-none d-lg-table-cell compact-cell text-end">{{ unit.kva }}</td>
-                <td class="d-none d-md-table-cell compact-cell text-start" [title]="unit.poNumber">{{ unit.poNumber }}</td>
-                <td class="d-none d-xl-table-cell compact-cell text-end">{{ formatCurrency(unit.unitCost) }}</td>
-                <td class="d-none d-xl-table-cell compact-cell text-end">{{ formatCurrency(unit.shipCost) }}</td>
-                <td class="compact-cell text-center">
-                  <span class="badge status-badge" [ngClass]="getStatusBadgeClass(unit.status)">
+                <td class="d-none d-xl-table-cell compact-cell numeric-cell text-end table-text-medium" style="font-size: 0.8em;">{{ unit.kva }}</td>
+                <td class="compact-cell numeric-cell text-start single-line-text table-text-medium" [title]="unit.poNumber" style="font-size: 0.8em;">{{ unit.poNumber }}</td>
+                <td class="compact-cell numeric-cell text-start single-line-text table-text-medium" [title]="unit.shippingPO" style="font-size: 0.8em;">{{ unit.shippingPO }}</td>
+                <td class="d-none d-xl-table-cell compact-cell numeric-cell text-end table-text-medium" style="font-size: 0.8em;">{{ formatCurrency(unit.unitCost) }}</td>
+                <td class="compact-cell numeric-cell text-end table-text-medium" style="font-size: 0.8em;">{{ formatCurrency(unit.shipCost) }}</td>
+                <td class="compact-cell text-center table-text-medium">
+                  <span class="badge status-badge" [ngClass]="getStatusBadgeClass(unit.status)" style="font-size: 0.8em;">
                     {{ unit.displayStatus }}
                   </span>
                 </td>
-                <td class="d-none d-lg-table-cell compact-cell text-start" [title]="unit.strippedBy">{{ unit.strippedBy }}</td>
-                <td class="d-none d-lg-table-cell compact-cell text-start" [title]="unit.putAwayBy">{{ unit.putAwayBy }}</td>
-                <td class="d-none d-md-table-cell compact-cell text-center" [title]="formatDateTimeTooltip(unit.createdOn)">{{ formatDateTime(unit.createdOn) }}</td>
+                <td class="d-none d-lg-table-cell compact-cell text-center compact-names table-text-medium" [title]="unit.strippedBy || 'Not assigned'">
+                  <span style="font-size: 1em;">{{ unit.strippedBy || '-' }}</span>
+                </td>
+                <td class="d-none d-lg-table-cell compact-cell text-center compact-names table-text-medium" [title]="unit.putAwayBy || 'Not assigned'">
+                  <span style="font-size: 1em;">{{ unit.putAwayBy || '-' }}</span>
+                </td>
+                <td class="compact-cell text-center multi-line-text table-text-medium" [title]="formatDateTimeTooltip(unit.createdOn)">
+                  <div class="d-flex flex-column">
+                    <span class="fw-semibold" style="font-size: 0.9em;">{{ formatDate(unit.createdOn) }}</span>
+                    <span class="text-dark" style="font-size: 0.8em;">{{ formatTime(unit.createdOn) }}</span>
+                  </div>
+                </td>
+
                 <td class="text-center compact-cell sticky-actions-cell">
                   <div class="action-buttons d-flex justify-content-center">
                     <button class="btn btn-success btn-sm enhanced-add-btn" (click)="addParts(unit)" title="Add Parts">

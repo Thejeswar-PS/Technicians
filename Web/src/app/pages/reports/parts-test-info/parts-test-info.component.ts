@@ -42,8 +42,10 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   saveError: string = '';
   
   // Employee functionality
-  employees: EmployeeDto[] = [];
+  employees: EmployeeDto[] = []; // For Assigned To (TC department)
+  createdByEmployees: EmployeeDto[] = []; // For Created By (P & T departments)
   isLoadingEmployees: boolean = false;
+  isLoadingCreatedByEmployees: boolean = false;
   selectedDepartment: string = 'TC'; // Default to TC department
   
   // Conditional display flags based on job type (matching legacy logic)
@@ -120,7 +122,8 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.handleQueryParams();
     this.loadMaxRowIndex();
-    this.loadAllEmployees(); // Load employees from all departments
+    this.loadEmployees('TC'); // Load only TC department employees for Assigned to dropdown
+    this.loadCreatedByEmployees(); // Load P & T department employees for Created by dropdown
     // Start in edit mode like the legacy form
     this.createNewItem();
     // Setup subscriptions after form is created
@@ -1115,7 +1118,6 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
       
       // Board Setup Status (conditional)
       boardStatus: ['0'],
-      boardSetupStatus: ['0'],
       
       // Common completion fields
       completionDate: [null],
@@ -1252,7 +1254,6 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
       createdBy: '', // Will be selected from dropdown
       assignedTo: '', // Will be selected from dropdown
       boardStatus: '0',
-      boardSetupStatus: '0',
       partRepairStatus: '0',
       testWorkStatus: '0',
       assyWorkStatus: '0',
@@ -1333,11 +1334,93 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
           this.saveMessage = response.message || 'Parts test entry saved successfully!';
           this.saveError = '';
           
-          // Refresh the data to show updated results
+          // Keep the form populated with the saved data instead of clearing it
+          // Update the editingItem with the saved data for reference
+          if (!this.editingItem) {
+            // For new entries, create an editingItem to maintain the data
+            this.editingItem = {
+              id: dto.rowIndex,
+              rowIndex: dto.rowIndex,
+              jobFrom: dto.jobFrom,
+              callNbr: dto.callNbr,
+              siteID: dto.siteID,
+              make: dto.make,
+              model: dto.model,
+              voltage: dto.voltage,
+              kva: dto.kva,
+              partNumber: dto.manufPartNo,
+              manufPartNo: dto.manufPartNo,
+              dcgPartNo: dto.dcgPartNo,
+              quantity: dto.quantity,
+              serialNo: dto.serialNo,
+              serialNumber: dto.serialNo,
+              description: dto.description,
+              problemNotes: dto.problemNotes,
+              resolveNotes: dto.resolveNotes,
+              createdBy: dto.createdBy,
+              assignedTo: dto.assignedTo,
+              dueDate: dto.dueDate,
+              testDate: dto.dueDate,
+              priority: dto.priority,
+              boardStatus: dto.boardStatus,
+              testWorkStatus: dto.testWorkStatus,
+              isPassed: dto.isPassed,
+              approved: dto.approved,
+              lastModifiedBy: dto.lastModifiedBy,
+              workType: dto.workType,
+              completedBy: dto.completedBy,
+              reviewedBy: dto.reviewedBy,
+              assyWorkDone: dto.assyWorkDone,
+              assyProcFollowed: dto.assyProcFollowed,
+              assyWorkStatus: dto.assyWorkStatus,
+              qcWorkDone: dto.qcWorkDone,
+              qcProcFollowed: dto.qcProcFollowed,
+              qcApproved: dto.qcApproved,
+              qcWorkStatus: dto.qcWorkStatus
+            } as PartsTestInfo;
+          } else {
+            // For updates, refresh the editingItem with current form data
+            Object.assign(this.editingItem, {
+              jobFrom: dto.jobFrom,
+              callNbr: dto.callNbr,
+              siteID: dto.siteID,
+              make: dto.make,
+              model: dto.model,
+              voltage: dto.voltage,
+              kva: dto.kva,
+              partNumber: dto.manufPartNo,
+              manufPartNo: dto.manufPartNo,
+              dcgPartNo: dto.dcgPartNo,
+              quantity: dto.quantity,
+              serialNo: dto.serialNo,
+              description: dto.description,
+              problemNotes: dto.problemNotes,
+              resolveNotes: dto.resolveNotes,
+              assignedTo: dto.assignedTo,
+              dueDate: dto.dueDate,
+              priority: dto.priority,
+              boardStatus: dto.boardStatus,
+              testWorkStatus: dto.testWorkStatus,
+              isPassed: dto.isPassed,
+              approved: dto.approved,
+              lastModifiedBy: dto.lastModifiedBy,
+              workType: dto.workType,
+              completedBy: dto.completedBy,
+              reviewedBy: dto.reviewedBy,
+              assyWorkDone: dto.assyWorkDone,
+              assyProcFollowed: dto.assyProcFollowed,
+              assyWorkStatus: dto.assyWorkStatus,
+              qcWorkDone: dto.qcWorkDone,
+              qcProcFollowed: dto.qcProcFollowed,
+              qcApproved: dto.qcApproved,
+              qcWorkStatus: dto.qcWorkStatus
+            });
+          }
+          
+          // Show success message for 3 seconds, but don't clear the form
           setTimeout(() => {
-            this.loadPartsTestData();
-            this.cancelEdit();
-          }, 1500);
+            this.saveMessage = '';
+          }, 3000);
         } else {
           this.saveError = response.message || 'Failed to save parts test entry.';
           this.saveMessage = '';
@@ -1535,7 +1618,7 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
     if (formValue.approved === true) {
       // Board Setup jobs - different validation
       if (formValue.jobFrom === '7') {
-        if (!formValue.boardSetupStatus || formValue.boardSetupStatus !== '1') {
+        if (!formValue.boardStatus || formValue.boardStatus !== '1') {
           alert('You cannot approve this because board setup dropdown is not completed.');
           return false;
         }
@@ -1566,13 +1649,8 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
       }
     }
     
-    // Board Setup validation for Job Type 7 (Board Setup jobs)
-    if (formValue.jobFrom === '7') {
-      if (!formValue.boardSetupStatus || formValue.boardSetupStatus === '0') {
-        alert('Board Setup Status must be "Completed" for Board Setup jobs.');
-        return false;
-      }
-    }
+    // Board Setup validation - only required when approving (handled above)
+    // Allow Board Setup jobs to be saved with any status (In Progress, Completed, etc.)
     
     // Complete approval validation (for non-Board Setup jobs)
     if (formValue.jobFrom !== '7') {
@@ -1786,6 +1864,45 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
     });
   }
 
+  // Load employees from P & T departments for Created By dropdown
+  loadCreatedByEmployees(): void {
+    this.isLoadingCreatedByEmployees = true;
+    const departments = ['P', 'T']; // P & T departments for Created By
+    const allCreatedByEmployees: EmployeeDto[] = [];
+    let completedRequests = 0;
+    
+    departments.forEach(department => {
+      this.reportService.getEmployeeNamesByDept(department).subscribe({
+        next: (response: EmployeeResponse) => {
+          if (response.success && response.employees) {
+            // Add employees from this department, avoiding duplicates
+            response.employees.forEach(emp => {
+              if (!allCreatedByEmployees.find(existing => existing.empName === emp.empName)) {
+                allCreatedByEmployees.push(emp);
+              }
+            });
+          }
+          completedRequests++;
+          
+          // When all departments are loaded, set the employees list
+          if (completedRequests === departments.length) {
+            this.createdByEmployees = allCreatedByEmployees.sort((a, b) => (a.empName || '').localeCompare(b.empName || ''));
+            this.isLoadingCreatedByEmployees = false;
+            console.log('Loaded Created By employees from P & T departments:', this.createdByEmployees.length, 'employees');
+          }
+        },
+        error: (error) => {
+          console.error(`Error loading Created By employees from department ${department}:`, error);
+          completedRequests++;
+          if (completedRequests === departments.length) {
+            this.createdByEmployees = allCreatedByEmployees.sort((a, b) => (a.empName || '').localeCompare(b.empName || ''));
+            this.isLoadingCreatedByEmployees = false;
+          }
+        }
+      });
+    });
+  }
+
   loadEmployees(department: string): void {
     if (!department) return;
     
@@ -1830,6 +1947,10 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
 
   getEmployeeOptions(): EmployeeDto[] {
     return this.employees || [];
+  }
+
+  getCreatedByEmployeeOptions(): EmployeeDto[] {
+    return this.createdByEmployees || [];
   }
 
   getEmployeeDisplayName(employee: EmployeeDto): string {
@@ -2133,38 +2254,70 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
   }
   
   generateAutoId(): void {
-    // Generate auto ID similar to legacy form
+    // Generate auto ID exactly like legacy system
+    const now = new Date();
+    
+    // Get max row index from database (already returns max(RowIndex)+1 like legacy)
+    this.reportService.getMaxTestRowIndex().subscribe({
+      next: (response) => {
+        if (response.success) {
+          const year = now.getFullYear().toString();
+          const month = now.getMonth().toString(); // Legacy uses single digit month
+          const day = now.getDate().toString();     // Legacy uses single digit day
+          const sequentialId = response.maxRowIndex.toString(); // Database returns max(RowIndex)+1
+          
+          this.editForm.patchValue({
+            autoGenYr: year,
+            autoGenMon: month,
+            autoGenDay: day,
+            autoGenID: sequentialId // Sequential ID from database (matches legacy)
+          });
+          
+          // Console log to verify legacy matching
+          console.log('Parts Test Info Auto ID (Legacy Match):');
+          console.log('Year:', year);
+          console.log('Month:', month);  
+          console.log('Day:', day);
+          console.log('Sequential ID from DB (max+1):', sequentialId);
+          console.log('Complete Format:', `${year}-${month}-${day}-${sequentialId}`);
+        } else {
+          console.error('Failed to get max row index:', response);
+          this.generateFallbackAutoId();
+        }
+      },
+      error: (error) => {
+        console.error('Error getting sequential ID from database:', error);
+        this.generateFallbackAutoId();
+      }
+    });
+  }
+
+  private generateFallbackAutoId(): void {
+    // Fallback if database call fails
     const now = new Date();
     const year = now.getFullYear().toString();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const id = Math.floor(Math.random() * 9999).toString().padStart(4, '0');
+    const month = now.getMonth().toString();
+    const day = now.getDate().toString();
+    const fallbackId = Date.now().toString().slice(-3); // Use last 3 digits of timestamp
     
     this.editForm.patchValue({
       autoGenYr: year,
       autoGenMon: month,
       autoGenDay: day,
-      autoGenID: id
+      autoGenID: fallbackId
     });
+    
+    console.log('Parts Test Info Auto ID (Fallback):', `${year}-${month}-${day}-${fallbackId}`);
   }
 
   clearForm(): void {
-    // Reset form to initial state
-    this.editForm.reset();
-    this.createEditForm();
-    this.generateAutoId();
-    
-    // Reset display conditions
-    this.showBoardSetup = false;
-    this.showComponentWork = false;
-    this.showAssemblyQC = false;
-    
-    // Clear messages
+    // Clear editing state and messages
+    this.editingItem = null;
     this.saveMessage = '';
     this.saveError = '';
     
-    // Update button state after clearing form
-    setTimeout(() => this.updateAddEntryButtonState(), 0);
+    // Start a new entry (this will reset the form properly)
+    this.createNewItem();
   }
 
   // Event handler for textarea input to auto-resize

@@ -1,0 +1,396 @@
+// Enhanced chart container with modern styling and support for new chart types
+.chart-container {
+  position: relative;
+  height: auto;
+  min-height: 450px;
+  padding: 25px;
+  margin-bottom: 20px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4, #10b981, #f59e0b, #ef4444);
+    opacity: 0.6;
+  }
+  
+  &:hover {
+    box-shadow: 
+      0 12px 48px rgba(0, 0, 0, 0.12),
+      0 6px 24px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transform: translateY(-3px) scale(1.01);
+  }
+  
+  // Specific styling for different chart types
+  &.donut-chart {
+    background: linear-gradient(145deg, #f0f9ff 0%, #ffffff 50%, #e0f2fe 100%);
+    min-height: 520px;
+  }
+  
+  &.radar-chart {
+    background: linear-gradient(145deg, #fffbeb 0%, #ffffff 50%, #fef3c7 100%);
+    min-height: 560px;
+  }
+  
+  &.mixed-chart {
+    background: linear-gradient(145deg, #f0fdf4 0%, #ffffff 50%, #dcfce7 100%);
+    min-height: 620px;
+  }
+}
+
+// Enhanced card styling with modern design
+.card-custom {
+  box-shadow: 0 2px 20px rgba(82, 63, 105, 0.08);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  background: #ffffff;
+  
+  &:hover {
+    box-shadow: 0 8px 40px rgba(82, 63, 105, 0.15);
+    transform: translateY(-4px);
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 16px 16px 0 0;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+  }
+}
+
+// Loading spinner enhancements
+.spinner-border {
+  width: 4rem;
+  height: 4rem;
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Enhanced chart styling with modern ApexCharts improvements
+.apexcharts-canvas {
+  border-radius: 16px;
+  margin: 0 auto;
+  
+  // Ensure proper sizing and prevent overflow
+  svg {
+    overflow: visible !important;
+  }
+  
+  // Enhanced toolbar styling
+  .apexcharts-toolbar {
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.12) !important;
+    padding: 8px !important;
+    
+    .apexcharts-toolbar-item {
+      margin: 2px !important;
+      border-radius: 6px !important;
+      transition: all 0.2s ease !important;
+      
+      &:hover {
+        background: rgba(59, 130, 246, 0.1) !important;
+        transform: scale(1.1) !important;
+      }
+    }
+  }
+  
+  // Enhanced tooltip styling
+  .apexcharts-tooltip {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18) !important;
+    backdrop-filter: blur(16px) !important;
+    padding: 12px !important;
+    
+    &.apexcharts-theme-light {
+      .apexcharts-tooltip-title {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+        border-radius: 8px 8px 0 0 !important;
+        font-weight: 700 !important;
+        color: #1e293b !important;
+        padding: 8px 12px !important;
+        margin: -12px -12px 8px -12px !important;
+      }
+      
+      .apexcharts-tooltip-y-group {
+        .apexcharts-tooltip-text-y-label {
+          font-weight: 600 !important;
+          color: #475569 !important;
+          font-size: 13px !important;
+        }
+        
+        .apexcharts-tooltip-text-y-value {
+          font-weight: 800 !important;
+          color: #059669 !important;
+          font-size: 15px !important;
+        }
+      }
+    }
+  }
+  
+  // Enhanced legend styling
+  .apexcharts-legend {
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    padding: 16px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+    
+    .apexcharts-legend-series {
+      margin: 4px 12px !important;
+      
+      .apexcharts-legend-marker {
+        border-radius: 4px !important;
+        width: 14px !important;
+        height: 14px !important;
+        margin-right: 8px !important;
+      }
+      
+      .apexcharts-legend-text {
+        font-weight: 600 !important;
+        color: #374151 !important;
+        font-size: 13px !important;
+      }
+    }
+  }
+  
+  // Donut chart specific styling
+  &[data-chart-type="donut"] {
+    .apexcharts-pie-label {
+      font-weight: 700 !important;
+      font-family: 'Inter, sans-serif' !important;
+      color: #1f2937 !important;
+    }
+    
+    .apexcharts-datalabel-label {
+      font-size: 14px !important;
+      font-weight: 600 !important;
+      fill: #6b7280 !important;
+    }
+    
+    .apexcharts-datalabel-value {
+      font-size: 20px !important;
+      font-weight: 800 !important;
+      fill: #111827 !important;
+    }
+  }
+  
+  // Radar chart specific styling  
+  &[data-chart-type="radar"] {
+    .apexcharts-radar-series path {
+      filter: drop-shadow(0 2px 4px rgba(245, 158, 11, 0.3));
+    }
+    
+    .apexcharts-gridline {
+      stroke: #e5e7eb !important;
+      stroke-width: 1.5px !important;
+    }
+    
+    .apexcharts-text.apexcharts-xaxis-label {
+      font-weight: 600 !important;
+      font-size: 12px !important;
+      fill: #374151 !important;
+    }
+  }
+  
+  // Mixed chart specific styling
+  &[data-chart-type="line"] {
+    .apexcharts-area-series path {
+      filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.2));
+    }
+    
+    .apexcharts-line-series path {
+      filter: drop-shadow(0 1px 3px rgba(5, 150, 105, 0.4));
+    }
+    
+    .apexcharts-bar-series rect {
+      filter: drop-shadow(0 2px 4px rgba(220, 38, 38, 0.3));
+    }
+  }
+}
+
+// Custom tooltip styling for enhanced tooltips
+.custom-tooltip {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  
+  .tooltip-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #2c3e50;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 4px;
+  }
+  
+  .tooltip-value {
+    font-weight: 700;
+    font-size: 16px;
+    color: #2980b9;
+  }
+}
+
+// Enhanced summary cards styling
+.symbol {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: scale(1.05);
+  }
+  
+  .symbol-label {
+    border-radius: 12px;
+    font-size: 1.4rem;
+    background: linear-gradient(135deg, var(--kt-primary) 0%, var(--kt-primary-light) 100%) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    
+    &:hover {
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
+    
+    // Color variations for different card types
+    &.bg-light-primary {
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%) !important;
+    }
+    
+    &.bg-light-success {
+      background: linear-gradient(135deg, #10b981 0%, #34d399 100%) !important;
+    }
+    
+    &.bg-light-warning {
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
+    }
+    
+    &.bg-light-danger {
+      background: linear-gradient(135deg, #ef4444 0%, #f87171 100%) !important;
+    }
+    
+    &.bg-light-info {
+      background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%) !important;
+    }
+  }
+}
+
+// Enhanced card titles and content
+.card-title {
+  .fw-bolder {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+  
+  .fs-7 {
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 0.9rem;
+  }
+}
+
+// Enhanced grid and layout improvements
+.row.g-5.g-xl-8 {
+  margin-bottom: 2rem;
+}
+
+// Loading and error states with better styling
+.alert {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  
+  &.alert-danger {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #dc2626;
+    border-left: 4px solid #dc2626;
+  }
+}
+
+// Responsive adjustments with improved breakpoints
+@media (max-width: 1200px) {
+  .chart-container {
+    height: 400px;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .chart-container {
+    height: 350px;
+    padding: 10px;
+  }
+  
+  .card-custom {
+    margin-bottom: 1.5rem;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+  
+  .card-title {
+    .fw-bolder {
+      font-size: 1.1rem;
+    }
+    
+    .fs-7 {
+      font-size: 0.8rem;
+    }
+  }
+  
+  .symbol .symbol-label {
+    font-size: 1.2rem;
+    
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .chart-container {
+    height: 300px;
+    padding: 8px;
+  }
+  
+  .custom-tooltip {
+    padding: 8px 12px;
+    
+    .tooltip-title {
+      font-size: 12px;
+    }
+    
+    .tooltip-value {
+      font-size: 14px;
+    }
+  }
+}

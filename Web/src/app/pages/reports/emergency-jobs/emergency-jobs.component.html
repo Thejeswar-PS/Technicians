@@ -1,0 +1,138 @@
+<!-- Emergency Jobs Page -->
+<div class="emergency-jobs-container d-flex flex-column h-100">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center emergency-jobs-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="emergency-jobs-header__top mb-4 d-flex justify-content-between align-items-center px-4 py-3">
+    <button
+      type="button"
+      class="btn btn-primary emergency-jobs-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="emergency-page-title flex-grow-1">
+      <h2 class="text-center mb-0">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Emergency Jobs
+      </h2>
+    </div>
+
+    <div style="width: 80px;"></div> <!-- Spacer for perfect centering -->
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading" class="container-fluid px-4">
+    <!-- Filter Section -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body p-4">
+        <!-- Filters Header -->
+        <div class="d-flex align-items-center mb-3">
+          <i class="bi bi-funnel me-2 text-primary"></i>
+          <h6 class="mb-0 fw-bold">Filters & Search</h6>
+          <span class="badge bg-primary ms-2">{{totalItems}} Results</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="errorMessage" class="alert alert-danger mb-4" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ errorMessage }}
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger ms-2"
+        (click)="refreshData()"
+      >
+        Retry
+      </button>
+    </div>
+
+    <!-- Table Container -->
+    <div class="table-container">
+      <div *ngIf="totalItems === 0" class="text-center py-5">
+        <div class="empty-state">
+          <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+          <h5 class="text-muted">No Emergency Jobs Found</h5>
+          <p class="text-muted">No emergency jobs available at this time.</p>
+        </div>
+      </div>
+
+      <div *ngIf="totalItems > 0" class="table-responsive">
+        <table class="table table-hover emergency-jobs-table mb-0">
+            <thead>
+              <tr>
+                <th 
+                  *ngFor="let column of columns"
+                  [class.sortable]="column.sortable"
+                  (click)="column.sortable ? onSort(column.key) : null"
+                  class="text-nowrap"
+                >
+                  {{ column.label }}
+                  <i 
+                    *ngIf="column.sortable"
+                    [class]="'sort-icon ms-2 ' + getSortIcon(column.key)"
+                  ></i>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let job of getPaginatedData(); trackBy: trackByCallNumber" class="emergency-job-row">
+                <td class="text-nowrap">
+                  <strong class="text-primary">{{ job.callnbr }}</strong>
+                </td>
+                <td>
+                  <div class="customer-info">
+                    <div class="fw-bold">{{ job.custname }}</div>
+                    <small class="text-muted">{{ job.custnmbr }}</small>
+                  </div>
+                </td>
+                <td>{{ job.city }}</td>
+                <td>
+                  <span class="badge badge-light">{{ job.state }}</span>
+                </td>
+                <td class="text-nowrap">{{ formatDate(job.dispdte) }}</td>
+                <td>
+                  <div class="technician-info">
+                    <div class="fw-bold">{{ job.name }}</div>
+                    <small class="text-muted">ID: {{ job.techid }}</small>
+                  </div>
+                </td>
+                <td>{{ job.accountManager }}</td>
+                <td>
+                  <span 
+                    class="badge"
+                    [ngClass]="getStatusBadgeClass(job.jobStatus)"
+                  >
+                    {{ job.jobStatus }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span 
+                    class="badge"
+                    [class.badge-danger]="job.changeAge > 7"
+                    [class.badge-warning]="job.changeAge > 3 && job.changeAge <= 7"
+                    [class.badge-success]="job.changeAge <= 3"
+                  >
+                    {{ job.changeAge }} days
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,410 @@
+// DCG Display Report Details Component - Matching Parts Request Status Design
+
+// Table header styling - Blue gradient like Parts Request Status
+.table thead th {
+  background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 1rem 1.25rem !important;
+  font-weight: 700 !important;
+  font-size: 1.05rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  text-align: center !important;
+  vertical-align: middle !important;
+  height: 60px !important;
+  position: relative !important;
+  
+  &:first-child {
+    border-radius: 16px 0 0 0 !important;
+  }
+  
+  &:last-child {
+    border-radius: 0 16px 0 0 !important;
+  }
+  
+  &.cursor-pointer {
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    
+    &:hover {
+      background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%) !important;
+      transform: translateY(-1px) !important;
+    }
+  }
+  
+  // Sort icons styling
+  .bi-arrow-up-down {
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// Table body styling - Dark black text with larger font
+.table tbody {
+  td {
+    color: #000000 !important; // Dark black text
+    font-size: 1rem !important; // Increased font size
+    font-weight: 500 !important;
+    padding: 1rem 1.25rem !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    
+    .fw-semibold {
+      color: #000000 !important; // Ensure dark text even with Bootstrap classes
+      font-weight: 600 !important;
+    }
+    
+    // Status-specific colors (keeping these for status indicators)
+    &.text-primary .fw-semibold {
+      color: #0066cc !important; // Amounts in blue
+    }
+    
+    &.text-success .fw-semibold {
+      color: #28a745 !important; // Success status
+    }
+    
+    &.text-warning .fw-semibold {
+      color: #ffc107 !important; // Warning status
+    }
+    
+    &.text-danger .fw-semibold {
+      color: #dc3545 !important; // Danger status
+    }
+  }
+  
+  tr {
+    transition: all 0.3s ease !important;
+    
+    &:hover {
+      background-color: rgba(84, 134, 255, 0.05) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    &:nth-child(even) {
+      background-color: rgba(248, 249, 250, 0.5) !important;
+    }
+  }
+}
+
+// Table container styling
+.table-responsive {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  
+  .table {
+    margin-bottom: 0 !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    font-family: "Inter", system-ui, sans-serif !important;
+  }
+}
+
+// Original cursor and hover styles
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.cursor-pointer:hover {
+  background-color: var(--kt-gray-100);
+}
+
+// Override for table header hover (already handled above)
+.table th.cursor-pointer:hover {
+  background-color: #f1f3f4;
+}
+
+// Filter section styling to match parts request status
+.dcg-report-details-filter-header {
+  .filter-label {
+    font-weight: 600 !important;
+    color: #2d3436 !important;
+    font-size: 0.9rem !important;
+    margin-bottom: 0.5rem !important;
+    display: flex;
+    align-items: center;
+    
+    i {
+      color: #5486ff !important;
+      margin-right: 0.25rem;
+    }
+  }
+  
+  .modern-select {
+    border: 2px solid #e9ecef !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+    color: #000000 !important; // Dark black text
+    background-color: #ffffff !important;
+    transition: all 0.3s ease !important;
+    
+    &:focus {
+      border-color: #5486ff !important;
+      box-shadow: 0 0 0 0.2rem rgba(84, 134, 255, 0.25) !important;
+      outline: none !important;
+    }
+    
+    &:hover {
+      border-color: #667eea !important;
+    }
+  }
+  
+  .filter-group {
+    margin-bottom: 1rem;
+  }
+}
+
+// Badge styling to match parts request status
+.badge {
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 20px !important;
+  
+  &.badge-light-success {
+    background-color: rgba(40, 167, 69, 0.1) !important;
+    color: #28a745 !important;
+  }
+  
+  &.badge-light-primary {
+    background-color: rgba(84, 134, 255, 0.1) !important;
+    color: #5486ff !important;
+  }
+  
+  &.badge-light-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+    color: #ffc107 !important;
+  }
+  
+  &.badge-light-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+    color: #dc3545 !important;
+  }
+}
+
+// Header section styling
+.dcg-report-details-page-title {
+  text-align: center;
+  
+  h2 {
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+    color: #5486ff !important;
+    margin-bottom: 0.5rem !important;
+    
+    i {
+      color: #667eea !important;
+    }
+  }
+  
+  .fw-semibold {
+    color: #000000 !important; // Dark black text
+    font-size: 1.1rem !important;
+  }
+}
+
+// Button styling
+.btn-primary {
+  background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+  border: none !important;
+  color: white !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  padding: 0.75rem 1.5rem !important;
+  transition: all 0.3s ease !important;
+  
+  &:hover {
+    background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(84, 134, 255, 0.3) !important;
+  }
+  
+  &:disabled {
+    opacity: 0.6 !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+.btn-light-primary {
+  background-color: rgba(84, 134, 255, 0.1) !important;
+  border: 2px solid #5486ff !important;
+  color: #5486ff !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  padding: 0.75rem 1.5rem !important;
+  transition: all 0.3s ease !important;
+  
+  &:hover {
+    background-color: #5486ff !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(84, 134, 255, 0.3) !important;
+  }
+  
+  &:disabled {
+    opacity: 0.6 !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+// Pagination styling
+.pagination {
+  .page-item {
+    .page-link {
+      color: #5486ff !important;
+      border: 2px solid transparent !important;
+      padding: 0.75rem 1rem !important;
+      margin: 0 0.25rem !important;
+      border-radius: 8px !important;
+      font-weight: 600 !important;
+      transition: all 0.3s ease !important;
+      cursor: pointer !important;
+      
+      &:hover {
+        background-color: rgba(84, 134, 255, 0.1) !important;
+        border-color: #5486ff !important;
+        color: #5486ff !important;
+        transform: translateY(-1px) !important;
+      }
+    }
+    
+    &.active .page-link {
+      background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+      border-color: #5486ff !important;
+      color: white !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 15px rgba(84, 134, 255, 0.3) !important;
+    }
+    
+    &.disabled .page-link {
+      color: #6c757d !important;
+      cursor: not-allowed !important;
+      opacity: 0.5 !important;
+      
+      &:hover {
+        background-color: transparent !important;
+        border-color: transparent !important;
+        transform: none !important;
+      }
+    }
+  }
+}
+
+// Card styling
+.card {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
+  
+  .card-header {
+    background: linear-gradient(135deg, rgba(84, 134, 255, 0.05) 0%, rgba(102, 126, 234, 0.05) 100%) !important;
+    border-bottom: 2px solid rgba(84, 134, 255, 0.1) !important;
+    border-radius: 16px 16px 0 0 !important;
+    
+    h5 {
+      color: #2d3436 !important;
+      font-weight: 700 !important;
+      
+      i {
+        color: #5486ff !important;
+      }
+    }
+    
+    small {
+      color: #636e72 !important;
+    }
+  }
+}
+
+// Loading and empty states
+.spinner-border {
+  color: #5486ff !important;
+}
+
+// Text improvements for better readability
+.text-muted {
+  color: #636e72 !important;
+}
+
+.text-dark {
+  color: #000000 !important;
+}
+
+.fw-bold, .fw-semibold {
+  color: #000000 !important;
+}
+
+// Container improvements
+.dcg-report-details-container {
+  font-family: "Inter", system-ui, sans-serif !important;
+  
+  .dcg-report-details-header__top {
+    padding: 1rem 0 !important;
+    margin-bottom: 2rem !important;
+  }
+}
+
+.table-responsive {
+  border-radius: 0.475rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-complete {
+  background-color: var(--kt-success-light);
+  color: var(--kt-success);
+}
+
+.status-pending {
+  background-color: var(--kt-warning-light);
+  color: var(--kt-warning);
+}
+
+.status-expired {
+  background-color: var(--kt-danger-light);
+  color: var(--kt-danger);
+}
+
+.amount-highlight {
+  font-weight: 600;
+  color: var(--kt-primary);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+}
+
+@media (max-width: 991.98px) {
+  .d-flex.flex-stack {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .w-250px {
+    width: 100% !important;
+    max-width: 250px;
+  }
+}

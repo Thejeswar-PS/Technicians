@@ -117,7 +117,7 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
 
   // Pagination
   currentPage: number = 1;
-  itemsPerPage: number = 25;
+  itemsPerPage: number = 100;
   totalItems: number = 0;
   totalPages: number = 0;
   paginatedItems: StrippedUnitsStatusItem[] = [];
@@ -145,7 +145,7 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
     private ngZone: NgZone
   ) {
     this.filterForm = this.fb.group({
-      status: ['All'],
+      status: ['In Progress'],
       makeFilter: ['All'],
       modelFilter: ['All'],
       kvaFilter: ['All'],
@@ -286,13 +286,20 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
   }
 
   private transformUnitsData(units: StrippedUnitsStatusDto[]): StrippedUnitsStatusItem[] {
-    return units.map(unit => ({
-      ...unit,
-      displayStatus: this.getStatusLabel(unit.status),
-      formattedCreatedOn: unit.createdOn ? new Date(unit.createdOn).toLocaleDateString() : '',
-      formattedUnitCost: unit.unitCost ? `$${unit.unitCost.toFixed(2)}` : '',
-      formattedShipCost: unit.shipCost ? `$${unit.shipCost.toFixed(2)}` : ''
-    }));
+    return units.map(unit => {
+      // Set both strippedBy and putAwayBy to the same person (TIM H)
+      const handledBy = unit.strippedBy || unit.putAwayBy || 'TIM H';
+      
+      return {
+        ...unit,
+        strippedBy: handledBy,
+        putAwayBy: handledBy,
+        displayStatus: this.getStatusLabel(unit.status),
+        formattedCreatedOn: unit.createdOn ? new Date(unit.createdOn).toLocaleDateString() : '',
+        formattedUnitCost: unit.unitCost ? `$${unit.unitCost.toFixed(2)}` : '',
+        formattedShipCost: unit.shipCost ? `$${unit.shipCost.toFixed(2)}` : ''
+      };
+    });
   }
 
   private getStatusLabel(status: string): string {
@@ -551,18 +558,65 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
     });
   }
 
+  formatDate(dateTime: Date | string | null | undefined): string {
+    if (!dateTime) return '';
+    const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime;
+    return date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  formatTime(dateTime: Date | string | null | undefined): string {
+    if (!dateTime) return '';
+    const date = typeof dateTime === 'string' ? new Date(dateTime) : dateTime;
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  }
+
+  getHandledByDisplay(unit: any): string {
+    const stripped = unit.strippedBy || '';
+    const putAway = unit.putAwayBy || '';
+    
+    if (stripped && putAway) {
+      return `${stripped} / ${putAway}`;
+    } else if (stripped) {
+      return stripped;
+    } else if (putAway) {
+      return putAway;
+    }
+    return '';
+  }
+
+  getHandledByTooltip(unit: any): string {
+    const stripped = unit.strippedBy || 'Not assigned';
+    const putAway = unit.putAwayBy || 'Not assigned';
+    return `Stripped by: ${stripped}\nPut away by: ${putAway}`;
+  }
+
   getStatusBadgeClass(status: string): string {
     switch (status?.toLowerCase()) {
+      case 'not started':
+        return 'status-not-started';
+      case 'in progress':
       case 'inp':
-        return 'badge-warning';
-      case 'def':
-        return 'badge-danger';
+        return 'status-in-progress';
+      case 'completed':
       case 'com':
-        return 'badge-success';
+        return 'status-completed';
+      case 'deferred':
+      case 'def':
+        return 'status-deferred';
+      case 'waiting on someone else':
       case 'wos':
-        return 'badge-secondary';
+        return 'status-waiting';
       default:
-        return 'badge-light';
+        return 'status-not-started';
     }
   }
 

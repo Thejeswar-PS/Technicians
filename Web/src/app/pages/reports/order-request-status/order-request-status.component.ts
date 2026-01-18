@@ -192,6 +192,36 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  getStatusPillClass(status: string | null | undefined): string {
+    if (!status) {
+      return 'status-pill status-default';
+    }
+    
+    const normalizedStatus = status.toUpperCase();
+    
+    switch (normalizedStatus) {
+      case 'COM':
+      case 'COMPLETED':
+        return 'status-pill status-completed';
+      case 'ORD':
+      case 'ORDERED':
+        return 'status-pill status-ordered';
+      case 'SHI':
+      case 'SHIPPED':
+        return 'status-pill status-shipped';
+      case 'BOR':
+      case 'BACK ORDERED':
+        return 'status-pill status-backordered';
+      case 'NEW':
+        return 'status-pill status-new';
+      case 'CAN':
+      case 'CANCELLED':
+        return 'status-pill status-cancelled';
+      default:
+        return 'status-pill status-default';
+    }
+  }
+
   // Pagination
   getPaginatedData(): OrderRequestStatusDto[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
@@ -386,10 +416,5 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   // Get filter badge class
   getFilterBadgeClass(): string {
     return 'badge-info-custom';
-  }
-
-  // Go back navigation
-  goBack(): void {
-    this.router.navigate(['/reports/order-request']);
   }
 }

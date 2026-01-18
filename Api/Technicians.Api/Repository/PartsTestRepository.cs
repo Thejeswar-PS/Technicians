@@ -117,8 +117,8 @@ namespace Technicians.Api.Repository
                 parameters.Add("@Priority", dto.Priority, DbType.AnsiStringFixedLength, size: 15);
                 parameters.Add("@AssignedTo", dto.AssignedTo, DbType.String, size: 50);
                 parameters.Add("@DueDate", dto.DueDate, DbType.DateTime);
-                parameters.Add("@KVA", dto.KVA, DbType.StringFixedLength, size: 10);
-                parameters.Add("@Voltage", dto.Voltage, DbType.StringFixedLength, size: 10);
+                parameters.Add("@KVA", dto.KVA, DbType.String, size: 10); // Changed from StringFixedLength to String for nchar compatibility
+                parameters.Add("@Voltage", dto.Voltage, DbType.String, size: 10); // Changed from StringFixedLength to String for nchar compatibility
                 parameters.Add("@ProblemNotes", dto.ProblemNotes, DbType.String, size: 500);
                 parameters.Add("@ResolveNotes", dto.ResolveNotes, DbType.String, size: 500);
                 parameters.Add("@RowIndex", dto.RowIndex, DbType.Int32);

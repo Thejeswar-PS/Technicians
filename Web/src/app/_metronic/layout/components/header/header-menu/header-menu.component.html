@@ -304,19 +304,38 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
     <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
       <a id="r17"
       routerLinkActive="active menu-here"
-      [routerLink]="['/reports/contract-details-report']"
+      [routerLink]="['/reports/dcg-display-report-details']"
+      [queryParams]="{ Page: 'quote', dataSetName: 'All Reports', backbutton: 'menu' }"
       class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
-        <span class="menu-icon"><i class="bi fs-3 bi-file-text"></i></span>
-        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Contract Details Report</span>
+        <span class="menu-icon"><i class="bi fs-3 bi-table"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Display Report Details</span>
       </a>
     </div>
     <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
       <a id="r18"
       routerLinkActive="active menu-here"
-      [routerLink]="['/reports/past-due-contract-details']"
+      [routerLink]="['/reports/parts-search']"
       class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
-        <span class="menu-icon"><i class="bi fs-3 bi-calendar-x"></i></span>
-        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Past Due Contract Details</span>
+        <span class="menu-icon"><i class="bi fs-3 bi-search"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Parts Search</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r19"
+      routerLinkActive="active menu-here"
+      [routerLink]="['/reports/acc-mgr-performance-report']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-graph-up"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Account Manager Performance</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r20"
+      routerLinkActive="active menu-here"
+      [routerLink]="['/reports/emergency-jobs']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-exclamation-triangle text-danger"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Emergency Jobs</span>
       </a>
     </div>
   </div>
@@ -364,6 +383,24 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
       class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
         <span class="menu-icon"><i class="bi fs-3 bi-layers"></i></span>
         <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Trending Reports- TEAMS</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r2"
+      routerLinkActive="active menu-here"
+      [routerLink]="['/graphs/account-manager-graph']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-bar-chart"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Account Manager Graph</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r3"
+      routerLinkActive="active menu-here"
+      [routerLink]="['/graphs/past-due-graph']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-clock-history"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Past Due Jobs Graph</span>
       </a>
     </div>
   </div>
