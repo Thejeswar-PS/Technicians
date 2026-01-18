@@ -190,10 +190,11 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
     ctx.fillRect(padding - 10, topPadding - 10, chartWidth + 20, chartHeight + 20);
     ctx.shadowBlur = 0;
 
-    // Draw title with modern styling
+    // Draw title with modern styling (matching legacy "DC Group - Battery VDC Readings")
     ctx.fillStyle = '#1a1a2e';
     ctx.font = 'bold 20px "Segoe UI", Arial, sans-serif';
     ctx.textAlign = 'center';
+    ctx.fillText('DC Group - Battery VDC Readings', canvas.width / 2, 35);
 
     // Draw modern grid lines
     ctx.strokeStyle = '#e9ecef';
@@ -220,7 +221,7 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
       ctx.fillText(value, padding - 15, y + 4);
     }
 
-    // Draw bars with modern styling and vibrant colors
+    // Draw bars with modern styling - color based on Status1 from data (matching legacy logic)
     this.chartDataPoints.forEach((point, index) => {
       const x = padding + (index * barWidth * 1.5) + (barWidth / 2);
       const barHeight = point.vdc * yScale;
@@ -234,15 +235,13 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 4;
       
-      // Use vibrant colors alternating with status-based colors
-      const vibrantColors = ['#5B93FF', '#FF6B9D', '#4CAF50', '#FFA726', '#AB47BC', '#26C6DA'];
-      const baseColor = this.getStatusColor(point.status1);
-      const displayColor = point.status1.toLowerCase() === 'green' ? vibrantColors[index % vibrantColors.length] : baseColor;
+      // Get color from Status1 field (Green, Yellow, Red - matching legacy behavior)
+      const barColor = this.getStatusColor(point.status1);
       
       // Create gradient for bar
       const gradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight);
-      gradient.addColorStop(0, this.lightenColor(displayColor, 15));
-      gradient.addColorStop(1, displayColor);
+      gradient.addColorStop(0, this.lightenColor(barColor, 15));
+      gradient.addColorStop(1, barColor);
       
       ctx.fillStyle = gradient;
       
@@ -252,7 +251,9 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
       ctx.shadowBlur = 0;
       
       // Draw value label on bar with background
-      if (barHeight > 20) {
+      // Hide labels if > 50 rows (matching legacy behavior)
+      const showLabels = this.chartDataPoints.length <= 50;
+      if (barHeight > 20 && showLabels) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
         ctx.shadowBlur = 4;
@@ -269,11 +270,15 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
         ctx.fillText(point.vdc.toFixed(2), x, barY - 12);
       }
       
-      // Draw X-axis label (Battery ID)
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '600 11px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Batt ${point.batteryId}`, x, topPadding + chartHeight + 25);
+      // Draw X-axis label (Battery ID) - adjust interval for > 50 rows
+      const showXLabels = this.chartDataPoints.length <= 50;
+      const labelInterval = this.chartDataPoints.length > 50 ? 20 : 1;
+      if (index % labelInterval === 0 && showXLabels) {
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '600 11px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(point.batteryId.toString(), x, topPadding + chartHeight + 25);
+      }
     });
 
     // Draw modern threshold lines
@@ -361,11 +366,11 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
     ctx.fillRect(padding - 10, topPadding - 10, chartWidth + 20, chartHeight + 20);
     ctx.shadowBlur = 0;
 
-    // Draw title with modern styling
+    // Draw title with modern styling (matching legacy "DC Group - Battery MHOS/VAC Readings")
     ctx.fillStyle = '#1a1a2e';
     ctx.font = 'bold 20px "Segoe UI", Arial, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Conductance Readings (MHOS/VAC)', canvas.width / 2, 35);
+    ctx.fillText('DC Group - Battery MHOS/VAC Readings', canvas.width / 2, 35);
 
     // Draw modern grid lines
     ctx.strokeStyle = '#e9ecef';
@@ -392,7 +397,7 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
       ctx.fillText(value, padding - 15, y + 4);
     }
 
-    // Draw bars with modern styling and vibrant colors
+    // Draw bars with modern styling - color based on Status2 from data (matching legacy logic)
     this.chartDataPoints.forEach((point, index) => {
       const x = padding + (index * barWidth * 1.5) + (barWidth / 2);
       const barHeight = point.nvdc * yScale;
@@ -406,15 +411,13 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 4;
       
-      // Use vibrant colors alternating with status-based colors
-      const vibrantColors = ['#5B93FF', '#FF6B9D', '#4CAF50', '#FFA726', '#AB47BC', '#26C6DA'];
-      const baseColor = this.getStatusColor(point.status2);
-      const displayColor = point.status2.toLowerCase() === 'green' ? vibrantColors[index % vibrantColors.length] : baseColor;
+      // Get color from Status2 field (Green, Yellow, Red - matching legacy behavior)
+      const barColor = this.getStatusColor(point.status2);
       
       // Create gradient for bar
       const gradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight);
-      gradient.addColorStop(0, this.lightenColor(displayColor, 15));
-      gradient.addColorStop(1, displayColor);
+      gradient.addColorStop(0, this.lightenColor(barColor, 15));
+      gradient.addColorStop(1, barColor);
       
       ctx.fillStyle = gradient;
       
@@ -424,7 +427,9 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
       ctx.shadowBlur = 0;
       
       // Draw value label on bar with background
-      if (barHeight > 20) {
+      // Hide labels if > 50 rows (matching legacy behavior)
+      const showLabels2 = this.chartDataPoints.length <= 50;
+      if (barHeight > 20 && showLabels2) {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
         ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
         ctx.shadowBlur = 4;
@@ -441,11 +446,15 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
         ctx.fillText(point.nvdc.toFixed(2), x, barY - 12);
       }
       
-      // Draw X-axis label (Battery ID)
-      ctx.fillStyle = '#6c757d';
-      ctx.font = '600 11px "Segoe UI", Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(`Batt ${point.batteryId}`, x, topPadding + chartHeight + 25);
+      // Draw X-axis label (Battery ID) - adjust interval for > 50 rows
+      const showXLabels2 = this.chartDataPoints.length <= 50;
+      const labelInterval2 = this.chartDataPoints.length > 50 ? 20 : 1;
+      if (index % labelInterval2 === 0 && showXLabels2) {
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '600 11px "Segoe UI", Arial, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(point.batteryId.toString(), x, topPadding + chartHeight + 25);
+      }
     });
 
     // Draw modern threshold lines
@@ -595,19 +604,19 @@ export class BatteryReadingsGraphComponent implements OnInit, AfterViewInit {
   }
 
   /**
-   * Map status color from legacy status string
-   * Legacy: Green, Yellow, Red
+   * Map status color from legacy status string (matching legacy ASPX behavior)
+   * Legacy: Green, Yellow, Red (matching the actual .NET System.Drawing.Color)
    */
   getStatusColor(status: string): string {
     switch (status?.toLowerCase()) {
       case 'green':
-        return '#28a745';
+        return '#28a745';  // Green
       case 'yellow':
-        return '#ffc107';
+        return '#ffc107';  // Yellow/Amber
       case 'red':
-        return '#dc3545';
+        return '#dc3545';  // Red
       default:
-        return '#6bc6e1';
+        return '#28a745';  // Default to Green
     }
   }
 

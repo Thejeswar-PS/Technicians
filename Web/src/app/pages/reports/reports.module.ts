@@ -23,6 +23,8 @@ import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
 import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { SharedModule } from '../../components/shared/shared.module';
+import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
+import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 
 @NgModule({
   declarations: [

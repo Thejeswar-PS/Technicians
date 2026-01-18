@@ -1,0 +1,184 @@
+<div class="container-fluid past-due-report-container">
+  <div *ngIf="loading" class="d-flex justify-content-center align-items-center past-due-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="past-due-header__top mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="past-due-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-calendar-x me-2"></i>
+        Past Due Contract Details Report
+      </h2>
+      <small class="text-muted">Contract aging and delinquency tracking</small>
+    </div>
+
+    <button type="button" class="btn btn-sm btn-primary past-due-refresh" (click)="loadData()" [disabled]="loading">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Refresh
+    </button>
+  </div>
+
+  <div class="card shadow-sm past-due-main-card">
+    <div class="card-header border-0 py-4">
+      <div class="past-due-filter-header">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h5 class="mb-0 fw-bold text-dark">
+              <i class="bi bi-funnel me-2 text-primary"></i>
+              Filters & Search
+              <span class="badge ms-2" [ngClass]="'badge-info-custom'">
+                {{ pastDueRows.length }} Result{{ pastDueRows.length === 1 ? '' : 's' }}
+              </span>
+            </h5>
+            <small class="text-muted">Filter by aging status to view contract details</small>
+          </div>
+          <div class="col-md-4">
+            <div class="filter-group mb-0">
+              <label class="filter-label">
+                <i class="bi bi-calendar-event me-1"></i>
+                Status
+              </label>
+              <div class="position-relative">
+                <select 
+                  id="statusSelect" 
+                  class="form-select modern-select" 
+                  [(ngModel)]="selectedStatus" 
+                  (change)="onStatusChange()"
+                  [disabled]="loading">
+                  <option *ngFor="let option of statusOptions" [value]="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body py-3">
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="loading" class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+        <span class="text-muted">Processing data...</span>
+      </div>
+
+      <!-- Chart Section -->
+      <div *ngIf="!loading && !errorMessage && chartData.length > 0" class="chart-section mb-4">
+        <div class="chart-card">
+          <div class="chart-header d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-0 fw-bold">Contracts by Account Manager</h6>
+              <small class="text-muted">{{ getStatusLabel() }}</small>
+            </div>
+            <div class="chart-type-toggle">
+              <button 
+                type="button" 
+                class="btn btn-sm"
+                [ngClass]="currentChartType === 'bar' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setChartType('bar')">
+                <i class="bi bi-bar-chart me-1"></i>
+                Bar Chart
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-sm ms-2"
+                [ngClass]="currentChartType === 'pie' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setChartType('pie')">
+                <i class="bi bi-pie-chart me-1"></i>
+                Pie Chart
+              </button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div *ngIf="currentChartType === 'bar'" class="interactive-bar-chart-container">
+              <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart" [dataLabels]="barChartOptions.dataLabels" [plotOptions]="barChartOptions.plotOptions" [xaxis]="barChartOptions.xaxis" [yaxis]="barChartOptions.yaxis" [colors]="barChartOptions.colors" [tooltip]="barChartOptions.tooltip" [grid]="barChartOptions.grid" [theme]="barChartOptions.theme"></apx-chart>
+            </div>
+            <div *ngIf="currentChartType === 'pie'" class="interactive-pie-chart-container">
+              <apx-chart [series]="donutChartOptions.series" [chart]="donutChartOptions.chart" [labels]="donutChartOptions.labels" [colors]="donutChartOptions.colors" [legend]="donutChartOptions.legend" [tooltip]="donutChartOptions.tooltip" [plotOptions]="donutChartOptions.plotOptions" [dataLabels]="donutChartOptions.dataLabels" [responsive]="donutChartOptions.responsive"></apx-chart>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Section -->
+      <div class="table-section" *ngIf="!loading && !errorMessage">
+        <div class="d-flex justify-content-between align-items-center mb-2 px-2 flex-wrap gap-2">
+          <div class="text-gray-700 fw-semibold">
+            Showing {{ pastDueRows.length ? 1 : 0 }} to {{ pastDueRows.length }} of {{ pastDueRows.length }} entries
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table modern-table">
+            <thead class="table-header">
+              <tr>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Site ID</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Site Name</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Account Manager</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Contract No</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Contract Type</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Invoice Date</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Mailing Date</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Amount</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody class="table-body">
+              <tr class="table-row" *ngFor="let row of pastDueRows; trackBy: trackByRow">
+                <td>{{ row.siteId || 'N/A' }}</td>
+                <td>{{ row.siteName || 'N/A' }}</td>
+                <td>{{ row.accountManager || 'N/A' }}</td>
+                <td class="fw-bold text-primary">{{ row.contractNo || 'N/A' }}</td>
+                <td>{{ row.contractType || 'N/A' }}</td>
+                <td>{{ row.invoiceDate | date: 'dd-MMM-yyyy' }}</td>
+                <td>{{ row.mailingDate | date: 'dd-MMM-yyyy' }}</td>
+                <td class="text-end fw-bold text-danger">{{ row.amount | currency }}</td>
+              </tr>
+              <tr *ngIf="pastDueRows.length === 0">
+                <td colspan="8" class="text-center text-muted py-4">No records found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
