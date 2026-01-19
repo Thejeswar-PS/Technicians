@@ -42,7 +42,9 @@ import { PastDueContractDetailsComponent } from './past-due-contract-details/pas
     DcgDisplayReportDetailsComponent,
     PartsSearchComponent,
     AccMgrPerformanceReportComponent,
-    EmergencyJobsComponent
+    EmergencyJobsComponent,
+    ContractDetailsReportComponent,
+    PastDueContractDetailsComponent
   ],
   imports: [
     CommonModule,
