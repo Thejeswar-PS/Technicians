@@ -134,6 +134,14 @@ export class AtsReadingsComponent implements OnInit {
       verified: [false]
     });
 
+    // Add value change listeners to enforce conditional validation
+    this.reconciliationForm.get('modelCorrect')?.valueChanges.subscribe(() => {
+      this.updateReconciliationValidators();
+    });
+    this.reconciliationForm.get('serialNoCorrect')?.valueChanges.subscribe(() => {
+      this.updateReconciliationValidators();
+    });
+
     this.visualForm = this.fb.group({
       clean: ['P'],
       inspect: ['P'],
@@ -344,16 +352,58 @@ export class AtsReadingsComponent implements OnInit {
     }
   }
 
+  // Update reconciliation field validators based on "Is this Correct?" selections
+  private updateReconciliationValidators(): void {
+    const modelCorrect = this.reconciliationForm.get('modelCorrect');
+    const actModel = this.reconciliationForm.get('actModel');
+    const serialNoCorrect = this.reconciliationForm.get('serialNoCorrect');
+    const actSerialNo = this.reconciliationForm.get('actSerialNo');
+
+    // If modelCorrect = 'NO', then actModel is required
+    if (modelCorrect?.value === 'NO') {
+      actModel?.setValidators([Validators.required]);
+    } else {
+      actModel?.clearValidators();
+    }
+    actModel?.updateValueAndValidity({ emitEvent: false });
+
+    // If serialNoCorrect = 'NO', then actSerialNo is required
+    if (serialNoCorrect?.value === 'NO') {
+      actSerialNo?.setValidators([Validators.required]);
+    } else {
+      actSerialNo?.clearValidators();
+    }
+    actSerialNo?.updateValueAndValidity({ emitEvent: false });
+  }
+
   // Legacy validations (PDU pattern)
   private runLegacyValidations(): boolean {
     if (!this.equipmentForm.valid) {
-      this.errorMessage = 'Please complete required fields in Equipment Verification.';
+      const invalidFields: string[] = [];
+      Object.keys(this.equipmentForm.controls).forEach(key => {
+        const control = this.equipmentForm.get(key);
+        if (control?.invalid) {
+          invalidFields.push(key);
+        }
+      });
+      this.errorMessage = `Please complete required fields in Equipment Verification: ${invalidFields.join(', ')}`;
       return false;
     }
 
     const recon = this.reconciliationForm.value;
     if (!recon.verified) {
       this.errorMessage = 'You must verify the Reconciliation section before Saving.';
+      return false;
+    }
+
+    // Validate reconciliation fields - if "Is this Correct?" = NO, then "Actual" is required
+    if (recon.modelCorrect === 'NO' && !this.trimValue(recon.actModel)) {
+      this.errorMessage = 'Please enter the Actual Model when "Is this Correct?" is "No".';
+      return false;
+    }
+
+    if (recon.serialNoCorrect === 'NO' && !this.trimValue(recon.actSerialNo)) {
+      this.errorMessage = 'Please enter the Actual Serial No when "Is this Correct?" is "No".';
       return false;
     }
 

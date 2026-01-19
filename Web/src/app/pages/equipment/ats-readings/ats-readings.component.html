@@ -395,10 +395,25 @@
                           class="form-control text-danger" 
                           formControlName="actModel" 
                           [readonly]="reconciliationForm.get('modelCorrect')?.value !== 'NO'"
+                          [class.is-invalid]="
+                            reconciliationForm.get('actModel')?.invalid &&
+                            reconciliationForm.get('actModel')?.touched
+                          "
                           id="actModel" 
                           placeholder="Actual Model" 
                         />
-                        <label for="actModel">Actual</label>
+                        <label for="actModel">Actual
+                          <span *ngIf="reconciliationForm.get('modelCorrect')?.value === 'NO'" class="text-danger">*</span>
+                        </label>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            reconciliationForm.get('actModel')?.invalid &&
+                            reconciliationForm.get('actModel')?.touched
+                          "
+                        >
+                          Actual Model is required when "Is this Correct?" is "No"
+                        </div>
                       </div>
                     </div>
 
@@ -432,10 +447,25 @@
                           class="form-control text-danger" 
                           formControlName="actSerialNo" 
                           [readonly]="reconciliationForm.get('serialNoCorrect')?.value !== 'NO'"
+                          [class.is-invalid]="
+                            reconciliationForm.get('actSerialNo')?.invalid &&
+                            reconciliationForm.get('actSerialNo')?.touched
+                          "
                           id="actSerialNo" 
                           placeholder="Actual Serial No" 
                         />
-                        <label for="actSerialNo">Actual</label>
+                        <label for="actSerialNo">Actual
+                          <span *ngIf="reconciliationForm.get('serialNoCorrect')?.value === 'NO'" class="text-danger">*</span>
+                        </label>
+                        <div
+                          class="invalid-feedback"
+                          *ngIf="
+                            reconciliationForm.get('actSerialNo')?.invalid &&
+                            reconciliationForm.get('actSerialNo')?.touched
+                          "
+                        >
+                          Actual Serial No is required when "Is this Correct?" is "No"
+                        </div>
                       </div>
                     </div>
                   </div>

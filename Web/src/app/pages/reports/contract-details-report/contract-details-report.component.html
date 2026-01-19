@@ -1,0 +1,151 @@
+<div class="container-fluid contract-report-container">
+  <div *ngIf="loading" class="d-flex justify-content-center align-items-center contract-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="contract-header__top mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="contract-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-file-text me-2"></i>
+        Contract Details Report
+      </h2>
+      <small class="text-muted">Non-Liebert contract billing visibility</small>
+    </div>
+
+    <button type="button" class="btn btn-sm btn-primary contract-refresh" (click)="loadData()" [disabled]="loading">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Refresh
+    </button>
+  </div>
+
+  <div class="card shadow-sm contract-main-card">
+    <div class="card-header border-0 py-4">
+      <div class="contract-filter-header">
+        <div class="row align-items-center">
+          <div class="col-md-5">
+            <h5 class="mb-0 fw-bold text-dark">
+              <i class="bi bi-funnel me-2 text-primary"></i>
+              Filters & Search
+              <span class="badge ms-2" [ngClass]="'badge-info-custom'">
+                {{ contractRows.length }} Result{{ contractRows.length === 1 ? '' : 's' }}
+              </span>
+            </h5>
+            <small class="text-muted">Select a category to view contract details</small>
+          </div>
+          <div class="col-md-7">
+            <div class="filter-group mb-0">
+              <label class="filter-label">
+                <i class="bi bi-card-list me-1"></i>
+                Contract Category
+              </label>
+              <div class="position-relative">
+                <select 
+                  id="categorySelect" 
+                  class="form-select modern-select" 
+                  [(ngModel)]="selectedCategory" 
+                  (change)="onCategoryChange()"
+                  [disabled]="loading">
+                  <option *ngFor="let option of categoryOptions" [value]="option.key">
+                    {{ option.label }}
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body py-3">
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="loading" class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+        <span class="text-muted">Processing data...</span>
+      </div>
+
+      <div class="table-section" *ngIf="!loading && !errorMessage">
+        <div class="d-flex justify-content-between align-items-center mb-2 px-2 flex-wrap gap-2">
+          <div class="text-gray-700 fw-semibold">
+            Showing {{ contractRows.length ? 1 : 0 }} to {{ contractRows.length }} of {{ contractRows.length }} entries
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table modern-table">
+            <thead class="table-header">
+              <tr>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Customer No</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Customer Name</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Address</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Sales Person</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Contract No</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">PO Number</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Contract Type</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Invoice Date</span>
+                  </div>
+                </th>
+                <th class="header-cell">
+                  <div class="header-content">
+                    <span class="header-text">Amount</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+
+            <tbody class="table-body">
+              <tr class="table-row" *ngFor="let row of contractRows; trackBy: trackByRow">
+                <td>{{ row.customerNo || 'N/A' }}</td>
+                <td>{{ row.customerName || 'N/A' }}</td>
+                <td>{{ row.address || 'N/A' }}</td>
+                <td>{{ row.salesPerson || 'N/A' }}</td>
+                <td class="fw-bold text-primary">{{ row.contractNo || 'N/A' }}</td>
+                <td>{{ row.poNumber || 'N/A' }}</td>
+                <td>{{ row.type || 'N/A' }}</td>
+                <td>{{ row.invoicedOn | date: 'dd-MMM-yyyy' }}</td>
+                <td class="text-end fw-bold text-success">{{ row.amount | currency }}</td>
+              </tr>
+              <tr *ngIf="contractRows.length === 0">
+                <td colspan="9" class="text-center text-muted py-4">No records found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,195 @@
+<div class="misc-tasks-container">
+  <div *ngIf="loading" class="d-flex justify-content-center align-items-center misc-tasks-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="misc-header mb-4">
+    <div class="header-content">
+      <div class="title-section">
+        <i class="bi bi-list-check fs-1 text-primary"></i>
+        <h2 class="fw-bold text-primary mb-0">Miscellaneous Tasks</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm misc-main-card">
+    <div class="card-body">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-circle me-2"></i>
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+      </div>
+
+      <!-- Task Selection -->
+      <div class="task-selection mb-4">
+        <label class="form-label fw-semibold fs-5">Select a Task</label>
+        <select 
+          class="form-select task-select" 
+          [(ngModel)]="selectedTask"
+          (change)="onTaskChange()"
+          [disabled]="loading">
+          <option *ngFor="let option of taskOptions" [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Add / View Parts Request (AVP) -->
+      <div class="task-section" *ngIf="selectedTask === 'AVP'">
+        <div class="section-title">Add / View Parts Request</div>
+        <div class="form-group mb-3">
+          <label class="form-label">Job Number</label>
+          <input 
+            type="text" 
+            class="form-control input-field" 
+            [(ngModel)]="callNbr"
+            placeholder="Enter Job Number"
+            [disabled]="loading"
+            maxlength="10">
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">Job Status</label>
+          <select 
+            class="form-select input-field" 
+            [(ngModel)]="jobStatus"
+            [disabled]="loading">
+            <option *ngFor="let option of jobStatusOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
+        <button 
+          type="button" 
+          class="btn btn-primary action-btn"
+          (click)="onGoClick()"
+          [disabled]="loading">
+          <i class="bi bi-plus-circle me-2"></i>
+          Add / View
+        </button>
+      </div>
+
+      <!-- Re-Download Job (RDJ) / Remove Tech From Job (RMT) -->
+      <div class="task-section" *ngIf="selectedTask === 'RDJ' || selectedTask === 'RMT'">
+        <div class="section-title">
+          {{ selectedTask === 'RDJ' ? 'Re-Download Job' : 'Remove Tech From Job' }}
+        </div>
+        <div class="form-group mb-3">
+          <label class="form-label">Job Number</label>
+          <input 
+            type="text" 
+            class="form-control input-field" 
+            [(ngModel)]="jobNo"
+            placeholder="Enter Job Number"
+            [disabled]="loading"
+            (keyup.enter)="onGoClick()">
+        </div>
+        <button 
+          type="button" 
+          class="btn btn-primary action-btn"
+          (click)="onGoClick()"
+          [disabled]="loading">
+          <i class="bi bi-download me-2"></i>
+          {{ selectedTask === 'RDJ' ? 'Submit' : 'Remove' }}
+        </button>
+      </div>
+
+      <!-- Previous Site History (PSH) -->
+      <div class="task-section" *ngIf="selectedTask === 'PSH'">
+        <div class="section-title">Previous Site History</div>
+        <div class="form-group mb-3">
+          <label class="form-label">Site ID / Job No</label>
+          <input 
+            type="text" 
+            class="form-control input-field" 
+            [(ngModel)]="siteID"
+            placeholder="Enter Site ID or Job Number"
+            [disabled]="loading"
+            (keyup.enter)="onGoClick()">
+        </div>
+        <button 
+          type="button" 
+          class="btn btn-primary action-btn"
+          (click)="onGoClick()"
+          [disabled]="loading">
+          <i class="bi bi-search me-2"></i>
+          View History
+        </button>
+
+        <!-- Site History Table -->
+        <div class="site-history-section" *ngIf="showSiteHistory && siteHistoryRows.length > 0">
+          <h5 class="mt-4 mb-3">Site History</h5>
+          <div class="table-responsive">
+            <table class="table modern-table">
+              <thead class="table-header">
+                <tr>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Job No</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Technician</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Scheduled</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Customer</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Address</span>
+                    </div>
+                  </th>
+                  <th class="header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Notes</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="table-body">
+                <tr class="table-row" *ngFor="let row of siteHistoryRows; trackBy: trackByHistoryRow">
+                  <td class="fw-bold text-primary">
+                    <a href="JobSummary.aspx?CallNbr={{ row.jobNo }}&TechName={{ row.techName }}" target="_blank">
+                      {{ row.jobNo }}
+                    </a>
+                  </td>
+                  <td>{{ row.techName || 'N/A' }}</td>
+                  <td>{{ row.scheduledOn | date: 'dd-MMM-yyyy' }}</td>
+                  <td>{{ row.customerName || 'N/A' }}</td>
+                  <td>{{ row.address || 'N/A' }}</td>
+                  <td class="notes-cell">
+                    <div class="notes-text">{{ row.techNotes || 'N/A' }}</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="selectedTask === 'SAT' && !loading" class="text-center py-5">
+        <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+        <p class="text-muted mt-3">Select a task from the dropdown to get started</p>
+      </div>
+    </div>
+  </div>
+</div>

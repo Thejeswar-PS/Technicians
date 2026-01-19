@@ -34,12 +34,17 @@ namespace Technicians.Api.Controllers
         }
 
         [HttpGet("GetEmployeeStatusForJobList")]
-        public async Task<IActionResult> GetEmployeeStatusForJobList([FromQuery] string userId)
+        public async Task<IActionResult> GetEmployeeStatusForJobList(
+            [FromQuery] string? userId,
+            [FromQuery] string? adUserId)
         {
-            // If you have user context (from JWT or AD), replace with actual user ID
-            if (string.IsNullOrEmpty(userId))
-                return BadRequest("userId is required.");
-            var data = await _repository.GetEmployeeStatusForJobListAsync(userId);
+            // Accept either userId or adUserId
+            string userIdentifier = userId ?? adUserId;
+
+            if (string.IsNullOrEmpty(userIdentifier))
+                return BadRequest("Either userId or adUserId is required.");
+
+            var data = await _repository.GetEmployeeStatusForJobListAsync(userIdentifier);
             return Ok(data);
         }
 
