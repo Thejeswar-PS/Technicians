@@ -735,6 +735,27 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     ];
   }
 
+  // Helper method to get progress bar colors
+  getProgressColor(index: number): string {
+    const colors = [
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'linear-gradient(135deg, #00a8ff 0%, #0078cc 100%)', 
+      'linear-gradient(135deg, #00d4ff 0%, #17a2b8 100%)',
+      'linear-gradient(135deg, #32cd32 0%, #228b22 100%)',
+      'linear-gradient(135deg, #ffa500 0%, #ff6347 100%)',
+      'linear-gradient(135deg, #da70d6 0%, #ba55d3 100%)'
+    ];
+    return colors[index % colors.length];
+  }
+
+  // Helper method to parse percentage strings to numbers
+  parsePercentage(value: string | number): number {
+    if (typeof value === 'number') {
+      return value;
+    }
+    return parseFloat(value) || 0;
+  }
+
   // Part Management Methods
   onAddStrippedPart(): void {
     this.toastr.info('Add functionality to be implemented');
