@@ -834,5 +834,80 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        /// <summary>
+        /// Deletes a stripped parts in unit record by MasterRowIndex and RowIndex
+        /// </summary>
+        /// <param name="masterRowIndex">The MasterRowIndex of the record to delete</param>
+        /// <param name="rowIndex">The RowIndex of the record to delete</param>
+        /// <returns>Delete operation result</returns>
+        [HttpDelete("DeleteStrippedPartsInUnit/{masterRowIndex}/{rowIndex}")]
+        public async Task<ActionResult> DeleteStrippedPartsInUnit(int masterRowIndex, int rowIndex)
+        {
+            try
+            {
+                // Allow MasterRowIndex = 0 to be consistent with other endpoints
+                if (masterRowIndex < 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Invalid MasterRowIndex. MasterRowIndex cannot be negative."
+                    });
+                }
+
+                if (rowIndex <= 0)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Invalid RowIndex. RowIndex must be greater than 0."
+                    });
+                }
+
+                _logger.LogInformation("Deleting stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}",
+                    masterRowIndex, rowIndex);
+
+                var success = await _repository.DeleteStrippedPartsInUnitAsync(masterRowIndex, rowIndex);
+
+                if (success)
+                {
+                    _logger.LogInformation("Successfully deleted stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}",
+                        masterRowIndex, rowIndex);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Stripped parts in unit deleted successfully",
+                        masterRowIndex = masterRowIndex,
+                        rowIndex = rowIndex
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to delete stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}",
+                        masterRowIndex, rowIndex);
+
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        message = "Failed to delete stripped parts in unit"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting stripped parts in unit - MasterRowIndex: {MasterRowIndex}, RowIndex: {RowIndex}",
+                    masterRowIndex, rowIndex);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to delete stripped parts in unit",
+                    error = ex.Message,
+                    masterRowIndex = masterRowIndex,
+                    rowIndex = rowIndex
+                });
+            }
+        }
     }
 }

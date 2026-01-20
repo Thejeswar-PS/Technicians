@@ -100,6 +100,8 @@ export interface StrippedPartsDetailDto {
   LastModifiedOn?: Date;
   CreatedBy?: string;
   CreatedOn?: Date;
+  // UI helper property for editing
+  actualKeepThrow?: string;
 }
 
 export interface StrippedPartsGroupCountDto {

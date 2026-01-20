@@ -2,14 +2,23 @@
 <div class="container-fluid stripped-parts-container">
   
   <!-- Header Section -->
-  <div class="order-request-header__top mb-2 d-flex justify-content-center align-items-center">
+  <div class="order-request-header__top mb-2 d-flex justify-content-between align-items-center">
+    <!-- Back Button -->
+    <button class="btn btn-outline-primary parts-request-header__back" (click)="goBack()">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
     <!-- Page Title - Centered -->
-    <div class="order-request-page-title">
+    <div class="order-request-page-title flex-grow-1 text-center">
       <h2 class="fw-bold text-primary mb-0">
         <i class="bi bi-cpu me-2"></i>
         Stripped Parts In Unit
       </h2>
     </div>
+    
+    <!-- Spacer for balance -->
+    <div style="width: 80px;"></div>
   </div>
 
   <!-- Unit Info Summary - Single Line -->
@@ -64,7 +73,9 @@
             <!-- Chart Content -->
             <div class="chart-content">
               <!-- Show chart if we have data, otherwise show placeholder -->
-              <div *ngIf="groupedParts && groupedParts.length > 0; else noChartData" class="modern-chart-wrapper">
+              <div *ngIf="groupedParts && groupedParts.length > 0; else noChartData" 
+                   class="modern-chart-wrapper"
+                   [style.height.px]="getChartHeight()">
                 <!-- Modern Vertical Bar Chart -->
                 <div class="vertical-bar-chart">
                   <div class="chart-header">
@@ -72,20 +83,23 @@
                     <span class="chart-subtitle">Quantity by Part Type</span>
                   </div>
                   
-                  <div class="chart-area">
-                    <div class="y-axis">
-                      <div class="y-label" *ngFor="let tick of [10, 8, 6, 4, 2, 0]">{{ tick }}</div>
+                  <div class="chart-area" [style.height.px]="getChartAreaHeight()">
+                    <div class="y-axis" [style.height.px]="getBarsHeight()">
+                      <div class="y-label" *ngFor="let tick of getYAxisTicks()">{{ tick }}</div>
                     </div>
                     
-                    <div class="bars-grid">
+                    <div class="bars-grid" 
+                         [style.height.px]="getBarsHeight()">
                       <div *ngFor="let part of summaryData; let i = index" 
                            class="bar-column" 
-                           [style.animation-delay.ms]="i * 200">
+                           [style.animation-delay.ms]="i * 200"
+                           [style.max-width.px]="getDynamicBarWidth()">
                         
-                        <div class="bar-container">
+                        <div class="bar-container" [style.height.px]="getBarsHeight()">
                           <div class="vertical-bar" 
-                               [style.height.%]="(part.quantity / 10) * 100"
-                               [style.background]="getProgressColor(i)">
+                               [style.height.%]="getBarHeightPercentage(part.quantity)"
+                               [style.background]="getProgressColor(i)"
+                               [style.max-width.px]="getDynamicBarWidth() * 0.8">
                             <div class="bar-shine"></div>
                             <div class="bar-value">{{ part.quantity }}</div>
                           </div>
@@ -259,7 +273,7 @@
                 </thead>
                 <tbody>
                   <tr *ngFor="let part of group.parts; let j = index" 
-                      [class.table-danger]="isThrowItem(part.keepThrow)">
+                      [class.table-danger]="isThrowItem(part.keepThrow || part.KeepThrow)">
                     <!-- DCG Part No - Editable -->
                     <td class="align-middle part-no-col" style="width: 18%; word-wrap: break-word; padding: 8px;">
                       <div *ngIf="!isEditingPart(part); else editPartNoTemplate" class="text-truncate" [title]="part.dcgPartNo">
@@ -298,16 +312,19 @@
                     <td class="align-middle text-center status-col" style="width: 15%; padding: 8px;">
                       <div *ngIf="!isEditingPart(part); else editStatusTemplate">
                         <span class="badge" [ngClass]="{
-                          'bg-success': !isThrowItem(part.keepThrow),
-                          'bg-danger': isThrowItem(part.keepThrow)
+                          'bg-success': !isThrowItem(part.keepThrow || part.KeepThrow),
+                          'bg-danger': isThrowItem(part.keepThrow || part.KeepThrow)
                         }">
-                          {{ part.keepThrow }}
+                          {{ part.keepThrow || part.KeepThrow }}
                         </span>
                       </div>
                       <ng-template #editStatusTemplate>
-                        <select class="form-select form-select-sm mx-auto" [(ngModel)]="part.keepThrow" style="width: 90px;">
-                          <option value="Keep">Keep</option>
-                          <option value="Throw">Throw</option>
+                        <select class="form-control form-control-sm mx-auto" 
+                                [(ngModel)]="part.keepThrow" 
+                                [value]="part.keepThrow || part.KeepThrow || 'Keep'"
+                                style="width: 90px;">
+                          <option value="Keep" [selected]="(part.keepThrow || part.KeepThrow) === 'Keep'">Keep</option>
+                          <option value="Throw" [selected]="(part.keepThrow || part.KeepThrow) === 'Throw'">Throw</option>
                         </select>
                       </ng-template>
                     </td>
@@ -316,10 +333,10 @@
                       <div class="btn-group btn-group-sm" role="group">
                         <!-- Edit/Update Button -->
                         <button *ngIf="!isEditingPart(part)" 
-                                class="btn btn-outline-primary btn-sm" 
+                                class="btn btn-outline-primary btn-sm edit-btn" 
                                 (click)="startEditingPart(part)" 
                                 title="Edit Part">
-                          <i class="bi bi-pencil"></i>
+                          <i class="bi bi-pencil-square"></i>
                         </button>
                         <button *ngIf="isEditingPart(part)" 
                                 class="btn btn-success btn-sm" 
@@ -336,11 +353,11 @@
                           <i class="bi bi-x"></i>
                         </button>
                         <!-- Delete Button -->
-                        <button class="btn btn-outline-danger btn-sm" 
+                        <button class="btn btn-outline-danger btn-sm delete-btn" 
                                 (click)="deletePartConfirm(part)" 
                                 title="Delete Part"
                                 [disabled]="isDeleting">
-                          <i class="bi bi-trash"></i>
+                          <i class="bi bi-trash3-fill"></i>
                         </button>
                       </div>
                     </td>

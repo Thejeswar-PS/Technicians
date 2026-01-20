@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Job } from '../model/job-model';
 import { IReportTeam } from '../model/trending-report-team.models';
@@ -92,6 +92,11 @@ import {
 export class ReportService {
 
   constructor(private http : HttpClient) { }
+
+  private handleError(error: any): Observable<never> {
+    console.error('An error occurred:', error);
+    return throwError(() => error);
+  }
 
   private headers = new HttpHeaders({
     'Access-Control-Allow-Origin': '*'
@@ -897,13 +902,15 @@ export class ReportService {
   }
 
   /**
-   * Deletes a stripped part from unit
-   * Note: This endpoint may need to be added to the backend if not already available
+   * Deletes a stripped part from unit using the new backend API
+   * Calls: DELETE /api/StrippedUnitsStatus/DeleteStrippedPartsInUnit/{masterRowIndex}/{rowIndex}
    */
   deleteStrippedPartInUnit(masterRowIndex: number, rowIndex: number): Observable<StrippedPartsInUnitApiResponse> {
-    return this.http.delete<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/DeleteStrippedPartInUnit/${masterRowIndex}/${rowIndex}`, {
+    return this.http.delete<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/DeleteStrippedPartsInUnit/${masterRowIndex}/${rowIndex}`, {
       headers: this.headers
-    });
+    }).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**

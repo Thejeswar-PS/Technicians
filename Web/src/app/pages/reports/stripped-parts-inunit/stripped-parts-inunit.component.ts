@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { trigger, state, style, transition, animate } from '@angular/animations';
@@ -235,6 +235,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       show: false
     }
   };
+  // Component state
   summaryData: any[] = [];
   totalStrippedParts: number = 0;
   partsLocation: string = '';
@@ -561,7 +562,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     private authService: AuthService,
     private toastr: ToastrService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.initializeForms();
   }
@@ -660,6 +662,28 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             
             // Map API response properties to component properties
             this.partsDetails = response.data.partsDetails || [];
+            
+            // AGGRESSIVELY normalize property names for consistent UI binding
+            this.partsDetails = this.partsDetails.map(part => {
+              // Get keepThrow value from any possible property variation
+              const keepThrowValue = part.keepThrow || part.KeepThrow || part['KeepThrow'] || part['keepThrow'] || '';
+              const normalizedKeepThrow = keepThrowValue.toString().trim();
+              
+              return {
+                ...part,
+                // Force consistent property naming with validated values
+                keepThrow: (normalizedKeepThrow === 'Keep' || normalizedKeepThrow === 'Throw') 
+                          ? normalizedKeepThrow 
+                          : 'Keep', // Default to 'Keep' if invalid
+                dcgPartNo: part.dcgPartNo || part.DCGPartNo || '',
+                partDesc: part.partDesc || part.Description || '',
+                group: part.group || part.Group || '',
+                stripNo: part.stripNo || part.StripNo || 1
+              };
+            });
+            
+            console.log('Normalized parts data:', this.partsDetails.map(p => ({dcgPartNo: p.dcgPartNo, keepThrow: p.keepThrow})));
+            
             this.groupCounts = response.data.groupCounts || [];
             this.costAnalysis = response.data.costAnalysis || [];
             this.partsLocations = response.data.partsLocations || [];
@@ -754,6 +778,140 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       return value;
     }
     return parseFloat(value) || 0;
+  }
+
+  // Get maximum quantity for auto-scaling
+  getMaxQuantity(): number {
+    if (!this.summaryData || this.summaryData.length === 0) {
+      return 10; // Default max value
+    }
+    const maxQty = Math.max(...this.summaryData.map(item => item.quantity || 0));
+    // Round up to next nice number for better Y-axis labels
+    return Math.max(10, Math.ceil(maxQty * 1.2));
+  }
+
+  // Generate Y-axis tick marks based on max value
+  getYAxisTicks(): number[] {
+    const max = this.getMaxQuantity();
+    const tickCount = 6;
+    const step = Math.ceil(max / (tickCount - 1));
+    const ticks = [];
+    
+    for (let i = tickCount - 1; i >= 0; i--) {
+      ticks.push(i * step);
+    }
+    
+    return ticks;
+  }
+
+  // Calculate bar height percentage based on max value
+  getBarHeightPercentage(quantity: number): number {
+    const max = this.getMaxQuantity();
+    if (max === 0) return 0;
+    
+    const percentage = (quantity / max) * 100;
+    // Ensure minimum height for visibility
+    return Math.max(percentage, 3);
+  }
+
+  // Calculate dynamic chart height based on data
+  getChartHeight(): number {
+    const baseHeight = 450; // Increased base height
+    const maxQuantity = this.getMaxQuantity();
+    const maxLabelLength = this.getMaxLabelLength();
+    
+    // Add height for large values (beyond base scale)
+    let heightForValues = 0;
+    if (maxQuantity > 20) {
+      heightForValues = Math.min((maxQuantity - 20) * 8, 150); // Max 150px extra
+    }
+    
+    // Add significant height for long labels - this is key for label visibility
+    let heightForLabels = 0;
+    if (maxLabelLength > 12) {
+      // More aggressive scaling for long labels
+      heightForLabels = Math.min((maxLabelLength - 12) * 5, 120); // Max 120px extra
+    }
+    
+    // Additional height for multi-line labels (labels with hyphens or spaces)
+    let heightForMultiLine = 0;
+    if (this.hasMultiLineLabels()) {
+      heightForMultiLine = 60; // Extra space for wrapped text
+    }
+    
+    return Math.min(baseHeight + heightForValues + heightForLabels + heightForMultiLine, 750); // Max total 750px
+  }
+
+  // Check if any labels will likely wrap to multiple lines
+  hasMultiLineLabels(): boolean {
+    if (!this.summaryData || this.summaryData.length === 0) {
+      return false;
+    }
+    return this.summaryData.some(item => {
+      const label = item.partsStripped || '';
+      return label.length > 15 || label.includes('-') || label.includes(' ');
+    });
+  }
+
+  // Get maximum label length for dynamic sizing
+  getMaxLabelLength(): number {
+    if (!this.summaryData || this.summaryData.length === 0) {
+      return 10;
+    }
+    return Math.max(...this.summaryData.map(item => 
+      (item.partsStripped || '').length
+    ));
+  }
+
+  // Calculate chart area height
+  getChartAreaHeight(): number {
+    return this.getChartHeight() - 120; // Subtract padding and header space
+  }
+
+  // Calculate bars height
+  getBarsHeight(): number {
+    return this.getChartAreaHeight() - 50; // Subtract Y-axis padding
+  }
+
+  // Calculate dynamic bar width based on number of categories
+  getDynamicBarWidth(): number {
+    if (!this.summaryData || this.summaryData.length === 0) {
+      return 80; // Default width
+    }
+    
+    const categoryCount = this.summaryData.length;
+    const availableWidth = 600; // Approximate chart width
+    
+    // Calculate width to distribute bars across full width
+    if (categoryCount <= 2) {
+      return Math.min(150, availableWidth / (categoryCount + 1)); // Very wide bars for 1-2 categories
+    } else if (categoryCount <= 4) {
+      return Math.min(120, availableWidth / (categoryCount + 1)); // Wide bars for 3-4 categories
+    } else if (categoryCount <= 8) {
+      return Math.min(80, availableWidth / (categoryCount + 1)); // Medium bars for 5-8 categories
+    } else {
+      return Math.max(40, availableWidth / (categoryCount + 2)); // Narrow bars for many categories
+    }
+  }
+
+  // Calculate dynamic gap between bars
+  getDynamicBarGap(): number {
+    if (!this.summaryData || this.summaryData.length === 0) {
+      return 12; // Default gap
+    }
+    
+    const categoryCount = this.summaryData.length;
+    
+    // Adjust gap based on number of categories
+    if (categoryCount <= 3) {
+      return 24; // Larger gaps for few categories
+    } else if (categoryCount <= 6) {
+      return 16; // Medium gaps
+    } else if (categoryCount <= 10) {
+      return 12; // Standard gaps
+    } else {
+      return 8; // Smaller gaps for many categories
+    }
   }
 
   // Part Management Methods
@@ -1103,7 +1261,47 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   startEditingPart(part: StrippedPartsDetailDto): void {
     // Store original data for potential cancellation
     this.originalPartData.set(part, { ...part });
+    
+    // AGGRESSIVELY normalize and set property values for editing
+    // Handle different property name variations from API (KeepThrow vs keepThrow)
+    const keepThrowValue = part.keepThrow || part.KeepThrow || part['KeepThrow'] || part['keepThrow'];
+    
+    // Force set the keepThrow value - override any blank/undefined states
+    part.keepThrow = keepThrowValue && (keepThrowValue.toString().trim() === 'Keep' || keepThrowValue.toString().trim() === 'Throw') 
+                     ? keepThrowValue.toString().trim() 
+                     : 'Keep'; // Default fallback
+    
+    // Normalize other properties
+    if (!part.dcgPartNo && part.DCGPartNo) {
+      part.dcgPartNo = part.DCGPartNo;
+    }
+    if (!part.partDesc && part.Description) {
+      part.partDesc = part.Description;
+    }
+    if (!part.group && part.Group) {
+      part.group = part.Group;
+    }
+    
+    console.log('Editing part - keepThrow value:', part.keepThrow, 'Original value:', keepThrowValue);
+    
     this.editingParts.add(part);
+    
+    // Force change detection and dropdown update
+    this.cdr.detectChanges();
+    
+    // Additional DOM manipulation to ensure dropdown shows selected value
+    setTimeout(() => {
+      const selectElements = document.querySelectorAll('select.form-select');
+      selectElements.forEach((element: Element) => {
+        const select = element as HTMLSelectElement;
+        const currentValue = part.keepThrow || 'Keep';
+        if (select.value !== currentValue) {
+          select.value = currentValue;
+          // Trigger change event
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    }, 100);
   }
 
   // Save part update - calls SaveUpdateStrippedPartsInUnit API
@@ -1189,42 +1387,69 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Delete confirmation and API call - calls DeleteStrippedPartsInUnit API
   deletePartConfirm(part: StrippedPartsDetailDto): void {
-    const confirmMessage = `Are you sure you want to delete part "${part.dcgPartNo}" - ${part.partDesc}?`;
+    const confirmMessage = `Are you sure you want to delete part "${part.dcgPartNo || part.DCGPartNo}" - ${part.partDesc || part.Description}?`;
     
     if (confirm(confirmMessage)) {
       this.isDeleting = true;
       
-      // Make actual API call to DeleteStrippedPartInUnit
-      // Note: Need to determine rowIndex - using part's index in array for now
-      const partIndex = this.partsDetails.findIndex(p => p.dcgPartNo === part.dcgPartNo);
+      // Get the actual rowIndex from the part data
+      // Use the part's rowIndex if available, otherwise use its position in the array
+      const rowIndex = part.rowIndex || part.RowIndex || 
+                      (this.partsDetails.findIndex(p => 
+                        (p.dcgPartNo === part.dcgPartNo || p.DCGPartNo === part.DCGPartNo) &&
+                        (p.partDesc === part.partDesc || p.Description === part.Description)
+                      ) + 1); // Add 1 since rowIndex is 1-based
       
-      const deleteSubscription = this.reportService.deleteStrippedPartInUnit(this.masterRowIndex, partIndex)
+      console.log('Deleting part with masterRowIndex:', this.masterRowIndex, 'rowIndex:', rowIndex);
+      
+      const deleteSubscription = this.reportService.deleteStrippedPartInUnit(this.masterRowIndex, rowIndex)
         .pipe(finalize(() => this.isDeleting = false))
         .subscribe({
-          next: (response: StrippedPartsInUnitApiResponse) => {
+          next: (response: any) => {
             if (response.success) {
               // Remove from local arrays
               this.partsDetails = this.partsDetails.filter((p: StrippedPartsDetailDto) => 
-                p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
+                !((p.dcgPartNo === part.dcgPartNo || p.DCGPartNo === part.DCGPartNo) &&
+                  (p.partDesc === part.partDesc || p.Description === part.Description))
               );
               
               // Update grouped parts
               this.groupedParts = this.groupedParts.map(group => ({
                 ...group,
                 parts: group.parts.filter((p: StrippedPartsDetailDto) => 
-                  p.dcgPartNo !== part.dcgPartNo || p.DCGPartNo !== part.dcgPartNo
+                  !((p.dcgPartNo === part.dcgPartNo || p.DCGPartNo === part.DCGPartNo) &&
+                    (p.partDesc === part.partDesc || p.Description === part.Description))
                 )
               })).filter(group => group.parts.length > 0);
               
-              this.calculateFromPartsDetails(); // Recalculate totals
-              this.toastr.success(`Part ${part.dcgPartNo} deleted successfully`, 'Deleted');
+              // Remove from editing state if it was being edited
+              this.editingParts.delete(part);
+              
+              // Recalculate summary data and totals
+              this.calculateFromPartsDetails();
+              
+              this.toastr.success(
+                `Part ${part.dcgPartNo || part.DCGPartNo} deleted successfully`, 
+                'Deleted'
+              );
             } else {
-              this.toastr.error(response.error || 'Failed to delete part', 'Delete Failed');
+              this.toastr.error(
+                response.message || 'Failed to delete part', 
+                'Delete Failed'
+              );
             }
           },
           error: (error: any) => {
             console.error('Error deleting part:', error);
-            this.toastr.error('Error deleting part. Please try again.', 'Delete Failed');
+            let errorMessage = 'Error deleting part. Please try again.';
+            
+            if (error.error?.message) {
+              errorMessage = error.error.message;
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
+            
+            this.toastr.error(errorMessage, 'Delete Failed');
           }
         });
       
@@ -1286,11 +1511,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     this.toastr.info('Parts Location feature to be implemented');
   }
 
-  // Navigation Methods
-  goBack(): void {
-    this.router.navigate(['/reports']);
-  }
-
   // Group collapse state tracking
   groupCollapseState: { [key: number]: boolean } = {};
 
@@ -1330,5 +1550,10 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   isGroupExpanded(groupIndex: number): boolean {
     // Default to true (expanded) if not initialized
     return this.groupCollapseState[groupIndex] !== false;
+  }
+
+  // Navigate back to previous page
+  goBack(): void {
+    this.router.navigate(['/reports/stripped-units-status']);
   }
 }

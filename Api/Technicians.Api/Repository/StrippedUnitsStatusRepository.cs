@@ -525,5 +525,32 @@ namespace Technicians.Api.Repository
 
             return 0;
         }
+
+        /// <summary>
+        /// Deletes a stripped parts in unit record using the DeleteStrippedPartsInUnit stored procedure
+        /// </summary>
+        /// <param name="masterRowIndex">The MasterRowIndex of the record to delete</param>
+        /// <param name="rowIndex">The RowIndex of the record to delete</param>
+        /// <returns>True if successful</returns>
+        public async Task<bool> DeleteStrippedPartsInUnitAsync(int masterRowIndex, int rowIndex)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@MasterRowIndex", masterRowIndex, DbType.Int32);
+                parameters.Add("@RowIndex", rowIndex, DbType.Int32);
+
+                await connection.ExecuteAsync("DeleteStrippedPartsInUnit", parameters, commandType: CommandType.StoredProcedure);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error deleting stripped parts in unit: {ex.Message}", ex);
+            }
+        }
     }
 }
