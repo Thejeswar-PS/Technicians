@@ -1,0 +1,979 @@
+/* UPS Test Status Component Styles - Based on Stripped Units Status Design */
+
+.ups-test-status-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  position: relative;
+
+  .ups-test-status-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 1000;
+  }
+}
+
+.ups-test-status-header__top {
+  margin-bottom: 2rem;
+  
+  .ups-test-status-header__back {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+  }
+}
+
+.ups-test-status-page-title {
+  text-align: center;
+  flex: 1;
+  
+  h2 {
+    color: #5486ff;
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin: 0;
+    
+    i {
+      color: #5486ff;
+      font-size: 2rem;
+    }
+  }
+}
+
+// Main card styling
+.ups-main-card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background: white;
+  
+  .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    padding: 1.5rem;
+    
+    .card-title {
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0;
+    }
+  }
+}
+
+// Modern Filter Card
+.modern-filter-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+  
+  .filter-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.25rem 2rem;
+    border-bottom: 1px solid #e9ecef;
+    
+    .filter-title {
+      color: white;
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      i {
+        font-size: 1.2rem;
+      }
+    }
+  }
+  
+  .filter-content {
+    padding: 2rem;
+    
+    .row {
+      margin: 0;
+      
+      .col-md-3 {
+        padding: 0 0.75rem;
+        margin-bottom: 1.5rem;
+      }
+    }
+    
+    .form-label {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
+      min-height: 20px;
+      
+      i {
+        color: #5486ff;
+      }
+    }
+    
+    .modern-select {
+      border: 2px solid rgba(84, 134, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: "Inter", system-ui, sans-serif;
+      background: rgba(255, 255, 255, 0.8);
+      transition: all 0.3s ease;
+      
+      &:focus {
+        border-color: #5486ff;
+        box-shadow: 0 0 0 0.2rem rgba(84, 134, 255, 0.25);
+        background: white;
+      }
+    }
+  }
+}
+
+// Chart Section
+.chart-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  overflow: hidden;
+  
+  .chart-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 2rem;
+    
+    .chart-title {
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      i {
+        font-size: 1.3rem;
+      }
+    }
+  }
+  
+  .chart-content {
+    padding: 2rem;
+    
+    .chart-controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      
+      .chart-type-btn {
+        padding: 0.75rem 2rem;
+        border: 2px solid #e4e6ea;
+        border-radius: 10px;
+        background: white;
+        color: #5e6278;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          border-color: #009ef7;
+          color: #009ef7;
+          background: #f5f8fa;
+        }
+        
+        &.active {
+          background: #009ef7;
+          border-color: #009ef7;
+          color: white;
+        }
+      }
+    }
+    
+    .chart-container {
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      .no-data-message {
+        text-align: center;
+        color: #7e8299;
+        font-size: 1.1rem;
+        
+        i {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+          opacity: 0.5;
+        }
+      }
+    }
+  }
+  
+  .chart-sidebar {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-left: 1px solid #e4e6ea;
+    
+    .summary-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #181c32;
+      margin-bottom: 1.5rem;
+      
+      i {
+        color: #009ef7;
+      }
+    }
+    
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #e4e6ea;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      .item-label {
+        font-weight: 600;
+        color: #5e6278;
+      }
+      
+      .item-count {
+        background: #009ef7;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-weight: 700;
+        font-size: 0.875rem;
+      }
+    }
+  }
+}
+
+// Table styling
+.table-section {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  
+  .table-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1.5rem 2rem;
+    
+    .table-title {
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      
+      i {
+        font-size: 1.3rem;
+      }
+    }
+  }
+  
+  // Modern data table wrapper - matching stripped units
+  .table-container-wrapper {
+    .table-responsive {
+      border-radius: 12px !important;
+      overflow: hidden !important;
+      border: 1px solid #dee2e6 !important;
+      
+      .table {
+        margin: 0;
+        table-layout: fixed;
+        width: 100%;
+        border-radius: 0 !important;
+        
+        thead th {
+          background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+          background-image: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+          color: white !important;
+          border: none !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+          padding: 1rem 0.75rem !important;
+          height: auto !important;
+          min-height: 65px !important;
+          vertical-align: middle !important;
+          text-align: center !important;
+          position: relative !important;
+          font-size: 0.75rem !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          line-height: 1.2 !important;
+          
+          &:first-child {
+            border-top-left-radius: 0 !important;
+            padding-left: 1rem !important;
+          }
+          
+          &:last-child {
+            border-top-right-radius: 0 !important;
+            padding-right: 1rem !important;
+          }
+        
+          
+          .header-content-compact {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.25rem !important;
+            min-height: 1.5rem;
+            
+            .header-text {
+              font-size: 0.75rem !important;
+              font-weight: 600 !important;
+              color: rgba(255, 255, 255, 0.95) !important;
+            }
+            
+            .sort-icon {
+              font-size: 0.7rem !important;
+              opacity: 0.8 !important;
+              transition: all 0.2s ease !important;
+              color: white !important;
+            }
+          }
+          
+          &:hover {
+            background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%) !important;
+            transform: translateY(-1px) !important;
+          }
+        }
+        
+        tbody {
+          tr {
+            transition: background-color 0.15s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            
+            &:hover {
+              background-color: rgba(255, 193, 7, 0.08) !important;
+              transform: none;
+            }
+            
+            &.striped {
+              background-color: rgba(248, 249, 250, 0.6);
+            }
+            
+            td {
+              padding: 0.75rem 0.5rem !important;
+              border-top: 1px solid rgba(0, 0, 0, 0.05);
+              vertical-align: top;
+              font-size: 0.85rem !important;
+              font-weight: 600 !important;
+              color: #000000 !important;
+              text-align: center;
+              white-space: normal !important;
+              word-wrap: break-word !important;
+              overflow-wrap: break-word !important;
+              text-overflow: unset !important;
+              overflow: visible !important;
+              line-height: 1.4;
+              max-height: 4.2rem;
+              height: auto !important;
+              min-height: 60px !important;
+              
+              &:first-child {
+              border-left: 3px solid transparent;
+            }
+            
+            .status-badge {
+              font-size: 0.8rem;
+              padding: 0.4rem 0.8rem;
+              font-weight: 700;
+              border-radius: 16px;
+              border: none;
+              text-transform: none;
+              letter-spacing: normal;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.25rem;
+              
+              &.badge-light-secondary,
+              &.status-not-started {
+                background-color: #F3F4F6;
+                color: #000000;
+              }
+              
+              &.badge-light-primary,
+              &.status-in-progress {
+                background-color: #E0F2FE;
+                color: #000000;
+              }
+              
+              &.badge-light-success,
+              &.status-completed {
+                background-color: #DCFCE7;
+                color: #000000;
+              }
+              
+              &.badge-light-warning,
+              &.status-deferred {
+                background-color: #FEF3C7;
+                color: #000000;
+              }
+              
+              &.badge-light-danger {
+                background-color: #FEE2E2;
+                color: #000000;
+              }
+              
+              &.badge-light-info,
+              &.status-waiting {
+                background-color: #F3E8FF;
+                color: #000000;
+              }
+            }
+            
+            .priority-badge {
+              font-size: 0.8rem;
+              padding: 0.4rem 0.8rem;
+              font-weight: 700;
+              border-radius: 16px;
+              border: none;
+              text-transform: none;
+              letter-spacing: normal;
+              display: inline-flex;
+              align-items: center;
+              gap: 0.25rem;
+              color: #000000 !important;
+              
+              // High Priority - Red
+              &.badge-light-danger,
+              &.priority-high {
+                background-color: #FFCDD2 !important;
+                color: #000000 !important;
+              }
+              
+              // Normal Priority - Blue
+              &.badge-light-primary,
+              &.priority-normal,
+              &.priority-medium {
+                background-color: #BBDEFB !important;
+                color: #000000 !important;
+              }
+              
+              // Low Priority - Green
+              &.badge-light-success,
+              &.priority-low {
+                background-color: #C8E6C9 !important;
+                color: #000000 !important;
+              }
+              
+              // At Convenience - Purple
+              &.badge-light-info,
+              &.priority-convenience,
+              &.priority-at-convenience {
+                background-color: #E1BEE7 !important;
+                color: #000000 !important;
+              }
+            }
+          }
+          
+          &:hover td:first-child {
+            border-left-color: #667eea;
+          }
+        }
+        
+        .ups-no-data-row {
+          td {
+            padding: 3rem 1rem;
+            text-align: center;
+            
+            i {
+              color: #b5b5c3;
+              font-size: 3rem;
+              margin-bottom: 1rem;
+            }
+            
+            h6 {
+              color: #7e8299;
+              margin-bottom: 0.5rem;
+            }
+            
+            small {
+              color: #b5b5c3;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Records control bar styling - Matching Stripped Units Status design
+.d-flex.justify-content-between.align-items-center.mb-4.p-3.bg-light.rounded {
+  background: #f8f9fa !important;
+  border: 1px solid #dee2e6 !important;
+  border-radius: 8px !important;
+  padding: 1rem 1.5rem !important;
+  
+  // Records per page selector (left)
+  .d-flex.align-items-center {
+    .form-label {
+      font-size: 0.9rem;
+      color: #495057;
+      font-weight: 600;
+      margin-bottom: 0 !important;
+      margin-right: 0.5rem !important;
+    }
+    
+    .form-select {
+      min-width: 70px;
+      border: 1px solid #007bff;
+      border-radius: 4px;
+      font-weight: 500;
+      font-size: 0.875rem;
+      transition: all 0.2s ease;
+      
+      &:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+    }
+  }
+  
+  // Center container for the results badge - matching stripped units
+  .d-flex.justify-content-center.align-items-center {
+    flex: 1;
+  }
+  
+  // Records per page and pagination controls alignment
+  .d-flex.align-items-center:first-child {
+    flex: 0 0 auto;
+  }
+  
+  .d-flex.align-items-center:last-child {
+    flex: 0 0 auto;
+  }
+  
+  // Pagination controls (right) - matching stripped units style
+  .d-flex.align-items-center {
+    gap: 0.5rem;
+    
+    .btn {
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      
+      &.btn-outline-secondary {
+        border-color: #6c757d;
+        color: #6c757d;
+        
+        &:hover:not(.disabled) {
+          background: #6c757d;
+          color: white;
+        }
+        
+        &.disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+    }
+    
+    .mx-2 {
+      font-size: 0.875rem;
+      color: #495057;
+      font-weight: 600;
+    }
+  }
+}
+
+// Pagination styling
+.ups-pagination-container {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+  
+  .ups-pagination-info {
+    small {
+      color: #7e8299;
+      font-size: 0.9rem;
+    }
+  }
+  
+  .pagination {
+    margin: 0;
+    
+    .page-item {
+      margin: 0 0.125rem;
+      
+      .page-link {
+        color: #5e6278;
+        padding: 0.625rem 1rem;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: #009ef7;
+          color: #009ef7;
+          background: #f5f8fa;
+        }
+      }
+    }
+    
+    .page-item.active .page-link {
+      background: #009ef7;
+      border-color: #009ef7;
+      color: white;
+    }
+    
+    .page-item.disabled .page-link {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Additional badge styles
+.badge-light-primary {
+  background-color: #e1f0ff !important;
+  color: #3699ff !important;
+}
+
+.badge-light-info {
+  background-color: #f3e8ff !important;
+  color: #8950fc !important;
+}
+
+}
+
+// Loading states
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .ups-test-status-container {
+    padding: 1rem 0.5rem;
+  }
+  
+  .chart-content {
+    .chart-controls {
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      .chart-type-btn {
+        width: 100%;
+      }
+    }
+  }
+  
+  .filter-content {
+    padding: 1rem;
+    
+    .col-md-3 {
+      margin-bottom: 1rem;
+    }
+  }
+}
+
+/* Force Stripped Units Status styling - Remove all conflicting styles */
+.ups-test-status-container .table-responsive .ups-status-table,
+.table.ups-status-table,
+.modern-table-container .table,
+.parts-data-table {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  border: 1px solid #dee2e6 !important;
+  
+  thead th {
+    background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+    color: white !important;
+    border: none !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    min-height: 65px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+    
+    .header-text {
+      font-size: 0.75rem !important;
+      font-weight: 600 !important;
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+    
+    .sort-icon {
+      font-size: 0.7rem !important;
+      opacity: 0.8 !important;
+      color: white !important;
+    }
+    
+    &:hover {
+      background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%) !important;
+      transform: translateY(-1px) !important;
+    }
+  }
+  
+  tbody {
+    tr {
+      transition: background-color 0.15s ease !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+      
+      &:hover {
+        background-color: rgba(255, 193, 7, 0.08) !important;
+        transform: none !important;
+      }
+      
+      &.striped {
+        background-color: rgba(248, 249, 250, 0.6) !important;
+      }
+      
+      td {
+        padding: 0.75rem 0.5rem !important;
+        border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+        vertical-align: top !important;
+        font-size: 0.85rem !important;
+        font-weight: 600 !important;
+        color: #000000 !important;
+        text-align: center !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        text-overflow: unset !important;
+        overflow: visible !important;
+        line-height: 1.4 !important;
+        max-height: 4.2rem !important;
+        height: auto !important;
+        min-height: 60px !important;
+        
+        .status-badge {
+          font-size: 0.8rem !important;
+          padding: 0.4rem 0.8rem !important;
+          font-weight: 700 !important;
+          border-radius: 50px !important;
+          border: none !important;
+          text-transform: none !important;
+          letter-spacing: normal !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 0.25rem !important;
+          white-space: nowrap !important;
+          text-align: center !important;
+          
+          // In Progress - Blue Color
+          &.badge-light-primary,
+          &.status-in-progress {
+            background-color: #2196F3 !important;
+            color: #FFFFFF !important;
+          }
+          
+          // Needs Components for Repair - Amber/Orange
+          &.badge-light-warning,
+          &.status-needs-components,
+          &.status-deferred {
+            background-color: #FFF3E0 !important;
+            color: #E65100 !important;
+          }
+          
+          // Missing Parts from Job - Red/Soft Red
+          &.badge-light-danger,
+          &.status-missing-parts {
+            background-color: #FFEBEE !important;
+            color: #C62828 !important;
+          }
+          
+          // Completed - Green
+          &.badge-light-success,
+          &.status-completed {
+            background-color: #E8F5E8 !important;
+            color: #2E7D32 !important;
+          }
+          
+          // Not Started - Light Gray
+          &.badge-light-secondary,
+          &.status-not-started {
+            background-color: #F5F5F5 !important;
+            color: #424242 !important;
+          }
+          
+          // Waiting/Info - Light Purple
+          &.badge-light-info,
+          &.status-waiting {
+            background-color: #F3E5F5 !important;
+            color: #7B1FA2 !important;
+          }
+        }
+        
+        .priority-badge {
+          font-size: 0.8rem !important;
+          padding: 0.4rem 0.8rem !important;
+          font-weight: 700 !important;
+          border-radius: 16px !important;
+          border: none !important;
+          text-transform: none !important;
+          letter-spacing: normal !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 0.25rem !important;
+          color: #000000 !important;
+          
+          // High Priority - Red
+          &.badge-light-danger,
+          &.priority-high {
+            background-color: #FFCDD2 !important;
+            color: #000000 !important;
+          }
+          
+          // Normal Priority - Blue  
+          &.badge-light-primary,
+          &.priority-normal,
+          &.priority-medium {
+            background-color: #BBDEFB !important;
+            color: #000000 !important;
+          }
+          
+          // Low Priority - Green
+          &.badge-light-success,
+          &.priority-low {
+            background-color: #C8E6C9 !important;
+            color: #000000 !important;
+          }
+          
+          // At Convenience - Purple
+          &.badge-light-info,
+          &.priority-convenience,
+          &.priority-at-convenience {
+            background-color: #E1BEE7 !important;
+            color: #000000 !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* HIGHEST PRIORITY - Force status badge colors to override all global styles */
+.ups-test-status-container table tbody tr td .status-badge,
+.ups-test-status-container .table tbody tr td .status-badge,
+.ups-test-status-container .modern-table-container .table tbody tr td .status-badge,
+.ups-test-status-container .table-responsive .table tbody tr td .status-badge {
+  
+  &.badge-light-primary,
+  &.status-in-progress {
+    background-color: #2196F3 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+  }
+  
+  &.badge-light-warning,
+  &.status-needs-components,
+  &.status-deferred {
+    background-color: #FFF3E0 !important;
+    color: #E65100 !important;
+    border: none !important;
+  }
+  
+  &.badge-light-danger,
+  &.status-missing-parts {
+    background-color: #FFEBEE !important;
+    color: #C62828 !important;
+    border: none !important;
+  }
+  
+  &.badge-light-success,
+  &.status-completed {
+    background-color: #E8F5E8 !important;
+    color: #2E7D32 !important;
+    border: none !important;
+  }
+  
+  &.badge-light-secondary,
+  &.status-not-started {
+    background-color: #F5F5F5 !important;
+    color: #424242 !important;
+    border: none !important;
+  }
+  
+  &.badge-light-info,
+  &.status-waiting {
+    background-color: #F3E5F5 !important;
+    color: #7B1FA2 !important;
+    border: none !important;
+  }
+}
+
+/* HIGHEST PRIORITY - Force priority badge colors */
+.ups-test-status-container table tbody tr td .priority-badge,
+.ups-test-status-container .table tbody tr td .priority-badge,
+.ups-test-status-container .modern-table-container .table tbody tr td .priority-badge,
+.ups-test-status-container .table-responsive .table tbody tr td .priority-badge {
+  color: #000000 !important;
+  font-weight: 700 !important;
+  
+  // High Priority - Red
+  &.badge-light-danger,
+  &.priority-high {
+    background-color: #FFCDD2 !important;
+    color: #000000 !important;
+  }
+  
+  // Normal Priority - Blue  
+  &.badge-light-primary,
+  &.priority-normal,
+  &.priority-medium {
+    background-color: #BBDEFB !important;
+    color: #000000 !important;
+  }
+  
+  // Low Priority - Green
+  &.badge-light-success,
+  &.priority-low {
+    background-color: #C8E6C9 !important;
+    color: #000000 !important;
+  }
+  
+  // At Convenience - Purple
+  &.badge-light-info,
+  &.priority-convenience,
+  &.priority-at-convenience {
+    background-color: #E1BEE7 !important;
+    color: #000000 !important;
+  }
+}

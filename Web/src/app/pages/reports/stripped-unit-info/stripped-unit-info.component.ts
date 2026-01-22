@@ -480,8 +480,35 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
       rowIndex: this.isNewUnit ? 0 : formData.rowIndex,
       lastModifiedBy: currentUser?.username || 'System',
       lastModifiedOn: new Date(),
-      status: this.currentStatusValue || formData.status // Use the currentStatusValue if available
+      status: this.currentStatusValue || formData.status, // Use the currentStatusValue if available
+      // Ensure required fields are not empty
+      make: formData.make || '',
+      serialNo: formData.serialNo || '',
+      model: formData.model || '',
+      kva: formData.kva || '',
+      voltage: formData.voltage || '',
+      strippedBy: formData.strippedBy || '',
+      putAwayBy: formData.putAwayBy || '',
+      partsLocation: formData.partsLocation || ''
     };
+
+    // Validate required fields before sending
+    if (!unitData.make?.trim()) {
+      this.toastr.error('Make is required');
+      return;
+    }
+    if (!unitData.serialNo?.trim()) {
+      this.toastr.error('Serial Number is required');
+      return;
+    }
+    if (!unitData.status?.trim()) {
+      this.toastr.error('Status is required');
+      return;
+    }
+    if (!unitData.lastModifiedBy?.trim()) {
+      this.toastr.error('User information is required');
+      return;
+    }
 
     const apiCall = this.isNewUnit 
       ? this.reportService.saveUpdateStrippingUnit(unitData)

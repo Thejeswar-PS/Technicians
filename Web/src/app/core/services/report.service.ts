@@ -28,7 +28,6 @@ import {
 } from '../model/part-return-status.model';
 import { 
   StrippedUnitsStatusDto,
-  MakeCountDto,
   StrippedUnitsStatusRequest,
   StrippedUnitsStatusResponse,
   StrippedUnitsStatusApiResponse,
@@ -85,6 +84,15 @@ import {
   PartsSearchDataDto,
   PartsSearchDataResponse
 } from '../model/parts-search.model';
+import {
+  UPSTestStatusDto,
+  UPSTestStatusRequest,
+  UPSTestStatusResponse,
+  UPSTestStatusApiResponse,
+  UPSTestMetadataResponse,
+  MakeCountDto,
+  StatusSummaryItem
+} from '../model/ups-test-status.model';
 
 @Injectable({
   providedIn: 'root'
@@ -858,7 +866,35 @@ export class ReportService {
    * Saves or updates a stripping unit
    */
   saveUpdateStrippingUnit(dto: StrippedUnitsStatusDto): Observable<{success: boolean; message: string; rowIndex?: number}> {
-    return this.http.post<{success: boolean; message: string; rowIndex?: number}>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippingUnit`, dto, {
+    // Transform camelCase to PascalCase for backend compatibility
+    const transformedDto = {
+      Make: dto.make?.trim() || '',
+      Model: dto.model?.trim() || '',
+      SerialNo: dto.serialNo?.trim() || '',
+      Kva: dto.kva?.trim() || '',
+      Voltage: dto.voltage?.trim() || '',
+      PoNumber: dto.poNumber?.trim() || '',
+      ShippingPO: dto.shippingPO?.trim() || '',
+      UnitCost: dto.unitCost || 0,
+      ShipCost: dto.shipCost || 0,
+      StrippedBy: dto.strippedBy?.trim() || '',
+      PutAwayBy: dto.putAwayBy?.trim() || '',
+      Status: dto.status?.trim() || '',
+      CreatedOn: dto.createdOn ? new Date(dto.createdOn).toISOString() : new Date().toISOString(),
+      RowIndex: dto.rowIndex || 0,
+      StripExists: dto.stripExists || 0,
+      PartsLocation: dto.partsLocation?.trim() || '',
+      LastModifiedBy: dto.lastModifiedBy?.trim() || '',
+      LastModifiedOn: dto.lastModifiedOn ? new Date(dto.lastModifiedOn).toISOString() : new Date().toISOString()
+    };
+
+    // Wrap the dto in the expected structure
+    const payload = { dto: transformedDto };
+    
+    // Debug: Log the payload to console
+    console.log('API Payload being sent:', JSON.stringify(payload, null, 2));
+    
+    return this.http.post<{success: boolean; message: string; rowIndex?: number}>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippingUnit`, payload, {
       headers: this.headers
     });
   }
@@ -867,7 +903,35 @@ export class ReportService {
    * Updates a stripping unit by RowIndex
    */
   updateStrippingUnitByRowIndex(rowIndex: number, dto: StrippedUnitsStatusDto): Observable<{success: boolean; message: string; rowIndex: number}> {
-    return this.http.put<{success: boolean; message: string; rowIndex: number}>(`${this.API}/StrippedUnitsStatus/UpdateStrippingUnit/${rowIndex}`, dto, {
+    // Transform camelCase to PascalCase for backend compatibility
+    const transformedDto = {
+      Make: dto.make?.trim() || '',
+      Model: dto.model?.trim() || '',
+      SerialNo: dto.serialNo?.trim() || '',
+      Kva: dto.kva?.trim() || '',
+      Voltage: dto.voltage?.trim() || '',
+      PoNumber: dto.poNumber?.trim() || '',
+      ShippingPO: dto.shippingPO?.trim() || '',
+      UnitCost: dto.unitCost || 0,
+      ShipCost: dto.shipCost || 0,
+      StrippedBy: dto.strippedBy?.trim() || '',
+      PutAwayBy: dto.putAwayBy?.trim() || '',
+      Status: dto.status?.trim() || '',
+      CreatedOn: dto.createdOn ? new Date(dto.createdOn).toISOString() : null,
+      RowIndex: dto.rowIndex || 0,
+      StripExists: dto.stripExists || 0,
+      PartsLocation: dto.partsLocation?.trim() || '',
+      LastModifiedBy: dto.lastModifiedBy?.trim() || '',
+      LastModifiedOn: dto.lastModifiedOn ? new Date(dto.lastModifiedOn).toISOString() : new Date().toISOString()
+    };
+
+    // Wrap the dto in the expected structure
+    const payload = { dto: transformedDto };
+    
+    // Debug: Log the payload to console
+    console.log('API Payload being sent:', JSON.stringify(payload, null, 2));
+    
+    return this.http.put<{success: boolean; message: string; rowIndex: number}>(`${this.API}/StrippedUnitsStatus/UpdateStrippingUnit/${rowIndex}`, payload, {
       headers: this.headers
     });
   }
@@ -1157,5 +1221,50 @@ export class ReportService {
     return this.http.get<EmergencyJobsResponseDto>(`${this.API}/EmergencyJobs`, {
       headers: this.headers
     });
+  }
+
+  // ========== UPS Test Status API Methods ==========
+
+  /**
+   * Get UPS test status data with filtering options
+   */
+  getUPSTestStatus(request: UPSTestStatusRequest): Observable<UPSTestStatusApiResponse> {
+    const params = new HttpParams()
+      .set('assignedTo', request.assignedTo || 'All')
+      .set('status', request.status || 'All')
+      .set('priority', request.priority || 'All')
+      .set('archive', request.archive.toString());
+
+    return this.http.get<UPSTestStatusApiResponse>(`${this.API}/UPSTestStatus`, {
+      params,
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get UPS test status data using POST method (for complex filtering if needed)
+   */
+  postUPSTestStatus(request: UPSTestStatusRequest): Observable<UPSTestStatusApiResponse> {
+    return this.http.post<UPSTestStatusApiResponse>(`${this.API}/UPSTestStatus`, request, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get UPS test metadata including technicians, status summary, and dropdown data
+   */
+  getUPSTestMetadata(archive: boolean = false): Observable<UPSTestMetadataResponse> {
+    const params = new HttpParams().set('archive', archive.toString());
+    
+    return this.http.get<UPSTestMetadataResponse>(`${this.API}/UPSTestStatus/metadata`, {
+      params,
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
   }
 }

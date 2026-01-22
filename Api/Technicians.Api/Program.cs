@@ -111,6 +111,7 @@ builder.Services.AddScoped<IPartsSearchRepository, PartsSearchRepository>();
 builder.Services.AddScoped<IAccMgrPerformanceReportRepository, AccMgrPerformanceReportRepository>();
 builder.Services.AddScoped<IPastDueGraphRepository, PastDueGraphRepository>();
 builder.Services.AddScoped<EmergencyJobsRepository>();
+builder.Services.AddScoped<UPSTestStatusRepository>();
 
 var app = builder.Build();
 

@@ -15,6 +15,7 @@ import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/d
 import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
 import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
+import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
 
 const routes: Routes = [
   {
@@ -85,6 +86,10 @@ const routes: Routes = [
   {
     path: 'emergency-jobs',
     component: EmergencyJobsComponent
+  },
+  {
+    path: 'ups-test-status',
+    component: UPSTestStatusComponent
   }
 ];
 
