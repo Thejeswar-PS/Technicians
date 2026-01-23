@@ -19,12 +19,8 @@ namespace Technicians.Api.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Gets UPS test status data with flexible filtering options
-        /// This single endpoint handles all filtering scenarios
-        /// </summary>
         /// <param name="assignedTo">Technician filter or "All" (default: All)</param>
-        /// <param name="status">Status filter: Nos, Inp, Def, Com, NCR, or All (default: All)</param>
+        /// <param name="status">Status filter: All, INP, NCR, MPJ (default: All)</param>
         /// <param name="priority">Priority filter: Atc, or All (default: All)</param>
         /// <param name="archive">Include archived records (default: false)</param>
         /// <returns>UPS test status data with make counts</returns>
@@ -42,7 +38,7 @@ namespace Technicians.Api.Controllers
 
                 // Map full names to codes using repository methods
                 string mappedStatus = _repository.MapStatusToCode(status);
-                string mappedPriority = _repository.MapPriorityToCode(priority);
+                string mappedPriority = priority;
 
                 var request = new UPSTestStatusRequest
                 {
@@ -60,7 +56,16 @@ namespace Technicians.Api.Controllers
                     {
                         success = false,
                         message = "Validation failed",
-                        errors = validationErrors
+                        errors = validationErrors,
+                        validStatuses = new[] { "All", "INP", "NCR", "MPJ" },
+                        statusMappings = new Dictionary<string, string>
+                        {
+                            { "All", "All units" },
+                            { "INP", "In Progress" },
+                            { "NCR", "Needs Components for Repair" },
+                            { "MPJ", "Missing Parts from Job" },
+                            { "Missing", "Maps to MPJ" }
+                        }
                     });
                 }
 
@@ -76,9 +81,11 @@ namespace Technicians.Api.Controllers
                     totalRecords = results.UnitsData.Count,
                     filters = new
                     {
-                        assignedTo = assignedTo,
-                        status = status,
-                        priority = priority,
+                        originalAssignedTo = assignedTo,
+                        originalStatus = status,
+                        originalPriority = priority,
+                        mappedStatus = mappedStatus,
+                        mappedPriority = mappedPriority,
                         archive = archive
                     }
                 });
@@ -146,9 +153,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
         /// Gets metadata for dropdown populations and dashboard summaries
-        /// </summary>
+        /// Based on actual New Units Test Status legacy system
         [HttpGet("metadata")]
         public async Task<ActionResult> GetMetadata([FromQuery] bool archive = false)
         {
@@ -168,19 +174,42 @@ namespace Technicians.Api.Controllers
                     technicians = await techniciansTask,
                     makeCounts = await makeCountsTask,
                     statusSummary = await statusSummaryTask,
-                    validStatuses = new[] { "Nos", "Inp", "Def", "Com", "NCR" },
-                    validPriorities = new[] { "Atc" },
+                    
+                    // Correct New Units Test Status values
+                    validStatuses = new[] { "All", "INP", "NCR", "MPJ" },
+                    validPriorities = new[] { "All", "Atc" },
+                    
+                    // Correct status labels for New Units Test Status
                     statusLabels = new Dictionary<string, string>
                     {
-                        { "Nos", "Not Started" },
-                        { "Inp", "In Progress" },
-                        { "Def", "Deferred" },
-                        { "Com", "Completed" },
-                        { "NCR", "Needs Components for Repair" }
+                        { "All", "All" },
+                        { "INP", "In Progress" },
+                        { "NCR", "Needs Components for Repair" },
+                        { "MPJ", "Missing Parts from Job" }
                     },
+                    
                     priorityLabels = new Dictionary<string, string>
                     {
+                        { "All", "All" },
                         { "Atc", "At Convenience" }
+                    },
+                    
+                    // Legacy mappings for New Units Test Status specifically
+                    legacyStatusMappings = new Dictionary<string, string>
+                    {
+                        { "Missing", "MPJ" },
+                        { "Missing Parts from Job", "MPJ" },
+                        { "In Progress", "INP" },
+                        { "Needs Components for Repair", "NCR" },
+                        { "All", "All" }
+                    },
+                    
+                    // Note about other system status codes
+                    systemInfo = new
+                    {
+                        pageType = "New Units Test Status",
+                        note = "Status codes Nos, Inp, Def, Com are used by Parts Test Status, not New Units Test Status",
+                        supportedStatuses = "All, INP, NCR, MPJ only"
                     }
                 };
 

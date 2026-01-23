@@ -1,9 +1,9 @@
 <!-- UPS Test Status Page -->
-<div class="container-fluid order-request-container">
+<div class="container-fluid ups-test-status-container">
   <!-- Loading spinner -->
   <div
     *ngIf="isLoading"
-    class="d-flex justify-content-center align-items-center order-request-loading"
+    class="d-flex justify-content-center align-items-center ups-test-status-loading"
   >
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -11,10 +11,10 @@
   </div>
 
   <!-- Header Section -->
-  <div class="order-request-header__top mb-4 d-flex justify-content-between align-items-center">
+  <div class="ups-test-status-header__top mb-4 d-flex justify-content-between align-items-center">
     <button
       type="button"
-      class="btn btn-sm btn-primary order-request-header__back"
+      class="btn btn-sm btn-primary ups-test-status-header__back"
       (click)="goBack()"
       [disabled]="isLoading">
       <i class="bi bi-arrow-left me-2"></i>
@@ -22,7 +22,7 @@
     </button>
     
     <!-- Page Title - Centered -->
-    <div class="order-request-page-title">
+    <div class="ups-test-status-page-title">
       <h2 class="fw-bold text-primary mb-0">
         <i class="bi bi-activity me-2"></i>
         New Unit Status
@@ -36,13 +36,13 @@
   <!-- Main content -->
   <div *ngIf="!isLoading">
 
-    <!--begin::Status Distribution Chart Section-->
-    <div class="card shadow-sm order-main-card mb-4">
+    <!--begin::Manufacturer Distribution Chart Section-->
+    <div class="card shadow-sm ups-test-status-main-card mb-4">
       <!-- Header -->
       <div class="card-header border-0 py-4">
         <h3 class="card-title">
           <i class="bi bi-pie-chart me-2"></i>
-          Status Distribution
+          Manufacturer Distribution
         </h3>
       </div>
 
@@ -50,156 +50,107 @@
       <div class="card-body py-2">
 
         <!-- Loading -->
-        <div *ngIf="isLoadingStatusChart" 
+        <div *ngIf="isLoadingMakeChart" 
              class="d-flex justify-content-center py-10 chart-loading">
           <div class="d-flex flex-column align-items-center">
             <div class="spinner-border text-primary mb-3"></div>
             <span class="text-muted">
-              <span>Loading status data...</span>
+              <span>Loading manufacturer data...</span>
             </span>
           </div>
         </div>
 
         <!-- Error -->
-        <div *ngIf="statusChartErrorMessage && !isLoadingStatusChart"
+        <div *ngIf="makeChartErrorMessage && !isLoadingMakeChart"
              class="alert alert-warning d-flex align-items-center p-5 mb-10">
           <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
           <div class="d-flex flex-column">
             <h4 class="mb-1 text-warning">Chart Data Unavailable</h4>
-            <div>{{ statusChartErrorMessage }}</div>
+            <div>{{ makeChartErrorMessage }}</div>
           </div>
         </div>
 
         <!-- Content -->
-        <div *ngIf="!isLoadingStatusChart && hasStatusChartData()">
+        <div *ngIf="!isLoadingMakeChart && hasMakeChartData()">
 
                         <!-- Chart and Summary Layout -->
                         <div class="row g-4">
-                          <!-- Chart Section - Left Side -->
-                          <div class="col-lg-8">
+                          <!-- Chart Section - Full Width -->
+                          <div class="col-12">
                             <div class="chart-container">
 
                               <!-- Chart Type Selector -->
                               <div class="chart-selector-section">
                                 <h4 class="chart-selector-title">Data Visualization</h4>
 
-                                <div class="chart-type-controls">
-                                  <input type="radio" class="btn-check" 
-                                         name="statusChartType" id="statusBarChart"
-                                         checked (change)="setStatusChartType('bar')">
-                                  <label class="chart-type-btn" for="statusBarChart">
-                                    <i class="bi bi-bar-chart"></i>
-                                    Bar Chart
-                                  </label>
 
-                                  <input type="radio" class="btn-check" 
-                                         name="statusChartType" id="statusPieChart"
-                                         (change)="setStatusChartType('pie')">
-                                  <label class="chart-type-btn" for="statusPieChart">
-                                    <i class="bi bi-pie-chart"></i>
-                                    Pie Chart
-                                  </label>
-                                </div>
                               </div>
 
               <!-- Interactive Bar Chart -->
-              <div *ngIf="currentStatusChartType === 'bar'" class="chart-wrapper">
+              <div class="chart-wrapper">
                 <div class="interactive-bar-chart-container">
-                  <apx-chart *ngIf="statusBarChartOptions && statusBarChartOptions.series"
-                    [series]="statusBarChartOptions.series"
-                    [chart]="statusBarChartOptions.chart"
-                    [dataLabels]="statusBarChartOptions.dataLabels"
-                    [plotOptions]="statusBarChartOptions.plotOptions"
-                    [xaxis]="statusBarChartOptions.xaxis"
-                    [yaxis]="statusBarChartOptions.yaxis"
-                    [colors]="statusBarChartOptions.colors"
-                    [tooltip]="statusBarChartOptions.tooltip"
-                    [grid]="statusBarChartOptions.grid"
-                    [theme]="statusBarChartOptions.theme">
-                  </apx-chart>
+                  <!-- Custom CSS Bar Chart (matching stripped parts design) -->
+                  <div *ngIf="hasMakeChartData(); else noMakeChartData" 
+                       class="modern-chart-wrapper"
+                       [style.height.px]="400">
+                    <!-- Modern Vertical Bar Chart -->
+                    <div class="vertical-bar-chart">
+                      <div class="chart-header">
+                        <h6 class="chart-title">UPS Units Count by Manufacturer</h6>
+                        <span class="chart-subtitle">Distribution by Make</span>
+                      </div>
+                      
+                      <div class="chart-area" [style.height.px]="320">
+                        <div class="y-axis" [style.height.px]="280">
+                          <div class="y-label" *ngFor="let tick of getYAxisTicks()">{{ tick }}</div>
+                        </div>
+                        
+                        <div class="bars-grid" [style.height.px]="280">
+                          <div *ngFor="let makeData of getMakeChartData(); let i = index; trackBy: trackByMake" 
+                               class="bar-column"
+                               [class.animate-in]="!chartAnimationComplete"
+                               [class.animation-complete]="chartAnimationComplete"
+                               [style.animation-delay.ms]="chartAnimationComplete ? 0 : i * 150"
+                               [style.min-width.px]="getDynamicBarWidth()">
+                            
+                            <div class="bar-container" [style.height.px]="230">
+                              <div class="vertical-bar" 
+                                   [style.height.%]="getBarHeightPercentage(makeData.count)"
+                                   [style.background-color]="getMakeColor(makeData.make, i)">
+                                
+                                <div class="bar-shine"></div>
+                                <div class="bar-value">{{ makeData.count }}</div>
+                              </div>
+                            </div>
+                            
+                            <div class="bar-label" 
+                                 [title]="makeData.make">{{ makeData.make }}</div>
+                          </div>
+                        </div>
+                        
+                        <div class="x-axis">
+                          <div class="x-grid-lines">
+                            <div *ngFor="let makeData of getMakeChartData()" class="x-grid-line"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <ng-template #noMakeChartData>
+                    <div class="text-center py-5">
+                      <p class="text-muted">No data available for chart</p>
+                    </div>
+                  </ng-template>
                 </div>
               </div>
 
-              <!-- Interactive Donut Chart -->
-              <div *ngIf="currentStatusChartType === 'pie'" class="chart-wrapper">
-                <div class="interactive-donut-chart-container">
-                  <apx-chart *ngIf="statusDonutChartOptions && statusDonutChartOptions.series"
-                    [series]="statusDonutChartOptions.series"
-                    [chart]="statusDonutChartOptions.chart"
-                    [labels]="statusDonutChartOptions.labels"
-                    [colors]="statusDonutChartOptions.colors"
-                    [legend]="statusDonutChartOptions.legend"
-                    [tooltip]="statusDonutChartOptions.tooltip"
-                    [plotOptions]="statusDonutChartOptions.plotOptions"
-                    [dataLabels]="statusDonutChartOptions.dataLabels"
-                    [responsive]="statusDonutChartOptions.responsive">
-                  </apx-chart>
-                </div>
-              </div>
+
 
                             </div>
                             <!--end::Chart Container-->
                           </div>
 
-                          <!-- Unit Summary Section - Right Side -->
-                          <div class="col-lg-4">
-                            <div class="parts-return-summary-sidebar">
-                              <div class="summary-header mb-3">
-                                <h5 class="summary-title">
-                                  <i class="bi bi-clipboard-data me-2"></i>
-                                  UPS Summary
-                                </h5>
-                                <p class="summary-subtitle">Overall stripped units overview</p>
-                              </div>
-
-                              <div class="summary-cards">
-                                <!-- Total Units -->
-                                <div class="summary-card total-units mb-3">
-                                  <div class="card-body p-3">
-                                    <div class="d-flex align-items-center">
-                                      <div class="summary-icon me-3">
-                                        <i class="bi bi-boxes"></i>
-                                      </div>
-                                      <div class="summary-content flex-grow-1">
-                                        <h6 class="summary-label mb-1">Total Units</h6>
-                                        <div class="summary-value">{{ filteredData.length }}</div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <!-- Status Cards -->
-                                <div *ngFor="let item of statusSummaryItems" class="summary-card status-units mb-3">
-                                  <div class="card-body p-3">
-                                    <div class="d-flex align-items-center">
-                                      <div class="summary-icon me-3">
-                                        <i class="bi bi-circle-fill" [ngClass]="getStatusIconClass(item.status)"></i>
-                                      </div>
-                                      <div class="summary-content flex-grow-1">
-                                        <h6 class="summary-label mb-1">{{ item.label }}</h6>
-                                        <div class="summary-value">{{ item.count }}</div>
-                                        <small class="text-muted">{{ getStatusPercentage(item.status) }}% of total</small>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <!-- Summary Totals -->
-                                <div class="summary-totals mt-4">
-                                  <div class="total-row filtered-count mb-2">
-                                    <span class="total-label">Filtered Results:</span>
-                                    <span class="total-value">{{ displayedData.length }} of {{ filteredData.length }}</span>
-                                  </div>
-                                  
-                                  <!-- Current Status Filter -->
-                                  <div class="total-row current-filter mb-2">
-                                    <span class="total-label">Current Filter:</span>
-                                    <span class="total-value text-primary">{{ filterForm.get('status')?.value || 'All' }}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
                         </div>
                         <!--end::Chart and Summary Layout-->
 
@@ -220,16 +171,10 @@
             <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
               <i class="bi bi-funnel me-2 text-primary"></i>
               Filters & Search
-              <span class="badge ms-2 px-2 py-1 fs-7 fw-bold" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white; border-radius: 15px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
+              <span class="badge ms-2 px-3 py-2 fs-7 fw-bold text-white rounded-pill" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 {{ totalRecords }} Result{{ totalRecords === 1 ? '' : 's' }}
               </span>
             </h6>
-            <div class="d-flex">
-              <button class="btn btn-sm btn-light-secondary me-2" (click)="clearFilters()">
-                <i class="bi bi-x-circle me-1"></i>
-                Clear Filters
-              </button>
-            </div>
           </div>
 
           <!-- Filter Controls -->
@@ -238,7 +183,7 @@
               <!-- Filter Row -->
               <div class="row g-3 mb-2">
                 <!-- Assigned To Filter -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <div class="filter-group">
                     <label class="filter-label">
                       <i class="bi bi-person me-1"></i>
@@ -272,7 +217,7 @@
                 </div>
 
                 <!-- Priority Filter -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                   <div class="filter-group">
                     <label class="filter-label">
                       <i class="bi bi-exclamation-triangle me-1"></i>
@@ -285,6 +230,26 @@
                         {{ priority.label }}
                       </option>
                     </select>
+                  </div>
+                </div>
+
+                <!-- Archive Toggle -->
+                <div class="col-md-2">
+                  <div class="filter-group">
+                    <label class="filter-label d-block mb-2">
+                      <i class="bi bi-archive me-1"></i>
+                      Archive:
+                    </label>
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" 
+                             type="checkbox" 
+                             id="archiveToggle"
+                             formControlName="archive"
+                             (change)="onFilterChange()">
+                      <label class="form-check-label" for="archiveToggle">
+                        Show Archive
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>

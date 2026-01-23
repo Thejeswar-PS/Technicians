@@ -118,6 +118,67 @@ namespace Technicians.Api.Repository
             }
         }
 
+        /// <summary>
+        /// Maps status names to database codes for New Units Test Status specifically
+        /// Only supports statuses available in the New Units Test Status page
+        /// </summary>
+        public string MapStatusToCode(string status)
+        {
+            if (string.IsNullOrEmpty(status))
+                return "All";
+
+            return status.ToUpper().Trim() switch
+            {
+                // New Units Test Status specific mappings
+                "ALL" => "All",
+                "INP" => "INP",
+                "NCR" => "NCR", 
+                "MPJ" => "MPJ",
+                
+                // Legacy friendly mappings for New Units Test Status
+                "IN PROGRESS" => "INP",
+                "NEEDS COMPONENTS FOR REPAIR" => "NCR",
+                "MISSING PARTS FROM JOB" => "MPJ",
+                "MISSING" => "MPJ", // Legacy mapping
+                
+                // Return as-is if already correct
+                _ => status.ToUpper()
+            };
+        }
+
+        /// <summary>
+        /// Validates request for New Units Test Status specifically
+        /// </summary>
+        public List<string> ValidateRequest(UPSTestStatusRequest request)
+        {
+            var errors = new List<string>();
+
+            if (request == null)
+            {
+                errors.Add("Request cannot be null");
+                return errors;
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Status) && request.Status != "All")
+            {
+                // Only valid status codes for New Units Test Status
+                var validStatuses = new[] { 
+                    "All", "INP", "NCR", "MPJ", // Database codes
+                    "In Progress", "Needs Components for Repair", "Missing Parts from Job", "Missing" // Legacy names
+                };
+                
+                if (!validStatuses.Contains(request.Status, StringComparer.OrdinalIgnoreCase))
+                {
+                    errors.Add($"Invalid status for New Units Test Status. Valid values are: All, INP, NCR, MPJ, or Missing");
+                }
+            }
+
+            return errors;
+        }
+
+        /// <summary>
+        /// Updates status summary query to handle New Units Test Status codes
+        /// </summary>
         public async Task<Dictionary<string, int>> GetStatusSummaryAsync(string assignedTo = "All", bool archive = false)
         {
             try
@@ -137,11 +198,15 @@ namespace Technicians.Api.Repository
                         CASE 
                             WHEN Status IS NULL THEN 'Unknown'
                             WHEN RTRIM(Status) = '' THEN 'Unknown'
-                            WHEN Status = 'Nos' THEN 'Not Started'
+                            -- New Units Test Status specific mappings
+                            WHEN Status = 'INP' THEN 'In Progress'
+                            WHEN Status = 'NCR' THEN 'Needs Components for Repair'
+                            WHEN Status = 'MPJ' THEN 'Missing Parts from Job'
+                            -- Handle legacy stored procedure mappings if they exist
                             WHEN Status = 'Inp' THEN 'In Progress'
+                            WHEN Status = 'Nos' THEN 'Not Started'
                             WHEN Status = 'Def' THEN 'Deferred'
                             WHEN Status = 'Com' THEN 'Completed'
-                            WHEN Status = 'NCR' THEN 'Needs Components for Repair'
                             ELSE ISNULL(RTRIM(Status), 'Unknown')
                         END AS StatusName,
                         COUNT(*) AS Count
@@ -158,11 +223,9 @@ namespace Technicians.Api.Repository
                 var statusSummary = new Dictionary<string, int>();
                 foreach (var result in results)
                 {
-                    // Additional null check and fallback
                     string statusName = result.StatusName?.ToString() ?? "Unknown";
                     int count = Convert.ToInt32(result.Count);
                     
-                    // Handle potential duplicate keys (shouldn't happen but just in case)
                     if (statusSummary.ContainsKey(statusName))
                     {
                         statusSummary[statusName] += count;
@@ -181,54 +244,25 @@ namespace Technicians.Api.Repository
             }
         }
 
-        public string MapStatusToCode(string status)
+        /// <summary>
+        /// Maps database status codes back to display names
+        /// </summary>
+        public string MapStatusFromCode(string statusCode)
         {
-            if (string.IsNullOrEmpty(status))
+            if (string.IsNullOrEmpty(statusCode))
                 return "All";
 
-            return status.ToLower().Trim() switch
+            return statusCode.ToUpper().Trim() switch
             {
-                "not started" => "Nos",
-                "in progress" => "Inp",
-                "deferred" or "deffered" => "Def",
-                "completed" => "Com",
-                "needs components for repair" or "needs componets for repair" => "NCR",
-                _ => status
+                "NOS" => "Not Started",
+                "INP" => "In Progress",
+                "DEF" => "Deferred", 
+                "COM" => "Completed",
+                "NCR" => "Needs Components for Repair",
+                "MPJ" => "Missing Parts from Job",
+                "ALL" => "All",
+                _ => statusCode
             };
-        }
-
-        public string MapPriorityToCode(string priority)
-        {
-            if (string.IsNullOrEmpty(priority))
-                return "All";
-
-            return priority.ToLower().Trim() switch
-            {
-                "at convenience" => "Atc",
-                _ => priority
-            };
-        }
-
-        public List<string> ValidateRequest(UPSTestStatusRequest request)
-        {
-            var errors = new List<string>();
-
-            if (request == null)
-            {
-                errors.Add("Request cannot be null");
-                return errors;
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.Status) && request.Status != "All")
-            {
-                var validStatuses = new[] { "Nos", "Inp", "Def", "Com", "NCR", "All" };
-                if (!validStatuses.Contains(request.Status, StringComparer.OrdinalIgnoreCase))
-                {
-                    errors.Add("Invalid status. Valid values are: Nos, Inp, Def, Com, NCR, or All");
-                }
-            }
-
-            return errors;
         }
     }
 }

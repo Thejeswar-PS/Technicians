@@ -64,6 +64,7 @@ export interface UPSTestMetadataResponse {
   validPriorities: string[];
   statusLabels: { [key: string]: string };
   priorityLabels: { [key: string]: string };
+  legacyStatusMappings?: { [key: string]: string };
   message?: string;
   error?: string;
 }

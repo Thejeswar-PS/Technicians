@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, NgZone } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, NgZone, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -20,7 +20,8 @@ import {
 @Component({
   selector: 'app-ups-test-status',
   templateUrl: './ups-test-status.component.html',
-  styleUrls: ['./ups-test-status.component.scss']
+  styleUrls: ['./ups-test-status.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit {
 
@@ -37,8 +38,14 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   priorityLabels: { [key: string]: string } = {};
   
   // Chart data
-  statusChartData: any[] = [];
-  makeChartData: any = null;
+  makeChartData: any[] = [];
+  makeSummary: { [key: string]: number } = {};
+  
+  // Chart animation control
+  public chartAnimationComplete: boolean = false;
+  private cachedMakeChartData: {make: string, count: number}[] = [];
+  private cachedYAxisTicks: number[] = [];
+  private cachedBarWidth: number = 60;
   
   // Available filter options (populated from data)
   availableMakes: string[] = [];
@@ -51,7 +58,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   isLoadingMetadata: boolean = false;
   isLoadingChart: boolean = false;
   isLoadingMakeChart: boolean = false;
-  isLoadingStatusChart: boolean = false;
   isProcessingData: boolean = false;
   
   // Error handling
@@ -59,15 +65,10 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   makeCountsErrorMessage: string = '';
   chartErrorMessage: string = '';
   makeChartErrorMessage: string = '';
-  statusChartErrorMessage: string = '';
 
   // Chart properties
   showChart: boolean = true;
   showMakeChart: boolean = true;
-  showStatusChart: boolean = true;
-  currentChartType: 'bar' | 'pie' = 'bar';
-  currentMakeChartType: 'bar' | 'pie' = 'bar';
-  currentStatusChartType: 'bar' | 'pie' = 'bar';
 
   // Interactive chart properties
   public hoveredSliceIndex: number = -1;
@@ -77,13 +78,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   public makeTooltipPosition = { x: 0, y: 0 };
   public statusTooltipPosition = { x: 0, y: 0 };
   
-  // Chart colors - Modern vibrant palette
-  chartColors = [
-    '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444',
-    '#8b5cf6', '#f97316', '#84cc16', '#ec4899', '#6366f1',
-    '#14b8a6', '#f97316', '#a855f7', '#22c55e', '#3b82f6'
-  ];
-
   // ApexCharts configurations
   public barChartOptions: any = {
     series: [],
@@ -110,35 +104,11 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     responsive: []
   };
 
-  // Status Chart Options
-  public statusBarChartOptions: any = {
-    series: [],
-    chart: { type: 'bar', height: 350 },
-    dataLabels: { enabled: false },
-    plotOptions: {},
-    xaxis: { categories: [] },
-    yaxis: {},
-    colors: [],
-    tooltip: {},
-    grid: {},
-    theme: {}
-  };
-
-  public statusDonutChartOptions: any = {
-    series: [],
-    chart: { type: 'donut', height: 350 },
-    labels: [],
-    colors: [],
-    legend: {},
-    tooltip: {},
-    plotOptions: {},
-    dataLabels: {},
-    responsive: []
-  };
+  // Make Chart Options - initialized in setupMakeChartOptions()
+  public makeBarChartOptions: any = {};
   
   // Canvas references for charts
   @ViewChild('makeBarChart', { static: false }) makeBarChartCanvas!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('statusBarChart', { static: false }) statusBarChartCanvas!: ElementRef<HTMLCanvasElement>;
 
   // Sorting
   sortColumn: string = '';
@@ -166,21 +136,29 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   viewMode: 'list' | 'details' = 'list';
   selectedUnit: UPSTestStatusDto | null = null;
 
-  // Status options matching backend
+  // Status options matching backend - New Units Test Status system
   statusOptions = [
     { value: 'All', label: 'All' },
-    { value: 'Inp', label: 'In Progress' },
+    { value: 'INP', label: 'In Progress' },
     { value: 'NCR', label: 'Needs Components for Repair' },
-    { value: 'Missing', label: 'Missing parts from Job' }
+    { value: 'MPJ', label: 'Missing Parts from Job' }
   ];
   
-  // Priority options
+  // Chart colors - same as stripped parts component
+  private chartColors = [
+    '#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0',
+    '#546E7A', '#26a69a', '#D10CE8', '#FF6C00', '#1E90FF',
+    '#FF1493', '#32CD32', '#FFD700', '#9370DB', '#FF6347',
+    '#14b8a6', '#f97316', '#a855f7', '#22c55e', '#3b82f6'
+  ];
+
+  // Priority options (with all standard priorities)
   priorityOptions = [
     { value: 'All', label: 'All' },
     { value: 'High', label: 'High' },
     { value: 'Normal', label: 'Normal' },
     { value: 'Low', label: 'Low' },
-    { value: 'Atc', label: 'At Convenience' }
+    { value: 'At Convenience', label: 'At Convenience' }
   ];
   
   // Technician options (populated from API)
@@ -197,15 +175,22 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     private route: ActivatedRoute,
     private auth: AuthService,
     private toastr: ToastrService,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private cdr: ChangeDetectorRef
   ) {
     this.initializeForm();
   }
 
   ngOnInit(): void {
+    // Setup chart options first
+    this.initializeCharts();
+    
     this.loadMetadata();
     this.setupFormSubscriptions();
     this.loadUPSTestStatusData();
+    
+    // Make debug method available in browser console
+    (window as any).debugUPSChart = () => this.debugChartData();
   }
 
   ngAfterViewInit(): void {
@@ -248,70 +233,192 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   private initializeCharts(): void {
-    this.setupBarChartOptions();
-    this.setupDonutChartOptions();
+    this.setupMakeChartOptions();
   }
 
-  private setupBarChartOptions(): void {
-    this.barChartOptions = {
+  private setupMakeChartOptions(): void {
+    console.log('🎨 setupMakeChartOptions called - applying stripped parts design');
+    
+    // Initialize make bar chart options with exact stripped parts design
+    this.makeBarChartOptions = {
       series: [],
       chart: {
         type: 'bar',
         height: 350,
-        toolbar: { show: true }
+        toolbar: {
+          show: true,
+          tools: {
+            download: true,
+            selection: false,
+            zoom: false,
+            zoomin: false,
+            zoomout: false,
+            pan: false,
+            reset: false
+          }
+        },
+        animations: {
+          enabled: true,
+          easing: 'easeinout',
+          speed: 800,
+          animateGradually: {
+            enabled: true,
+            delay: 150
+          },
+          dynamicAnimation: {
+            enabled: true,
+            speed: 350
+          }
+        }
       },
-      dataLabels: { enabled: true },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '55%',
-          endingShape: 'rounded'
-        }
-      },
-      xaxis: { categories: [] },
-      yaxis: {},
-      colors: this.chartColors,
-      tooltip: {},
-      grid: { borderColor: '#f1f1f1' },
-      theme: { mode: 'light' }
-    };
-  }
-
-  private setupDonutChartOptions(): void {
-    this.donutChartOptions = {
-      series: [],
-      chart: {
-        type: 'donut',
-        height: 350
-      },
-      labels: [],
-      colors: this.chartColors,
-      legend: {
-        position: 'bottom'
-      },
-      tooltip: {},
-      plotOptions: {
-        pie: {
-          donut: {
-            size: '65%'
+          columnWidth: '60%',
+          borderRadius: 10,
+          borderRadiusApplication: 'end',
+          borderRadiusWhenStacked: 'last',
+          dataLabels: {
+            position: 'top'
+          },
+          distributed: true,
+          colors: {
+            ranges: [{
+              from: 0,
+              to: 1000,
+              color: '#008FFB'
+            }]
           }
         }
       },
       dataLabels: {
-        enabled: true
+        enabled: true,
+        formatter: function (val: any) {
+          return val;
+        },
+        offsetY: -20,
+        style: {
+          fontSize: '12px',
+          fontFamily: 'inherit',
+          colors: ['#304758']
+        }
       },
-      responsive: [{
-        breakpoint: 480,
-        options: {
-          chart: {
-            width: 200
+      xaxis: {
+        categories: [],
+        labels: {
+          rotate: -45,
+          rotateAlways: false,
+          hideOverlappingLabels: true,
+          showDuplicates: false,
+          trim: false,
+          minHeight: undefined,
+          maxHeight: 120,
+          style: {
+            colors: [],
+            fontSize: '11px',
+            fontFamily: 'inherit',
+            fontWeight: 400,
+            cssClass: 'apexcharts-xaxis-label'
           },
-          legend: {
-            position: 'bottom'
+          offsetX: 0,
+          offsetY: 0,
+          format: undefined
+        },
+        axisBorder: {
+          show: false
+        },
+        axisTicks: {
+          show: false
+        }
+      },
+      yaxis: {
+        title: {
+          text: 'Number of Units',
+          style: {
+            color: '#304758',
+            fontSize: '12px',
+            fontFamily: 'inherit',
+            fontWeight: 400
+          }
+        },
+        labels: {
+          style: {
+            colors: '#304758',
+            fontSize: '11px',
+            fontFamily: 'inherit',
+            fontWeight: 400
           }
         }
-      }]
+      },
+      colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0', '#546E7A', '#26a69a', '#D10CE8'],
+      stroke: {
+        show: true,
+        width: 2,
+        colors: ['transparent']
+      },
+      tooltip: {
+        enabled: true,
+        shared: false,
+        followCursor: false,
+        intersect: false,
+        inverseOrder: false,
+        custom: undefined,
+        fillSeriesColor: false,
+        theme: false,
+        style: {
+          fontSize: '12px',
+          fontFamily: 'inherit'
+        },
+        onDatasetHover: {
+          highlightDataSeries: false
+        },
+        x: {
+          show: true,
+          format: 'dd MMM',
+          formatter: undefined
+        },
+        y: {
+          formatter: function (val: any) {
+            return val + ' units';
+          },
+          title: {
+            formatter: (seriesName: any) => seriesName + ': '
+          }
+        },
+        z: {
+          formatter: undefined,
+          title: 'Size: '
+        },
+        marker: {
+          show: true
+        }
+      },
+      grid: {
+        borderColor: '#e7e7e7',
+        row: {
+          colors: ['#f3f3f3', 'transparent'],
+          opacity: 0.5
+        }
+      },
+      title: {
+        text: 'UPS Units Count by Manufacturer',
+        align: 'center',
+        style: {
+          fontSize: '16px',
+          fontWeight: 'bold',
+          fontFamily: 'inherit',
+          color: '#263238'
+        }
+      },
+      legend: {
+        show: false
+      },
+      theme: {}
     };
+    
+    console.log('✅ Chart options setup complete!');
+    console.log('📊 makeBarChartOptions plotOptions:', this.makeBarChartOptions.plotOptions);
+    console.log('🎨 makeBarChartOptions colors:', this.makeBarChartOptions.colors);
   }
 
   private loadMetadata(): void {
@@ -322,11 +429,52 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: UPSTestMetadataResponse) => {
+        console.log('Metadata loaded:', response);
         if (response.success) {
           this.technicians = response.technicians || [];
           this.statusSummary = response.statusSummary || {};
           this.statusLabels = response.statusLabels || {};
           this.priorityLabels = response.priorityLabels || {};
+          
+          // Update status options from backend metadata
+          if (response.validStatuses && response.statusLabels) {
+            this.statusOptions = response.validStatuses.map(status => ({
+              value: status,
+              label: response.statusLabels[status] || status
+            }));
+          }
+          
+          // Update priority options from backend metadata  
+          if (response.validPriorities && response.priorityLabels) {
+            // Start with standard priority options
+            const standardPriorities = [
+              { value: 'All', label: 'All' },
+              { value: 'High', label: 'High' },
+              { value: 'Normal', label: 'Normal' },
+              { value: 'Low', label: 'Low' },
+              { value: 'At Convenience', label: 'At Convenience' }
+            ];
+            
+            // Add any additional priorities from API that aren't already included
+            const standardPriorityValues = ['All', 'High', 'Normal', 'Low', 'At Convenience', 'ATC', 'at convenience', 'at_convenience', 'convenience'];
+            const apiPriorities = response.validPriorities
+              .filter(p => {
+                const normalizedP = p.toLowerCase().trim().replace(/[_\s]/g, '');
+                const normalizedStandard = standardPriorityValues.map(s => s.toLowerCase().trim().replace(/[_\s]/g, ''));
+                return !normalizedStandard.includes(normalizedP);
+              })
+              .map(priority => ({
+                value: priority,
+                label: response.priorityLabels[priority] || priority
+              }));
+            
+            this.priorityOptions = [...standardPriorities, ...apiPriorities];
+          }
+          
+          console.log('Updated statusOptions:', this.statusOptions);
+          console.log('Updated priorityOptions:', this.priorityOptions);
+          console.log('Metadata statusSummary:', this.statusSummary);
+          console.log('Metadata statusLabels:', this.statusLabels);
           
           // Update technician dropdown options
           this.technicianOptions = [
@@ -362,13 +510,20 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: any) => {
+        console.log('UPS Test Status data loaded:', response);
         if (response.success && response.data) {
           this.upsTestStatusList = response.data.unitsData || [];
           this.makeCounts = response.data.makeCounts || [];
           this.totalRecords = response.totalRecords || this.upsTestStatusList.length;
           
+          console.log('Loaded units data length:', this.upsTestStatusList.length);
+          console.log('Sample unit data:', this.upsTestStatusList.slice(0, 3));
+          
           // Update filter options based on new data
           this.updateAvailableFilterOptions();
+          
+          // Calculate manufacturer summary from the data
+          this.calculateMakeSummary();
           
           // Apply client-side filters and update display
           this.applyClientSideFilters();
@@ -439,80 +594,146 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.displayedData = this.filteredData.slice(startIndex, endIndex);
   }
 
-  // Chart management methods
-  setMakeChartType(type: 'bar' | 'pie'): void {
-    this.currentMakeChartType = type;
-    this.updateMakeChart();
+  // Chart management methods removed - only bar chart supported
+
+  // Force chart refresh
+  refreshCharts(): void {
+    if (this.hasMakeChartData()) {
+      setTimeout(() => {
+        this.updateMakeChart();
+      }, 100);
+    }
   }
 
-  setStatusChartType(type: 'bar' | 'pie'): void {
-    this.currentStatusChartType = type;
-    this.updateStatusChart();
+  // Debug method - can be called from browser console
+  debugChartData(): void {
+    console.log('=== CHART DEBUG INFO ===');
+    console.log('hasMakeChartData:', this.hasMakeChartData());
+    console.log('makeSummary:', this.makeSummary);
+    console.log('makeBarChartOptions:', this.makeBarChartOptions);
+    console.log('upsTestStatusList length:', this.upsTestStatusList?.length || 0);
+    console.log('filteredData length:', this.filteredData?.length || 0);
+    console.log('=== END DEBUG INFO ===');
   }
 
-  hasChartData(): boolean {
-    return this.makeCounts && this.makeCounts.length > 0;
-  }
-
-  hasStatusChartData(): boolean {
-    return Object.keys(this.statusSummary).length > 0;
+  hasMakeChartData(): boolean {
+    return Object.keys(this.makeSummary).length > 0;
   }
 
   private updateMakeChart(): void {
-    if (!this.hasChartData()) return;
+    console.log('🔄 updateMakeChart called - preserving styling');
+    console.log('hasMakeChartData:', this.hasMakeChartData());
+    console.log('makeSummary:', this.makeSummary);
     
-    this.ngZone.run(() => {
-      // Update make chart based on current type
-      if (this.currentMakeChartType === 'bar') {
-        this.barChartOptions = {
-          ...this.barChartOptions,
-          series: [{
-            name: 'Units',
-            data: this.makeCounts.map(item => item.makeCount)
-          }],
-          xaxis: {
-            categories: this.makeCounts.map(item => item.make)
-          }
-        };
-      } else {
-        this.donutChartOptions = {
-          ...this.donutChartOptions,
-          series: this.makeCounts.map(item => item.makeCount),
-          labels: this.makeCounts.map(item => item.make)
-        };
-      }
-    });
-  }
-
-  private updateStatusChart(): void {
-    if (!this.hasStatusChartData()) return;
+    if (!this.hasMakeChartData()) {
+      console.log('No make chart data available');
+      return;
+    }
     
-    const statusData = Object.entries(this.statusSummary).map(([status, count]) => ({
-      status,
-      label: this.statusLabels[status] || status,
+    // Clear cached data to force recalculation with new data
+    this.cachedMakeChartData = [];
+    this.cachedYAxisTicks = [];
+    this.cachedBarWidth = 0;
+    this.chartAnimationComplete = false;
+    
+    const makeData = Object.entries(this.makeSummary).map(([make, count]) => ({
+      make,
       count
     }));
 
+    console.log('makeData for chart:', makeData);
+    
     this.ngZone.run(() => {
-      if (this.currentStatusChartType === 'bar') {
-        this.barChartOptions = {
-          ...this.barChartOptions,
-          series: [{
-            name: 'Count',
-            data: statusData.map(item => item.count)
-          }],
-          xaxis: {
-            categories: statusData.map(item => item.label)
-          }
-        };
-      } else {
-        this.donutChartOptions = {
-          ...this.donutChartOptions,
-          series: statusData.map(item => item.count),
-          labels: statusData.map(item => item.label)
-        };
-      }
+      // Update only the data, preserve all styling from setupMakeChartOptions
+      this.makeBarChartOptions = {
+        ...this.makeBarChartOptions,
+        series: [{
+          name: 'Units',
+          data: makeData.map(item => item.count)
+        }],
+        xaxis: {
+          ...this.makeBarChartOptions.xaxis,
+          categories: makeData.map(item => item.make)
+        }
+      };
+      
+      console.log('📊 Bar chart updated - plotOptions preserved:', this.makeBarChartOptions.plotOptions?.bar?.borderRadius);
+      
+      console.log('Chart options updated successfully');
+      console.log('makeBarChartOptions:', this.makeBarChartOptions);
+      
+      // Trigger change detection after chart update
+      this.cdr.detectChanges();
     });
+  }
+
+  // Custom Chart Methods (matching stripped parts component)
+  public getMakeChartData(): {make: string, count: number}[] {
+    if (this.cachedMakeChartData.length > 0) {
+      return this.cachedMakeChartData;
+    }
+    
+    this.cachedMakeChartData = Object.entries(this.makeSummary).map(([make, count]) => ({
+      make,
+      count
+    }));
+    
+    return this.cachedMakeChartData;
+  }
+
+  public getYAxisTicks(): number[] {
+    if (this.cachedYAxisTicks.length > 0) {
+      return this.cachedYAxisTicks;
+    }
+    
+    // Always show 0-100 range regardless of data
+    this.cachedYAxisTicks = [0, 20, 40, 60, 80, 100];
+    return this.cachedYAxisTicks;
+  }
+
+  public getBarHeightPercentage(value: number): number {
+    // Use fixed scale of 100 instead of dynamic max value
+    return Math.min((value / 100) * 100, 100);
+  }
+
+  public getDynamicBarWidth(): number {
+    if (this.cachedBarWidth > 0) {
+      return this.cachedBarWidth;
+    }
+    
+    const chartData = this.getMakeChartData();
+    const totalBars = chartData.length;
+    if (totalBars === 0) {
+      this.cachedBarWidth = 60;
+      return this.cachedBarWidth;
+    }
+    
+    // Calculate optimal width based on container and number of bars
+    const containerWidth = 800; // Approximate chart container width
+    const availableWidth = containerWidth - (totalBars * 12); // Account for gaps
+    const calculatedWidth = Math.floor(availableWidth / totalBars);
+    
+    // Ensure minimum and maximum widths for readability
+    this.cachedBarWidth = Math.max(50, Math.min(120, calculatedWidth));
+    return this.cachedBarWidth;
+  }
+
+  public getMakeColor(make: string, index: number): string {
+    const colors = ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0', '#546E7A', '#26a69a', '#D10CE8'];
+    return colors[index % colors.length];
+  }
+
+  // TrackBy function to prevent unnecessary re-rendering
+  public trackByMake(index: number, item: {make: string, count: number}): string {
+    return item.make;
+  }
+
+  // Mark animation as complete after initial load
+  public markAnimationComplete(): void {
+    setTimeout(() => {
+      this.chartAnimationComplete = true;
+      this.cdr.detectChanges(); // Only trigger change detection when animation completes
+    }, 1500); // Wait for all animations to complete
   }
 
   // Data processing methods
@@ -530,22 +751,44 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.availableTechnicians = ['All', ...new Set(this.upsTestStatusList.map(item => item.assignedTo).filter(tech => tech))];
   }
 
+  private calculateMakeSummary(): void {
+    // Use make counts data directly from backend
+    this.makeSummary = {};
+    
+    if (this.makeCounts && this.makeCounts.length > 0) {
+      this.makeCounts.forEach(item => {
+        const make = item.make || 'Unknown';
+        const count = item.makeCount || 0;
+        this.makeSummary[make] = count;
+      });
+    }
+    
+    console.log('Make Summary from backend makeCounts:', this.makeSummary);
+    console.log('Raw makeCounts data:', this.makeCounts);
+  }
+
   private processChartData(): void {
     this.isLoadingChart = true;
     this.isLoadingMakeChart = true;
     
     try {
-      // Process status chart data
-      this.statusChartData = Object.entries(this.statusSummary).map(([status, count]) => ({
-        status,
-        label: this.statusLabels[status] || status,
+      // Process manufacturer chart data
+      this.makeChartData = Object.entries(this.makeSummary).map(([make, count], index) => ({
+        make,
         count,
-        color: this.getStatusColor(status)
+        color: this.getMakeColor(make, index)
       }));
 
-      // Update charts
-      this.updateMakeChart();
-      this.updateStatusChart();
+      // Update charts with a small delay to ensure proper rendering
+      setTimeout(() => {
+        this.updateMakeChart();
+        this.markAnimationComplete();
+        
+        // Additional refresh after another small delay
+        setTimeout(() => {
+          this.refreshCharts();
+        }, 200);
+      }, 100);
       
     } catch (error) {
       console.error('Error processing chart data:', error);
@@ -689,12 +932,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
-  getStatusPercentage(status: string): number {
-    if (!this.filteredData || this.filteredData.length === 0) return 0;
-    const statusCount = this.filteredData.filter(item => item.status === status).length;
-    return Math.round((statusCount / this.filteredData.length) * 100);
-  }
-
   getVisiblePages(): number[] {
     const totalPages = this.totalPages;
     const current = this.currentPage;
@@ -732,20 +969,94 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   getStatusBadgeClass(status: string): string {
-    switch (status?.toLowerCase()) {
-      case 'nos': return 'badge-light-secondary';
-      case 'inp': return 'badge-light-primary';
-      case 'def': return 'badge-light-warning';
-      case 'com': return 'badge-light-success';
-      case 'ncr': return 'badge-light-danger';
-      default: return 'badge-light-secondary';
+    if (!status) return 'badge-light-secondary';
+    
+    const normalizedStatus = status.toLowerCase().trim();
+    
+    // Handle specific status values
+    switch (normalizedStatus) {
+      case 'nos':
+      case 'not started':
+      case 'not_started':
+      case 'pending':
+        return 'badge-light-secondary';
+        
+      case 'inp':
+      case 'in progress':
+      case 'in_progress':
+      case 'inprogress':
+      case 'active':
+      case 'working':
+        return 'badge-light-primary'; // Soft Blue
+        
+      case 'needs components for repair':
+      case 'needs_components_for_repair':
+      case 'needs components':
+      case 'awaiting components':
+      case 'def':
+      case 'deferred':
+      case 'delayed':
+      case 'on hold':
+      case 'on_hold':
+      case 'hold':
+        return 'badge-light-warning'; // Amber/Orange
+        
+      case 'missing parts from job':
+      case 'missing_parts_from_job':
+      case 'missing parts':
+      case 'parts missing':
+      case 'ncr':
+      case 'rejected':
+      case 'failed':
+      case 'cancelled':
+      case 'canceled':
+      case 'error':
+        return 'badge-light-danger'; // Red/Soft Red
+        
+      case 'com':
+      case 'completed':
+      case 'complete':
+      case 'done':
+      case 'finished':
+        return 'badge-light-success';
+        
+      default:
+        return 'badge-light-secondary';
     }
   }
 
   getPriorityBadgeClass(priority: string): string {
-    switch (priority?.toLowerCase()) {
-      case 'atc': return 'badge-light-info';
-      default: return 'badge-light-secondary';
+    if (!priority) return 'badge-light-secondary';
+    
+    const normalizedPriority = priority.toLowerCase().trim();
+    
+    // Handle common priority values
+    switch (normalizedPriority) {
+      case 'high':
+      case 'urgent':
+      case 'critical':
+      case 'emergency':
+        return 'badge-light-danger';
+        
+      case 'normal':
+      case 'medium':
+      case 'standard':
+      case 'regular':
+        return 'badge-light-primary';
+        
+      case 'low':
+      case 'minor':
+        return 'badge-light-success';
+        
+      case 'atc':
+      case 'at convenience':
+      case 'at_convenience':
+      case 'convenience':
+      case 'when convenient':
+        return 'badge-light-info';
+        
+      default:
+        return 'badge-light-secondary';
     }
   }
 
@@ -801,11 +1112,30 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.location.back();
   }
 
-  get statusSummaryItems(): StatusSummaryItem[] {
-    return Object.entries(this.statusSummary).map(([status, count]) => ({
-      status,
-      label: this.statusLabels[status] || status,
+  get makeSummaryItems(): any[] {
+    return Object.entries(this.makeSummary).map(([make, count]) => ({
+      make,
       count
     }));
   }
+
+  getMakeIconClass(make: string): string {
+    // Return different icon classes for different manufacturers
+    const iconMap: { [key: string]: string } = {
+      'APC': 'text-primary',
+      'Tripp Lite': 'text-info',
+      'Eaton': 'text-success',
+      'CyberPower': 'text-warning',
+      'Liebert': 'text-danger'
+    };
+    return iconMap[make] || 'text-secondary';
+  }
+
+  getMakePercentage(make: string): number {
+    const total = this.filteredData.length;
+    const makeCount = this.makeSummary[make] || 0;
+    return total > 0 ? Math.round((makeCount / total) * 100) : 0;
+  }
+
+  // Utility method for parsing numeric values
 }
