@@ -26,6 +26,7 @@ import { SharedModule } from '../../components/shared/shared.module';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
+import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 
 @NgModule({
   declarations: [
@@ -46,7 +47,8 @@ import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.compon
     EmergencyJobsComponent,
     ContractDetailsReportComponent,
     PastDueContractDetailsComponent,
-    UPSTestStatusComponent
+    UPSTestStatusComponent,
+    NewUnitTestComponent
   ],
   imports: [
     CommonModule,

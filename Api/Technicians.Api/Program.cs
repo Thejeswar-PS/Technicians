@@ -112,6 +112,8 @@ builder.Services.AddScoped<IAccMgrPerformanceReportRepository, AccMgrPerformance
 builder.Services.AddScoped<IPastDueGraphRepository, PastDueGraphRepository>();
 builder.Services.AddScoped<EmergencyJobsRepository>();
 builder.Services.AddScoped<UPSTestStatusRepository>();
+builder.Services.AddScoped<NewUniTestRepository>(); 
+
 
 var app = builder.Build();
 

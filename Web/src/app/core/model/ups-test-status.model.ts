@@ -19,6 +19,10 @@ export interface UPSTestStatusDto {
   rowIndex: number;
   stripSNo: string;
   
+  // Additional fields for result updates
+  resolveNotes?: string;
+  testProcedures?: string;
+  
   // Computed properties for parsed decimal values (optional, for calculations)
   unitCostDecimal?: number;
   shipCostDecimal?: number;

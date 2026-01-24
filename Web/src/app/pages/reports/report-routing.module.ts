@@ -16,6 +16,7 @@ import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
 import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
 import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
+import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 
 const routes: Routes = [
   {
@@ -90,6 +91,10 @@ const routes: Routes = [
   {
     path: 'ups-test-status',
     component: UPSTestStatusComponent
+  },
+  {
+    path: 'new-unit-test',
+    component: NewUnitTestComponent
   }
 ];
 

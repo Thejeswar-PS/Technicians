@@ -93,6 +93,15 @@ import {
   MakeCountDto,
   StatusSummaryItem
 } from '../model/ups-test-status.model';
+import {
+  NewUniTestRequest,
+  NewUniTestResponse,
+  NewUniTestApiResponse,
+  NewUniTestSummaryResponse,
+  UnitTestExistsResponse,
+  MoveUnitToStrippingDto,
+  MoveUnitToStrippingApiResponse
+} from '../model/new-unit-test.model';
 
 @Injectable({
   providedIn: 'root'
@@ -1262,6 +1271,74 @@ export class ReportService {
     
     return this.http.get<UPSTestMetadataResponse>(`${this.API}/UPSTestStatus/metadata`, {
       params,
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // New Unit Test Methods
+  /**
+   * Get new unit test list data
+   * @param rowIndex Row index to filter by (0 returns all records ordered by LastModifiedOn)
+   * @returns New unit test data using existing UPSTestStatusDto
+   */
+  getNewUniTestList(rowIndex: number = 0): Observable<NewUniTestApiResponse> {
+    const params = new HttpParams().set('rowIndex', rowIndex.toString());
+
+    return this.http.get<NewUniTestApiResponse>(`${this.API}/NewUniTest`, {
+      params,
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get a specific unit test by row index
+   * @param rowIndex The row index to retrieve
+   * @returns Single UPSTestStatusDto record or null if not found
+   */
+  getNewUniTestByRowIndex(rowIndex: number): Observable<{ success: boolean; data: UPSTestStatusDto; message?: string; error?: string }> {
+    return this.http.get<{ success: boolean; data: UPSTestStatusDto; message?: string; error?: string }>(`${this.API}/NewUniTest/${rowIndex}`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get summary statistics and metadata for the new unit tests
+   * @returns Summary statistics including counts by status, make, etc.
+   */
+  getNewUniTestSummary(): Observable<NewUniTestSummaryResponse> {
+    return this.http.get<NewUniTestSummaryResponse>(`${this.API}/NewUniTest/summary`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Check if a unit test exists for the given row index
+   * @param rowIndex The row index to check
+   * @returns Whether the unit test exists
+   */
+  checkNewUnitTestExists(rowIndex: number): Observable<UnitTestExistsResponse> {
+    return this.http.get<UnitTestExistsResponse>(`${this.API}/NewUniTest/exists/${rowIndex}`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Move a unit to stripping
+   * @param dto The unit data to move to stripping
+   * @returns Response indicating success or failure
+   */
+  moveUnitToStripping(dto: MoveUnitToStrippingDto): Observable<MoveUnitToStrippingApiResponse> {
+    return this.http.post<MoveUnitToStrippingApiResponse>(`${this.API}/NewUniTest/move-to-stripping`, dto, {
       headers: this.headers
     }).pipe(
       catchError(this.handleError)
