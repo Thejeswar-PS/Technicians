@@ -79,49 +79,58 @@
           <table class="table modern-table">
             <thead class="table-header">
               <tr>
-                <th class="header-cell">
+                <th class="header-cell sortable-header" (click)="sortBy('customerNo')" [class.active]="sortField === 'customerNo'">
                   <div class="header-content">
                     <span class="header-text">Customer No</span>
+                    <i [ngClass]="'bi ' + getSortIcon('customerNo')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header" (click)="sortBy('customerName')" [class.active]="sortField === 'customerName'">
                   <div class="header-content">
                     <span class="header-text">Customer Name</span>
+                    <i [ngClass]="'bi ' + getSortIcon('customerName')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header address-column" (click)="sortBy('address')" [class.active]="sortField === 'address'">
                   <div class="header-content">
                     <span class="header-text">Address</span>
+                    <i [ngClass]="'bi ' + getSortIcon('address')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header" (click)="sortBy('salesPerson')" [class.active]="sortField === 'salesPerson'">
                   <div class="header-content">
                     <span class="header-text">Sales Person</span>
+                    <i [ngClass]="'bi ' + getSortIcon('salesPerson')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header" (click)="sortBy('contractNo')" [class.active]="sortField === 'contractNo'">
                   <div class="header-content">
                     <span class="header-text">Contract No</span>
+                    <i [ngClass]="'bi ' + getSortIcon('contractNo')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header" (click)="sortBy('poNumber')" [class.active]="sortField === 'poNumber'">
                   <div class="header-content">
                     <span class="header-text">PO Number</span>
+                    <i [ngClass]="'bi ' + getSortIcon('poNumber')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header" (click)="sortBy('type')" [class.active]="sortField === 'type'">
                   <div class="header-content">
                     <span class="header-text">Contract Type</span>
+                    <i [ngClass]="'bi ' + getSortIcon('type')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header" (click)="sortBy('invoicedOn')" [class.active]="sortField === 'invoicedOn'">
                   <div class="header-content">
                     <span class="header-text">Invoice Date</span>
+                    <i [ngClass]="'bi ' + getSortIcon('invoicedOn')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
-                <th class="header-cell">
+                <th class="header-cell sortable-header text-end" (click)="sortBy('amount')" [class.active]="sortField === 'amount'">
                   <div class="header-content">
                     <span class="header-text">Amount</span>
+                    <i [ngClass]="'bi ' + getSortIcon('amount')" class="sort-icon ms-1"></i>
                   </div>
                 </th>
               </tr>
@@ -131,7 +140,7 @@
               <tr class="table-row" *ngFor="let row of contractRows; trackBy: trackByRow">
                 <td>{{ row.customerNo || 'N/A' }}</td>
                 <td>{{ row.customerName || 'N/A' }}</td>
-                <td>{{ row.address || 'N/A' }}</td>
+                <td class="address-cell">{{ row.address || 'N/A' }}</td>
                 <td>{{ row.salesPerson || 'N/A' }}</td>
                 <td class="fw-bold text-primary">{{ row.contractNo || 'N/A' }}</td>
                 <td>{{ row.poNumber || 'N/A' }}</td>

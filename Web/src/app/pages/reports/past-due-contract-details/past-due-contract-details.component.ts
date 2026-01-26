@@ -24,6 +24,9 @@ interface StatusOption {
   value: string;
 }
 
+type SortField = 'siteId' | 'siteName' | 'accountManager' | 'contractNo' | 'contractType' | 'invoiceDate' | 'amount';
+type SortOrder = 'asc' | 'desc';
+
 @Component({
   selector: 'app-past-due-contract-details',
   templateUrl: './past-due-contract-details.component.html',
@@ -36,6 +39,10 @@ export class PastDueContractDetailsComponent implements OnInit {
   pastDueRows: PastDueRow[] = [];
   chartData: ChartDataPoint[] = [];
   selectedStatus = '30';
+  
+  // Sorting
+  sortField: SortField = 'contractNo';
+  sortOrder: SortOrder = 'asc';
 
   statusOptions: StatusOption[] = [
     {
@@ -108,6 +115,7 @@ export class PastDueContractDetailsComponent implements OnInit {
     ).subscribe(data => {
       this.pastDueRows = data.rows;
       this.chartData = data.chartData;
+      this.applySorting();
       this.renderChart();
       this.loading = false;
     });
@@ -115,6 +123,43 @@ export class PastDueContractDetailsComponent implements OnInit {
 
   onStatusChange(): void {
     this.loadData();
+  }
+
+  sortBy(field: SortField): void {
+    if (this.sortField === field) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortOrder = 'asc';
+    }
+    this.applySorting();
+  }
+
+  private applySorting(): void {
+    if (!this.pastDueRows.length) return;
+
+    this.pastDueRows.sort((a, b) => {
+      let aVal: any = a[this.sortField];
+      let bVal: any = b[this.sortField];
+
+      if (aVal == null && bVal == null) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+
+      let comparison = 0;
+      if (aVal > bVal) comparison = 1;
+      else if (aVal < bVal) comparison = -1;
+
+      return this.sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }
+
+  getSortIcon(field: SortField): string {
+    if (this.sortField !== field) return 'bi-arrow-down-up';
+    return this.sortOrder === 'asc' ? 'bi-sort-up' : 'bi-sort-down';
   }
 
   private normalizeResponse(response: any): { rows: PastDueRow[], chartData: ChartDataPoint[] } {
@@ -266,8 +311,7 @@ export class PastDueContractDetailsComponent implements OnInit {
       labels: labels,
       colors: this.chartColors.slice(0, labels.length),
       legend: {
-        position: 'right',
-        offsetY: 0
+        show: false
       },
       tooltip: {
         y: {

@@ -20,6 +20,9 @@ interface CategoryOption {
   label: string;
 }
 
+type SortField = 'customerNo' | 'customerName' | 'address' | 'salesPerson' | 'contractNo' | 'poNumber' | 'type' | 'invoicedOn' | 'amount';
+type SortOrder = 'asc' | 'desc';
+
 @Component({
   selector: 'app-contract-details-report',
   templateUrl: './contract-details-report.component.html',
@@ -31,6 +34,10 @@ export class ContractDetailsReportComponent implements OnInit {
   errorMessage = '';
   contractRows: ContractDetailRow[] = [];
   selectedCategory = 'Non Liebert Contracts not billed as of yesterday';
+  
+  // Sorting
+  sortField: SortField = 'contractNo';
+  sortOrder: SortOrder = 'asc';
 
   categoryOptions: CategoryOption[] = [
     {
@@ -67,12 +74,52 @@ export class ContractDetailsReportComponent implements OnInit {
       })
     ).subscribe(rows => {
       this.contractRows = rows;
+      this.applySorting();
       this.loading = false;
     });
   }
 
   onCategoryChange(): void {
+    this.sortField = 'contractNo';
+    this.sortOrder = 'asc';
     this.loadData();
+  }
+
+  sortBy(field: SortField): void {
+    if (this.sortField === field) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortField = field;
+      this.sortOrder = 'asc';
+    }
+    this.applySorting();
+  }
+
+  private applySorting(): void {
+    this.contractRows.sort((a, b) => {
+      const aVal = a[this.sortField];
+      const bVal = b[this.sortField];
+
+      let comparison = 0;
+
+      if (aVal == null && bVal == null) comparison = 0;
+      else if (aVal == null) comparison = 1;
+      else if (bVal == null) comparison = -1;
+      else if (typeof aVal === 'string') {
+        comparison = aVal.localeCompare(bVal as string);
+      } else {
+        comparison = (aVal as number) < (bVal as number) ? -1 : 1;
+      }
+
+      return this.sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }
+
+  getSortIcon(field: SortField): string {
+    if (this.sortField !== field) {
+      return 'bi-arrow-down-up';
+    }
+    return this.sortOrder === 'asc' ? 'bi-sort-up' : 'bi-sort-down';
   }
 
   private normalizeRows(rows: any[]): ContractDetailRow[] {

@@ -125,6 +125,26 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("GetSiteHistory")]
+        public async Task<IActionResult> GetSiteHistory([FromQuery] string siteID)
+        {
+            if (string.IsNullOrWhiteSpace(siteID))
+                return BadRequest("siteID is required.");
+
+            try
+            {
+                var data = await _toolsRepository.GetSiteHistoryAsync(siteID);
+                return Ok(data);
+            }
+            catch (Exception ex)
+            {
+
+                return StatusCode(500, new
+                {
+                    message = "Failed to retrieve site history."
+                });
+            }
+        }
 
 
     }

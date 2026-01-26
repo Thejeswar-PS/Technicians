@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Hangfire.Storage.Monitoring;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
@@ -370,7 +371,6 @@ namespace Technicians.Api.Repository
         }
 
 
-
         public static class DateNormalizer
         {
             public static DateTime Normalize(DateTime value)
@@ -379,6 +379,45 @@ namespace Technicians.Api.Repository
                     ? new DateTime(1900, 1, 1)
                     : value;
             }
+        }
+
+        public async Task<List<SiteHistoryDto>> GetSiteHistoryAsync(string custNmbr)
+        {
+            using var connection = new SqlConnection(_gpconnectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CustNmbr", custNmbr, DbType.String);
+
+            await connection.OpenAsync();
+
+            var rows = await connection.QueryAsync(
+                "GetPrevSiteNotesByCustNmbr",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            var results = rows
+                .Select(r =>
+                {
+                    var row = (IDictionary<string, object>)r;
+
+                    return new SiteHistoryDto
+                    {
+                        JobNo = row.ContainsKey("Job No") ? row["Job No"]?.ToString() : null,
+                        Technician = row.ContainsKey("Technician") ? row["Technician"]?.ToString() : null,
+                        TechNotes = row.ContainsKey("TechNotes") ? row["TechNotes"]?.ToString() : null,
+                        Status = row.ContainsKey("Status") ? row["Status"]?.ToString() : null,
+                        ScheduledOn = row.ContainsKey("Scheduled On") ? row["Scheduled On"]?.ToString() : null,
+                        CustomerName = row.ContainsKey("Customer Name") ? row["Customer Name"]?.ToString() : null,
+                        Address = row.ContainsKey("Address") ? row["Address"]?.ToString() : null,
+                        StrtDate = row.ContainsKey("StrtDate") && row["StrtDate"] != null 
+                            ? Convert.ToDateTime(row["StrtDate"]) 
+                            : default(DateTime)
+                    };
+                })
+                .ToList();
+
+            return results;
         }
 
 
