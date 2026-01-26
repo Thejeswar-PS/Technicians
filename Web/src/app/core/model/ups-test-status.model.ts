@@ -10,18 +10,24 @@ export interface UPSTestStatusDto {
   shipCost: string;
   priority: string;
   status: string;
-  testedOn: string;
   assignedTo: string;
+  dueDate?: string | Date;
+  testProcedures: string;
+  problemNotes: string;
+  resolveNotes: string;
   testedBy: string;
-  createdOn?: Date;
-  lastModifiedBy: string;
-  lastModifiedOn?: Date;
+  testedOn: string;
+  archive: boolean;
+  approved: boolean;
+  approvedOn?: string | Date;
   rowIndex: number;
+  createdBy: string;
+  createdOn?: string | Date;
+  lastModifiedBy: string;
+  lastModifiedOn?: string | Date;
+  approvalSent: boolean;
+  archiveSent: boolean;
   stripSNo: string;
-  
-  // Additional fields for result updates
-  resolveNotes?: string;
-  testProcedures?: string;
   
   // Computed properties for parsed decimal values (optional, for calculations)
   unitCostDecimal?: number;

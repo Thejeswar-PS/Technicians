@@ -56,10 +56,14 @@ export class NewUnitTestService {
   /**
    * Get a specific unit test by row index
    * @param rowIndex The row index to retrieve
+   * @param archive Whether to search in archived data
    * @returns Single UPSTestStatusDto record or null if not found
    */
-  getNewUniTestByRowIndex(rowIndex: number): Observable<{ success: boolean; data: UPSTestStatusDto; message?: string; error?: string }> {
+  getNewUniTestByRowIndex(rowIndex: number, archive: boolean = false): Observable<{ success: boolean; data: UPSTestStatusDto; message?: string; error?: string }> {
+    const params = new HttpParams().set('archive', archive.toString());
+    
     return this.http.get<{ success: boolean; data: UPSTestStatusDto; message?: string; error?: string }>(`${this.API}/NewUniTest/${rowIndex}`, {
+      params,
       headers: this.headers
     }).pipe(
       catchError(this.handleError)

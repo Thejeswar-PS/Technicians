@@ -123,8 +123,10 @@
                               </div>
                             </div>
                             
-                            <div class="bar-label" 
-                                 [title]="makeData.make">{{ makeData.make }}</div>
+                            <div class="bar-label make-clickable" 
+                                 [title]="makeData.make"
+                                 (click)="navigateToNewUnitTestByMake(makeData.make)"
+                                 style="cursor: pointer; text-decoration: underline; color: #0066cc;">{{ makeData.make }}</div>
                           </div>
                         </div>
                         
@@ -419,7 +421,10 @@
                   </td>
                   <!-- Make -->
                   <td class="text-start compact-cell table-text-medium">
-                    <span class="text-dark fw-semibold" [title]="item.make">{{ item.make || 'N/A' }}</span>
+                    <span class="text-dark fw-semibold make-clickable" 
+                          [title]="item.make" 
+                          (click)="navigateToNewUnitTest(item)"
+                          style="cursor: pointer; text-decoration: underline; color: #0066cc;">{{ item.make || 'N/A' }}</span>
                   </td>
                   <!-- Model No -->
                   <td class="text-start compact-cell table-text-medium" [title]="item.model">

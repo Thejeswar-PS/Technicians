@@ -479,7 +479,9 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
           // Update technician dropdown options
           this.technicianOptions = [
             { value: 'All', label: 'All Technicians' },
-            ...this.technicians.map(tech => ({ value: tech, label: tech }))
+            ...this.technicians
+              .filter(tech => tech.toUpperCase() !== 'PS') // Remove PS from the list
+              .map(tech => ({ value: tech, label: tech }))
           ];
           
           this.makeCounts = response.makeCounts || [];
@@ -839,6 +841,33 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   closeDetailsView(): void {
     this.selectedUnit = null;
     this.viewMode = 'list';
+  }
+
+  // Navigation methods
+  navigateToNewUnitTest(unit: UPSTestStatusDto): void {
+    console.log('🚀 Navigating to New Unit Test with unit:', unit);
+    console.log('🚀 Row Index:', unit.rowIndex);
+    
+    // Get current archive status from filter form
+    const isArchived = this.filterForm.get('archive')?.value || false;
+    
+    // Navigate to new unit test page with rowIndex in the URL path
+    // The New Unit Test page will fetch complete data using the API
+    this.router.navigate([`/reports/new-unit-test/${unit.rowIndex}`], {
+      queryParams: {
+        loadFromApi: 'true',
+        archive: isArchived
+      }
+    });
+  }
+
+  navigateToNewUnitTestByMake(make: string): void {
+    // Navigate to new unit test page with pre-filled make field
+    this.router.navigate(['/reports/new-unit-test'], {
+      queryParams: {
+        make: make
+      }
+    });
   }
 
   // Public methods for template

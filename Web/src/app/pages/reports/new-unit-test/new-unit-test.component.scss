@@ -704,3 +704,119 @@
     font-weight: 500;
   }
 }
+
+// Improved Action Buttons Styling
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  
+  // Enhanced button styling within form-actions
+  .modern-btn {
+    min-width: 140px;
+    padding: 1rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    
+    // Enhanced hover effects
+    &:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+    }
+    
+    // Success button (Update Unit)
+    &.success {
+      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        box-shadow: 0 8px 30px rgba(34, 197, 94, 0.4);
+      }
+    }
+    
+    // Danger button (Delete Unit)
+    &.danger {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        box-shadow: 0 8px 30px rgba(239, 68, 68, 0.4);
+      }
+    }
+    
+    // Secondary button (Clear)
+    &.secondary {
+      background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+      color: #475569;
+      border: 2px solid #e2e8f0;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      
+      &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        color: #334155;
+        border-color: #cbd5e1;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+      }
+    }
+    
+    // Icon styling
+    .btn-icon {
+      margin-right: 0.5rem;
+      font-size: 1rem;
+    }
+    
+    // Spinner styling
+    .btn-spinner {
+      margin-right: 0.5rem;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+  
+  // Responsive design
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    
+    .modern-btn {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+}
+
+// Modern Button Group Styling (for direct access buttons)
+.modern-button-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  
+  .modern-btn {
+    min-width: 120px;
+  }
+}

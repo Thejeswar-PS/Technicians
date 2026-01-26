@@ -32,11 +32,11 @@
     </div>
     
     <!-- Unit Index Badge -->
-    <div class="unit-badge-compact" *ngIf="!isLoading && selectedUnit && selectedUnit.rowIndex">
+    <div class="unit-badge-compact" *ngIf="!isLoading && (selectedUnit?.rowIndex || currentRowIndex)">
       <small class="text-danger fw-bold">
         <i class="fa fa-hashtag me-1"></i>Unit:
       </small>
-      <span class="unit-value">{{ selectedUnit.rowIndex }}</span>
+      <span class="unit-value">{{ selectedUnit?.rowIndex || currentRowIndex }}</span>
     </div>
   </div>
 
@@ -184,7 +184,8 @@
                       type="text" 
                       class="modern-input"
                       formControlName="poNumber"
-                      placeholder="Enter PO number">
+                      placeholder="Enter PO number"
+                      [readonly]="isLoadedFromApi">
                   </div>
                 </div>
 
@@ -203,7 +204,8 @@
                       formControlName="unitCost"
                       placeholder="Enter unit cost"
                       step="0.01"
-                      min="0">
+                      min="0"
+                      [readonly]="isLoadedFromApi">
                   </div>
                 </div>
 
@@ -220,7 +222,8 @@
                       type="text" 
                       class="modern-input"
                       formControlName="shippingPO"
-                      placeholder="Enter shipping PO">
+                      placeholder="Enter shipping PO"
+                      [readonly]="isLoadedFromApi">
                   </div>
                 </div>
 
@@ -239,7 +242,8 @@
                       formControlName="shipCost"
                       placeholder="Enter shipping cost"
                       step="0.01"
-                      min="0">
+                      min="0"
+                      [readonly]="isLoadedFromApi">
                   </div>
                 </div>
 
@@ -276,11 +280,11 @@
                       class="modern-select"
                       formControlName="assignedTo">
                       <option value="">Please Select</option>
-                      <option *ngFor="let tech of technicianOptions" 
-                              [value]="tech.value"
-                              [disabled]="tech.value === 'All'">
-                        {{ tech.label }}
-                      </option>
+                      <ng-container *ngFor="let tech of technicianOptions">
+                        <option [value]="tech.value" *ngIf="tech.value !== 'All'">
+                          {{ tech.label }}
+                        </option>
+                      </ng-container>
                     </select>
                   </div>
                 </div>
@@ -334,7 +338,8 @@
                           type="checkbox" 
                           id="approved"
                           formControlName="approved"
-                          class="checkbox-input">
+                          class="checkbox-input"
+                          (change)="onApprovedChange()">
                         <label for="approved" class="checkbox-label">
                           <span class="checkbox-custom"></span>
                           <span class="checkbox-text">Approved</span>
@@ -345,7 +350,8 @@
                           type="checkbox" 
                           id="moveToArchive"
                           formControlName="moveToArchive"
-                          class="checkbox-input">
+                          class="checkbox-input"
+                          (change)="onMoveToArchiveChange()">
                         <label for="moveToArchive" class="checkbox-label">
                           <span class="checkbox-custom"></span>
                           <span class="checkbox-text">Move to Archive</span>
@@ -356,7 +362,8 @@
                           type="checkbox" 
                           id="moveToStrip"
                           formControlName="moveToStrip"
-                          class="checkbox-input">
+                          class="checkbox-input"
+                          (change)="onMoveToStripChange()">
                         <label for="moveToStrip" class="checkbox-label">
                           <span class="checkbox-custom"></span>
                           <span class="checkbox-text">Move to Strip</span>
@@ -368,12 +375,12 @@
                 
               </div>
 
-              <!-- Unit Info Action Buttons -->
-              <div class="modern-button-group">
+              <!-- Buttons for Direct Access (New Unit Creation) -->
+              <div class="modern-button-group" *ngIf="!selectedUnit">
                 <button 
                   type="button" 
                   class="modern-btn secondary"
-                  (click)="onClearUnitForm()"
+                  (click)="clearAllData()"
                   title="Clear all form fields">
                   <i class="fa fa-eraser btn-icon"></i>
                   <span>Clear</span>
@@ -382,7 +389,6 @@
                   type="submit" 
                   class="modern-btn success"
                   [disabled]="editForm.invalid || savingUnit"
-                  (click)="onAddUnit()"
                   title="Add new unit">
                   <span class="btn-spinner" *ngIf="savingUnit"></span>
                   <i class="fa fa-plus btn-icon" *ngIf="!savingUnit"></i>
@@ -390,72 +396,37 @@
                 </button>
               </div>
 
-              <!-- Action Buttons for Unit Info -->
-              <div class="modern-button-group" *ngIf="selectedUnit && !isCreatingNew">
-                <!-- View Mode Buttons -->
-                <div *ngIf="viewMode === 'details'" class="d-flex gap-3 justify-content-center">
-                  <button 
-                    type="button" 
-                    class="modern-btn primary"
-                    (click)="onEditUnit()"
-                    [disabled]="savingUnit">
-                    <i class="fa fa-edit btn-icon"></i>
-                    <span>Edit Unit</span>
-                  </button>
-                  <button 
-                    type="button" 
-                    class="modern-btn success"
-                    (click)="onUpdateResults()"
-                    [disabled]="savingUnit">
-                    <i class="fa fa-clipboard-check btn-icon"></i>
-                    <span>Update Results</span>
-                  </button>
-                </div>
-                
-                <!-- Edit Mode Buttons -->
-                <div *ngIf="showEditModal" class="d-flex gap-3 justify-content-center">
-                  <button 
-                    type="submit" 
-                    class="modern-btn success"
-                    [disabled]="editForm.invalid || savingUnit"
-                    (click)="onSaveUnit()">
-                    <span class="btn-spinner" *ngIf="savingUnit"></span>
-                    <i class="fa fa-save btn-icon" *ngIf="!savingUnit"></i>
-                    <span>{{ savingUnit ? 'Saving...' : 'Save Changes' }}</span>
-                  </button>
-                  <button 
-                    type="button" 
-                    class="modern-btn secondary"
-                    (click)="onCancelEdit()"
-                    [disabled]="savingUnit">
-                    <i class="fa fa-times btn-icon"></i>
-                    <span>Cancel</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Action Buttons for New Units -->
-              <div class="modern-button-group" *ngIf="isCreatingNew">
-                <button 
-                  type="button" 
-                  class="modern-btn secondary"
-                  (click)="onCancelCreate()"
-                  [disabled]="savingUnit">
-                  <i class="fa fa-times btn-icon"></i>
-                  <span>Cancel</span>
-                </button>
-                <button 
-                  type="submit" 
-                  class="modern-btn success"
-                  [disabled]="editForm.invalid || savingUnit"
-                  (click)="onCreateUnit()">
-                  <span class="btn-spinner" *ngIf="savingUnit"></span>
-                  <i class="fa fa-plus btn-icon" *ngIf="!savingUnit"></i>
-                  <span>{{ savingUnit ? 'Creating...' : 'Create Unit' }}</span>
-                </button>
-              </div>
-
             </form>
+
+            <!-- Action buttons for loaded units -->
+            <div class="form-actions" *ngIf="selectedUnit">
+              <button 
+                type="button" 
+                class="modern-btn success"
+                [disabled]="savingUnit"
+                (click)="onUpdateUnit()">
+                <span class="btn-spinner" *ngIf="savingUnit"></span>
+                <i class="fa fa-edit btn-icon" *ngIf="!savingUnit"></i>
+                <span>{{ savingUnit ? 'Updating...' : 'Update Unit' }}</span>
+              </button>
+              
+              <button 
+                type="button" 
+                class="modern-btn danger"
+                [disabled]="savingUnit"
+                (click)="onDeleteUnit()">
+                <i class="fa fa-trash btn-icon"></i>
+                <span>Delete Unit</span>
+              </button>
+              
+              <button 
+                type="button" 
+                class="modern-btn secondary"
+                (click)="clearAllData()">
+                <i class="fa fa-times btn-icon"></i>
+                <span>Clear</span>
+              </button>
+            </div>
 
             <!-- No Unit State -->
             <div class="empty-state" *ngIf="!selectedUnit && !isCreatingNew">
@@ -512,7 +483,6 @@
                     <select 
                       class="modern-select"
                       formControlName="followedProcedure">
-                      <option value="">Select</option>
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
                       <option value="N/A">N/A</option>
@@ -600,6 +570,19 @@
               </div>
 
             </form>
+
+            <!-- Update Results button for loaded units -->
+            <div class="form-actions" *ngIf="selectedUnit">
+              <button 
+                type="button" 
+                class="modern-btn success"
+                [disabled]="updatingResult"
+                (click)="onUpdateResults()">
+                <span class="btn-spinner" *ngIf="updatingResult"></span>
+                <i class="fa fa-edit btn-icon" *ngIf="!updatingResult"></i>
+                <span>{{ updatingResult ? 'Updating...' : 'Update Results' }}</span>
+              </button>
+            </div>
 
             <!-- No Results State -->
             <div class="empty-state" *ngIf="!selectedUnit">

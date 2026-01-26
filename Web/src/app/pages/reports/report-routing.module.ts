@@ -95,6 +95,10 @@ const routes: Routes = [
   {
     path: 'new-unit-test',
     component: NewUnitTestComponent
+  },
+  {
+    path: 'new-unit-test/:rowIndex',
+    component: NewUnitTestComponent
   }
 ];
 

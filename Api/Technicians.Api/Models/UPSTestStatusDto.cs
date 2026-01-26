@@ -19,13 +19,25 @@ namespace Technicians.Api.Models
         
         public string Priority { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public string TestedOn { get; set; } = string.Empty;
         public string AssignedTo { get; set; } = string.Empty;
+        public DateTime? DueDate { get; set; }
+        public string TestProcedures { get; set; } = string.Empty;
+        public string ProblemNotes { get; set; } = string.Empty;
+        public string ResolveNotes { get; set; } = string.Empty;
         public string TestedBy { get; set; } = string.Empty;
+        public string TestedOn { get; set; } = string.Empty;
+        public bool Archive { get; set; }
+        public bool Approved { get; set; }
+        public DateTime? ApprovedOn { get; set; }
+        public int RowIndex { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
         public DateTime? CreatedOn { get; set; }
         public string LastModifiedBy { get; set; } = string.Empty;
         public DateTime? LastModifiedOn { get; set; }
-        public int RowIndex { get; set; }
+        public bool ApprovalSent { get; set; }
+        public bool ArchiveSent { get; set; }
+        
+        // Keep existing property for backward compatibility
         public string StripSNo { get; set; } = string.Empty;
         
         // Computed properties for parsed decimal values (optional, for calculations)

@@ -90,6 +90,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   editingUnit: UPSTestStatusDto | null = null;
   isCreatingNew = false;
   savingUnit = false;
+  isLoadedFromApi = false; // Track if unit was loaded from API
 
   // Result Update functionality
   showResultModal = false;
@@ -169,6 +170,194 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.initializeForm();
   }
 
+  // Getter to retrieve current row index from route parameters
+  get currentRowIndex(): string | null {
+    // Use route snapshot for current value, but this will update when route changes
+    return this.route.snapshot.params['rowIndex'] || null;
+  }
+
+  // Custom Validators based on legacy validation requirements
+  
+  // Validator for numeric fields (validates only integer values)
+  private numericValidator(control: any) {
+    if (!control.value) return null; // Allow empty values
+    const isNumeric = /^[0-9]+$/.test(control.value.toString());
+    return isNumeric ? null : { numeric: true };
+  }
+
+  // Validator for Assigned To field (cannot be "PS" - Please Select)
+  private notPSValidator(control: any) {
+    if (!control.value) return null; // Required validator will handle empty values
+    return control.value === 'PS' ? { notPS: true } : null;
+  }
+
+  // Comprehensive validation method for edit form (equivalent to legacy onSaveClick())
+  private validateEditForm(): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    const formValue = this.editForm.value;
+
+    // 1. Make - Cannot be empty or null
+    if (!formValue.make || formValue.make.trim() === '') {
+      errors.push('Make is required and cannot be empty.');
+    }
+
+    // 2. Model - Cannot be empty or null
+    if (!formValue.model || formValue.model.trim() === '') {
+      errors.push('Model is required and cannot be empty.');
+    }
+
+    // 3. Serial No - Cannot be empty or null
+    if (!formValue.serialNo || formValue.serialNo.trim() === '') {
+      errors.push('Serial No is required and cannot be empty.');
+    }
+
+    // 4. Assigned To - Cannot be "PS" (Please Select) or null
+    if (!formValue.assignedTo || formValue.assignedTo === 'PS' || formValue.assignedTo.trim() === '') {
+      errors.push('Please select a valid technician from Assigned To dropdown.');
+    }
+
+    // 5. Due Date - Cannot be empty
+    if (!formValue.dueDate || formValue.dueDate === '') {
+      errors.push('Due Date is required.');
+    }
+
+    // 6. Deficiency Notes - Cannot be empty or null
+    if (!formValue.deficiencyNotes || formValue.deficiencyNotes.trim() === '') {
+      errors.push('Deficiency Notes are required and cannot be empty.');
+    }
+
+    // 13. KVA Field - Must be numeric if provided
+    if (formValue.kva && formValue.kva.trim() !== '') {
+      if (!/^[0-9]+$/.test(formValue.kva)) {
+        errors.push('KVA must be a numeric value.');
+      }
+    }
+
+    // Numeric validation for cost fields
+    if (formValue.unitCost && formValue.unitCost.trim() !== '') {
+      const cleanCost = formValue.unitCost.replace(/[$,]/g, '');
+      if (!/^[0-9.]+$/.test(cleanCost)) {
+        errors.push('Unit Cost must be a valid number.');
+      }
+    }
+
+    if (formValue.shipCost && formValue.shipCost.trim() !== '') {
+      const cleanCost = formValue.shipCost.replace(/[$,]/g, '');
+      if (!/^[0-9.]+$/.test(cleanCost)) {
+        errors.push('Ship Cost must be a valid number.');
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  // Validation method for result form (equivalent to legacy onSaveInspClick())
+  private validateResultForm(): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+    const resultValue = this.resultForm.value;
+    const currentStatus = resultValue.currentStatus || resultValue.Status;
+
+    // 7. & 9. Inspection Notes - Required only when Status = "COM" (Completed)
+    if (currentStatus === 'COM') {
+      if (!resultValue.inspectionNotes || resultValue.inspectionNotes.trim() === '') {
+        errors.push('Inspection Notes are required when status is Completed.');
+      }
+
+      // 8. Test Engineer - Required when Status = "COM"
+      if (!resultValue.testEngineer || resultValue.testEngineer.trim() === '') {
+        errors.push('Test Engineer is required when status is Completed.');
+      }
+    }
+
+    return { valid: errors.length === 0, errors };
+  }
+
+  // Workflow validation methods
+  
+  // 10. Approved Checkbox - Can only be checked when Status = "COM"
+  private validateApprovedCheckbox(): boolean {
+    const resultValue = this.resultForm.value;
+    const editValue = this.editForm.value;
+    const currentStatus = resultValue.currentStatus || resultValue.Status;
+    
+    if (editValue.approved && currentStatus !== 'COM') {
+      this.toastr.warning('You cannot approve this because the testing status of this Unit is not completed.', 'Validation Warning');
+      // Uncheck the approved checkbox
+      this.editForm.patchValue({ approved: false });
+      return false;
+    }
+    return true;
+  }
+
+  // 11. Move to Archive - Can only be checked when unit is approved
+  private validateMoveToArchive(): boolean {
+    const editValue = this.editForm.value;
+    
+    if (editValue.moveToArchive && !editValue.approved) {
+      this.toastr.warning('You cannot move to archive this because the unit is not approved by technical director.', 'Validation Warning');
+      // Uncheck the move to archive checkbox
+      this.editForm.patchValue({ moveToArchive: false });
+      return false;
+    }
+    return true;
+  }
+
+  // 12. Move to Strip - Can only be checked when unit is approved
+  private validateMoveToStrip(): boolean {
+    const editValue = this.editForm.value;
+    
+    if (editValue.moveToStrip && !editValue.approved) {
+      this.toastr.warning('You cannot move to strip this because the unit is not approved by technical director.', 'Validation Warning');
+      // Uncheck the move to strip checkbox
+      this.editForm.patchValue({ moveToStrip: false });
+      return false;
+    }
+    return true;
+  }
+
+  // Method to save unit data to localStorage for persistence
+  private saveUnitDataToStorage(unitData: UPSTestStatusDto): void {
+    try {
+      localStorage.setItem('newUnitTest_unitData', JSON.stringify(unitData));
+      localStorage.setItem('newUnitTest_timestamp', Date.now().toString());
+    } catch (error) {
+      console.warn('Failed to save unit data to localStorage:', error);
+    }
+  }
+
+  // Method to load unit data from localStorage
+  private loadUnitDataFromStorage(): UPSTestStatusDto | null {
+    try {
+      const unitDataStr = localStorage.getItem('newUnitTest_unitData');
+      const timestampStr = localStorage.getItem('newUnitTest_timestamp');
+      
+      if (!unitDataStr || !timestampStr) return null;
+      
+      // Check if data is less than 1 hour old to avoid stale data
+      const timestamp = parseInt(timestampStr);
+      const oneHour = 60 * 60 * 1000;
+      if (Date.now() - timestamp > oneHour) {
+        this.clearStoredUnitData();
+        return null;
+      }
+      
+      return JSON.parse(unitDataStr);
+    } catch (error) {
+      console.warn('Failed to load unit data from localStorage:', error);
+      return null;
+    }
+  }
+
+  // Method to clear stored unit data
+  private clearStoredUnitData(): void {
+    try {
+      localStorage.removeItem('newUnitTest_unitData');
+      localStorage.removeItem('newUnitTest_timestamp');
+    } catch (error) {
+      console.warn('Failed to clear unit data from localStorage:', error);
+    }
+  }
+
   ngOnInit(): void {
     // Setup chart options first
     this.initializeCharts();
@@ -176,6 +365,9 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.setupFormSubscriptions();
     this.loadMetadata();
     this.loadNewUnitTestData();
+    
+    // Always check route parameters first (for direct URL access or refresh)
+    this.handleRouteParameters();
     
     // Make debug method available in browser console
     (window as any).debugNewUnitChart = () => this.debugChartData();
@@ -199,6 +391,176 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.routeSubscription) {
       this.routeSubscription.unsubscribe();
     }
+    
+    // Clear stored unit data when component is destroyed
+    // This ensures data doesn't persist across different unit selections
+    this.clearStoredUnitData();
+  }
+
+  // Method to clear all form data and start fresh
+  // Method to update existing unit information
+  public onUpdateUnit(): void {
+    // Perform comprehensive validation
+    const editValidation = this.validateEditForm();
+    const resultValidation = this.validateResultForm();
+    
+    // Check all validations
+    const allErrors = [...editValidation.errors, ...resultValidation.errors];
+    
+    if (!editValidation.valid || !resultValidation.valid) {
+      // Display all validation errors
+      allErrors.forEach(error => this.toastr.error(error, 'Validation Error'));
+      return;
+    }
+
+    // Validate workflow constraints
+    if (!this.validateApprovedCheckbox() || !this.validateMoveToArchive() || !this.validateMoveToStrip()) {
+      return;
+    }
+
+    if (!this.selectedUnit) {
+      this.toastr.error('No unit selected for update');
+      return;
+    }
+
+    this.savingUnit = true;
+    const formData = this.editForm.value;
+
+    // Use existing save method for now - can be extended later
+    this.newUnitTestService.saveUpdateUnitTest(formData)
+      .subscribe({
+        next: (response: any) => {
+          this.savingUnit = false;
+          if (response.success) {
+            this.toastr.success('Unit updated successfully!');
+            // Update local data
+            if (this.selectedUnit) {
+              const updatedUnit = { ...this.selectedUnit, ...formData };
+              this.selectedUnit = updatedUnit;
+              this.saveUnitDataToStorage(updatedUnit);
+            }
+            this.cdr.detectChanges();
+          } else {
+            this.toastr.error(response.message || 'Failed to update unit');
+          }
+        },
+        error: (error: any) => {
+          this.savingUnit = false;
+          this.toastr.error('Error updating unit: ' + error.message);
+        }
+      });
+  }
+
+  // Method to delete existing unit
+  public onDeleteUnit(): void {
+    if (!this.selectedUnit) {
+      this.toastr.error('No unit selected for deletion');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this unit? This action cannot be undone.')) {
+      return;
+    }
+
+    // For now, just clear the data (can be extended with actual delete API later)
+    this.toastr.success('Unit cleared successfully!');
+    this.clearAllData();
+  }
+
+  // Method to update test results for existing unit
+  public onUpdateResults(): void {
+    // Perform comprehensive validation for result form
+    const resultValidation = this.validateResultForm();
+    
+    if (!resultValidation.valid) {
+      // Display all validation errors
+      resultValidation.errors.forEach(error => this.toastr.error(error, 'Validation Error'));
+      return;
+    }
+
+    if (!this.selectedUnit) {
+      this.toastr.error('No unit selected for update');
+      return;
+    }
+
+    this.updatingResult = true;
+    const formData = this.resultForm.value;
+
+    // Use existing save method for now - can be extended later
+    this.newUnitTestService.saveUpdateUnitTestResult(formData)
+      .subscribe({
+        next: (response: any) => {
+          this.updatingResult = false;
+          if (response.success) {
+            this.toastr.success('Test results updated successfully!');
+            // Update local data
+            if (this.selectedUnit) {
+              const updatedUnit = { ...this.selectedUnit, ...formData };
+              this.selectedUnit = updatedUnit;
+              this.saveUnitDataToStorage(updatedUnit);
+            }
+            this.cdr.detectChanges();
+          } else {
+            this.toastr.error(response.message || 'Failed to update test results');
+          }
+        },
+        error: (error: any) => {
+          this.updatingResult = false;
+          this.toastr.error('Error updating test results: ' + error.message);
+        }
+      });
+  }
+
+  public clearAllData(): void {
+    // Clear stored data
+    this.clearStoredUnitData();
+    
+    // Reset forms to initial state
+    this.initializeForm();
+    
+    // Clear any loaded unit data
+    this.selectedUnit = null;
+    
+    // Force change detection
+    this.cdr.detectChanges();
+    
+    console.log('✅ All data cleared - starting fresh');
+  }
+
+  // Real-time validation methods for checkbox interactions
+
+  // Handle approved checkbox change
+  public onApprovedChange(): void {
+    this.validateApprovedCheckbox();
+  }
+
+  // Handle move to archive checkbox change  
+  public onMoveToArchiveChange(): void {
+    this.validateMoveToArchive();
+  }
+
+  // Handle move to strip checkbox change
+  public onMoveToStripChange(): void {
+    this.validateMoveToStrip();
+  }
+
+  // Helper method to check if form field has error
+  public hasFieldError(form: FormGroup, fieldName: string): boolean {
+    const field = form.get(fieldName);
+    return field ? (field.invalid && (field.dirty || field.touched)) : false;
+  }
+
+  // Helper method to get field error message
+  public getFieldErrorMessage(form: FormGroup, fieldName: string): string {
+    const field = form.get(fieldName);
+    if (!field || !field.errors) return '';
+
+    if (field.errors['required']) return `${fieldName} is required.`;
+    if (field.errors['maxlength']) return `${fieldName} exceeds maximum length.`;
+    if (field.errors['numeric']) return `${fieldName} must be a numeric value.`;
+    if (field.errors['notPS']) return `Please select a valid option.`;
+    
+    return 'Invalid value.';
   }
 
   private initializeForm(): void {
@@ -212,19 +574,19 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     // Initialize edit form with UPS Test Status fields
     this.editForm = this.formBuilder.group({
       rowIndex: [0],
-      make: ['', [Validators.required, Validators.maxLength(50)]],
-      model: ['', [Validators.required, Validators.maxLength(50)]],
-      kva: ['', [Validators.maxLength(10)]],
+      make: ['', [Validators.required, Validators.maxLength(50)]], // Required - Cannot be empty or null
+      model: ['', [Validators.required, Validators.maxLength(50)]], // Required - Cannot be empty or null
+      kva: ['', [Validators.maxLength(3), this.numericValidator]], // Limited to 3 characters maximum, must be numeric
       voltage: ['', [Validators.maxLength(10)]],
-      serialNo: ['', [Validators.required, Validators.maxLength(50)]],
+      serialNo: ['', [Validators.required, Validators.maxLength(50)]], // Required - Cannot be empty or null
       poNumber: ['', [Validators.maxLength(50)]],
-      unitCost: ['', [Validators.maxLength(20)]],
+      unitCost: ['', [Validators.maxLength(20), this.numericValidator]],
       shippingPO: ['', [Validators.maxLength(50)]],
-      shipCost: ['', [Validators.maxLength(20)]],
+      shipCost: ['', [Validators.maxLength(20), this.numericValidator]],
       priority: ['Normal', [Validators.maxLength(15)]],
-      assignedTo: ['', [Validators.required, Validators.maxLength(50)]],
-      dueDate: [''],
-      deficiencyNotes: ['', [Validators.maxLength(1000)]],
+      assignedTo: ['', [Validators.required, this.notPSValidator, Validators.maxLength(50)]], // Required - Cannot be "PS" or null
+      dueDate: ['', [Validators.required]], // Required - Cannot be empty
+      deficiencyNotes: ['', [Validators.required, Validators.maxLength(1000)]], // Required - Cannot be empty or null
       approved: [false],
       moveToArchive: [false],
       moveToStrip: [false]
@@ -234,13 +596,13 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.resultForm = this.formBuilder.group({
       RowIndex: [0, [Validators.required, Validators.min(1)]],
       Status: ['', [Validators.required, Validators.maxLength(5)]],
-      ResolveNotes: ['', [Validators.maxLength(500)]],
-      TestProcedures: ['', [Validators.maxLength(1)]],
-      TestedBy: ['', [Validators.maxLength(50)]],
+      resolveNotes: ['', [Validators.maxLength(2000)]], // Will be required conditionally when Status = "COM"
+      testProcedures: ['', [Validators.maxLength(1)]],
+      TestedBy: ['', [Validators.maxLength(50)]], // Will be required conditionally when Status = "COM"
       followedProcedure: ['', [Validators.maxLength(20)]],
       currentStatus: ['', [Validators.maxLength(20)]],
-      testEngineer: ['', [Validators.maxLength(50)]],
-      inspectionNotes: ['', [Validators.maxLength(2000)]]
+      testEngineer: ['', [Validators.maxLength(50)]], // Will be required conditionally when Status = "COM"
+      inspectionNotes: ['', [Validators.maxLength(2000)]] // Will be required conditionally when Status = "COM"
     });
   }
 
@@ -461,21 +823,327 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       next: (response: UPSTestMetadataResponse) => {
         console.log('Technician metadata loaded:', response);
         if (response.success && response.technicians) {
-          // Update technician dropdown options
+          // Update technician dropdown options (exclude 'All' for edit form and filter out 'PS')
           this.technicianOptions = [
-            { value: 'All', label: 'All Technicians' },
-            ...response.technicians.map(tech => ({ value: tech, label: tech }))
+            ...response.technicians
+              .filter(tech => tech.toUpperCase() !== 'PS') // Remove PS from the list
+              .map(tech => ({ value: tech, label: tech }))
           ];
           
-          console.log('Updated technicianOptions:', this.technicianOptions);
           this.cdr.detectChanges();
         }
       },
       error: (error) => {
-        console.error('Error loading technician metadata:', error);
         // Continue with default options if metadata loading fails
       }
     });
+  }
+
+  private handleRouteParameters(): void {
+    // Handle route parameters (rowIndex from URL path) - this works for both navigation and direct access/refresh
+    this.route.params.subscribe(routeParams => {
+      if (routeParams['rowIndex']) {
+        const rowIndex = parseInt(routeParams['rowIndex']);
+        console.log('🔍 Route parameter detected - Row Index:', rowIndex);
+        
+        // Check query parameters for additional data
+        this.route.queryParams.subscribe(queryParams => {
+          const archive = queryParams['archive'] === 'true';
+          const loadFromApi = queryParams['loadFromApi'] === 'true';
+          
+          // Always load fresh data from API when route parameter is present
+          // This ensures database changes are reflected on page refresh or direct URL access
+          console.log('🔄 Loading fresh unit data from API for rowIndex:', rowIndex);
+          this.loadUnitFromApi(rowIndex, archive);
+          
+          // Clear query parameters after processing to keep URL clean, but keep the rowIndex in the path
+          if (loadFromApi) {
+            setTimeout(() => {
+              this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: {},
+                replaceUrl: true
+              });
+            }, 100);
+          }
+        });
+      } else {
+        // No route parameter - check for stored data or legacy query parameters
+        const storedUnitData = this.loadUnitDataFromStorage();
+        if (storedUnitData) {
+          console.log('🔄 Loading stored unit data (no route param)');
+          this.populateFormFromUnitData(storedUnitData);
+        } else {
+          // Handle legacy query parameters for backward compatibility
+          this.handleLegacyQueryParameters();
+        }
+      }
+    });
+  }
+
+  private handleLegacyQueryParameters(): void {
+    this.routeSubscription = this.route.queryParams.subscribe(params => {
+      if (Object.keys(params).length > 0) {
+        
+        // If we have loadFromApi flag and rowIndex, fetch data from API
+        if (params['loadFromApi'] === 'true' && params['rowIndex']) {
+          const rowIndex = parseInt(params['rowIndex']);
+          const archive = params['archive'] === 'true';
+          this.loadUnitFromApi(rowIndex, archive);
+        }
+        // If we have unit data from UPS Test Status (fallback), populate the edit form and show modal
+        else if (params['rowIndex'] || params['make']) {
+          // Populate the form first with the data from query params
+          this.populateFormFromQueryParams(params);
+          
+          // Then show the modal without resetting the form
+          this.isCreatingNew = true;
+          this.editingUnit = null;
+          this.showEditModal = true;
+          
+          // Clear query parameters after processing to keep URL clean
+          setTimeout(() => {
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: {},
+              replaceUrl: true
+            });
+          }, 100);
+        }
+      }
+    });
+  }
+
+  private loadUnitFromApi(rowIndex: number, archive: boolean = false): void {
+    console.log('🔄 Loading unit data from API - rowIndex:', rowIndex, 'archive:', archive);
+    
+    this.newUnitTestService.getNewUniTestByRowIndex(rowIndex, archive).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          
+          // Show the modal first without resetting the form
+          this.isCreatingNew = true;
+          this.editingUnit = null;
+          this.showEditModal = true;
+          this.isLoadedFromApi = true; // Mark as loaded from API
+          
+          // If unit has test result data, also prepare result form
+          if (response.data.testedBy || response.data.resolveNotes || response.data.testProcedures) {
+            this.resultUnit = response.data;
+          }
+          
+          // Wait for modal to be displayed then populate the form
+          setTimeout(() => {
+            this.populateFormFromUnitData(response.data);
+          }, 150);
+          
+          // Clear query parameters after processing
+          setTimeout(() => {
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: {},
+              replaceUrl: true
+            });
+          }, 300);
+          
+        } else {
+          // If not found and we haven't tried archive yet, try with archive=true
+          if (!archive) {
+            console.log('🔄 Unit not found in active data, trying archived data...');
+            this.loadUnitFromApi(rowIndex, true);
+          } else {
+            this.toastr.error(`Unit with Row Index ${rowIndex} not found`, 'Unit Not Found');
+          }
+        }
+      },
+      error: (error) => {
+        console.error('API Error:', error);
+        // If not found and we haven't tried archive yet, try with archive=true
+        if (!archive) {
+          console.log('🔄 API error with active data, trying archived data...');
+          this.loadUnitFromApi(rowIndex, true);
+        } else {
+          this.toastr.error('Failed to load unit data from API', 'Error');
+        }
+      }
+    });
+  }
+
+  private populateFormFromUnitData(unitData: UPSTestStatusDto): void {
+    console.log('🔍 FULL API RESPONSE DATA:', JSON.stringify(unitData, null, 2));
+    console.log('🔍 Available API fields:', Object.keys(unitData));
+    
+    // Save unit data to localStorage for persistence
+    this.saveUnitDataToStorage(unitData);
+    
+    // Set selectedUnit so buttons will show
+    this.selectedUnit = unitData;
+    
+    // Helper function to clean currency values for number inputs
+    const cleanCurrencyValue = (value: string | undefined): string => {
+      if (!value) return '';
+      // Remove $ sign, commas, and any other non-numeric characters except decimal point
+      return value.replace(/[$,]/g, '').trim();
+    };
+
+    // Helper function to map assigned to values
+    const mapAssignedToValue = (value: string | undefined): string => {
+      if (!value || value.toUpperCase() === 'PS') return '';
+      return value;
+    };
+
+    // Helper function to map test procedures value
+    const mapTestProceduresValue = (value: string | undefined): string => {
+      if (!value) return '';
+      const trimmedValue = value.trim().toUpperCase();
+      switch (trimmedValue) {
+        case 'Y':
+        case 'YES':
+          return 'Yes';
+        case 'N':
+        case 'NO':
+          return 'No';
+        case 'N/A':
+        case 'NA':
+        case 'A':  // Database stores 'A' for N/A
+          return 'N/A';
+        default:
+          return value.trim();
+      }
+    };
+
+    // Helper function to format date for date input
+    const formatDateForInput = (dateValue: string | Date | undefined): string => {
+      if (!dateValue) return '';
+      try {
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return '';
+        return date.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+      } catch {
+        return '';
+      }
+    };
+
+    // Helper function to map status values from API to dropdown values
+    const mapStatusValue = (value: string | undefined): string => {
+      if (!value) return '';
+      const trimmedValue = value.trim().toUpperCase();
+      switch (trimmedValue) {
+        case 'INP':
+        case 'IN PROGRESS':
+          return 'INP';
+        case 'NCR':
+        case 'NEEDS COMPONENTS FOR REPAIR':
+          return 'NCR';
+        case 'MPJ':
+        case 'MISSING PARTS FROM JOB':
+          return 'MPJ';
+        case 'COM':
+        case 'COMPLETED':
+          return 'COM';
+        default:
+          // Handle mixed case like "Inp" -> "INP"
+          return trimmedValue;
+      }
+    };
+
+    // Populate the edit form with the unit data from API
+    const formData = {
+      rowIndex: unitData.rowIndex || 0,
+      make: unitData.make || '',
+      model: unitData.model || '',
+      kva: unitData.kva?.trim() || '',
+      voltage: unitData.voltage?.trim() || '',
+      serialNo: unitData.serialNo || '',
+      poNumber: unitData.poNumber?.trim() || '',
+      unitCost: cleanCurrencyValue(unitData.unitCost),
+      shippingPO: unitData.shippingPO?.trim() || '',
+      shipCost: cleanCurrencyValue(unitData.shipCost),
+      priority: unitData.priority?.trim() || 'Normal',
+      assignedTo: mapAssignedToValue(unitData.assignedTo?.trim()),
+      dueDate: formatDateForInput(unitData.dueDate), // Use dueDate field from API
+      deficiencyNotes: unitData.problemNotes || '', // Use problemNotes directly, empty if not provided
+      approved: unitData.approved || false, // Use API value instead of hardcoding to false
+      moveToArchive: unitData.archive === true, // Only true if archive field is explicitly true
+      moveToStrip: unitData.stripSNo ? true : false // Set based on stripSNo field presence
+    };
+    
+    // Populate the result form with test result data from API
+    const resultFormData = {
+      RowIndex: unitData.rowIndex || 0,
+      Status: mapStatusValue(unitData.status), // Apply status mapping
+      resolveNotes: unitData.resolveNotes || '',
+      testProcedures: unitData.testProcedures?.trim() || '',
+      TestedBy: unitData.testedBy || '',
+      followedProcedure: mapTestProceduresValue(unitData.testProcedures), // Map Y to Yes for dropdown
+      currentStatus: mapStatusValue(unitData.status), // Apply status mapping
+      testEngineer: unitData.testedBy || '', // Map testedBy to testEngineer
+      inspectionNotes: unitData.resolveNotes || '' // Map resolveNotes to inspection notes
+    };
+    
+    // Use setValue instead of patchValue to ensure all fields are set
+    try {
+      this.editForm.setValue(formData);
+    } catch (error) {
+      this.editForm.patchValue(formData);
+    }
+
+    // Populate result form as well
+    try {
+      this.resultForm.setValue(resultFormData);
+      console.log('✅ Result form setValue successful');
+    } catch (error) {
+      console.log('⚠️ Result form setValue failed, using patchValue:', error);
+      this.resultForm.patchValue(resultFormData);
+    }
+    this.cdr.detectChanges();
+  }
+
+  private populateFormFromQueryParams(params: any): void {
+    // Create a unit object from query params
+    const unitData: Partial<UPSTestStatusDto> = {
+      rowIndex: params['rowIndex'] ? parseInt(params['rowIndex']) : 0,
+      make: params['make'] || '',
+      model: params['model'] || '',
+      serialNo: params['serialNo'] || '',
+      kva: params['kva'] || '',
+      voltage: params['voltage'] || '',
+      poNumber: params['poNumber'] || '',
+      unitCost: params['unitCost'] || '',
+      shippingPO: params['shippingPO'] || '',
+      shipCost: params['shipCost'] || '',
+      priority: params['priority'] || 'Normal',
+      assignedTo: params['assignedTo'] || '',
+      status: params['status'] || '',
+      testedBy: params['testedBy'] || '',
+      stripSNo: params['stripSNo'] || ''
+    };
+
+    // Populate the edit form with the unit data
+    const formData = {
+      rowIndex: unitData.rowIndex,
+      make: unitData.make,
+      model: unitData.model,
+      kva: unitData.kva,
+      voltage: unitData.voltage,
+      serialNo: unitData.serialNo,
+      poNumber: unitData.poNumber,
+      unitCost: unitData.unitCost,
+      shippingPO: unitData.shippingPO,
+      shipCost: unitData.shipCost,
+      priority: unitData.priority,
+      assignedTo: unitData.assignedTo,
+      dueDate: '',
+      deficiencyNotes: `Unit imported from UPS Test Status. Original Status: ${unitData.status || 'N/A'}`,
+      approved: false,
+      moveToArchive: false,
+      moveToStrip: false
+    };
+
+    this.editForm.patchValue(formData);
+    this.cdr.detectChanges();
   }
 
   loadNewUnitTestData(): void {
@@ -498,12 +1166,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
             this.processData();
             this.applyFilters();
             
-            console.log('✅ New unit test data loaded:', {
-              totalRecords: this.totalRecords,
-              isFiltered: this.isFiltered,
-              dataLength: this.allData.length
-            });
-            
             this.toastr.success(`Loaded ${this.totalRecords} new unit test records`, 'Success');
           } else {
             this.errorMessage = response.message || 'Failed to load new unit test data';
@@ -511,7 +1173,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         },
         error: (error) => {
-          console.error('❌ Error loading new unit test data:', error);
           this.errorMessage = 'Failed to load new unit test data. Please try again.';
           this.toastr.error(this.errorMessage, 'Error');
         },
@@ -1019,9 +1680,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       });
   }
 
-  /**
-   * Checks if a unit is currently being moved
-   */
+  // Checks if a unit is currently being moved
   isUnitMoving(rowIndex: number): boolean {
     return this.movingUnits.has(rowIndex);
   }
@@ -1033,9 +1692,8 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.moveResults[rowIndex] || null;
   }
 
-  /**
-   * Checks if unit can be moved (has required fields)
-   */
+  //Checks if unit can be moved (has required fields)
+  
   canMoveUnit(unit: UPSTestStatusDto): boolean {
     return !!(unit.make && unit.model && unit.serialNo && unit.rowIndex > 0);
   }
@@ -1053,13 +1711,11 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     return `Move ${unit.make} ${unit.model} to stripping`;
   }
 
-  // Edit/Create functionality
-  /**
-   * Opens the edit modal for creating a new unit test
-   */
+  // Opens the edit modal for creating a new unit test
   openCreateModal(): void {
     this.isCreatingNew = true;
     this.editingUnit = null;
+    this.isLoadedFromApi = false; // Reset flag for manual creation
     this.editForm.reset({
       rowIndex: 0,
       make: '',
@@ -1083,6 +1739,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   openEditModal(unit: UPSTestStatusDto): void {
     this.isCreatingNew = false;
     this.editingUnit = unit;
+    this.isLoadedFromApi = false; 
     
     // Convert date to proper format if needed
     let dueDateValue = '';
@@ -1118,6 +1775,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showEditModal = false;
     this.editingUnit = null;
     this.isCreatingNew = false;
+    this.isLoadedFromApi = false;
     this.editForm.reset();
   }
 
@@ -1249,26 +1907,13 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     return '';
   }
 
-  /**
-   * Checks if a form field has errors
-   */
-  hasFieldError(fieldName: string): boolean {
-    const control = this.editForm.get(fieldName);
-    return !!(control?.errors && control.touched);
-  }
-
-  // #region Result Update Methods
-
-  /**
-   * Opens the result update modal for a unit
-   */
   openResultUpdateModal(unit: UPSTestStatusDto): void {
     this.resultUnit = unit;
     this.resultForm.patchValue({
       RowIndex: unit.rowIndex,
       Status: unit.status || '',
-      ResolveNotes: unit.resolveNotes || '',
-      TestProcedures: unit.testProcedures || '',
+      resolveNotes: unit.resolveNotes || '',
+      testProcedures: unit.testProcedures || '',
       TestedBy: unit.testedBy || ''
     });
     this.showResultModal = true;
@@ -1418,40 +2063,10 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Opens the result update modal for a unit
-   */
-  onUpdateResults(): void {
-    if (!this.selectedUnit) return;
-    
-    this.resultUnit = this.selectedUnit;
-    this.resultForm.patchValue({
-      RowIndex: this.selectedUnit.rowIndex,
-      Status: this.selectedUnit.status || '',
-      ResolveNotes: this.selectedUnit.resolveNotes || '',
-      TestProcedures: this.selectedUnit.testProcedures || '',
-      TestedBy: this.selectedUnit.testedBy || '',
-      followedProcedure: '',
-      currentStatus: '',
-      testEngineer: '',
-      inspectionNotes: ''
-    });
-    this.showResultModal = true;
-    this.cdr.detectChanges();
-  }
-
-  /**
    * Views the UPS test procedure
    */
   onViewTestProcedure(): void {
-    // This would typically open a modal or navigate to a procedure document
-    // For now, we'll show a placeholder message
     this.toastr.info('UPS Test Procedure would be displayed here', 'Test Procedure');
-    
-    // In a real implementation, you might:
-    // - Open a modal with the procedure document
-    // - Navigate to a procedure page
-    // - Download a PDF document
-    // - Open an external link
   }
 
   /**
