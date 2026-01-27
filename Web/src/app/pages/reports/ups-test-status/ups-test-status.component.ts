@@ -689,6 +689,11 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     return item.make;
   }
 
+  // Check if a unit is stripped (has stripSNo value)
+  public isUnitStripped(item: UPSTestStatusDto): boolean {
+    return !!(item.stripSNo && item.stripSNo.trim());
+  }
+
   // Mark animation as complete after initial load
   public markAnimationComplete(): void {
     setTimeout(() => {

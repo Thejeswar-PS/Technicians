@@ -414,7 +414,8 @@
                 <!-- Data rows -->
                 <tr *ngFor="let item of displayedData; let i = index; trackBy: trackByIndex" 
                     class="compact-row" 
-                    [class.striped]="i % 2 === 1">
+                    [class.striped]="i % 2 === 1"
+                    [class.stripped-unit]="isUnitStripped(item)">
                   <!-- No -->
                   <td class="text-center compact-cell table-text-medium">
                     <span class="text-dark fw-semibold">{{ item.rowIndex }}</span>
