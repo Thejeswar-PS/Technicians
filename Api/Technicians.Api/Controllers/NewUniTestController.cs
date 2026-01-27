@@ -423,5 +423,82 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// MAIN API: Deletes a unit test using the DeleteNewUnitTest stored procedure
+        /// </summary>
+        /// <param name="rowIndex">The RowIndex of the unit test to delete</param>
+        /// <returns>Success or failure response with result message</returns>
+        [HttpDelete("{rowIndex}")]
+        public async Task<ActionResult<DeleteNewUnitTestResponse>> DeleteNewUnitTest(int rowIndex)
+        {
+            try
+            {
+                _logger.LogInformation("Deleting unit test - RowIndex: {RowIndex}", rowIndex);
+
+                // Validate the request
+                var validationErrors = _repository.ValidateDeleteRequest(rowIndex);
+                if (validationErrors.Any())
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Validation failed",
+                        errors = validationErrors
+                    });
+                }
+
+                // Check if the unit test exists before attempting delete
+                var unitExists = await _repository.UnitTestExistsAsync(rowIndex);
+                if (!unitExists)
+                {
+                    _logger.LogWarning("Unit test not found for deletion - RowIndex: {RowIndex}", rowIndex);
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Unit test not found",
+                        rowIndex = rowIndex
+                    });
+                }
+
+                // Execute the delete operation
+                var result = await _repository.DeleteNewUnitTestAsync(rowIndex);
+
+                if (result.Success)
+                {
+                    _logger.LogInformation("Successfully deleted unit test - RowIndex: {RowIndex}, Result: {Result}", 
+                        rowIndex, result.Result);
+                    
+                    return Ok(new
+                    {
+                        success = true,
+                        message = result.Result,
+                        data = result
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("Unit test deletion failed - RowIndex: {RowIndex}, Result: {Result}", 
+                        rowIndex, result.Result);
+                    
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = result.Result,
+                        data = result
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting unit test - RowIndex: {RowIndex}", rowIndex);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to delete unit test", 
+                    error = ex.Message 
+                });
+            }
+        }
     }
 }

@@ -14,7 +14,8 @@ import {
   SaveUpdateNewUnitTestDto,
   SaveUpdateUnitTestResponse,
   SaveUpdateNewUnitResultDto,
-  SaveUpdateUnitTestResultResponse
+  SaveUpdateUnitTestResultResponse,
+  DeleteNewUnitTestResponse
 } from '../model/new-unit-test.model';
 import { UPSTestStatusDto } from '../model/ups-test-status.model';
 import { StrippedUnitsStatusDto } from '../model/stripped-units-status.model';
@@ -154,6 +155,19 @@ export class NewUnitTestService {
    */
   saveUpdateUnitTestResult(dto: SaveUpdateNewUnitResultDto): Observable<SaveUpdateUnitTestResultResponse> {
     return this.http.post<SaveUpdateUnitTestResultResponse>(`${this.API}/NewUniTest/update-result`, dto, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Delete a unit test
+   * @param rowIndex The RowIndex of the unit test to delete
+   * @returns Response indicating success or failure with result message
+   */
+  deleteNewUnitTest(rowIndex: number): Observable<DeleteNewUnitTestResponse> {
+    return this.http.delete<DeleteNewUnitTestResponse>(`${this.API}/NewUniTest/${rowIndex}`, {
       headers: this.headers
     }).pipe(
       catchError(this.handleError)

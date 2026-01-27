@@ -104,6 +104,7 @@ export interface SaveUpdateNewUnitResultDto {
   ResolveNotes?: string;
   TestProcedures?: string;
   TestedBy?: string;
+  LastModifiedBy?: string;
 }
 
 export interface SaveUpdateUnitTestResultResponse {
@@ -113,5 +114,17 @@ export interface SaveUpdateUnitTestResultResponse {
   status: string;
   emailSent?: boolean;
   errors?: string[];
+  error?: string;
+}
+
+// Delete Unit Test Models
+export interface DeleteNewUnitTestResponse {
+  success: boolean;
+  message: string;
+  data: {
+    success: boolean;
+    result: string;
+    rowIndex: number;
+  };
   error?: string;
 }

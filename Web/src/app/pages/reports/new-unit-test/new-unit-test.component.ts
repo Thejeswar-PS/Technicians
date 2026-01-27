@@ -98,6 +98,11 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   updatingResult = false;
   resultUnit: UPSTestStatusDto | null = null;
 
+  // Delete functionality
+  showDeleteConfirmModal = false;
+  unitToDelete: UPSTestStatusDto | null = null;
+  deletingUnit = false;
+
   // Status options matching backend - New Units Test system
   statusOptions = [
     { value: 'All', label: 'All' },
@@ -424,13 +429,26 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.savingUnit = true;
-    const formData = this.editForm.value;
+    const formValue = this.editForm.value;
+    
+    // Map form fields to API fields
+    const formData = {
+      ...formValue,
+      problemNotes: formValue.deficiencyNotes, // Map deficiencyNotes → problemNotes
+      lastModifiedBy: this.auth.currentUserValue?.username || 'System'
+    };
+    
+    // Remove the form field since we mapped it to problemNotes
+    delete formData.deficiencyNotes;
+
+    console.log('onUpdateUnit - Sending data:', formData);
 
     // Use existing save method for now - can be extended later
     this.newUnitTestService.saveUpdateUnitTest(formData)
       .subscribe({
         next: (response: any) => {
           this.savingUnit = false;
+          console.log('onUpdateUnit - API Response:', response);
           if (response.success) {
             this.toastr.success('Unit updated successfully!');
             // Update local data
@@ -438,6 +456,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
               const updatedUnit = { ...this.selectedUnit, ...formData };
               this.selectedUnit = updatedUnit;
               this.saveUnitDataToStorage(updatedUnit);
+              console.log('onUpdateUnit - Updated local data:', updatedUnit);
             }
             this.cdr.detectChanges();
           } else {
@@ -469,46 +488,147 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Method to update test results for existing unit
   public onUpdateResults(): void {
-    // Perform comprehensive validation for result form
-    const resultValidation = this.validateResultForm();
-    
-    if (!resultValidation.valid) {
-      // Display all validation errors
-      resultValidation.errors.forEach(error => this.toastr.error(error, 'Validation Error'));
-      return;
-    }
+    this.saveUnitTestResult('update');
+  }
 
-    if (!this.selectedUnit) {
-      this.toastr.error('No unit selected for update');
-      return;
+  /**
+   * Unified method to save/update unit test results
+   * @param context - The context of the operation (update, save, result)
+   */
+  private saveUnitTestResult(context: 'update' | 'save' | 'result'): void {
+    console.log('🚀 saveUnitTestResult called with context:', context);
+    
+    // Validate form based on context
+    if (context === 'update') {
+      const resultValidation = this.validateResultForm();
+      if (!resultValidation.valid) {
+        resultValidation.errors.forEach(error => this.toastr.error(error, 'Validation Error'));
+        return;
+      }
+      if (!this.selectedUnit) {
+        this.toastr.error('No unit selected for update');
+        return;
+      }
+    } else {
+      if (this.resultForm.invalid) {
+        this.markResultFormGroupTouched(this.resultForm);
+        this.toastr.warning('Please fill in all required fields correctly.', 'Validation Error');
+        return;
+      }
     }
 
     this.updatingResult = true;
-    const formData = this.resultForm.value;
+    this.cdr.detectChanges();
 
-    // Use existing save method for now - can be extended later
-    this.newUnitTestService.saveUpdateUnitTestResult(formData)
-      .subscribe({
-        next: (response: any) => {
-          this.updatingResult = false;
-          if (response.success) {
-            this.toastr.success('Test results updated successfully!');
-            // Update local data
-            if (this.selectedUnit) {
-              const updatedUnit = { ...this.selectedUnit, ...formData };
-              this.selectedUnit = updatedUnit;
-              this.saveUnitDataToStorage(updatedUnit);
+    // Only send the fields expected by the API with correct mapping
+    const formValue = this.resultForm.value;
+    console.log('Raw form values:', formValue);
+    
+    // Simple mapping for followedProcedure to database format
+    let testProcedures = '';
+    if (formValue.followedProcedure) {
+      switch (formValue.followedProcedure) {
+        case 'Yes':
+          testProcedures = 'Y';
+          break;
+        case 'No':
+          testProcedures = 'N';
+          break;
+        case 'N/A':
+          testProcedures = 'A';
+          break;
+        default:
+          testProcedures = formValue.followedProcedure;
+      }
+    }
+
+    console.log('Current user:', this.auth.currentUserValue);
+    console.log('Username:', this.auth.currentUserValue?.username);
+
+    const dto: SaveUpdateNewUnitResultDto = {
+      RowIndex: formValue.RowIndex,
+      Status: formValue.currentStatus || formValue.Status,
+      ResolveNotes: formValue.inspectionNotes,
+      TestedBy: formValue.testEngineer,
+      LastModifiedBy: this.auth.currentUserValue?.username || 'System'
+    };
+
+    if (testProcedures) {
+      dto.TestProcedures = testProcedures;
+    }
+
+    console.log('Sending DTO to API:', dto);
+
+    this.newUnitTestService.saveUpdateUnitTestResult(dto).subscribe({
+      next: (response: SaveUpdateUnitTestResultResponse) => {
+        this.updatingResult = false;
+        if (response.success) {
+          // Success messages based on context
+          const successMessage = context === 'update' ? 'Test results updated successfully!' : 
+                                 context === 'save' ? 'Results Updated' : 'Result Updated';
+          this.toastr.success(response.message || successMessage);
+          
+          // Log the response for debugging
+          console.log('Update result API response:', response);
+          
+          // Update local data immediately
+          if (this.resultUnit || this.selectedUnit) {
+            const index = this.allData.findIndex(unit => unit.rowIndex === dto.RowIndex);
+            console.log('Found unit at index:', index, 'for RowIndex:', dto.RowIndex);
+            if (index !== -1) {
+              const oldUnit = { ...this.allData[index] };
+              this.allData[index] = { ...this.allData[index], 
+                status: dto.Status, 
+                resolveNotes: dto.ResolveNotes || '',
+                testProcedures: dto.TestProcedures || '',
+                testedBy: dto.TestedBy || ''
+              };
+              console.log('Updated unit from:', oldUnit, 'to:', this.allData[index]);
+              
+              if (context === 'update' && this.selectedUnit) {
+                this.selectedUnit = this.allData[index];
+                this.saveUnitDataToStorage(this.allData[index]);
+              } else if (context === 'save' && this.resultUnit) {
+                this.selectedUnit = this.allData[index];
+              }
+            } else {
+              console.error('Could not find unit with RowIndex:', dto.RowIndex, 'in allData');
             }
-            this.cdr.detectChanges();
-          } else {
-            this.toastr.error(response.message || 'Failed to update test results');
           }
-        },
-        error: (error: any) => {
-          this.updatingResult = false;
-          this.toastr.error('Error updating test results: ' + error.message);
+
+          // Apply filters and update charts with the updated data
+          this.applyFilters();
+          this.updateCharts();
+          console.log('Local data updated successfully - changes will persist until page refresh');
+          
+          // Log the current displayedData to verify the changes are visible
+          const updatedDisplayedUnit = this.displayedData.find(unit => unit.rowIndex === dto.RowIndex);
+          if (updatedDisplayedUnit) {
+            console.log('Updated unit in displayedData:', updatedDisplayedUnit);
+          } else {
+            console.log('Updated unit not found in displayedData - may be filtered out or on different page');
+          }
+          
+          if (context === 'result') {
+            this.closeResultModal();
+          } else if (context === 'save') {
+            this.onCancelResultUpdate();
+          }
+          
+        } else {
+          this.toastr.error(response.message || 'Failed to update results', 'Update Failed');
         }
-      });
+      },
+      error: (error) => {
+        this.updatingResult = false;
+        console.error('Error updating unit test result:', error);
+        this.toastr.error('Failed to update results. Please try again.', 'Error');
+      },
+      complete: () => {
+        this.updatingResult = false;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   public clearAllData(): void {
@@ -954,7 +1074,10 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
             console.log('🔄 Unit not found in active data, trying archived data...');
             this.loadUnitFromApi(rowIndex, true);
           } else {
-            this.toastr.error(`Unit with Row Index ${rowIndex} not found`, 'Unit Not Found');
+            console.log('❌ Unit not found in both active and archived data, redirecting to main list');
+            this.toastr.error(`Unit with Row Index ${rowIndex} not found. Redirecting to main list.`, 'Unit Not Found');
+            // Redirect back to main list when unit doesn't exist
+            this.router.navigate(['/reports/new-unit-test']);
           }
         }
       },
@@ -965,7 +1088,10 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           console.log('🔄 API error with active data, trying archived data...');
           this.loadUnitFromApi(rowIndex, true);
         } else {
-          this.toastr.error('Failed to load unit data from API', 'Error');
+          console.log('❌ API error loading unit from both active and archived data, redirecting to main list');
+          this.toastr.error(`Failed to load unit with Row Index ${rowIndex}. Redirecting to main list.`, 'Error');
+          // Redirect back to main list when unit can't be loaded
+          this.router.navigate(['/reports/new-unit-test']);
         }
       }
     });
@@ -1166,7 +1292,8 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
             this.processData();
             this.applyFilters();
             
-            this.toastr.success(`Loaded ${this.totalRecords} new unit test records`, 'Success');
+            // Remove the success toast - no need to show on page load
+            // this.toastr.success(`Loaded ${this.totalRecords} new unit test records`, 'Success');
           } else {
             this.errorMessage = response.message || 'Failed to load new unit test data';
             this.toastr.error(this.errorMessage, 'Error');
@@ -1935,52 +2062,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
    * Updates the unit test result
    */
   updateUnitTestResult(): void {
-    if (this.resultForm.invalid) {
-      this.markResultFormGroupTouched(this.resultForm);
-      this.toastr.warning('Please fill in all required fields correctly.', 'Validation Error');
-      return;
-    }
-
-    this.updatingResult = true;
-    this.cdr.detectChanges();
-
-    const dto: SaveUpdateNewUnitResultDto = this.resultForm.value;
-    
-    this.newUnitTestService.saveUpdateUnitTestResult(dto).subscribe({
-      next: (response: SaveUpdateUnitTestResultResponse) => {
-        if (response.success) {
-          this.toastr.success(response.message, 'Result Updated');
-          
-          // Update the local data
-          if (this.resultUnit) {
-            const index = this.allData.findIndex(unit => unit.rowIndex === dto.RowIndex);
-            if (index !== -1) {
-              this.allData[index] = { ...this.allData[index], 
-                status: dto.Status, 
-                resolveNotes: dto.ResolveNotes || '',
-                testProcedures: dto.TestProcedures || '',
-                testedBy: dto.TestedBy || ''
-              };
-            }
-          }
-
-          // Refresh data and close modal
-          this.applyFilters();
-          this.updateCharts();
-          this.closeResultModal();
-        } else {
-          this.toastr.error(response.message || 'Failed to update unit test result', 'Update Failed');
-        }
-      },
-      error: (error) => {
-        console.error('Error updating unit test result:', error);
-        this.toastr.error('Failed to update unit test result. Please try again.', 'Error');
-      },
-      complete: () => {
-        this.updatingResult = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.saveUnitTestResult('result');
   }
 
   /**
@@ -2128,10 +2210,8 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.viewMode = 'details';
     this.cdr.detectChanges();
   }
-
-  /**
-   * Cancels the create operation
-   */
+ 
+  //Cancels the create operation
   onCancelCreate(): void {
     this.isCreatingNew = false;
     this.editForm.reset();
@@ -2186,53 +2266,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
    * Saves the test results
    */
   onSaveResults(): void {
-    if (this.resultForm.invalid) {
-      this.markResultFormGroupTouched(this.resultForm);
-      this.toastr.warning('Please fill in all required fields correctly.', 'Validation Error');
-      return;
-    }
-
-    this.updatingResult = true;
-    this.cdr.detectChanges();
-
-    const dto: SaveUpdateNewUnitResultDto = this.resultForm.value;
-    
-    this.newUnitTestService.saveUpdateUnitTestResult(dto).subscribe({
-      next: (response: SaveUpdateUnitTestResultResponse) => {
-        if (response.success) {
-          this.toastr.success(response.message, 'Results Updated');
-          
-          // Update the local data
-          if (this.resultUnit) {
-            const index = this.allData.findIndex(unit => unit.rowIndex === dto.RowIndex);
-            if (index !== -1) {
-              this.allData[index] = { ...this.allData[index], 
-                status: dto.Status, 
-                resolveNotes: dto.ResolveNotes || '',
-                testProcedures: dto.TestProcedures || '',
-                testedBy: dto.TestedBy || ''
-              };
-              this.selectedUnit = this.allData[index];
-            }
-          }
-
-          // Refresh data and close modal
-          this.applyFilters();
-          this.updateCharts();
-          this.onCancelResultUpdate();
-        } else {
-          this.toastr.error(response.message || 'Failed to update results', 'Update Failed');
-        }
-      },
-      error: (error) => {
-        console.error('Error updating results:', error);
-        this.toastr.error('Failed to update results. Please try again.', 'Error');
-      },
-      complete: () => {
-        this.updatingResult = false;
-        this.cdr.detectChanges();
-      }
-    });
+    this.saveUnitTestResult('save');
   }
 
   /**
@@ -2296,6 +2330,86 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       complete: () => {
         this.savingUnit = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Delete functionality methods
+  
+  /**
+   * Opens the delete confirmation modal
+   * @param unit The unit to delete
+   */
+  openDeleteConfirmModal(unit: UPSTestStatusDto): void {
+    this.unitToDelete = unit;
+    this.showDeleteConfirmModal = true;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Closes the delete confirmation modal
+   */
+  closeDeleteConfirmModal(): void {
+    this.showDeleteConfirmModal = false;
+    this.unitToDelete = null;
+    this.deletingUnit = false;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Confirms and executes the unit deletion
+   */
+  confirmDeleteUnit(): void {
+    if (!this.unitToDelete) {
+      this.toastr.error('No unit selected for deletion');
+      return;
+    }
+
+    this.deletingUnit = true;
+    const unitToDelete = this.unitToDelete;
+    
+    console.log('Deleting unit - RowIndex:', unitToDelete.rowIndex);
+
+    this.newUnitTestService.deleteNewUnitTest(unitToDelete.rowIndex).subscribe({
+      next: (response) => {
+        console.log('Delete API Response:', response);
+        if (response.success) {
+          this.toastr.success(response.message || 'Unit deleted successfully', 'Success');
+          
+          // Remove the unit from local data
+          this.allData = this.allData.filter(unit => unit.rowIndex !== unitToDelete.rowIndex);
+          
+          // Update filtered and displayed data
+          this.applyFilters();
+          this.updateCharts();
+          
+          // Close the modal
+          this.closeDeleteConfirmModal();
+          
+          // Clear selected unit if it was the deleted unit
+          if (this.selectedUnit?.rowIndex === unitToDelete.rowIndex) {
+            this.selectedUnit = null;
+          }
+          
+          // Check if we're on a specific unit URL and redirect to main list
+          this.route.params.subscribe(routeParams => {
+            if (routeParams['rowIndex'] && parseInt(routeParams['rowIndex']) === unitToDelete.rowIndex) {
+              console.log('🔄 Redirecting to main list after deleting current unit');
+              this.router.navigate(['/reports/new-unit-test']);
+            }
+          });
+          
+        } else {
+          this.toastr.error(response.message || 'Failed to delete unit', 'Delete Failed');
+        }
+      },
+      error: (error) => {
+        console.error('Error deleting unit:', error);
+        this.toastr.error('Failed to delete unit. Please try again.', 'Error');
+      },
+      complete: () => {
+        this.deletingUnit = false;
         this.cdr.detectChanges();
       }
     });

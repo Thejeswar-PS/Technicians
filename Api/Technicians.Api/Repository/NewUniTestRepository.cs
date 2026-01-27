@@ -202,11 +202,11 @@ namespace Technicians.Api.Repository
 
                 var parameters = new DynamicParameters();
                 parameters.Add("@RowIndex", dto.RowIndex, DbType.Int32);
-                parameters.Add("@Make", dto.Make, DbType.AnsiString, size: 50);
-                parameters.Add("@Model", dto.Model, DbType.AnsiString, size: 50);
-                parameters.Add("@KVA", dto.KVA, DbType.AnsiStringFixedLength, size: 10);
-                parameters.Add("@Voltage", dto.Voltage, DbType.AnsiStringFixedLength, size: 10);
-                parameters.Add("@SerialNo", dto.SerialNo, DbType.AnsiString, size: 50);
+                parameters.Add("@Make", dto.Make, DbType.AnsiString, size: 100);        // Updated: 50-100 chars
+                parameters.Add("@Model", dto.Model, DbType.AnsiString, size: 100);      // Updated: 50-100 chars  
+                parameters.Add("@KVA", dto.KVA, DbType.AnsiStringFixedLength, size: 3); // Updated: 3 chars
+                parameters.Add("@Voltage", dto.Voltage, DbType.AnsiString, size: 50);     // Updated: 20-50 chars
+                parameters.Add("@SerialNo", dto.SerialNo, DbType.AnsiString, size: 100);  // Updated: 50-100 chars
                 parameters.Add("@PONumber", dto.PONumber, DbType.AnsiStringFixedLength, size: 10);
                 parameters.Add("@ShippingPO", dto.ShippingPO, DbType.AnsiStringFixedLength, size: 10);
                 parameters.Add("@UnitCost", dto.UnitCost ?? 0, DbType.Decimal);
@@ -244,6 +244,7 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Validates the MoveUnitToStrippingDto for the move operation
+        /// Updated with correct field length constraints
         /// </summary>
         /// <param name="dto">DTO to validate</param>
         /// <returns>List of validation errors</returns>
@@ -279,21 +280,21 @@ namespace Technicians.Api.Repository
             if (dto.ShipCost.HasValue && dto.ShipCost < 0)
                 errors.Add("ShipCost cannot be negative");
 
-            // Validate string field lengths based on stored procedure parameters
-            if (!string.IsNullOrEmpty(dto.Make) && dto.Make.Length > 50)
-                errors.Add("Make cannot exceed 50 characters");
+            // Updated field length validations based on database schema
+            if (!string.IsNullOrEmpty(dto.Make) && dto.Make.Length > 100)
+                errors.Add("Make cannot exceed 100 characters");
 
-            if (!string.IsNullOrEmpty(dto.Model) && dto.Model.Length > 50)
-                errors.Add("Model cannot exceed 50 characters");
+            if (!string.IsNullOrEmpty(dto.Model) && dto.Model.Length > 100)
+                errors.Add("Model cannot exceed 100 characters");
 
-            if (!string.IsNullOrEmpty(dto.KVA) && dto.KVA.Length > 10)
-                errors.Add("KVA cannot exceed 10 characters");
+            if (!string.IsNullOrEmpty(dto.KVA) && dto.KVA.Length > 3)
+                errors.Add("KVA cannot exceed 3 characters");
 
-            if (!string.IsNullOrEmpty(dto.Voltage) && dto.Voltage.Length > 10)
-                errors.Add("Voltage cannot exceed 10 characters");
+            if (!string.IsNullOrEmpty(dto.Voltage) && dto.Voltage.Length > 50)
+                errors.Add("Voltage cannot exceed 50 characters");
 
-            if (!string.IsNullOrEmpty(dto.SerialNo) && dto.SerialNo.Length > 50)
-                errors.Add("SerialNo cannot exceed 50 characters");
+            if (!string.IsNullOrEmpty(dto.SerialNo) && dto.SerialNo.Length > 100)
+                errors.Add("SerialNo cannot exceed 100 characters");
 
             if (!string.IsNullOrEmpty(dto.PONumber) && dto.PONumber.Length > 10)
                 errors.Add("PONumber cannot exceed 10 characters");
@@ -364,6 +365,7 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Saves or updates a new unit test using the SaveUpdateNewUnitTest stored procedure
+        /// Updated with correct field length constraints
         /// </summary>
         public async Task<bool> SaveUpdateNewUnitTestAsync(SaveUpdateNewUnitTestDto dto)
         {
@@ -374,15 +376,15 @@ namespace Technicians.Api.Repository
 
                 var parameters = new DynamicParameters();
                 parameters.Add("@RowIndex", dto.RowIndex, DbType.Int32);
-                parameters.Add("@Make", dto.Make, DbType.AnsiString, size: 50);
-                parameters.Add("@Model", dto.Model, DbType.AnsiString, size: 50);
-                parameters.Add("@KVA", dto.KVA, DbType.AnsiStringFixedLength, size: 10);
-                parameters.Add("@Voltage", dto.Voltage, DbType.AnsiStringFixedLength, size: 10);
-                parameters.Add("@SerialNo", dto.SerialNo, DbType.AnsiString, size: 50);
+                parameters.Add("@Make", dto.Make, DbType.AnsiString, size: 100);          // Updated: 50-100 chars
+                parameters.Add("@Model", dto.Model, DbType.AnsiString, size: 100);        // Updated: 50-100 chars
+                parameters.Add("@KVA", dto.KVA, DbType.AnsiStringFixedLength, size: 3);   // Updated: 3 chars
+                parameters.Add("@Voltage", dto.Voltage, DbType.AnsiString, size: 50);     // Updated: 20-50 chars
+                parameters.Add("@SerialNo", dto.SerialNo, DbType.AnsiString, size: 100);  // Updated: 50-100 chars
                 parameters.Add("@Priority", dto.Priority, DbType.AnsiStringFixedLength, size: 15);
                 parameters.Add("@AssignedTo", dto.AssignedTo, DbType.AnsiString, size: 50);
                 parameters.Add("@DueDate", dto.DueDate, DbType.DateTime);
-                parameters.Add("@ProblemNotes", dto.ProblemNotes, DbType.AnsiString, size: 500);
+                parameters.Add("@ProblemNotes", dto.ProblemNotes, DbType.AnsiString, size: 1000); // Updated: 1000+ chars
                 parameters.Add("@Approved", dto.Approved, DbType.Boolean);
                 parameters.Add("@Archive", dto.Archive, DbType.Boolean);
                 parameters.Add("@LastModifiedBy", dto.LastModifiedBy, DbType.AnsiString, size: 125);
@@ -397,7 +399,7 @@ namespace Technicians.Api.Repository
         }
 
         /// <summary>
-        /// Validates the SaveUpdateNewUnitTestDto
+        /// Validates the SaveUpdateNewUnitTestDto with correct field length constraints
         /// </summary>
         public List<string> ValidateSaveUpdateRequest(SaveUpdateNewUnitTestDto dto)
         {
@@ -421,6 +423,34 @@ namespace Technicians.Api.Repository
             if (string.IsNullOrWhiteSpace(dto.LastModifiedBy))
                 errors.Add("LastModifiedBy is required");
 
+            // Updated field length validations based on database schema
+            if (!string.IsNullOrEmpty(dto.Make) && dto.Make.Length > 100)
+                errors.Add("Make cannot exceed 100 characters");
+
+            if (!string.IsNullOrEmpty(dto.Model) && dto.Model.Length > 100)
+                errors.Add("Model cannot exceed 100 characters");
+
+            if (!string.IsNullOrEmpty(dto.KVA) && dto.KVA.Length > 3)
+                errors.Add("KVA cannot exceed 3 characters");
+
+            if (!string.IsNullOrEmpty(dto.Voltage) && dto.Voltage.Length > 50)
+                errors.Add("Voltage cannot exceed 50 characters");
+
+            if (!string.IsNullOrEmpty(dto.SerialNo) && dto.SerialNo.Length > 100)
+                errors.Add("SerialNo cannot exceed 100 characters");
+
+            if (!string.IsNullOrEmpty(dto.Priority) && dto.Priority.Length > 15)
+                errors.Add("Priority cannot exceed 15 characters");
+
+            if (!string.IsNullOrEmpty(dto.AssignedTo) && dto.AssignedTo.Length > 50)
+                errors.Add("AssignedTo cannot exceed 50 characters");
+
+            if (!string.IsNullOrEmpty(dto.ProblemNotes) && dto.ProblemNotes.Length > 1000)
+                errors.Add("ProblemNotes cannot exceed 1000 characters");
+
+            if (!string.IsNullOrEmpty(dto.LastModifiedBy) && dto.LastModifiedBy.Length > 125)
+                errors.Add("LastModifiedBy cannot exceed 125 characters");
+
             return errors;
         }
 
@@ -430,6 +460,7 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Updates unit test result using the SaveUpdateNewUnitResult stored procedure
+        /// Updated with correct field length constraints
         /// </summary>
         /// <param name="dto">The unit test result data to update</param>
         /// <returns>True if successful</returns>
@@ -443,9 +474,9 @@ namespace Technicians.Api.Repository
                 var parameters = new DynamicParameters();
                 parameters.Add("@RowIndex", dto.RowIndex, DbType.Int32);
                 parameters.Add("@Status", dto.Status, DbType.AnsiStringFixedLength, size: 5);
-                parameters.Add("@ResolveNotes", dto.ResolveNotes, DbType.AnsiString, size: 500);
+                parameters.Add("@ResolveNotes", dto.ResolveNotes, DbType.AnsiString, size: 1000); // Updated: 1000+ chars for Inspection Notes
                 parameters.Add("@TestProcedures", dto.TestProcedures, DbType.AnsiStringFixedLength, size: 1);
-                parameters.Add("@TestedBy", dto.TestedBy, DbType.AnsiString, size: 50);
+                parameters.Add("@TestedBy", dto.TestedBy, DbType.AnsiString, size: 100);          // Updated: 50-100 chars for Test Engineer
 
                 await connection.ExecuteAsync("SaveUpdateNewUnitResult", parameters, commandType: CommandType.StoredProcedure);
                 return true;
@@ -457,7 +488,7 @@ namespace Technicians.Api.Repository
         }
 
         /// <summary>
-        /// Validates the SaveUpdateNewUnitResultDto
+        /// Validates the SaveUpdateNewUnitResultDto with correct field length constraints
         /// </summary>
         /// <param name="dto">DTO to validate</param>
         /// <returns>List of validation errors</returns>
@@ -477,18 +508,80 @@ namespace Technicians.Api.Repository
             if (string.IsNullOrWhiteSpace(dto.Status))
                 errors.Add("Status is required");
 
-            // Validate field lengths based on stored procedure parameters
+            // Updated field length validations based on database schema
             if (!string.IsNullOrEmpty(dto.Status) && dto.Status.Length > 5)
                 errors.Add("Status cannot exceed 5 characters");
 
-            if (!string.IsNullOrEmpty(dto.ResolveNotes) && dto.ResolveNotes.Length > 500)
-                errors.Add("ResolveNotes cannot exceed 500 characters");
+            if (!string.IsNullOrEmpty(dto.ResolveNotes) && dto.ResolveNotes.Length > 1000)
+                errors.Add("ResolveNotes (Inspection Notes) cannot exceed 1000 characters");
 
             if (!string.IsNullOrEmpty(dto.TestProcedures) && dto.TestProcedures.Length > 1)
                 errors.Add("TestProcedures must be a single character");
 
-            if (!string.IsNullOrEmpty(dto.TestedBy) && dto.TestedBy.Length > 50)
-                errors.Add("TestedBy cannot exceed 50 characters");
+            if (!string.IsNullOrEmpty(dto.TestedBy) && dto.TestedBy.Length > 100)
+                errors.Add("TestedBy (Test Engineer) cannot exceed 100 characters");
+
+            return errors;
+        }
+
+        #endregion
+
+        #region DeleteNewUnitTest Functionality
+
+        /// <summary>
+        /// Deletes a unit test using the DeleteNewUnitTest stored procedure
+        /// </summary>
+        /// <param name="rowIndex">The RowIndex of the unit test to delete</param>
+        /// <returns>Response indicating success or failure with result message</returns>
+        public async Task<DeleteNewUnitTestResponse> DeleteNewUnitTestAsync(int rowIndex)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@RowIndex", rowIndex, DbType.Int32);
+
+                // Execute the stored procedure and get the result
+                var result = await connection.QuerySingleOrDefaultAsync<string>(
+                    "DeleteNewUnitTest", 
+                    parameters, 
+                    commandType: CommandType.StoredProcedure);
+
+                var response = new DeleteNewUnitTestResponse
+                {
+                    RowIndex = rowIndex,
+                    Result = result ?? "Operation completed"
+                };
+
+                // Determine success based on result message
+                response.Success = !string.IsNullOrEmpty(result) && 
+                                 result.Contains("Unit Deleted Successfully", StringComparison.OrdinalIgnoreCase);
+
+                return response;
+            }
+            catch (SqlException sqlEx)
+            {
+                throw new Exception($"Database error deleting unit test: {sqlEx.Message}", sqlEx);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error deleting unit test: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Validates the delete request
+        /// </summary>
+        /// <param name="rowIndex">RowIndex to validate</param>
+        /// <returns>List of validation errors</returns>
+        public List<string> ValidateDeleteRequest(int rowIndex)
+        {
+            var errors = new List<string>();
+
+            if (rowIndex <= 0)
+                errors.Add("RowIndex must be greater than 0");
 
             return errors;
         }
