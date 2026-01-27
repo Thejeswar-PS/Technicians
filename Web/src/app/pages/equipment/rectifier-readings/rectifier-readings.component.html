@@ -136,155 +136,187 @@
 
                 <div class="ups-section-content show">
                   <form class="ups-form" [formGroup]="visualMechanicalForm">
-                    <!-- Capacitors Table -->
-                    <div class="table-responsive mb-4">
-                      <table class="table table-bordered">
-                        <thead class="table-light">
-                          <tr>
-                            <th></th>
-                            <th>Make</th>
-                            <th>Quantity</th>
-                            <th>&lt; 7 Years</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr>
-                            <td class="fw-semibold">DC BUS</td>
-                            <td>
+                    <!-- Capacitors Section -->
+                    <div class="measurements-grid mb-4">
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-cpu text-primary"></i>
+                          <h6 class="mb-0">DC BUS Capacitor</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <div class="row g-3">
+                            <div class="col-12">
+                              <label class="form-label">Make:</label>
                               <select class="form-select" formControlName="dcBusManuf">
-                                <option value="">Select</option>
+                                <option value="">Select manufacturer</option>
                                 <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
                                   {{ manuf.label }}
                                 </option>
                               </select>
-                            </td>
-                            <td>
-                              <input type="number" class="form-control" formControlName="dcBusQuantity" />
-                            </td>
-                            <td>
+                            </div>
+                            <div class="col-6">
+                              <label class="form-label">Quantity:</label>
+                              <input type="number" class="form-control" formControlName="dcBusQuantity" placeholder="Enter quantity" />
+                            </div>
+                            <div class="col-6">
+                              <label class="form-label">&lt; 7 Years:</label>
                               <select class="form-select" formControlName="dcBusYears">
                                 <option value="P">Pass</option>
                                 <option value="R">Replace</option>
                               </select>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td class="fw-semibold">INPUT</td>
-                            <td>
-                              <select class="form-select" formControlName="inputManuf">
-                                <option value="">Select</option>
-                                <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
-                                  {{ manuf.label }}
-                                </option>
-                              </select>
-                            </td>
-                            <td>
-                              <input type="number" class="form-control" formControlName="inputQuantity" />
-                            </td>
-                            <td>
-                              <select class="form-select" formControlName="inputYears">
-                                <option value="P">Pass</option>
-                                <option value="R">Replace</option>
-                              </select>
-                            </td>
-                          </tr>
-                          <tr>
-                            <td class="fw-semibold">COMM</td>
-                            <td>
-                              <select class="form-select" formControlName="commManuf">
-                                <option value="">Select</option>
-                                <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
-                                  {{ manuf.label }}
-                                </option>
-                              </select>
-                            </td>
-                            <td>
-                              <input type="number" class="form-control" formControlName="commQuantity" />
-                            </td>
-                            <td>
-                              <select class="form-select" formControlName="commYears">
-                                <option value="P">Pass</option>
-                                <option value="R">Replace</option>
-                              </select>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <!-- Verification Checklist -->
-                    <div class="row g-3 mb-3">
-                      <div class="col-12">
-                        <div class="power-measurement-card">
-                          <div class="power-card-header">
-                            <i class="bi bi-list-check text-primary"></i>
-                            <h6 class="mb-0 fw-semibold">Verification Checklist</h6>
-                          </div>
-                          <div class="power-card-body">
-                            <div class="row g-3">
-                              <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-3">
-                                  <label class="form-label text-muted mb-0 text-nowrap">1. Current Limit Alarm:</label>
-                                  <select class="form-select power-select flex-grow-1" formControlName="currentLimitAlarm">
-                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-3">
-                                  <label class="form-label text-muted mb-0 text-nowrap">2. Hi Voltage Alarm:</label>
-                                  <select class="form-select power-select flex-grow-1" formControlName="hiVoltAlarm">
-                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-3">
-                                  <label class="form-label text-muted mb-0 text-nowrap">3. Shutdown Alarm:</label>
-                                  <select class="form-select power-select flex-grow-1" formControlName="shutdownAlarm">
-                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-3">
-                                  <label class="form-label text-muted mb-0 text-nowrap">4. Low Current Alarm:</label>
-                                  <select class="form-select power-select flex-grow-1" formControlName="lowCurrentAlarm">
-                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-3">
-                                  <label class="form-label text-muted mb-0 text-nowrap">5. Check and align load sharing:</label>
-                                  <select class="form-select power-select flex-grow-1" formControlName="loadSharing">
-                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
-                                  </select>
-                                </div>
-                              </div>
-
-                              <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-3">
-                                  <label class="form-label text-muted mb-0 text-nowrap">6. Perform Visual Inspection:</label>
-                                  <select class="form-select power-select flex-grow-1" formControlName="visualInspection">
-                                    <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
-                                  </select>
-                                </div>
-                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div class="col-12">
-                        <div class="form-floating">
-                          <textarea rows="3" class="form-control" formControlName="comments" id="vmComments" placeholder="Comments"></textarea>
-                          <label for="vmComments">Comments</label>
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-lightning text-warning"></i>
+                          <h6 class="mb-0">INPUT Capacitor</h6>
                         </div>
+                        <div class="measurement-content">
+                          <div class="row g-3">
+                            <div class="col-12">
+                              <label class="form-label">Make:</label>
+                              <select class="form-select" formControlName="inputManuf">
+                                <option value="">Select manufacturer</option>
+                                <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
+                                  {{ manuf.label }}
+                                </option>
+                              </select>
+                            </div>
+                            <div class="col-6">
+                              <label class="form-label">Quantity:</label>
+                              <input type="number" class="form-control" formControlName="inputQuantity" placeholder="Enter quantity" />
+                            </div>
+                            <div class="col-6">
+                              <label class="form-label">&lt; 7 Years:</label>
+                              <select class="form-select" formControlName="inputYears">
+                                <option value="P">Pass</option>
+                                <option value="R">Replace</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-diagram-3 text-success"></i>
+                          <h6 class="mb-0">COMM Capacitor</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <div class="row g-3">
+                            <div class="col-12">
+                              <label class="form-label">Make:</label>
+                              <select class="form-select" formControlName="commManuf">
+                                <option value="">Select manufacturer</option>
+                                <option *ngFor="let manuf of manufacturers" [value]="manuf.value">
+                                  {{ manuf.label }}
+                                </option>
+                              </select>
+                            </div>
+                            <div class="col-6">
+                              <label class="form-label">Quantity:</label>
+                              <input type="number" class="form-control" formControlName="commQuantity" placeholder="Enter quantity" />
+                            </div>
+                            <div class="col-6">
+                              <label class="form-label">&lt; 7 Years:</label>
+                              <select class="form-select" formControlName="commYears">
+                                <option value="P">Pass</option>
+                                <option value="R">Replace</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Verification Checklist -->
+                    <div class="measurements-grid mb-4">
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-exclamation-triangle text-warning"></i>
+                          <h6 class="mb-0">Current Limit Alarm</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <label class="form-label">Check alarm functionality:</label>
+                          <select class="form-select" formControlName="currentLimitAlarm">
+                            <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-arrow-up-circle text-danger"></i>
+                          <h6 class="mb-0">Hi Voltage Alarm</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <label class="form-label">Check alarm functionality:</label>
+                          <select class="form-select" formControlName="hiVoltAlarm">
+                            <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-power text-danger"></i>
+                          <h6 class="mb-0">Shutdown Alarm</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <label class="form-label">Check alarm functionality:</label>
+                          <select class="form-select" formControlName="shutdownAlarm">
+                            <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-arrow-down-circle text-info"></i>
+                          <h6 class="mb-0">Low Current Alarm</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <label class="form-label">Check alarm functionality:</label>
+                          <select class="form-select" formControlName="lowCurrentAlarm">
+                            <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-distribute-vertical text-success"></i>
+                          <h6 class="mb-0">Load Sharing</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <label class="form-label">Check and align load sharing:</label>
+                          <select class="form-select" formControlName="loadSharing">
+                            <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div class="measurement-card">
+                        <div class="measurement-header">
+                          <i class="bi bi-eye text-primary"></i>
+                          <h6 class="mb-0">Visual Inspection</h6>
+                        </div>
+                        <div class="measurement-content">
+                          <label class="form-label">Perform visual inspection:</label>
+                          <select class="form-select" formControlName="visualInspection">
+                            <option *ngFor="let opt of passFailOptions" [value]="opt.value">{{ opt.label }}</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="form-group-modern">
+                      <div class="form-floating">
+                        <textarea rows="3" class="form-control" formControlName="comments" id="vmComments" placeholder="Comments"></textarea>
+                        <label for="vmComments">Visual and Mechanical Verification Comments</label>
                       </div>
                     </div>
                   </form>

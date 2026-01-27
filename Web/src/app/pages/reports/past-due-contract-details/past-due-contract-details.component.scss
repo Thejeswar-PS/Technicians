@@ -13,6 +13,27 @@
     max-width: none;
   }
 
+  // Sortable header styling
+  .header-cell.cursor-pointer {
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      background-color: rgba(102, 126, 234, 0.1);
+    }
+
+    .header-content {
+      i {
+        opacity: 0.6;
+        transition: opacity 0.2s;
+      }
+
+      &:hover i {
+        opacity: 1;
+      }
+    }
+  }
+
   .past-due-loading {
     position: fixed;
     top: 0;

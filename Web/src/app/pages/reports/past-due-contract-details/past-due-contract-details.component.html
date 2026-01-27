@@ -97,7 +97,7 @@
           </div>
           <div class="chart-container">
             <div *ngIf="currentChartType === 'bar'" class="interactive-bar-chart-container">
-              <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart" [dataLabels]="barChartOptions.dataLabels" [plotOptions]="barChartOptions.plotOptions" [xaxis]="barChartOptions.xaxis" [yaxis]="barChartOptions.yaxis" [colors]="barChartOptions.colors" [tooltip]="barChartOptions.tooltip" [grid]="barChartOptions.grid" [theme]="barChartOptions.theme"></apx-chart>
+              <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart" [dataLabels]="barChartOptions.dataLabels" [plotOptions]="barChartOptions.plotOptions" [xaxis]="barChartOptions.xaxis" [yaxis]="barChartOptions.yaxis" [colors]="barChartOptions.colors" [tooltip]="barChartOptions.tooltip" [legend]="barChartOptions.legend" [grid]="barChartOptions.grid" [theme]="barChartOptions.theme"></apx-chart>
             </div>
             <div *ngIf="currentChartType === 'pie'" class="interactive-pie-chart-container">
               <apx-chart [series]="donutChartOptions.series" [chart]="donutChartOptions.chart" [labels]="donutChartOptions.labels" [colors]="donutChartOptions.colors" [legend]="donutChartOptions.legend" [tooltip]="donutChartOptions.tooltip" [plotOptions]="donutChartOptions.plotOptions" [dataLabels]="donutChartOptions.dataLabels" [responsive]="donutChartOptions.responsive"></apx-chart>
@@ -118,44 +118,46 @@
           <table class="table modern-table">
             <thead class="table-header">
               <tr>
-                <th class="header-cell">
-                  <div class="header-content">
+                <th class="header-cell cursor-pointer" (click)="sortBy('siteId')">
+                  <div class="header-content d-flex justify-content-between align-items-center">
                     <span class="header-text">Site ID</span>
+                    <i class="bi" [ngClass]="getSortIcon('siteId')"></i>
                   </div>
                 </th>
-                <th class="header-cell">
-                  <div class="header-content">
+                <th class="header-cell cursor-pointer" (click)="sortBy('siteName')">
+                  <div class="header-content d-flex justify-content-between align-items-center">
                     <span class="header-text">Site Name</span>
+                    <i class="bi" [ngClass]="getSortIcon('siteName')"></i>
                   </div>
                 </th>
-                <th class="header-cell">
-                  <div class="header-content">
+                <th class="header-cell cursor-pointer" (click)="sortBy('accountManager')">
+                  <div class="header-content d-flex justify-content-between align-items-center">
                     <span class="header-text">Account Manager</span>
+                    <i class="bi" [ngClass]="getSortIcon('accountManager')"></i>
                   </div>
                 </th>
-                <th class="header-cell">
-                  <div class="header-content">
+                <th class="header-cell cursor-pointer" (click)="sortBy('contractNo')">
+                  <div class="header-content d-flex justify-content-between align-items-center">
                     <span class="header-text">Contract No</span>
+                    <i class="bi" [ngClass]="getSortIcon('contractNo')"></i>
                   </div>
                 </th>
-                <th class="header-cell">
-                  <div class="header-content">
+                <th class="header-cell cursor-pointer" (click)="sortBy('contractType')">
+                  <div class="header-content d-flex justify-content-between align-items-center">
                     <span class="header-text">Contract Type</span>
+                    <i class="bi" [ngClass]="getSortIcon('contractType')"></i>
                   </div>
                 </th>
-                <th class="header-cell">
-                  <div class="header-content">
+                <th class="header-cell cursor-pointer" (click)="sortBy('invoiceDate')">
+                  <div class="header-content d-flex justify-content-between align-items-center">
                     <span class="header-text">Invoice Date</span>
+                    <i class="bi" [ngClass]="getSortIcon('invoiceDate')"></i>
                   </div>
                 </th>
-                <th class="header-cell">
-                  <div class="header-content">
-                    <span class="header-text">Mailing Date</span>
-                  </div>
-                </th>
-                <th class="header-cell">
-                  <div class="header-content">
+                <th class="header-cell cursor-pointer" (click)="sortBy('amount')">
+                  <div class="header-content d-flex justify-content-between align-items-center">
                     <span class="header-text">Amount</span>
+                    <i class="bi" [ngClass]="getSortIcon('amount')"></i>
                   </div>
                 </th>
               </tr>
@@ -169,11 +171,10 @@
                 <td class="fw-bold text-primary">{{ row.contractNo || 'N/A' }}</td>
                 <td>{{ row.contractType || 'N/A' }}</td>
                 <td>{{ row.invoiceDate | date: 'dd-MMM-yyyy' }}</td>
-                <td>{{ row.mailingDate | date: 'dd-MMM-yyyy' }}</td>
-                <td class="text-end fw-bold text-danger">{{ row.amount | currency }}</td>
+                <td class="text-end fw-bold text-success">{{ row.amount | currency }}</td>
               </tr>
               <tr *ngIf="pastDueRows.length === 0">
-                <td colspan="8" class="text-center text-muted py-4">No records found</td>
+                <td colspan="7" class="text-center text-muted py-4">No records found</td>
               </tr>
             </tbody>
           </table>

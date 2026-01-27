@@ -503,8 +503,8 @@ namespace Technicians.Api.Controllers
 
             var result = await _repository.GetSccInfoAsync(callNbr, sccId);
 
-            if (result == null)
-                return NotFound("No SCC data found");
+            //if (result == null)
+            //    return NotFound("No SCC data found");
 
             return Ok(result);
         }
