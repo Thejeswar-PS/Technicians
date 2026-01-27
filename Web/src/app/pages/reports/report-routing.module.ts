@@ -15,6 +15,8 @@ import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/d
 import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
 import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
+import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
+import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 
@@ -87,6 +89,18 @@ const routes: Routes = [
   {
     path: 'emergency-jobs',
     component: EmergencyJobsComponent
+  },
+  {
+    path: 'ups-test-status',
+    component: UPSTestStatusComponent
+  },
+  {
+    path: 'new-unit-test',
+    component: NewUnitTestComponent
+  },
+  {
+    path: 'new-unit-test/:rowIndex',
+    component: NewUnitTestComponent
   },
   {
     path: 'contract-details-report',

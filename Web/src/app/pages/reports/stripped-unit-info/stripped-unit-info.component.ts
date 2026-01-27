@@ -193,14 +193,10 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
         // If coming from Add Parts, enable field editing and store unit context
         if (fromAddParts) {
           this.fromAddParts = true;
+          this.isEditMode = true; // Automatically enable edit mode when coming from Add Parts
           
           // Store unit details for context display
           this.unitContext = unitDetails;
-          
-          // Show success message with unit context
-          if (unitDetails.make && unitDetails.model) {
-            this.successMessage = `Add Parts for: ${unitDetails.make} ${unitDetails.model} (S/N: ${unitDetails.serialNo || 'N/A'}, KVA: ${unitDetails.kva || 'N/A'})`;
-          }
           
           // Auto-show parts section when coming from Add Parts
           setTimeout(() => {
@@ -211,8 +207,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
         this.startNewUnit();
       } else if (params['fromAddParts'] === 'true') {
         // Handle case where user wants to add parts without a specific unit
-        this.successMessage = 'You can add parts information independently using the form below.';
-        
         // Auto-show parts section when coming from Add Parts without specific unit
         setTimeout(() => {
           this.showPartsSection = true;
@@ -315,28 +309,57 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   private loadUnitToForm(): void {
     if (!this.currentUnit) return;
 
+    const trimmedStatus = this.currentUnit.status ? this.currentUnit.status.trim() : '';
+    const trimmedVoltage = this.currentUnit.voltage ? this.currentUnit.voltage.trim() : '';
+    
     this.unitInfoForm.patchValue({
       rowIndex: this.currentUnit.rowIndex,
       make: this.currentUnit.make,
       model: this.currentUnit.model,
       serialNo: this.currentUnit.serialNo,
       kva: this.currentUnit.kva,
-      voltage: this.currentUnit.voltage,
+      voltage: trimmedVoltage,
       poNumber: this.currentUnit.poNumber,
       shippingPO: this.currentUnit.shippingPO,
       unitCost: this.currentUnit.unitCost,
       shipCost: this.currentUnit.shipCost,
       strippedBy: this.currentUnit.strippedBy,
       putAwayBy: this.currentUnit.putAwayBy,
-      status: this.currentUnit.status,
       partsLocation: this.currentUnit.partsLocation,
       createdOn: this.currentUnit.createdOn ? new Date(this.currentUnit.createdOn).toLocaleString() : '',
       lastModifiedOn: this.currentUnit.lastModifiedOn ? new Date(this.currentUnit.lastModifiedOn).toLocaleString() : '',
       stripExists: this.currentUnit.stripExists
     });
     
+    // Set status separately with setValue to force update
+    const statusControl = this.unitInfoForm.get('status');
+    statusControl?.setValue(trimmedStatus);
+    statusControl?.markAsTouched();
+    statusControl?.updateValueAndValidity();
+    
+    // Force update the status field
+    this.cdr.detectChanges();
+    
+    // Double-check the status value after change detection
+    setTimeout(() => {
+      // Force another change detection
+      this.cdr.detectChanges();
+    }, 100);
+    
     // Set the currentStatusValue for the select binding
     this.currentStatusValue = this.currentUnit.status || '';
+    
+    // Set proper form control states based on edit mode
+    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
+    if (this.isEditMode || this.isNewUnit || this.fromAddParts) {
+      editableFields.forEach(field => {
+        this.unitInfoForm.get(field)?.enable();
+      });
+    } else {
+      editableFields.forEach(field => {
+        this.unitInfoForm.get(field)?.disable();
+      });
+    }
   }
 
   private markFormGroupTouched(formGroup: FormGroup) {
@@ -362,6 +385,17 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
 
   isFieldEditable(): boolean {
     return this.isEditMode || this.isNewUnit || this.fromAddParts;
+  }
+
+  // Check if a specific field should be readonly regardless of edit mode
+  isFieldAlwaysReadonly(fieldName: string): boolean {
+    const alwaysReadonlyFields = ['poNumber', 'shippingPO', 'unitCost', 'shipCost', 'rowIndex', 'createdOn', 'lastModifiedOn', 'stripExists'];
+    return alwaysReadonlyFields.includes(fieldName);
+  }
+
+  // Combined method for field readonly state
+  isFieldReadonly(fieldName: string): boolean {
+    return this.isFieldAlwaysReadonly(fieldName) || !this.isFieldEditable();
   }
 
   isFieldInvalid(fieldName: string): boolean {
@@ -392,13 +426,31 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   onEdit(): void {
     this.isEditMode = true;
     this.errorMessage = '';
+    
+    // Enable editable form controls
+    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
+    editableFields.forEach(field => {
+      this.unitInfoForm.get(field)?.enable();
+    });
   }
 
   onCancel(): void {
+    if (this.fromAddParts) {
+      // If coming from Add Parts, navigate back to the previous page
+      this.router.navigate(['/reports/stripped-units-status']);
+      return;
+    }
+    
     this.isEditMode = false;
     this.isNewUnit = false;
     this.loadUnitToForm();
     this.errorMessage = '';
+    
+    // Disable editable form controls when not in edit mode
+    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
+    editableFields.forEach(field => {
+      this.unitInfoForm.get(field)?.disable();
+    });
   }
 
   onBack(): void {
@@ -414,6 +466,12 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.isSaving = true;
     this.errorMessage = '';
 
+    // Enable all controls temporarily to get their values
+    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
+    editableFields.forEach(field => {
+      this.unitInfoForm.get(field)?.enable();
+    });
+    
     const formData = this.unitInfoForm.getRawValue();
     const currentUser = this.authService.currentUserValue;
     
@@ -421,21 +479,70 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
       ...formData,
       rowIndex: this.isNewUnit ? 0 : formData.rowIndex,
       lastModifiedBy: currentUser?.username || 'System',
-      lastModifiedOn: new Date()
+      lastModifiedOn: new Date(),
+      status: this.currentStatusValue || formData.status, // Use the currentStatusValue if available
+      // Ensure required fields are not empty
+      make: formData.make || '',
+      serialNo: formData.serialNo || '',
+      model: formData.model || '',
+      kva: formData.kva || '',
+      voltage: formData.voltage || '',
+      strippedBy: formData.strippedBy || '',
+      putAwayBy: formData.putAwayBy || '',
+      partsLocation: formData.partsLocation || ''
     };
+
+    // Validate required fields before sending
+    if (!unitData.make?.trim()) {
+      this.toastr.error('Make is required');
+      return;
+    }
+    if (!unitData.serialNo?.trim()) {
+      this.toastr.error('Serial Number is required');
+      return;
+    }
+    if (!unitData.status?.trim()) {
+      this.toastr.error('Status is required');
+      return;
+    }
+    if (!unitData.lastModifiedBy?.trim()) {
+      this.toastr.error('User information is required');
+      return;
+    }
 
     const apiCall = this.isNewUnit 
       ? this.reportService.saveUpdateStrippingUnit(unitData)
       : this.reportService.updateStrippingUnitByRowIndex(unitData.rowIndex, unitData);
 
     const subscription = apiCall
-      .pipe(finalize(() => this.isSaving = false))
+      .pipe(finalize(() => {
+        this.isSaving = false;
+        // Restore disabled state for fields if not in edit mode
+        if (!this.isEditMode && !this.isNewUnit) {
+          editableFields.forEach(field => {
+            this.unitInfoForm.get(field)?.disable();
+          });
+        }
+      }))
       .subscribe({
         next: (response: any) => {
           if (response.success) {
             this.successMessage = response.message || (this.isNewUnit ? 'Unit created successfully' : 'Unit updated successfully');
             this.toastr.success(this.successMessage);
-            this.isEditMode = false;
+            
+            // Don't disable edit mode if coming from Add Parts - keep it editable
+            if (!this.fromAddParts) {
+              this.isEditMode = false;
+              
+              // Disable editable fields after successful save (only if not from Add Parts)
+              const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
+              editableFields.forEach(field => {
+                this.unitInfoForm.get(field)?.disable();
+              });
+            } else {
+              // If from Add Parts, show a message encouraging parts addition
+              this.successMessage += ' - You can now add parts information below.';
+            }
             
             if (this.isNewUnit && response.rowIndex) {
               // Load the newly created unit
@@ -460,12 +567,12 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   }
 
   getStatusOptions() {
-    // Return status options - you may need to import these from your model
+    // Return status options matching actual database values
     return [
-      { value: 'INP', label: 'In Progress' },
-      { value: 'COM', label: 'Complete' },
-      { value: 'DEF', label: 'Defective' },
-      { value: 'WOS', label: 'Waiting On Someone else' }
+      { value: 'Inp', label: 'In Progress' },
+      { value: 'COM', label: 'Completed' },
+      { value: 'NCR', label: 'Needs Components for Repair' },
+      { value: 'MPJ', label: 'Missing Parts from Job' }
     ];
   }
 
@@ -473,9 +580,57 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     const selectedValue = event.target.value;
     this.currentStatusValue = selectedValue;
     
-    // Update the form control as well
-    this.unitInfoForm.patchValue({ status: selectedValue });
+    // Update the form control directly
+    this.unitInfoForm.get('status')?.setValue(selectedValue);
+    this.unitInfoForm.get('status')?.updateValueAndValidity();
     
+    // Mark the field as touched for validation
+    this.unitInfoForm.get('status')?.markAsTouched();
+    
+    // Force change detection
+    this.cdr.detectChanges();
+  }
+
+  getCurrentStatusLabel(): string {
+    const currentValue = this.unitInfoForm.get('status')?.value;
+    const option = this.getStatusOptions().find(opt => opt.value === currentValue);
+    
+    // If no match found, default to In Progress
+    if (!option) {
+      // Set default status to In Progress if no value or no match
+      if (!currentValue) {
+        this.unitInfoForm.get('status')?.setValue('Inp');
+        return 'In Progress';
+      }
+      return `DB Value: "${currentValue}"`;
+    }
+    
+    return option ? option.label : 'In Progress';
+  }
+
+  updateStatus(value: string): void {
+    // Update the reactive form control
+    const statusControl = this.unitInfoForm.get('status');
+    statusControl?.setValue(value);
+    statusControl?.updateValueAndValidity();
+    statusControl?.markAsTouched();
+    
+    // Update component property
+    this.currentStatusValue = value;
+  }
+
+  onStatusChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    const value = target.value;
+    
+    // Update the reactive form control
+    const statusControl = this.unitInfoForm.get('status');
+    statusControl?.setValue(value);
+    statusControl?.updateValueAndValidity();
+    statusControl?.markAsTouched();
+    
+    // Update component property
+    this.currentStatusValue = value;
   }
 
   private loadStripPartCodes(): void {
@@ -594,11 +749,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     });
     
     // Debug: Log form data to see what we're getting
-    console.log('🔍 Form Data:', formData);
-    console.log('🔍 Username:', username);
-    console.log('🔍 Form Valid:', this.strippedPartsForm.valid);
-    console.log('🔍 Form Errors:', this.getFormValidationErrors());
-    
     // Check if form is valid
     if (!this.strippedPartsForm.valid) {
       this.toastr.error('Please fill in all required fields');
@@ -636,9 +786,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
       
       // Allow Master Row Index = 0 for direct part additions
       // This will be treated as independent part entries
-      if (masterRowIndex === 0) {
-        console.log('Adding part with Master Row Index = 0 (direct addition)');
-      }
     }
     
     this.isSavingPart = true;
@@ -654,9 +801,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
       StripNo: parseInt(formData.stripNo) || 1,
       LastModifiedBy: username
     };
-    
-    // Debug: Log payload to see what we're sending
-    console.log('📤 API Payload:', payload);
     
     // Final validation of payload
     const requiredFields = ['DCGPartGroup', 'DCGPartNo', 'PartDesc', 'LastModifiedBy'];

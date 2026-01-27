@@ -1,425 +1,645 @@
-<div class="card">
-  <div class="card-header border-0 pt-5">
-    <div class="d-flex align-items-center">
-      <button 
-        type="button" 
-        class="btn btn-sm btn-light-primary me-3"
-        (click)="onBack()"
-        title="Back to Stripped Units Status">
-        <i class="fa fa-arrow-left me-1"></i> Back
-      </button>
-      <h3 class="card-title align-items-start flex-column mb-0">
-        <span class="card-label fw-bold fs-3 mb-1">Stripped Unit Information</span>
-        <span class="text-muted fs-7">View and manage individual stripped unit details</span>
-      </h3>
+<!-- Stripped Unit Information Page -->
+<div class="container-fluid stripped-unit-container">
+
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center stripped-unit-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
     </div>
   </div>
 
-  <div class="card-body py-3">
-    <!-- Error Messages -->
-    <div class="row mb-4" *ngIf="errorMessage">
-      <div class="col-12">
-        <div class="alert alert-danger" *ngIf="errorMessage" role="alert">
-          <i class="fa fa-exclamation-circle me-2"></i>{{ errorMessage }}
+  <!-- Header Section -->
+  <div class="stripped-unit-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary stripped-unit-header__back"
+      (click)="onBack()"
+      [disabled]="isLoading"
+      title="Back to Stripped Units Status">
+      <i class="fa fa-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="stripped-unit-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="fa fa-cube me-2"></i>
+        Stripped Unit Information
+      </h2>
+    </div>
+    
+    <!-- Unit Index Badge -->
+    <div class="unit-badge-compact" *ngIf="!isLoading && currentUnit && !isNewUnit">
+      <small class="text-danger fw-bold">
+        <i class="fa fa-hashtag me-1"></i>Unit:
+      </small>
+      <span class="unit-value">{{ currentUnit.rowIndex }}</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+
+    <!-- Stripped Unit Form Section -->
+    <div class="card shadow-sm stripped-main-card">
+      
+      <!-- Status Messages -->
+      <div class="message-section" *ngIf="errorMessage || successMessage">
+        <!-- SUCCESS -->
+        <div *ngIf="successMessage && !isSaving" class="modern-alert success">
+          <div class="alert-icon">
+            <i class="fa fa-check-circle"></i>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ successMessage }}</span>
+          </div>
+        </div>
+
+        <!-- ERROR -->
+        <div *ngIf="errorMessage && !isSaving" class="modern-alert error">
+          <div class="alert-icon">
+            <i class="fa fa-exclamation-triangle"></i>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ errorMessage }}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Unit Information Form -->
-    <div class="row">
-      <div class="col-lg-6">
-        <div class="card card-flush">
-          <div class="card-header">
-            <h4 class="card-title">
-              <span *ngIf="isNewUnit">New Stripped Unit</span>
-              <span *ngIf="!isNewUnit && currentUnit">Unit Information - Row Index: {{ currentUnit.rowIndex }}</span>
-              <span *ngIf="!isNewUnit && !currentUnit">Unit Information</span>
-            </h4>
-            <div class="card-toolbar" *ngIf="currentUnit && !isNewUnit">
-              <button 
-                type="button" 
-                class="btn btn-sm btn-light-primary me-2"
-                (click)="onSave()"
-                [disabled]="isLoading || isSaving || isDeleting">
-                <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-                <i class="fa fa-save me-1" *ngIf="!isSaving"></i> Update
-              </button>
-              <button 
-                type="button" 
-                class="btn btn-sm btn-light-danger me-2"
-                (click)="onDelete()"
-                [disabled]="isLoading || isSaving || isDeleting">
-                <span *ngIf="isDeleting" class="spinner-border spinner-border-sm me-2"></span>
-                <i class="fa fa-trash me-1" *ngIf="!isDeleting"></i> Delete
-              </button>
-            </div>
+      <!-- Form Content -->
+      <div class="form-content">
+        
+        <!-- Loading overlay -->
+        <div *ngIf="isSaving || isDeleting" class="loading-overlay">
+          <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <span class="loading-text" *ngIf="isSaving">Saving unit information...</span>
+            <span class="loading-text" *ngIf="isDeleting">Deleting unit...</span>
           </div>
-          <div class="card-body">
-            <form [formGroup]="unitInfoForm" (ngSubmit)="onSave()">
-              <div class="row g-4">
-                <!-- Basic Information -->
-                <div class="col-12">
-                  <h5 class="text-primary mb-3">Basic Information</h5>
-                </div>
+        </div>
 
-                <div class="col-md-6">
-                  <label class="form-label">Make</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="make"
-                    [readonly]="!isFieldEditable()"
-                    [class.is-invalid]="isFieldInvalid('make')"
-                    placeholder="Enter make">
-                  <div class="invalid-feedback" *ngIf="isFieldInvalid('make')">
-                    {{ getFieldError('make') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Model</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="model"
-                    [readonly]="!isFieldEditable()"
-                    [class.is-invalid]="isFieldInvalid('model')"
-                    placeholder="Enter model">
-                  <div class="invalid-feedback" *ngIf="isFieldInvalid('model')">
-                    {{ getFieldError('model') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Serial Number</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="serialNo"
-                    [readonly]="!isFieldEditable()"
-                    [class.is-invalid]="isFieldInvalid('serialNo')"
-                    placeholder="Enter serial number">
-                  <div class="invalid-feedback" *ngIf="isFieldInvalid('serialNo')">
-                    {{ getFieldError('serialNo') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">KVA</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="kva"
-                    [readonly]="!isFieldEditable()"
-                    placeholder="Enter KVA">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Voltage</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="voltage"
-                    [readonly]="!isFieldEditable()"
-                    placeholder="Enter voltage">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Status</label>
-                  <select 
-                    class="form-select"
-                    [value]="currentStatusValue"
-                    (change)="onStatusSelectChange($event)"
-                    [class.is-invalid]="isFieldInvalid('status')">
-                    <option value="">Select Status</option>
-                    <option *ngFor="let status of getStatusOptions()" 
-                            [value]="status.value"
-                            [selected]="status.value === currentStatusValue">
-                      {{ status.label }}
-                    </option>
-                  </select>
-                  
-
-
-                  <div class="invalid-feedback" *ngIf="isFieldInvalid('status')">
-                    {{ getFieldError('status') }}
-                  </div>
-                  
-
-                </div>
-
-                <!-- Purchase Order Information -->
-                <div class="col-12 mt-6">
-                  <h5 class="text-primary mb-3">Purchase Order Information</h5>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">PO Number</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="poNumber"
-                    readonly
-                    placeholder="PO Number (Read-only)">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Shipping PO</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="shippingPO"
-                    readonly
-                    placeholder="Shipping PO (Read-only)">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Unit Cost</label>
-                  <input 
-                    type="number" 
-                    class="form-control"
-                    formControlName="unitCost"
-                    readonly
-                    placeholder="Unit Cost (Read-only)"
-                    step="0.01"
-                    min="0">
-                  <div class="invalid-feedback" *ngIf="isFieldInvalid('unitCost')">
-                    {{ getFieldError('unitCost') }}
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Shipping Cost</label>
-                  <input 
-                    type="number" 
-                    class="form-control"
-                    formControlName="shipCost"
-                    readonly
-                    placeholder="Shipping Cost (Read-only)"
-                    step="0.01"
-                    min="0">
-                </div>
-
-                <!-- Personnel Information -->
-                <div class="col-12 mt-6">
-                  <h5 class="text-primary mb-3">Personnel Information</h5>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Stripped By</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="strippedBy"
-                    [readonly]="!isFieldEditable()"
-                    placeholder="Enter stripped by">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Put Away By</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="putAwayBy"
-                    [readonly]="!isFieldEditable()"
-                    placeholder="Enter put away by">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Stripped Parts Location</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="partsLocation"
-                    [readonly]="!isFieldEditable()"
-                    placeholder="Enter stripped parts location">
-                </div>
-
-
-
-
-
-
-
-                <!-- Action Buttons for New Units Only -->
-                <div class="col-12 mt-6" *ngIf="isNewUnit && (!isLoading || isSaving)">
-                  <div class="d-flex justify-content-end gap-3">
-                    <button 
-                      type="button" 
-                      class="btn btn-light-secondary"
-                      (click)="onCancel()"
-                      [disabled]="isSaving">
-                      <i class="fa fa-times me-1"></i> Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      class="btn btn-primary"
-                      [disabled]="unitInfoForm.invalid || isSaving">
-                      <span *ngIf="isSaving" class="spinner-border spinner-border-sm me-2"></span>
-                      <i class="fa fa-save me-1" *ngIf="!isSaving"></i>
-                      Create Unit
-                    </button>
-                  </div>
-                </div>
+        <!-- Form Sections Grid -->
+        <div class="form-sections" *ngIf="!isSaving && !isDeleting">
+          
+          <!-- Unit Information Section -->
+          <div class="modern-card-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fa fa-info-circle"></i>
               </div>
-            </form>
-
-            <!-- Loading State -->
-            <div class="d-flex justify-content-center py-10" *ngIf="isLoading">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-              </div>
+              <h3 class="section-title">Unit Information</h3>
             </div>
+
+            <form [formGroup]="unitInfoForm" class="modern-form" (ngSubmit)="onSave()">
+              <div class="form-grid">
+                
+                <!-- Make -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-industry field-icon"></i>
+                      <span>Make</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="make"
+                      [class.error]="isFieldInvalid('make')"
+                      placeholder="Enter make">
+                    <div class="field-error" *ngIf="isFieldInvalid('make')">
+                      {{ getFieldError('make') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Model -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-tag field-icon"></i>
+                      <span>Model</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="model"
+                      [class.error]="isFieldInvalid('model')"
+                      placeholder="Enter model">
+                    <div class="field-error" *ngIf="isFieldInvalid('model')">
+                      {{ getFieldError('model') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Serial Number -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-barcode field-icon"></i>
+                      <span>Serial Number</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="serialNo"
+                      [class.error]="isFieldInvalid('serialNo')"
+                      placeholder="Enter serial number">
+                    <div class="field-error" *ngIf="isFieldInvalid('serialNo')">
+                      {{ getFieldError('serialNo') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- KVA -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-bolt field-icon"></i>
+                      <span>KVA</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="kva"
+                      placeholder="Enter KVA">
+                  </div>
+                </div>
+
+                <!-- Voltage -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-flash field-icon"></i>
+                      <span>Voltage</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="voltage"
+                      placeholder="Enter voltage">
+                  </div>
+                </div>
+
+                <!-- Status -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-flag field-icon"></i>
+                      <span>Status</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <select 
+                      class="modern-select"
+                      [value]="unitInfoForm.get('status')?.value || ''"
+                      (change)="onStatusChange($event)"
+                      [disabled]="!isFieldEditable()"
+                      #statusSelect
+                      style="pointer-events: auto !important; cursor: pointer !important;">
+                      <option *ngFor="let status of getStatusOptions()" 
+                              [value]="status.value"
+                              [selected]="status.value === (unitInfoForm.get('status')?.value || '')">
+                        {{ status.label }}
+                      </option>
+                    </select>
+                    <!-- Hidden form control to maintain reactive form -->
+                    <input type="hidden" formControlName="status">
+                    <div class="field-error" *ngIf="isFieldInvalid('status')">
+                      {{ getFieldError('status') }}
+                    </div>
+                  </div>"
+                </div>
+                
+              </div>
+
+              <!-- Purchase Order Information Section -->
+              <div class="section-header" style="margin-top: 2rem;">
+                <div class="section-icon">
+                  <i class="fa fa-file-text"></i>
+                </div>
+                <h4 class="section-title">Purchase Order Information</h4>
+              </div>
+
+              <div class="form-grid">
+                
+                <!-- PO Number -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-hashtag field-icon"></i>
+                      <span>PO Number</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="poNumber"
+                      readonly
+                      placeholder="PO Number (Read-only)">
+                  </div>
+                </div>
+
+                <!-- Shipping PO -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-truck field-icon"></i>
+                      <span>Shipping PO</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="shippingPO"
+                      readonly
+                      placeholder="Shipping PO (Read-only)">
+                  </div>
+                </div>
+
+                <!-- Unit Cost -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-dollar-sign field-icon"></i>
+                      <span>Unit Cost</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="number" 
+                      class="modern-input"
+                      formControlName="unitCost"
+                      readonly
+                      placeholder="Unit Cost (Read-only)"
+                      step="0.01"
+                      min="0">
+                    <div class="field-error" *ngIf="isFieldInvalid('unitCost')">
+                      {{ getFieldError('unitCost') }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Shipping Cost -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-shipping-fast field-icon"></i>
+                      <span>Shipping Cost</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="number" 
+                      class="modern-input"
+                      formControlName="shipCost"
+                      readonly
+                      placeholder="Shipping Cost (Read-only)"
+                      step="0.01"
+                      min="0">
+                  </div>
+                </div>
+                
+              </div>
+
+              <!-- Personnel Information Section -->
+              <div class="section-header" style="margin-top: 2rem;">
+                <div class="section-icon">
+                  <i class="fa fa-users"></i>
+                </div>
+                <h4 class="section-title">Personnel Information</h4>
+              </div>
+
+              <div class="form-grid">
+                
+                <!-- Stripped By -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-user field-icon"></i>
+                      <span>Stripped By</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="strippedBy"
+                      placeholder="Enter stripped by">
+                  </div>
+                </div>
+
+                <!-- Put Away By -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-user-check field-icon"></i>
+                      <span>Put Away By</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="putAwayBy"
+                      placeholder="Enter put away by">
+                  </div>
+                </div>
+
+                <!-- Parts Location -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-map-marker-alt field-icon"></i>
+                      <span>Stripped Parts Location</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="partsLocation"
+                      placeholder="Enter stripped parts location">
+                  </div>
+                </div>
+                
+              </div>
+
+              <!-- Action Buttons for Existing Units -->
+              <div class="modern-button-group" *ngIf="currentUnit && !isNewUnit">
+                <!-- View Mode Buttons (only show if not coming from Add Parts) -->
+                <div *ngIf="!isEditMode && !fromAddParts" class="d-flex gap-3 justify-content-center">
+                  <button 
+                    type="button" 
+                    class="modern-btn primary"
+                    (click)="onEdit()"
+                    [disabled]="isSaving || isDeleting">
+                    <i class="fa fa-edit btn-icon"></i>
+                    <span>Edit Unit</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="modern-btn danger"
+                    (click)="onDelete()"
+                    [disabled]="isSaving || isDeleting">
+                    <span class="btn-spinner" *ngIf="isDeleting"></span>
+                    <i class="fa fa-trash btn-icon" *ngIf="!isDeleting"></i>
+                    <span>{{ isDeleting ? 'Deleting...' : 'Delete Unit' }}</span>
+                  </button>
+                </div>
+                
+                <!-- Edit Mode Buttons (show when editing or coming from Add Parts) -->
+                <div *ngIf="isEditMode || fromAddParts" class="d-flex gap-3 justify-content-center">
+                  <button 
+                    type="submit" 
+                    class="modern-btn success"
+                    [disabled]="unitInfoForm.invalid || isSaving || isDeleting">
+                    <span class="btn-spinner" *ngIf="isSaving"></span>
+                    <i class="fa fa-save btn-icon" *ngIf="!isSaving"></i>
+                    <span>{{ isSaving ? 'Updating...' : 'Update' }}</span>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="modern-btn danger"
+                    (click)="onDelete()"
+                    [disabled]="isSaving || isDeleting">
+                    <span class="btn-spinner" *ngIf="isDeleting"></span>
+                    <i class="fa fa-trash btn-icon" *ngIf="!isDeleting"></i>
+                    <span>{{ isDeleting ? 'Deleting...' : 'Delete' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Action Buttons for New Units -->
+              <div class="modern-button-group" *ngIf="isNewUnit">
+                <button 
+                  type="button" 
+                  class="modern-btn secondary"
+                  (click)="onCancel()"
+                  [disabled]="isSaving">
+                  <i class="fa fa-times btn-icon"></i>
+                  <span>Cancel</span>
+                </button>
+                <button 
+                  type="submit" 
+                  class="modern-btn success"
+                  [disabled]="unitInfoForm.invalid || isSaving">
+                  <span class="btn-spinner" *ngIf="isSaving"></span>
+                  <i class="fa fa-save btn-icon" *ngIf="!isSaving"></i>
+                  <span>{{ isSaving ? 'Creating...' : 'Create Unit' }}</span>
+                </button>
+              </div>
+
+            </form>
 
             <!-- No Unit State -->
-            <div class="text-center py-10" *ngIf="!isLoading && !currentUnit && !isNewUnit">
-              <i class="fa fa-search fs-2x text-muted mb-3"></i>
-              <h5 class="text-muted">No unit selected</h5>
-              <p class="text-muted">Use the search form above to find a specific unit or create a new one.</p>
+            <div class="empty-state" *ngIf="!currentUnit && !isNewUnit">
+              <div class="empty-icon">
+                <i class="fa fa-search"></i>
+              </div>
+              <h5 class="empty-title">No unit selected</h5>
+              <p class="empty-description">Use the search form above to find a specific unit or create a new one.</p>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Add Parts from Stripped Unit Form -->
-      <div class="col-lg-6">
-        <div class="card card-flush">
-          <div class="card-header">
-            <h4 class="card-title d-flex align-items-center">
-              <i class="fa fa-cogs me-2"></i>
-              Add Parts from Stripped Unit
-            </h4>
-            <div class="text-muted fs-7 mt-1">
-              This section can be used independently to add parts information
-            </div>
           </div>
           
-          <div class="card-body">
-            <!-- Add Part Form - Always Visible -->
-            <form [formGroup]="strippedPartsForm" (ngSubmit)="onSaveStrippedPart()">
-              <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label required">DCG Part Group</label>
-                  <select 
-                    class="form-select"
-                    formControlName="dcgPartGroup"
-                    [class.is-invalid]="isPartsFieldInvalid('dcgPartGroup')"
-                    [disabled]="isLoadingStripPartCodes">
-                    <option value="">
-                      <span *ngIf="isLoadingStripPartCodes">Loading...</span>
-                      <span *ngIf="!isLoadingStripPartCodes">Select DCG Part Group</span>
-                    </option>
-                    <option *ngFor="let partCode of stripPartCodes" [value]="partCode.code">
-                      {{ partCode.name }}
-                    </option>
-                  </select>
-                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('dcgPartGroup')">
-                    DCG Part Group is required
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label required">DCG Part No</label>
-                  <input 
-                    type="text" 
-                    class="form-control"
-                    formControlName="dcgPartNo"
-                    [class.is-invalid]="isPartsFieldInvalid('dcgPartNo')"
-                    placeholder="Enter DCG part number">
-                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('dcgPartNo')">
-                    DCG Part Number is required
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label required">Number Stripped</label>
-                  <input 
-                    type="number" 
-                    class="form-control"
-                    formControlName="stripNo"
-                    [class.is-invalid]="isPartsFieldInvalid('stripNo')"
-                    placeholder="Enter strip number"
-                    min="1">
-                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('stripNo')">
-                    Strip Number is required and must be at least 1
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label required">Keep or Throw</label>
-                  <select 
-                    class="form-select"
-                    formControlName="keepThrow"
-                    [class.is-invalid]="isPartsFieldInvalid('keepThrow')">
-                    <option value="">Select Action</option>
-                    <option *ngFor="let option of getKeepThrowOptions()" [value]="option.value">
-                      {{ option.label }}
-                    </option>
-                  </select>
-                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('keepThrow')">
-                    Please select Keep or Throw
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label required">Part Description</label>
-                  <textarea 
-                    class="form-control"
-                    formControlName="partDesc"
-                    [class.is-invalid]="isPartsFieldInvalid('partDesc')"
-                    placeholder="Enter part description"
-                    rows="3">
-                  </textarea>
-                  <div class="invalid-feedback" *ngIf="isPartsFieldInvalid('partDesc')">
-                    Part Description is required
-                  </div>
-                </div>
-
-                <!-- Hidden fields for system data -->
-                <input type="hidden" formControlName="masterRowIndex">
-                <input type="hidden" formControlName="rowIndex">
-                <input type="hidden" formControlName="createdBy">
-                <input type="hidden" formControlName="lastModifiedBy">
-                <input type="hidden" formControlName="createdOn">
-                <input type="hidden" formControlName="lastModifiedOn">
-
-                <!-- Action Buttons -->
-                <div class="col-12 mt-4">
-                  <div class="d-flex justify-content-center gap-3">
-                    <button 
-                      type="submit" 
-                      class="btn btn-primary px-4"
-                      [disabled]="isSavingPart || strippedPartsForm.invalid"
-                      title="Add or Update stripped part">
-                      <span *ngIf="isSavingPart" class="spinner-border spinner-border-sm me-2"></span>
-                      <i class="fa fa-save me-1" *ngIf="!isSavingPart"></i>
-                      {{ isSavingPart ? 'Saving...' : 'Save Part' }}
-                    </button>
-                    <button 
-                      type="button" 
-                      class="btn btn-light-secondary px-4"
-                      (click)="onClearPartForm()"
-                      title="Clear all form fields">
-                      <i class="fa fa-eraser me-1"></i> Clear
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Disabled state message for new units -->
-                <div class="col-12 mt-3" *ngIf="isNewUnit">
-                  <div class="alert alert-info">
-                    <i class="fa fa-info-circle me-2"></i>
-                    Save the unit information first to add stripped parts.
-                  </div>
-                </div>
-
+          <!-- Add Parts Section -->
+          <div class="modern-card-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fa fa-cogs"></i>
               </div>
+              <h3 class="section-title">Add Parts from Stripped Unit</h3>
+            </div>
+            <p class="text-muted mb-4">This section can be used independently to add parts information</p>
+
+            <form [formGroup]="strippedPartsForm" class="modern-form" (ngSubmit)="onSaveStrippedPart()">
+              <div class="form-grid">
+                
+                <!-- DCG Part Group -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-layer-group field-icon"></i>
+                      <span>DCG Part Group</span>
+                      <span class="required-indicator">*</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <select 
+                      class="modern-select"
+                      formControlName="dcgPartGroup"
+                      [class.error]="isPartsFieldInvalid('dcgPartGroup')"
+                      [disabled]="isLoadingStripPartCodes">
+                      <option value="">
+                        <span *ngIf="isLoadingStripPartCodes">Loading...</span>
+                        <span *ngIf="!isLoadingStripPartCodes">Select DCG Part Group</span>
+                      </option>
+                      <option *ngFor="let partCode of stripPartCodes" [value]="partCode.code">
+                        {{ partCode.name }}
+                      </option>
+                    </select>
+                    <div class="field-error" *ngIf="isPartsFieldInvalid('dcgPartGroup')">
+                      DCG Part Group is required
+                    </div>
+                  </div>
+                </div>
+
+                <!-- DCG Part No -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-code field-icon"></i>
+                      <span>DCG Part No</span>
+                      <span class="required-indicator">*</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="dcgPartNo"
+                      [class.error]="isPartsFieldInvalid('dcgPartNo')"
+                      placeholder="Enter DCG part number">
+                    <div class="field-error" *ngIf="isPartsFieldInvalid('dcgPartNo')">
+                      DCG Part Number is required
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Number Stripped -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-sort-numeric-up field-icon"></i>
+                      <span>Number Stripped</span>
+                      <span class="required-indicator">*</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="number" 
+                      class="modern-input"
+                      formControlName="stripNo"
+                      [class.error]="isPartsFieldInvalid('stripNo')"
+                      placeholder="Enter strip number"
+                      min="1">
+                    <div class="field-error" *ngIf="isPartsFieldInvalid('stripNo')">
+                      Strip Number is required and must be at least 1
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Keep or Throw -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-tasks field-icon"></i>
+                      <span>Keep or Throw</span>
+                      <span class="required-indicator">*</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <select 
+                      class="modern-select"
+                      formControlName="keepThrow"
+                      [class.error]="isPartsFieldInvalid('keepThrow')">
+                      <option value="">Select Action</option>
+                      <option *ngFor="let option of getKeepThrowOptions()" [value]="option.value">
+                        {{ option.label }}
+                      </option>
+                    </select>
+                    <div class="field-error" *ngIf="isPartsFieldInvalid('keepThrow')">
+                      Please select Keep or Throw
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Part Description -->
+                <div class="form-field" style="grid-column: 1 / -1;">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-align-left field-icon"></i>
+                      <span>Part Description</span>
+                      <span class="required-indicator">*</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <textarea 
+                      class="modern-textarea"
+                      formControlName="partDesc"
+                      [class.error]="isPartsFieldInvalid('partDesc')"
+                      placeholder="Enter part description"
+                      rows="3">
+                    </textarea>
+                    <div class="field-error" *ngIf="isPartsFieldInvalid('partDesc')">
+                      Part Description is required
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+
+              <!-- Hidden fields for system data -->
+              <input type="hidden" formControlName="masterRowIndex">
+              <input type="hidden" formControlName="rowIndex">
+              <input type="hidden" formControlName="createdBy">
+              <input type="hidden" formControlName="lastModifiedBy">
+              <input type="hidden" formControlName="createdOn">
+              <input type="hidden" formControlName="lastModifiedOn">
+
+              <!-- Parts Action Buttons -->
+              <div class="modern-button-group">
+                <button 
+                  type="button" 
+                  class="modern-btn secondary"
+                  (click)="onClearPartForm()"
+                  title="Clear all form fields">
+                  <i class="fa fa-eraser btn-icon"></i>
+                  <span>Clear</span>
+                </button>
+                <button 
+                  type="submit" 
+                  class="modern-btn success"
+                  [disabled]="isSavingPart || strippedPartsForm.invalid"
+                  title="Add or Update stripped part">
+                  <span class="btn-spinner" *ngIf="isSavingPart"></span>
+                  <i class="fa fa-save btn-icon" *ngIf="!isSavingPart"></i>
+                  <span>{{ isSavingPart ? 'Saving...' : 'Save Part' }}</span>
+                </button>
+              </div>
+
+              <!-- Disabled state message for new units -->
+              <div class="modern-alert error" *ngIf="isNewUnit">
+                <div class="alert-icon">
+                  <i class="fa fa-info-circle"></i>
+                </div>
+                <div class="alert-content">
+                  <span class="alert-message">Save the unit information first to add stripped parts.</span>
+                </div>
+              </div>
+
             </form>
           </div>
+
         </div>
+
       </div>
     </div>
-
 
   </div>
 </div>

@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { Job } from '../model/job-model';
 import { IReportTeam } from '../model/trending-report-team.models';
@@ -28,7 +28,6 @@ import {
 } from '../model/part-return-status.model';
 import { 
   StrippedUnitsStatusDto,
-  MakeCountDto,
   StrippedUnitsStatusRequest,
   StrippedUnitsStatusResponse,
   StrippedUnitsStatusApiResponse,
@@ -85,6 +84,24 @@ import {
   PartsSearchDataDto,
   PartsSearchDataResponse
 } from '../model/parts-search.model';
+import {
+  UPSTestStatusDto,
+  UPSTestStatusRequest,
+  UPSTestStatusResponse,
+  UPSTestStatusApiResponse,
+  UPSTestMetadataResponse,
+  MakeCountDto,
+  StatusSummaryItem
+} from '../model/ups-test-status.model';
+import {
+  NewUniTestRequest,
+  NewUniTestResponse,
+  NewUniTestApiResponse,
+  NewUniTestSummaryResponse,
+  UnitTestExistsResponse,
+  MoveUnitToStrippingDto,
+  MoveUnitToStrippingApiResponse
+} from '../model/new-unit-test.model';
 
 @Injectable({
   providedIn: 'root'
@@ -92,6 +109,11 @@ import {
 export class ReportService {
 
   constructor(private http : HttpClient) { }
+
+  private handleError(error: any): Observable<never> {
+    console.error('An error occurred:', error);
+    return throwError(() => error);
+  }
 
   private headers = new HttpHeaders({
     'Access-Control-Allow-Origin': '*'
@@ -853,7 +875,35 @@ export class ReportService {
    * Saves or updates a stripping unit
    */
   saveUpdateStrippingUnit(dto: StrippedUnitsStatusDto): Observable<{success: boolean; message: string; rowIndex?: number}> {
-    return this.http.post<{success: boolean; message: string; rowIndex?: number}>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippingUnit`, dto, {
+    // Transform camelCase to PascalCase for backend compatibility
+    const transformedDto = {
+      Make: dto.make?.trim() || '',
+      Model: dto.model?.trim() || '',
+      SerialNo: dto.serialNo?.trim() || '',
+      Kva: dto.kva?.trim() || '',
+      Voltage: dto.voltage?.trim() || '',
+      PoNumber: dto.poNumber?.trim() || '',
+      ShippingPO: dto.shippingPO?.trim() || '',
+      UnitCost: dto.unitCost || 0,
+      ShipCost: dto.shipCost || 0,
+      StrippedBy: dto.strippedBy?.trim() || '',
+      PutAwayBy: dto.putAwayBy?.trim() || '',
+      Status: dto.status?.trim() || '',
+      CreatedOn: dto.createdOn ? new Date(dto.createdOn).toISOString() : new Date().toISOString(),
+      RowIndex: dto.rowIndex || 0,
+      StripExists: dto.stripExists || 0,
+      PartsLocation: dto.partsLocation?.trim() || '',
+      LastModifiedBy: dto.lastModifiedBy?.trim() || '',
+      LastModifiedOn: dto.lastModifiedOn ? new Date(dto.lastModifiedOn).toISOString() : new Date().toISOString()
+    };
+
+    // Wrap the dto in the expected structure
+    const payload = { dto: transformedDto };
+    
+    // Debug: Log the payload to console
+    console.log('API Payload being sent:', JSON.stringify(payload, null, 2));
+    
+    return this.http.post<{success: boolean; message: string; rowIndex?: number}>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippingUnit`, payload, {
       headers: this.headers
     });
   }
@@ -862,7 +912,35 @@ export class ReportService {
    * Updates a stripping unit by RowIndex
    */
   updateStrippingUnitByRowIndex(rowIndex: number, dto: StrippedUnitsStatusDto): Observable<{success: boolean; message: string; rowIndex: number}> {
-    return this.http.put<{success: boolean; message: string; rowIndex: number}>(`${this.API}/StrippedUnitsStatus/UpdateStrippingUnit/${rowIndex}`, dto, {
+    // Transform camelCase to PascalCase for backend compatibility
+    const transformedDto = {
+      Make: dto.make?.trim() || '',
+      Model: dto.model?.trim() || '',
+      SerialNo: dto.serialNo?.trim() || '',
+      Kva: dto.kva?.trim() || '',
+      Voltage: dto.voltage?.trim() || '',
+      PoNumber: dto.poNumber?.trim() || '',
+      ShippingPO: dto.shippingPO?.trim() || '',
+      UnitCost: dto.unitCost || 0,
+      ShipCost: dto.shipCost || 0,
+      StrippedBy: dto.strippedBy?.trim() || '',
+      PutAwayBy: dto.putAwayBy?.trim() || '',
+      Status: dto.status?.trim() || '',
+      CreatedOn: dto.createdOn ? new Date(dto.createdOn).toISOString() : null,
+      RowIndex: dto.rowIndex || 0,
+      StripExists: dto.stripExists || 0,
+      PartsLocation: dto.partsLocation?.trim() || '',
+      LastModifiedBy: dto.lastModifiedBy?.trim() || '',
+      LastModifiedOn: dto.lastModifiedOn ? new Date(dto.lastModifiedOn).toISOString() : new Date().toISOString()
+    };
+
+    // Wrap the dto in the expected structure
+    const payload = { dto: transformedDto };
+    
+    // Debug: Log the payload to console
+    console.log('API Payload being sent:', JSON.stringify(payload, null, 2));
+    
+    return this.http.put<{success: boolean; message: string; rowIndex: number}>(`${this.API}/StrippedUnitsStatus/UpdateStrippingUnit/${rowIndex}`, payload, {
       headers: this.headers
     });
   }
@@ -897,13 +975,15 @@ export class ReportService {
   }
 
   /**
-   * Deletes a stripped part from unit
-   * Note: This endpoint may need to be added to the backend if not already available
+   * Deletes a stripped part from unit using the new backend API
+   * Calls: DELETE /api/StrippedUnitsStatus/DeleteStrippedPartsInUnit/{masterRowIndex}/{rowIndex}
    */
   deleteStrippedPartInUnit(masterRowIndex: number, rowIndex: number): Observable<StrippedPartsInUnitApiResponse> {
-    return this.http.delete<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/DeleteStrippedPartInUnit/${masterRowIndex}/${rowIndex}`, {
+    return this.http.delete<StrippedPartsInUnitApiResponse>(`${this.API}/StrippedUnitsStatus/DeleteStrippedPartsInUnit/${masterRowIndex}/${rowIndex}`, {
       headers: this.headers
-    });
+    }).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -1150,5 +1230,118 @@ export class ReportService {
     return this.http.get<EmergencyJobsResponseDto>(`${this.API}/EmergencyJobs`, {
       headers: this.headers
     });
+  }
+
+  // ========== UPS Test Status API Methods ==========
+
+  /**
+   * Get UPS test status data with filtering options
+   */
+  getUPSTestStatus(request: UPSTestStatusRequest): Observable<UPSTestStatusApiResponse> {
+    const params = new HttpParams()
+      .set('assignedTo', request.assignedTo || 'All')
+      .set('status', request.status || 'All')
+      .set('priority', request.priority || 'All')
+      .set('archive', request.archive.toString());
+
+    return this.http.get<UPSTestStatusApiResponse>(`${this.API}/UPSTestStatus`, {
+      params,
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get UPS test status data using POST method (for complex filtering if needed)
+   */
+  postUPSTestStatus(request: UPSTestStatusRequest): Observable<UPSTestStatusApiResponse> {
+    return this.http.post<UPSTestStatusApiResponse>(`${this.API}/UPSTestStatus`, request, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get UPS test metadata including technicians, status summary, and dropdown data
+   */
+  getUPSTestMetadata(archive: boolean = false): Observable<UPSTestMetadataResponse> {
+    const params = new HttpParams().set('archive', archive.toString());
+    
+    return this.http.get<UPSTestMetadataResponse>(`${this.API}/UPSTestStatus/metadata`, {
+      params,
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // New Unit Test Methods
+  /**
+   * Get new unit test list data
+   * @param rowIndex Row index to filter by (0 returns all records ordered by LastModifiedOn)
+   * @returns New unit test data using existing UPSTestStatusDto
+   */
+  getNewUniTestList(rowIndex: number = 0): Observable<NewUniTestApiResponse> {
+    const params = new HttpParams().set('rowIndex', rowIndex.toString());
+
+    return this.http.get<NewUniTestApiResponse>(`${this.API}/NewUniTest`, {
+      params,
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get a specific unit test by row index
+   * @param rowIndex The row index to retrieve
+   * @returns Single UPSTestStatusDto record or null if not found
+   */
+  getNewUniTestByRowIndex(rowIndex: number): Observable<{ success: boolean; data: UPSTestStatusDto; message?: string; error?: string }> {
+    return this.http.get<{ success: boolean; data: UPSTestStatusDto; message?: string; error?: string }>(`${this.API}/NewUniTest/${rowIndex}`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get summary statistics and metadata for the new unit tests
+   * @returns Summary statistics including counts by status, make, etc.
+   */
+  getNewUniTestSummary(): Observable<NewUniTestSummaryResponse> {
+    return this.http.get<NewUniTestSummaryResponse>(`${this.API}/NewUniTest/summary`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Check if a unit test exists for the given row index
+   * @param rowIndex The row index to check
+   * @returns Whether the unit test exists
+   */
+  checkNewUnitTestExists(rowIndex: number): Observable<UnitTestExistsResponse> {
+    return this.http.get<UnitTestExistsResponse>(`${this.API}/NewUniTest/exists/${rowIndex}`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Move a unit to stripping
+   * @param dto The unit data to move to stripping
+   * @returns Response indicating success or failure
+   */
+  moveUnitToStripping(dto: MoveUnitToStrippingDto): Observable<MoveUnitToStrippingApiResponse> {
+    return this.http.post<MoveUnitToStrippingApiResponse>(`${this.API}/NewUniTest/move-to-stripping`, dto, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
   }
 }

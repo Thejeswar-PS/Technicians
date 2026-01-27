@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -25,6 +25,8 @@ import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { SharedModule } from '../../components/shared/shared.module';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
+import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
+import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 
 @NgModule({
   declarations: [
@@ -44,7 +46,9 @@ import { PastDueContractDetailsComponent } from './past-due-contract-details/pas
     AccMgrPerformanceReportComponent,
     EmergencyJobsComponent,
     ContractDetailsReportComponent,
-    PastDueContractDetailsComponent
+    PastDueContractDetailsComponent,
+    UPSTestStatusComponent,
+    NewUnitTestComponent
   ],
   imports: [
     CommonModule,
@@ -56,6 +60,7 @@ import { PastDueContractDetailsComponent } from './past-due-contract-details/pas
     NgApexchartsModule,
 
     SharedModule
-  ]
+  ],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA]
 })
 export class ReportsModule { }

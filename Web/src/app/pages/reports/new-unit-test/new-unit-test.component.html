@@ -1,0 +1,604 @@
+<!-- New Unit Test Page -->
+<div class="container-fluid new-unit-test-container">
+
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center new-unit-test-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="new-unit-test-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary new-unit-test-header__back"
+      (click)="onBack()"
+      [disabled]="isLoading"
+      title="Back to New Unit Test List">
+      <i class="fa fa-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="new-unit-test-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="fa fa-clipboard-check me-2"></i>
+        New Unit Test
+      </h2>
+    </div>
+    
+    <!-- Unit Index Badge -->
+    <div class="unit-badge-compact" *ngIf="!isLoading && (selectedUnit?.rowIndex || currentRowIndex)">
+      <small class="text-danger fw-bold">
+        <i class="fa fa-hashtag me-1"></i>Unit:
+      </small>
+      <span class="unit-value">{{ selectedUnit?.rowIndex || currentRowIndex }}</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+
+    <!-- New Unit Test Form Section -->
+    <div class="card shadow-sm new-unit-test-main-card">
+      
+      <!-- Status Messages -->
+      <div class="message-section" *ngIf="errorMessage">
+        <!-- ERROR -->
+        <div *ngIf="errorMessage && !savingUnit" class="modern-alert error">
+          <div class="alert-icon">
+            <i class="fa fa-exclamation-triangle"></i>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ errorMessage }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Content -->
+      <div class="form-content">
+        
+        <!-- Loading overlay -->
+        <div *ngIf="savingUnit || updatingResult" class="loading-overlay">
+          <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <span class="loading-text" *ngIf="savingUnit">Saving unit test information...</span>
+            <span class="loading-text" *ngIf="updatingResult">Updating test results...</span>
+          </div>
+        </div>
+
+        <!-- Form Sections Grid -->
+        <div class="form-sections" *ngIf="!savingUnit && !updatingResult">
+          
+          <!-- UPS Unit Testing Info Section (Left Column) -->
+          <div class="modern-card-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fa fa-microchip"></i>
+              </div>
+              <h3 class="section-title">UPS Unit Testing Info</h3>
+            </div>
+
+            <form [formGroup]="editForm" class="modern-form" *ngIf="editForm">
+              <div class="form-grid">
+                
+                <!-- Make -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-industry field-icon"></i>
+                      <span>Make</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="make"
+                      placeholder="Enter make">
+                  </div>
+                </div>
+
+                <!-- Model -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-tag field-icon"></i>
+                      <span>Model</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="model"
+                      placeholder="Enter model">
+                  </div>
+                </div>
+
+                <!-- Serial Number -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-barcode field-icon"></i>
+                      <span>Serial No</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="serialNo"
+                      placeholder="Enter serial number">
+                  </div>
+                </div>
+
+                <!-- KVA -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-bolt field-icon"></i>
+                      <span>KVA</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="kva"
+                      placeholder="Enter KVA">
+                  </div>
+                </div>
+
+                <!-- Voltage -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-flash field-icon"></i>
+                      <span>Voltage</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="voltage"
+                      placeholder="Enter voltage">
+                  </div>
+                </div>
+
+                <!-- PO Number -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-hashtag field-icon"></i>
+                      <span>PO Number</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="poNumber"
+                      placeholder="Enter PO number"
+                      [readonly]="isLoadedFromApi">
+                  </div>
+                </div>
+
+                <!-- Unit Cost -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-dollar-sign field-icon"></i>
+                      <span>Unit Cost</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="number" 
+                      class="modern-input"
+                      formControlName="unitCost"
+                      placeholder="Enter unit cost"
+                      step="0.01"
+                      min="0"
+                      [readonly]="isLoadedFromApi">
+                  </div>
+                </div>
+
+                <!-- Shipping PO -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-truck field-icon"></i>
+                      <span>Shipping PO</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="shippingPO"
+                      placeholder="Enter shipping PO"
+                      [readonly]="isLoadedFromApi">
+                  </div>
+                </div>
+
+                <!-- Shipping Cost -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-shipping-fast field-icon"></i>
+                      <span>Shipping Cost</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="number" 
+                      class="modern-input"
+                      formControlName="shipCost"
+                      placeholder="Enter shipping cost"
+                      step="0.01"
+                      min="0"
+                      [readonly]="isLoadedFromApi">
+                  </div>
+                </div>
+
+                <!-- Priority -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-exclamation-triangle field-icon"></i>
+                      <span>Priority</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <select 
+                      class="modern-select"
+                      formControlName="priority">
+                      <option value="High">High</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Low">Low</option>
+                      <option value="At Convenience">At Convenience</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Assigned To -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-user field-icon"></i>
+                      <span>Assigned To</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <select 
+                      class="modern-select"
+                      formControlName="assignedTo">
+                      <option value="">Please Select</option>
+                      <ng-container *ngFor="let tech of technicianOptions">
+                        <option [value]="tech.value" *ngIf="tech.value !== 'All'">
+                          {{ tech.label }}
+                        </option>
+                      </ng-container>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Due Date -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-calendar field-icon"></i>
+                      <span>Due Date</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="date" 
+                      class="modern-input"
+                      formControlName="dueDate">
+                  </div>
+                </div>
+
+                <!-- Deficiency Notes -->
+                <div class="form-field" style="grid-column: 1 / -1;">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-clipboard-list field-icon"></i>
+                      <span>Deficiency Notes</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <textarea 
+                      class="modern-textarea"
+                      formControlName="deficiencyNotes"
+                      placeholder="Enter deficiency notes and observations"
+                      rows="4">
+                    </textarea>
+                  </div>
+                </div>
+
+                <!-- Action Checkboxes -->
+                <div class="form-field" style="grid-column: 1 / -1;">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-check-square field-icon"></i>
+                      <span>Actions</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <div class="checkbox-group">
+                      <div class="modern-checkbox">
+                        <input 
+                          type="checkbox" 
+                          id="approved"
+                          formControlName="approved"
+                          class="checkbox-input"
+                          (change)="onApprovedChange()">
+                        <label for="approved" class="checkbox-label">
+                          <span class="checkbox-custom"></span>
+                          <span class="checkbox-text">Approved</span>
+                        </label>
+                      </div>
+                      <div class="modern-checkbox">
+                        <input 
+                          type="checkbox" 
+                          id="moveToArchive"
+                          formControlName="moveToArchive"
+                          class="checkbox-input"
+                          (change)="onMoveToArchiveChange()">
+                        <label for="moveToArchive" class="checkbox-label">
+                          <span class="checkbox-custom"></span>
+                          <span class="checkbox-text">Move to Archive</span>
+                        </label>
+                      </div>
+                      <div class="modern-checkbox">
+                        <input 
+                          type="checkbox" 
+                          id="moveToStrip"
+                          formControlName="moveToStrip"
+                          class="checkbox-input"
+                          (change)="onMoveToStripChange()">
+                        <label for="moveToStrip" class="checkbox-label">
+                          <span class="checkbox-custom"></span>
+                          <span class="checkbox-text">Move to Strip</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+              </div>
+
+              <!-- Buttons for Direct Access (New Unit Creation) -->
+              <div class="modern-button-group" *ngIf="!selectedUnit">
+                <button 
+                  type="button" 
+                  class="modern-btn secondary"
+                  (click)="clearAllData()"
+                  title="Clear all form fields">
+                  <i class="fa fa-eraser btn-icon"></i>
+                  <span>Clear</span>
+                </button>
+                <button 
+                  type="submit" 
+                  class="modern-btn success"
+                  [disabled]="editForm.invalid || savingUnit"
+                  title="Add new unit">
+                  <span class="btn-spinner" *ngIf="savingUnit"></span>
+                  <i class="fa fa-plus btn-icon" *ngIf="!savingUnit"></i>
+                  <span>{{ savingUnit ? 'Adding...' : 'Add' }}</span>
+                </button>
+              </div>
+
+            </form>
+
+            <!-- Action buttons for loaded units -->
+            <div class="form-actions" *ngIf="selectedUnit">
+              <button 
+                type="button" 
+                class="modern-btn success"
+                [disabled]="savingUnit"
+                (click)="onUpdateUnit()">
+                <span class="btn-spinner" *ngIf="savingUnit"></span>
+                <i class="fa fa-edit btn-icon" *ngIf="!savingUnit"></i>
+                <span>{{ savingUnit ? 'Updating...' : 'Update Unit' }}</span>
+              </button>
+              
+              <button 
+                type="button" 
+                class="modern-btn danger"
+                [disabled]="savingUnit"
+                (click)="onDeleteUnit()">
+                <i class="fa fa-trash btn-icon"></i>
+                <span>Delete Unit</span>
+              </button>
+              
+              <button 
+                type="button" 
+                class="modern-btn secondary"
+                (click)="clearAllData()">
+                <i class="fa fa-times btn-icon"></i>
+                <span>Clear</span>
+              </button>
+            </div>
+
+            <!-- No Unit State -->
+            <div class="empty-state" *ngIf="!selectedUnit && !isCreatingNew">
+              <div class="empty-icon">
+                <i class="fa fa-search"></i>
+              </div>
+              <h5 class="empty-title">No unit selected</h5>
+              <p class="empty-description">Select a unit from the list or create a new unit test entry.</p>
+            </div>
+
+          </div>
+          
+          <!-- Test Results Section (Right Column) -->
+          <div class="modern-card-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fa fa-chart-bar"></i>
+              </div>
+              <h3 class="section-title">Test Results</h3>
+            </div>
+
+            <form [formGroup]="resultForm" class="modern-form" *ngIf="resultForm">
+              <div class="form-grid">
+                
+                <!-- UPS Test Procedure -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-file-text field-icon"></i>
+                      <span>UPS Test Procedure</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <button 
+                      type="button"
+                      class="modern-btn primary"
+                      (click)="onViewTestProcedure()"
+                      style="width: 100%; justify-content: center;">
+                      <i class="fa fa-external-link-alt btn-icon"></i>
+                      <span>Click Here</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Followed Procedure -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-check-circle field-icon"></i>
+                      <span>Followed Procedure</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <select 
+                      class="modern-select"
+                      formControlName="followedProcedure">
+                      <option value="Yes">Yes</option>
+                      <option value="No">No</option>
+                      <option value="N/A">N/A</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Current Status -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-info-circle field-icon"></i>
+                      <span>Current Status</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <select 
+                      class="modern-select"
+                      formControlName="currentStatus">
+                      <option value="">Select Status</option>
+                      <option value="INP">In Progress</option>
+                      <option value="NCR">Needs Components for Repair</option>
+                      <option value="MPJ">Missing Parts from Job</option>
+                      <option value="COM">Completed</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Test Engineer -->
+                <div class="form-field">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-user-cog field-icon"></i>
+                      <span>Test Engineer</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <input 
+                      type="text" 
+                      class="modern-input"
+                      formControlName="testEngineer"
+                      placeholder="Enter test engineer name">
+                  </div>
+                </div>
+
+                <!-- Inspection Notes -->
+                <div class="form-field" style="grid-column: 1 / -1;">
+                  <div class="field-header">
+                    <label class="field-label">
+                      <i class="fa fa-clipboard-list field-icon"></i>
+                      <span>Inspection Notes</span>
+                    </label>
+                  </div>
+                  <div class="field-input">
+                    <textarea 
+                      class="modern-textarea"
+                      formControlName="inspectionNotes"
+                      placeholder="Enter inspection notes and test results"
+                      rows="6">
+                    </textarea>
+                  </div>
+                </div>
+                
+              </div>
+
+              <!-- Results Action Buttons -->
+              <div class="modern-button-group" *ngIf="showResultModal">
+                <button 
+                  type="button" 
+                  class="modern-btn secondary"
+                  (click)="onCancelResultUpdate()"
+                  [disabled]="updatingResult">
+                  <i class="fa fa-times btn-icon"></i>
+                  <span>Cancel</span>
+                </button>
+                <button 
+                  type="submit" 
+                  class="modern-btn success"
+                  [disabled]="resultForm.invalid || updatingResult"
+                  (click)="onSaveResults()">
+                  <span class="btn-spinner" *ngIf="updatingResult"></span>
+                  <i class="fa fa-save btn-icon" *ngIf="!updatingResult"></i>
+                  <span>{{ updatingResult ? 'Saving...' : 'Save Results' }}</span>
+                </button>
+              </div>
+
+            </form>
+
+            <!-- Update Results button for loaded units -->
+            <div class="form-actions" *ngIf="selectedUnit">
+              <button 
+                type="button" 
+                class="modern-btn success"
+                [disabled]="updatingResult"
+                (click)="onUpdateResults()">
+                <span class="btn-spinner" *ngIf="updatingResult"></span>
+                <i class="fa fa-edit btn-icon" *ngIf="!updatingResult"></i>
+                <span>{{ updatingResult ? 'Updating...' : 'Update Results' }}</span>
+              </button>
+            </div>
+
+            <!-- No Results State -->
+            <div class="empty-state" *ngIf="!selectedUnit">
+              <div class="empty-icon">
+                <i class="fa fa-chart-bar"></i>
+              </div>
+              <h5 class="empty-title">No test results</h5>
+              <p class="empty-description">Select a unit to view and edit test results.</p>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
