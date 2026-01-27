@@ -149,16 +149,6 @@
                   </th>
                   <th class="header-cell">
                     <div class="header-content">
-                      <span class="header-text">Customer</span>
-                    </div>
-                  </th>
-                  <th class="header-cell">
-                    <div class="header-content">
-                      <span class="header-text">Address</span>
-                    </div>
-                  </th>
-                  <th class="header-cell">
-                    <div class="header-content">
                       <span class="header-text">Notes</span>
                     </div>
                   </th>
@@ -173,10 +163,8 @@
                   </td>
                   <td>{{ row.techName || 'N/A' }}</td>
                   <td>{{ row.scheduledOn | date: 'dd-MMM-yyyy' }}</td>
-                  <td>{{ row.customerName || 'N/A' }}</td>
-                  <td>{{ row.address || 'N/A' }}</td>
                   <td class="notes-cell">
-                    <div class="notes-text">{{ row.techNotes || 'N/A' }}</div>
+                    <div class="notes-text" [innerHTML]="row.techNotes"></div>
                   </td>
                 </tr>
               </tbody>

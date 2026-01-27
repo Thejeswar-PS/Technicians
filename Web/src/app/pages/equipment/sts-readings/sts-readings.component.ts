@@ -116,6 +116,7 @@ export class StsReadingsComponent implements OnInit {
   ngOnInit(): void {
     this.loadRouteParams();
     this.initializeForms();
+    this.setupReconciliationValidation();
     this.setupFilterCurrentCheckboxHandlers();
     this.loadManufacturers();
     this.loadData();
@@ -137,8 +138,8 @@ export class StsReadingsComponent implements OnInit {
     this.equipmentForm = this.fb.group({
       manufacturer: ['', Validators.required],
       modelNo: [''],
-      serialNo: [''],
-      location: [''],
+      serialNo: ['', Validators.required],
+      location: ['', Validators.required],
       dateCode: [null],
       kva: [''],
       temperature: [''],
@@ -536,6 +537,50 @@ export class StsReadingsComponent implements OnInit {
     this.commentsForm = this.fb.group({
       comments5: ['']
     });
+  }
+
+  private setupReconciliationValidation(): void {
+    const pairs = [
+      { correct: 'recModelCorrect', actual: 'actModel' },
+      { correct: 'recSerialNoCorrect', actual: 'actSerialNo' },
+      { correct: 'kvaCorrect', actual: 'actKVA' },
+      { correct: 'totalEquipsCorrect', actual: 'actTotalEquips' }
+    ];
+
+    pairs.forEach(({ correct, actual }) => {
+      const correctCtrl = this.reconciliationForm?.get(correct);
+      if (!correctCtrl) return;
+
+      // Apply initial state
+      this.applyReconciliationRule(correct, actual, correctCtrl.value);
+
+      // React to future changes
+      correctCtrl.valueChanges.subscribe(value => {
+        this.applyReconciliationRule(correct, actual, value);
+      });
+    });
+  }
+
+  private applyReconciliationRule(correctControlName: string, actualControlName: string, currentValue?: any): void {
+    const actualCtrl = this.reconciliationForm?.get(actualControlName);
+    const correctCtrl = this.reconciliationForm?.get(correctControlName);
+    const correctValue = currentValue !== undefined ? currentValue : correctCtrl?.value;
+
+    if (!actualCtrl) {
+      return;
+    }
+
+    const isIncorrect = correctValue === 'NO';
+
+    if (isIncorrect) {
+      actualCtrl.enable({ emitEvent: false });
+      actualCtrl.setValidators([Validators.required]);
+    } else {
+      actualCtrl.disable({ emitEvent: false });
+      actualCtrl.clearValidators();
+    }
+
+    actualCtrl.updateValueAndValidity({ emitEvent: false });
   }
 
   private async loadManufacturers(): Promise<void> {
@@ -1528,6 +1573,16 @@ export class StsReadingsComponent implements OnInit {
       return alertAndFocus('Please enter the Model No', this.equipmentForm.get('modelNo'));
     }
 
+    const serialNo = (this.equipmentForm.get('serialNo')?.value || '').trim();
+    if (!serialNo) {
+      return alertAndFocus('Please enter the Serial No', this.equipmentForm.get('serialNo'));
+    }
+
+    const location = (this.equipmentForm.get('location')?.value || '').trim();
+    if (!location) {
+      return alertAndFocus('Please enter the Location', this.equipmentForm.get('location'));
+    }
+
     const dateCode = this.equipmentForm.get('dateCode')?.value;
     if (!dateCode) {
       return alertAndFocus('Please enter the DateCode.', this.equipmentForm.get('dateCode'));
@@ -1558,6 +1613,28 @@ export class StsReadingsComponent implements OnInit {
     const reconVerified = !!this.reconciliationForm.get('verified')?.value;
     if (!reconVerified) {
       return alertAndFocus('You must verify the Reconciliation section before saving.', this.reconciliationForm.get('verified'));
+    }
+
+    // Actual fields are required when marked as incorrect
+    const recModelCorrect = (this.reconciliationForm.get('recModelCorrect')?.value || '').toString();
+    const recSerialCorrect = (this.reconciliationForm.get('recSerialNoCorrect')?.value || '').toString();
+    const kvaCorrect = (this.reconciliationForm.get('kvaCorrect')?.value || '').toString();
+    const totalEquipsCorrect = (this.reconciliationForm.get('totalEquipsCorrect')?.value || '').toString();
+
+    if (recModelCorrect === 'NO' && !(this.reconciliationForm.get('actModel')?.value || '').toString().trim()) {
+      return alertAndFocus('Please enter Actual Model when Model is marked No.', this.reconciliationForm.get('actModel'));
+    }
+
+    if (recSerialCorrect === 'NO' && !(this.reconciliationForm.get('actSerialNo')?.value || '').toString().trim()) {
+      return alertAndFocus('Please enter Actual Serial No when Serial No is marked No.', this.reconciliationForm.get('actSerialNo'));
+    }
+
+    if (kvaCorrect === 'NO' && !(this.reconciliationForm.get('actKVA')?.value || '').toString().trim()) {
+      return alertAndFocus('Please enter Actual KVA when KVA is marked No.', this.reconciliationForm.get('actKVA'));
+    }
+
+    if (totalEquipsCorrect === 'NO' && !(this.reconciliationForm.get('actTotalEquips')?.value || '').toString().trim()) {
+      return alertAndFocus('Please enter Actual Total Equipments when Total Equipments is marked No.', this.reconciliationForm.get('actTotalEquips'));
     }
 
     // Input/Output selections must be chosen

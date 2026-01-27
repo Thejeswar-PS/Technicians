@@ -17,6 +17,8 @@ import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/a
 import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
 import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
 import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
+import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
+import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 
 const routes: Routes = [
   {
@@ -99,6 +101,14 @@ const routes: Routes = [
   {
     path: 'new-unit-test/:rowIndex',
     component: NewUnitTestComponent
+  },
+  {
+    path: 'contract-details-report',
+    component: ContractDetailsReportComponent
+  },
+  {
+    path: 'past-due-contract-details',
+    component: PastDueContractDetailsComponent
   }
 ];
 

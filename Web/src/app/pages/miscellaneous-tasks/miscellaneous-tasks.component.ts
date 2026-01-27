@@ -1,16 +1,16 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
+import { AuthService } from 'src/app/modules/auth/services/auth.service';
 
 interface SiteHistoryRow {
   jobNo: string;
   techName: string;
-  scheduledOn: string | null;
-  customerName: string;
-  address: string;
-  techNotes: string;
+  scheduledOn: Date | null;
+  techNotes: SafeHtml;
 }
 
 @Component({
@@ -54,10 +54,39 @@ export class MiscellaneousTasksComponent implements OnInit {
     { label: 'CLS', value: 'CLS' }
   ];
 
-  constructor(private reportService: ReportService, private router: Router) {}
+  constructor(
+    private reportService: ReportService,
+    private router: Router,
+    private authService: AuthService,
+    private route: ActivatedRoute,
+    private sanitizer: DomSanitizer
+  ) {}
 
   ngOnInit(): void {
     this.clearMessages();
+    this.filterTasksByRole();
+    this.checkQueryStringPrePopulation();
+  }
+
+  // Filter tasks based on user role (Technicians cannot see RDJ and RMT)
+  private filterTasksByRole(): void {
+    const userStatus = this.authService.currentUserValue?.status;
+    if (userStatus === 'Technician') {
+      this.taskOptions = this.taskOptions.filter(
+        option => option.value !== 'RDJ' && option.value !== 'RMT'
+      );
+    }
+  }
+
+  // Check for query string pre-population (CustNmbr parameter for PSH)
+  private checkQueryStringPrePopulation(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['CustNmbr']) {
+        this.siteID = params['CustNmbr'].replace(/&/g, ' ');
+        this.selectedTask = 'PSH';
+        setTimeout(() => this.viewSiteHistory(), 500);
+      }
+    });
   }
 
   onTaskChange(): void {
@@ -161,17 +190,43 @@ export class MiscellaneousTasksComponent implements OnInit {
   }
 
   private normalizeHistoryResponse(response: any): SiteHistoryRow[] {
-    if (!response.rows || !Array.isArray(response.rows)) {
+    // Handle both wrapped response (with .rows) and direct array
+    const rows = Array.isArray(response) ? response : (response.rows || []);
+    
+    if (!Array.isArray(rows)) {
       return [];
     }
-    return response.rows.map((row: any) => ({
-      jobNo: row?.jobNo || row?.callNbr || '',
-      techName: row?.techName || '',
-      scheduledOn: row?.scheduledOn || null,
-      customerName: row?.customerName || '',
-      address: row?.address || '',
-      techNotes: row?.techNotes || ''
-    }));
+
+    return rows.map((row: any) => {
+      // Parse scheduledOn - API returns either "MM/DD/YYYY" format or ISO date
+      let scheduledDate: Date | null = null;
+      const scheduledRaw = row?.scheduledOn || row?.strtDate;
+      
+      if (scheduledRaw) {
+        if (typeof scheduledRaw === 'string') {
+          // Handle "09/23/2025" format or ISO "2025-09-23T00:00:00"
+          if (scheduledRaw.includes('T')) {
+            // ISO format
+            scheduledDate = new Date(scheduledRaw);
+          } else if (scheduledRaw.match(/\d{2}\/\d{2}\/\d{4}/)) {
+            // MM/DD/YYYY format
+            const [month, day, year] = scheduledRaw.split('/');
+            scheduledDate = new Date(`${year}-${month}-${day}`);
+          }
+        }
+      }
+
+      // Sanitize HTML in techNotes
+      const htmlNotes = (row?.techNotes || '').trim();
+      const sanitizedHtml = this.sanitizer.sanitize(1, htmlNotes) || '';
+
+      return {
+        jobNo: (row?.jobNo || row?.callNbr || '').trim(),
+        techName: (row?.technician || row?.techName || '').trim(),
+        scheduledOn: scheduledDate,
+        techNotes: this.sanitizer.bypassSecurityTrustHtml(sanitizedHtml)
+      };
+    });
   }
 
   private showError(message: string): void {

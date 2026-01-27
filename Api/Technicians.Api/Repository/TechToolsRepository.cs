@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Hangfire.Storage.Monitoring;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
@@ -370,7 +371,6 @@ namespace Technicians.Api.Repository
         }
 
 
-
         public static class DateNormalizer
         {
             public static DateTime Normalize(DateTime value)
@@ -379,6 +379,122 @@ namespace Technicians.Api.Repository
                     ? new DateTime(1900, 1, 1)
                     : value;
             }
+        }
+
+        public async Task<List<SiteHistoryDto>> GetSiteHistoryAsync(string custNmbr)
+        {
+            using var connection = new SqlConnection(_gpconnectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CustNmbr", custNmbr, DbType.String);
+
+            await connection.OpenAsync();
+
+            var rows = await connection.QueryAsync(
+                "GetPrevSiteNotesByCustNmbr",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            var results = rows
+                .Select(r =>
+                {
+                    var row = (IDictionary<string, object>)r;
+
+                    return new SiteHistoryDto
+                    {
+                        JobNo = row.ContainsKey("Job No") ? row["Job No"]?.ToString() : null,
+                        Technician = row.ContainsKey("Technician") ? row["Technician"]?.ToString() : null,
+                        TechNotes = row.ContainsKey("TechNotes") ? row["TechNotes"]?.ToString() : null,
+                        Status = row.ContainsKey("Status") ? row["Status"]?.ToString() : null,
+                        ScheduledOn = row.ContainsKey("Scheduled On") ? row["Scheduled On"]?.ToString() : null,
+                        CustomerName = row.ContainsKey("Customer Name") ? row["Customer Name"]?.ToString() : null,
+                        Address = row.ContainsKey("Address") ? row["Address"]?.ToString() : null,
+                        StrtDate = row.ContainsKey("StrtDate") && row["StrtDate"] != null 
+                            ? Convert.ToDateTime(row["StrtDate"]) 
+                            : default(DateTime)
+                    };
+                })
+                .ToList();
+
+            return results;
+        }
+
+        public async Task<JobExistsDto?> CheckJobExistsAsync(string jobNo, string jobStatus)
+        {
+            var callNbr = AddPrefixToCallNbr(jobNo);
+
+            const string sql = @"
+            SELECT 
+                a.CallNbr,
+                ISNULL(c.Name, '') AS TechName
+            FROM SVC00200 a
+            JOIN aaETechJobExt b 
+                ON a.CallNbr = b.CallNbr 
+               AND a.SrvrecType = b.SrvrecType
+            LEFT JOIN SVC00100 c 
+                ON c.TechID = a.TechID
+            WHERE 
+                a.SrvrecType > 1
+                AND a.CallNbr = @CallNbr
+                AND b.JobStatus = @JobStatus";
+
+            using var conn = new SqlConnection(_gpconnectionString);
+
+            return await conn.QueryFirstOrDefaultAsync<JobExistsDto>(
+                sql,
+                new
+                {
+                    CallNbr = callNbr,
+                    JobStatus = jobStatus
+                });
+        }
+
+        public async Task<string> ExecuteMiscTaskAsync(
+        string jobNo,
+        string operation)
+        {
+            var callNbr = AddPrefixToCallNbr(jobNo);
+
+            string storedProc = operation.ToLower() switch
+            {
+                "redownload" => "ManualJobDownload",
+                "remove" => "RemoveTheTechFromGP",
+                _ => throw new ArgumentException("Invalid operation")
+            };
+
+            string paramName = operation.ToLower() == "redownload"
+                ? "@CallNbr"
+                : "@JobId";
+
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+
+                return await conn.ExecuteScalarAsync<string>(
+                    storedProc,
+                    new DynamicParameters(new Dictionary<string, object>
+                    {
+                    { paramName, callNbr }
+                    }),
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            catch (Exception ex)
+            {
+                // Optional: log to DB if you want same legacy behavior
+                return $"Error Occured : {ex.Message}";
+            }
+        }
+
+
+        private string AddPrefixToCallNbr(string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return callNbr;
+
+            // Example: adjust if you have real prefix logic
+            return callNbr.Trim();
         }
 
 

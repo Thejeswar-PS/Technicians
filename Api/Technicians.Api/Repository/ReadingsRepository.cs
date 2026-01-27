@@ -1288,10 +1288,10 @@ namespace Technicians.Api.Repository
                 commandType: CommandType.StoredProcedure
             );
 
-            if (result == null)
-            {
-                throw new KeyNotFoundException("No SCC data found.");
-            }
+            //if (result == null)
+            //{
+            //    throw new KeyNotFoundException("No SCC data found.");
+            //}
 
             return result;
         }
