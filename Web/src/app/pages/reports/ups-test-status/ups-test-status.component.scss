@@ -497,6 +497,12 @@
               display: inline-flex;
               align-items: center;
               gap: 0.25rem;
+              white-space: normal !important;
+              word-wrap: break-word !important;
+              line-height: 1.2;
+              max-width: 100%;
+              text-align: center;
+              justify-content: center;
               
               &.badge-light-secondary,
               &.status-not-started {
@@ -907,7 +913,10 @@
           align-items: center !important;
           justify-content: center !important;
           gap: 0.25rem !important;
-          white-space: nowrap !important;
+          white-space: normal !important;
+          word-wrap: break-word !important;
+          line-height: 1.2 !important;
+          max-width: 100% !important;
           text-align: center !important;
           
           // In Progress - Blue Color

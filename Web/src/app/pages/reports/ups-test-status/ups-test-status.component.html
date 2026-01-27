@@ -123,10 +123,8 @@
                               </div>
                             </div>
                             
-                            <div class="bar-label make-clickable" 
-                                 [title]="makeData.make"
-                                 (click)="navigateToNewUnitTestByMake(makeData.make)"
-                                 style="cursor: pointer; text-decoration: underline; color: #0066cc;">{{ makeData.make }}</div>
+                            <div class="bar-label" 
+                                 [title]="makeData.make">{{ makeData.make }}</div>
                           </div>
                         </div>
                         
@@ -367,7 +365,7 @@
                       <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('shippingCost')"></i>
                     </div>
                   </th>
-                  <th class="cursor-pointer text-center" (click)="sortData('status')" style="width: 8%;">
+                  <th class="cursor-pointer text-center" (click)="sortData('status')" style="width: 12%;">
                     <div class="header-content-compact d-flex align-items-center justify-content-center">
                       <span class="header-text">Status</span>
                       <i class="bi ms-2 sort-icon fs-6 text-warning" [ngClass]="getSortIcon('status')"></i>
