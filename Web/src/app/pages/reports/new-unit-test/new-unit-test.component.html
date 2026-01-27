@@ -83,7 +83,7 @@
               <h3 class="section-title">UPS Unit Testing Info</h3>
             </div>
 
-            <form [formGroup]="editForm" class="modern-form" *ngIf="editForm">
+            <form [formGroup]="editForm" class="modern-form" *ngIf="editForm" (ngSubmit)="onAddUnit()">
               <div class="form-grid">
                 
                 <!-- Make -->

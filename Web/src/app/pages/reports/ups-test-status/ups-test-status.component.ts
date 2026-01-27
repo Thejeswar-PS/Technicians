@@ -188,9 +188,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.loadMetadata();
     this.setupFormSubscriptions();
     this.loadUPSTestStatusData();
-    
-    // Make debug method available in browser console
-    (window as any).debugUPSChart = () => this.debugChartData();
   }
 
   ngAfterViewInit(): void {
@@ -237,7 +234,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   private setupMakeChartOptions(): void {
-    console.log('🎨 setupMakeChartOptions called - applying stripped parts design');
     
     // Initialize make bar chart options with exact stripped parts design
     this.makeBarChartOptions = {
@@ -415,10 +411,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       },
       theme: {}
     };
-    
-    console.log('✅ Chart options setup complete!');
-    console.log('📊 makeBarChartOptions plotOptions:', this.makeBarChartOptions.plotOptions);
-    console.log('🎨 makeBarChartOptions colors:', this.makeBarChartOptions.colors);
   }
 
   private loadMetadata(): void {
@@ -429,7 +421,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: UPSTestMetadataResponse) => {
-        console.log('Metadata loaded:', response);
         if (response.success) {
           this.technicians = response.technicians || [];
           this.statusSummary = response.statusSummary || {};
@@ -471,11 +462,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
             this.priorityOptions = [...standardPriorities, ...apiPriorities];
           }
           
-          console.log('Updated statusOptions:', this.statusOptions);
-          console.log('Updated priorityOptions:', this.priorityOptions);
-          console.log('Metadata statusSummary:', this.statusSummary);
-          console.log('Metadata statusLabels:', this.statusLabels);
-          
           // Update technician dropdown options
           this.technicianOptions = [
             { value: 'All', label: 'All Technicians' },
@@ -489,7 +475,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
         this.isLoadingMetadata = false;
       },
       error: (error: any) => {
-        console.error('Error loading UPS test metadata:', error);
         this.errorMessage = 'Failed to load metadata. Please try again.';
         this.isLoadingMetadata = false;
       }
@@ -512,14 +497,10 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: any) => {
-        console.log('UPS Test Status data loaded:', response);
         if (response.success && response.data) {
           this.upsTestStatusList = response.data.unitsData || [];
           this.makeCounts = response.data.makeCounts || [];
           this.totalRecords = response.totalRecords || this.upsTestStatusList.length;
-          
-          console.log('Loaded units data length:', this.upsTestStatusList.length);
-          console.log('Sample unit data:', this.upsTestStatusList.slice(0, 3));
           
           // Update filter options based on new data
           this.updateAvailableFilterOptions();
@@ -540,7 +521,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
         this.isLoading = false;
       },
       error: (error: any) => {
-        console.error('Error loading UPS test status:', error);
         this.errorMessage = error.error?.message || 'Failed to load UPS test status data. Please try again.';
         this.upsTestStatusList = [];
         this.totalRecords = 0;
@@ -607,28 +587,14 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     }
   }
 
-  // Debug method - can be called from browser console
-  debugChartData(): void {
-    console.log('=== CHART DEBUG INFO ===');
-    console.log('hasMakeChartData:', this.hasMakeChartData());
-    console.log('makeSummary:', this.makeSummary);
-    console.log('makeBarChartOptions:', this.makeBarChartOptions);
-    console.log('upsTestStatusList length:', this.upsTestStatusList?.length || 0);
-    console.log('filteredData length:', this.filteredData?.length || 0);
-    console.log('=== END DEBUG INFO ===');
-  }
+
 
   hasMakeChartData(): boolean {
     return Object.keys(this.makeSummary).length > 0;
   }
 
   private updateMakeChart(): void {
-    console.log('🔄 updateMakeChart called - preserving styling');
-    console.log('hasMakeChartData:', this.hasMakeChartData());
-    console.log('makeSummary:', this.makeSummary);
-    
     if (!this.hasMakeChartData()) {
-      console.log('No make chart data available');
       return;
     }
     
@@ -643,8 +609,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       count
     }));
 
-    console.log('makeData for chart:', makeData);
-    
     this.ngZone.run(() => {
       // Update only the data, preserve all styling from setupMakeChartOptions
       this.makeBarChartOptions = {
@@ -658,11 +622,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
           categories: makeData.map(item => item.make)
         }
       };
-      
-      console.log('📊 Bar chart updated - plotOptions preserved:', this.makeBarChartOptions.plotOptions?.bar?.borderRadius);
-      
-      console.log('Chart options updated successfully');
-      console.log('makeBarChartOptions:', this.makeBarChartOptions);
       
       // Trigger change detection after chart update
       this.cdr.detectChanges();
@@ -765,8 +724,7 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       });
     }
     
-    console.log('Make Summary from backend makeCounts:', this.makeSummary);
-    console.log('Raw makeCounts data:', this.makeCounts);
+
   }
 
   private processChartData(): void {
@@ -793,7 +751,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       }, 100);
       
     } catch (error) {
-      console.error('Error processing chart data:', error);
       this.chartErrorMessage = 'Failed to process chart data';
       this.makeChartErrorMessage = 'Failed to process make chart data';
     } finally {
@@ -845,9 +802,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
 
   // Navigation methods
   navigateToNewUnitTest(unit: UPSTestStatusDto): void {
-    console.log('🚀 Navigating to New Unit Test with unit:', unit);
-    console.log('🚀 Row Index:', unit.rowIndex);
-    
     // Get current archive status from filter form
     const isArchived = this.filterForm.get('archive')?.value || false;
     
