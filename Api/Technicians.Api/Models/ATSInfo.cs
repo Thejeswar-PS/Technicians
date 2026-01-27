@@ -4,7 +4,7 @@
     {
         public string CallNbr { get; set; }
         public int EquipId { get; set; }
-        public int ATSId { get; set; }
+        public string ATSId { get; set; }
         public string Manufacturer { get; set; }
         public string ModelNo { get; set; }
         public string SerialNo { get; set; }

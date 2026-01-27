@@ -405,9 +405,9 @@ export class RectifierReadingsComponent implements OnInit {
   }
 
   private validateForm(): boolean {
-    const status = this.equipmentVerificationForm.get('status')?.value;
-    const statusNotes = this.equipmentVerificationForm.get('statusNotes')?.value;
-    const comments1 = this.visualMechanicalForm.get('comments')?.value || '';
+    const status = (this.equipmentVerificationForm.get('status')?.value || '').toString().trim();
+    const statusNotes = (this.equipmentVerificationForm.get('statusNotes')?.value || '').toString();
+    const comments1 = (this.visualMechanicalForm.get('comments')?.value || '').toString();
     const hasFailures = this.checkForFailReadings();
 
     // Legacy validation: if status is not Online, status notes are required
@@ -433,13 +433,13 @@ export class RectifierReadingsComponent implements OnInit {
     const vmForm = this.visualMechanicalForm.value;
     const pvForm = this.powerVerificationForm.value;
 
-    // Check all _PF (Pass/Fail) fields for 'F' value
-    const allFields = { ...vmForm, ...pvForm };
+    // Consider any select-equivalent value set to Fail ('F') or Replace ('R') as a failure
+    const allFields = { ...vmForm, ...pvForm } as Record<string, any>;
+
     return Object.keys(allFields).some(key => {
-      if (key.endsWith('_PF')) {
-        return allFields[key] === 'F';
-      }
-      return false;
+      const val = (allFields[key] ?? '').toString();
+      // Legacy ddlFinder looked at all dropdowns; treat F/Fail or R/Replace as requiring comments
+      return val === 'F' || val === 'R';
     });
   }
 

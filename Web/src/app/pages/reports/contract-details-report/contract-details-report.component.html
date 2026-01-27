@@ -23,13 +23,13 @@
   <div class="card shadow-sm contract-main-card">
     <div class="card-header border-0 py-4">
       <div class="contract-filter-header">
-        <div class="row align-items-center">
+        <div class="row align-items-center mb-3">
           <div class="col-md-5">
             <h5 class="mb-0 fw-bold text-dark">
               <i class="bi bi-funnel me-2 text-primary"></i>
               Filters & Search
               <span class="badge ms-2" [ngClass]="'badge-info-custom'">
-                {{ contractRows.length }} Result{{ contractRows.length === 1 ? '' : 's' }}
+                {{ filteredContractRows.length }} Result{{ filteredContractRows.length === 1 ? '' : 's' }}
               </span>
             </h5>
             <small class="text-muted">Select a category to view contract details</small>
@@ -55,6 +55,29 @@
             </div>
           </div>
         </div>
+        <div class="row align-items-center">
+          <div class="col-md-12">
+            <div class="filter-group mb-0">
+              <label class="filter-label">
+                <i class="bi bi-person me-1"></i>
+                Sales Person
+              </label>
+              <div class="position-relative">
+                <input 
+                  type="text" 
+                  id="salesPersonFilter" 
+                  class="form-control modern-select" 
+                  placeholder="Type to filter by Sales Person name..."
+                  [(ngModel)]="salesPersonFilter" 
+                  (input)="onSalesPersonFilterChange()"
+                  [disabled]="loading">
+                <small class="d-block text-muted mt-1" *ngIf="salesPersonFilter">
+                  Filtering by: <strong>{{ salesPersonFilter }}</strong>
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -68,10 +91,57 @@
         <span class="text-muted">Processing data...</span>
       </div>
 
-      <div class="table-section" *ngIf="!loading && !errorMessage">
+      <!-- Chart Section -->
+      <div *ngIf="!loading && !errorMessage && chartData.length > 0" class="chart-section mb-4">
+        <div class="chart-card">
+          <div class="chart-header d-flex justify-content-between align-items-center">
+            <div>
+              <h6 class="mb-0 fw-bold">Total Amount by Month/Year</h6>
+              <small class="text-muted">{{ selectedCategory }}</small>
+            </div>
+            <div class="chart-type-toggle">
+              <button 
+                type="button" 
+                class="btn btn-sm"
+                [ngClass]="currentChartType === 'bar' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setChartType('bar')">
+                <i class="bi bi-bar-chart me-1"></i>
+                Bar Chart
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-sm ms-2"
+                [ngClass]="currentChartType === 'pie' ? 'btn-primary' : 'btn-outline-primary'"
+                (click)="setChartType('pie')">
+                <i class="bi bi-pie-chart me-1"></i>
+                Pie Chart
+              </button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <div *ngIf="currentChartType === 'bar'" class="interactive-bar-chart-container">
+              <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart" [dataLabels]="barChartOptions.dataLabels" [plotOptions]="barChartOptions.plotOptions" [xaxis]="barChartOptions.xaxis" [yaxis]="barChartOptions.yaxis" [colors]="barChartOptions.colors" [tooltip]="barChartOptions.tooltip" [grid]="barChartOptions.grid" [theme]="barChartOptions.theme"></apx-chart>
+            </div>
+            <div *ngIf="currentChartType === 'pie'" class="interactive-pie-chart-container">
+              <apx-chart [series]="donutChartOptions.series" [chart]="donutChartOptions.chart" [labels]="donutChartOptions.labels" [colors]="donutChartOptions.colors" [legend]="donutChartOptions.legend" [tooltip]="donutChartOptions.tooltip" [plotOptions]="donutChartOptions.plotOptions" [dataLabels]="donutChartOptions.dataLabels" [responsive]="donutChartOptions.responsive"></apx-chart>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Section -->
         <div class="d-flex justify-content-between align-items-center mb-2 px-2 flex-wrap gap-2">
           <div class="text-gray-700 fw-semibold">
-            Showing {{ contractRows.length ? 1 : 0 }} to {{ contractRows.length }} of {{ contractRows.length }} entries
+            Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredContractRows.length) }} of {{ filteredContractRows.length }} entries
+          </div>
+          <div class="pagination-controls">
+            <button class="btn btn-sm btn-outline-primary" (click)="prevPage()" [disabled]="currentPage === 1">
+              <i class="bi bi-chevron-left me-1"></i>Previous
+            </button>
+            <span class="mx-2 text-muted">Page {{ currentPage }} of {{ getTotalPages() }}</span>
+            <button class="btn btn-sm btn-outline-primary" (click)="nextPage()" [disabled]="currentPage >= getTotalPages()">
+              Next<i class="bi bi-chevron-right ms-1"></i>
+            </button>
           </div>
         </div>
 
@@ -137,7 +207,7 @@
             </thead>
 
             <tbody class="table-body">
-              <tr class="table-row" *ngFor="let row of contractRows; trackBy: trackByRow">
+              <tr class="table-row" *ngFor="let row of displayedContractRows; trackBy: trackByRow">
                 <td>{{ row.customerNo || 'N/A' }}</td>
                 <td>{{ row.customerName || 'N/A' }}</td>
                 <td class="address-cell">{{ row.address || 'N/A' }}</td>
@@ -148,7 +218,7 @@
                 <td>{{ row.invoicedOn | date: 'dd-MMM-yyyy' }}</td>
                 <td class="text-end fw-bold text-success">{{ row.amount | currency }}</td>
               </tr>
-              <tr *ngIf="contractRows.length === 0">
+              <tr *ngIf="displayedContractRows.length === 0">
                 <td colspan="9" class="text-center text-muted py-4">No records found</td>
               </tr>
             </tbody>
@@ -157,4 +227,4 @@
       </div>
     </div>
   </div>
-</div>
+

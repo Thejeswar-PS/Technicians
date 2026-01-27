@@ -81,8 +81,8 @@ export class SccReadingsComponent implements OnInit {
     this.equipmentVerificationForm = this.fb.group({
       manufacturer: ['', Validators.required],
       modelNo: ['', Validators.required],
-      serialNo: [''],
-      location: [''],
+      serialNo: ['', Validators.required],
+      location: ['', Validators.required],
       dateCode: ['', Validators.required],
       temperature: ['', Validators.required],
       status: ['Online', Validators.required],
@@ -149,8 +149,12 @@ export class SccReadingsComponent implements OnInit {
       const actModelControl = this.reconciliationForm.get('actModel');
       if (value === 'NO') {
         actModelControl?.enable();
+        actModelControl?.setValidators([Validators.required]);
+        actModelControl?.updateValueAndValidity();
       } else {
         actModelControl?.setValue('');
+        actModelControl?.clearValidators();
+        actModelControl?.updateValueAndValidity();
         actModelControl?.disable();
       }
     });
@@ -160,8 +164,12 @@ export class SccReadingsComponent implements OnInit {
       const actSerialNoControl = this.reconciliationForm.get('actSerialNo');
       if (value === 'NO') {
         actSerialNoControl?.enable();
+        actSerialNoControl?.setValidators([Validators.required]);
+        actSerialNoControl?.updateValueAndValidity();
       } else {
         actSerialNoControl?.setValue('');
+        actSerialNoControl?.clearValidators();
+        actSerialNoControl?.updateValueAndValidity();
         actSerialNoControl?.disable();
       }
     });
@@ -171,8 +179,12 @@ export class SccReadingsComponent implements OnInit {
       const actTotalEquipsControl = this.reconciliationForm.get('actTotalEquips');
       if (value === 'NO') {
         actTotalEquipsControl?.enable();
+        actTotalEquipsControl?.setValidators([Validators.required]);
+        actTotalEquipsControl?.updateValueAndValidity();
       } else {
         actTotalEquipsControl?.setValue('');
+        actTotalEquipsControl?.clearValidators();
+        actTotalEquipsControl?.updateValueAndValidity();
         actTotalEquipsControl?.disable();
       }
     });
@@ -345,7 +357,7 @@ export class SccReadingsComponent implements OnInit {
             serialNo: (data.serialNo || data.SerialNo || '').toString().trim(),
             temperature: (data.temp || data.Temp || '').toString().trim(),
             status: (data.status || data.Status || 'Online').toString().trim(),
-            statusNotes: (data.statusNotes || data.StatusNotes || '').toString().trim()
+            statusNotes: (data.comments || data.Comments || data.statusNotes || data.StatusNotes || '').toString().trim()
           });
           console.log('[SCC Load] After SCC patch - modelNo:', this.equipmentVerificationForm.get('modelNo')?.value, 'serialNo:', this.equipmentVerificationForm.get('serialNo')?.value);
 
@@ -365,8 +377,9 @@ export class SccReadingsComponent implements OnInit {
             loadCurrent: (data.loadCurrent || data.LoadCurrent || '').toString().trim()
           });
 
+          // Comments form is for additional notes, not status notes
           this.commentsForm.patchValue({
-            comments: (data.comments || data.Comments || '').toString().trim()
+            comments: ''
           });
         }
 
@@ -695,6 +708,20 @@ export class SccReadingsComponent implements OnInit {
       return false;
     }
 
+    // Validate serial number
+    if (!this.equipmentVerificationForm.value.serialNo) {
+      this.errorMessage = 'Please enter the Serial No';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate location
+    if (!this.equipmentVerificationForm.value.location) {
+      this.errorMessage = 'Please enter the Location';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
     // Validate date code
     if (!this.equipmentVerificationForm.value.dateCode || this.equipmentVerificationForm.value.dateCode === '01/01/1900') {
       this.errorMessage = 'Please enter the DateCode';
@@ -712,9 +739,21 @@ export class SccReadingsComponent implements OnInit {
     }
 
     // Validate status notes if status is not Online
-    if (this.equipmentVerificationForm.value.status !== 'Online' && 
-        !this.equipmentVerificationForm.value.statusNotes) {
-      this.errorMessage = 'Please enter the reason for status';
+    const currentStatus = this.equipmentVerificationForm.value.status;
+    const statusNotesControl = this.equipmentVerificationForm.get('statusNotes');
+    const statusNotesValue = (statusNotesControl?.value || '').trim();
+    
+    console.log('Status validation - currentStatus:', currentStatus);
+    console.log('Status validation - form control value:', statusNotesControl?.value);
+    console.log('Status validation - statusNotesValue:', statusNotesValue);
+    console.log('Status validation - statusNotesValue length:', statusNotesValue.length);
+    console.log('Full form value:', this.equipmentVerificationForm.value);
+    
+    // Check if status is online (including variations like 'Online', 'OnLine', etc.)
+    const isOnlineStatus = currentStatus?.toLowerCase() === 'online';
+    
+    if (!isOnlineStatus && !statusNotesValue) {
+      this.errorMessage = 'Please enter the reason for status in the Status Notes field (located in Equipment Verification section)';
       this.toastr.error(this.errorMessage);
       return false;
     }
@@ -729,6 +768,25 @@ export class SccReadingsComponent implements OnInit {
     // Validate reconciliation checkbox
     if (!this.reconciliationForm.value.verified) {
       this.errorMessage = 'You must verify the Reconciliation section before Saving PM form';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate reconciliation actual fields when marked as incorrect
+    if (this.reconciliationForm.value.recModelCorrect === 'NO' && !this.reconciliationForm.value.actModel) {
+      this.errorMessage = 'Please enter the Actual Model when marked as incorrect';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    if (this.reconciliationForm.value.recSerialNoCorrect === 'NO' && !this.reconciliationForm.value.actSerialNo) {
+      this.errorMessage = 'Please enter the Actual Serial No when marked as incorrect';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    if (this.reconciliationForm.value.recTotalEquipsCorrect === 'NO' && !this.reconciliationForm.value.actTotalEquips) {
+      this.errorMessage = 'Please enter the Actual Total Equipment when marked as incorrect';
       this.toastr.error(this.errorMessage);
       return false;
     }

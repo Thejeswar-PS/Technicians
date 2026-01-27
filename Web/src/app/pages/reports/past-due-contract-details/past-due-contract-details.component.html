@@ -97,7 +97,7 @@
           </div>
           <div class="chart-container">
             <div *ngIf="currentChartType === 'bar'" class="interactive-bar-chart-container">
-              <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart" [dataLabels]="barChartOptions.dataLabels" [plotOptions]="barChartOptions.plotOptions" [xaxis]="barChartOptions.xaxis" [yaxis]="barChartOptions.yaxis" [colors]="barChartOptions.colors" [tooltip]="barChartOptions.tooltip" [grid]="barChartOptions.grid" [theme]="barChartOptions.theme"></apx-chart>
+              <apx-chart [series]="barChartOptions.series" [chart]="barChartOptions.chart" [dataLabels]="barChartOptions.dataLabels" [plotOptions]="barChartOptions.plotOptions" [xaxis]="barChartOptions.xaxis" [yaxis]="barChartOptions.yaxis" [colors]="barChartOptions.colors" [tooltip]="barChartOptions.tooltip" [legend]="barChartOptions.legend" [grid]="barChartOptions.grid" [theme]="barChartOptions.theme"></apx-chart>
             </div>
             <div *ngIf="currentChartType === 'pie'" class="interactive-pie-chart-container">
               <apx-chart [series]="donutChartOptions.series" [chart]="donutChartOptions.chart" [labels]="donutChartOptions.labels" [colors]="donutChartOptions.colors" [legend]="donutChartOptions.legend" [tooltip]="donutChartOptions.tooltip" [plotOptions]="donutChartOptions.plotOptions" [dataLabels]="donutChartOptions.dataLabels" [responsive]="donutChartOptions.responsive"></apx-chart>

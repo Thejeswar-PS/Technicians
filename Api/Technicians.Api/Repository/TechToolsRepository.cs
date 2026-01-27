@@ -420,6 +420,83 @@ namespace Technicians.Api.Repository
             return results;
         }
 
+        public async Task<JobExistsDto?> CheckJobExistsAsync(string jobNo, string jobStatus)
+        {
+            var callNbr = AddPrefixToCallNbr(jobNo);
+
+            const string sql = @"
+            SELECT 
+                a.CallNbr,
+                ISNULL(c.Name, '') AS TechName
+            FROM SVC00200 a
+            JOIN aaETechJobExt b 
+                ON a.CallNbr = b.CallNbr 
+               AND a.SrvrecType = b.SrvrecType
+            LEFT JOIN SVC00100 c 
+                ON c.TechID = a.TechID
+            WHERE 
+                a.SrvrecType > 1
+                AND a.CallNbr = @CallNbr
+                AND b.JobStatus = @JobStatus";
+
+            using var conn = new SqlConnection(_gpconnectionString);
+
+            return await conn.QueryFirstOrDefaultAsync<JobExistsDto>(
+                sql,
+                new
+                {
+                    CallNbr = callNbr,
+                    JobStatus = jobStatus
+                });
+        }
+
+        public async Task<string> ExecuteMiscTaskAsync(
+        string jobNo,
+        string operation)
+        {
+            var callNbr = AddPrefixToCallNbr(jobNo);
+
+            string storedProc = operation.ToLower() switch
+            {
+                "redownload" => "ManualJobDownload",
+                "remove" => "RemoveTheTechFromGP",
+                _ => throw new ArgumentException("Invalid operation")
+            };
+
+            string paramName = operation.ToLower() == "redownload"
+                ? "@CallNbr"
+                : "@JobId";
+
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+
+                return await conn.ExecuteScalarAsync<string>(
+                    storedProc,
+                    new DynamicParameters(new Dictionary<string, object>
+                    {
+                    { paramName, callNbr }
+                    }),
+                    commandType: CommandType.StoredProcedure
+                );
+            }
+            catch (Exception ex)
+            {
+                // Optional: log to DB if you want same legacy behavior
+                return $"Error Occured : {ex.Message}";
+            }
+        }
+
+
+        private string AddPrefixToCallNbr(string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return callNbr;
+
+            // Example: adjust if you have real prefix logic
+            return callNbr.Trim();
+        }
+
 
     }
 }

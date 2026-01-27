@@ -77,6 +77,7 @@ export class PastDueContractDetailsComponent implements OnInit {
     yaxis: {},
     colors: [],
     tooltip: {},
+    legend: { show: false },
     grid: {},
     theme: {}
   };
@@ -286,6 +287,9 @@ export class PastDueContractDetailsComponent implements OnInit {
         y: {
           formatter: (val: number) => `${val} contracts`
         }
+      },
+      legend: {
+        show: false
       },
       grid: {
         show: true

@@ -146,6 +146,53 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("CheckJobExists")]
+        public async Task<IActionResult> CheckJobExists(
+        [FromQuery] string jobNo,
+        [FromQuery] string jobStatus)
+        {
+            if (string.IsNullOrWhiteSpace(jobNo))
+                return BadRequest("jobNo is required");
+
+            if (string.IsNullOrWhiteSpace(jobStatus))
+                return BadRequest("jobStatus is required");
+
+            var result = await _toolsRepository.CheckJobExistsAsync(jobNo, jobStatus);
+
+            if (result == null)
+                return Ok(new { exists = false });
+
+            return Ok(new
+            {
+                exists = true,
+                data = result
+            });
+        }
+
+        [HttpPost("MiscTask")]
+        public async Task<IActionResult> ExecuteMiscTask([FromBody] MiscTaskRequest request)
+        {
+            if (request == null)
+                return BadRequest("Request body is required.");
+
+            if (string.IsNullOrWhiteSpace(request.JobNo))
+                return BadRequest("jobNo is required.");
+
+            if (string.IsNullOrWhiteSpace(request.Operation))
+                return BadRequest("operation is required.");
+
+            var result = await _toolsRepository.ExecuteMiscTaskAsync(
+                request.JobNo,
+                request.Operation);
+
+            if (result.Contains("Success", StringComparison.OrdinalIgnoreCase))
+            {
+                return Ok(new { success = true, message = result });
+            }
+
+            return BadRequest(new { success = false, message = result });
+        }
+
 
     }
 }
