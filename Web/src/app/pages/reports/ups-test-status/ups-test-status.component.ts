@@ -188,9 +188,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.loadMetadata();
     this.setupFormSubscriptions();
     this.loadUPSTestStatusData();
-    
-    // Make debug method available in browser console
-    (window as any).debugUPSChart = () => this.debugChartData();
   }
 
   ngAfterViewInit(): void {
