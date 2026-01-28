@@ -22,7 +22,9 @@ import {
   SaveUpdateNewUnitTestDto,
   SaveUpdateUnitTestResponse,
   SaveUpdateNewUnitResultDto,
-  SaveUpdateUnitTestResultResponse
+  SaveUpdateUnitTestResultResponse,
+  CreateNewUnitDto,
+  CreateNewUnitApiResponse
 } from '../../../core/model/new-unit-test.model';
 import { StrippedUnitsStatusDto } from '../../../core/model/stripped-units-status.model';
 
@@ -90,7 +92,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   editingUnit: UPSTestStatusDto | null = null;
   isCreatingNew = false;
   savingUnit = false;
-  isLoadedFromApi = false; // Track if unit was loaded from API
+  isLoadedFromApi = true; // Track if unit was loaded from API - financial fields read-only by default
 
   // Result Update functionality
   showResultModal = false;
@@ -326,7 +328,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       localStorage.setItem('newUnitTest_unitData', JSON.stringify(unitData));
       localStorage.setItem('newUnitTest_timestamp', Date.now().toString());
     } catch (error) {
-      console.warn('Failed to save unit data to localStorage:', error);
+      // Failed to save unit data to localStorage
     }
   }
 
@@ -348,7 +350,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       
       return JSON.parse(unitDataStr);
     } catch (error) {
-      console.warn('Failed to load unit data from localStorage:', error);
+      // Failed to load unit data from localStorage
       return null;
     }
   }
@@ -359,7 +361,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       localStorage.removeItem('newUnitTest_unitData');
       localStorage.removeItem('newUnitTest_timestamp');
     } catch (error) {
-      console.warn('Failed to clear unit data from localStorage:', error);
+      // Failed to clear unit data from localStorage
     }
   }
 
@@ -441,14 +443,11 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     // Remove the form field since we mapped it to problemNotes
     delete formData.deficiencyNotes;
 
-    console.log('onUpdateUnit - Sending data:', formData);
-
     // Use existing save method for now - can be extended later
     this.newUnitTestService.saveUpdateUnitTest(formData)
       .subscribe({
         next: (response: any) => {
           this.savingUnit = false;
-          console.log('onUpdateUnit - API Response:', response);
           if (response.success) {
             this.toastr.success('Unit updated successfully!');
             // Update local data
@@ -456,7 +455,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
               const updatedUnit = { ...this.selectedUnit, ...formData };
               this.selectedUnit = updatedUnit;
               this.saveUnitDataToStorage(updatedUnit);
-              console.log('onUpdateUnit - Updated local data:', updatedUnit);
             }
             this.cdr.detectChanges();
           } else {
@@ -481,9 +479,42 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
-    // For now, just clear the data (can be extended with actual delete API later)
-    this.toastr.success('Unit cleared successfully!');
-    this.clearAllData();
+    // Call the proper delete API
+
+    // Store rowIndex before API call to avoid null reference issues
+    const selectedUnitRowIndex = this.selectedUnit.rowIndex;
+
+    this.newUnitTestService.deleteNewUnitTest(selectedUnitRowIndex).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toastr.success(response.message || 'Unit deleted successfully', 'Success');
+          
+          // Remove the unit from local data
+          this.allData = this.allData.filter(unit => unit.rowIndex !== selectedUnitRowIndex);
+          
+          // Update filtered and displayed data
+          this.applyFilters();
+          this.updateCharts();
+          
+          // Clear selected unit since it was deleted
+          const deletedRowIndex = selectedUnitRowIndex;
+          this.selectedUnit = null;
+          
+          // Check if we're on a specific unit URL and redirect to main list
+          this.route.params.subscribe(routeParams => {
+            if (routeParams['rowIndex'] && parseInt(routeParams['rowIndex']) === deletedRowIndex) {
+              this.router.navigate(['/reports/new-unit-test']);
+            }
+          });
+          
+        } else {
+          this.toastr.error(response.message || 'Failed to delete unit', 'Delete Failed');
+        }
+      },
+      error: (error) => {
+        this.toastr.error('Failed to delete unit. Please try again.', 'Error');
+      }
+    });
   }
 
   // Method to update test results for existing unit
@@ -496,7 +527,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
    * @param context - The context of the operation (update, save, result)
    */
   private saveUnitTestResult(context: 'update' | 'save' | 'result'): void {
-    console.log('🚀 saveUnitTestResult called with context:', context);
     
     // Validate form based on context
     if (context === 'update') {
@@ -522,7 +552,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Only send the fields expected by the API with correct mapping
     const formValue = this.resultForm.value;
-    console.log('Raw form values:', formValue);
     
     // Simple mapping for followedProcedure to database format
     let testProcedures = '';
@@ -542,9 +571,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     }
 
-    console.log('Current user:', this.auth.currentUserValue);
-    console.log('Username:', this.auth.currentUserValue?.username);
-
     const dto: SaveUpdateNewUnitResultDto = {
       RowIndex: formValue.RowIndex,
       Status: formValue.currentStatus || formValue.Status,
@@ -557,8 +583,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       dto.TestProcedures = testProcedures;
     }
 
-    console.log('Sending DTO to API:', dto);
-
     this.newUnitTestService.saveUpdateUnitTestResult(dto).subscribe({
       next: (response: SaveUpdateUnitTestResultResponse) => {
         this.updatingResult = false;
@@ -568,13 +592,9 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
                                  context === 'save' ? 'Results Updated' : 'Result Updated';
           this.toastr.success(response.message || successMessage);
           
-          // Log the response for debugging
-          console.log('Update result API response:', response);
-          
           // Update local data immediately
           if (this.resultUnit || this.selectedUnit) {
             const index = this.allData.findIndex(unit => unit.rowIndex === dto.RowIndex);
-            console.log('Found unit at index:', index, 'for RowIndex:', dto.RowIndex);
             if (index !== -1) {
               const oldUnit = { ...this.allData[index] };
               this.allData[index] = { ...this.allData[index], 
@@ -583,7 +603,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
                 testProcedures: dto.TestProcedures || '',
                 testedBy: dto.TestedBy || ''
               };
-              console.log('Updated unit from:', oldUnit, 'to:', this.allData[index]);
               
               if (context === 'update' && this.selectedUnit) {
                 this.selectedUnit = this.allData[index];
@@ -592,22 +611,15 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.selectedUnit = this.allData[index];
               }
             } else {
-              console.error('Could not find unit with RowIndex:', dto.RowIndex, 'in allData');
+              // Could not find unit with RowIndex in allData
             }
           }
 
           // Apply filters and update charts with the updated data
           this.applyFilters();
           this.updateCharts();
-          console.log('Local data updated successfully - changes will persist until page refresh');
           
-          // Log the current displayedData to verify the changes are visible
-          const updatedDisplayedUnit = this.displayedData.find(unit => unit.rowIndex === dto.RowIndex);
-          if (updatedDisplayedUnit) {
-            console.log('Updated unit in displayedData:', updatedDisplayedUnit);
-          } else {
-            console.log('Updated unit not found in displayedData - may be filtered out or on different page');
-          }
+          // Check if the updated unit is visible in displayedData
           
           if (context === 'result') {
             this.closeResultModal();
@@ -621,7 +633,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       },
       error: (error) => {
         this.updatingResult = false;
-        console.error('Error updating unit test result:', error);
         this.toastr.error('Failed to update results. Please try again.', 'Error');
       },
       complete: () => {
@@ -643,8 +654,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Force change detection
     this.cdr.detectChanges();
-    
-    console.log('✅ All data cleared - starting fresh');
   }
 
   // Real-time validation methods for checkbox interactions
@@ -694,14 +703,14 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     // Initialize edit form with UPS Test Status fields
     this.editForm = this.formBuilder.group({
       rowIndex: [0],
-      make: ['', [Validators.required, Validators.maxLength(50)]], // Required - Cannot be empty or null
-      model: ['', [Validators.required, Validators.maxLength(50)]], // Required - Cannot be empty or null
+      make: ['', [Validators.required, Validators.maxLength(100)]], // Required - Cannot be empty or null
+      model: ['', [Validators.required, Validators.maxLength(100)]], // Required - Cannot be empty or null
       kva: ['', [Validators.maxLength(3), this.numericValidator]], // Limited to 3 characters maximum, must be numeric
-      voltage: ['', [Validators.maxLength(10)]],
-      serialNo: ['', [Validators.required, Validators.maxLength(50)]], // Required - Cannot be empty or null
-      poNumber: ['', [Validators.maxLength(50)]],
+      voltage: ['', [Validators.maxLength(50)]],
+      serialNo: ['', [Validators.required, Validators.maxLength(100)]], // Required - Cannot be empty or null
+      poNumber: ['', [Validators.maxLength(10)]],
       unitCost: ['', [Validators.maxLength(20), this.numericValidator]],
-      shippingPO: ['', [Validators.maxLength(50)]],
+      shippingPO: ['', [Validators.maxLength(10)]],
       shipCost: ['', [Validators.maxLength(20), this.numericValidator]],
       priority: ['Normal', [Validators.maxLength(15)]],
       assignedTo: ['', [Validators.required, this.notPSValidator, Validators.maxLength(50)]], // Required - Cannot be "PS" or null
@@ -716,13 +725,13 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.resultForm = this.formBuilder.group({
       RowIndex: [0, [Validators.required, Validators.min(1)]],
       Status: ['', [Validators.required, Validators.maxLength(5)]],
-      resolveNotes: ['', [Validators.maxLength(2000)]], // Will be required conditionally when Status = "COM"
+      resolveNotes: ['', [Validators.maxLength(1000)]], // Will be required conditionally when Status = "COM"
       testProcedures: ['', [Validators.maxLength(1)]],
-      TestedBy: ['', [Validators.maxLength(50)]], // Will be required conditionally when Status = "COM"
+      TestedBy: ['', [Validators.maxLength(100)]], // Will be required conditionally when Status = "COM"
       followedProcedure: ['', [Validators.maxLength(20)]],
       currentStatus: ['', [Validators.maxLength(20)]],
-      testEngineer: ['', [Validators.maxLength(50)]], // Will be required conditionally when Status = "COM"
-      inspectionNotes: ['', [Validators.maxLength(2000)]] // Will be required conditionally when Status = "COM"
+      testEngineer: ['', [Validators.maxLength(100)]], // Will be required conditionally when Status = "COM"
+      inspectionNotes: ['', [Validators.maxLength(1000)]] // Will be required conditionally when Status = "COM"
     });
   }
 
@@ -746,7 +755,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private setupMakeChartOptions(): void {
-    console.log('🔧 Setting up make chart options...');
     
     this.makeBarChartOptions = {
       series: [{
@@ -889,7 +897,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       theme: {}
     };
     
-    console.log('✅ Chart options setup complete!');
   }
 
   private setupBarChartOptions(): void {
@@ -941,7 +948,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: UPSTestMetadataResponse) => {
-        console.log('Technician metadata loaded:', response);
         if (response.success && response.technicians) {
           // Update technician dropdown options (exclude 'All' for edit form and filter out 'PS')
           this.technicianOptions = [
@@ -964,7 +970,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.route.params.subscribe(routeParams => {
       if (routeParams['rowIndex']) {
         const rowIndex = parseInt(routeParams['rowIndex']);
-        console.log('🔍 Route parameter detected - Row Index:', rowIndex);
         
         // Check query parameters for additional data
         this.route.queryParams.subscribe(queryParams => {
@@ -973,7 +978,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           
           // Always load fresh data from API when route parameter is present
           // This ensures database changes are reflected on page refresh or direct URL access
-          console.log('🔄 Loading fresh unit data from API for rowIndex:', rowIndex);
           this.loadUnitFromApi(rowIndex, archive);
           
           // Clear query parameters after processing to keep URL clean, but keep the rowIndex in the path
@@ -991,7 +995,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
         // No route parameter - check for stored data or legacy query parameters
         const storedUnitData = this.loadUnitDataFromStorage();
         if (storedUnitData) {
-          console.log('🔄 Loading stored unit data (no route param)');
           this.populateFormFromUnitData(storedUnitData);
         } else {
           // Handle legacy query parameters for backward compatibility
@@ -1035,7 +1038,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private loadUnitFromApi(rowIndex: number, archive: boolean = false): void {
-    console.log('🔄 Loading unit data from API - rowIndex:', rowIndex, 'archive:', archive);
     
     this.newUnitTestService.getNewUniTestByRowIndex(rowIndex, archive).pipe(
       takeUntil(this.destroy$)
@@ -1071,10 +1073,8 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
         } else {
           // If not found and we haven't tried archive yet, try with archive=true
           if (!archive) {
-            console.log('🔄 Unit not found in active data, trying archived data...');
             this.loadUnitFromApi(rowIndex, true);
           } else {
-            console.log('❌ Unit not found in both active and archived data, redirecting to main list');
             this.toastr.error(`Unit with Row Index ${rowIndex} not found. Redirecting to main list.`, 'Unit Not Found');
             // Redirect back to main list when unit doesn't exist
             this.router.navigate(['/reports/new-unit-test']);
@@ -1082,14 +1082,11 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       },
       error: (error) => {
-        console.error('API Error:', error);
         // If not found and we haven't tried archive yet, try with archive=true
         if (!archive) {
-          console.log('🔄 API error with active data, trying archived data...');
           this.loadUnitFromApi(rowIndex, true);
         } else {
-          console.log('❌ API error loading unit from both active and archived data, redirecting to main list');
-          this.toastr.error(`Failed to load unit with Row Index ${rowIndex}. Redirecting to main list.`, 'Error');
+          this.toastr.error(`Unit ${rowIndex} was deleted and is no longer available. You've been redirected to the main list.`, 'This unit no longer exists');
           // Redirect back to main list when unit can't be loaded
           this.router.navigate(['/reports/new-unit-test']);
         }
@@ -1098,8 +1095,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private populateFormFromUnitData(unitData: UPSTestStatusDto): void {
-    console.log('🔍 FULL API RESPONSE DATA:', JSON.stringify(unitData, null, 2));
-    console.log('🔍 Available API fields:', Object.keys(unitData));
     
     // Save unit data to localStorage for persistence
     this.saveUnitDataToStorage(unitData);
@@ -1219,9 +1214,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     // Populate result form as well
     try {
       this.resultForm.setValue(resultFormData);
-      console.log('✅ Result form setValue successful');
     } catch (error) {
-      console.log('⚠️ Result form setValue failed, using patchValue:', error);
       this.resultForm.patchValue(resultFormData);
     }
     this.cdr.detectChanges();
@@ -1687,12 +1680,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Debug method
   debugChartData(): void {
-    console.log('🔍 Debug Chart Data:');
-    console.log('Make Summary:', this.makeSummary);
-    console.log('Status Summary:', this.statusSummary);
-    console.log('Chart Options:', this.makeBarChartOptions);
-    console.log('All Data:', this.allData);
-    console.log('Filtered Data:', this.filteredData);
   }
 
   // Move to Stripping functionality
@@ -1790,8 +1777,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
         error: (error) => {
           this.movingUnits.delete(unit.rowIndex);
           
-          console.error('❌ Error moving unit to stripping:', error);
-          
           this.moveResults[unit.rowIndex] = {
             success: false,
             message: 'An error occurred while moving the unit'
@@ -1842,7 +1827,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   openCreateModal(): void {
     this.isCreatingNew = true;
     this.editingUnit = null;
-    this.isLoadedFromApi = false; // Reset flag for manual creation
+    // Keep financial fields read-only - removed: this.isLoadedFromApi = false;
     this.editForm.reset({
       rowIndex: 0,
       make: '',
@@ -1866,7 +1851,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   openEditModal(unit: UPSTestStatusDto): void {
     this.isCreatingNew = false;
     this.editingUnit = unit;
-    this.isLoadedFromApi = false; 
+    // Keep financial fields read-only - removed: this.isLoadedFromApi = false;
     
     // Convert date to proper format if needed
     let dueDateValue = '';
@@ -1902,7 +1887,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showEditModal = false;
     this.editingUnit = null;
     this.isCreatingNew = false;
-    this.isLoadedFromApi = false;
+    // Keep financial fields read-only - removed: this.isLoadedFromApi = false;
     this.editForm.reset();
   }
 
@@ -1998,7 +1983,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
         },
         error: (error) => {
           this.savingUnit = false;
-          console.error('❌ Error saving unit test:', error);
           
           this.toastr.error(
             'An error occurred while saving the unit test',
@@ -2164,32 +2148,73 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.savingUnit = true;
     this.cdr.detectChanges();
 
-    const dto: SaveUpdateNewUnitTestDto = this.editForm.value;
-    
+    const formValue = this.editForm.value;
+
+    const dto: SaveUpdateNewUnitTestDto = {
+      rowIndex: formValue.rowIndex || 0,
+      make: formValue.make || '',
+      model: formValue.model || '',
+      serialNo: formValue.serialNo || '',
+      kva: formValue.kva || '',
+      voltage: formValue.voltage || '',
+      poNumber: formValue.poNumber || '',
+      shippingPO: formValue.shippingPO || '',
+      unitCost: formValue.unitCost ? (typeof formValue.unitCost === 'number' ? formValue.unitCost : parseFloat(formValue.unitCost.replace(/[$,]/g, ''))) : undefined,
+      shipCost: formValue.shipCost ? (typeof formValue.shipCost === 'number' ? formValue.shipCost : parseFloat(formValue.shipCost.replace(/[$,]/g, ''))) : undefined,
+      priority: formValue.priorityLevel || '',
+      assignedTo: formValue.testEngineer || '',
+      dueDate: formValue.installedDate,
+      problemNotes: formValue.deficiencyNotes || '',
+      approved: formValue.approved || false,
+      archive: formValue.moveToArchive || false,
+      lastModifiedBy: this.auth.currentUserValue?.username || 'System'
+    };
+
     this.newUnitTestService.saveUpdateUnitTest(dto).subscribe({
       next: (response: SaveUpdateUnitTestResponse) => {
         if (response.success) {
           this.toastr.success(response.message, 'Unit Updated');
           
-          // Update the local data
+          // Update the local data with proper type conversion
           if (this.editingUnit) {
             const index = this.allData.findIndex(unit => unit.rowIndex === dto.rowIndex);
             if (index !== -1) {
-              this.allData[index] = { ...this.allData[index], ...dto };
-              this.selectedUnit = this.allData[index];
+              // Convert DTO back to UPSTestStatusDto format with proper types
+              const updatedUnit = {
+                ...this.allData[index],
+                make: dto.make,
+                model: dto.model,
+                serialNo: dto.serialNo,
+                kva: dto.kva,
+                voltage: dto.voltage,
+                poNumber: dto.poNumber || '',
+                shippingPO: dto.shippingPO || '',
+                unitCost: dto.unitCost ? dto.unitCost.toString() : '',
+                shipCost: dto.shipCost ? dto.shipCost.toString() : '',
+                priority: dto.priority,
+                assignedTo: dto.assignedTo,
+                dueDate: dto.dueDate,
+                problemNotes: dto.problemNotes,
+                approved: dto.approved,
+                archive: dto.archive,
+                lastModifiedBy: dto.lastModifiedBy,
+                unitCostDecimal: dto.unitCost,
+                shipCostDecimal: dto.shipCost
+              };
+              this.allData[index] = updatedUnit;
+              this.selectedUnit = updatedUnit;
             }
           }
 
-          // Refresh data and close modal
+          // Refresh data and update charts
           this.applyFilters();
           this.updateCharts();
-          this.onCancelEdit();
+          // Keep form data visible - removed: this.onCancelEdit();
         } else {
           this.toastr.error(response.message || 'Failed to update unit', 'Update Failed');
         }
       },
       error: (error) => {
-        console.error('Error updating unit:', error);
         this.toastr.error('Failed to update unit. Please try again.', 'Error');
       },
       complete: () => {
@@ -2234,32 +2259,15 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.savingUnit = true;
     this.cdr.detectChanges();
 
-    const dto: SaveUpdateNewUnitTestDto = {
-      ...this.editForm.value,
-      rowIndex: 0 // New unit
-    };
-    
-    this.newUnitTestService.saveUpdateUnitTest(dto).subscribe({
-      next: (response: SaveUpdateUnitTestResponse) => {
-        if (response.success) {
-          this.toastr.success(response.message, 'Unit Created');
-          
-          // Reload data to include the new unit
-          this.loadNewUnitTestData();
-          this.onCancelCreate();
-        } else {
-          this.toastr.error(response.message || 'Failed to create unit', 'Create Failed');
-        }
-      },
-      error: (error) => {
-        console.error('Error creating unit:', error);
-        this.toastr.error('Failed to create unit. Please try again.', 'Error');
-      },
-      complete: () => {
-        this.savingUnit = false;
-        this.cdr.detectChanges();
-      }
-    });
+    const formValue = this.editForm.value;
+
+    // Use the new create API when creating a new unit (rowIndex = 0 or not set)
+    if (!formValue.rowIndex || formValue.rowIndex === 0) {
+      this.createNewUnit(formValue);
+    } else {
+      // Use existing save-update API for existing units
+      this.saveUpdateExistingUnit(formValue);
+    }
   }
 
   /**
@@ -2307,26 +2315,167 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.savingUnit = true;
     this.cdr.detectChanges();
 
-    const dto: SaveUpdateNewUnitTestDto = {
-      ...this.editForm.value,
-      rowIndex: 0 // New unit
+    const formValue = this.editForm.value;
+
+    // Use the new create API when adding a new unit (rowIndex = 0 or not set)
+    if (!formValue.rowIndex || formValue.rowIndex === 0) {
+      this.createNewUnit(formValue);
+    } else {
+      // Use existing save-update API for existing units
+      this.saveUpdateExistingUnit(formValue);
+    }
+  }
+
+  /**
+   * Create a new unit using the dedicated create API
+   */
+  private createNewUnit(formValue: any): void {
+
+    // Get values from result form as well if they exist
+    const resultFormValue = this.resultForm.value;
+
+    // Simple mapping for followedProcedure to database format
+    let testProcedures = '';
+    const followedProcedure = resultFormValue.followedProcedure || formValue.followedProcedure;
+    if (followedProcedure) {
+      switch (followedProcedure) {
+        case 'Yes':
+          testProcedures = 'Y';
+          break;
+        case 'No':
+          testProcedures = 'N';
+          break;
+        case 'N/A':
+          testProcedures = 'A';
+          break;
+        default:
+          testProcedures = followedProcedure;
+      }
+    }
+
+    // Get current user
+    const currentUser = this.auth.currentUserValue?.username || 'System';
+
+    // Get test information
+    const testedBy = resultFormValue.testEngineer || resultFormValue.TestedBy || formValue.testEngineer || formValue.TestedBy || formValue.testedBy || '';
+    const isApproved = formValue.approved || false;
+
+    const dto: CreateNewUnitDto = {
+      // Basic Unit Information (Required)
+      make: formValue.make || '',
+      model: formValue.model || '',
+      kva: formValue.kva || '',
+      voltage: formValue.voltage || '',
+      serialNo: formValue.serialNo || '',
+      
+      // Financial Information (Optional)
+      poNumber: formValue.poNumber || '',
+      shippingPO: formValue.shippingPO || '',
+      unitCost: formValue.unitCost ? (typeof formValue.unitCost === 'number' ? formValue.unitCost : parseFloat(formValue.unitCost.replace(/[$,]/g, ''))) : undefined,
+      shipCost: formValue.shipCost ? (typeof formValue.shipCost === 'number' ? formValue.shipCost : parseFloat(formValue.shipCost.replace(/[$,]/g, ''))) : undefined,
+      
+      // Assignment & Scheduling Fields
+      priority: formValue.priority || 'Normal',
+      assignedTo: formValue.assignedTo || '',
+      dueDate: formValue.dueDate,
+      
+      // Status & Workflow Fields
+      status: resultFormValue.currentStatus || resultFormValue.Status || formValue.currentStatus || formValue.Status || 'INP', // Default status for new units
+      approved: isApproved,
+      archive: formValue.moveToArchive || false,
+      approvedOn: isApproved ? new Date().toISOString() : undefined, // Set current date if approved
+      approvalSent: formValue.approvalSent || false,
+      archiveSent: formValue.archiveSent || false,
+      
+      // Problem & Testing Fields
+      problemNotes: formValue.deficiencyNotes || '',
+      resolveNotes: resultFormValue.inspectionNotes || resultFormValue.resolveNotes || formValue.inspectionNotes || formValue.resolveNotes || '',
+      testProcedures: testProcedures || resultFormValue.testProcedures || formValue.testProcedures || '',
+      
+      // Test Results & Personnel
+      testedBy: testedBy,
+      testedOn: testedBy ? new Date().toISOString() : undefined, // Set current date if there's a tester
+      
+      // Audit Metadata Fields
+      createdBy: currentUser,
+      createdOn: new Date().toISOString(), // Always set to current time for new units
+      lastModifiedBy: currentUser, // Always use current user
+      lastModifiedOn: new Date().toISOString() // Always set to current time
     };
-    
-    this.newUnitTestService.saveUpdateUnitTest(dto).subscribe({
-      next: (response: SaveUpdateUnitTestResponse) => {
+
+    this.newUnitTestService.createNewUnit(dto).subscribe({
+      next: (response: CreateNewUnitApiResponse) => {
         if (response.success) {
-          this.toastr.success(response.message, 'Unit Added');
+          this.toastr.success(`Unit created successfully! New RowIndex: ${response.data.newRowIndex}`, 'Unit Created');
+          
+          // Update the form with the new RowIndex
+          this.editForm.patchValue({ rowIndex: response.data.newRowIndex });
           
           // Reload data to include the new unit
           this.loadNewUnitTestData();
-          this.onClearUnitForm();
         } else {
-          this.toastr.error(response.message || 'Failed to add unit', 'Add Failed');
+          this.toastr.error(response.message || 'Failed to create unit', 'Create Failed');
         }
       },
       error: (error) => {
-        console.error('Error adding unit:', error);
-        this.toastr.error('Failed to add unit. Please try again.', 'Error');
+        let errorMessage = 'Failed to create unit. Please try again.';
+        
+        if (error?.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        this.toastr.error(errorMessage, 'Error');
+      },
+      complete: () => {
+        this.savingUnit = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /**
+   * Update existing unit using save-update API
+   */
+  private saveUpdateExistingUnit(formValue: any): void {
+
+    // Get current user
+    const currentUser = this.auth.currentUserValue?.username || 'System';
+
+    const dto: SaveUpdateNewUnitTestDto = {
+      rowIndex: formValue.rowIndex || 0,
+      make: formValue.make || '',
+      model: formValue.model || '',
+      serialNo: formValue.serialNo || '',
+      kva: formValue.kva || '',
+      voltage: formValue.voltage || '',
+      poNumber: formValue.poNumber || '',
+      shippingPO: formValue.shippingPO || '',
+      unitCost: formValue.unitCost ? (typeof formValue.unitCost === 'number' ? formValue.unitCost : parseFloat(formValue.unitCost.replace(/[$,]/g, ''))) : undefined,
+      shipCost: formValue.shipCost ? (typeof formValue.shipCost === 'number' ? formValue.shipCost : parseFloat(formValue.shipCost.replace(/[$,]/g, ''))) : undefined,
+      priority: formValue.priority || 'Normal',
+      assignedTo: formValue.assignedTo || '',
+      dueDate: formValue.dueDate,
+      problemNotes: formValue.deficiencyNotes || '',
+      approved: formValue.approved || false,
+      archive: formValue.moveToArchive || false,
+      lastModifiedBy: currentUser // Always use current authenticated user
+    };
+
+    this.newUnitTestService.saveUpdateUnitTest(dto).subscribe({
+      next: (response: SaveUpdateUnitTestResponse) => {
+        if (response.success) {
+          this.toastr.success(response.message, 'Unit Updated');
+          
+          // Reload data to include the updated unit
+          this.loadNewUnitTestData();
+        } else {
+          this.toastr.error(response.message || 'Failed to update unit', 'Update Failed');
+        }
+      },
+      error: (error) => {
+        this.toastr.error('Failed to update unit. Please try again.', 'Error');
       },
       complete: () => {
         this.savingUnit = false;
@@ -2369,11 +2518,8 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     this.deletingUnit = true;
     const unitToDelete = this.unitToDelete;
     
-    console.log('Deleting unit - RowIndex:', unitToDelete.rowIndex);
-
     this.newUnitTestService.deleteNewUnitTest(unitToDelete.rowIndex).subscribe({
       next: (response) => {
-        console.log('Delete API Response:', response);
         if (response.success) {
           this.toastr.success(response.message || 'Unit deleted successfully', 'Success');
           
@@ -2395,7 +2541,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           // Check if we're on a specific unit URL and redirect to main list
           this.route.params.subscribe(routeParams => {
             if (routeParams['rowIndex'] && parseInt(routeParams['rowIndex']) === unitToDelete.rowIndex) {
-              console.log('🔄 Redirecting to main list after deleting current unit');
               this.router.navigate(['/reports/new-unit-test']);
             }
           });
@@ -2405,7 +2550,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
         }
       },
       error: (error) => {
-        console.error('Error deleting unit:', error);
         this.toastr.error('Failed to delete unit. Please try again.', 'Error');
       },
       complete: () => {

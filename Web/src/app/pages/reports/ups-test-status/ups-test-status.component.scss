@@ -451,6 +451,19 @@
               background-color: rgba(248, 249, 250, 0.6);
             }
             
+            &.stripped-unit {
+              background-color: rgba(255, 165, 0, 0.2) !important; // Orange row highlight for stripped units
+              
+              &:hover {
+                background-color: rgba(255, 165, 0, 0.35) !important;
+              }
+              
+              td {
+                background-color: inherit !important;
+                color: #b8860b !important; // Dark orange text for better contrast
+              }
+            }
+            
             td {
               padding: 0.75rem 0.5rem !important;
               border-top: 1px solid rgba(0, 0, 0, 0.05);
@@ -484,6 +497,12 @@
               display: inline-flex;
               align-items: center;
               gap: 0.25rem;
+              white-space: normal !important;
+              word-wrap: break-word !important;
+              line-height: 1.2;
+              max-width: 100%;
+              text-align: center;
+              justify-content: center;
               
               &.badge-light-secondary,
               &.status-not-started {
@@ -851,6 +870,19 @@
         background-color: rgba(248, 249, 250, 0.6) !important;
       }
       
+      &.stripped-unit {
+        background-color: rgba(255, 165, 0, 0.2) !important; // Orange row highlight for stripped units
+        
+        &:hover {
+          background-color: rgba(255, 165, 0, 0.35) !important;
+        }
+        
+        td {
+          background-color: inherit !important;
+          color: #b8860b !important; // Dark orange text for better contrast
+        }
+      }
+      
       td {
         padding: 0.75rem 0.5rem !important;
         border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
@@ -881,7 +913,10 @@
           align-items: center !important;
           justify-content: center !important;
           gap: 0.25rem !important;
-          white-space: nowrap !important;
+          white-space: normal !important;
+          word-wrap: break-word !important;
+          line-height: 1.2 !important;
+          max-width: 100% !important;
           text-align: center !important;
           
           // In Progress - Blue Color

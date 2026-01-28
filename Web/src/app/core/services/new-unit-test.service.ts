@@ -15,7 +15,9 @@ import {
   SaveUpdateUnitTestResponse,
   SaveUpdateNewUnitResultDto,
   SaveUpdateUnitTestResultResponse,
-  DeleteNewUnitTestResponse
+  DeleteNewUnitTestResponse,
+  CreateNewUnitDto,
+  CreateNewUnitApiResponse
 } from '../model/new-unit-test.model';
 import { UPSTestStatusDto } from '../model/ups-test-status.model';
 import { StrippedUnitsStatusDto } from '../model/stripped-units-status.model';
@@ -168,6 +170,19 @@ export class NewUnitTestService {
    */
   deleteNewUnitTest(rowIndex: number): Observable<DeleteNewUnitTestResponse> {
     return this.http.delete<DeleteNewUnitTestResponse>(`${this.API}/NewUniTest/${rowIndex}`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Create a new unit test record with complete metadata
+   * @param dto The new unit data to create
+   * @returns Response with created unit details including new RowIndex
+   */
+  createNewUnit(dto: CreateNewUnitDto): Observable<CreateNewUnitApiResponse> {
+    return this.http.post<CreateNewUnitApiResponse>(`${this.API}/NewUniTest/create`, dto, {
       headers: this.headers
     }).pipe(
       catchError(this.handleError)

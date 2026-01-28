@@ -281,13 +281,14 @@ namespace Technicians.Api.Controllers
             {
                 if (dto == null)
                 {
-                    return BadRequest(new { 
-                        success = false, 
-                        message = "Invalid request payload" 
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Invalid request payload"
                     });
                 }
 
-                _logger.LogInformation("Saving/updating unit test - RowIndex: {RowIndex}, Make: {Make}, SerialNo: {SerialNo}", 
+                _logger.LogInformation("Saving/updating unit test - RowIndex: {RowIndex}, Make: {Make}, SerialNo: {SerialNo}",
                     dto.RowIndex, dto.Make, dto.SerialNo);
 
                 // Validate the request
@@ -309,6 +310,7 @@ namespace Technicians.Api.Controllers
                 {
                     _logger.LogInformation("Successfully saved/updated unit test - RowIndex: {RowIndex}", dto.RowIndex);
                     
+
                     return Ok(new
                     {
                         success = true,
@@ -328,11 +330,12 @@ namespace Technicians.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving/updating unit test - RowIndex: {RowIndex}", dto?.RowIndex);
-                
-                return StatusCode(500, new { 
-                    success = false, 
-                    message = "Failed to save/update unit test", 
-                    error = ex.Message 
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to save/update unit test",
+                    error = ex.Message
                 });
             }
         }
@@ -496,6 +499,77 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, new { 
                     success = false, 
                     message = "Failed to delete unit test", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Creates a new unit test record (separate from save-update)
+        /// </summary>
+        [HttpPost("create")]
+        public async Task<ActionResult<CreateNewUnitResponse>> CreateNewUnit([FromBody] CreateNewUnitDto dto)
+        {
+            try
+            {
+                if (dto == null)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Invalid request payload" 
+                    });
+                }
+
+                _logger.LogInformation("Creating new unit - Make: {Make}, Model: {Model}, SerialNo: {SerialNo}", 
+                    dto.Make, dto.Model, dto.SerialNo);
+
+                // Validate the request
+                var validationErrors = _repository.ValidateCreateNewUnitRequest(dto);
+                if (validationErrors.Any())
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Validation failed",
+                        errors = validationErrors
+                    });
+                }
+
+                // Check if serial number already exists
+                var serialExists = await _repository.SerialNumberExistsAsync(dto.SerialNo);
+                if (serialExists)
+                {
+                    return Conflict(new
+                    {
+                        success = false,
+                        message = $"A unit with serial number '{dto.SerialNo}' already exists"
+                    });
+                }
+
+                // Create the new unit
+                var result = await _repository.CreateNewUnitAsync(dto);
+
+                _logger.LogInformation("Successfully created new unit - RowIndex: {RowIndex}, Make: {Make}, SerialNo: {SerialNo}", 
+                    result.NewRowIndex, result.Make, result.SerialNo);
+                
+                return CreatedAtAction(
+                    nameof(GetNewUniTestByRowIndex), 
+                    new { rowIndex = result.NewRowIndex }, 
+                    new
+                    {
+                        success = true,
+                        message = result.Message,
+                        data = result
+                    });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating new unit - Make: {Make}, SerialNo: {SerialNo}", 
+                    dto?.Make, dto?.SerialNo);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to create new unit", 
                     error = ex.Message 
                 });
             }

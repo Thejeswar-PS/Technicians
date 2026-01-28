@@ -80,6 +80,10 @@ export interface SaveUpdateNewUnitTestDto {
   kva: string;
   voltage: string;
   serialNo: string;
+  poNumber?: string;
+  shippingPO?: string;
+  unitCost?: number;
+  shipCost?: number;
   priority: string;
   assignedTo: string;
   dueDate?: Date | string;
@@ -126,5 +130,65 @@ export interface DeleteNewUnitTestResponse {
     result: string;
     rowIndex: number;
   };
+  error?: string;
+}
+
+// Create New Unit Models
+export interface CreateNewUnitDto {
+  // Basic Unit Information (Required)
+  make: string;
+  model: string;
+  kva: string;
+  voltage: string;
+  serialNo: string;
+  
+  // Financial Information (Optional)
+  poNumber?: string;
+  shippingPO?: string;
+  unitCost?: number;
+  shipCost?: number;
+  
+  // Assignment & Scheduling Fields
+  priority?: string;
+  assignedTo?: string;
+  dueDate?: Date | string;
+  
+  // Status & Workflow Fields
+  status?: string;
+  approved?: boolean;
+  archive?: boolean;
+  approvedOn?: Date | string;
+  approvalSent?: boolean;
+  archiveSent?: boolean;
+  
+  // Problem & Testing Fields
+  problemNotes?: string;
+  resolveNotes?: string;
+  testProcedures?: string;
+  
+  // Test Results & Personnel
+  testedBy?: string;
+  testedOn?: Date | string;
+  
+  // Audit Metadata Fields
+  createdBy: string;
+  createdOn?: Date | string;
+  lastModifiedBy?: string;
+  lastModifiedOn?: Date | string;
+}
+
+export interface CreateNewUnitResponse {
+  success: boolean;
+  message: string;
+  newRowIndex: number;
+  make: string;
+  serialNo: string;
+}
+
+export interface CreateNewUnitApiResponse {
+  success: boolean;
+  message: string;
+  data: CreateNewUnitResponse;
+  errors?: string[];
   error?: string;
 }

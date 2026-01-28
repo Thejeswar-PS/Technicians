@@ -59,10 +59,11 @@ namespace Technicians.Api.Repository
         }
 
         /// <summary>
-        /// Gets a specific unit test record by row index
+        /// Gets a specific unit test record by row index using direct query
+        /// This ensures exact RowIndex match and returns 404 when unit doesn't exist
         /// </summary>
         /// <param name="rowIndex">The row index to retrieve</param>
-        /// <returns>Single UPSTestStatusDto or null if not found</returns>
+        /// <returns>Single UPSTestStatusDto with exact RowIndex match or null if not found</returns>
         public async Task<UPSTestStatusDto?> GetNewUniTestByRowIndexAsync(int rowIndex)
         {
             try
@@ -244,7 +245,6 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Validates the MoveUnitToStrippingDto for the move operation
-        /// Updated with correct field length constraints
         /// </summary>
         /// <param name="dto">DTO to validate</param>
         /// <returns>List of validation errors</returns>
@@ -362,6 +362,7 @@ namespace Technicians.Api.Repository
                 throw new Exception($"Error retrieving stripped unit by RowIndex: {ex.Message}", ex);
             }
         }
+
 
         /// <summary>
         /// Saves or updates a new unit test using the SaveUpdateNewUnitTest stored procedure
@@ -577,13 +578,198 @@ namespace Technicians.Api.Repository
         /// <param name="rowIndex">RowIndex to validate</param>
         /// <returns>List of validation errors</returns>
         public List<string> ValidateDeleteRequest(int rowIndex)
-        {
+        {   
             var errors = new List<string>();
 
             if (rowIndex <= 0)
                 errors.Add("RowIndex must be greater than 0");
 
             return errors;
+        }
+
+        #endregion
+
+        #region CreateNewUnit Functionality
+
+        /// <summary>
+        /// Creates a new unit test record with ALL fields including assignment, workflow, results, and audit metadata
+        /// </summary>
+        public async Task<CreateNewUnitResponse> CreateNewUnitAsync(CreateNewUnitDto dto)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string insertQuery = @"
+                    INSERT INTO dbo.UPSTestUnits (
+                        Make, Model, KVA, Voltage, SerialNo, 
+                        PONumber, ShippingPO, UnitCost, ShipCost,
+                        Priority, AssignedTo, DueDate, Status,
+                        ProblemNotes, ResolveNotes, TestProcedures,
+                        TestedBy, TestedOn, Approved, Archive, 
+                        ApprovedOn, ApprovalSent, ArchiveSent,
+                        CreatedBy, CreatedOn, LastModifiedBy, LastModifiedOn
+                    )
+                    OUTPUT INSERTED.RowIndex
+                    VALUES (
+                        @Make, @Model, @KVA, @Voltage, @SerialNo,
+                        @PONumber, @ShippingPO, @UnitCost, @ShipCost,
+                        @Priority, @AssignedTo, @DueDate, @Status,
+                        @ProblemNotes, @ResolveNotes, @TestProcedures,
+                        @TestedBy, @TestedOn, @Approved, @Archive,
+                        @ApprovedOn, @ApprovalSent, @ArchiveSent,
+                        @CreatedBy, COALESCE(@CreatedOn, CURRENT_TIMESTAMP), 
+                        @LastModifiedBy, COALESCE(@LastModifiedOn, CURRENT_TIMESTAMP)
+                    )";
+
+                var parameters = new DynamicParameters();
+                
+                // Basic Unit Information
+                parameters.Add("@Make", dto.Make, DbType.AnsiString, size: 100);
+                parameters.Add("@Model", dto.Model, DbType.AnsiString, size: 100);
+                parameters.Add("@KVA", dto.KVA, DbType.AnsiStringFixedLength, size: 3);
+                parameters.Add("@Voltage", dto.Voltage, DbType.AnsiString, size: 50);
+                parameters.Add("@SerialNo", dto.SerialNo, DbType.AnsiString, size: 100);
+                
+                // Financial Information
+                parameters.Add("@PONumber", dto.PONumber, DbType.AnsiString, size: 10);
+                parameters.Add("@ShippingPO", dto.ShippingPO, DbType.AnsiString, size: 10);
+                parameters.Add("@UnitCost", dto.UnitCost, DbType.Decimal);
+                parameters.Add("@ShipCost", dto.ShipCost, DbType.Decimal);
+                
+                // Assignment & Scheduling
+                parameters.Add("@Priority", dto.Priority, DbType.AnsiString, size: 15);
+                parameters.Add("@AssignedTo", dto.AssignedTo, DbType.AnsiString, size: 50);
+                parameters.Add("@DueDate", dto.DueDate, DbType.DateTime);
+                
+                // Status & Workflow
+                parameters.Add("@Status", dto.Status, DbType.AnsiString, size: 5);
+                parameters.Add("@Approved", dto.Approved, DbType.Boolean);
+                parameters.Add("@Archive", dto.Archive, DbType.Boolean);
+                parameters.Add("@ApprovedOn", dto.ApprovedOn, DbType.DateTime);
+                parameters.Add("@ApprovalSent", dto.ApprovalSent, DbType.Boolean);
+                parameters.Add("@ArchiveSent", dto.ArchiveSent, DbType.Boolean);
+                
+                // Problem & Testing
+                parameters.Add("@ProblemNotes", dto.ProblemNotes, DbType.AnsiString, size: 1000);
+                parameters.Add("@ResolveNotes", dto.ResolveNotes, DbType.AnsiString, size: 1000);
+                parameters.Add("@TestProcedures", dto.TestProcedures, DbType.AnsiString, size: 1);
+                
+                // Test Results & Personnel
+                parameters.Add("@TestedBy", dto.TestedBy, DbType.AnsiString, size: 100);
+                parameters.Add("@TestedOn", dto.TestedOn, DbType.DateTime);
+                
+                // Audit Metadata
+                parameters.Add("@CreatedBy", dto.CreatedBy, DbType.AnsiString, size: 125);
+                parameters.Add("@CreatedOn", dto.CreatedOn, DbType.DateTime);
+                parameters.Add("@LastModifiedBy", string.IsNullOrEmpty(dto.LastModifiedBy) ? dto.CreatedBy : dto.LastModifiedBy, DbType.AnsiString, size: 125);
+                parameters.Add("@LastModifiedOn", dto.LastModifiedOn, DbType.DateTime);
+
+                var newRowIndex = await connection.QuerySingleAsync<int>(insertQuery, parameters);
+
+                return new CreateNewUnitResponse
+                {
+                    Success = true,
+                    Message = "New unit created successfully with complete metadata",
+                    NewRowIndex = newRowIndex,
+                    Make = dto.Make,
+                    SerialNo = dto.SerialNo
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error creating new unit: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Updated validation for CreateNewUnitDto with all fields
+        /// </summary>
+        public List<string> ValidateCreateNewUnitRequest(CreateNewUnitDto dto)
+        {
+            var errors = new List<string>();
+
+            if (dto == null)
+            {
+                errors.Add("Request cannot be null");
+                return errors;
+            }
+
+            // Required fields
+            if (string.IsNullOrWhiteSpace(dto.Make))
+                errors.Add("Make is required");
+            if (string.IsNullOrWhiteSpace(dto.Model))
+                errors.Add("Model is required");
+            if (string.IsNullOrWhiteSpace(dto.SerialNo))
+                errors.Add("SerialNo is required");
+            if (string.IsNullOrWhiteSpace(dto.CreatedBy))
+                errors.Add("CreatedBy is required");
+
+            // Field length validations
+            if (!string.IsNullOrEmpty(dto.Make) && dto.Make.Length > 100)
+                errors.Add("Make cannot exceed 100 characters");
+            if (!string.IsNullOrEmpty(dto.Model) && dto.Model.Length > 100)
+                errors.Add("Model cannot exceed 100 characters");
+            if (!string.IsNullOrEmpty(dto.KVA) && dto.KVA.Length > 3)
+                errors.Add("KVA cannot exceed 3 characters");
+            if (!string.IsNullOrEmpty(dto.Voltage) && dto.Voltage.Length > 50)
+                errors.Add("Voltage cannot exceed 50 characters");
+            if (!string.IsNullOrEmpty(dto.SerialNo) && dto.SerialNo.Length > 100)
+                errors.Add("SerialNo cannot exceed 100 characters");
+            if (!string.IsNullOrEmpty(dto.PONumber) && dto.PONumber.Length > 10)
+                errors.Add("PONumber cannot exceed 10 characters");
+            if (!string.IsNullOrEmpty(dto.ShippingPO) && dto.ShippingPO.Length > 10)
+                errors.Add("ShippingPO cannot exceed 10 characters");
+            if (!string.IsNullOrEmpty(dto.Priority) && dto.Priority.Length > 15)
+                errors.Add("Priority cannot exceed 15 characters");
+            if (!string.IsNullOrEmpty(dto.AssignedTo) && dto.AssignedTo.Length > 50)
+                errors.Add("AssignedTo cannot exceed 50 characters");
+            if (!string.IsNullOrEmpty(dto.Status) && dto.Status.Length > 5)
+                errors.Add("Status cannot exceed 5 characters");
+            if (!string.IsNullOrEmpty(dto.ProblemNotes) && dto.ProblemNotes.Length > 1000)
+                errors.Add("ProblemNotes cannot exceed 1000 characters");
+            if (!string.IsNullOrEmpty(dto.ResolveNotes) && dto.ResolveNotes.Length > 1000)
+                errors.Add("ResolveNotes cannot exceed 1000 characters");
+            if (!string.IsNullOrEmpty(dto.TestProcedures) && dto.TestProcedures.Length > 1)
+                errors.Add("TestProcedures must be a single character");
+            if (!string.IsNullOrEmpty(dto.TestedBy) && dto.TestedBy.Length > 100)
+                errors.Add("TestedBy cannot exceed 100 characters");
+            if (!string.IsNullOrEmpty(dto.CreatedBy) && dto.CreatedBy.Length > 125)
+                errors.Add("CreatedBy cannot exceed 125 characters");
+            if (!string.IsNullOrEmpty(dto.LastModifiedBy) && dto.LastModifiedBy.Length > 125)
+                errors.Add("LastModifiedBy cannot exceed 125 characters");
+
+            // Business validations
+            if (dto.UnitCost.HasValue && dto.UnitCost < 0)
+                errors.Add("UnitCost cannot be negative");
+            if (dto.ShipCost.HasValue && dto.ShipCost < 0)
+                errors.Add("ShipCost cannot be negative");
+            if (dto.DueDate.HasValue && dto.DueDate < DateTime.Now.Date)
+                errors.Add("DueDate cannot be in the past");
+
+            return errors;
+        }
+
+        /// <summary>
+        /// Checks if serial number already exists
+        /// </summary>
+        public async Task<bool> SerialNumberExistsAsync(string serialNo)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = "SELECT COUNT(1) FROM dbo.UPSTestUnits WHERE SerialNo = @SerialNo";
+                var count = await connection.QuerySingleAsync<int>(query, new { SerialNo = serialNo });
+                
+                return count > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error checking serial number: {ex.Message}", ex);
+            }
         }
 
         #endregion
