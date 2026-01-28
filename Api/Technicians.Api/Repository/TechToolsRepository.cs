@@ -497,6 +497,259 @@ namespace Technicians.Api.Repository
             return callNbr.Trim();
         }
 
+        public async Task<List<JobsToBeUploadedDto>> GetJobsToBeUploadedAsync(
+        string technicianId,
+        string accountManagerName,
+        string empId)
+        {
+            var result = new List<JobsToBeUploadedDto>();
 
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("JobsToBeUploadedByTech", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@TechID", technicianId);
+                cmd.Parameters.AddWithValue("@OffId", accountManagerName);
+                cmd.Parameters.AddWithValue("@EmpID", empId);
+
+                await conn.OpenAsync();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    result.Add(new JobsToBeUploadedDto
+                    {
+                        CallNbr = reader["CallNbr"].ToString(),
+                        TechName = reader["TechName"].ToString(),
+                        AccMgr = reader["AccMgr"].ToString(),
+                        Status = reader["Status"].ToString(),
+                        StrtDate = Convert.ToDateTime(reader["StrtDate"]),
+                        CustName = reader["CustName"].ToString(),
+                        ChangeAge = Convert.ToInt32(reader["ChangeAge"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+            return result;
+        }
+
+        public async Task<CapFanUsageByYearResponse> GetCapFanUsageByYearAsync(
+        string capPartNo,
+        string fanPartNo,
+        string battNo,
+        string igbNo,
+        string scrNo,
+        string fusNo,
+        string year)
+        {
+            using var conn = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CapPartNo", capPartNo);
+            parameters.Add("@FanPartNo", fanPartNo);
+            parameters.Add("@BattNo", battNo);
+            parameters.Add("@IGB", igbNo);
+            parameters.Add("@SCR", scrNo);
+            parameters.Add("@FUS", fusNo);
+            parameters.Add("@Year", year);
+
+            await conn.OpenAsync();
+
+            using var multi = await conn.QueryMultipleAsync(
+                "CapFanUsageByYears",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            // Read result sets with dynamic mapping for columns with spaces
+            var capsRaw = await multi.ReadAsync();
+            var caps = capsRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("Cap Part No") ? dict["Cap Part No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total Caps") ? Convert.ToInt32(dict["Total Caps"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fansRaw = await multi.ReadAsync();
+            var fans = fansRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("Fan Part No") ? dict["Fan Part No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total Fans") ? Convert.ToInt32(dict["Total Fans"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var batteriesRaw = await multi.ReadAsync();
+            var batteries = batteriesRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("Batt No") ? dict["Batt No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total Batts") ? Convert.ToInt32(dict["Total Batts"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var igbRaw = await multi.ReadAsync();
+            var igb = igbRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("IGB No") ? dict["IGB No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total IGB") ? Convert.ToInt32(dict["Total IGB"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var scrRaw = await multi.ReadAsync();
+            var scr = scrRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("SCR No") ? dict["SCR No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total SCR") ? Convert.ToInt32(dict["Total SCR"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fusRaw = await multi.ReadAsync();
+            var fus = fusRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("FUS No") ? dict["FUS No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total FUS") ? Convert.ToInt32(dict["Total FUS"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            // Read total result sets
+            var capsTotalRaw = await multi.ReadAsync();
+            var capsTotal = capsTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total Caps") ? Convert.ToInt32(dict["Total Caps"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fansTotalRaw = await multi.ReadAsync();
+            var fansTotal = fansTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total Fans") ? Convert.ToInt32(dict["Total Fans"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var batteriesTotalRaw = await multi.ReadAsync();
+            var batteriesTotal = batteriesTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total Batts") ? Convert.ToInt32(dict["Total Batts"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var igbTotalRaw = await multi.ReadAsync();
+            var igbTotal = igbTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total IGB") ? Convert.ToInt32(dict["Total IGB"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var scrTotalRaw = await multi.ReadAsync();
+            var scrTotal = scrTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total SCR") ? Convert.ToInt32(dict["Total SCR"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fusTotalRaw = await multi.ReadAsync();
+            var fusTotal = fusTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total FUS") ? Convert.ToInt32(dict["Total FUS"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            return new CapFanUsageByYearResponse
+            {
+                Caps = caps,
+                Fans = fans,
+                Batteries = batteries,
+                IGB = igb,
+                SCR = scr,
+                FUS = fus,
+                CapsTotal = capsTotal,
+                FansTotal = fansTotal,
+                BatteriesTotal = batteriesTotal,
+                IGBTotal = igbTotal,
+                SCRTotal = scrTotal,
+                FUSTotal = fusTotal
+            };
+        }
+
+        public async Task<List<UnscheduledJobsByMonthDto>> GetUnscheduledJobsByMonthAsync()
+        {
+            using var conn = new SqlConnection(_gpconnectionString);
+            await conn.OpenAsync();
+
+            var result = await conn.QueryAsync<UnscheduledJobsByMonthDto>(
+                "DisplayUnscheduledGraph",
+                commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
+        }
+        public async Task<List<UnscheduledJobsByAccountManagerDto>> GetUnscheduledJobsByAccountManagerAsync(string month)
+        {
+            using var conn = new SqlConnection(_gpconnectionString);
+            await conn.OpenAsync();
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@pMonth", month);
+
+            var result = await conn.QueryAsync<UnscheduledJobsByAccountManagerDto>(
+                "DisplayUnscheduledActMngrGraph",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
+        }
     }
 }

@@ -193,7 +193,97 @@ namespace Technicians.Api.Controllers
             return BadRequest(new { success = false, message = result });
         }
 
+        [HttpGet("GetJobsToBeUploaded")]
+        public async Task<IActionResult> GetJobsToBeUploaded(
+        [FromQuery] string technicianID,
+        [FromQuery] string accountManagerName,
+        [FromQuery] string empID)
+        {
+            if (string.IsNullOrWhiteSpace(empID))
+                return BadRequest("empID is required.");
 
+            try
+            {
+                var jobs = await _toolsRepository.GetJobsToBeUploadedAsync(technicianID, accountManagerName, empID);
+
+                return Ok(new
+                {
+                    success = true,
+                    count = jobs.Count,
+                    data = jobs
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while fetching jobs."
+                });
+            }
+        }
+
+        [HttpGet("GetCapFanUsageByYear")]
+        public async Task<IActionResult> GetCapFanUsageByYear(
+            [FromQuery] string? capPartNo = "",
+            [FromQuery] string? fanPartNo = "",
+            [FromQuery] string? battNo = "",
+            [FromQuery] string? igbNo = "",
+            [FromQuery] string? scrNo = "",
+            [FromQuery] string? fusNo = "",
+            [FromQuery] string? year = "")
+        {
+            // Handle null values by converting them to empty strings
+            capPartNo ??= string.Empty;
+            fanPartNo ??= string.Empty;
+            battNo ??= string.Empty;
+            igbNo ??= string.Empty;
+            scrNo ??= string.Empty;
+            fusNo ??= string.Empty;
+            year ??= string.Empty;
+
+            var data = await _toolsRepository.GetCapFanUsageByYearAsync(
+                capPartNo, 
+                fanPartNo, 
+                battNo, 
+                igbNo, 
+                scrNo, 
+                fusNo, 
+                year);
+
+            return Ok(new
+            {
+                success = true,
+                data
+            });
+        }
+
+        [HttpGet("GetUnscheduledJobsByMonth")]
+        public async Task<IActionResult> GetUnscheduledJobsByMonth()
+        {
+            var data = await _toolsRepository.GetUnscheduledJobsByMonthAsync();
+
+            return Ok(new
+            {
+                success = true,
+                title = "DC Group - Unscheduled Jobs By Month",
+                data
+            });
+        }
+
+        [HttpGet("GetUnscheduledJobsByAccountManager")]
+        public async Task<IActionResult> GetUnscheduledJobsByAccountManager([FromQuery] string month)
+        {
+            var data = await _toolsRepository.GetUnscheduledJobsByAccountManagerAsync(month);
+
+            return Ok(new
+            {
+                success = true,
+                month,
+                chartType = "funnel",
+                data
+            });
+        }
     }
 }
 

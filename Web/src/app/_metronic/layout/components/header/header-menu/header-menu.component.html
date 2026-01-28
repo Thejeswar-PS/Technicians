@@ -439,6 +439,24 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
         <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Past Due Jobs Graph</span>
       </a>
     </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r4"
+      routerLinkActive="active menu-here"
+      [routerLink]="['/graphs/cap-fan-usage-yearly']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-bar-chart-line"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Cap/Fan Usage Yearly</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r5"
+      routerLinkActive="active menu-here"
+      [routerLink]="['/graphs/unscheduled-jobs-graph']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-calendar-x"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Unscheduled Jobs Graph</span>
+      </a>
+    </div>
   </div>
 
 </div>
@@ -482,6 +500,15 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
         class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/tools/notes-search')">
         <span class="menu-icon"><i class="bi fs-3 bi-search"></i></span>
         <span class="menu-title fs-4 text-dark">Notes Search</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="jobstobeuploaded"
+        routerLinkActive="active menu-here"
+        [routerLink]="['/tools/jobs-to-be-uploaded']"
+        class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/tools/jobs-to-be-uploaded')">
+        <span class="menu-icon"><i class="bi fs-3 bi-upload"></i></span>
+        <span class="menu-title fs-4 text-dark">Jobs To Be Uploaded</span>
       </a>
     </div>
   </div>

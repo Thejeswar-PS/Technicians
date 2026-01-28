@@ -3,6 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { TrendingReportTeamsComponent } from './trending-report-teams/trending-report-teams.component';
 import { AccountManagerGraphComponent } from '../reports/account-manager-graph/account-manager-graph.component';
 import { PastDueGraphComponent } from './past-due-graph/past-due-graph.component';
+import { CapFanUsageYearlyComponent } from './cap-fan-usage-yearly/cap-fan-usage-yearly.component';
+import { UnscheduledJobsGraphComponent } from './unscheduled-jobs-graph/unscheduled-jobs-graph.component';
 
 
 const routes: Routes = [
@@ -22,6 +24,14 @@ const routes: Routes = [
   {
     path: 'past-due-graph',
     component: PastDueGraphComponent
+  },
+  {
+    path: 'cap-fan-usage-yearly',
+    component: CapFanUsageYearlyComponent
+  },
+  {
+    path: 'unscheduled-jobs-graph',
+    component: UnscheduledJobsGraphComponent
   }
 ];
 
