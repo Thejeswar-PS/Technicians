@@ -341,6 +341,15 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
     <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
       <a id="r21"
       routerLinkActive="active menu-here"
+      [routerLink]="['/reports/dtech-users-data']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-people text-info"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">DTech Users Data</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r22"
+      routerLinkActive="active menu-here"
       [routerLink]="['/reports/ups-test-status']"
       class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
         <span class="menu-icon"><i class="bi fs-3 bi-battery-charging text-primary"></i></span>
@@ -348,7 +357,7 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
       </a>
     </div>
     <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
-      <a id="r22"
+      <a id="r23"
       routerLinkActive="active menu-here"
       [routerLink]="['/reports/new-unit-test']"
       class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">

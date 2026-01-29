@@ -114,6 +114,7 @@ builder.Services.AddScoped<IPastDueGraphRepository, PastDueGraphRepository>();
 builder.Services.AddScoped<EmergencyJobsRepository>();
 builder.Services.AddScoped<UPSTestStatusRepository>();
 builder.Services.AddScoped<NewUniTestRepository>(); 
+builder.Services.AddScoped<DTechUsersDataRepository>();
 
 
 var app = builder.Build();

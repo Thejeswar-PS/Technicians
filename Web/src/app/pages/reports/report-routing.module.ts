@@ -19,6 +19,7 @@ import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.compon
 import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
+import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
 
 const routes: Routes = [
   {
@@ -109,6 +110,10 @@ const routes: Routes = [
   {
     path: 'past-due-contract-details',
     component: PastDueContractDetailsComponent
+  },
+  {
+    path: 'dtech-users-data',
+    component: DTechUsersDataComponent
   }
 ];
 

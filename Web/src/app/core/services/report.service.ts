@@ -102,6 +102,11 @@ import {
   MoveUnitToStrippingDto,
   MoveUnitToStrippingApiResponse
 } from '../model/new-unit-test.model';
+import {
+  DTechUsersDataRequest,
+  DTechUsersDataApiResponse,
+  DTechUsersDataResponse
+} from '../model/dtech-users-data.model';
 
 @Injectable({
   providedIn: 'root'
@@ -1341,6 +1346,86 @@ export class ReportService {
     return this.http.post<MoveUnitToStrippingApiResponse>(`${this.API}/NewUniTest/move-to-stripping`, dto, {
       headers: this.headers
     }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // ====================== DTech Users Data Methods ======================
+
+  /**
+   * Gets DTech users data with optional filtering
+   * @param filters Optional filter criteria for the search
+   * @returns Filtered DTech users data
+   */
+  getDTechUsersData(filters?: DTechUsersDataRequest): Observable<DTechUsersDataApiResponse> {
+    let params = new HttpParams();
+    
+    if (filters) {
+      if (filters.login) {
+        params = params.set('login', filters.login);
+      }
+      if (filters.siteID) {
+        params = params.set('siteID', filters.siteID);
+      }
+      if (filters.custName) {
+        params = params.set('custName', filters.custName);
+      }
+      if (filters.address) {
+        params = params.set('address', filters.address);
+      }
+      if (filters.phone) {
+        params = params.set('phone', filters.phone);
+      }
+      if (filters.email) {
+        params = params.set('email', filters.email);
+      }
+      if (filters.contact) {
+        params = params.set('contact', filters.contact);
+      }
+      if (filters.svcSerialId) {
+        params = params.set('svcSerialId', filters.svcSerialId);
+      }
+    }
+
+    return this.http.get<DTechUsersDataApiResponse>(`${this.API}/DTechUsersData`, {
+      headers: this.headers,
+      params: params
+    }).pipe(
+      map(response => {
+        // Convert date strings to Date objects
+        if (response.data && response.data.usersData) {
+          response.data.usersData = response.data.usersData.map(user => ({
+            ...user,
+            lastLoggedIn: new Date(user.lastLoggedIn),
+            lastChangedPwd: new Date(user.lastChangedPwd)
+          }));
+        }
+        return response;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Advanced filtering endpoint with POST method for complex queries
+   * @param request Detailed filter criteria
+   * @returns Filtered DTech users data
+   */
+  filterDTechUsers(request: DTechUsersDataRequest): Observable<DTechUsersDataApiResponse> {
+    return this.http.post<DTechUsersDataApiResponse>(`${this.API}/DTechUsersData/filter`, request, {
+      headers: this.headers
+    }).pipe(
+      map(response => {
+        // Convert date strings to Date objects
+        if (response.data && response.data.usersData) {
+          response.data.usersData = response.data.usersData.map(user => ({
+            ...user,
+            lastLoggedIn: new Date(user.lastLoggedIn),
+            lastChangedPwd: new Date(user.lastChangedPwd)
+          }));
+        }
+        return response;
+      }),
       catchError(this.handleError)
     );
   }
