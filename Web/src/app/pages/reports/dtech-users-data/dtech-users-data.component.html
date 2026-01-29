@@ -266,58 +266,47 @@
 
     <!-- Results Section -->
     <div class="card dtech-results-card" *ngIf="displayedData.length > 0">
-      <div class="card-header results-header">
-        <div class="results-header-content">
-          <div class="results-title-section">
-            <h4 class="results-title">
-              <i class="fas fa-list-ul me-2"></i>Search Results
-            </h4>
-            <div class="results-meta">
-              <span class="results-count">{{ totalRecords }} users found</span>
-            </div>
-          </div>
-          <div class="results-actions">
-            <button class="btn btn-outline-primary btn-sm export-btn">
-              <i class="fas fa-download me-1"></i>Export
-            </button>
-          </div>
+      <div class="card-header app-card-header">
+        <div class="d-flex align-items-center gap-3">
+          <h4 class="mb-0">
+            <i class="fas fa-list-ul me-2"></i>Search Results
+          </h4>
+          <span class="badge rounded-pill" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">{{ totalRecords }} Results</span>
         </div>
       </div>
       
-      <div class="card-body p-0">
-        <div class="results-table-container">
-          <table class="table results-table mb-0">
-            <thead class="table-header">
+      <div class="card-body px-4 py-0">
+        <div class="app-table-container">
+          <table class="table app-table mb-0">
+            <thead class="app-table-header">
               <tr>
-                <th class="sortable-header col-login">
+                <th class="app-sortable-header">
                   <span>Login</span>
                   <i class="fas fa-sort"></i>
                 </th>
-                <th class="col-password">Password</th>
-                <th class="sortable-header col-site">
+                <th>Password</th>
+                <th class="app-sortable-header">
                   <span>Site ID</span>
                   <i class="fas fa-sort"></i>
                 </th>
-                <th class="col-customer">Customer</th>
-                <th class="col-address">Address</th>
-                <th class="col-contact">Contact</th>
-                <th class="col-phone">Phone</th>
-                <th class="col-email">Email</th>
-                <th class="sortable-header col-login-date">
+                <th>Customer</th>
+                <th>Address</th>
+                <th>Contact</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th class="app-sortable-header">
                   <span>Last Login</span>
                   <i class="fas fa-sort"></i>
                 </th>
-                <th class="sortable-header col-pwd-date">
+                <th class="app-sortable-header">
                   <span>Pwd Changed</span>
                   <i class="fas fa-sort"></i>
                 </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="app-table-body">
               <tr *ngFor="let user of displayedData; index as i" 
-                  class="result-row" 
-                  [class.even]="i % 2 === 0"
-                  [class.odd]="i % 2 === 1">
+                  class="app-table-row">
                 <td class="login-cell">
                   <div class="cell-content">
                     <span class="text-primary fw-bold">{{ user.login }}</span>
@@ -325,7 +314,7 @@
                 </td>
                 <td class="password-cell">
                   <div class="cell-content">
-                    <span class="password-mask">{{ user.password ? '••••••' : 'N/A' }}</span>
+                    <span>{{ user.password || 'N/A' }}</span>
                   </div>
                 </td>
                 <td class="site-cell">
@@ -340,7 +329,7 @@
                 </td>
                 <td class="address-cell">
                   <div class="cell-content truncate">
-                    <span class="text-muted">{{ user.address }}</span>
+                    <span>{{ user.address }}</span>
                   </div>
                 </td>
                 <td class="contact-cell">
@@ -355,7 +344,7 @@
                 </td>
                 <td class="email-cell">
                   <div class="cell-content truncate">
-                    <span class="text-success">{{ user.email }}</span>
+                    <span style="color: #1bc505;">{{ user.email }}</span>
                   </div>
                 </td>
                 <td class="login-date-cell">
