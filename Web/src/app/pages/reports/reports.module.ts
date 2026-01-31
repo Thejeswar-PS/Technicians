@@ -28,6 +28,7 @@ import { PastDueContractDetailsComponent } from './past-due-contract-details/pas
 import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
 import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
+import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
 
 @NgModule({
   declarations: [
@@ -50,7 +51,8 @@ import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.com
     PastDueContractDetailsComponent,
     UPSTestStatusComponent,
     NewUnitTestComponent,
-    DTechUsersDataComponent
+    DTechUsersDataComponent,
+    ExtranetUserClassesComponent
   ],
   imports: [
     CommonModule,

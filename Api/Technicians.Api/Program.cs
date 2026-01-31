@@ -115,6 +115,7 @@ builder.Services.AddScoped<EmergencyJobsRepository>();
 builder.Services.AddScoped<UPSTestStatusRepository>();
 builder.Services.AddScoped<NewUniTestRepository>(); 
 builder.Services.AddScoped<DTechUsersDataRepository>();
+builder.Services.AddScoped<ExtranetUserClassesRepository>();
 
 
 var app = builder.Build();

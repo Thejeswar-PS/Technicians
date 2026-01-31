@@ -1,0 +1,404 @@
+<div class="modern-user-management">
+  <!-- Header Section -->
+  <div class="order-request-header__top mb-4 d-flex justify-content-center align-items-center">
+    <!-- Page Title - Centered -->
+    <div class="order-request-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-person-gear me-2"></i>
+        Extranet User Management
+      </h2>
+    </div>
+  </div>
+
+  <!-- Input Fields Section -->
+  <div class="input-fields-section">
+    <form [formGroup]="assignCustomerForm">
+    <div class="row g-3">
+      <!-- User Selection for Customer Numbers -->
+      <div class="col-md-4">
+        <label class="form-label">Select User for Customer Numbers</label>
+        <select 
+          class="form-select" 
+          (change)="onUserSelectionChange($event)"
+          [disabled]="isLoading">
+          <option value="">Select user...</option>
+          <option *ngFor="let user of extranetUserClasses" [value]="user.classID">
+            {{user.classID}}
+          </option>
+        </select>
+      </div>
+
+      <!-- View Customer Numbers Button -->
+      <div class="col-md-2 d-flex align-items-end">
+        <button 
+          type="button" 
+          class="btn btn-info w-100"
+          (click)="viewCustomerNumbers()"
+          [disabled]="isLoading || !selectedUserForCustomers">
+          <i class="fas fa-search me-2"></i>
+          View Numbers
+        </button>
+      </div>
+
+      <!-- Customer Number Input for Assignment -->
+      <div class="col-md-4">
+        <form [formGroup]="assignCustomerForm">
+          <label class="form-label">Customer Number to Assign</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            formControlName="custNmbr"
+            placeholder="Enter customer number"
+            [disabled]="isLoading">
+        </form>
+      </div>
+
+      <!-- Spacer -->
+      <div class="col-md-2"></div>
+    </div>
+    </form>
+    
+    <!-- Assignment Action Buttons -->
+    <div class="d-flex justify-content-center gap-3 mt-3">
+      <!-- Assign Customer Number -->
+      <button 
+        type="button" 
+        class="btn btn-success"
+        (click)="assignCustomerNumber()"
+        [disabled]="isLoading || !assignCustomerForm.get('custNmbr')?.value || !userForm.get('login')?.value">
+        <i class="fas fa-plus-circle me-2"></i>
+        Assign Customer Number
+      </button>
+
+      <!-- Delete Customer Number -->
+      <button 
+        type="button" 
+        class="btn btn-warning"
+        (click)="deleteCustomerNumber(selectedLogin, '')"
+        [disabled]="isLoading || !selectedLogin || customerNumbers.length === 0">
+        <i class="fas fa-minus-circle me-2"></i>
+        Delete Customer Number
+      </button>
+
+      <!-- Delete User -->
+      <button 
+        type="button" 
+        class="btn btn-danger"
+        (click)="deleteUser()"
+        [disabled]="isLoading || !userForm.get('login')?.value">
+        <i class="fas fa-user-times me-2"></i>
+        Delete User
+      </button>
+    </div>
+  </div>
+  <div *ngIf="showCustomerNumbers" class="customer-numbers-section">
+    <div class="section-header">
+      <h5 class="section-title">
+        <i class="fas fa-users text-info me-2"></i>
+        Customer Numbers for: <span class="text-primary">{{selectedLogin}}</span>
+      </h5>
+    </div>
+    
+    <div *ngIf="isLoadingCustomerNumbers" class="loading-state">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p>Loading customer numbers...</p>
+    </div>
+
+    <div *ngIf="!isLoadingCustomerNumbers" class="customer-grid">
+      <div *ngIf="customerNumbers.length === 0" class="empty-state">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <h6>No Customer Numbers Found</h6>
+        <p class="text-muted">This user has no assigned customer numbers.</p>
+      </div>
+      
+      <div *ngIf="customerNumbers.length > 0" class="row g-3">
+        <div *ngFor="let customer of customerNumbers" class="col-md-4 col-lg-3">
+          <div class="customer-number-card">
+            <div class="card-icon">
+              <i class="fas fa-hashtag"></i>
+            </div>
+            <div class="card-content">
+              <h6>{{customer.custNmbr}}</h6>
+            </div>
+            <div class="card-actions">
+              <button 
+                type="button" 
+                class="btn btn-sm btn-outline-danger"
+                (click)="deleteCustomerNumber(selectedLogin, customer.custNmbr)"
+                [disabled]="isLoadingCustomerNumbers">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Form -->
+  <div class="main-form-section">
+    <div class="section-header">
+      <h5 class="section-title">
+        <i class="fas fa-user-edit text-primary me-2"></i>
+        User Information
+      </h5>
+    </div>
+
+    <form [formGroup]="userForm" class="modern-form">
+      <div class="row g-4">
+        <!-- Account Information -->
+        <div class="col-lg-6">
+          <div class="form-section">
+            <div class="section-label">
+              <i class="fas fa-user-circle"></i>
+              <span>Account Information</span>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label required">Username</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                formControlName="login"
+                placeholder="Enter username"
+                [class.is-invalid]="userForm.get('login')?.invalid && userForm.get('login')?.touched"
+                [disabled]="isLoading">
+              <div *ngIf="userForm.get('login')?.invalid && userForm.get('login')?.touched" class="invalid-feedback">
+                Username is required
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Password</label>
+              <input 
+                type="password" 
+                class="form-control" 
+                formControlName="password"
+                placeholder="Enter password"
+                [class.is-invalid]="userForm.get('password')?.invalid && userForm.get('password')?.touched"
+                [disabled]="isLoading">
+              <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched" class="invalid-feedback">
+                Password is required
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label required">Customer Class</label>
+              <select 
+                class="form-select" 
+                formControlName="classID"
+                [class.is-invalid]="userForm.get('classID')?.invalid && userForm.get('classID')?.touched"
+                [disabled]="isLoading">
+                <option value="">Select customer class...</option>
+                <option *ngFor="let userClass of extranetUserClasses" [value]="userClass.classID">
+                  {{userClass.classID}}
+                </option>
+              </select>
+              <div *ngIf="userForm.get('classID')?.invalid && userForm.get('classID')?.touched" class="invalid-feedback">
+                Customer class is required
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="col-lg-6">
+          <div class="form-section">
+            <div class="section-label">
+              <i class="fas fa-address-book"></i>
+              <span>Contact Information</span>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Customer Name</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                formControlName="customerName"
+                placeholder="Enter customer name"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Contact Name</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                formControlName="contactName"
+                placeholder="Enter contact name"
+                [disabled]="isLoading">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input 
+                type="email" 
+                class="form-control" 
+                formControlName="email"
+                placeholder="Enter email address"
+                [class.is-invalid]="userForm.get('email')?.invalid && userForm.get('email')?.touched"
+                [disabled]="isLoading">
+              <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched" class="invalid-feedback">
+                Please enter a valid email address
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Address Information -->
+        <div class="col-12">
+          <div class="form-section">
+            <div class="section-label">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>Address Information</span>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Address Line 1</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="address1"
+                  placeholder="Enter address line 1"
+                  [disabled]="isLoading">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Address Line 2</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="address2"
+                  placeholder="Enter address line 2"
+                  [disabled]="isLoading">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">City</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="city"
+                  placeholder="Enter city"
+                  [disabled]="isLoading">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">State</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="state"
+                  placeholder="Enter state"
+                  [disabled]="isLoading">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">ZIP Code</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  formControlName="zip"
+                  placeholder="Enter ZIP code"
+                  [disabled]="isLoading">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Phone Number</label>
+                <input 
+                  type="tel" 
+                  class="form-control" 
+                  formControlName="phone"
+                  placeholder="Enter phone number"
+                  [disabled]="isLoading">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Permissions -->
+        <div class="col-12">
+          <div class="form-section">
+            <div class="section-label">
+              <i class="fas fa-shield-alt"></i>
+              <span>Permissions & Status</span>
+            </div>
+            
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="custom-checkbox">
+                  <input 
+                    type="checkbox" 
+                    id="viewFinancial" 
+                    formControlName="viewFinancial"
+                    [disabled]="isLoading">
+                  <label for="viewFinancial">
+                    <span class="checkbox-icon"></span>
+                    <div class="checkbox-content">
+                      <strong>Can View Invoices</strong>
+                      <small>Allow access to financial information and invoices</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="custom-checkbox">
+                  <input 
+                    type="checkbox" 
+                    id="underContract" 
+                    formControlName="underContract"
+                    [disabled]="isLoading">
+                  <label for="underContract">
+                    <span class="checkbox-icon"></span>
+                    <div class="checkbox-content">
+                      <strong>Under Contract</strong>
+                      <small>Customer is currently under contract</small>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- Bottom Action Buttons -->
+    <div class="bottom-actions mt-4">
+      <div class="d-flex justify-content-center gap-3">
+        <!-- Save User -->
+        <button 
+          type="button" 
+          class="btn btn-primary btn-lg"
+          (click)="saveUser()"
+          [disabled]="isLoading || userForm.invalid">
+          <span *ngIf="!isLoading">
+            <i class="fas fa-save me-2"></i>
+            Save User
+          </span>
+          <span *ngIf="isLoading">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+            Saving...
+          </span>
+        </button>
+
+        <!-- Reset Form -->
+        <button 
+          type="button" 
+          class="btn btn-secondary btn-lg"
+          (click)="resetForm()"
+          [disabled]="isLoading">
+          <i class="fas fa-undo me-2"></i>
+          Reset Form
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="loading-content">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <h6>Processing...</h6>
+      <p class="text-muted">Please wait while we process your request</p>
+    </div>
+  </div>
+</div>

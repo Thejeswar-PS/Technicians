@@ -350,6 +350,15 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
     <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
       <a id="r22"
       routerLinkActive="active menu-here"
+      [routerLink]="['/reports/extranet-user-classes']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-person-badge text-success"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Extranet User Classes</span>
+      </a>
+    </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r22"
+      routerLinkActive="active menu-here"
       [routerLink]="['/reports/ups-test-status']"
       class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
         <span class="menu-icon"><i class="bi fs-3 bi-battery-charging text-primary"></i></span>

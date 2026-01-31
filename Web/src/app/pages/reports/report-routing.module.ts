@@ -20,6 +20,7 @@ import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 import { ContractDetailsReportComponent } from './contract-details-report/contract-details-report.component';
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
+import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
 
 const routes: Routes = [
   {
@@ -114,6 +115,10 @@ const routes: Routes = [
   {
     path: 'dtech-users-data',
     component: DTechUsersDataComponent
+  },
+  {
+    path: 'extranet-user-classes',
+    component: ExtranetUserClassesComponent
   }
 ];
 

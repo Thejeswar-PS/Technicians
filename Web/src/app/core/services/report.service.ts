@@ -107,6 +107,17 @@ import {
   DTechUsersDataApiResponse,
   DTechUsersDataResponse
 } from '../model/dtech-users-data.model';
+import {
+  ExtranetUserClassesDto,
+  ExtranetUserClassesApiResponse,
+  ExtranetCustNumbersDto,
+  ExtranetUserInfoDto,
+  ExtranetAddCustnmbrResult,
+  ExtranetSaveUpdateUserDto,
+  ExtranetSaveUpdateUserResponse,
+  ExtranetDeleteUserResponse,
+  ExtranetDeleteCustnmbrResponse
+} from '../model/extranet-user-classes.model';
 
 @Injectable({
   providedIn: 'root'
@@ -1426,6 +1437,174 @@ export class ReportService {
         }
         return response;
       }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Gets ExtranetUserClasses data from the API
+   * @returns Observable containing ExtranetUserClasses data
+   */
+  getExtranetUserClasses(): Observable<ExtranetUserClassesApiResponse> {
+    return this.http.get<ExtranetUserClassesApiResponse>(`${this.API}/ExtranetUserClasses`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Gets customer numbers for a specific login from the API
+   * @param login The login identifier
+   * @returns Observable containing customer numbers data
+   */
+  getExtranetCustomerNumbers(login: string): Observable<ExtranetCustNumbersDto[]> {
+    if (!login || login.trim() === '') {
+      throw new Error('Login is required');
+    }
+    
+    return this.http.get<ExtranetCustNumbersDto[]>(`${this.API}/ExtranetUserClasses/${encodeURIComponent(login.trim())}/customer-numbers`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Gets user information for a specific login from the API
+   * @param login The login identifier
+   * @returns Observable containing user information
+   */
+  getExtranetUserInfo(login: string): Observable<ExtranetUserInfoDto> {
+    if (!login || login.trim() === '') {
+      throw new Error('Login is required');
+    }
+    
+    return this.http.get<ExtranetUserInfoDto>(`${this.API}/ExtranetUserClasses/${encodeURIComponent(login.trim())}`, {
+      headers: this.headers
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Adds a customer number for a specific login
+   * @param login The login identifier
+   * @param custNmbr The customer number to add
+   * @returns Observable containing the operation result
+   */
+  addExtranetCustomerNumber(login: string, custNmbr: string): Observable<ExtranetAddCustnmbrResult> {
+    if (!login || login.trim() === '') {
+      throw new Error('Login is required');
+    }
+    if (!custNmbr || custNmbr.trim() === '') {
+      throw new Error('Customer number is required');
+    }
+    
+    const trimmedLogin = login.trim();
+    const trimmedCustNmbr = custNmbr.trim();
+    
+    return this.http.post<ExtranetAddCustnmbrResult>(
+      `${this.API}/ExtranetUserClasses/${encodeURIComponent(trimmedLogin)}/customer-numbers/${encodeURIComponent(trimmedCustNmbr)}`,
+      {},
+      {
+        headers: this.headers
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Saves or updates extranet user information
+   * @param userDto The user information to save/update
+   * @returns Observable containing the operation result
+   */
+  saveUpdateExtranetUser(userDto: ExtranetSaveUpdateUserDto): Observable<ExtranetSaveUpdateUserResponse> {
+    // Trim all string properties
+    const trimmedUserDto: ExtranetSaveUpdateUserDto = {
+      login: (userDto.login || '').trim(),
+      password: (userDto.password || '').trim(),
+      classID: (userDto.classID || '').trim(),
+      customerName: (userDto.customerName || '').trim(),
+      contactName: (userDto.contactName || '').trim(),
+      address1: (userDto.address1 || '').trim(),
+      address2: (userDto.address2 || '').trim(),
+      city: (userDto.city || '').trim(),
+      state: (userDto.state || '').trim(),
+      zip: (userDto.zip || '').trim(),
+      phone: (userDto.phone || '').trim(),
+      email: (userDto.email || '').trim(),
+      viewFinancial: userDto.viewFinancial,
+      underContract: userDto.underContract
+    };
+    
+    if (!trimmedUserDto.login) {
+      throw new Error('Login is required');
+    }
+    if (!trimmedUserDto.password) {
+      throw new Error('Password is required');
+    }
+    if (!trimmedUserDto.classID) {
+      throw new Error('Class ID is required');
+    }
+    
+    return this.http.post<ExtranetSaveUpdateUserResponse>(
+      `${this.API}/ExtranetUserClasses/save-update`,
+      trimmedUserDto,
+      {
+        headers: this.headers
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Deletes an extranet user
+   * @param username The username to delete
+   * @returns Observable containing the operation result
+   */
+  deleteExtranetUser(username: string): Observable<ExtranetDeleteUserResponse> {
+    if (!username || username.trim() === '') {
+      throw new Error('Username is required');
+    }
+    
+    const trimmedUsername = username.trim();
+    
+    return this.http.delete<ExtranetDeleteUserResponse>(
+      `${this.API}/ExtranetUserClasses/${encodeURIComponent(trimmedUsername)}`,
+      {
+        headers: this.headers
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Deletes a customer number for a specific login
+   * @param login The login identifier
+   * @param custNmbr The customer number to delete
+   * @returns Observable containing the operation result
+   */
+  deleteExtranetCustomerNumber(login: string, custNmbr: string): Observable<ExtranetDeleteCustnmbrResponse> {
+    if (!login || login.trim() === '') {
+      throw new Error('Login is required');
+    }
+    if (!custNmbr || custNmbr.trim() === '') {
+      throw new Error('Customer number is required');
+    }
+    
+    const trimmedLogin = login.trim();
+    const trimmedCustNmbr = custNmbr.trim();
+    
+    return this.http.delete<ExtranetDeleteCustnmbrResponse>(
+      `${this.API}/ExtranetUserClasses/${encodeURIComponent(trimmedLogin)}/customer-numbers/${encodeURIComponent(trimmedCustNmbr)}`,
+      {
+        headers: this.headers
+      }
+    ).pipe(
       catchError(this.handleError)
     );
   }
