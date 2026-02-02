@@ -1,0 +1,753 @@
+// DTech Users Container Styling - Professional Design
+.dtech-users-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  position: relative;
+  contain: layout;
+  
+  // Force white card header background
+  .card-header,
+  .app-card-header,
+  .results-header {
+    background: white !important;
+    backdrop-filter: blur(20px);
+  }
+  
+  // Force blue table header - highest specificity
+  .app-table-container .app-table thead.app-table-header,
+  .app-table-container .app-table .app-table-header,
+  .results-table-container .app-table thead.app-table-header,
+  .results-table-container .app-table .app-table-header {
+    background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+    
+    th {
+      background: linear-gradient(135deg, #5486ff 0%, #667eea 100%) !important;
+      color: white !important;
+      padding: 1rem !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      font-size: 0.8rem !important;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+      
+      &:hover {
+        background: linear-gradient(135deg, #4a7dff 0%, #5a73e8 100%) !important;
+      }
+    }
+  }
+  
+  // Allow full-width layout
+  > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  // Loading Screen
+  .dtech-users-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border-width: 3px;
+      border-color: #5486ff;
+      border-right-color: transparent;
+    }
+
+    .loading-message {
+      color: #4a5568;
+      font-weight: 500;
+      margin-top: 1rem;
+      font-size: 1.1rem;
+    }
+  }
+
+  // Header styling - matching order request
+  .dtech-users-header__top {
+    width: 100%;
+    margin: 0 0 2rem 0;
+    padding: 0 2rem;
+    
+    .dtech-users-header__back {
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+      color: white;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
+    }
+
+    .header-spacer {
+      width: 120px; // Match button width for perfect centering
+    }
+  }
+
+  // Page title - matching order request
+  .dtech-users-page-title {
+    text-align: center;
+    flex: 1;
+    
+    h2 {
+      color: #5486ff;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0;
+      
+      i {
+        color: #5486ff;
+        font-size: 2rem;
+      }
+    }
+  }
+}
+
+// Modern Form Card Styling
+.card.dtech-main-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: none;
+  margin-bottom: 2rem;
+}
+
+// Message Section
+.message-section {
+  padding: 1.5rem 2rem 0;
+  
+  .modern-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    
+    .alert-icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      i {
+        font-size: 1.25rem;
+      }
+    }
+    
+    .alert-content {
+      flex: 1;
+      
+      .alert-message {
+        font-weight: 500;
+        font-size: 0.95rem;
+      }
+    }
+    
+    &.success {
+      background: linear-gradient(135deg, #c6f6d5 0%, #9ae6b4 100%);
+      color: #22543d;
+      border: 1px solid #9ae6b4;
+    }
+    
+    &.error {
+      background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+      color: #742a2a;
+      border: 1px solid #feb2b2;
+    }
+  }
+}
+
+// Form Content
+.form-content {
+  position: relative;
+  padding: 2rem;
+  
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    border-radius: 20px;
+    
+    .loading-content {
+      text-align: center;
+      
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+      
+      .loading-text {
+        color: #4a5568;
+        font-weight: 500;
+        font-size: 1.1rem;
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Modern Form Styling
+.modern-form {
+  .form-section-title {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    
+    h4 {
+      color: #2d3748;
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      
+      i {
+        color: #667eea;
+      }
+    }
+    
+    p {
+      color: #718096;
+      font-size: 0.95rem;
+      margin: 0;
+    }
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+    
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    @media (min-width: 992px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    
+    @media (min-width: 1200px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    
+    @media (max-width: 767px) {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+  
+  .form-field {
+    .field-header {
+      margin-bottom: 0.75rem;
+      
+      .field-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+        
+        i {
+          font-size: 1rem;
+        }
+      }
+      
+      .field-hint {
+        display: block;
+        font-size: 0.8rem;
+        color: #718096;
+        font-style: italic;
+      }
+    }
+    
+    .field-input {
+      position: relative;
+      
+      .modern-input {
+        padding: 0.875rem 1rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: rgba(255, 255, 255, 0.8);
+        
+        &:focus {
+          border-color: #667eea;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          background: white;
+        }
+        
+        &::placeholder {
+          color: #a0aec0;
+          font-weight: 400;
+        }
+      }
+      
+      .input-focus-border {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 1px;
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+      }
+      
+      .modern-input:focus + .input-focus-border {
+        transform: scaleX(1);
+      }
+    }
+  }
+}
+
+// Action Section
+.action-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e2e8f0;
+  
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    
+    .action-btn {
+      position: relative;
+      padding: 1rem 2rem;
+      font-weight: 600;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      min-width: 160px;
+      
+      &.primary-action {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        
+        &:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        &:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+      }
+      
+      &.secondary-action {
+        background: white;
+        color: #4a5568;
+        border-color: #e2e8f0;
+        
+        &:hover:not(:disabled) {
+          background: #f7fafc;
+          border-color: #cbd5e0;
+          transform: translateY(-1px);
+        }
+        
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+      
+      .btn-loader {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top: 2px solid white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+    }
+  }
+}
+
+// Results Card Styling
+.card.dtech-results-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: none;
+  margin-bottom: 2rem;
+  
+  .results-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1.5rem 2rem;
+    
+    .results-header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      .results-title-section {
+        .results-title {
+          font-size: 1.3rem;
+          font-weight: 600;
+          margin: 0 0 0.25rem 0;
+          
+          i {
+            color: rgba(255, 255, 255, 0.9);
+          }
+        }
+        
+        .results-meta {
+          .results-count {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+          }
+        }
+      }
+      
+      .results-actions {
+        .export-btn {
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          color: white;
+          font-weight: 500;
+          border-radius: 8px;
+          
+          &:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: white;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Results Table
+.results-table-container {
+  overflow-x: auto;
+  
+  .results-table {
+    min-width: 100%;
+    table-layout: fixed;
+    width: 100%;
+    
+    // Force blue header styling to override any inherited styles
+    thead.app-table-header,
+    .app-table-header {
+      background: linear-gradient(135deg, #5486ff 0%, #4f7cff 100%) !important;
+      
+      th {
+        background: transparent !important;
+        color: white !important;
+        padding: 1rem !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        font-size: 0.8rem !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+      }
+    }
+    
+    // Remove custom header styling to allow global styles
+    .table-header {
+      // Column widths to fit in viewport
+      th {
+        &.col-login { width: 10%; }
+        &.col-password { width: 8%; }
+        &.col-site { width: 8%; }
+        &.col-customer { width: 12%; }
+        &.col-address { width: 15%; }
+        &.col-contact { width: 10%; }
+        &.col-phone { width: 10%; }
+        &.col-email { width: 12%; }
+        &.col-login-date { width: 8%; }
+        &.col-pwd-date { width: 7%; }
+      }
+    }
+    
+    .result-row {
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: #f8f9fa;
+      }
+      
+      &.even {
+        background: rgba(248, 249, 250, 0.3);
+      }
+      
+      td {
+        padding: 0.75rem 0.5rem;
+        vertical-align: middle;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.8rem;
+        
+        .cell-content {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          
+          &.truncate {
+            max-width: 100%;
+          }
+        }
+        
+        .date-info {
+          .date-main {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2d3748;
+            line-height: 1.2;
+          }
+          
+          .badge {
+            font-size: 0.6rem;
+            padding: 0.125rem 0.375rem;
+          }
+        }
+        
+        .password-mask {
+          font-family: monospace;
+          color: #718096;
+          font-size: 0.9rem;
+        }
+        
+        .badge {
+          font-size: 0.7rem;
+          padding: 0.25rem 0.5rem;
+        }
+      }
+    }
+  }
+}
+
+// Responsive table adjustments
+@media (max-width: 1200px) {
+  .results-table-container {
+    .results-table {
+      .result-row td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .results-table-container {
+    .results-table {
+      .table-header th {
+        // Only keep column widths, remove other styling
+        &.col-login { width: 12%; }
+        &.col-password { width: 8%; }
+        &.col-site { width: 8%; }
+        &.col-customer { width: 14%; }
+        &.col-address { width: 16%; }
+        &.col-contact { width: 12%; }
+        &.col-phone { width: 10%; }
+        &.col-email { width: 14%; }
+        &.col-login-date { width: 8%; }
+        &.col-pwd-date { width: 8%; }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .results-table-container {
+    .results-table {
+      min-width: 800px; // Enable horizontal scroll on mobile
+      
+      .result-row td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.7rem;
+      }
+    }
+  }
+}
+
+// No Results Card
+.card.no-results-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: none;
+  
+  .no-results-content {
+    text-align: center;
+    padding: 3rem 2rem;
+    
+    .no-results-icon-wrapper {
+      margin-bottom: 2rem;
+      
+      .no-results-icon {
+        font-size: 4rem;
+        color: #cbd5e0;
+      }
+    }
+    
+    .no-results-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 1rem;
+    }
+    
+    .no-results-message {
+      font-size: 1rem;
+      color: #718096;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    
+    .no-results-suggestions {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 12px;
+      text-align: left;
+      display: inline-block;
+      
+      h6 {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.75rem;
+      }
+      
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        
+        li {
+          padding: 0.25rem 0;
+          color: #4a5568;
+          position: relative;
+          padding-left: 1.25rem;
+          
+          &:before {
+            content: '•';
+            color: #667eea;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .dtech-users-container {
+    padding: 1rem 0.5rem;
+    
+    .dtech-users-header__top {
+      padding: 0 1rem;
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+      
+      .dtech-users-header__back,
+      .header-spacer {
+        display: none;
+      }
+      
+      .dtech-users-page-title h2 {
+        font-size: 1.8rem;
+      }
+    }
+    
+    .form-content {
+      padding: 1.5rem;
+    }
+    
+    .results-header .results-header-content {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .results-table-container {
+    .results-table {
+      font-size: 0.875rem;
+      
+      th, td {
+        padding: 0.75rem 0.5rem;
+      }
+    }
+  }
+  
+  .action-buttons-group {
+    flex-direction: column;
+    gap: 0.25rem !important;
+  }
+}
