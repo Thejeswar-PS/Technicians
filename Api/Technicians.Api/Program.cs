@@ -116,7 +116,7 @@ builder.Services.AddScoped<UPSTestStatusRepository>();
 builder.Services.AddScoped<NewUniTestRepository>(); 
 builder.Services.AddScoped<DTechUsersDataRepository>();
 builder.Services.AddScoped<ExtranetUserClassesRepository>();
-
+builder.Services.AddScoped<ToolsTrackingTechsRepository>();
 
 var app = builder.Build();
 

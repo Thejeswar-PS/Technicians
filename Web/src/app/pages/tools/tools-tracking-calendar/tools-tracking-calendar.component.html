@@ -1,0 +1,282 @@
+<!-- Tools Tracking Calendar Page -->
+<div class="container-fluid tools-tracking-calendar-container">
+
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center tools-tracking-calendar-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="tools-tracking-calendar-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary tools-tracking-calendar-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="tools-tracking-calendar-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-calendar-check me-2"></i>
+        Tools Tracking Calendar
+      </h2>
+    </div>
+    
+    <!-- Empty div to maintain layout balance -->
+    <div></div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+
+    <!-- Tools Tracking Calendar Section -->
+    <div class="card shadow-sm tools-tracking-main-card">
+      
+      <!-- Status Messages -->
+      <div class="message-section" *ngIf="errorMessage">
+        <!-- ERROR -->
+        <div *ngIf="errorMessage" class="modern-alert error">
+          <div class="alert-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ errorMessage }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="card-header border-0 py-4">
+        <div class="row g-3 align-items-end">
+          <!-- Technician Filter -->
+          <div class="col-md-3">
+            <label class="form-label fw-bold text-primary">
+              <i class="bi bi-person me-2"></i>Select Technician:
+            </label>
+            <select 
+              class="form-select form-select-sm border-primary" 
+              [(ngModel)]="selectedTech"
+              (change)="onTechnicianChange()">
+              <option value="All">All Technicians</option>
+              <option 
+                *ngFor="let tech of technicians; trackBy: trackByTechId" 
+                [value]="tech.techID">
+                {{ tech.techname }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Tool Type Filter -->
+          <div class="col-md-3">
+            <label class="form-label fw-bold text-primary">
+              <i class="bi bi-tools me-2"></i>Tool Type:
+            </label>
+            <select 
+              class="form-select form-select-sm border-primary" 
+              [(ngModel)]="selectedToolType"
+              (change)="onFilterChange()">
+              <option 
+                *ngFor="let tool of availableTools" 
+                [value]="tool">
+                {{ tool }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Serial Number Filter -->
+          <div class="col-md-3">
+            <label class="form-label fw-bold text-primary">
+              <i class="bi bi-hash me-2"></i>Serial Number:
+            </label>
+            <select 
+              class="form-select form-select-sm border-primary" 
+              [(ngModel)]="selectedSerialNo"
+              (change)="onFilterChange()"
+              [disabled]="isLoadingSerialNumbers">>
+              <option value="All">All Serial Numbers</option>
+              <option 
+                *ngFor="let serial of toolSerialNumbers" 
+                [value]="serial.serialNo">
+                {{ serial.serialNo }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="col-md-3">
+            <div class="d-flex gap-2">
+              <button 
+                type="button" 
+                class="btn btn-sm btn-primary"
+                (click)="onFilterChange()"
+                [disabled]="isLoadingCalendar">
+                <i class="bi bi-search me-1"></i>
+                Get Tools
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics Dashboard -->
+      <div class="card-body pt-0">
+        <div class="statistics-dashboard mb-4">
+          <div class="row g-3">
+            <!-- Overdue -->
+            <div class="col-md-2">
+              <div class="stat-card overdue">
+                <div class="stat-icon">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ statistics.overdue }}</div>
+                  <div class="stat-label">Overdue</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Due in 15 Days -->
+            <div class="col-md-2">
+              <div class="stat-card due15">
+                <div class="stat-icon">
+                  <i class="bi bi-clock-fill"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ statistics.due15Days }}</div>
+                  <div class="stat-label">Due 15 Days</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Due in 30 Days -->
+            <div class="col-md-2">
+              <div class="stat-card due30">
+                <div class="stat-icon">
+                  <i class="bi bi-calendar-week"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ statistics.due30Days }}</div>
+                  <div class="stat-label">Due 30 Days</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Due in 45 Days -->
+            <div class="col-md-2">
+              <div class="stat-card due45">
+                <div class="stat-icon">
+                  <i class="bi bi-calendar2-week"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ statistics.due45Days }}</div>
+                  <div class="stat-label">Due 45 Days</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Due in 60 Days -->
+            <div class="col-md-2">
+              <div class="stat-card due60">
+                <div class="stat-icon">
+                  <i class="bi bi-calendar3-week"></i>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-number">{{ statistics.due60Days }}</div>
+                  <div class="stat-label">Due 60 Days</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar Navigation -->
+        <div class="calendar-navigation mb-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-primary"
+              (click)="previousMonth()">
+              <i class="bi bi-chevron-left"></i>
+              Previous
+            </button>
+            
+            <div class="current-month-year">
+              <h4 class="fw-bold text-primary mb-0">
+                {{ getCurrentMonthYear() }}
+              </h4>
+            </div>
+            
+            <button 
+              type="button" 
+              class="btn btn-sm btn-outline-primary"
+              (click)="nextMonth()">
+              Next
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Calendar Grid -->
+        <div class="calendar-container" *ngIf="!isLoadingCalendar; else calendarLoading">
+          <!-- Calendar content will go here -->
+          <div class="calendar-grid">
+            <!-- Week days header -->
+            <div class="weekdays-row">
+              <div 
+                *ngFor="let day of weekDays" 
+                class="weekday-header">
+                {{ day }}
+              </div>
+            </div>
+
+            <!-- Calendar days -->
+            <div class="calendar-days">
+              <div 
+                *ngFor="let day of calendarDays; trackBy: trackByDate"
+                class="calendar-day"
+                [class.other-month]="!day.isCurrentMonth"
+                [class.today]="day.isToday"
+                [class.has-tools]="day.toolEntries.length > 0">
+                
+                <div class="day-number">{{ day.dayNumber }}</div>
+                
+                <div class="tool-entries" *ngIf="day.toolEntries.length > 0">
+                  <div 
+                    *ngFor="let entry of day.toolEntries; let i = index"
+                    class="tool-entry"
+                    [class]="'status-' + getToolStatus(entry)"
+                    [title]="entry.empName + ' - ' + entry.toolName + ' (' + entry.serialNo + ')'"
+                    (click)="openToolDetails(entry)">
+                    <small class="tool-info">
+                      {{ entry.empName }}<br>
+                      {{ entry.toolName }}<br>
+                      {{ entry.serialNo }}
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar Loading Template -->
+        <ng-template #calendarLoading>
+          <div class="calendar-loading-placeholder">
+            <div class="d-flex justify-content-center align-items-center">
+              <div class="spinner-border text-primary me-3" role="status"></div>
+              <span class="text-muted">Loading calendar data...</span>
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>

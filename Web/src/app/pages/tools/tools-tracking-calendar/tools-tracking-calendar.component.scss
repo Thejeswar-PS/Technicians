@@ -1,0 +1,565 @@
+// Tools Tracking Calendar Container Styling - Based on Order Request Design
+.tools-tracking-calendar-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  position: relative;
+  contain: layout;
+  
+  // Allow full-width layout
+  > * {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .tools-tracking-calendar-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border-width: 3px;
+      border-color: #5486ff;
+      border-right-color: transparent;
+    }
+  }
+
+  // Header styling - matching order request status
+  .tools-tracking-calendar-header__top {
+    width: 100%;
+    margin: 0;
+    
+    .tools-tracking-calendar-header__back {
+      border: 2px solid transparent;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: transparent;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+    }
+  }
+
+  // Page title - matching order request status
+  .tools-tracking-calendar-page-title {
+    text-align: center;
+    flex: 1;
+    
+    h2 {
+      color: #5486ff;
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin: 0;
+      
+      i {
+        color: #5486ff;
+        font-size: 2rem;
+      }
+    }
+  }
+
+  // Statistics Badge styling
+  .statistics-badge-compact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #fff8e1 0%, #ffe082 100%);
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    border: 2px solid #ffa000;
+    box-shadow: 0 4px 16px rgba(255, 160, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    
+    // Highlight effect
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #ffa000 0%, #ffb300 100%);
+    }
+    
+    .stat-value {
+      color: #e65100;
+      font-weight: 700;
+      font-size: 1rem;
+      line-height: 1;
+    }
+  }
+
+  // Main card styling
+  .tools-tracking-main-card {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+
+    .card-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      
+      .form-label {
+        color: white;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+        
+        i {
+          color: #ffd700;
+        }
+      }
+      
+      .form-select {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.95);
+        color: #333;
+        font-weight: 500;
+        
+        &:focus {
+          border-color: #ffd700;
+          box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
+        }
+      }
+      
+      .btn-outline-primary {
+        border-color: white;
+        color: white;
+        
+        &:hover {
+          background: white;
+          color: #667eea;
+        }
+      }
+      
+      .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+      }
+    }
+  }
+
+  // Message section styling
+  .message-section {
+    padding: 1rem;
+    
+    .modern-alert {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      
+      &.error {
+        background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+        border: 2px solid #e53e3e;
+        color: #c53030;
+      }
+      
+      .alert-icon {
+        font-size: 1.25rem;
+        margin-right: 0.75rem;
+      }
+    }
+  }
+
+  // Statistics Dashboard (Legacy table layout)
+  .statistics-dashboard {
+    .row {
+      margin: 0;
+    }
+    
+    .stat-card {
+      background-color: #F5F5F5;
+      color: #2984c5;
+      height: 100px;
+      text-align: center;
+      font-family: Arial;
+      border: none;
+      border-radius: 0;
+      border-left: 1px solid #e1e1e1;
+      box-shadow: none;
+      padding: 1rem;
+      transition: none;
+      
+      &:hover {
+        transform: none;
+        box-shadow: none;
+      }
+      
+      .stat-icon {
+        display: none; // Legacy didn't have icons
+      }
+      
+      .stat-number {
+        font-size: 4rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0;
+      }
+      
+      .stat-label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        margin-top: 0.25rem;
+        display: block;
+      }
+      
+      // Legacy background colors with white text
+      &.overdue {
+        background-color: #e60000 !important;
+        color: white !important;
+        border-color: #e60000;
+        
+        .stat-number, .stat-label {
+          color: white !important;
+        }
+      }
+      
+      &.due15 {
+        background-color: #E8A90E !important;
+        color: white !important;
+        border-color: #E8A90E;
+        
+        .stat-number, .stat-label {
+          color: white !important;
+        }
+      }
+      
+      &.due30 {
+        background-color: #f4d24e !important;
+        color: white !important;
+        border-color: #f4d24e;
+        
+        .stat-number, .stat-label {
+          color: white !important;
+        }
+      }
+      
+      &.due45 {
+        background-color: #b3b300 !important;
+        color: white !important;
+        border-color: #b3b300;
+        
+        .stat-number, .stat-label {
+          color: white !important;
+        }
+      }
+      
+      &.due60 {
+        background-color: #86b300 !important;
+        color: white !important;
+        border-color: #86b300;
+        
+        .stat-number, .stat-label {
+          color: white !important;
+        }
+      }
+      
+      &.total {
+        border-color: #9c27b0;
+        
+        .stat-icon {
+          color: #9c27b0;
+        }
+        
+        .stat-number {
+          color: #7b1fa2;
+        }
+        
+        .stat-label {
+          color: #9c27b0;
+        }
+      }
+    }
+  }
+
+  // Calendar Navigation
+  .calendar-navigation {
+    .current-month-year {
+      text-align: center;
+      
+      h4 {
+        color: #5486ff;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+      }
+    }
+    
+    .btn-outline-primary {
+      border-color: #5486ff;
+      color: #5486ff;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 10px;
+      
+      &:hover {
+        background: #5486ff;
+        color: white;
+        transform: translateY(-1px);
+      }
+    }
+  }
+
+  // Calendar Grid
+  .calendar-container {
+      .calendar-grid {
+        background: #aeb5f8;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        border: 1px solid #aeb5f8;
+        
+        .weekdays-row {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          background: #5bd6de;
+          
+          .weekday-header {
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 700;
+            color: blue;
+            font-size: 0.875rem;
+            background: white;
+            border: 1px solid #aeb5f8;
+          }
+        }
+        
+        .calendar-days {
+          display: grid;
+          grid-template-columns: repeat(7, 1fr);
+          
+          .calendar-day {
+            min-height: 100px;
+            border: 1px solid #aeb5f8;
+            padding: 0.25rem;
+            position: relative;
+            background: #fdfdfd;
+            transition: all 0.2s ease;
+            vertical-align: top;
+            
+            &:hover {
+              background: #f8fafc;
+            }
+            
+            &.other-month {
+              background: #f8f9fa;
+              color: #adb5bd;
+            }
+            
+            &.today {
+              background: #e1e1e1;
+              
+              .day-number {
+                color: white;
+                font-weight: 700;
+                font-size: 1.2rem;
+              }
+            }
+            
+            // Weekend styling
+            &:nth-child(7n), &:nth-child(7n+1) {
+              background: #5bd6de;
+              
+              .day-number {
+                color: blue;
+              }
+            }
+            
+            .day-number {
+              font-weight: 600;
+              color: blue;
+              font-size: 1rem;
+              margin-bottom: 0.25rem;
+              display: block;
+            }
+            
+            .tool-entries {
+              .tool-entry {
+                display: block;
+                text-decoration: none;
+                overflow: auto;
+                border: solid 1px #9CA2DF;
+                font-family: verdana;
+                font-size: 0.75rem;
+                margin-bottom: 0.125rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                padding: 0.125rem;
+                
+                .tool-info {
+                  line-height: 1.1;
+                  font-size: 0.7rem;
+                }              // Status-specific styling (Legacy colors)
+              &.status-overdue {
+                background: #ff2448;
+                border-left-color: #ff2448;
+                color: white;
+                
+                .tool-info {
+                  color: white;
+                }
+                
+                &:hover {
+                  background: #15b765;
+                }
+              }
+              
+              &.status-due15 {
+                background: #E8A90E;
+                border-left-color: #E8A90E;
+                color: black;
+                
+                .tool-info {
+                  color: black;
+                }
+                
+                &:hover {
+                  background: #15b765;
+                  color: white;
+                }
+              }
+              
+              &.status-due30 {
+                background: #f4d24e;
+                border-left-color: #f4d24e;
+                color: black;
+                
+                .tool-info {
+                  color: black;
+                }
+                
+                &:hover {
+                  background: #15b765;
+                  color: white;
+                }
+              }
+              
+              &.status-due45 {
+                background: #b3b300;
+                border-left-color: #b3b300;
+                color: black;
+                
+                .tool-info {
+                  color: black;
+                }
+                
+                &:hover {
+                  background: #15b765;
+                  color: white;
+                }
+              }
+              
+              &.status-due60 {
+                background: #86b300;
+                border-left-color: #86b300;
+                color: black;
+                
+                .tool-info {
+                  color: black;
+                }
+                
+                &:hover {
+                  background: #15b765;
+                  color: white;
+                }
+              }
+              
+              &.status-normal {
+                background: #6bc6e1;
+                border-left-color: #6bc6e1;
+                color: black;
+                
+                .tool-info {
+                  color: black;
+                }
+                
+                &:hover {
+                  background: #15b765;
+                  color: white;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Calendar Loading Placeholder
+  .calendar-loading-placeholder {
+    background: white;
+    border-radius: 16px;
+    padding: 4rem 2rem;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    
+    .spinner-border {
+      color: #5486ff;
+    }
+  }
+
+  // Responsive Design
+  @media (max-width: 768px) {
+    padding: 1rem 0.5rem;
+    
+    .tools-tracking-calendar-header__top {
+      flex-direction: column;
+      gap: 1rem;
+      
+      .tools-tracking-calendar-page-title h2 {
+        font-size: 1.75rem;
+      }
+    }
+    
+    .statistics-dashboard {
+      .stat-card {
+        padding: 1rem;
+        
+        .stat-number {
+          font-size: 1.5rem;
+        }
+        
+        .stat-icon {
+          font-size: 1.5rem;
+        }
+      }
+    }
+    
+    .calendar-container .calendar-grid .calendar-days .calendar-day {
+      min-height: 80px;
+      
+      .tool-entries .tool-entry .tool-info {
+        font-size: 0.625rem;
+      }
+    }
+  }
+}

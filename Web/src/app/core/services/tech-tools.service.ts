@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { TechToolsData, TechnicianInfo, ToolKitItem, Technician } from '../model/tech-tools.model';
+import { map, catchError } from 'rxjs/operators';
+import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto, TechToolSerialNoDto, ToolsCalendarTrackingResultDto } from '../model/tech-tools.model';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -56,5 +56,49 @@ export class TechToolsService {
 
   saveUpdateTechTools(data: TechToolsData): Observable<any> {
     return this.http.post(`${this.apiUrl}/TechTools/SaveUpdateTechTools`, data);
+  }
+
+  // Get tools tracking technicians
+  getToolsTrackingTechs(): Observable<ToolsTrackingTechsDto[]> {
+    return this.http.get<any>(`${this.apiUrl}/ToolsTrackingTechs`).pipe(
+      map(response => response.data || response || [])
+    );
+  }
+
+  // Get tech tool serial numbers
+  getTechToolSerialNos(toolName: string = 'All'): Observable<TechToolSerialNoDto[]> {
+    return this.http.get<any>(`${this.apiUrl}/ToolsTrackingTechs/serial-numbers?toolName=${encodeURIComponent(toolName)}`).pipe(
+      map(response => response.data || response || [])
+    );
+  }
+
+  // Get tools calendar tracking data
+  getToolsCalendarTracking(
+    startDate?: string,
+    endDate?: string,
+    toolName: string = 'All',
+    serialNo: string = 'All',
+    techFilter: string = 'All'
+  ): Observable<ToolsCalendarTrackingResultDto> {
+    // Build params object, only include dates if provided
+    const params: any = {
+      toolName,
+      serialNo,
+      techFilter
+    };
+    
+    // Only add dates if they're provided (backend has defaults)
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    
+    const url = `${this.apiUrl}/ToolsTrackingTechs/calendar-tracking`;
+    
+    return this.http.get<any>(url, { params }).pipe(
+      map(response => {
+        // Your controller returns: { success: true, data: ToolsCalendarTrackingResultDto, ... }
+        // Extract the actual ToolsCalendarTrackingResultDto from response.data
+        return response.data || response;
+      })
+    );
   }
 }
