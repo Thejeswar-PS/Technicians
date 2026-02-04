@@ -27,6 +27,8 @@ import { ContractDetailsReportComponent } from './contract-details-report/contra
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.component';
 import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
+import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
+import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
 
 @NgModule({
   declarations: [
@@ -48,7 +50,9 @@ import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
     ContractDetailsReportComponent,
     PastDueContractDetailsComponent,
     UPSTestStatusComponent,
-    NewUnitTestComponent
+    NewUnitTestComponent,
+    DTechUsersDataComponent,
+    ExtranetUserClassesComponent
   ],
   imports: [
     CommonModule,
