@@ -1,7 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { JobReportDetailsComponent } from './job-report-details/job-report-details.component';
-import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-report.component';
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
 import { OrderRequestComponent } from './order-request/order-request.component';
@@ -27,16 +25,8 @@ import { AccountingStatusComponent } from './accounting-status/accounting-status
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'job-report-details',
+    redirectTo: 'parts-request-status',
     pathMatch: 'full'
-  },
-  {
-    path: 'job-report-details', 
-    component: JobReportDetailsComponent
-  },
-  {
-    path: 'job-schedule-report', 
-    component: JobScheduleReportComponent
   },
   {
     path: 'parts-request-status', 

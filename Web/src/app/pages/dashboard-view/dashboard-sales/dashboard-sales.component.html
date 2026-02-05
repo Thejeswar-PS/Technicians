@@ -29,9 +29,7 @@
           class="svg-icon svg-icon-3x svg-icon-primary d-block my-2"
         ></span>
         <div flex-grow-1 me-2>
-          <a id="r1" (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
-          [queryParams]="{QueryType: 'ToBeScheduled', manager: filters.accountManager, yearType: filters.dateRange }"
-          [routerLinkActive]="'active menu-here'" class="text-primary fw-bold fs-3" style="color: darkblue !important;">Jobs Scheduled</a>
+          <span class="text-primary fw-bold fs-3" style="color: darkblue !important;">Jobs Scheduled</span>
           <br>
           <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsScheduled}}</span>
         </div>
@@ -43,9 +41,7 @@
           [inlineSVG]="'../../../../assets/media/icons/duotune/general/gen032.svg'"
           class="svg-icon svg-icon-3x svg-icon-warning d-block my-2"
         ></span>
-        <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
-        [queryParams]="{ QueryType: 'QuotesWritten', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: rgb(147, 107, 7) !important;">To Be Uploaded</a>
+        <span class="text-warning  fw-bold fs-3" style="color: rgb(147, 107, 7) !important;">To Be Uploaded</span>
         <br>
         <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsToBeUploaded}}</span>
         <br>
@@ -60,9 +56,7 @@
           [inlineSVG]="'.../../../../assets/media/icons/duotune/general/gen032.svg'"
           class="svg-icon svg-icon-3x svg-icon-success d-block my-2"
         ></span>
-        <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
-        [queryParams]="{ QueryType: 'Scheduled', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: darkgreen !important;">Emergency Jobs</a>
+        <span class="text-warning  fw-bold fs-3" style="color: darkgreen !important;">Emergency Jobs</span>
         <br>
         <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.emergencyJobs}}</span>
         <br>
@@ -75,9 +69,7 @@
           [inlineSVG]="'../../../../assets/media/icons/duotune/general/gen032.svg'"
           class="svg-icon svg-icon-3x svg-icon-danger d-block my-2" style="color: orange;"
         ></span>
-        <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
-        [queryParams]="{ QueryType: 'PastDue', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: rgb(116, 66, 5) !important;">Missing Jobs</a>
+        <span class="text-warning  fw-bold fs-3" style="color: rgb(116, 66, 5) !important;">Missing Jobs</span>
         <br>
         <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.missingJobs}}</span>
         <br>
@@ -93,9 +85,7 @@
           [inlineSVG]="'../../../../assets/media/icons/duotune/general/gen032.svg'"
           class="svg-icon svg-icon-3x svg-icon-danger d-block my-2" style="color: purple;"
         ></span>
-        <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
-        [queryParams]="{ QueryType: 'Processed', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: purple !important;">Jobs With Parts</a>
+        <span class="text-warning  fw-bold fs-3" style="color: purple !important;">Jobs With Parts</span>
         <br>
         <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsWithParts}}</span>
         <br>
@@ -108,9 +98,7 @@
           [inlineSVG]="'../../../../assets/media/icons/duotune/general/gen032.svg'"
           class="svg-icon svg-icon-3x svg-icon-danger d-block my-2"
         ></span>
-        <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
-        [queryParams]="{ QueryType: 'JobsToProcess', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: darkred !important;">Jobs This Week</a>
+        <span class="text-warning  fw-bold fs-3" style="color: darkred !important;">Jobs This Week</span>
         <br>
         <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsThisWeek}}</span>
         <br>

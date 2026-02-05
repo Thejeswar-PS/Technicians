@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { InlineSVGModule } from 'ng-inline-svg-2';
 import { NgApexchartsModule } from 'ng-apexcharts';
-import { TrendingReportTeamsComponent } from './trending-report-teams/trending-report-teams.component';
 import { GraphsRoutingModule } from './graphs-routing.module';
 import { TeamGridComponent } from './shared/team-grid/team-grid.component';
 import { AccountManagerGraphComponent } from '../reports/account-manager-graph/account-manager-graph.component';
@@ -16,7 +15,6 @@ import { SharedModule } from '../../components/shared/shared.module';
 
 @NgModule({
   declarations: [
-    TrendingReportTeamsComponent,
     TeamGridComponent,
     AccountManagerGraphComponent,
     PastDueGraphComponent,
