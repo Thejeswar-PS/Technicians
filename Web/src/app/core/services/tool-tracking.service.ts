@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsApiResponse } from '../model/tool-tracking.model';
+import { ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsApiResponse, EquipmentFileApiResponse, SaveEquipmentFileRequestDto, SaveFileApiResponse } from '../model/tool-tracking.model';
 
 @Injectable({
   providedIn: 'root'
@@ -57,6 +57,42 @@ export class ToolTrackingService {
     return this.http.get<ToolTrackingCountApiResponse>(
       `${this.apiUrl}/ToolsTrackingTechs/count/${techId}`,
       { headers: this.headers }
+    );
+  }
+
+  /**
+   * Save equipment file attachment to database as BLOB
+   * Matches legacy SaveEquipmentFiles method
+   */
+  saveEquipmentFile(fileData: SaveEquipmentFileRequestDto): Observable<SaveFileApiResponse> {
+    return this.http.post<SaveFileApiResponse>(
+      `${this.apiUrl}/ToolsTrackingTechs/equipment-files`,
+      fileData,
+      { headers: this.headers }
+    );
+  }
+
+  /**
+   * Get equipment file attachments from database
+   * Matches legacy GetEquipmentFiles method
+   */
+  getEquipmentFiles(equipID: number): Observable<EquipmentFileApiResponse> {
+    return this.http.get<EquipmentFileApiResponse>(
+      `${this.apiUrl}/ToolsTrackingTechs/equipment-files/${equipID}`,
+      { headers: this.headers }
+    );
+  }
+
+  /**
+   * Download file from database BLOB storage
+   */
+  downloadEquipmentFile(equipID: number, fileName: string): Observable<Blob> {
+    return this.http.get(
+      `${this.apiUrl}/ToolsTrackingTechs/equipment-files/${equipID}/download/${fileName}`,
+      { 
+        headers: this.headers,
+        responseType: 'blob'
+      }
     );
   }
 }

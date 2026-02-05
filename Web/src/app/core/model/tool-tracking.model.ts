@@ -88,3 +88,35 @@ export interface DeleteToolsTrackingResultDto {
   success: boolean;
   message: string;
 }
+
+// Equipment file attachment models - matching legacy BLOB storage
+export interface EquipmentFileDto {
+  equipID: number;           // Equipment/Tool ID
+  techID: string;           // Technician ID
+  img_Title: string;        // Original filename
+  img_Type: string;         // File extension/MIME type
+  img_Stream: string;       // Base64 encoded file data (BLOB)
+  createdBy: string;        // User who uploaded
+  createdDate?: Date;       // Upload timestamp
+}
+
+export interface SaveEquipmentFileRequestDto {
+  equipID: number;
+  techID: string;
+  img_Title: string;
+  img_Type: string;
+  img_Stream: string;       // Base64 encoded binary data
+  createdBy: string;
+}
+
+export interface EquipmentFileApiResponse {
+  success: boolean;
+  data: EquipmentFileDto[];
+  message: string;
+}
+
+export interface SaveFileApiResponse {
+  success: boolean;
+  message: string;
+  fileId?: number;
+}

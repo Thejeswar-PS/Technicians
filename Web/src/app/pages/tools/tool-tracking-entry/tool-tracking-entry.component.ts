@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToolTrackingService } from 'src/app/core/services/tool-tracking.service';
-import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto } from 'src/app/core/model/tool-tracking.model';
+import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto, EquipmentFileDto, SaveEquipmentFileRequestDto } from 'src/app/core/model/tool-tracking.model';
 
 @Component({
   selector: 'app-tool-tracking-entry',
@@ -20,7 +20,12 @@ export class ToolTrackingEntryComponent implements OnInit {
   loadingCount: boolean = false;
   loadingTechnicians: boolean = false;
   error: string = '';
-  uploadedFiles: File[] = [];  // Added for file handling
+  successMessage: string = '';
+  
+  // File attachment properties - BLOB storage like legacy
+  equipmentFiles: EquipmentFileDto[] = [];
+  selectedFiles: File[] = [];
+  uploadingFiles: boolean = false;
   
   constructor(private toolTrackingService: ToolTrackingService, private router: Router) {}
 
@@ -175,10 +180,6 @@ export class ToolTrackingEntryComponent implements OnInit {
     alert('Save functionality will be implemented with backend integration');
   }
 
-  goBack(): void {
-    this.router.navigate(['/tools']);
-  }
-
   // Simple methods for editable grid functionality
   toggleEdit(index: number): void {
     // Store original values before editing
@@ -210,74 +211,190 @@ export class ToolTrackingEntryComponent implements OnInit {
     }
   }
 
-  // File handling methods
+  // File attachment methods - Database BLOB storage (matching legacy)
   onFileSelected(event: any): void {
     const files = event.target.files;
     if (files && files.length > 0) {
-      console.log('Files selected:', files.length);
+      this.selectedFiles = Array.from(files);
+      console.log('Files selected:', this.selectedFiles.length);
     }
   }
 
-  uploadFiles(): void {
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (fileInput && fileInput.files && fileInput.files.length > 0) {
-      // Convert FileList to Array and add to uploaded files
-      const newFiles = Array.from(fileInput.files);
-      this.uploadedFiles.push(...newFiles);
-      console.log('Files uploaded:', newFiles.length);
-      
-      // Clear the file input
-      fileInput.value = '';
-      
-      // Show success message
-      alert(`${newFiles.length} file(s) uploaded successfully`);
-    } else {
+  async uploadFiles(): Promise<void> {
+    if (this.selectedFiles.length === 0) {
       alert('Please select files to upload');
+      return;
+    }
+
+    this.uploadingFiles = true;
+    const uploadPromises: Promise<void>[] = [];
+
+    for (const file of this.selectedFiles) {
+      const promise = this.uploadSingleFile(file);
+      uploadPromises.push(promise);
+    }
+
+    try {
+      await Promise.all(uploadPromises);
+      this.successMessage = `${this.selectedFiles.length} file(s) uploaded successfully to database`;
+      this.selectedFiles = [];
+      
+      // Clear file input
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      
+      // Auto-hide success message
+      setTimeout(() => {
+        this.successMessage = '';
+      }, 3000);
+      
+    } catch (error) {
+      console.error('File upload error:', error);
+      this.error = 'Failed to upload files to database';
+    } finally {
+      this.uploadingFiles = false;
     }
   }
 
-  viewFile(index: number): void {
-    const file = this.uploadedFiles[index];
-    if (file) {
-      // Create object URL and open in new window
-      const url = URL.createObjectURL(file);
-      window.open(url, '_blank');
-    }
+  private async uploadSingleFile(file: File): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        try {
+          // Convert to base64 for BLOB storage (matching legacy Img_Stream)
+          const base64Data = (reader.result as string).split(',')[1];
+          
+          const fileData: SaveEquipmentFileRequestDto = {
+            equipID: 0, // Will be set based on selected tool
+            techID: this.techId,
+            img_Title: file.name,           // Original filename
+            img_Type: file.type || this.getFileExtension(file.name), // MIME type or extension
+            img_Stream: base64Data,         // Base64 encoded binary data (BLOB)
+            createdBy: this.techId || 'system'
+          };
+          
+          // Save to database via API (matches legacy SaveEquipmentFiles)
+          this.toolTrackingService.saveEquipmentFile(fileData).subscribe({
+            next: (response) => {
+              if (response.success) {
+                console.log('File saved to database:', file.name);
+                resolve();
+              } else {
+                reject(new Error(response.message));
+              }
+            },
+            error: (err) => {
+              console.error('Database save error:', err);
+              reject(err);
+            }
+          });
+          
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   }
 
-  downloadFile(index: number): void {
-    const file = this.uploadedFiles[index];
-    if (file) {
-      // Create download link
-      const url = URL.createObjectURL(file);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.name;
-      link.click();
-      URL.revokeObjectURL(url);
-    }
+  private getFileExtension(filename: string): string {
+    return filename.substring(filename.lastIndexOf('.') + 1);
+  }
+
+  loadEquipmentFiles(equipID: number): void {
+    // Load files from database BLOB storage (matches legacy GetEquipmentFiles)
+    this.toolTrackingService.getEquipmentFiles(equipID).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.equipmentFiles = response.data;
+          console.log('Equipment files loaded from database:', this.equipmentFiles.length);
+        } else {
+          console.error('Failed to load equipment files:', response.message);
+        }
+      },
+      error: (err) => {
+        console.error('Error loading equipment files:', err);
+      }
+    });
+  }
+
+  downloadFile(file: EquipmentFileDto): void {
+    // Download file from database BLOB storage
+    this.toolTrackingService.downloadEquipmentFile(file.equipID, file.img_Title).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.img_Title;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('File download error:', err);
+        this.error = 'Failed to download file from database';
+      }
+    });
+  }
+
+  viewFile(file: EquipmentFileDto): void {
+    // View file from database BLOB storage
+    this.toolTrackingService.downloadEquipmentFile(file.equipID, file.img_Title).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Clean up URL after a delay
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      },
+      error: (err) => {
+        console.error('File view error:', err);
+        this.error = 'Failed to view file from database';
+      }
+    });
   }
 
   removeFile(index: number): void {
     if (confirm('Are you sure you want to remove this file?')) {
-      this.uploadedFiles.splice(index, 1);
+      this.selectedFiles.splice(index, 1);
     }
   }
 
   updateReceived(item: TechToolsTrackingDto, event: any): void {
     // Convert checkbox boolean to string as expected by backend
-    item.received = event.target.checked ? 'true' : 'false';
+    const isChecked = event.target.checked;
+    item.received = isChecked ? 'true' : 'false';
+    
+    // Ensure the value is properly set for immediate UI update
+    if (isChecked) {
+      item.received = 'true';
+    } else {
+      item.received = 'false';
+    }
   }
 
   // Helper methods for the new modern design
+  isReceivedTrue(received: any): boolean {
+    if (received == null || received === undefined) return false;
+    
+    // Handle different possible true values (case-insensitive for strings)
+    const normalizedValue = typeof received === 'string' ? received.toLowerCase() : received;
+    return normalizedValue === 'true' || normalizedValue === true || normalizedValue === 1 || normalizedValue === '1';
+  }
+
   getReceivedCount(): number {
     if (!this.trackingData) return 0;
-    return this.trackingData.filter(item => item.received === 'true').length;
+    return this.trackingData.filter(item => this.isReceivedTrue(item.received)).length;
   }
 
   getPendingCount(): number {
     if (!this.trackingData) return 0;
-    return this.trackingData.filter(item => item.received !== 'true').length;
+    return this.trackingData.filter(item => !this.isReceivedTrue(item.received)).length;
   }
 
   isDueDateOverdue(dueDate: any): boolean {
@@ -349,6 +466,82 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   trackByFn(index: number, item: TechToolsTrackingDto): any {
     return item.toolName + item.serialNo; // Unique identifier for tracking
+  }
+
+  // New methods for the redesigned UI
+  goBack(): void {
+    this.router.navigate(['/tools']); // Navigate back to tools listing or appropriate page
+  }
+
+  getFilterBadgeClass(): string {
+    if (this.trackingData.length === 0) {
+      return 'badge-light-secondary';
+    } else if (this.trackingData.length <= 5) {
+      return 'badge-light-success';
+    } else if (this.trackingData.length <= 10) {
+      return 'badge-light-warning';
+    } else {
+      return 'badge-light-primary';
+    }
+  }
+
+  toggleEditItem(item: TechToolsTrackingDto): void {
+    if (item.isEditing) {
+      this.saveItemEdit(item);
+    } else {
+      this.startItemEdit(item);
+    }
+  }
+
+  startItemEdit(item: TechToolsTrackingDto): void {
+    // Store original values for cancel functionality
+    item.originalValues = { ...item };
+    item.isEditing = true;
+  }
+
+  saveItemEdit(item: TechToolsTrackingDto): void {
+    // Save the individual item changes
+    item.isEditing = false;
+    delete item.originalValues;
+    
+    // Show success message temporarily
+    this.successMessage = 'Tool information updated successfully';
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 3000);
+  }
+
+  // New methods for the redesigned edit buttons
+  startEditItem(item: TechToolsTrackingDto): void {
+    // Store original values for cancel functionality
+    item.originalValues = { ...item };
+    item.isEditing = true;
+  }
+
+  saveEditItem(item: TechToolsTrackingDto): void {
+    // Save the individual item changes
+    item.isEditing = false;
+    delete item.originalValues;
+    
+    // Show success message temporarily
+    this.successMessage = 'Tool information updated successfully';
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 3000);
+  }
+
+  cancelEditItem(item: TechToolsTrackingDto): void {
+    // Restore original values
+    if (item.originalValues) {
+      Object.assign(item, item.originalValues);
+      delete item.originalValues;
+    }
+    item.isEditing = false;
+  }
+
+  clearMessages(): void {
+    this.error = '';
+    this.successMessage = '';
   }
 
 }
