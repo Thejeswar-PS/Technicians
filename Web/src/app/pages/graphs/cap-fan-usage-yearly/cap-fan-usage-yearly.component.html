@@ -1,0 +1,329 @@
+<div class="container-fluid cap-fan-usage-container">
+  <div class="card shadow-sm main-card">
+    <div class="card-header border-0 py-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <button type="button" class="btn btn-sm btn-primary" (click)="goBack()" [disabled]="isLoading">
+          <i class="bi bi-arrow-left me-2"></i>Back
+        </button>
+        <div class="text-center flex-grow-1">
+          <h3 class="fw-bold text-primary text-light mb-0">Cap/Fan Usage Yearly</h3>
+        </div>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Error Message -->
+      <div class="mb-3" *ngIf="errorMessage">
+        <div class="alert alert-danger d-inline-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <span>{{ errorMessage }}</span>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="row mb-4">
+        <div class="col-md-4 mb-4">
+          <div class="chart-container">
+            <apx-chart
+              *ngIf="capsChartOptions.series"
+              [series]="capsChartOptions.series"
+              [chart]="capsChartOptions.chart"
+              [xaxis]="capsChartOptions.xaxis"
+              [yaxis]="capsChartOptions.yaxis"
+              [dataLabels]="capsChartOptions.dataLabels"
+              [colors]="capsChartOptions.colors">
+            </apx-chart>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="chart-container">
+            <apx-chart
+              *ngIf="fansChartOptions.series"
+              [series]="fansChartOptions.series"
+              [chart]="fansChartOptions.chart"
+              [xaxis]="fansChartOptions.xaxis"
+              [yaxis]="fansChartOptions.yaxis"
+              [dataLabels]="fansChartOptions.dataLabels"
+              [colors]="fansChartOptions.colors">
+            </apx-chart>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="chart-container">
+            <apx-chart
+              *ngIf="battsChartOptions.series"
+              [series]="battsChartOptions.series"
+              [chart]="battsChartOptions.chart"
+              [xaxis]="battsChartOptions.xaxis"
+              [yaxis]="battsChartOptions.yaxis"
+              [dataLabels]="battsChartOptions.dataLabels"
+              [colors]="battsChartOptions.colors">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mb-4">
+        <div class="col-md-4 mb-4">
+          <div class="chart-container">
+            <apx-chart
+              *ngIf="igbChartOptions.series"
+              [series]="igbChartOptions.series"
+              [chart]="igbChartOptions.chart"
+              [xaxis]="igbChartOptions.xaxis"
+              [yaxis]="igbChartOptions.yaxis"
+              [dataLabels]="igbChartOptions.dataLabels"
+              [colors]="igbChartOptions.colors">
+            </apx-chart>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="chart-container">
+            <apx-chart
+              *ngIf="scrChartOptions.series"
+              [series]="scrChartOptions.series"
+              [chart]="scrChartOptions.chart"
+              [xaxis]="scrChartOptions.xaxis"
+              [yaxis]="scrChartOptions.yaxis"
+              [dataLabels]="scrChartOptions.dataLabels"
+              [colors]="scrChartOptions.colors">
+            </apx-chart>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="chart-container">
+            <apx-chart
+              *ngIf="fusChartOptions.series"
+              [series]="fusChartOptions.series"
+              [chart]="fusChartOptions.chart"
+              [xaxis]="fusChartOptions.xaxis"
+              [yaxis]="fusChartOptions.yaxis"
+              [dataLabels]="fusChartOptions.dataLabels"
+              [colors]="fusChartOptions.colors">
+            </apx-chart>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Panel -->
+      <div class="filter-panel mb-4 p-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-2">
+            <label class="form-label fw-bold">Cap Part #:</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="capPartNo" maxlength="50">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-bold">Fan Part #:</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="fanPartNo" maxlength="50">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-bold">Battery #:</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="battNo" maxlength="50">
+          </div>
+          <div class="col-md-1">
+            <label class="form-label fw-bold">IGB #:</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="igbNo" maxlength="50">
+          </div>
+          <div class="col-md-1">
+            <label class="form-label fw-bold">SCR #:</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="scrNo" maxlength="50">
+          </div>
+          <div class="col-md-1">
+            <label class="form-label fw-bold">FUS #:</label>
+            <input type="text" class="form-control form-control-sm" [(ngModel)]="fusNo" maxlength="50">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-bold">Year:</label>
+            <select class="form-select form-select-sm" [(ngModel)]="selectedYear">
+              <option *ngFor="let year of fiscalYears" [value]="year">{{ year }}</option>
+            </select>
+          </div>
+          <div class="col-md-1">
+            <button type="button" class="btn btn-primary btn-sm w-100" (click)="search()" [disabled]="isLoading">
+              <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></span>
+              Search
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Grids Section -->
+      <div class="row">
+        <!-- Caps Grid -->
+        <div class="col-md-2 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">{{ capsData.length }} records</small>
+            <button class="btn btn-sm btn-success" (click)="exportToExcel(capsData, 'CapsDetails')">
+              <i class="bi bi-file-excel me-1"></i>Export
+            </button>
+          </div>
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th *ngFor="let col of getColumnKeys(capsData); trackBy: trackByIndex">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getDisplayData(capsData, showAllCaps); trackBy: trackByIndex">
+                  <td *ngFor="let col of getColumnKeys(capsData); trackBy: trackByIndex">{{ row[col] }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="text-center mt-2" *ngIf="capsData.length > maxDisplayRows">
+              <button class="btn btn-sm btn-link" (click)="toggleShowAll('caps')">
+                {{ showAllCaps ? 'Show Less' : 'Show All (' + capsData.length + ')' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fans Grid -->
+        <div class="col-md-2 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">{{ fansData.length }} records</small>
+            <button class="btn btn-sm btn-success" (click)="exportToExcel(fansData, 'FansDetails')">
+              <i class="bi bi-file-excel me-1"></i>Export
+            </button>
+          </div>
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th *ngFor="let col of getColumnKeys(fansData); trackBy: trackByIndex">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getDisplayData(fansData, showAllFans); trackBy: trackByIndex">
+                  <td *ngFor="let col of getColumnKeys(fansData); trackBy: trackByIndex">{{ row[col] }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="text-center mt-2" *ngIf="fansData.length > maxDisplayRows">
+              <button class="btn btn-sm btn-link" (click)="toggleShowAll('fans')">
+                {{ showAllFans ? 'Show Less' : 'Show All (' + fansData.length + ')' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batts Grid -->
+        <div class="col-md-2 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">{{ battsData.length }} records</small>
+            <button class="btn btn-sm btn-success" (click)="exportToExcel(battsData, 'BattsDetails')">
+              <i class="bi bi-file-excel me-1"></i>Export
+            </button>
+          </div>
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th *ngFor="let col of getColumnKeys(battsData); trackBy: trackByIndex">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getDisplayData(battsData, showAllBatts); trackBy: trackByIndex">
+                  <td *ngFor="let col of getColumnKeys(battsData); trackBy: trackByIndex">{{ row[col] }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="text-center mt-2" *ngIf="battsData.length > maxDisplayRows">
+              <button class="btn btn-sm btn-link" (click)="toggleShowAll('batts')">
+                {{ showAllBatts ? 'Show Less' : 'Show All (' + battsData.length + ')' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- IGB Grid -->
+        <div class="col-md-2 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">{{ igbData.length }} records</small>
+            <button class="btn btn-sm btn-success" (click)="exportToExcel(igbData, 'IGBDetails')">
+              <i class="bi bi-file-excel me-1"></i>Export
+            </button>
+          </div>
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th *ngFor="let col of getColumnKeys(igbData); trackBy: trackByIndex">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getDisplayData(igbData, showAllIgb); trackBy: trackByIndex">
+                  <td *ngFor="let col of getColumnKeys(igbData); trackBy: trackByIndex">{{ row[col] }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="text-center mt-2" *ngIf="igbData.length > maxDisplayRows">
+              <button class="btn btn-sm btn-link" (click)="toggleShowAll('igb')">
+                {{ showAllIgb ? 'Show Less' : 'Show All (' + igbData.length + ')' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SCR Grid -->
+        <div class="col-md-2 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">{{ scrData.length }} records</small>
+            <button class="btn btn-sm btn-success" (click)="exportToExcel(scrData, 'SCRDetails')">
+              <i class="bi bi-file-excel me-1"></i>Export
+            </button>
+          </div>
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th *ngFor="let col of getColumnKeys(scrData); trackBy: trackByIndex">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getDisplayData(scrData, showAllScr); trackBy: trackByIndex">
+                  <td *ngFor="let col of getColumnKeys(scrData); trackBy: trackByIndex">{{ row[col] }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="text-center mt-2" *ngIf="scrData.length > maxDisplayRows">
+              <button class="btn btn-sm btn-link" (click)="toggleShowAll('scr')">
+                {{ showAllScr ? 'Show Less' : 'Show All (' + scrData.length + ')' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FUS Grid -->
+        <div class="col-md-2 mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">{{ fusData.length }} records</small>
+            <button class="btn btn-sm btn-success" (click)="exportToExcel(fusData, 'FUSDetails')">
+              <i class="bi bi-file-excel me-1"></i>Export
+            </button>
+          </div>
+          <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="table table-sm table-bordered table-hover">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th *ngFor="let col of getColumnKeys(fusData); trackBy: trackByIndex">{{ col }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of getDisplayData(fusData, showAllFus); trackBy: trackByIndex">
+                  <td *ngFor="let col of getColumnKeys(fusData); trackBy: trackByIndex">{{ row[col] }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="text-center mt-2" *ngIf="fusData.length > maxDisplayRows">
+              <button class="btn btn-sm btn-link" (click)="toggleShowAll('fus')">
+                {{ showAllFus ? 'Show Less' : 'Show All (' + fusData.length + ')' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

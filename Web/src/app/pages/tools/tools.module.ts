@@ -10,6 +10,9 @@ import { ToolTrackingEntryComponent } from './tool-tracking-entry/tool-tracking-
 
 // Routing import
 import { ToolsRoutingModule } from './tools-routing.module';
+import { JobsToBeUploadedComponent } from './jobs-to-be-uploaded/jobs-to-be-uploaded.component';
+import { DataMaintenanceComponent } from './data-maintenance/data-maintenance.component';
+import { BillAfterPMJobsComponent } from './bill-after-pm-jobs/bill-after-pm-jobs.component';
 
 @NgModule({
   declarations: [
@@ -17,6 +20,9 @@ import { ToolsRoutingModule } from './tools-routing.module';
     NotesSearchComponent,
     ToolsTrackingCalendarComponent,
     ToolTrackingEntryComponent
+    JobsToBeUploadedComponent,
+    DataMaintenanceComponent,
+    BillAfterPMJobsComponent
   ],
   imports: [
     CommonModule,
@@ -25,3 +31,4 @@ import { ToolsRoutingModule } from './tools-routing.module';
   ]
 })
 export class ToolsModule { }
+

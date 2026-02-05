@@ -1,0 +1,187 @@
+<div class="container-fluid report-container">
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center report-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="report-header__top mb-4">
+    <div class="report-page-title text-center">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-file-earmark-pdf me-2"></i>
+        Unscheduled Report
+      </h2>
+      <small class="text-muted">All Account Managers Past Due Unscheduled Jobs Information</small>
+    </div>
+
+    <button type="button" class="btn btn-sm btn-primary report-refresh" (click)="loadData()" [disabled]="isLoading">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card shadow-sm report-main-card">
+    <div class="card-body py-3">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Charts Section -->
+      <div *ngIf="!isLoading && !errorMessage && pastDueData.length > 0" class="charts-section mb-5">
+        <div class="row">
+          <!-- Chart 1: Past Due / Bill After PM -->
+          <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+              <div class="chart-header mb-3">
+                <h6 class="mb-0 fw-bold">Past Due / Bill After PM Jobs</h6>
+              </div>
+              <div class="chart-wrapper" *ngIf="pastDueChartOptions">
+                <apx-chart
+                  [series]="pastDueChartOptions.series"
+                  [chart]="pastDueChartOptions.chart"
+                  [colors]="pastDueChartOptions.colors"
+                  [plotOptions]="pastDueChartOptions.plotOptions"
+                  [dataLabels]="pastDueChartOptions.dataLabels"
+                  [xaxis]="pastDueChartOptions.xaxis"
+                  [yaxis]="pastDueChartOptions.yaxis"
+                  [title]="pastDueChartOptions.title"
+                  [tooltip]="pastDueChartOptions.tooltip"
+                  [grid]="pastDueChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 2: Scheduled Percentage -->
+          <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+              <div class="chart-header mb-3">
+                <h6 class="mb-0 fw-bold">Scheduled Percentage by Manager</h6>
+              </div>
+              <div class="chart-wrapper" *ngIf="scheduledPercentageChartOptions">
+                <apx-chart
+                  [series]="scheduledPercentageChartOptions.series"
+                  [chart]="scheduledPercentageChartOptions.chart"
+                  [colors]="scheduledPercentageChartOptions.colors"
+                  [plotOptions]="scheduledPercentageChartOptions.plotOptions"
+                  [dataLabels]="scheduledPercentageChartOptions.dataLabels"
+                  [xaxis]="scheduledPercentageChartOptions.xaxis"
+                  [yaxis]="scheduledPercentageChartOptions.yaxis"
+                  [title]="scheduledPercentageChartOptions.title"
+                  [tooltip]="scheduledPercentageChartOptions.tooltip"
+                  [grid]="scheduledPercentageChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 3: Total Jobs to be Scheduled -->
+          <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+              <div class="chart-header mb-3">
+                <h6 class="mb-0 fw-bold">Total Jobs to be Scheduled</h6>
+              </div>
+              <div class="chart-wrapper" *ngIf="totalJobsChartOptions">
+                <apx-chart
+                  [series]="totalJobsChartOptions.series"
+                  [chart]="totalJobsChartOptions.chart"
+                  [colors]="totalJobsChartOptions.colors"
+                  [plotOptions]="totalJobsChartOptions.plotOptions"
+                  [dataLabels]="totalJobsChartOptions.dataLabels"
+                  [xaxis]="totalJobsChartOptions.xaxis"
+                  [yaxis]="totalJobsChartOptions.yaxis"
+                  [title]="totalJobsChartOptions.title"
+                  [tooltip]="totalJobsChartOptions.tooltip"
+                  [grid]="totalJobsChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 4: Total Jobs Scheduled -->
+          <div class="col-lg-6 mb-4">
+            <div class="chart-card">
+              <div class="chart-header mb-3">
+                <h6 class="mb-0 fw-bold">Total Jobs Scheduled</h6>
+              </div>
+              <div class="chart-wrapper" *ngIf="totalJobsScheduledChartOptions">
+                <apx-chart
+                  [series]="totalJobsScheduledChartOptions.series"
+                  [chart]="totalJobsScheduledChartOptions.chart"
+                  [colors]="totalJobsScheduledChartOptions.colors"
+                  [plotOptions]="totalJobsScheduledChartOptions.plotOptions"
+                  [dataLabels]="totalJobsScheduledChartOptions.dataLabels"
+                  [xaxis]="totalJobsScheduledChartOptions.xaxis"
+                  [yaxis]="totalJobsScheduledChartOptions.yaxis"
+                  [title]="totalJobsScheduledChartOptions.title"
+                  [tooltip]="totalJobsScheduledChartOptions.tooltip"
+                  [grid]="totalJobsScheduledChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Grid Section -->
+      <div class="grid-section" *ngIf="!isLoading && gridData.length > 0">
+        <div class="grid-header d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0 fw-bold">
+            <i class="bi bi-table me-2 text-primary"></i>
+            Unscheduled Jobs Data
+            <span class="badge ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+              {{ gridData.length }} Jobs
+            </span>
+          </h5>
+          <button class="btn btn-sm btn-success" (click)="exportToExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+          </button>
+        </div>
+
+        <!-- Pagination -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <small class="text-muted">
+            Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, gridData.length) }} of {{ gridData.length }} entries
+          </small>
+          <div class="pagination-controls">
+            <button class="btn btn-sm btn-outline-primary" (click)="prevPage()" [disabled]="currentPage === 1">
+              <i class="bi bi-chevron-left me-1"></i>Previous
+            </button>
+            <span class="mx-2 text-muted">Page {{ currentPage }} of {{ getTotalPages() }}</span>
+            <button class="btn btn-sm btn-outline-primary" (click)="nextPage()" [disabled]="currentPage >= getTotalPages()">
+              Next<i class="bi bi-chevron-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Grid -->
+        <div class="table-responsive">
+          <table class="table modern-table">
+            <thead class="table-header">
+              <tr>
+                <th *ngFor="let col of displayColumns" [style.width]="col.width" class="header-cell sortable-header" (click)="sortBy(col.key)" [class.active]="sortField === col.key">
+                  <div class="header-content">
+                    <span class="header-text">{{ col.header }}</span>
+                    <i [ngClass]="'bi ' + getSortIcon(col.key)" class="sort-icon ms-1"></i>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of getDisplayData()" [ngClass]="{'bill-after-pm': row.jobstatus === 'Could be billed' || row.jobstatus === 'Bill After PM'}">
+                <td *ngFor="let col of displayColumns" [style.width]="col.width">
+                  {{ row[col.key] | date: 'dd-MMM-yyyy' || row[col.key] }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,188 @@
+<div class="container-fluid performance-container">
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center performance-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="performance-header mb-4">
+    <div class="header-content">
+      <h1 class="page-title">
+        <i class="bi bi-graph-up-arrow me-2"></i>
+        Parts Performance Graphs
+      </h1>
+      <p class="page-subtitle">Monthly Performance Metrics and Analytics</p>
+    </div>
+    <button type="button" class="btn btn-primary refresh-btn" (click)="refresh()" [disabled]="isLoading">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card shadow-sm performance-card">
+    <div class="card-body py-4">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+      </div>
+
+      <!-- Charts Section -->
+      <div *ngIf="!isLoading && !errorMessage" class="charts-wrapper">
+        <!-- Row 1: Three Charts -->
+        <div class="row mb-4">
+          <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+              <div class="chart-container" *ngIf="folderDaysChartOptions">
+                <apx-chart
+                  [series]="folderDaysChartOptions.series"
+                  [chart]="folderDaysChartOptions.chart"
+                  [colors]="folderDaysChartOptions.colors"
+                  [plotOptions]="folderDaysChartOptions.plotOptions"
+                  [dataLabels]="folderDaysChartOptions.dataLabels"
+                  [xaxis]="folderDaysChartOptions.xaxis"
+                  [yaxis]="folderDaysChartOptions.yaxis"
+                  [title]="folderDaysChartOptions.title"
+                  [tooltip]="folderDaysChartOptions.tooltip"
+                  [grid]="folderDaysChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+              <div class="chart-container" *ngIf="returnDaysChartOptions">
+                <apx-chart
+                  [series]="returnDaysChartOptions.series"
+                  [chart]="returnDaysChartOptions.chart"
+                  [colors]="returnDaysChartOptions.colors"
+                  [plotOptions]="returnDaysChartOptions.plotOptions"
+                  [dataLabels]="returnDaysChartOptions.dataLabels"
+                  [xaxis]="returnDaysChartOptions.xaxis"
+                  [yaxis]="returnDaysChartOptions.yaxis"
+                  [title]="returnDaysChartOptions.title"
+                  [tooltip]="returnDaysChartOptions.tooltip"
+                  [grid]="returnDaysChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+              <div class="chart-container" *ngIf="testedDaysChartOptions">
+                <apx-chart
+                  [series]="testedDaysChartOptions.series"
+                  [chart]="testedDaysChartOptions.chart"
+                  [colors]="testedDaysChartOptions.colors"
+                  [plotOptions]="testedDaysChartOptions.plotOptions"
+                  [dataLabels]="testedDaysChartOptions.dataLabels"
+                  [xaxis]="testedDaysChartOptions.xaxis"
+                  [yaxis]="testedDaysChartOptions.yaxis"
+                  [title]="testedDaysChartOptions.title"
+                  [tooltip]="testedDaysChartOptions.tooltip"
+                  [grid]="testedDaysChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Three Charts -->
+        <div class="row mb-4">
+          <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+              <div class="chart-container" *ngIf="foldersChartOptions">
+                <apx-chart
+                  [series]="foldersChartOptions.series"
+                  [chart]="foldersChartOptions.chart"
+                  [colors]="foldersChartOptions.colors"
+                  [plotOptions]="foldersChartOptions.plotOptions"
+                  [dataLabels]="foldersChartOptions.dataLabels"
+                  [xaxis]="foldersChartOptions.xaxis"
+                  [yaxis]="foldersChartOptions.yaxis"
+                  [title]="foldersChartOptions.title"
+                  [tooltip]="foldersChartOptions.tooltip"
+                  [grid]="foldersChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+              <div class="chart-container" *ngIf="returnsChartOptions">
+                <apx-chart
+                  [series]="returnsChartOptions.series"
+                  [chart]="returnsChartOptions.chart"
+                  [colors]="returnsChartOptions.colors"
+                  [plotOptions]="returnsChartOptions.plotOptions"
+                  [dataLabels]="returnsChartOptions.dataLabels"
+                  [xaxis]="returnsChartOptions.xaxis"
+                  [yaxis]="returnsChartOptions.yaxis"
+                  [title]="returnsChartOptions.title"
+                  [tooltip]="returnsChartOptions.tooltip"
+                  [grid]="returnsChartOptions.grid"
+                  [legend]="returnsChartOptions.legend"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4 mb-3">
+            <div class="chart-card">
+              <div class="chart-container" *ngIf="testedChartOptions">
+                <apx-chart
+                  [series]="testedChartOptions.series"
+                  [chart]="testedChartOptions.chart"
+                  [colors]="testedChartOptions.colors"
+                  [plotOptions]="testedChartOptions.plotOptions"
+                  [dataLabels]="testedChartOptions.dataLabels"
+                  [xaxis]="testedChartOptions.xaxis"
+                  [yaxis]="testedChartOptions.yaxis"
+                  [title]="testedChartOptions.title"
+                  [tooltip]="testedChartOptions.tooltip"
+                  [grid]="testedChartOptions.grid"
+                  [legend]="testedChartOptions.legend"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Full Width Chart -->
+        <div class="row">
+          <div class="col-12">
+            <div class="chart-card chart-card-large">
+              <div class="chart-container-large" *ngIf="partsUnitsChartOptions">
+                <apx-chart
+                  [series]="partsUnitsChartOptions.series"
+                  [chart]="partsUnitsChartOptions.chart"
+                  [colors]="partsUnitsChartOptions.colors"
+                  [plotOptions]="partsUnitsChartOptions.plotOptions"
+                  [dataLabels]="partsUnitsChartOptions.dataLabels"
+                  [xaxis]="partsUnitsChartOptions.xaxis"
+                  [yaxis]="partsUnitsChartOptions.yaxis"
+                  [title]="partsUnitsChartOptions.title"
+                  [tooltip]="partsUnitsChartOptions.tooltip"
+                  [grid]="partsUnitsChartOptions.grid"
+                ></apx-chart>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && !errorMessage && !foldersChartOptions" class="empty-state text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <p class="text-muted mt-3">No data available to display</p>
+      </div>
+    </div>
+  </div>
+</div>

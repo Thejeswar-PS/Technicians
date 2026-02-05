@@ -1,7 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { JobReportDetailsComponent } from './job-report-details/job-report-details.component';
-import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-report.component';
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
 import { OrderRequestComponent } from './order-request/order-request.component';
@@ -21,20 +19,14 @@ import { ContractDetailsReportComponent } from './contract-details-report/contra
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
 import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
+import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-report.component';
+import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
 
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'job-report-details',
+    redirectTo: 'parts-request-status',
     pathMatch: 'full'
-  },
-  {
-    path: 'job-report-details', 
-    component: JobReportDetailsComponent
-  },
-  {
-    path: 'job-schedule-report', 
-    component: JobScheduleReportComponent
   },
   {
     path: 'parts-request-status', 
@@ -119,6 +111,14 @@ const routes: Routes = [
   {
     path: 'extranet-user-classes',
     component: ExtranetUserClassesComponent
+  },
+  {
+    path: 'unscheduled-report',
+    component: UnscheduledReportComponent
+  },
+  {
+    path: 'accounting-status',
+    component: AccountingStatusComponent
   }
 ];
 

@@ -132,5 +132,134 @@ namespace Technicians.Api.Repository
 
             return states;
         }
+
+        public async Task<TechKpiDto> GetKpisAsync(string pOffid, string techId, string yearType)
+        {
+            var result = new TechKpiDto();
+
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("dbo.GetTechDBReportDetails_Count", con);
+
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@pOffid", pOffid);
+            cmd.Parameters.AddWithValue("@TechID", techId);
+            cmd.Parameters.AddWithValue("@YearType", yearType);
+
+            await con.OpenAsync();
+
+            using var dr = await cmd.ExecuteReaderAsync();
+
+            if (await dr.ReadAsync())
+            {
+                result = new TechKpiDto
+                {
+                    JobsScheduled = Convert.ToInt32(dr["JobsScheduled"]),
+                    JobsToBeUploaded = Convert.ToInt32(dr["JobsToBeUploaded"]),
+                    EmergencyJobs = Convert.ToInt32(dr["EmergencyJobs"]),
+                    MissingJobs = Convert.ToInt32(dr["MissingJobs"]),
+                    JobsWithParts = Convert.ToInt32(dr["JobsWithParts"]),
+                    JobsThisWeek = Convert.ToInt32(dr["JobsThisWeek"])
+                };
+            }
+
+            return result;
+        }
+
+        public async Task<List<TechActivityLogDto>> GetActivityLogAsync(string accMgr, string techId)
+        {
+            var results = new List<TechActivityLogDto>();
+
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("dbo.SpGetRecentLogActivity", con);
+
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@AccMgr", accMgr);
+            cmd.Parameters.AddWithValue("@TechID", techId);
+
+            await con.OpenAsync();
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                results.Add(new TechActivityLogDto
+                {
+                    CallNbr = reader["CallNbr"]?.ToString(),
+                    TechID = reader["TechID"]?.ToString(),
+                    AccMgr = reader["AccMgr"]?.ToString(),
+                    Activity = reader["Activity"]?.ToString(),
+                    Status = reader["Status"]?.ToString(),
+                    ActivityDate = reader["ActivityDate"] != DBNull.Value
+                        ? Convert.ToDateTime(reader["ActivityDate"])
+                        : DateTime.MinValue
+                });
+            }
+
+            return results;
+        }
+
+        public async Task<List<WeekJobDto>> GetWeekJobsAsync(string accMgr, string techId)
+        {
+            var results = new List<WeekJobDto>();
+
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("dbo.GetCurrentWeekJobsList", con);
+
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@AccMgr", accMgr);
+            cmd.Parameters.AddWithValue("@TechID", techId);
+
+            await con.OpenAsync();
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                results.Add(new WeekJobDto
+                {
+                    CallNbr = reader["CallNbr"]?.ToString(),
+                    CustNbr = reader["CustNbr"]?.ToString(),
+                    CustName = reader["CustName"]?.ToString(),
+                    TechID = reader["TechID"]?.ToString(),
+                    TechName = reader["TechName"]?.ToString(),
+                    AccMgr = reader["AccMgr"]?.ToString(),
+                    Status = reader["Status"]?.ToString(),
+                    ScheduledDate = reader["ScheduledDate"] != DBNull.Value
+                        ? Convert.ToDateTime(reader["ScheduledDate"])
+                        : DateTime.MinValue
+                });
+            }
+
+            return results;
+        }
+
+        public async Task<MonthlyScheduledChartDto> GetMonthlyScheduledChartAsync(string accMgr, string techId)
+        {
+            var chart = new MonthlyScheduledChartDto();
+
+            using var con = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("dbo.MonthlyScheduledGraph", con);
+
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@AccMgr", accMgr);
+            cmd.Parameters.AddWithValue("@TechID", techId);
+
+            await con.OpenAsync();
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                // ---- Same logic as your legacy code ----
+                if (reader["MonthNo"]?.ToString() == "0")
+                    continue;   // Skip "Not Uploaded"
+
+                chart.Labels.Add(reader["MonthName"]?.ToString());
+                chart.Data.Add(Convert.ToInt32(reader["Jobs"]));
+            }
+
+            return chart;
+        }
+
     }
 }

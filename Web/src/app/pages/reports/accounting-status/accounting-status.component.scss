@@ -1,0 +1,269 @@
+.status-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  padding: 1.5rem 0.5rem;
+  width: 100%;
+  max-width: none;
+  overflow-x: auto;
+  box-sizing: border-box;
+
+  .status-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(5px);
+    z-index: 9999;
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      border-width: 3px;
+      border-color: #5486ff;
+      border-right-color: transparent;
+    }
+  }
+
+  .status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 0 1rem;
+
+    .header-content {
+      flex: 1;
+      min-width: 300px;
+
+      .page-title {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #5486ff;
+        margin: 0;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+
+        i {
+          color: #5486ff;
+          font-size: 2rem;
+        }
+      }
+
+      .page-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        margin: 0.5rem 0 0 0;
+        font-weight: 500;
+      }
+    }
+
+    .refresh-btn {
+      align-self: flex-start;
+      border-radius: 12px;
+      padding: 11px 20px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+.status-card {
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+
+  .card-body {
+    padding: 2rem;
+  }
+}
+
+.charts-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.chart-section {
+  width: 100%;
+}
+
+.chart-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .chart-header {
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid rgba(84, 134, 255, 0.1);
+    margin-bottom: 1.5rem;
+
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1f2937;
+      margin: 0;
+      display: flex;
+      align-items: center;
+
+      i {
+        font-size: 1.3rem;
+      }
+    }
+  }
+
+  .chart-container {
+    min-height: 450px;
+    padding: 1rem 0;
+  }
+}
+
+.alert {
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  border: none;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  font-weight: 500;
+
+  &.alert-danger {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+
+    i {
+      color: #dc2626;
+    }
+
+    .btn-close {
+      filter: opacity(0.5);
+
+      &:hover {
+        filter: opacity(0.7);
+      }
+    }
+  }
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+
+  i {
+    opacity: 0.3;
+  }
+
+  p {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 1200px) {
+  .status-card .card-body {
+    padding: 1.5rem;
+  }
+
+  .chart-card {
+    padding: 1.25rem;
+
+    .chart-header {
+      padding-bottom: 1rem;
+      margin-bottom: 1rem;
+
+      .chart-title {
+        font-size: 1rem;
+      }
+    }
+
+    .chart-container {
+      min-height: 400px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .status-container {
+    padding: 1rem 0.25rem;
+
+    .status-header {
+      flex-direction: column;
+      align-items: stretch;
+
+      .header-content {
+        min-width: auto;
+
+        .page-title {
+          font-size: 1.75rem;
+        }
+
+        .page-subtitle {
+          font-size: 0.9rem;
+        }
+      }
+
+      .refresh-btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  }
+
+  .status-card {
+    margin: 0 0.25rem;
+
+    .card-body {
+      padding: 1rem;
+    }
+  }
+
+  .chart-card {
+    padding: 1rem;
+
+    .chart-header {
+      padding-bottom: 0.75rem;
+      margin-bottom: 1rem;
+
+      .chart-title {
+        font-size: 0.95rem;
+
+        i {
+          font-size: 1.1rem;
+        }
+      }
+    }
+
+    .chart-container {
+      min-height: 350px;
+    }
+  }
+}

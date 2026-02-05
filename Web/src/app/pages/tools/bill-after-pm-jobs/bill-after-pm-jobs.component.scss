@@ -1,0 +1,107 @@
+.bill-after-pm-jobs-container {
+  padding: 20px;
+
+  .main-card {
+    border-radius: 8px;
+
+    .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .card-body {
+      padding: 30px;
+    }
+  }
+
+  .filter-panel {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 30px;
+
+    .form-label {
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-select {
+      font-size: 14px;
+      border: 1px solid #ced4da;
+
+      &:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+    }
+  }
+
+  .table-responsive {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .table {
+    font-size: 14px;
+    margin-bottom: 0;
+
+    thead {
+      th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        padding: 12px;
+        text-align: left;
+      }
+    }
+
+    tbody {
+      tr {
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #f8f9fa;
+        }
+
+        &.row-selected {
+          background-color: #f0e68c;
+        }
+
+        td {
+          padding: 12px;
+          vertical-align: middle;
+        }
+      }
+    }
+  }
+
+  .alert {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 992px) {
+  .bill-after-pm-jobs-container {
+    .table {
+      font-size: 0.85rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .bill-after-pm-jobs-container {
+    .table-responsive {
+      max-height: none;
+    }
+
+    .table {
+      font-size: 0.8rem;
+    }
+
+    .btn {
+      padding: 0.25rem 0.4rem;
+      font-size: 0.75rem;
+    }
+  }
+}
