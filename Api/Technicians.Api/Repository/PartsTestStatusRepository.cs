@@ -35,6 +35,7 @@ namespace Technicians.Api.Repository
                 parameters.Add("@Archive", request.Archive, DbType.Boolean);
                 parameters.Add("@Make", string.IsNullOrEmpty(request.Make) || request.Make == "All" ? string.Empty : request.Make, DbType.String, size: 50);
                 parameters.Add("@Model", string.IsNullOrEmpty(request.Model) || request.Model == "All" ? string.Empty : request.Model, DbType.String, size: 50);
+                parameters.Add("@AssignedTo", string.IsNullOrEmpty(request.AssignedTo) || request.AssignedTo == "All" ? string.Empty : request.AssignedTo, DbType.String, size: 50);
 
                 // Execute stored procedure and get multiple result sets
                 using var multi = await connection.QueryMultipleAsync("GetPartsTestStatus", parameters, commandType: CommandType.StoredProcedure);
@@ -70,7 +71,8 @@ namespace Technicians.Api.Repository
                 Priority = string.Empty,
                 Archive = false,
                 Make = string.Empty,
-                Model = string.Empty
+                Model = string.Empty,
+                AssignedTo = string.Empty
             };
 
             return await GetPartsTestStatusAsync(defaultRequest);

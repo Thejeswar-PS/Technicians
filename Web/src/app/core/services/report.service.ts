@@ -744,7 +744,8 @@ export class ReportService {
       priority: request?.priority || 'All', 
       archive: request?.archive || false,
       make: request?.make || 'All',
-      model: request?.model || 'All'
+      model: request?.model || 'All',
+      assignedTo: request?.assignedTo || 'All'
     };
 
     return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, requestBody, {
@@ -755,6 +756,29 @@ export class ReportService {
   getPartsTestStatusPost(request: PartsTestStatusRequest): Observable<PartsTestStatusApiResponse> {
     return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, request, {
       headers: this.headers
+    });
+  }
+
+  // GET method with query parameters to match backend
+  getPartsTestStatusByParams(
+    jobType: string = "",
+    priority: string = "",
+    archive: boolean = false,
+    make: string = "",
+    model: string = "",
+    assignedTo: string = ""
+  ): Observable<PartsTestStatusApiResponse> {
+    let params = new HttpParams()
+      .set('jobType', jobType)
+      .set('priority', priority)
+      .set('archive', archive.toString())
+      .set('make', make)
+      .set('model', model)
+      .set('assignedTo', assignedTo);
+
+    return this.http.get<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, {
+      headers: this.headers,
+      params: params
     });
   }
 

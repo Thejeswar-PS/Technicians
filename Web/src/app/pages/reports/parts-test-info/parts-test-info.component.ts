@@ -502,7 +502,8 @@ export class PartsTestInfoComponent implements OnInit, AfterViewInit {
       priority: 'All',
       archive: false,
       make: 'All',
-      model: 'All'
+      model: 'All',
+      assignedTo: 'All'
     };
     
     this.reportService.getPartsTestStatus(statusRequest).subscribe({

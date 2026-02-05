@@ -75,7 +75,8 @@ export class PartsTestStatusComponent implements OnInit {
       priority: ['All'],
       make: ['All'],
       model: ['All'],
-      archive: [false]
+      archive: [false],
+      assignedTo: ['All']
     });
   }
 
@@ -183,7 +184,8 @@ export class PartsTestStatusComponent implements OnInit {
       priority: formValue.priority || '',
       archive: formValue.archive || false,
       make: formValue.make || '',
-      model: formValue.model || ''
+      model: formValue.model || '',
+      assignedTo: formValue.assignedTo || ''
     };
 
     this.reportService.getPartsTestStatus(request).subscribe({
@@ -223,7 +225,8 @@ export class PartsTestStatusComponent implements OnInit {
       priority: 'All',
       make: 'All',
       model: 'All',
-      archive: false
+      archive: false,
+      assignedTo: 'All'
     });
     this.loadPartsTestStatus();
   }

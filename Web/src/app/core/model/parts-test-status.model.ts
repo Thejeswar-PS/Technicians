@@ -29,6 +29,7 @@ export interface PartsTestStatusRequest {
   archive: boolean;
   make: string;
   model: string;
+  assignedTo: string;
 }
 
 export interface MakeModelDto {
