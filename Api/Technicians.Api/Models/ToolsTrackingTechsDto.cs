@@ -102,4 +102,20 @@ namespace Technicians.Api.Models
         public string OldMSerialNo { get; set; } = string.Empty;
         public string OldMTracking { get; set; } = string.Empty;
     }
+
+    //public class SaveTechToolsTrackingRequestDto
+    //{
+    //    public string TechID { get; set; } = string.Empty;
+    //    public string ModifiedBy { get; set; } = string.Empty;
+    //    public List<TechToolsTrackingDto> ToolTrackingItems { get; set; } = new List<TechToolsTrackingDto>();
+    //}
+
+    //// DTO for the save result
+    //public class SaveTechToolsTrackingResultDto
+    //{
+    //    public bool Success { get; set; }
+    //    public string Message { get; set; } = string.Empty;
+    //    public int RecordsProcessed { get; set; }
+    //    public string GeneratedQuery { get; set; } = string.Empty;
+    //}
 }

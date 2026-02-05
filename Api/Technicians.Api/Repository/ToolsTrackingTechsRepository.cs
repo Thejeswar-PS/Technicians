@@ -8,15 +8,21 @@ namespace Technicians.Api.Repository
     public class ToolsTrackingTechsRepository
     {
         private readonly IConfiguration _configuration;
-        private readonly string _connectionString;
+        private readonly string _etechConnectionString;
+        private readonly string _defaultConnectionString;
+        private readonly ILogger<ToolsTrackingTechsRepository> _logger;
 
-        public ToolsTrackingTechsRepository(IConfiguration configuration)
+        public ToolsTrackingTechsRepository(IConfiguration configuration, ILogger<ToolsTrackingTechsRepository> logger)
         {
             _configuration = configuration;
-            _connectionString = _configuration.GetConnectionString("DefaultConnection") ??
-                throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            _etechConnectionString = configuration.GetConnectionString("ETechConnString")
+                ?? throw new InvalidOperationException("ETechConnString not found");
+            _defaultConnectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("DefaultConnection not found");
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        // Methods that use ETechConnString (DCG database)
         /// <summary>
         /// Gets tools tracking technicians data using the ToolsTrackingTechs stored procedure
         /// </summary>
@@ -24,7 +30,7 @@ namespace Technicians.Api.Repository
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var techsData = await connection.QueryAsync<ToolsTrackingTechsDto>(
@@ -51,7 +57,7 @@ namespace Technicians.Api.Repository
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var serialNosData = await connection.QueryAsync<TechToolSerialNoDto>(
@@ -88,7 +94,7 @@ namespace Technicians.Api.Repository
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 using var multi = await connection.QueryMultipleAsync(
@@ -173,7 +179,7 @@ namespace Technicians.Api.Repository
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var count = await connection.QuerySingleAsync<int>(
@@ -201,7 +207,7 @@ namespace Technicians.Api.Repository
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_etechConnectionString);
                 await connection.OpenAsync();
 
                 var parameters = new DynamicParameters();
@@ -240,7 +246,7 @@ namespace Technicians.Api.Repository
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var rowsAffected = await connection.ExecuteAsync(
@@ -275,7 +281,7 @@ namespace Technicians.Api.Repository
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var toolsTrackingData = await connection.QueryAsync<TechToolsTrackingDto>(
@@ -294,5 +300,104 @@ namespace Technicians.Api.Repository
                 throw new Exception($"Error retrieving tech tools tracking data for tech ID '{techId}': {ex.Message}", ex);
             }
         }
+
+        /// <summary>
+        /// Saves/Updates tech tools tracking data using MERGE (UPSERT) logic
+        /// </summary>
+        /// <param name="request">Save request containing tech ID and tool tracking items</param>
+        //public async Task<SaveTechToolsTrackingResultDto> SaveTechToolsTrackingAsync(SaveTechToolsTrackingRequestDto request)
+        //{
+        //    try
+        //    {
+        //        if (!request.ToolTrackingItems.Any())
+        //        {
+        //            return new SaveTechToolsTrackingResultDto
+        //            {
+        //                Success = false,
+        //                Message = "No tool tracking items provided",
+        //                RecordsProcessed = 0
+        //            };
+        //        }
+
+        //        using var connection = new SqlConnection(_defaultConnectionString);
+        //        await connection.OpenAsync();
+                
+        //        var totalRowsAffected = 0;
+        //        var processedItems = new List<string>();
+
+        //        foreach (var item in request.ToolTrackingItems)
+        //        {
+        //            // Handle empty due date like legacy (default to 1/1/1900)
+        //            var dueDt = item.DueDt == DateTime.MinValue ? new DateTime(1900, 1, 1) : item.DueDt;
+                    
+        //            // Convert boolean/string received to proper format
+        //            var receivedValue = 0; // Default to false
+        //            if (!string.IsNullOrEmpty(item.Received))
+        //            {
+        //                if (item.Received.Equals("True", StringComparison.OrdinalIgnoreCase) || 
+        //                    item.Received.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+        //                    item.Received.Equals("true", StringComparison.OrdinalIgnoreCase))
+        //                {
+        //                    receivedValue = 1;
+        //                }
+        //            }
+
+        //            // Use MERGE for UPSERT behavior
+        //            var sql = @"
+        //                MERGE [ToolTracking] AS target
+        //                USING (SELECT @TechID AS TechID, @ToolName AS ToolName) AS source
+        //                ON target.TechID = source.TechID AND target.ToolName = source.ToolName
+        //                WHEN MATCHED THEN
+        //                    UPDATE SET 
+        //                        SerialNo = @SerialNo,
+        //                        DueDt = @DueDt,
+        //                        NewMTracking = @NewMTracking,
+        //                        OldMSerialNo = @OldMSerialNo,
+        //                        OldMTracking = @OldMTracking,
+        //                        Received = @Received,
+        //                        ModifiedOn = GETDATE(),
+        //                        ModifiedBy = @ModifiedBy,
+        //                        ColumnOrder = @ColumnOrder
+        //                WHEN NOT MATCHED THEN
+        //                    INSERT (TechID, ToolName, SerialNo, DueDt, NewMTracking, OldMSerialNo, OldMTracking, Received, ModifiedOn, ModifiedBy, ColumnOrder)
+        //                    VALUES (@TechID, @ToolName, @SerialNo, @DueDt, @NewMTracking, @OldMSerialNo, @OldMTracking, @Received, GETDATE(), @ModifiedBy, @ColumnOrder);";
+
+        //            var rowsAffected = await connection.ExecuteAsync(sql, new
+        //            {
+        //                TechID = request.TechID,
+        //                ToolName = item.ToolName,
+        //                SerialNo = item.SerialNo?.Trim() ?? "",
+        //                DueDt = dueDt,
+        //                NewMTracking = item.NewMTracking?.Trim() ?? "",
+        //                OldMSerialNo = item.OldMSerialNo?.Trim() ?? "",
+        //                OldMTracking = item.OldMTracking?.Trim() ?? "",
+        //                Received = receivedValue,
+        //                ModifiedBy = request.ModifiedBy,
+        //                ColumnOrder = item.ColumnOrder
+        //            });
+
+        //            totalRowsAffected += rowsAffected;
+        //            processedItems.Add($"{item.ToolName} (TechID: {request.TechID})");
+        //        }
+
+        //        return new SaveTechToolsTrackingResultDto
+        //        {
+        //            Success = totalRowsAffected > 0,
+        //            Message = totalRowsAffected > 0 ? 
+        //                $"Successfully processed {totalRowsAffected} tool tracking records: {string.Join(", ", processedItems)}" : 
+        //                "No records were processed",
+        //            RecordsProcessed = totalRowsAffected,
+        //            GeneratedQuery = $"Executed {request.ToolTrackingItems.Count} MERGE (UPSERT) statements"
+        //        };
+        //    }
+        //    catch (SqlException sqlEx)
+        //    {
+        //        throw new Exception($"Database error saving tech tools tracking data: {sqlEx.Message}", sqlEx);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception($"Error saving tech tools tracking data: {ex.Message}", ex);
+        //    }
+        //}
     }
 }

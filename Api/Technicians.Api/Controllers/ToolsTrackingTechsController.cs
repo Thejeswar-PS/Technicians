@@ -412,5 +412,70 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Saves/Updates tech tools tracking data
+        /// </summary>
+        /// <param name="request">Save request containing tech ID and tool tracking items</param>
+        //[HttpPost("save-tracking")]
+        //public async Task<ActionResult<SaveTechToolsTrackingResultDto>> SaveTechToolsTracking(
+        //    [FromBody] SaveTechToolsTrackingRequestDto request)
+        //{
+        //    if (request == null)
+        //        return BadRequest("Request body is required.");
+
+        //    if (string.IsNullOrWhiteSpace(request.TechID))
+        //        return BadRequest("Tech ID is required.");
+
+        //    if (string.IsNullOrWhiteSpace(request.ModifiedBy))
+        //        return BadRequest("Modified By is required.");
+
+        //    if (!request.ToolTrackingItems.Any())
+        //        return BadRequest("At least one tool tracking item is required.");
+
+        //    try
+        //    {
+        //        _logger.LogInformation(
+        //            "Saving tech tools tracking data - TechId: {TechId}, ItemCount: {ItemCount}, ModifiedBy: {ModifiedBy}",
+        //            request.TechID, request.ToolTrackingItems.Count, request.ModifiedBy);
+
+        //        var result = await _repository.SaveTechToolsTrackingAsync(request);
+
+        //        _logger.LogInformation(
+        //            "Tech tools tracking save completed - TechId: {TechId}, Success: {Success}, RecordsProcessed: {RecordsProcessed}",
+        //            request.TechID, result.Success, result.RecordsProcessed);
+
+        //        if (result.Success)
+        //        {
+        //            return Ok(new
+        //            {
+        //                success = true,
+        //                data = result,
+        //                message = result.Message
+        //            });
+        //        }
+        //        else
+        //        {
+        //            return StatusCode(422, new
+        //            {
+        //                success = false,
+        //                data = result,
+        //                message = result.Message
+        //            });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, 
+        //            "Error saving tech tools tracking data - TechId: {TechId}", request.TechID);
+
+        //        return StatusCode(500, new
+        //        {
+        //            success = false,
+        //            message = "Failed to save tech tools tracking data",
+        //            error = ex.Message
+        //        });
+        //    }
+        //}
     }
 }
