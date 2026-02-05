@@ -1,0 +1,223 @@
+<!-- Legacy-Style Tool Tracking Table -->
+<div class="legacy-tool-tracking">
+  
+  <!-- Loading spinner -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="technician-selector-row">
+      <div class="selector-container">
+        <select 
+          class="form-select technician-dropdown" 
+          [(ngModel)]="selectedTech"
+          (ngModelChange)="onTechnicianChange($event)"
+          [disabled]="loading || loadingCount || loadingTechnicians"
+        >
+          <option value="All">Select Technician</option>
+          <option *ngFor="let tech of technicians" [value]="tech.techID">
+            {{tech.techname}}
+          </option>
+        </select>
+      </div>
+      <div class="action-buttons">
+        <button 
+          type="button" 
+          class="btn btn-info save-btn"
+          (click)="onSave()"
+          [disabled]="!trackingData || trackingData.length === 0"
+        >
+          Save Info
+        </button>
+      </div>
+    </div>
+
+    <!-- Error Display -->
+    <div *ngIf="error" class="alert alert-danger mt-3">
+      <strong>Error:</strong> {{ error }}
+    </div>
+  </div>
+
+  <!-- Main Tools Table -->
+  <div *ngIf="trackingData && trackingData.length > 0" class="tools-table-section">
+    
+    <!-- Table Title Header -->
+    <div class="table-title-header">
+      TOOLS ASSIGNED TO TECHNICIAN: {{ getSelectedTechName().toUpperCase() }}
+    </div>
+    
+    <!-- Tools Table -->
+    <div class="table-container">
+      <table class="tools-table">
+        <thead>
+          <tr>
+            <th class="col-tool-name">TOOL NAME</th>
+            <th class="col-serial-no">SERIAL NO</th>
+            <th class="col-due-date">DUE DATE</th>
+            <th class="col-new-meter">NEW METER TRACKING</th>
+            <th class="col-old-meter-sno">OLD METER SNO</th>
+            <th class="col-old-meter">OLD METER TRACKING</th>
+            <th class="col-received">RECEIVED</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of trackingData; let i = index; trackBy: trackByFn" 
+              class="table-row" 
+              [class.editing-row]="item.isEditing">
+            
+            <!-- Tool Name -->
+            <td class="tool-name-cell">
+              {{ item.toolName || '' }}
+            </td>
+            
+            <!-- Serial No -->
+            <td class="serial-no-cell">
+              <ng-container *ngIf="!item.isEditing">
+                {{ item.serialNo || '' }}
+              </ng-container>
+              <input 
+                *ngIf="item.isEditing" 
+                type="text" 
+                class="form-control table-input"
+                [(ngModel)]="item.serialNo"
+                placeholder=""
+              />
+            </td>
+            
+            <!-- Due Date -->
+            <td class="due-date-cell">
+              <ng-container *ngIf="!item.isEditing">
+                {{ formatTableDate(item.dueDt) }}
+              </ng-container>
+              <ng-container *ngIf="item.isEditing">
+                <div class="date-input-container">
+                  <input 
+                    type="date" 
+                    class="form-control table-input date-input"
+                    [ngModel]="formatDateForInput(item.dueDt)"
+                    (ngModelChange)="item.dueDt = $event"
+                  />
+                  <button type="button" class="date-picker-btn" title="Select Date">
+                    📅
+                  </button>
+                </div>
+              </ng-container>
+            </td>
+            
+            <!-- New Meter Tracking -->
+            <td class="new-meter-cell">
+              <ng-container *ngIf="!item.isEditing">
+                {{ item.newMTracking || '' }}
+              </ng-container>
+              <input 
+                *ngIf="item.isEditing" 
+                type="text" 
+                class="form-control table-input"
+                [(ngModel)]="item.newMTracking"
+                placeholder=""
+              />
+            </td>
+            
+            <!-- Old Meter Serial No -->
+            <td class="old-meter-sno-cell">
+              <ng-container *ngIf="!item.isEditing">
+                {{ item.oldMSerialNo || '' }}
+              </ng-container>
+              <input 
+                *ngIf="item.isEditing" 
+                type="text" 
+                class="form-control table-input"
+                [(ngModel)]="item.oldMSerialNo"
+                placeholder=""
+              />
+            </td>
+            
+            <!-- Old Meter Tracking -->
+            <td class="old-meter-cell">
+              <ng-container *ngIf="!item.isEditing">
+                {{ item.oldMTracking || '' }}
+              </ng-container>
+              <input 
+                *ngIf="item.isEditing" 
+                type="text" 
+                class="form-control table-input"
+                [(ngModel)]="item.oldMTracking"
+                placeholder=""
+              />
+            </td>
+            
+            <!-- Received Checkbox -->
+            <td class="received-cell">
+              <input 
+                type="checkbox" 
+                class="form-check-input received-checkbox"
+                [checked]="item.received === 'true'"
+                (change)="updateReceived(item, $event)"
+                [disabled]="!item.isEditing"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Note Section -->
+    <div class="note-section">
+      <strong>Note:</strong> Make sure that File Name does not contain any spaces. It should be all one word.
+    </div>
+    
+    <!-- File Upload Section -->
+    <div class="file-upload-section">
+      <div class="upload-header">
+        <strong>Add Attachments</strong>
+      </div>
+      <div class="upload-controls">
+        <input 
+          type="file" 
+          class="form-control file-input"
+          #fileInput 
+          multiple 
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt"
+          (change)="onFileSelected($event)"
+        />
+        <button 
+          type="button" 
+          class="btn btn-primary upload-btn"
+          (click)="uploadFiles()"
+        >
+          Upload
+        </button>
+      </div>
+      
+      <!-- Uploaded Files List -->
+      <div *ngIf="uploadedFiles && uploadedFiles.length > 0" class="uploaded-files-list">
+        <div class="uploaded-files-header">
+          <strong>Uploaded Attachments for selected Job</strong>
+        </div>
+        <div *ngFor="let file of uploadedFiles; let i = index" class="uploaded-file-item">
+          <span class="file-name">{{ file.name }}</span>
+          <button 
+            type="button" 
+            class="btn btn-sm btn-danger remove-file-btn"
+            (click)="removeFile(i)"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="selectedTech && selectedTech !== 'All' && (!trackingData || trackingData.length === 0) && !loading" 
+       class="empty-state">
+    <div class="alert alert-info">
+      <strong>No Tools Found</strong><br>
+      No tracking records were found for the selected technician.
+    </div>
+  </div>
+</div>

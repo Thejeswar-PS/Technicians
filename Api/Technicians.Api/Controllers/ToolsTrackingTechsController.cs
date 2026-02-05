@@ -176,5 +176,241 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Gets tech tools misc kit data by tech ID
+        /// </summary>
+        /// <param name="techId">Tech ID to retrieve misc kit data for (required)</param>
+        //[HttpGet("misc-kit/{techId}")]
+        //public async Task<ActionResult<TechToolsMiscKitResultDto>> GetTechToolsMiscKitByTechId(string techId)
+        //{
+        //    if (string.IsNullOrWhiteSpace(techId))
+        //        return BadRequest("Tech ID is required.");
+
+        //    try
+        //    {
+        //        _logger.LogInformation("Getting tech tools misc kit data for tech ID: {TechId}", techId);
+
+        //        var results = await _repository.GetTechToolsMiscKitByTechIdAsync(techId);
+
+        //        _logger.LogInformation(
+        //            "Successfully retrieved tech tools misc kit data - TechId: {TechId}, ToolKitRecords: {ToolKitRecords}, TechInfo: {TechInfo}",
+        //            techId, results.ToolKitData.Count, results.TechInfo.TechID);
+
+        //        return Ok(new
+        //        {
+        //            success = true,
+        //            data = results,
+        //            totalToolKitRecords = results.ToolKitData.Count,
+        //            techInfo = results.TechInfo,
+        //            techId = techId,
+        //            message = $"Tech tools misc kit data retrieved successfully for tech ID: {techId}"
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error getting tech tools misc kit data for tech ID: {TechId}", techId);
+
+        //        return StatusCode(500, new
+        //        {
+        //            success = false,
+        //            message = "Failed to retrieve tech tools misc kit data",
+        //            error = ex.Message
+        //        });
+        //    }
+        //}
+
+        /// <summary>
+        /// Gets tools tracking count by tech ID
+        /// </summary>
+        /// <param name="techId">Tech ID to get count for (required)</param>
+        [HttpGet("count/{techId}")]
+        public async Task<ActionResult<ToolsTrackingCountDto>> GetToolsTrackingCount(string techId)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
+
+            try
+            {
+                _logger.LogInformation("Getting tools tracking count for tech ID: {TechId}", techId);
+
+                var count = await _repository.GetToolsTrackingCountAsync(techId);
+
+                _logger.LogInformation(
+                    "Successfully retrieved tools tracking count - TechId: {TechId}, Count: {Count}",
+                    techId, count);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = new ToolsTrackingCountDto { Count = count },
+                    techId = techId,
+                    count = count,
+                    message = $"Tools tracking count retrieved successfully for tech ID: {techId}"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting tools tracking count for tech ID: {TechId}", techId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to retrieve tools tracking count",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Executes insert tech tools query
+        /// </summary>
+        /// <param name="request">Query execution request</param>
+        [HttpPost("execute-query")]
+        public async Task<ActionResult<ExecuteInsertTechToolsQueryResultDto>> ExecuteInsertTechToolsQuery(
+            [FromBody] ExecuteInsertTechToolsQueryDto request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Query))
+                return BadRequest("Query is required.");
+
+            try
+            {
+                _logger.LogInformation("Executing insert tech tools query - Query length: {QueryLength}", 
+                    request.Query.Length);
+
+                var result = await _repository.ExecuteInsertTechToolsQueryAsync(request.Query);
+
+                _logger.LogInformation(
+                    "Query execution completed - Success: {Success}, ReturnValue: {ReturnValue}",
+                    result.Success, result.ReturnValue);
+
+                if (result.Success)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = result,
+                        message = "Query executed successfully"
+                    });
+                }
+                else
+                {
+                    return StatusCode(422, new
+                    {
+                        success = false,
+                        data = result,
+                        message = "Query execution failed"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing insert tech tools query");
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to execute insert tech tools query",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Deletes tools tracking data by tech ID
+        /// </summary>
+        /// <param name="techId">Tech ID to delete tracking data for (required)</param>
+        [HttpDelete("delete/{techId}")]
+        public async Task<ActionResult<DeleteToolsTrackingResultDto>> DeleteToolsTracking(string techId)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
+
+            try
+            {
+                _logger.LogInformation("Deleting tools tracking data for tech ID: {TechId}", techId);
+
+                var result = await _repository.DeleteToolsTrackingAsync(techId);
+
+                _logger.LogInformation(
+                    "Tools tracking deletion completed - TechId: {TechId}, RowsAffected: {RowsAffected}, Success: {Success}",
+                    techId, result.RowsAffected, result.Success);
+
+                if (result.Success)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = result,
+                        techId = techId,
+                        rowsAffected = result.RowsAffected,
+                        message = result.Message
+                    });
+                }
+                else
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        data = result,
+                        techId = techId,
+                        message = result.Message
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting tools tracking data for tech ID: {TechId}", techId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to delete tools tracking data",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets tech tools tracking data by tech ID
+        /// </summary>
+        /// <param name="techId">Tech ID to retrieve tracking data for (required)</param>
+        [HttpGet("tracking/{techId}")]
+        public async Task<ActionResult<List<TechToolsTrackingDto>>> GetTechToolsTrackingByTechId(string techId)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
+
+            try
+            {
+                _logger.LogInformation("Getting tech tools tracking data for tech ID: {TechId}", techId);
+
+                var results = await _repository.GetTechToolsTrackingByTechIdAsync(techId);
+
+                _logger.LogInformation(
+                    "Successfully retrieved tech tools tracking data - TechId: {TechId}, RecordCount: {RecordCount}",
+                    techId, results.Count);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = results,
+                    totalRecords = results.Count,
+                    techId = techId,
+                    message = $"Tech tools tracking data retrieved successfully for tech ID: {techId}"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting tech tools tracking data for tech ID: {TechId}", techId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to retrieve tech tools tracking data",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

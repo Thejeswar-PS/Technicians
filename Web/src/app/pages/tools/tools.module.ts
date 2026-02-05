@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { TechToolsComponent } from './tech-tools/tech-tools.component';
 import { NotesSearchComponent } from '../notes-search/notes-search.component';
 import { ToolsTrackingCalendarComponent } from './tools-tracking-calendar/tools-tracking-calendar.component';
+import { ToolTrackingEntryComponent } from './tool-tracking-entry/tool-tracking-entry.component';
 
 // Routing import
 import { ToolsRoutingModule } from './tools-routing.module';
@@ -14,7 +15,8 @@ import { ToolsRoutingModule } from './tools-routing.module';
   declarations: [
     TechToolsComponent,
     NotesSearchComponent,
-    ToolsTrackingCalendarComponent
+    ToolsTrackingCalendarComponent,
+    ToolTrackingEntryComponent
   ],
   imports: [
     CommonModule,
