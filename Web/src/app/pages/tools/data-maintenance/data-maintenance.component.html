@@ -1,0 +1,152 @@
+<div class="container-fluid data-maintenance-container">
+
+  <!-- Loading Overlay -->
+  <div *ngIf="loading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.3); z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="card shadow-sm main-card">
+    <div class="card-header border-0 py-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="header-spacer"></div>
+        <div class="text-center flex-grow-1">
+          <h3 class="fw-bold text-white mb-0">ETech Data Maintenance</h3>
+          <div class="text-white-50 fw-bold fs-7 mt-1">Manage Midtronics Reference Values and Equipment Data</div>
+        </div>
+        <div>
+          <button *ngIf="!addingNew" class="btn btn-sm btn-light" (click)="startAddNew()">
+            <i class="bi bi-plus-circle me-2"></i>Add New
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Error/Success Message -->
+      <div class="mb-4" *ngIf="message">
+        <div [ngClass]="messageType === 'success' ? 'alert alert-success' : 'alert alert-danger'" class="d-inline-flex align-items-center" role="alert">
+          <i [ngClass]="messageType === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-triangle-fill'" class="me-2"></i>
+          <span>{{ message }}</span>
+        </div>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="row mb-4 filter-panel">
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Select Make:</label>
+          <select class="form-select" 
+                  [(ngModel)]="selectedMake" 
+                  (change)="onMakeChange()">
+            <option *ngFor="let make of makes" [value]="make.value">{{ make.text }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Data Table Section -->
+      <div class="table-responsive">
+        <table class="table table-hover table-bordered mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="cursor: pointer;" (click)="onSort('equipID')" class="fw-bold">
+                Equip ID
+                <i *ngIf="sortBy === 'equipID'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th style="cursor: pointer;" (click)="onSort('make')" class="fw-bold">
+                Make
+                <i *ngIf="sortBy === 'make'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th style="cursor: pointer;" (click)="onSort('model')" class="fw-bold">
+                Model
+                <i *ngIf="sortBy === 'model'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold">Ref Value</th>
+              <th class="fw-bold">Resistance Value</th>
+              <th class="fw-bold" style="width: 150px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Add New Row -->
+            <tr *ngIf="addingNew" class="table-success">
+              <td>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="newRefValue.equipID" placeholder="ID">
+              </td>
+              <td>
+                <input type="text" class="form-control form-control-sm" [(ngModel)]="newRefValue.make" placeholder="Make">
+              </td>
+              <td>
+                <input type="text" class="form-control form-control-sm" [(ngModel)]="newRefValue.model" placeholder="Model">
+              </td>
+              <td>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="newRefValue.refValue" placeholder="0">
+              </td>
+              <td>
+                <input type="number" class="form-control form-control-sm" [(ngModel)]="newRefValue.resistance" placeholder="0">
+              </td>
+              <td>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn btn-success btn-sm" (click)="addNew()" title="Add">
+                    <i class="bi bi-plus"></i> Add
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="cancelAddNew()" title="Cancel">
+                    <i class="bi bi-x"></i> Cancel
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Existing Items -->
+            <tr *ngFor="let item of refValues; let i = index" [ngClass]="{'table-active': editingIndex === i}">
+                  <td>
+                    <span *ngIf="editingIndex !== i">{{ item.equipID }}</span>
+                    <input *ngIf="editingIndex === i" type="number" class="form-control form-control-sm" [(ngModel)]="item.equipID" disabled>
+                  </td>
+                  <td>
+                    <span *ngIf="editingIndex !== i">{{ item.make }}</span>
+                    <input *ngIf="editingIndex === i" type="text" class="form-control form-control-sm" [(ngModel)]="item.make" disabled>
+                  </td>
+                  <td>
+                    <span *ngIf="editingIndex !== i">{{ item.model }}</span>
+                    <input *ngIf="editingIndex === i" type="text" class="form-control form-control-sm" [(ngModel)]="item.model" disabled>
+                  </td>
+                  <td>
+                    <span *ngIf="editingIndex !== i">{{ item.refValue || '-' }}</span>
+                    <input *ngIf="editingIndex === i" type="number" class="form-control form-control-sm" [(ngModel)]="item.refValue" placeholder="0">
+                  </td>
+                  <td>
+                    <span *ngIf="editingIndex !== i">{{ item.resistance || '-' }}</span>
+                    <input *ngIf="editingIndex === i" type="number" class="form-control form-control-sm" [(ngModel)]="item.resistance" placeholder="0">
+                  </td>
+                  <td>
+                    <div *ngIf="editingIndex !== i" class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-primary btn-sm" (click)="startEdit(i)" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                      <button type="button" class="btn btn-outline-danger btn-sm" (click)="deleteRefValue(item, i)" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                    <div *ngIf="editingIndex === i" class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-success btn-sm" (click)="updateRefValue(item)" title="Update">
+                        <i class="bi bi-check"></i> Update
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" (click)="cancelEdit()" title="Cancel">
+                        <i class="bi bi-x"></i> Cancel
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+
+            <!-- Empty State -->
+            <tr *ngIf="refValues.length === 0 && !addingNew">
+              <td colspan="6" class="text-center text-muted py-4">
+                No data found for selected make
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

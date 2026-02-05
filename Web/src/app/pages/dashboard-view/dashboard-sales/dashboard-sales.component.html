@@ -31,9 +31,9 @@
         <div flex-grow-1 me-2>
           <a id="r1" (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
           [queryParams]="{QueryType: 'ToBeScheduled', manager: filters.accountManager, yearType: filters.dateRange }"
-          [routerLinkActive]="'active menu-here'" class="text-primary fw-bold fs-3" style="color: darkblue !important;">To Be Scheduled</a>
+          [routerLinkActive]="'active menu-here'" class="text-primary fw-bold fs-3" style="color: darkblue !important;">Jobs Scheduled</a>
           <br>
-          <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.toBeSchedCount}}</span>
+          <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsScheduled}}</span>
         </div>
       </div>
       <!-- end::Col -->
@@ -45,9 +45,9 @@
         ></span>
         <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
         [queryParams]="{ QueryType: 'QuotesWritten', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: rgb(147, 107, 7) !important;">Quotes Written</a>
+        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: rgb(147, 107, 7) !important;">To Be Uploaded</a>
         <br>
-        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.pastDueCount}}</span>
+        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsToBeUploaded}}</span>
         <br>
         <!-- <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-4" *ngIf="empLevel === 1">${{salesData[1].quoteAmount | number : '1.2-2'}}</span> -->
       </div>
@@ -62,9 +62,9 @@
         ></span>
         <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
         [queryParams]="{ QueryType: 'Scheduled', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: darkgreen !important;">Scheduled</a>
+        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: darkgreen !important;">Emergency Jobs</a>
         <br>
-        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.inDiscussion}}</span>
+        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.emergencyJobs}}</span>
         <br>
         <!-- <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-3" *ngIf="empLevel === 1">${{data.sales?.inDiscussion}}</span> -->
       </div>
@@ -77,9 +77,9 @@
         ></span>
         <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
         [queryParams]="{ QueryType: 'PastDue', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: rgb(116, 66, 5) !important;">Past Due</a>
+        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: rgb(116, 66, 5) !important;">Missing Jobs</a>
         <br>
-        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.toBeCalled}}</span>
+        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.missingJobs}}</span>
         <br>
         <!-- <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-3" *ngIf="empLevel === 1">${{data.sales?.toBeCalled}}</span> -->
       </div>
@@ -95,9 +95,9 @@
         ></span>
         <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
         [queryParams]="{ QueryType: 'Processed', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: purple !important;">Processed</a>
+        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: purple !important;">Jobs With Parts</a>
         <br>
-        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.toBeSentLetters}}</span>
+        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsWithParts}}</span>
         <br>
         <!-- <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-3" *ngIf="empLevel === 1">${{data.sales?.toBeSentLetters}}</span> -->
       </div>
@@ -110,9 +110,9 @@
         ></span>
         <a (click)="reloadPage()" [routerLink]="['/reports/job-report-details']"
         [queryParams]="{ QueryType: 'JobsToProcess', manager: filters.accountManager, yearType: filters.dateRange }"
-        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: darkred !important;">Jobs To Process</a>
+        [routerLinkActive]="'active menu-here'" class="text-warning  fw-bold fs-3" style="color: darkred !important;">Jobs This Week</a>
         <br>
-        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.toBeEsclated}}</span>
+        <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-1" style="font-size: 48px !important;">{{data.sales?.jobsThisWeek}}</span>
         <br>
         <!-- <span class="fs-6 text-gray-800 text-hover-primary fw-bolder fs-3"  *ngIf="empLevel === 1">${{data.sales?.toBeEsclated}}</span> -->
       </div>

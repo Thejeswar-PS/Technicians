@@ -284,6 +284,175 @@ namespace Technicians.Api.Controllers
                 data
             });
         }
+
+        [HttpGet("GetPastDueUnscheduledJobs")]
+        public async Task<IActionResult> GetPastDueUnscheduledJobs()
+        {
+            var data = await _toolsRepository.GetPastDueUnscheduledJobsAsync();
+
+            return Ok(new
+            {
+                success = true,
+                generatedAt = DateTime.UtcNow,
+                data
+            });
+        }
+
+        [HttpGet("GetAccountingStatusData")]
+        public async Task<IActionResult> GetAccountingStatusData()
+        {
+            var data = await _toolsRepository.GetAccountingStatusDataAsync();
+            return Ok(data);
+        }
+
+        [HttpGet("GetPartsPerformanceData")]
+        public async Task<IActionResult> GetPartsPerformanceData()
+        {
+            var data = await _toolsRepository.GetPartsPerformanceDataAsync();
+            return Ok(data);
+        }
+
+        [HttpGet("GetBatteryMakes")]
+        public async Task<IActionResult> GetBatteryMakes()
+        {
+            var makes = await _toolsRepository.GetBatteryMakesAsync();
+            return Ok(makes);
+        }
+
+        [HttpGet("GetRefValues")]
+        public async Task<IActionResult> GetRefValues(
+        [FromQuery] string make)
+        {
+            if (string.IsNullOrWhiteSpace(make))
+                return BadRequest("Parameter 'make' is required.");
+
+            var data = await _toolsRepository.GetRefValuesByMakeAsync(make);
+            return Ok(data);
+        }
+
+        [HttpPut("UpdateRefValue")]
+        public async Task<IActionResult> UpdateRefValue([FromBody] UpdateMidtronicsRefValueRequest request)
+        {
+            if (request == null)
+                return BadRequest("Request body is required.");
+
+            if (request.EquipID == null)
+                return BadRequest("EquipID is required and must be greater than 0.");
+
+            if (string.IsNullOrWhiteSpace(request.Make))
+                return BadRequest("Make is required.");
+
+            if (string.IsNullOrWhiteSpace(request.Model))
+                return BadRequest("Model is required.");
+
+            bool updated = await _toolsRepository.UpdateRefValueAsync(request);
+
+            if (!updated)
+                return NotFound("No matching record found to update.");
+
+            return Ok(new
+            {
+                message = $"Make: {request.Make}, Model: {request.Model} updated successfully"
+            });
+        }
+
+        [HttpPost("AddRefValue")]
+        public async Task<IActionResult> AddRefValue([FromBody] UpdateMidtronicsRefValueRequest request)
+        {
+            if (request == null)
+                return BadRequest("Request body is required.");
+
+            if (request.EquipID == null)
+                return BadRequest("EquipID must be greater than 0.");
+
+            if (string.IsNullOrWhiteSpace(request.Make))
+                return BadRequest("Make is required.");
+
+            if (string.IsNullOrWhiteSpace(request.Model))
+                return BadRequest("Model is required.");
+
+            bool added = await _toolsRepository.AddRefValueAsync(request);
+
+            if (!added)
+                return StatusCode(500, "Failed to insert record.");
+
+            return Ok(new
+            {
+                message = $"Make: {request.Make}, Model: {request.Model} added successfully"
+            });
+        }
+
+        [HttpDelete("DeleteRefValue")]
+        public async Task<IActionResult> DeleteRefValue(
+    [FromQuery] int equipID,
+    [FromQuery] string make,
+    [FromQuery] string model)
+        {
+            if (equipID == null)
+                return BadRequest("equipID must be greater than 0.");
+
+            if (string.IsNullOrWhiteSpace(make))
+                return BadRequest("make is required.");
+
+            if (string.IsNullOrWhiteSpace(model))
+                return BadRequest("model is required.");
+
+            bool deleted = await _toolsRepository.DeleteRefValueAsync(equipID, make, model);
+
+            if (!deleted)
+                return NotFound($"No record found for EquipID={equipID}, Make={make}, Model={model}");
+
+            return Ok(new
+            {
+                message = $"Make: {make}, Model: {model} deleted successfully"
+            });
+        }
+
+        [HttpGet("GetBillAfterPMJobs")]
+        public async Task<IActionResult> GetBillAfterPMJobs(
+        [FromQuery] string archive,
+        [FromQuery] string pmType,
+        [FromQuery] int fiscalYear,
+        [FromQuery] int month)
+        {
+            if (string.IsNullOrWhiteSpace(archive))
+                return BadRequest("archive is required.");
+
+            if (string.IsNullOrWhiteSpace(pmType))
+                return BadRequest("pmType is required.");
+
+            var data = await _toolsRepository.GetBillAfterPMJobsAsync(
+                archive, pmType, fiscalYear, month);
+
+            return Ok(data);
+        }
+
+        [HttpPost("MoveBillAfterPMJobs")]
+        public async Task<IActionResult> MoveBillAfterPMJobs(
+    [FromBody] MoveBillAfterPMJobsRequest request)
+        {
+            if (request == null || request.JobIds == null || !request.JobIds.Any())
+                return BadRequest("JobIds cannot be empty.");
+
+            if (request.Archive != "0" && request.Archive != "1")
+                return BadRequest("Archive must be '0' or '1'.");
+
+            bool success = await _toolsRepository.MoveBillAfterPMJobsAsync(
+                request.JobIds, request.Archive);
+
+            if (!success)
+                return NotFound("No records were updated.");
+
+            return Ok(new
+            {
+                message = request.Archive == "1"
+                    ? "Jobs successfully archived."
+                    : "Jobs successfully un-archived."
+            });
+        }
+
+
+
     }
 }
 

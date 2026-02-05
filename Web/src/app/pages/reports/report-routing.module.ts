@@ -21,6 +21,8 @@ import { ContractDetailsReportComponent } from './contract-details-report/contra
 import { PastDueContractDetailsComponent } from './past-due-contract-details/past-due-contract-details.component';
 import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
 import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
+import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-report.component';
+import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
 
 const routes: Routes = [
   {
@@ -119,6 +121,14 @@ const routes: Routes = [
   {
     path: 'extranet-user-classes',
     component: ExtranetUserClassesComponent
+  },
+  {
+    path: 'unscheduled-report',
+    component: UnscheduledReportComponent
+  },
+  {
+    path: 'accounting-status',
+    component: AccountingStatusComponent
   }
 ];
 

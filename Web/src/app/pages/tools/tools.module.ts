@@ -5,12 +5,16 @@ import { ToolsRoutingModule } from './tools-routing.module';
 import { TechToolsComponent } from './tech-tools/tech-tools.component';
 import { NotesSearchComponent } from '../notes-search/notes-search.component';
 import { JobsToBeUploadedComponent } from './jobs-to-be-uploaded/jobs-to-be-uploaded.component';
+import { DataMaintenanceComponent } from './data-maintenance/data-maintenance.component';
+import { BillAfterPMJobsComponent } from './bill-after-pm-jobs/bill-after-pm-jobs.component';
 
 @NgModule({
   declarations: [
     TechToolsComponent,
     NotesSearchComponent,
-    JobsToBeUploadedComponent
+    JobsToBeUploadedComponent,
+    DataMaintenanceComponent,
+    BillAfterPMJobsComponent
   ],
   imports: [
     CommonModule,
@@ -19,3 +23,4 @@ import { JobsToBeUploadedComponent } from './jobs-to-be-uploaded/jobs-to-be-uplo
   ]
 })
 export class ToolsModule { }
+

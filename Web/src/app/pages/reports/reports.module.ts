@@ -29,6 +29,8 @@ import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.compon
 import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
 import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
+import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-report.component';
+import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
 
 @NgModule({
   declarations: [
@@ -52,7 +54,9 @@ import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-u
     UPSTestStatusComponent,
     NewUnitTestComponent,
     DTechUsersDataComponent,
-    ExtranetUserClassesComponent
+    ExtranetUserClassesComponent,
+    UnscheduledReportComponent,
+    AccountingStatusComponent
   ],
   imports: [
     CommonModule,

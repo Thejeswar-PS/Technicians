@@ -1,0 +1,96 @@
+<div class="container-fluid status-container">
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center status-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="status-header mb-4">
+    <div class="header-content">
+      <h1 class="page-title">
+        <i class="bi bi-graph-up me-2"></i>
+        Accounting Status Report
+      </h1>
+      <p class="page-subtitle">DC Group - Accounting & Contract Billing Status</p>
+    </div>
+    <button type="button" class="btn btn-primary refresh-btn" (click)="refresh()" [disabled]="isLoading">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card shadow-sm status-card">
+    <div class="card-body py-4">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+      </div>
+
+      <!-- Charts Section -->
+      <div *ngIf="!isLoading && !errorMessage" class="charts-wrapper">
+        <!-- Chart 1: Accounting Status -->
+        <div class="chart-section mb-5">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h5 class="chart-title">
+                <i class="bi bi-bar-chart me-2 text-success"></i>
+                Accounting Status Overview
+              </h5>
+            </div>
+            <div class="chart-container" *ngIf="accountingStatusChartOptions">
+              <apx-chart
+                [series]="accountingStatusChartOptions.series"
+                [chart]="accountingStatusChartOptions.chart"
+                [colors]="accountingStatusChartOptions.colors"
+                [plotOptions]="accountingStatusChartOptions.plotOptions"
+                [dataLabels]="accountingStatusChartOptions.dataLabels"
+                [xaxis]="accountingStatusChartOptions.xaxis"
+                [yaxis]="accountingStatusChartOptions.yaxis"
+                [title]="accountingStatusChartOptions.title"
+                [tooltip]="accountingStatusChartOptions.tooltip"
+                [grid]="accountingStatusChartOptions.grid"
+              ></apx-chart>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart 2: Contract Billing Status -->
+        <div class="chart-section">
+          <div class="chart-card">
+            <div class="chart-header">
+              <h5 class="chart-title">
+                <i class="bi bi-calendar-check me-2 text-warning"></i>
+                Contract Billing Status
+              </h5>
+            </div>
+            <div class="chart-container" *ngIf="contractBillingChartOptions">
+              <apx-chart
+                [series]="contractBillingChartOptions.series"
+                [chart]="contractBillingChartOptions.chart"
+                [colors]="contractBillingChartOptions.colors"
+                [plotOptions]="contractBillingChartOptions.plotOptions"
+                [dataLabels]="contractBillingChartOptions.dataLabels"
+                [xaxis]="contractBillingChartOptions.xaxis"
+                [yaxis]="contractBillingChartOptions.yaxis"
+                [title]="contractBillingChartOptions.title"
+                [tooltip]="contractBillingChartOptions.tooltip"
+                [grid]="contractBillingChartOptions.grid"
+              ></apx-chart>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && !errorMessage && accountingStatusData.length === 0" class="empty-state text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <p class="text-muted mt-3">No data available to display</p>
+      </div>
+    </div>
+  </div>
+</div>

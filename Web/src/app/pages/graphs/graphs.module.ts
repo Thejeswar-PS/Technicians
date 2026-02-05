@@ -10,6 +10,7 @@ import { AccountManagerGraphComponent } from '../reports/account-manager-graph/a
 import { PastDueGraphComponent } from './past-due-graph/past-due-graph.component';
 import { CapFanUsageYearlyComponent } from './cap-fan-usage-yearly/cap-fan-usage-yearly.component';
 import { UnscheduledJobsGraphComponent } from './unscheduled-jobs-graph/unscheduled-jobs-graph.component';
+import { PartsPerformanceGraphComponent } from './parts-performance-graph/parts-performance-graph.component';
 import { SharedModule } from '../../components/shared/shared.module';
 
 
@@ -20,7 +21,8 @@ import { SharedModule } from '../../components/shared/shared.module';
     AccountManagerGraphComponent,
     PastDueGraphComponent,
     CapFanUsageYearlyComponent,
-    UnscheduledJobsGraphComponent
+    UnscheduledJobsGraphComponent,
+    PartsPerformanceGraphComponent
   ],
   imports: [
     CommonModule,
