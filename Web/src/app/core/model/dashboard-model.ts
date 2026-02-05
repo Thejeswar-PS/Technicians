@@ -17,7 +17,14 @@ export interface Sale
   toBeSchedCount: number,
   toBeCalled: number,
   toBeSentLetters: number,
-  toBeEsclated: number
+  toBeEsclated: number,
+  // Tech Dashboard KPI fields
+  jobsScheduled?: number,
+  jobsToBeUploaded?: number,
+  emergencyJobs?: number,
+  missingJobs?: number,
+  jobsWithParts?: number,
+  jobsThisWeek?: number
 }
 export interface JobScheduleTrend
 {

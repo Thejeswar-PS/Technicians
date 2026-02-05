@@ -1,0 +1,100 @@
+<div class="container-fluid graph-container">
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center graph-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="graph-header__top mb-4">
+    <div class="graph-page-title text-center">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-calendar-x me-2"></i>
+        Unscheduled Jobs Graph
+      </h2>
+      <small class="text-muted">Monthly unscheduled jobs analysis and account manager breakdown</small>
+    </div>
+
+    <button type="button" class="btn btn-sm btn-primary graph-refresh" (click)="ngOnInit()" [disabled]="isLoading">
+      <i class="bi bi-arrow-clockwise me-2"></i>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Main Card -->
+  <div class="card shadow-sm graph-main-card">
+    <div class="card-body py-3">
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Charts Container -->
+      <div *ngIf="!isLoading && !errorMessage">
+        <!-- Monthly Jobs Chart -->
+        <div class="chart-section mb-5">
+          <div class="chart-card">
+            <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0 fw-bold">Unscheduled Jobs By Month</h6>
+              </div>
+            </div>
+            <div class="chart-wrapper" *ngIf="monthlyChartOptions">
+              <apx-chart
+                [series]="monthlyChartOptions.series"
+                [chart]="monthlyChartOptions.chart"
+                [colors]="monthlyChartOptions.colors"
+                [plotOptions]="monthlyChartOptions.plotOptions"
+                [dataLabels]="monthlyChartOptions.dataLabels"
+                [xaxis]="monthlyChartOptions.xaxis"
+                [yaxis]="monthlyChartOptions.yaxis"
+                [title]="monthlyChartOptions.title"
+                [tooltip]="monthlyChartOptions.tooltip"
+                [legend]="monthlyChartOptions.legend"
+                [grid]="monthlyChartOptions.grid"
+              ></apx-chart>
+            </div>
+            <p class="text-muted text-center mt-3 mb-0">
+              <small><i class="bi bi-info-circle me-1"></i>Click on any bar to view account manager breakdown for that month</small>
+            </p>
+          </div>
+        </div>
+
+        <!-- Account Manager Jobs Chart -->
+        <div class="chart-section" *ngIf="accountManagerData.length > 0">
+          <div class="chart-card">
+            <div class="chart-header d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <h6 class="mb-0 fw-bold">Unscheduled Jobs By Account Manager</h6>
+                <small class="text-muted">{{ selectedMonth }}</small>
+              </div>
+            </div>
+            <div class="chart-wrapper" *ngIf="accountManagerChartOptions">
+              <apx-chart
+                [series]="accountManagerChartOptions.series"
+                [chart]="accountManagerChartOptions.chart"
+                [colors]="accountManagerChartOptions.colors"
+                [plotOptions]="accountManagerChartOptions.plotOptions"
+                [dataLabels]="accountManagerChartOptions.dataLabels"
+                [xaxis]="accountManagerChartOptions.xaxis"
+                [yaxis]="accountManagerChartOptions.yaxis"
+                [title]="accountManagerChartOptions.title"
+                [tooltip]="accountManagerChartOptions.tooltip"
+                [legend]="accountManagerChartOptions.legend"
+                [grid]="accountManagerChartOptions.grid"
+              ></apx-chart>
+            </div>
+          </div>
+        </div>
+
+        <!-- No Data Message for Account Manager Chart -->
+        <div *ngIf="accountManagerData.length === 0 && selectedMonth && !isLoading" class="alert alert-info text-center mt-4">
+          <i class="bi bi-info-circle me-2"></i>
+          No data available for {{ selectedMonth }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

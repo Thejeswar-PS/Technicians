@@ -1,0 +1,69 @@
+.cap-fan-usage-container {
+  padding: 20px;
+
+  .main-card {
+    border-radius: 8px;
+
+    .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .card-body {
+      padding: 30px;
+    }
+  }
+
+  .chart-container {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-height: 350px;
+  }
+
+  .filter-panel {
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+
+    .form-label {
+      margin-bottom: 4px;
+      color: #333;
+      font-size: 13px;
+    }
+
+    .form-control,
+    .form-select {
+      font-size: 13px;
+    }
+  }
+
+  .table {
+    font-size: 12px;
+    margin-bottom: 0;
+
+    thead th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+      border-bottom: 2px solid #dee2e6;
+      padding: 8px;
+      white-space: nowrap;
+      
+      &.sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+    }
+
+    tbody td {
+      padding: 6px 8px;
+      vertical-align: middle;
+    }
+  }
+
+  .btn-success {
+    font-size: 12px;
+  }
+}

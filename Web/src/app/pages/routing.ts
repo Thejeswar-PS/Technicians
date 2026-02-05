@@ -2,22 +2,11 @@ import { Routes } from '@angular/router';
 import { JobEditComponent } from './jobs/job-edit/job-edit.component';
 import { EditEquipmentComponent } from './jobs/edit-equipment/edit-equipment.component';
 import { AuthGuard } from '../modules/auth/services/auth.guard';
-
 const Routing: Routes = [
   {
     path: 'calendar',
     canActivate: [AuthGuard],
     loadChildren: () => import('./calendar/calendar.module').then(m => m.CalendarModule),
-  },
-  {
-    path: 'admin',
-    canActivate: [AuthGuard],
-    loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule),
-  },
-  {
-    path: 'pricing',
-    canActivate: [AuthGuard],
-    loadChildren: () => import('./pricing/capfanpricing.module').then(m => m.CapfanpricingModule),
   },
   {
     path: 'quotes',
@@ -120,12 +109,6 @@ const Routing: Routes = [
     path : 'job-edit',
     canActivate: [AuthGuard],
     component: JobEditComponent
-  },
-  {
-    path: 'to-do-list',
-    canActivate: [AuthGuard],
-    loadChildren: () => import('./to-do-list/to-do-list.module').then((m) => m.ToDoListModule),
-    data: { layout: 'light-sidebar' },
   },
   {
     path: 'graphs',

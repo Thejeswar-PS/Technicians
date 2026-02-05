@@ -2,8 +2,6 @@ import { NgModule, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { JobReportDetailsComponent } from './job-report-details/job-report-details.component';
-import { JobScheduleReportComponent } from './job-schedule-report/job-schedule-report.component';
 import { PartsRequestStatusComponent } from './parts-request-status/parts-request-status.component';
 import { PartReturnStatusComponent } from './part-return-status/part-return-status.component';
 import { OrderRequestComponent } from './order-request/order-request.component';
@@ -29,11 +27,11 @@ import { UPSTestStatusComponent } from './ups-test-status/ups-test-status.compon
 import { NewUnitTestComponent } from './new-unit-test/new-unit-test.component';
 import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.component';
 import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
+import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-report.component';
+import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
 
 @NgModule({
   declarations: [
-    JobReportDetailsComponent,
-    JobScheduleReportComponent,
     PartsRequestStatusComponent,
     PartReturnStatusComponent,
     OrderRequestComponent,
@@ -52,7 +50,9 @@ import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-u
     UPSTestStatusComponent,
     NewUnitTestComponent,
     DTechUsersDataComponent,
-    ExtranetUserClassesComponent
+    ExtranetUserClassesComponent,
+    UnscheduledReportComponent,
+    AccountingStatusComponent
   ],
   imports: [
     CommonModule,

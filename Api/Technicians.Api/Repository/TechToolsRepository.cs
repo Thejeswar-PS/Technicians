@@ -497,6 +497,676 @@ namespace Technicians.Api.Repository
             return callNbr.Trim();
         }
 
+        public async Task<List<JobsToBeUploadedDto>> GetJobsToBeUploadedAsync(
+        string technicianId,
+        string accountManagerName,
+        string empId)
+        {
+            var result = new List<JobsToBeUploadedDto>();
+
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("JobsToBeUploadedByTech", conn)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
+
+                cmd.Parameters.AddWithValue("@TechID", technicianId);
+                cmd.Parameters.AddWithValue("@OffId", accountManagerName);
+                cmd.Parameters.AddWithValue("@EmpID", empId);
+
+                await conn.OpenAsync();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    result.Add(new JobsToBeUploadedDto
+                    {
+                        CallNbr = reader["CallNbr"].ToString(),
+                        TechName = reader["TechName"].ToString(),
+                        AccMgr = reader["AccMgr"].ToString(),
+                        Status = reader["Status"].ToString(),
+                        StrtDate = Convert.ToDateTime(reader["StrtDate"]),
+                        CustName = reader["CustName"].ToString(),
+                        ChangeAge = Convert.ToInt32(reader["ChangeAge"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+
+            return result;
+        }
+
+        public async Task<CapFanUsageByYearResponse> GetCapFanUsageByYearAsync(
+        string capPartNo,
+        string fanPartNo,
+        string battNo,
+        string igbNo,
+        string scrNo,
+        string fusNo,
+        string year)
+        {
+            using var conn = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@CapPartNo", capPartNo);
+            parameters.Add("@FanPartNo", fanPartNo);
+            parameters.Add("@BattNo", battNo);
+            parameters.Add("@IGB", igbNo);
+            parameters.Add("@SCR", scrNo);
+            parameters.Add("@FUS", fusNo);
+            parameters.Add("@Year", year);
+
+            await conn.OpenAsync();
+
+            using var multi = await conn.QueryMultipleAsync(
+                "CapFanUsageByYears",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            // Read result sets with dynamic mapping for columns with spaces
+            var capsRaw = await multi.ReadAsync();
+            var caps = capsRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("Cap Part No") ? dict["Cap Part No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total Caps") ? Convert.ToInt32(dict["Total Caps"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fansRaw = await multi.ReadAsync();
+            var fans = fansRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("Fan Part No") ? dict["Fan Part No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total Fans") ? Convert.ToInt32(dict["Total Fans"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var batteriesRaw = await multi.ReadAsync();
+            var batteries = batteriesRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("Batt No") ? dict["Batt No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total Batts") ? Convert.ToInt32(dict["Total Batts"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var igbRaw = await multi.ReadAsync();
+            var igb = igbRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("IGB No") ? dict["IGB No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total IGB") ? Convert.ToInt32(dict["Total IGB"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var scrRaw = await multi.ReadAsync();
+            var scr = scrRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("SCR No") ? dict["SCR No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total SCR") ? Convert.ToInt32(dict["Total SCR"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fusRaw = await multi.ReadAsync();
+            var fus = fusRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageByYearDto
+                {
+                    PartNo = dict.ContainsKey("FUS No") ? dict["FUS No"]?.ToString() : null,
+                    Total = dict.ContainsKey("Total FUS") ? Convert.ToInt32(dict["Total FUS"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            // Read total result sets
+            var capsTotalRaw = await multi.ReadAsync();
+            var capsTotal = capsTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total Caps") ? Convert.ToInt32(dict["Total Caps"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fansTotalRaw = await multi.ReadAsync();
+            var fansTotal = fansTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total Fans") ? Convert.ToInt32(dict["Total Fans"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var batteriesTotalRaw = await multi.ReadAsync();
+            var batteriesTotal = batteriesTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total Batts") ? Convert.ToInt32(dict["Total Batts"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var igbTotalRaw = await multi.ReadAsync();
+            var igbTotal = igbTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total IGB") ? Convert.ToInt32(dict["Total IGB"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var scrTotalRaw = await multi.ReadAsync();
+            var scrTotal = scrTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total SCR") ? Convert.ToInt32(dict["Total SCR"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            var fusTotalRaw = await multi.ReadAsync();
+            var fusTotal = fusTotalRaw.Select(r =>
+            {
+                var dict = (IDictionary<string, object>)r;
+                return new PartUsageTotalByYearDto
+                {
+                    Total = dict.ContainsKey("Total FUS") ? Convert.ToInt32(dict["Total FUS"]) : 0,
+                    Year = dict.ContainsKey("Year") ? Convert.ToInt32(dict["Year"]) : 0
+                };
+            }).ToList();
+
+            return new CapFanUsageByYearResponse
+            {
+                Caps = caps,
+                Fans = fans,
+                Batteries = batteries,
+                IGB = igb,
+                SCR = scr,
+                FUS = fus,
+                CapsTotal = capsTotal,
+                FansTotal = fansTotal,
+                BatteriesTotal = batteriesTotal,
+                IGBTotal = igbTotal,
+                SCRTotal = scrTotal,
+                FUSTotal = fusTotal
+            };
+        }
+
+        public async Task<List<UnscheduledJobsByMonthDto>> GetUnscheduledJobsByMonthAsync()
+        {
+            using var conn = new SqlConnection(_gpconnectionString);
+            await conn.OpenAsync();
+
+            var result = await conn.QueryAsync<UnscheduledJobsByMonthDto>(
+                "DisplayUnscheduledGraph",
+                commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
+        }
+        public async Task<List<UnscheduledJobsByAccountManagerDto>> GetUnscheduledJobsByAccountManagerAsync(string month)
+        {
+            using var conn = new SqlConnection(_gpconnectionString);
+            await conn.OpenAsync();
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@pMonth", month);
+
+            var result = await conn.QueryAsync<UnscheduledJobsByAccountManagerDto>(
+                "DisplayUnscheduledActMngrGraph",
+                parameters,
+                commandType: CommandType.StoredProcedure);
+
+            return result.ToList();
+        }
+
+        public async Task<PastDueUnscheduledResponse> GetPastDueUnscheduledJobsAsync()
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            using var multi = await conn.QueryMultipleAsync(
+                "PDueUnscheduledJobsInfo",
+                commandType: CommandType.StoredProcedure);
+
+            var response = new PastDueUnscheduledResponse
+            {
+                JobDetails = (await multi.ReadAsync<PastDueJobDetailDto>()).ToList(),
+                SummaryByManager = (await multi.ReadAsync<PastDueSummaryDto>()).ToList(),
+                ScheduledPercent = (await multi.ReadAsync<ScheduledPercentDto>()).ToList(),
+                TotalUnscheduledJobs = (await multi.ReadAsync<TotalJobsDto>()).ToList(),
+                TotalScheduledJobs = (await multi.ReadAsync<TotalJobsDto>()).ToList()
+            };
+
+            return response;
+        }
+
+        public async Task<AccountingStatusResponse> GetAccountingStatusDataAsync()
+        {
+            var result = new AccountingStatusResponse
+            {
+                AccountingStatus = new List<GraphPoint>(),
+                ContractBillingStatus = new List<GraphPoint>()
+            };
+
+            using var conn = new SqlConnection(_gpconnectionString);
+            await conn.OpenAsync();
+
+            // -------- BindData1 equivalent ----------
+            using (var cmd = new SqlCommand("NewDisplayCallsGraph", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@pDetailPage", "AcctStatus");
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    result.AccountingStatus = new List<GraphPoint>
+                {
+                    new GraphPoint { Label = "Jobs in Technical Review", Value = ToInt(reader["CompletedTechReview"]) },
+                    new GraphPoint { Label = "Jobs in review by Part Dep.", Value = ToInt(reader["Completedparts"]) },
+                    new GraphPoint { Label = "Jobs in Manager Review", Value = ToInt(reader["CompletedMngrReview"]) },
+                    new GraphPoint { Label = "TM job Costing by accounting", Value = ToInt(reader["Completedcosting"]) },
+                    new GraphPoint { Label = "FS Job Costing", Value = ToInt(reader["CompletedFScosting"]) },
+                    new GraphPoint { Label = "Jobs Invoiced Today", Value = ToInt(reader["Invoicedtoday"]) },
+                    new GraphPoint { Label = "Completed and Returned with Missing Data", Value = ToInt(reader["MissingData"]) },
+                    new GraphPoint { Label = "Jobs Invoiced Month to Date", Value = ToInt(reader["Invoicemonthtodate"]) },
+                    new GraphPoint { Label = "Contracts Invoiced Month to Date", Value = ToInt(reader["ContractInvoicemonthtodate"]) },
+                    new GraphPoint { Label = "Jobs Invoiced yesterday", Value = ToInt(reader["Invoicedyesterdate"]) }
+                };
+                }
+            }
+
+            // -------- BindData2 equivalent ----------
+            using (var cmd = new SqlCommand("NewDisplayContractsGraph", conn))
+            {
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    result.ContractBillingStatus = new List<GraphPoint>
+                {
+                    new GraphPoint { Label = "Liebert Contracts not billed as of yesterday", Value = ToInt(reader["PastNonBilledContracts"]) },
+                    new GraphPoint { Label = "Non Liebert Contracts not billed as of yesterday", Value = ToInt(reader["NonLiebertPastNonBilledContracts"]) },
+
+                    new GraphPoint { Label = "Liebert Contracts to be billed in next 30 days", Value = ToInt(reader["ContractToInvoiceNext30"]) },
+                    new GraphPoint { Label = "Non Liebert Contracts to be billed in next 30 days", Value = ToInt(reader["NonLiebertContractToInvoiceNext30"]) },
+
+                    new GraphPoint { Label = "Liebert Contracts to be billed in next 60 days", Value = ToInt(reader["ContractToInvoiceNext60"]) },
+                    new GraphPoint { Label = "Non Liebert Contracts to be billed in next 60 days", Value = ToInt(reader["NonLiebertContractToInvoiceNext60"]) },
+
+                    new GraphPoint { Label = "Liebert Contracts to be billed in next 90 days", Value = ToInt(reader["ContractToInvoiceNext90"]) },
+                    new GraphPoint { Label = "Non Liebert Contracts to be billed in next 90 days", Value = ToInt(reader["NonLiebertContractToInvoiceNext90"]) },
+
+                    new GraphPoint { Label = "Liebert Contracts to be billed after 90 days", Value = ToInt(reader["ContractToInvoiceOver90"]) },
+                    new GraphPoint { Label = "Non Liebert Contracts to be billed after 90 days", Value = ToInt(reader["NonLiebertContractToInvoiceOver90"]) }
+                };
+                }
+            }
+
+            return result;
+        }
+
+        public async Task<PartsPerformanceResponse> GetPartsPerformanceDataAsync()
+        {
+            var response = new PartsPerformanceResponse
+            {
+                FoldersPerMonth = new List<MonthlyCountDto>(),
+                AvgFolderDays = new List<MonthlyAvgDto>(),
+                PartsReturnedStatus = new List<ReturnStatusDto>(),
+                AvgReturnDays = new List<MonthlyAvgDto>(),
+                PartsTestedStatus = new List<TestStatusDto>(),
+                AvgTestingDays = new List<MonthlyAvgDto>(),
+                PartsUnitsByCategory = new List<CategoryCountDto>()
+            };
+
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            using var cmd = new SqlCommand("PartsPerformanceDashboard", conn)
+            {
+                CommandType = CommandType.StoredProcedure,
+                CommandTimeout = 3000
+            };
+
+            using var da = new SqlDataAdapter(cmd);
+            var ds = new DataSet();
+            da.Fill(ds);
+
+            // ---------- Table 0 : Monthly Folders + Return/Test Status ----------
+            foreach (DataRow row in ds.Tables[0].Rows)
+            {
+                var month = row["MonthName"].ToString();
+
+                response.FoldersPerMonth.Add(new MonthlyCountDto
+                {
+                    MonthName = month,
+                    Folders = ToInt(row["Folders"])
+                });
+
+                response.PartsReturnedStatus.Add(new ReturnStatusDto
+                {
+                    MonthName = month,
+                    ReturnedParts = ToInt(row["ReturnedParts"]),
+                    NotReturned = ToInt(row["NotReturned"])
+                });
+
+                response.PartsTestedStatus.Add(new TestStatusDto
+                {
+                    MonthName = month,
+                    Tested = ToInt(row["Tested"]),
+                    NotTested = ToInt(row["NotTested"])
+                });
+            }
+
+            // ---------- Table 1 : Avg Days to Process Folders ----------
+            foreach (DataRow row in ds.Tables[1].Rows)
+            {
+                response.AvgFolderDays.Add(new MonthlyAvgDto
+                {
+                    MonthName = row["MonthName"].ToString(),
+                    AvgDays = ToDecimal(row["AvgDays"])
+                });
+            }
+
+            // ---------- Table 2 : Avg Days to Return Parts ----------
+            foreach (DataRow row in ds.Tables[2].Rows)
+            {
+                response.AvgReturnDays.Add(new MonthlyAvgDto
+                {
+                    MonthName = row["MonthName"].ToString(),
+                    AvgDays = ToDecimal(row["AvgDays"])
+                });
+            }
+
+            // ---------- Table 3 : Avg Days to Test Parts ----------
+            foreach (DataRow row in ds.Tables[3].Rows)
+            {
+                response.AvgTestingDays.Add(new MonthlyAvgDto
+                {
+                    MonthName = row["MonthName"].ToString(),
+                    AvgDays = ToDecimal(row["AvgDays"])
+                });
+            }
+
+            // ---------- Table 4 : Parts / Units by Category ----------
+            foreach (DataRow row in ds.Tables[4].Rows)
+            {
+                response.PartsUnitsByCategory.Add(new CategoryCountDto
+                {
+                    Category = row["Category"].ToString(),
+                    PartsCount = ToInt(row["PartsCount"])
+                });
+            }
+
+            return response;
+        }
+
+        private int ToInt(object value)
+        => int.TryParse(value?.ToString(), out int v) ? v : 0;
+
+        private decimal ToDecimal(object value)
+            => decimal.TryParse(value?.ToString(), out decimal v) ? v : 0;
+
+        public async Task<List<BatteryMakeDto>> GetBatteryMakesAsync()
+        {
+            var list = new List<BatteryMakeDto>();
+
+            // Add "Please Select" at the TOP (same as your legacy UI)
+            list.Add(new BatteryMakeDto
+            {
+                Text = "Please Select",
+                Value = "PS"
+            });
+
+            using var con = new SqlConnection(_connectionString);
+            await con.OpenAsync();
+
+            var query = "SELECT DISTINCT RTRIM(Make) AS Make FROM [MidtronicsRefValues] ORDER BY Make";
+
+            using var cmd = new SqlCommand(query, con);
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                var make = reader["Make"].ToString();
+
+                list.Add(new BatteryMakeDto
+                {
+                    Text = make,
+                    Value = make
+                });
+            }
+
+            return list;
+        }
+
+        public async Task<List<MidtronicsRefValueDto>> GetRefValuesByMakeAsync(string make)
+        {
+            var results = new List<MidtronicsRefValueDto>();
+            var dataTable = new DataTable();
+
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            var query = @"SELECT * 
+                      FROM [MidtronicsRefValues] 
+                      WHERE Make = @Make 
+                      ORDER BY Make";
+
+            using var cmd = new SqlCommand(query, conn);
+            cmd.Parameters.AddWithValue("@Make", make);
+
+            using var adapter = new SqlDataAdapter(cmd);
+            adapter.Fill(dataTable);
+
+
+            foreach (DataRow row in dataTable.Rows)
+            {
+                var dict = new Dictionary<string, object>();
+
+                foreach (DataColumn col in dataTable.Columns)
+                {
+                    dict[col.ColumnName] = row[col];
+                }
+
+                results.Add(new MidtronicsRefValueDto
+                {
+                    Columns = dict
+                });
+            }
+
+            return results;
+        }
+
+        public async Task<bool> UpdateRefValueAsync(UpdateMidtronicsRefValueRequest request)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            string query = @"
+        UPDATE [MidtronicsRefValues] 
+        SET 
+            RefValue = @RefValue,
+            Resistance = @Resistance,
+            LastModified = CURRENT_TIMESTAMP
+        WHERE 
+            EquipID = @EquipID 
+            AND Make = @Make 
+            AND Model = @Model";
+
+            using var cmd = new SqlCommand(query, conn);
+
+            cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
+            cmd.Parameters.AddWithValue("@Make", request.Make);
+            cmd.Parameters.AddWithValue("@Model", request.Model);
+            cmd.Parameters.AddWithValue("@RefValue", request.RefValue);
+            cmd.Parameters.AddWithValue("@Resistance", request.Resistance);
+
+            int rowsAffected = await cmd.ExecuteNonQueryAsync();
+
+            return rowsAffected > 0;
+        }
+
+        public async Task<bool> AddRefValueAsync(UpdateMidtronicsRefValueRequest request)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            string query = @"
+    INSERT INTO [MidtronicsRefValues]
+    (EquipID, Make, Model, RefValue, Resistance, LastModified)
+    VALUES
+    (@EquipID, @Make, @Model, @RefValue, @Resistance, CURRENT_TIMESTAMP)";
+
+            using var cmd = new SqlCommand(query, conn);
+
+            cmd.Parameters.AddWithValue("@EquipID", request.EquipID);
+            cmd.Parameters.AddWithValue("@Make", request.Make);
+            cmd.Parameters.AddWithValue("@Model", request.Model);
+            cmd.Parameters.AddWithValue("@RefValue", request.RefValue);
+            cmd.Parameters.AddWithValue("@Resistance", request.Resistance);
+
+            int rows = await cmd.ExecuteNonQueryAsync();
+            return rows > 0;
+        }
+
+        public async Task<bool> DeleteRefValueAsync(int equipID, string make, string model)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            string query = @"
+    DELETE FROM [MidtronicsRefValues]
+    WHERE EquipID = @EquipID 
+      AND Make = @Make 
+      AND Model = @Model";
+
+            using var cmd = new SqlCommand(query, conn);
+
+            cmd.Parameters.AddWithValue("@EquipID", equipID);
+            cmd.Parameters.AddWithValue("@Make", make);
+            cmd.Parameters.AddWithValue("@Model", model);
+
+            int rows = await cmd.ExecuteNonQueryAsync();
+            return rows > 0;
+        }
+
+        public async Task<List<BillAfterPMJobDto>> GetBillAfterPMJobsAsync(
+    string archive,
+    string pmType,
+    int fiscalYear,
+    int month)
+        {
+            var result = new List<BillAfterPMJobDto>();
+
+            using var conn = new SqlConnection(_gpconnectionString);
+            using var cmd = new SqlCommand("GetBillAfterPMJobs", conn);
+
+            cmd.CommandType = CommandType.StoredProcedure;
+            cmd.Parameters.AddWithValue("@Archive", archive);
+            cmd.Parameters.AddWithValue("@Desc", pmType);
+            cmd.Parameters.AddWithValue("@Year", fiscalYear);
+            cmd.Parameters.AddWithValue("@Month", month);
+
+            await conn.OpenAsync();
+
+            using var reader = await cmd.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                result.Add(new BillAfterPMJobDto
+                {
+                    CallNbr = reader["CallNbr"] as string,
+                    CustNbr = reader["CustNbr"] as string,
+                    CustName = reader["CustName"] as string,
+                    PMType = reader["PMType"] as string,
+                    Description = reader["Description"] as string,
+                    Status = reader["status"] as string,
+                    TechName = reader["TechName"] as string,
+                    AccMgr = reader["AccMgr"] as string,
+                    StrtDate = reader["StrtDate"] == DBNull.Value
+                                ? null
+                                : Convert.ToDateTime(reader["StrtDate"]),
+                    EndDate = reader["EndDate"] == DBNull.Value
+                                ? null
+                                : Convert.ToDateTime(reader["EndDate"]),
+                    ContNbr = reader["ContNbr"] as string
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<bool> MoveBillAfterPMJobsAsync(List<string> jobIds, string archive)
+        {
+            if (jobIds == null || jobIds.Count == 0)
+                return false;
+
+            using var conn = new SqlConnection(_gpconnectionString);
+            await conn.OpenAsync();
+
+            // Build parameterized IN clause
+            var parameters = new List<string>();
+            for (int i = 0; i < jobIds.Count; i++)
+            {
+                parameters.Add($"@job{i}");
+            }
+
+            string inClause = string.Join(",", parameters);
+
+            string query = archive == "1"
+                ? $"UPDATE BillAfterPMJobs SET Archive = 'True', ModifiedOn = GETDATE() WHERE CallNbr IN ({inClause})"
+                : $"UPDATE BillAfterPMJobs SET Archive = 'False', ModifiedOn = GETDATE() WHERE CallNbr IN ({inClause})";
+
+            using var cmd = new SqlCommand(query, conn);
+
+            for (int i = 0; i < jobIds.Count; i++)
+            {
+                cmd.Parameters.AddWithValue($"@job{i}", jobIds[i].Trim());
+            }
+
+            int rowsAffected = await cmd.ExecuteNonQueryAsync();
+            return rowsAffected > 0;
+        }
+
+
 
     }
 }

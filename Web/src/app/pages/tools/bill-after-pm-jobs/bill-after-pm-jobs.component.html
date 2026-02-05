@@ -1,0 +1,140 @@
+<div class="container-fluid bill-after-pm-jobs-container">
+  <!-- Loading Overlay -->
+  <div *ngIf="loading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.3); z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="card shadow-sm main-card">
+    <div class="card-header border-0 py-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="text-center flex-grow-1">
+          <h3 class="fw-bold text-primary mb-0">Bill After PM Jobs</h3>
+          <div class="text-muted fw-bold fs-7 mt-1">Review and move jobs between Active and Archive</div>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-primary" (click)="loadJobs()" [disabled]="loading">
+            <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+            {{ loading ? 'Loading...' : 'Refresh' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Message -->
+      <div class="mb-4" *ngIf="message">
+        <div [ngClass]="messageType === 'success' ? 'alert alert-success' : 'alert alert-danger'" class="d-inline-flex align-items-center" role="alert">
+          <i [ngClass]="messageType === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-triangle-fill'" class="me-2"></i>
+          <span>{{ message }}</span>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="row mb-4 filter-panel">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Show:</label>
+          <select class="form-select" [(ngModel)]="selectedArchive" (change)="onFilterChange()">
+            <option *ngFor="let option of archiveOptions" [value]="option.value">{{ option.text }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Year:</label>
+          <select class="form-select" [(ngModel)]="selectedFiscalYear" (change)="onFilterChange()">
+            <option *ngFor="let year of fiscalYears" [value]="year.value">{{ year.text }}</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Month:</label>
+          <select class="form-select" [(ngModel)]="selectedMonth" (change)="onFilterChange()">
+            <option *ngFor="let month of months" [value]="month.value">{{ month.text }}</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+          <button class="btn btn-primary w-100" (click)="moveSelected()" [disabled]="loading">
+            <i class="bi bi-archive me-2"></i>{{ moveButtonText }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive" *ngIf="jobs.length > 0">
+        <table class="table table-hover table-bordered mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="fw-bold" style="width: 60px;">Select</th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('callNbr')">
+                Call No
+                <i *ngIf="sortBy === 'callNbr'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('custNbr')">
+                Site ID
+                <i *ngIf="sortBy === 'custNbr'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('custName')">
+                Site Name
+                <i *ngIf="sortBy === 'custName'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('pmType')">
+                PM Type
+                <i *ngIf="sortBy === 'pmType'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('description')">
+                Description
+                <i *ngIf="sortBy === 'description'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('status')">
+                Job Status
+                <i *ngIf="sortBy === 'status'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('techName')">
+                Tech-Name
+                <i *ngIf="sortBy === 'techName'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('accMgr')">
+                Account Manager
+                <i *ngIf="sortBy === 'accMgr'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('strtDate')">
+                Start Date
+                <i *ngIf="sortBy === 'strtDate'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('endDate')">
+                End Date
+                <i *ngIf="sortBy === 'endDate'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+              <th class="fw-bold" style="cursor: pointer;" (click)="onSort('contNbr')">
+                Contract No
+                <i *ngIf="sortBy === 'contNbr'" class="bi ms-1" [ngClass]="sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down'"></i>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let job of jobs" [ngClass]="{ 'row-selected': isSelected(job.callNbr) }">
+              <td class="text-center">
+                <input type="checkbox" class="form-check-input" [checked]="isSelected(job.callNbr)" (change)="toggleSelection(job.callNbr, !!$any($event.target).checked)">
+              </td>
+              <td>{{ job.callNbr }}</td>
+              <td>{{ job.custNbr }}</td>
+              <td>{{ job.custName }}</td>
+              <td>{{ job.pmType }}</td>
+              <td>{{ job.description }}</td>
+              <td>{{ job.status }}</td>
+              <td>{{ job.techName }}</td>
+              <td>{{ job.accMgr }}</td>
+              <td>{{ job.strtDate | date: 'dd-MMM-yyyy' }}</td>
+              <td>{{ job.endDate | date: 'dd-MMM-yyyy' }}</td>
+              <td>{{ job.contNbr }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-info text-center" *ngIf="!loading && jobs.length === 0 && message">
+        <i class="bi bi-info-circle me-2"></i>
+        No records to display
+      </div>
+    </div>
+  </div>
+</div>

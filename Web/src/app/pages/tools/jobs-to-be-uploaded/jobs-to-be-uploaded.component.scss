@@ -1,0 +1,92 @@
+.jobs-to-be-uploaded-container {
+  padding: 20px;
+
+  .main-card {
+    border-radius: 8px;
+    
+    .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .card-body {
+      padding: 30px;
+    }
+  }
+
+  .filter-panel {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 30px;
+
+    .form-label {
+      margin-bottom: 8px;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .form-select {
+      font-size: 14px;
+      border: 1px solid #ced4da;
+
+      &:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+    }
+
+    .btn-primary {
+      white-space: nowrap;
+    }
+  }
+
+  .table {
+    font-size: 14px;
+    margin-bottom: 0;
+
+    thead {
+      th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+        padding: 12px;
+        text-align: left;
+      }
+    }
+
+    tbody {
+      tr {
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #f8f9fa;
+        }
+
+        td {
+          padding: 12px;
+          vertical-align: middle;
+        }
+
+        a {
+          text-decoration: none;
+          font-weight: 500;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+  }
+
+  .badge {
+    padding: 6px 12px;
+    font-weight: 500;
+    font-size: 12px;
+  }
+
+  .alert {
+    margin-top: 20px;
+    margin-bottom: 0;
+  }
+}
