@@ -98,3 +98,35 @@ export interface Technician {
   techID: string;
   techname: string;
 }
+
+export interface ToolsTrackingTechsDto {
+  techID: string;
+  techname: string;
+}
+
+export interface TechToolSerialNoDto {
+  serialNo: string;
+}
+
+// New interfaces for calendar tracking API
+export interface ToolsCalendarTrackingDto {
+  empName: string;
+  techID: string;
+  toolName: string;
+  serialNo: string;
+  dueDt: string; // ISO date string from backend
+}
+
+export interface ToolsCalendarDueCountsDto {
+  counter: number;
+  overDue: number;
+  due15: number;
+  due30: number;
+  due45: number;
+  due60: number;
+}
+
+export interface ToolsCalendarTrackingResultDto {
+  trackingData: ToolsCalendarTrackingDto[];
+  dueCounts: ToolsCalendarDueCountsDto;
+}

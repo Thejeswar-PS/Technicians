@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { TechToolsService } from '../../../core/services/tech-tools.service';
 import { CommonService } from '../../../core/services/common.service';
 import { AuthService } from '../../../modules/auth/services/auth.service';
-import { TechToolsData, TechnicianInfo, ToolKitItem, Technician } from '../../../core/model/tech-tools.model';
+import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto } from '../../../core/model/tech-tools.model';
 
 @Component({
   selector: 'app-tech-tools',
@@ -36,6 +36,9 @@ export class TechToolsComponent implements OnInit {
   isSaving: boolean = false;
   errorMessage: string = '';
   successMessage: string = '';
+
+  // Configuration flag - set to true to use the new ToolsTrackingTechs endpoint
+  useToolsTrackingTechsEndpoint: boolean = true;
 
   // Badges section
   rapidGate: string = 'NO';
@@ -154,7 +157,13 @@ export class TechToolsComponent implements OnInit {
 
   ngOnInit(): void {
     this.setCurrentUserInfo();
-    this.loadTechnicians();
+    
+    // Choose which method to load technicians based on configuration
+    if (this.useToolsTrackingTechsEndpoint) {
+      this.loadToolsTrackingTechnicians();
+    } else {
+      this.loadTechnicians();
+    }
   }
 
   private setCurrentUserInfo(): void {
@@ -245,6 +254,29 @@ export class TechToolsComponent implements OnInit {
     } catch (err: any) {
       this.errorMessage = 'Error loading technicians: ' + err?.message;
     }
+  }
+
+  // Alternative method to load technicians using the new ToolsTrackingTechs endpoint
+  loadToolsTrackingTechnicians(): void {
+    this.errorMessage = '';
+    
+    this.techToolsService.getToolsTrackingTechs().subscribe({
+      next: (technicians: ToolsTrackingTechsDto[]) => {
+        // Map to the expected Technician interface
+        this.technicians = technicians.map(tech => ({
+          techID: tech.techID,
+          techname: tech.techname
+        }));
+        
+        // Add "All" option for admin users (optional)
+        this.technicians.unshift({ techID: 'All', techname: 'All' });
+        this.selectedTech = 'All';
+      },
+      error: (error) => {
+        this.errorMessage = 'Error loading tools tracking technicians: ' + error.message;
+        console.error('Error fetching tools tracking technicians:', error);
+      }
+    });
   }
 
   onTechnicianChange(): void {
