@@ -1,20 +1,24 @@
-﻿namespace Technicians.Api.Models
+﻿    namespace Technicians.Api.Models
 {
     public class EmergencyJobDto
     {
-        public string Callnbr { get; set; }
-        public string Offid { get; set; }
-        public string Techid { get; set; }
-        public string CUSTNMBR { get; set; }
-        public string CUSTNAME { get; set; }
-        public string CITY { get; set; }
-        public string STATE { get; set; }
+        public string Callnbr { get; set; } = string.Empty;
+        public string Offid { get; set; } = string.Empty;
+        public string Techid { get; set; } = string.Empty;
+        public string CUSTNMBR { get; set; } = string.Empty;
+        public string CUSTNAME { get; set; } = string.Empty;
+        public string CITY { get; set; } = string.Empty;
+        public string STATE { get; set; } = string.Empty;
         public DateTime? DISPDTE { get; set; }
-        public string AccountManager { get; set; }
-        public string NAME { get; set; }  // Technician Name
+        public string AccountManager { get; set; } = string.Empty;
+        public string NAME { get; set; } = string.Empty;  // Technician Name
         public DateTime? ChangeDate { get; set; }
-        public string PriorityLevel { get; set; }
-        public string JobStatus { get; set; }
+        
+        // Consider using JsonPropertyName or Dapper column mapping for case sensitivity
+        [System.Text.Json.Serialization.JsonPropertyName("priorityLevel")]
+        public string PriorityLevel { get; set; } = string.Empty;
+        
+        public string JobStatus { get; set; } = string.Empty;
         public int ChangeAge { get; set; }
     }
     public class EmergencyJobsResponseDto

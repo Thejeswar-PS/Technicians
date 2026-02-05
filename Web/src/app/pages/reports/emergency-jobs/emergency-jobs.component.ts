@@ -33,8 +33,10 @@ export class EmergencyJobsComponent implements OnInit, OnDestroy {
   
   // Pagination
   currentPage = 1;
-  itemsPerPage = 8;
+  itemsPerPage = 100; // Show 100 records per page by default
   totalItems = 0;
+  totalPages = 0;
+  paginatedData: EmergencyJobDto[] = [];
   
   // Sorting
   sortColumn = '';
@@ -102,10 +104,31 @@ export class EmergencyJobsComponent implements OnInit, OnDestroy {
   }
 
   private applyFilters(): void {
-    // No filtering - just use all data limited to top 8
-    this.filteredList = this.emergencyJobsList.slice(0, 8);
+    // Show all data with proper pagination
+    this.filteredList = [...this.emergencyJobsList];
     this.totalItems = this.filteredList.length;
     this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  updatePagination(): void {
+    this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedData = this.filteredList.slice(startIndex, endIndex);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  changeItemsPerPage(newSize: number): void {
+    this.itemsPerPage = newSize;
+    this.currentPage = 1;
+    this.updatePagination();
   }
 
   onSort(column: string): void {
@@ -132,6 +155,9 @@ export class EmergencyJobsComponent implements OnInit, OnDestroy {
 
       return this.sortDirection === 'desc' ? comparison * -1 : comparison;
     });
+    
+    // Update pagination after sorting
+    this.updatePagination();
   }
 
   private getColumnValue(item: EmergencyJobDto, column: string): any {
@@ -151,13 +177,11 @@ export class EmergencyJobsComponent implements OnInit, OnDestroy {
   }
 
   getPaginatedData(): EmergencyJobDto[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    return this.filteredList.slice(startIndex, endIndex);
+    return this.paginatedData;
   }
 
   getTotalPages(): number {
-    return Math.ceil(this.totalItems / this.itemsPerPage);
+    return this.totalPages;
   }
 
   onPageChange(page: number): void {

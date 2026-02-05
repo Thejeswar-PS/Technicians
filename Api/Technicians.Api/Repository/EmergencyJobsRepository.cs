@@ -12,8 +12,8 @@ namespace Technicians.Api.Repository
 
         public EmergencyJobsRepository(IConfiguration configuration, ILogger<EmergencyJobsRepository> logger)
         {
-            _connectionString = configuration.GetConnectionString("ETechConnString")
-                ?? throw new InvalidOperationException("ETechConnString not found");
+            _connectionString = configuration.GetConnectionString("ETechGreatPlainsConnString")
+                ?? throw new InvalidOperationException("ETechGreatPlainsConnString not found");
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -24,17 +24,32 @@ namespace Technicians.Api.Repository
                 _logger.LogInformation("Getting emergency jobs for display");
 
                 using var connection = new SqlConnection(_connectionString);
+                
+                // More explicit approach with column mapping if needed
                 var emergencyJobs = await connection.QueryAsync<EmergencyJobDto>(
                     "aaEmergencyJobsForDisplay",
                     commandType: CommandType.StoredProcedure,
                     commandTimeout: 120
                 );
 
+                _logger.LogInformation("Successfully retrieved {Count} emergency jobs", emergencyJobs.Count());
+
                 return new EmergencyJobsResponseDto
                 {
                     Success = true,
                     GeneratedAt = DateTime.UtcNow,
-                    EmergencyJobs = emergencyJobs.ToList()
+                    EmergencyJobs = emergencyJobs.ToList(),
+                    Message = $"Successfully retrieved {emergencyJobs.Count()} emergency jobs"
+                };
+            }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "SQL error getting emergency jobs: {SqlState} {ErrorNumber}", sqlEx.State, sqlEx.Number);
+                return new EmergencyJobsResponseDto
+                {
+                    Success = false,
+                    Message = $"Database error retrieving emergency jobs: {sqlEx.Message}",
+                    GeneratedAt = DateTime.UtcNow
                 };
             }
             catch (Exception ex)
