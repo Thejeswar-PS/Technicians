@@ -27,8 +27,8 @@ namespace Technicians.Api.Repository
 
         public PastDueGraphRepository(IConfiguration configuration, ILogger<PastDueGraphRepository> logger)
         {
-            _connectionString = configuration.GetConnectionString("ETechConnString")
-                ?? throw new InvalidOperationException("ETechConnString not found");
+            _connectionString = configuration.GetConnectionString("ETechGreatPlainsConnString")
+                ?? throw new InvalidOperationException("ETechGreatPlainsConnString not found");
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
