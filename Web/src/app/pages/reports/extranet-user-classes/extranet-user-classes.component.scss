@@ -661,4 +661,13 @@
   .action-card {
     animation: fadeIn 0.3s ease-out;
   }
+
+  // Custom placeholder styling for select dropdown
+  .form-select {
+    option[disabled] {
+      color: #6c757d;
+      font-style: italic;
+      background-color: #f8f9fa;
+    }
+  }
 }

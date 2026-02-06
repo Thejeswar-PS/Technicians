@@ -27,6 +27,7 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   customerNumbers: ExtranetCustNumbersDto[] = [];
   isLoading = false;
   isLoadingCustomerNumbers = false;
+  passwordValidationError = false;
 
   // Forms
   userForm: FormGroup;
@@ -35,7 +36,7 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   // Selection properties
   selectedLogin = '';
   selectedUserForCustomers = '';
-  showCustomerNumbers = false;
+  selectedCustomerNumber = '';
 
   // Subscription management
   private subscriptions: Subscription[] = [];
@@ -114,35 +115,84 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * View customer numbers for selected user
+   * Fetch user information by username (like legacy FetchUser_Click)
    */
-  viewCustomerNumbers(): void {
-    if (!this.selectedUserForCustomers) {
-      this.toastr.warning('Please select a user to view customer numbers');
+  fetchUser(): void {
+    const username = this.userForm.get('login')?.value;
+    if (!username || username.trim() === '') {
       return;
     }
 
-    this.isLoadingCustomerNumbers = true;
-    this.selectedLogin = this.selectedUserForCustomers;
+    this.isLoading = true;
+    const trimmedUsername = username.trim();
+
+    const fetchSub = this.reportService.getExtranetUserInfo(trimmedUsername).subscribe({
+      next: (user: ExtranetUserInfoDto) => {
+        this.populateFormWithUserData(user);
+        this.loadCustomerNumbersForUser(trimmedUsername);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Error fetching user:', error);
+        // Clear form except username for new user creation
+        this.resetFormExceptUsername();
+      }
+    });
+
+    this.subscriptions.push(fetchSub);
+  }
+
+  /**
+   * Handle username change (like legacy txtUserName_Change)
+   */
+  onUsernameChange(): void {
+    const username = this.userForm.get('login')?.value;
+    if (username && username.trim().length > 1) {
+      // Auto-fetch user data when username is entered (like legacy behavior)
+      this.fetchUser();
+    }
+  }
+
+  /**
+   * Populate form with user data (like legacy LoadUserDetails)
+   */
+  private populateFormWithUserData(user: ExtranetUserInfoDto): void {
+    this.userForm.patchValue({
+      login: user.login,
+      password: user.password,
+      classID: user.classID,
+      customerName: user.customerName,
+      contactName: user.contactName,
+      email: user.email,
+      address1: user.address1,
+      address2: user.address2,
+      city: user.city,
+      state: user.state,
+      zip: user.zip,
+      phone: user.phone,
+      viewFinancial: user.viewFinancial,
+      underContract: user.underContract
+    });
+  }
+
+  /**
+   * Load customer numbers for a specific user
+   */
+  private loadCustomerNumbersForUser(username: string): void {
+    this.selectedLogin = username;
+    this.selectedUserForCustomers = username;
     
-    const customerSub = this.reportService.getExtranetCustomerNumbers(this.selectedUserForCustomers).subscribe({
+    const customerSub = this.reportService.getExtranetCustomerNumbers(username).subscribe({
       next: (customerNumbers: ExtranetCustNumbersDto[]) => {
         this.customerNumbers = customerNumbers || [];
-        this.showCustomerNumbers = true;
-        this.isLoadingCustomerNumbers = false;
-        
-        if (this.customerNumbers.length === 0) {
-          this.toastr.info(`No customer numbers found for user: ${this.selectedUserForCustomers}`);
-        } else {
-          this.toastr.success(`Found ${this.customerNumbers.length} customer number(s) for user: ${this.selectedUserForCustomers}`);
-        }
+        // Clear selected customer number when list changes
+        this.selectedCustomerNumber = '';
       },
       error: (error) => {
         console.error('Error loading customer numbers:', error);
-        this.toastr.error('Error loading customer numbers');
         this.customerNumbers = [];
-        this.showCustomerNumbers = true;
-        this.isLoadingCustomerNumbers = false;
+        this.selectedCustomerNumber = '';
       }
     });
 
@@ -150,32 +200,73 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Validate password according to legacy requirements
+   */
+  private validatePassword(password: string): boolean {
+    if (!password) return false;
+    
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^A-Za-z0-9]/.test(password);
+    
+    return hasUppercase && hasLowercase && hasNumber && hasSpecial;
+  }
+
+  /**
+   * Reset form except username
+   */
+  private resetFormExceptUsername(): void {
+    const currentUsername = this.userForm.get('login')?.value;
+    this.userForm.reset({
+      login: currentUsername,
+      password: '',
+      classID: '',
+      customerName: '',
+      contactName: '',
+      email: '',
+      address1: '',
+      address2: '',
+      city: '',
+      state: '',
+      zip: '',
+      phone: '',
+      viewFinancial: false,
+      underContract: false
+    });
+    this.customerNumbers = [];
+    this.selectedCustomerNumber = '';
+  }
+
+  /**
    * Assign customer number to login
    */
   assignCustomerNumber(): void {
-    if (this.assignCustomerForm.invalid) {
-      Object.keys(this.assignCustomerForm.controls).forEach(key => {
-        const control = this.assignCustomerForm.get(key);
-        if (control && control.invalid) {
-          control.markAsTouched();
-        }
-      });
+    const login = this.userForm.get('login')?.value;
+    const custNmbr = this.assignCustomerForm.get('custNmbr')?.value;
+    
+    if (!login || login.trim() === '') {
+      this.toastr.warning('Please enter a username first');
+      return;
+    }
+    
+    if (!custNmbr || custNmbr.trim() === '') {
+      this.toastr.warning('Please enter a customer number to assign');
       return;
     }
 
     this.isLoading = true;
-    const { login, custNmbr } = this.assignCustomerForm.value;
+    const trimmedLogin = login.trim();
+    const trimmedCustNmbr = custNmbr.trim();
 
-    const assignSub = this.reportService.addExtranetCustomerNumber(login, custNmbr).subscribe({
+    const assignSub = this.reportService.addExtranetCustomerNumber(trimmedLogin, trimmedCustNmbr).subscribe({
       next: (result: ExtranetAddCustnmbrResult) => {
         this.isLoading = false;
         this.toastr.success(result.message || 'Customer number assigned successfully');
-        this.assignCustomerForm.reset();
+        this.assignCustomerForm.get('custNmbr')?.reset();
         
-        // Refresh customer numbers if viewing the same login
-        if (this.selectedLogin === login) {
-          this.viewCustomerNumbers();
-        }
+        // Refresh customer numbers
+        this.loadCustomerNumbersForUser(trimmedLogin);
       },
       error: (error) => {
         this.isLoading = false;
@@ -188,7 +279,7 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Save user information
+   * Save user information (with password validation like legacy)
    */
   saveUser(): void {
     if (this.userForm.invalid) {
@@ -201,6 +292,15 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Validate password like legacy
+    const password = this.userForm.get('password')?.value;
+    if (!this.validatePassword(password)) {
+      this.passwordValidationError = true;
+      this.toastr.error('Password does not meet complexity requirements');
+      return;
+    }
+    this.passwordValidationError = false;
+
     this.isLoading = true;
     const userDto: ExtranetSaveUpdateUserDto = this.userForm.value;
 
@@ -208,6 +308,10 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
       next: (response: ExtranetSaveUpdateUserResponse) => {
         this.isLoading = false;
         this.toastr.success(response.message || 'User saved successfully');
+        // Refresh customer numbers after save
+        if (userDto.login) {
+          this.loadCustomerNumbersForUser(userDto.login);
+        }
         // Optionally refresh user classes list
         this.loadExtranetUserClasses();
       },
@@ -222,13 +326,13 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Reset form to initial state
+   * Reset form to initial state (like legacy reset)
    */
   resetForm(): void {
     this.userForm.reset({
       login: '',
       password: '',
-      classID: '', // No default value
+      classID: '',
       customerName: '',
       contactName: '',
       email: '',
@@ -241,10 +345,19 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
       viewFinancial: false,
       underContract: false
     });
+    this.assignCustomerForm.reset({
+      login: '',
+      custNmbr: ''
+    });
+    this.customerNumbers = [];
+
+    this.selectedLogin = '';
+    this.selectedUserForCustomers = '';
+    this.passwordValidationError = false;
   }
 
   /**
-   * Delete user
+   * Delete user (like legacy DeleteUser_Click)
    */
   deleteUser(): void {
     const username = this.userForm.get('login')?.value;
@@ -299,7 +412,7 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
         
         // Refresh customer numbers list
         if (this.selectedLogin && this.selectedLogin.toLowerCase() === login.toLowerCase()) {
-          this.viewCustomerNumbers();
+          this.loadCustomerNumbersForUser(this.selectedLogin);
         }
       },
       error: (error) => {

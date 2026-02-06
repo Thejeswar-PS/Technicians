@@ -10,133 +10,64 @@
     </div>
   </div>
 
-  <!-- Input Fields Section -->
-  <div class="input-fields-section">
+  <!-- Top Action Section -->
+  <div class="top-action-section mb-4">
     <form [formGroup]="assignCustomerForm">
-    <div class="row g-3">
-      <!-- User Selection for Customer Numbers -->
-      <div class="col-md-4">
-        <label class="form-label">Select User for Customer Numbers</label>
-        <select 
-          class="form-select" 
-          (change)="onUserSelectionChange($event)"
-          [disabled]="isLoading">
-          <option value="">Select user...</option>
-          <option *ngFor="let user of extranetUserClasses" [value]="user.classID">
-            {{user.classID}}
-          </option>
-        </select>
-      </div>
+      <div class="row g-3 align-items-end">
+        <!-- Assigned Customer Numbers Dropdown -->
+        <div class="col-md-3">
+          <label class="form-label">Assigned Customer Numbers ({{customerNumbers.length}})</label>
+          <select 
+            class="form-select" 
+            [(ngModel)]="selectedCustomerNumber"
+            [ngModelOptions]="{ standalone: true }"
+            [disabled]="isLoading">
+            <option value="" disabled hidden>View Customer Number</option>
+            <option *ngFor="let custNum of customerNumbers" [value]="custNum.custNmbr">
+              {{custNum.custNmbr}}
+            </option>
+          </select>
+        </div>
 
-      <!-- View Customer Numbers Button -->
-      <div class="col-md-2 d-flex align-items-end">
-        <button 
-          type="button" 
-          class="btn btn-info w-100"
-          (click)="viewCustomerNumbers()"
-          [disabled]="isLoading || !selectedUserForCustomers">
-          <i class="fas fa-search me-2"></i>
-          View Numbers
-        </button>
-      </div>
-
-      <!-- Customer Number Input for Assignment -->
-      <div class="col-md-4">
-        <form [formGroup]="assignCustomerForm">
-          <label class="form-label">Customer Number to Assign</label>
+        <!-- Assign Customer Number Input -->
+        <div class="col-md-3">
+          <label class="form-label">Assign Customer Number</label>
           <input 
             type="text" 
             class="form-control" 
             formControlName="custNmbr"
             placeholder="Enter customer number"
             [disabled]="isLoading">
-        </form>
-      </div>
+        </div>
 
-      <!-- Spacer -->
-      <div class="col-md-2"></div>
-    </div>
-    </form>
-    
-    <!-- Assignment Action Buttons -->
-    <div class="d-flex justify-content-center gap-3 mt-3">
-      <!-- Assign Customer Number -->
-      <button 
-        type="button" 
-        class="btn btn-success"
-        (click)="assignCustomerNumber()"
-        [disabled]="isLoading || !assignCustomerForm.get('custNmbr')?.value || !userForm.get('login')?.value">
-        <i class="fas fa-plus-circle me-2"></i>
-        Assign Customer Number
-      </button>
+        <!-- Action Buttons -->
+        <div class="col-md-6 d-flex gap-2">
+          <!-- Assign Button -->
+          <button 
+            type="button" 
+            class="btn btn-primary"
+            (click)="assignCustomerNumber()"
+            [disabled]="isLoading || !assignCustomerForm.get('custNmbr')?.value || !userForm.get('login')?.value">
+            Assign
+          </button>
 
-      <!-- Delete Customer Number -->
-      <button 
-        type="button" 
-        class="btn btn-warning"
-        (click)="deleteCustomerNumber(selectedLogin, '')"
-        [disabled]="isLoading || !selectedLogin || customerNumbers.length === 0">
-        <i class="fas fa-minus-circle me-2"></i>
-        Delete Customer Number
-      </button>
+          <!-- Delete Customer Number Button -->
+          <button type="button" class="btn btn-warning" (click)="deleteCustomerNumber(userForm.get('login')?.value, selectedCustomerNumber)" [disabled]="isLoading || !userForm.get('login')?.value || !selectedCustomerNumber">
+            Delete Customer Number
+          </button>
 
-      <!-- Delete User -->
-      <button 
-        type="button" 
-        class="btn btn-danger"
-        (click)="deleteUser()"
-        [disabled]="isLoading || !userForm.get('login')?.value">
-        <i class="fas fa-user-times me-2"></i>
-        Delete User
-      </button>
-    </div>
-  </div>
-  <div *ngIf="showCustomerNumbers" class="customer-numbers-section">
-    <div class="section-header">
-      <h5 class="section-title">
-        <i class="fas fa-users text-info me-2"></i>
-        Customer Numbers for: <span class="text-primary">{{selectedLogin}}</span>
-      </h5>
-    </div>
-    
-    <div *ngIf="isLoadingCustomerNumbers" class="loading-state">
-      <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-      <p>Loading customer numbers...</p>
-    </div>
-
-    <div *ngIf="!isLoadingCustomerNumbers" class="customer-grid">
-      <div *ngIf="customerNumbers.length === 0" class="empty-state">
-        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-        <h6>No Customer Numbers Found</h6>
-        <p class="text-muted">This user has no assigned customer numbers.</p>
-      </div>
-      
-      <div *ngIf="customerNumbers.length > 0" class="row g-3">
-        <div *ngFor="let customer of customerNumbers" class="col-md-4 col-lg-3">
-          <div class="customer-number-card">
-            <div class="card-icon">
-              <i class="fas fa-hashtag"></i>
-            </div>
-            <div class="card-content">
-              <h6>{{customer.custNmbr}}</h6>
-            </div>
-            <div class="card-actions">
-              <button 
-                type="button" 
-                class="btn btn-sm btn-outline-danger"
-                (click)="deleteCustomerNumber(selectedLogin, customer.custNmbr)"
-                [disabled]="isLoadingCustomerNumbers">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
+          <!-- Delete User Button -->
+          <button 
+            type="button" 
+            class="btn btn-danger"
+            (click)="deleteUser()"
+            [disabled]="isLoading || !userForm.get('login')?.value">
+            Delete User
+          </button>
         </div>
       </div>
-    </div>
+    </form>
   </div>
-
   <!-- Main Form -->
   <div class="main-form-section">
     <div class="section-header">
@@ -163,6 +94,7 @@
                 class="form-control" 
                 formControlName="login"
                 placeholder="Enter username"
+                (blur)="onUsernameChange()"
                 [class.is-invalid]="userForm.get('login')?.invalid && userForm.get('login')?.touched"
                 [disabled]="isLoading">
               <div *ngIf="userForm.get('login')?.invalid && userForm.get('login')?.touched" class="invalid-feedback">
@@ -173,14 +105,21 @@
             <div class="form-group">
               <label class="form-label required">Password</label>
               <input 
-                type="password" 
+                type="text" 
                 class="form-control" 
                 formControlName="password"
                 placeholder="Enter password"
-                [class.is-invalid]="userForm.get('password')?.invalid && userForm.get('password')?.touched"
+                [class.is-invalid]="(userForm.get('password')?.invalid && userForm.get('password')?.touched) || passwordValidationError"
                 [disabled]="isLoading">
               <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched" class="invalid-feedback">
                 Password is required
+              </div>
+              <div *ngIf="passwordValidationError" class="invalid-feedback">
+                Password must contain:<br/>
+                • At least 1 uppercase letter (A-Z)<br/>
+                • At least 1 lowercase letter (a-z)<br/>
+                • At least 1 number (0-9)<br/>
+                • At least 1 special character (!@#$%^&*)
               </div>
             </div>
 
