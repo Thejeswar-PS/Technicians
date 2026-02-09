@@ -12,8 +12,6 @@ import {
 } from '../../../core/model/dcg-employee.model';
 import { DcgEmployeeService } from '../../../core/services/dcg-employee.service';
 
-declare var $: any;
-
 // Local enums and constants to avoid import issues
 enum GridType {
   Employee = 'E',
@@ -241,7 +239,6 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.employeeForm.patchValue({ empNo: 0 });
     this.showEmployeeForm = true;
     this.clearMessages();
-    setTimeout(() => $('#employeeModal').modal('show'), 100);
   }
 
   editEmployee(employee: DCGEmployeeDto): void {
@@ -249,7 +246,6 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.employeeForm.patchValue(employee);
     this.showEmployeeForm = true;
     this.clearMessages();
-    setTimeout(() => $('#employeeModal').modal('show'), 100);
   }
 
   saveEmployee(): void {
@@ -358,7 +354,6 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.officeForm.reset();
     this.showOfficeForm = true;
     this.clearMessages();
-    setTimeout(() => $('#officeModal').modal('show'), 100);
   }
 
   editOfficeAssignment(office: OfficeStateAssignmentDto): void {
@@ -366,7 +361,6 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.officeForm.patchValue(office);
     this.showOfficeForm = true;
     this.clearMessages();
-    setTimeout(() => $('#officeModal').modal('show'), 100);
   }
 
   saveOfficeAssignment(): void {
@@ -467,14 +461,12 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   }
 
   // Helper Methods
-  private hideEmployeeModal(): void {
-    $('#employeeModal').modal('hide');
+  hideEmployeeModal(): void {
     this.showEmployeeForm = false;
     this.resetForms();
   }
 
-  private hideOfficeModal(): void {
-    $('#officeModal').modal('hide');
+  hideOfficeModal(): void {
     this.showOfficeForm = false;
     this.resetForms();
   }

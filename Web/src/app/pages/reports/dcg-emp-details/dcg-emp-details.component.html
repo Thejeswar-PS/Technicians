@@ -363,15 +363,17 @@
 </div>
 
 <!-- Employee Modal -->
-<div class="modal fade" id="employeeModal" tabindex="-1" *ngIf="showEmployeeForm">
-  <div class="modal-dialog modal-lg">
+<div class="modal-overlay" *ngIf="showEmployeeForm" (click)="hideEmployeeModal()">
+  <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
           <i class="bi bi-person-plus me-2"></i>
           {{ modalTitle }}
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" (click)="hideEmployeeModal()">
+          <i class="bi bi-x"></i>
+        </button>
       </div>
       <form [formGroup]="employeeForm" (ngSubmit)="saveEmployee()">
         <div class="modal-body">
@@ -424,7 +426,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" [disabled]="isSubmitting">
+          <button type="button" class="btn btn-secondary" (click)="hideEmployeeModal()" [disabled]="isSubmitting">
             Cancel
           </button>
           <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || employeeForm.invalid">
@@ -439,15 +441,17 @@
 </div>
 
 <!-- Inventory Region Modal -->
-<div class="modal fade" id="officeModal" tabindex="-1" *ngIf="showOfficeForm">
-  <div class="modal-dialog modal-lg">
+<div class="modal-overlay" *ngIf="showOfficeForm" (click)="hideOfficeModal()">
+  <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">
           <i class="bi bi-geo-alt-fill me-2"></i>
           {{ modalTitle }}
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close" (click)="hideOfficeModal()">
+          <i class="bi bi-x"></i>
+        </button>
       </div>
       <form [formGroup]="officeForm" (ngSubmit)="saveOfficeAssignment()">
         <div class="modal-body">
@@ -491,7 +495,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" [disabled]="isSubmitting">
+          <button type="button" class="btn btn-secondary" (click)="hideOfficeModal()" [disabled]="isSubmitting">
             Cancel
           </button>
           <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || officeForm.invalid">
