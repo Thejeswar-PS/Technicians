@@ -38,7 +38,7 @@
                   {{totalRecords}} Result{{totalRecords === 1 ? '' : 's'}}
                 </span>
               </h5>
-              <small class="text-muted">Customize your view with filters below</small>
+
             </div>
           </div>
 
@@ -55,21 +55,6 @@
                     </label>
                     <select class="form-select modern-select" formControlName="jobType">
                       <option *ngFor="let option of jobTypeOptions" [value]="option.value">
-                        {{option.label}}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                
-                <!-- Priority Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-exclamation-triangle me-1"></i>
-                      Priority
-                    </label>
-                    <select class="form-select modern-select" formControlName="priority">
-                      <option *ngFor="let option of priorityOptions" [value]="option.value">
                         {{option.label}}
                       </option>
                     </select>
@@ -118,22 +103,29 @@
                   </div>
                 </div>
 
-                <!-- Include Archive Filter -->
-                <div class="col-md-2">
+                <!-- Assigned To Filter -->
+                <div class="col-md-3">
                   <div class="filter-group">
                     <label class="filter-label">
                       <i class="bi bi-person-check me-1"></i>
                       Assigned To
                     </label>
-                    <select class="form-select modern-select" formControlName="assignedTo">
-                      <option value="All">All Technicians</option>
-                      <!-- Add more technician options as needed -->
-                    </select>
+                    <div class="position-relative">
+                      <select class="form-select modern-select" formControlName="assignedTo" [disabled]="isLoadingTechnicians">
+                        <option value="All">All Technicians</option>
+                        <option *ngFor="let technician of technicians" [value]="technician.empName">
+                          {{technician.empName}}
+                        </option>
+                      </select>
+                      <span *ngIf="isLoadingTechnicians" class="loading-indicator">
+                        <i class="bi bi-arrow-repeat spin"></i>
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Include Archive Filter -->
-                <div class="col-md-2">
+                <div class="col-md-3">
                   <div class="filter-group">
                     <label class="filter-label">
                       <i class="bi bi-archive me-1"></i>
@@ -149,17 +141,6 @@
                         Show Archived Parts
                       </label>
                     </div>
-                  </div>
-                </div>
-
-                <!-- Clear Filters -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">&nbsp;</label>
-                    <button type="button" class="btn btn-outline-secondary w-100" (click)="onClearFilters()">
-                      <i class="bi bi-x-circle me-1"></i>
-                      Clear
-                    </button>
                   </div>
                 </div>
               </div>
@@ -207,34 +188,49 @@
           <span class="text-muted">Processing data...</span>
         </div>
 
-        <!-- Enhanced Results Summary -->
-        <div class="enhanced-pagination-card" *ngIf="!isProcessingData">
-          <div class="results-summary">
-            <div class="summary-icon">
-              <i class="bi bi-database"></i>
-            </div>
-            <div class="summary-details">
-              <div class="summary-title">Data Overview</div>
-              <div class="summary-count">
-                Displaying <span class="highlight-number">{{displayedData.length}}</span> 
-                of <span class="total-number">{{totalRecords}}</span> records
-              </div>
-            </div>
+        <!-- Modern Pagination Controls at Top -->
+        <div *ngIf="totalRecords > 0 && !isProcessingData" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+          <!-- Records Per Page -->
+          <div class="d-flex align-items-center">
+            <label class="form-label me-2 mb-0 fw-semibold text-dark">Records per page:</label>
+            <select class="form-select form-select-sm w-auto border-primary" 
+                    [value]="pageSize" 
+                    (change)="changeItemsPerPage(+$any($event.target).value)"
+                    style="min-width: 70px;">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
           </div>
-          <div class="page-controls">
-            <div class="control-group">
-              <div class="control-label">
-                <i class="bi bi-eye-fill me-1"></i>
-                View
-              </div>
-              <select id="pageSize" class="premium-select" 
-                      [value]="pageSize" (change)="onPageSizeChange($event)">
-                <option value="10">10 entries</option>
-                <option value="25">25 entries</option>
-                <option value="50">50 entries</option>
-                <option value="100">100 entries</option>
-              </select>
-            </div>
+          
+          <!-- Results Summary Badge -->
+          <div class="badge px-4 py-2 fs-6 fw-semibold" 
+               style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 25px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);">
+            Showing {{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, totalRecords) }} of {{ totalRecords }} records
+          </div>
+          
+          <!-- Page Navigation -->
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" 
+                    [disabled]="currentPage <= 1"
+                    (click)="goToPage(currentPage - 1)"
+                    [class.disabled]="currentPage <= 1">
+              <i class="bi bi-chevron-left"></i>
+              Previous
+            </button>
+            
+            <span class="mx-2 fw-semibold text-dark">
+              Page {{ currentPage }} of {{ getTotalPages() }}
+            </span>
+            
+            <button class="btn btn-sm btn-outline-secondary" 
+                    [disabled]="currentPage >= getTotalPages()"
+                    (click)="goToPage(currentPage + 1)"
+                    [class.disabled]="currentPage >= getTotalPages()">
+              Next
+              <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
         </div>
 
@@ -244,16 +240,23 @@
             <table class="table modern-table">
               <thead class="table-header">
                 <tr>
+                  <th class="header-cell text-center" style="width: 5%;">Row No</th>
+                  <th class="sortable header-cell" (click)="onSort('callNbr')" [ngClass]="getSortClass('callNbr')" style="width: 8%;">
+                    <div class="header-content">
+                      <span class="header-text">Job No</span>
+                      <i [class]="'sort-icon ' + sortIcon('callNbr')"></i>
+                    </div>
+                  </th>
                   <th class="header-cell text-center" style="width: 8%;">Assembled</th>
                   <th class="header-cell text-center" style="width: 8%;">Reviewed</th>
-                  <th class="header-cell text-center" style="width: 10%;">Quality Check</th>
-                  <th class="sortable header-cell" (click)="onSort('dcgPartNo')" [ngClass]="getSortClass('dcgPartNo')" style="width: 12%;">
+                  <th class="header-cell text-center" style="width: 5%;">QC</th>
+                  <th class="sortable header-cell" (click)="onSort('dcgPartNo')" [ngClass]="getSortClass('dcgPartNo')" style="width: 10%;">
                     <div class="header-content">
                       <span class="header-text">DCG Part No</span>
                       <i [class]="'sort-icon ' + sortIcon('dcgPartNo')"></i>
                     </div>
                   </th>
-                  <th class="sortable header-cell" (click)="onSort('siteID')" [ngClass]="getSortClass('siteID')" style="width: 12%;">
+                  <th class="sortable header-cell" (click)="onSort('siteID')" [ngClass]="getSortClass('siteID')" style="width: 8%;">
                     <div class="header-content">
                       <span class="header-text">Site ID</span>
                       <i [class]="'sort-icon ' + sortIcon('siteID')"></i>
@@ -277,35 +280,50 @@
                       <i [class]="'sort-icon ' + sortIcon('quantity')"></i>
                     </div>
                   </th>
-                  <th class="header-cell" style="width: 21%;">Description</th>
-                  <th class="sortable header-cell" (click)="onSort('dueDate')" [ngClass]="getSortClass('dueDate')" style="width: 8%;">
+                  <th class="sortable header-cell" (click)="onSort('createdOn')" [ngClass]="getSortClass('createdOn')" style="width: 10%;">
                     <div class="header-content">
-                      <span class="header-text">Due Date</span>
+                      <span class="header-text">Created On</span>
+                      <i [class]="'sort-icon ' + sortIcon('createdOn')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="onSort('dueDate')" [ngClass]="getSortClass('dueDate')" style="width: 10%;">
+                    <div class="header-content">
+                      <span class="header-text">Projected DueDt</span>
                       <i [class]="'sort-icon ' + sortIcon('dueDate')"></i>
                     </div>
                   </th>
+                  <th class="sortable header-cell" (click)="onSort('assignedTo')" [ngClass]="getSortClass('assignedTo')" style="width: 12%;">
+                    <div class="header-content">
+                      <span class="header-text">Assigned To</span>
+                      <i [class]="'sort-icon ' + sortIcon('assignedTo')"></i>
+                    </div>
+                  </th>
                   <th class="header-cell" style="width: 10%;">Modified By</th>
-                  <th class="header-cell" style="width: 10%;">Modified On</th>
                 </tr>
               </thead>
               <tbody class="table-body">
-                <tr *ngFor="let item of displayedData; trackBy: trackByUniqueId" 
+                <tr *ngFor="let item of displayedData; trackBy: trackByUniqueId; let i = index" 
                     class="table-row" 
                     [class]="getRowColorClass(item.dueDate || null)">
+                  <td class="text-center cell-content">{{item.rowIndex}}</td>
+                  <td class="cell-content">{{item.callNbr}}</td>
                   <td class="text-center">
                     <input type="checkbox" class="form-check-input" 
                            [checked]="isAssembled(item)"
-                           (change)="onStatusChange(item, 'assembled', $event)">
+                           [disabled]="true"
+                           title="Assembly status (read-only)">
                   </td>
                   <td class="text-center">
                     <input type="checkbox" class="form-check-input" 
                            [checked]="item.isPassed"
-                           (change)="onStatusChange(item, 'reviewed', $event)">
+                           [disabled]="true"
+                           title="Review status (read-only)">
                   </td>
                   <td class="text-center">
                     <input type="checkbox" class="form-check-input" 
                            [checked]="isQualityChecked(item)"
-                           (change)="onStatusChange(item, 'qc', $event)">
+                           [disabled]="true"
+                           title="Quality control status (read-only)">
                   </td>
                   <td>
                     <a href="javascript:void(0)" class="call-link" (click)="navigateToPartTestEntry(item.rowIndex)">{{item.dcgPartNo}}</a>
@@ -314,17 +332,13 @@
                   <td class="cell-content">{{item.make}}</td>
                   <td class="cell-content">{{item.model}}</td>
                   <td class="text-center cell-content">{{item.quantity}}</td>
-                  <td class="description-cell">
-                    <div class="description-text" [title]="item.description">
-                      {{item.description}}
-                    </div>
-                  </td>
+                  <td class="cell-content">{{formatDate(item.createdOn)}}</td>
                   <td class="cell-content">{{formatDate(item.dueDate || null)}}</td>
+                  <td class="cell-content">{{item.assignedTo}}</td>
                   <td class="cell-content modified-by-cell">{{item.lastModifiedBy || item.createdBy}}</td>
-                  <td class="cell-content">{{formatDate(item.lastModifiedOn || item.createdOn)}}</td>
                 </tr>
                 <tr *ngIf="displayedData.length === 0">
-                  <td colspan="12" class="text-center text-muted py-4">
+                  <td colspan="14" class="text-center text-muted py-4">
                     <div class="empty-state">
                       <i class="bi bi-inbox display-1 text-muted mb-3"></i>
                       <h5 class="text-muted">No Data Available</h5>
@@ -337,38 +351,38 @@
           </div>
         </div>
 
-        <!-- Pagination -->
-        <nav aria-label="Parts test status pagination" class="mt-4" *ngIf="getTotalPages() > 1 && !isProcessingData">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="pagination-info">
-              <span class="text-muted">
-                Page {{currentPage}} of {{getTotalPages()}} 
-                ({{totalRecords}} total records)
-              </span>
+        <!-- Bottom Modern Pagination Navigation -->
+        <div *ngIf="totalRecords > 0 && !isProcessingData && getTotalPages() > 1" class="d-flex justify-content-center mt-4 p-3">
+          <div class="d-flex align-items-center gap-2 bg-light rounded px-4 py-2">
+            <button class="btn btn-sm btn-outline-primary" 
+                    [disabled]="currentPage <= 1"
+                    (click)="goToPage(currentPage - 1)"
+                    [class.disabled]="currentPage <= 1">
+              <i class="bi bi-chevron-left"></i>
+              Previous
+            </button>
+            
+            <!-- Page Numbers (show only a few around current page) -->
+            <div class="d-flex align-items-center gap-1 mx-2">
+              <button *ngFor="let page of [].constructor(getTotalPages()); let i = index" 
+                      class="btn btn-sm"
+                      [class.btn-primary]="currentPage === i + 1"
+                      [class.btn-outline-secondary]="currentPage !== i + 1"
+                      [class.d-none]="!shouldShowPageNumber(i + 1)"
+                      (click)="goToPage(i + 1)">
+                {{ i + 1 }}
+              </button>
             </div>
-            <ul class="pagination pagination-sm mb-0">
-              <li class="page-item" [class.disabled]="currentPage === 1">
-                <a class="page-link" href="#" (click)="onPageChange(currentPage - 1, $event)">
-                  <i class="bi bi-chevron-left"></i>
-                  Previous
-                </a>
-              </li>
-              <li class="page-item" 
-                  *ngFor="let page of getPageNumbers()" 
-                  [class.active]="page === currentPage">
-                <a class="page-link" href="#" (click)="onPageChange(page, $event)">
-                  {{page}}
-                </a>
-              </li>
-              <li class="page-item" [class.disabled]="currentPage === getTotalPages()">
-                <a class="page-link" href="#" (click)="onPageChange(currentPage + 1, $event)">
-                  Next
-                  <i class="bi bi-chevron-right"></i>
-                </a>
-              </li>
-            </ul>
+            
+            <button class="btn btn-sm btn-outline-primary" 
+                    [disabled]="currentPage >= getTotalPages()"
+                    (click)="goToPage(currentPage + 1)"
+                    [class.disabled]="currentPage >= getTotalPages()">
+              Next
+              <i class="bi bi-chevron-right"></i>
+            </button>
           </div>
-        </nav>
+        </div>
       </div>
     </div>
   </div>
