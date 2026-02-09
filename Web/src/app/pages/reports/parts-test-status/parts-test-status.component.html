@@ -1,9 +1,9 @@
 <!-- Parts Test Status Report -->
-<div class="container-fluid parts-test-status-container">
+<div class="container-fluid parts-request-container">
   <!-- Loading spinner -->
   <div
     *ngIf="isLoading"
-    class="d-flex justify-content-center align-items-center parts-test-status-loading"
+    class="d-flex justify-content-center align-items-center parts-request-loading"
   >
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
@@ -11,11 +11,21 @@
   </div>
 
   <!-- Header Section -->
-  <div class="parts-test-status-header__top mb-4 d-flex justify-content-center align-items-center">
-    <!-- Page Title - Centered -->
+  <div class="parts-request-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary parts-request-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
     <div class="parts-page-title">
       <h2 class="fw-bold text-primary mb-0">
-        <i class="bi bi-clipboard-check me-2"></i>
+        <i class="bi bi-tools me-2"></i>
         Parts Test Status
       </h2>
     </div>
@@ -236,38 +246,39 @@
 
         <!-- Data Table Section -->
         <div class="table-section" *ngIf="!isProcessingData">
-          <div class="table-responsive">
-            <table class="table modern-table">
-              <thead class="table-header">
-                <tr>
-                  <th class="header-cell text-center" style="width: 5%;">Row No</th>
-                  <th class="sortable header-cell" (click)="onSort('callNbr')" [ngClass]="getSortClass('callNbr')" style="width: 8%;">
-                    <div class="header-content">
-                      <span class="header-text">Job No</span>
-                      <i [class]="'sort-icon ' + sortIcon('callNbr')"></i>
-                    </div>
-                  </th>
-                  <th class="header-cell text-center" style="width: 8%;">Assembled</th>
-                  <th class="header-cell text-center" style="width: 8%;">Reviewed</th>
-                  <th class="header-cell text-center" style="width: 5%;">QC</th>
-                  <th class="sortable header-cell" (click)="onSort('dcgPartNo')" [ngClass]="getSortClass('dcgPartNo')" style="width: 10%;">
-                    <div class="header-content">
-                      <span class="header-text">DCG Part No</span>
-                      <i [class]="'sort-icon ' + sortIcon('dcgPartNo')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('siteID')" [ngClass]="getSortClass('siteID')" style="width: 8%;">
-                    <div class="header-content">
-                      <span class="header-text">Site ID</span>
-                      <i [class]="'sort-icon ' + sortIcon('siteID')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('make')" [ngClass]="getSortClass('make')" style="width: 8%;">
-                    <div class="header-content">
-                      <span class="header-text">Make</span>
-                      <i [class]="'sort-icon ' + sortIcon('make')"></i>
-                    </div>
-                  </th>
+          <div class="modern-table-container">
+            <div class="table-responsive">
+              <table class="table modern-table">
+                <thead class="table-header">
+                  <tr>
+                    <th class="header-cell text-center" style="width: 5%;">Row</th>
+                    <th class="sortable header-cell" (click)="onSort('callNbr')" [ngClass]="getSortClass('callNbr')" style="width: 8%;">
+                      <div class="header-content">
+                        <span class="header-text">Job No</span>
+                        <i [class]="'sort-icon ' + sortIcon('callNbr')"></i>
+                      </div>
+                    </th>
+                    <th class="header-cell text-center" style="width: 7%;">Assembled</th>
+                    <th class="header-cell text-center" style="width: 7%;">Reviewed</th>
+                    <th class="header-cell text-center" style="width: 4%;">QC</th>
+                    <th class="sortable header-cell" (click)="onSort('dcgPartNo')" [ngClass]="getSortClass('dcgPartNo')" style="width: 10%;">
+                      <div class="header-content">
+                        <span class="header-text">DCG Part</span>
+                        <i [class]="'sort-icon ' + sortIcon('dcgPartNo')"></i>
+                      </div>
+                    </th>
+                    <th class="sortable header-cell" (click)="onSort('siteID')" [ngClass]="getSortClass('siteID')" style="width: 10%;">
+                      <div class="header-content">
+                        <span class="header-text">Site ID</span>
+                        <i [class]="'sort-icon ' + sortIcon('siteID')"></i>
+                      </div>
+                    </th>
+                    <th class="sortable header-cell" (click)="onSort('make')" [ngClass]="getSortClass('make')" style="width: 7%;">
+                      <div class="header-content">
+                        <span class="header-text">Make</span>
+                        <i [class]="'sort-icon ' + sortIcon('make')"></i>
+                      </div>
+                    </th>
                   <th class="sortable header-cell" (click)="onSort('model')" [ngClass]="getSortClass('model')" style="width: 8%;">
                     <div class="header-content">
                       <span class="header-text">Model</span>
@@ -301,53 +312,76 @@
                   <th class="header-cell" style="width: 10%;">Modified By</th>
                 </tr>
               </thead>
-              <tbody class="table-body">
-                <tr *ngFor="let item of displayedData; trackBy: trackByUniqueId; let i = index" 
-                    class="table-row" 
-                    [class]="getRowColorClass(item.dueDate || null)">
-                  <td class="text-center cell-content">{{item.rowIndex}}</td>
-                  <td class="cell-content">{{item.callNbr}}</td>
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" 
-                           [checked]="isAssembled(item)"
-                           [disabled]="true"
-                           title="Assembly status (read-only)">
-                  </td>
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" 
-                           [checked]="item.isPassed"
-                           [disabled]="true"
-                           title="Review status (read-only)">
-                  </td>
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" 
-                           [checked]="isQualityChecked(item)"
-                           [disabled]="true"
-                           title="Quality control status (read-only)">
-                  </td>
-                  <td>
-                    <a href="javascript:void(0)" class="call-link" (click)="navigateToPartTestEntry(item.rowIndex)">{{item.dcgPartNo}}</a>
-                  </td>
-                  <td class="cell-content">{{item.siteID}}</td>
-                  <td class="cell-content">{{item.make}}</td>
-                  <td class="cell-content">{{item.model}}</td>
-                  <td class="text-center cell-content">{{item.quantity}}</td>
-                  <td class="cell-content">{{formatDate(item.createdOn)}}</td>
-                  <td class="cell-content">{{formatDate(item.dueDate || null)}}</td>
-                  <td class="cell-content">{{item.assignedTo}}</td>
-                  <td class="cell-content modified-by-cell">{{item.lastModifiedBy || item.createdBy}}</td>
-                </tr>
-                <tr *ngIf="displayedData.length === 0">
-                  <td colspan="14" class="text-center text-muted py-4">
-                    <div class="empty-state">
-                      <i class="bi bi-inbox display-1 text-muted mb-3"></i>
-                      <h5 class="text-muted">No Data Available</h5>
-                      <p class="text-muted mb-0">Try adjusting your filters or check back later.</p>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+                <tbody class="table-body">
+                  <tr *ngFor="let item of displayedData; trackBy: trackByUniqueId; let i = index" 
+                      class="table-row modern-row" 
+                      [class]="getRowColorClass(item.dueDate || null)">
+                    <td class="data-cell text-center">
+                      <span class="cell-content">{{item.rowIndex}}</span>
+                    </td>
+                    <td class="data-cell">
+                      <span class="cell-content">{{item.callNbr}}</span>
+                    </td>
+                    <td class="data-cell text-center">
+                      <input type="checkbox" class="form-check-input modern-checkbox" 
+                             [checked]="isAssembled(item)"
+                             [disabled]="true"
+                             title="Assembly status (read-only)">
+                    </td>
+                    <td class="data-cell text-center">
+                      <input type="checkbox" class="form-check-input modern-checkbox" 
+                             [checked]="item.isPassed"
+                             [disabled]="true"
+                             title="Review status (read-only)">
+                    </td>
+                    <td class="data-cell text-center">
+                      <input type="checkbox" class="form-check-input modern-checkbox" 
+                             [checked]="isQualityChecked(item)"
+                             [disabled]="true"
+                             title="Quality control status (read-only)">
+                    </td>
+                    <td class="data-cell">
+                      <a href="javascript:void(0)" class="call-link" (click)="navigateToPartTestEntry(item.rowIndex)">
+                        <span class="cell-content" [title]="item.dcgPartNo">{{item.dcgPartNo}}</span>
+                      </a>
+                    </td>
+                    <td class="data-cell">
+                      <span class="cell-content" [title]="item.siteID">{{item.siteID}}</span>
+                    </td>
+                    <td class="data-cell">
+                      <span class="cell-content" [title]="item.make">{{item.make}}</span>
+                    </td>
+                    <td class="data-cell">
+                      <span class="cell-content" [title]="item.model">{{item.model}}</span>
+                    </td>
+                    <td class="data-cell text-center">
+                      <span class="cell-content">{{item.quantity}}</span>
+                    </td>
+                    <td class="data-cell">
+                      <span class="cell-content" [title]="formatDate(item.createdOn)">{{formatDate(item.createdOn)}}</span>
+                    </td>
+                    <td class="data-cell">
+                      <span class="cell-content" [title]="formatDate(item.dueDate || null)">{{formatDate(item.dueDate || null)}}</span>
+                    </td>
+                    <td class="data-cell name-cell">
+                      <span class="cell-content name-content" [title]="item.assignedTo">{{item.assignedTo}}</span>
+                    </td>
+                    <td class="data-cell name-cell">
+                      <span class="cell-content name-content" [title]="item.lastModifiedBy || item.createdBy">{{item.lastModifiedBy || item.createdBy}}</span>
+                    </td>
+                  </tr>
+                  <tr *ngIf="displayedData.length === 0">
+                    <td colspan="14" class="text-center text-muted py-4">
+                      <div class="empty-state">
+                        <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                        <h5 class="text-muted">No Data Available</h5>
+                        <p class="text-muted mb-0">Try adjusting your filters or check back later.</p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
