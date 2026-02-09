@@ -117,6 +117,7 @@ builder.Services.AddScoped<NewUniTestRepository>();
 builder.Services.AddScoped<DTechUsersDataRepository>();
 builder.Services.AddScoped<ExtranetUserClassesRepository>();
 builder.Services.AddScoped<ToolsTrackingTechsRepository>();
+builder.Services.AddScoped<DCGEmployeeRepository>(); 
 
 var app = builder.Build();
 

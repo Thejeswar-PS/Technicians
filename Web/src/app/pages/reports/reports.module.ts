@@ -29,6 +29,7 @@ import { DTechUsersDataComponent } from './dtech-users-data/dtech-users-data.com
 import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-user-classes.component';
 import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-report.component';
 import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
+import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.component';
 
 @NgModule({
   declarations: [
@@ -52,7 +53,8 @@ import { AccountingStatusComponent } from './accounting-status/accounting-status
     DTechUsersDataComponent,
     ExtranetUserClassesComponent,
     UnscheduledReportComponent,
-    AccountingStatusComponent
+    AccountingStatusComponent,
+    DcgEmpDetailsComponent
   ],
   imports: [
     CommonModule,
