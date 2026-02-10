@@ -49,6 +49,7 @@ export interface PartsTestInfo {
   priority?: string;
   assignedTo?: string;
   dueDate?: Date | string; // Can be Date object or string for HTML date inputs
+  submittedDate?: Date | string; // Optional submitted date field
   kva?: string;
   voltage?: string;
   problemNotes?: string;
@@ -70,6 +71,8 @@ export interface PartsTestInfo {
   qcApproved?: string;
   qcWorkStatus?: string;
   createdBy?: string;
+  createdOn?: Date | string; // Creation date for auto-generated ID calculation
+  autoGenID?: string; // Existing auto-generated ID from database
   approved?: boolean;
   lastModifiedBy?: string;
 }
@@ -100,6 +103,7 @@ export interface SaveUpdatePartsTestDto {
   priority: string;
   assignedTo: string;
   dueDate?: Date;
+  submittedDate?: Date;
   kva: string;
   voltage: string;
   problemNotes: string;
@@ -121,6 +125,7 @@ export interface SaveUpdatePartsTestDto {
   qcApproved: string;
   qcWorkStatus: string;
   createdBy: string;
+  createdOn?: Date | string; // Creation date for auto-generated ID calculation
   approved: boolean;
   lastModifiedBy: string;
 }
