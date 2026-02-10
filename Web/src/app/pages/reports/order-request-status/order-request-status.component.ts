@@ -320,7 +320,8 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
         orderDate: orderRequest.orderDate ? new Date(orderRequest.orderDate).toISOString().split('T')[0] : '',
         arriveDate: orderRequest.arriveDate ? new Date(orderRequest.arriveDate).toISOString().split('T')[0] : '',
         status: orderRequest.status || 'NEW',
-        notes: orderRequest.notes || ''
+        notes: orderRequest.notes || '',
+        createdOn: orderRequest.createdOn ? new Date(orderRequest.createdOn).toISOString() : ''
       }
     });
   }
