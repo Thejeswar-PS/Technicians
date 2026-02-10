@@ -302,10 +302,6 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   viewOrderRequest(orderRequest: OrderRequestStatusDto): void {
     if (!orderRequest) return;
     
-    // Debug: Log the order request data being passed
-    console.log('Order Request Status Data:', orderRequest);
-    console.log('Notes field value:', orderRequest.notes);
-    
     // Navigate to order request form with the order request data
     this.router.navigate(['/reports/order-request'], {
       queryParams: { 

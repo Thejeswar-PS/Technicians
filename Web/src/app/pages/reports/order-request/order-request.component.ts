@@ -121,6 +121,8 @@ export class OrderRequestComponent implements OnInit {
             status: (params['status'] || 'NEW').trim(),
             notes: (params['notes'] || '').trim()
           });
+
+          this.loadOrderRequestDetailsFromApi(rowIndex);
           
           // Debug: Log the values to see what's being set
           console.log('All query params:', params);
@@ -155,6 +157,39 @@ export class OrderRequestComponent implements OnInit {
       // If no rowIndex parameter, load normally
       this.generateAutoId();
       this.loadMaxOrderRequestRowIndex();
+    });
+  }
+
+  private loadOrderRequestDetailsFromApi(rowIndex: number): void {
+    this.orderRequestService.getPartsTestList(rowIndex, 'OrderRequest').subscribe({
+      next: (data: PartsTestListResponse) => {
+        const dataAny = data as any;
+        const table = data?.Tables?.[0];
+        const row = table?.Rows?.[0] || dataAny?.tables?.[0]?.rows?.[0];
+        if (!row) {
+          console.warn('Order Request details not found in API response.', data);
+          return;
+        }
+
+        this.orderRequestForm.patchValue({
+          orderType: (row.OrderType || row.orderType || '').toString().trim(),
+          requester: (row.Requester || row.requester || '').toString().trim(),
+          dcgPartNo: (row.DCGPartNo || row.dcgPartNo || '').toString().trim(),
+          manufPartNo: (row.ManufPartNo || row.manufPartNo || '').toString().trim(),
+          qtyNeeded: row.QtyNeeded ?? row.qtyNeeded ?? null,
+          vendor: (row.Vendor || row.vendor || '').toString().trim(),
+          poNumber: (row.PONumber || row.poNumber || '').toString().trim(),
+          orderDate: row.OrderDate ? new Date(row.OrderDate).toISOString().split('T')[0] : this.orderRequestForm.get('orderDate')?.value,
+          arriveDate: row.ArriveDate ? new Date(row.ArriveDate).toISOString().split('T')[0] : this.orderRequestForm.get('arriveDate')?.value,
+          status: (row.Status || row.status || this.orderRequestForm.get('status')?.value || 'NEW').toString().trim(),
+          notes: (row.Notes || row.notes || '').toString().trim()
+        });
+
+        console.log('Order Request details loaded from API:', row);
+      },
+      error: (error) => {
+        console.error('Error loading order request details:', error);
+      }
     });
   }
 
