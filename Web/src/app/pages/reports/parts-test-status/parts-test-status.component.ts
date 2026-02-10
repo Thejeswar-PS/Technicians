@@ -196,6 +196,7 @@ export class PartsTestStatusComponent implements OnInit {
 
   loadPartsTestStatus(): void {
     this.isLoading = true;
+    this.displayedData = [];
     this.errorMessage = '';
     
     const formValue = this.filterForm.value;
@@ -234,6 +235,7 @@ export class PartsTestStatusComponent implements OnInit {
   }
 
   onFilterChange(): void {
+    this.isLoading = true;
     this.currentPage = 1;
     this.clearErrorMessage();
     this.loadPartsTestStatus();
@@ -270,18 +272,12 @@ export class PartsTestStatusComponent implements OnInit {
   applySorting(): void {
     if (!this.sortColumn) return;
 
+    const column = this.sortColumn;
+
     this.partsTestStatusList.sort((a, b) => {
-      let valueA = this.getNestedProperty(a, this.sortColumn);
-      let valueB = this.getNestedProperty(b, this.sortColumn);
+      const valueA = this.normalizeSortValue(this.getNestedProperty(a, column), column);
+      const valueB = this.normalizeSortValue(this.getNestedProperty(b, column), column);
 
-      // Handle dates
-      if (valueA instanceof Date && valueB instanceof Date) {
-        return this.sortDirection === 'asc' 
-          ? valueA.getTime() - valueB.getTime()
-          : valueB.getTime() - valueA.getTime();
-      }
-
-      // Handle strings and numbers
       if (valueA < valueB) {
         return this.sortDirection === 'asc' ? -1 : 1;
       }
@@ -296,6 +292,38 @@ export class PartsTestStatusComponent implements OnInit {
 
   getNestedProperty(obj: any, path: string): any {
     return path.split('.').reduce((o, p) => o && o[p], obj);
+  }
+
+  private normalizeSortValue(value: any, column: string): string | number {
+    if (value === null || value === undefined) return '';
+
+    if (typeof value === 'boolean') {
+      return value ? 1 : 0;
+    }
+
+    if (typeof value === 'number') {
+      return value;
+    }
+
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+
+    if (typeof value === 'string') {
+      if (this.isDateColumn(column)) {
+        const parsed = new Date(value);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.getTime();
+        }
+      }
+      return value.toLowerCase();
+    }
+
+    return String(value).toLowerCase();
+  }
+
+  private isDateColumn(column: string): boolean {
+    return column === 'dueDate' || column === 'createdOn' || column === 'lastModifiedOn';
   }
 
   onPageChange(page: number, event?: Event): void {
@@ -472,15 +500,21 @@ export class PartsTestStatusComponent implements OnInit {
     
     const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
     const today = new Date();
-    const diffTime = due.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
+    // Reset time to midnight for accurate day comparison (matching legacy .NET logic)
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    const diffTime = dueDay.getTime() - todayDay.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24); // Don't ceil - match .NET TotalDays exactly
+    
+    // Legacy logic: (DueDt - today).TotalDays
     if (diffDays <= 0) {
-      return 'row-overdue'; // Red gradient - Due same day or overdue (ACTIVE ONLY)
+      return 'row-overdue'; // Red (#ff6347, white text) - Due same day or overdue
     } else if (diffDays <= 3) {
-      return 'row-urgent'; // Orange gradient - Due within 3 days (ACTIVE ONLY)
+      return 'row-urgent'; // Orange - Due within 3 days
     } else if (diffDays <= 7) {
-      return 'row-upcoming'; // Yellow gradient - Due within a week (ACTIVE ONLY)
+      return 'row-upcoming'; // Yellow - Due within a week
     }
     return '';
   }

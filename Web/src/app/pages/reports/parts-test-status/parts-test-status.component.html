@@ -1,423 +1,214 @@
-<!-- Parts Test Status Report -->
-<div class="container-fluid parts-request-container">
-  <!-- Loading spinner -->
-  <div
-    *ngIf="isLoading"
-    class="d-flex justify-content-center align-items-center parts-request-loading"
-  >
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+<div class="container-fluid parts-test-status-container">
+
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading"
+       class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay">
+    <div class="spinner-border text-primary"></div>
   </div>
 
-  <!-- Header Section -->
-  <div class="parts-request-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button
-      type="button"
-      class="btn btn-sm btn-primary parts-request-header__back"
-      (click)="goBack()"
-      [disabled]="isLoading"
-    >
-      <i class="bi bi-arrow-left me-2"></i>
-      Back
-    </button>
-    
-    <!-- Page Title - Centered between buttons -->
-    <div class="parts-page-title">
-      <h2 class="fw-bold text-primary mb-0">
-        <i class="bi bi-tools me-2"></i>
-        Parts Test Status
-      </h2>
+  <div class="card shadow-sm main-card">
+
+    <!-- Header -->
+    <div class="card-header border-0 py-4">
+      <div class="d-flex align-items-center">
+        <!-- LEFT: Back button -->
+        <div class="flex-shrink-0">
+          <button class="btn btn-sm btn-primary" (click)="goBack()">
+            <i class="bi bi-arrow-left me-1"></i> Back
+          </button>
+        </div>
+
+        <!-- CENTER: Title -->
+        <div class="flex-grow-1 text-center">
+          <h3 class="fw-bold text-primary mb-0">
+            Parts Test Status
+          </h3>
+        </div>
+
+        <!-- RIGHT: spacer to balance layout -->
+        <div class="flex-shrink-0" style="width: 72px;"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- Main content -->
-  <div *ngIf="!isLoading">
+    <div class="card-body">
+      <!-- Error -->
+      <div class="mb-3" *ngIf="errorMessage">
+        <div class="alert alert-danger d-inline-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {{ errorMessage }}
+        </div>
+      </div>
 
-    <!-- Filter & Data Section -->
-    <div class="card shadow-sm parts-main-card">
-      <!-- Filter Header -->
-      <div class="card-header border-0 py-4">
-        <div class="parts-filter-header">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-funnel me-2 text-primary"></i>
-                Filters & Search
-                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
-                  {{totalRecords}} Result{{totalRecords === 1 ? '' : 's'}}
-                </span>
-              </h5>
+      <!-- Color Legend -->
+      <div class="color-legend justify-content-center"
+           *ngIf="!filterForm.get('archive')?.value">
+        <div class="legend-item">
+          <div class="legend-box red"></div>
+          <span>Red = Due Same day or Overdue</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box orange"></div>
+          <span>Orange = Due Within 3 days</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box yellow"></div>
+          <span>Yellow = Due within a week</span>
+        </div>
+      </div>
 
-            </div>
-          </div>
+      <!-- Filters -->
+      <div class="row mb-3 filter-panel" [formGroup]="filterForm">
+        <div class="col-md-2">
+          <label class="form-label">Job Type</label>
+          <select class="form-select" formControlName="jobType">
+            <option *ngFor="let option of jobTypeOptions"
+                    [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
 
-          <!-- Filter Controls -->
-          <div class="filter-controls-section mt-3">
-            <form [formGroup]="filterForm" class="parts-filter-form">
-              <div class="row g-3">
-                <!-- Job Type Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-gear me-1"></i>
-                      Job Type
-                    </label>
-                    <select class="form-select modern-select" formControlName="jobType">
-                      <option *ngFor="let option of jobTypeOptions" [value]="option.value">
-                        {{option.label}}
-                      </option>
-                    </select>
-                  </div>
-                </div>
+        <div class="col-md-2">
+          <label class="form-label">Make</label>
+          <select class="form-select" formControlName="make">
+            <option value="All">All</option>
+            <option *ngFor="let make of distinctMakes"
+                    [value]="make.make">
+              {{ make.make }}
+            </option>
+          </select>
+        </div>
 
-                <!-- Make Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-building me-1"></i>
-                      Make
-                    </label>
-                    <div class="position-relative">
-                      <select class="form-select modern-select" formControlName="make" [disabled]="isLoadingMakes">
-                        <option value="All">All Makes</option>
-                        <option *ngFor="let make of distinctMakes" [value]="make.make">
-                          {{make.make}}
-                        </option>
-                      </select>
-                      <span *ngIf="isLoadingMakes" class="loading-indicator">
-                        <i class="bi bi-arrow-repeat spin"></i>
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        <div class="col-md-2">
+          <label class="form-label">Model</label>
+          <select class="form-select" formControlName="model">
+            <option value="All">All</option>
+            <option *ngFor="let model of modelsForSelectedMake"
+                    [value]="model.make">
+              {{ model.make }}
+            </option>
+          </select>
+        </div>
 
-                <!-- Model Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-diagram-3 me-1"></i>
-                      Model
-                    </label>
-                    <div class="position-relative">
-                      <select class="form-select modern-select" formControlName="model" [disabled]="isLoadingModels">
-                        <option value="All">All Models</option>
-                        <option *ngFor="let model of modelsForSelectedMake" [value]="model.make">
-                          {{model.make}}
-                        </option>
-                      </select>
-                      <span *ngIf="isLoadingModels" class="loading-indicator">
-                        <i class="bi bi-arrow-repeat spin"></i>
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        <div class="col-md-3">
+          <label class="form-label">Assigned To</label>
+          <select class="form-select" formControlName="assignedTo">
+            <option value="All">All</option>
+            <option *ngFor="let tech of technicians"
+                    [value]="tech.empName">
+              {{ tech.empName }}
+            </option>
+          </select>
+        </div>
 
-                <!-- Assigned To Filter -->
-                <div class="col-md-3">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-person-check me-1"></i>
-                      Assigned To
-                    </label>
-                    <div class="position-relative">
-                      <select class="form-select modern-select" formControlName="assignedTo" [disabled]="isLoadingTechnicians">
-                        <option value="All">All Technicians</option>
-                        <option *ngFor="let technician of technicians" [value]="technician.empName">
-                          {{technician.empName}}
-                        </option>
-                      </select>
-                      <span *ngIf="isLoadingTechnicians" class="loading-indicator">
-                        <i class="bi bi-arrow-repeat spin"></i>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Include Archive Filter -->
-                <div class="col-md-3">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-archive me-1"></i>
-                      Include Archive
-                    </label>
-                    <div class="form-check form-switch mt-2">
-                      <input class="form-check-input" 
-                             type="checkbox" 
-                             role="switch"
-                             id="archive" 
-                             formControlName="archive">
-                      <label class="form-check-label" for="archive">
-                        Show Archived Parts
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </form>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check form-switch">
+            <input class="form-check-input"
+                   type="checkbox"
+                   formControlName="archive">
+            <label class="form-check-label ms-2">
+              Include Archive
+            </label>
           </div>
         </div>
       </div>
 
-      <!-- Data Display Section -->
-      <div class="card-body py-4">
-        
-        <!-- Messages -->
-        <div class="parts-messages" *ngIf="errorMessage">
-          <div class="alert alert-danger d-inline-flex align-items-center">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <span>{{ errorMessage }}</span>
-          </div>
-        </div>
-
-        <!-- Status Legend -->
-        <div class="row mb-3">
-          <div class="col-12">
-            <div class="subtle-legend">
-              <div class="legend-items">
-                <div class="legend-item">
-                  <div class="legend-dot legend-overdue"></div>
-                  <span class="legend-label">Due Same day or Overdue</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot legend-urgent"></div>
-                  <span class="legend-label">Due Within 3 days</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot legend-upcoming"></div>
-                  <span class="legend-label">Due within a week</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Loading indicator for data processing -->
-        <div *ngIf="isProcessingData" class="text-center py-4">
-          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-          <span class="text-muted">Processing data...</span>
-        </div>
-
-        <!-- Modern Pagination Controls at Top -->
-        <div *ngIf="totalRecords > 0 && !isProcessingData" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
-          <!-- Records Per Page -->
-          <div class="d-flex align-items-center">
-            <label class="form-label me-2 mb-0 fw-semibold text-dark">Records per page:</label>
-            <select class="form-select form-select-sm w-auto border-primary" 
-                    [value]="pageSize" 
-                    (change)="changeItemsPerPage(+$any($event.target).value)"
-                    style="min-width: 70px;">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-          
-          <!-- Results Summary Badge -->
-          <div class="badge px-4 py-2 fs-6 fw-semibold" 
-               style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 25px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);">
-            Showing {{ (currentPage - 1) * pageSize + 1 }}-{{ Math.min(currentPage * pageSize, totalRecords) }} of {{ totalRecords }} records
-          </div>
-          
-          <!-- Page Navigation -->
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-secondary" 
-                    [disabled]="currentPage <= 1"
-                    (click)="goToPage(currentPage - 1)"
-                    [class.disabled]="currentPage <= 1">
-              <i class="bi bi-chevron-left"></i>
-              Previous
-            </button>
-            
-            <span class="mx-2 fw-semibold text-dark">
-              Page {{ currentPage }} of {{ getTotalPages() }}
-            </span>
-            
-            <button class="btn btn-sm btn-outline-secondary" 
-                    [disabled]="currentPage >= getTotalPages()"
-                    (click)="goToPage(currentPage + 1)"
-                    [class.disabled]="currentPage >= getTotalPages()">
-              Next
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-
-        <!-- Data Table Section -->
-        <div class="table-section" *ngIf="!isProcessingData">
-          <div class="modern-table-container">
-            <div class="table-responsive">
-              <table class="table modern-table">
-                <thead class="table-header">
-                  <tr>
-                    <th class="header-cell text-center" style="width: 5%;">Row</th>
-                    <th class="sortable header-cell" (click)="onSort('callNbr')" [ngClass]="getSortClass('callNbr')" style="width: 8%;">
-                      <div class="header-content">
-                        <span class="header-text">Job No</span>
-                        <i [class]="'sort-icon ' + sortIcon('callNbr')"></i>
-                      </div>
-                    </th>
-                    <th class="header-cell text-center" style="width: 7%;">Assembled</th>
-                    <th class="header-cell text-center" style="width: 7%;">Reviewed</th>
-                    <th class="header-cell text-center" style="width: 4%;">QC</th>
-                    <th class="sortable header-cell" (click)="onSort('dcgPartNo')" [ngClass]="getSortClass('dcgPartNo')" style="width: 10%;">
-                      <div class="header-content">
-                        <span class="header-text">DCG Part</span>
-                        <i [class]="'sort-icon ' + sortIcon('dcgPartNo')"></i>
-                      </div>
-                    </th>
-                    <th class="sortable header-cell" (click)="onSort('siteID')" [ngClass]="getSortClass('siteID')" style="width: 10%;">
-                      <div class="header-content">
-                        <span class="header-text">Site ID</span>
-                        <i [class]="'sort-icon ' + sortIcon('siteID')"></i>
-                      </div>
-                    </th>
-                    <th class="sortable header-cell" (click)="onSort('make')" [ngClass]="getSortClass('make')" style="width: 7%;">
-                      <div class="header-content">
-                        <span class="header-text">Make</span>
-                        <i [class]="'sort-icon ' + sortIcon('make')"></i>
-                      </div>
-                    </th>
-                  <th class="sortable header-cell" (click)="onSort('model')" [ngClass]="getSortClass('model')" style="width: 8%;">
-                    <div class="header-content">
-                      <span class="header-text">Model</span>
-                      <i [class]="'sort-icon ' + sortIcon('model')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('quantity')" [ngClass]="getSortClass('quantity')" style="width: 5%;">
-                    <div class="header-content">
-                      <span class="header-text">Qty</span>
-                      <i [class]="'sort-icon ' + sortIcon('quantity')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('createdOn')" [ngClass]="getSortClass('createdOn')" style="width: 10%;">
-                    <div class="header-content">
-                      <span class="header-text">Created On</span>
-                      <i [class]="'sort-icon ' + sortIcon('createdOn')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('dueDate')" [ngClass]="getSortClass('dueDate')" style="width: 10%;">
-                    <div class="header-content">
-                      <span class="header-text">Projected DueDt</span>
-                      <i [class]="'sort-icon ' + sortIcon('dueDate')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('assignedTo')" [ngClass]="getSortClass('assignedTo')" style="width: 12%;">
-                    <div class="header-content">
-                      <span class="header-text">Assigned To</span>
-                      <i [class]="'sort-icon ' + sortIcon('assignedTo')"></i>
-                    </div>
-                  </th>
-                  <th class="header-cell" style="width: 10%;">Modified By</th>
-                </tr>
-              </thead>
-                <tbody class="table-body">
-                  <tr *ngFor="let item of displayedData; trackBy: trackByUniqueId; let i = index" 
-                      class="table-row modern-row" 
-                      [class]="getRowColorClass(item.dueDate || null)">
-                    <td class="data-cell text-center">
-                      <span class="cell-content">{{item.rowIndex}}</span>
-                    </td>
-                    <td class="data-cell">
-                      <span class="cell-content">{{item.callNbr}}</span>
-                    </td>
-                    <td class="data-cell text-center">
-                      <input type="checkbox" class="form-check-input modern-checkbox" 
-                             [checked]="isAssembled(item)"
-                             [disabled]="true"
-                             title="Assembly status (read-only)">
-                    </td>
-                    <td class="data-cell text-center">
-                      <input type="checkbox" class="form-check-input modern-checkbox" 
-                             [checked]="item.isPassed"
-                             [disabled]="true"
-                             title="Review status (read-only)">
-                    </td>
-                    <td class="data-cell text-center">
-                      <input type="checkbox" class="form-check-input modern-checkbox" 
-                             [checked]="isQualityChecked(item)"
-                             [disabled]="true"
-                             title="Quality control status (read-only)">
-                    </td>
-                    <td class="data-cell">
-                      <a href="javascript:void(0)" class="call-link" (click)="navigateToPartTestEntry(item.rowIndex)">
-                        <span class="cell-content" [title]="item.dcgPartNo">{{item.dcgPartNo}}</span>
-                      </a>
-                    </td>
-                    <td class="data-cell">
-                      <span class="cell-content" [title]="item.siteID">{{item.siteID}}</span>
-                    </td>
-                    <td class="data-cell">
-                      <span class="cell-content" [title]="item.make">{{item.make}}</span>
-                    </td>
-                    <td class="data-cell">
-                      <span class="cell-content" [title]="item.model">{{item.model}}</span>
-                    </td>
-                    <td class="data-cell text-center">
-                      <span class="cell-content">{{item.quantity}}</span>
-                    </td>
-                    <td class="data-cell">
-                      <span class="cell-content" [title]="formatDate(item.createdOn)">{{formatDate(item.createdOn)}}</span>
-                    </td>
-                    <td class="data-cell">
-                      <span class="cell-content" [title]="formatDate(item.dueDate || null)">{{formatDate(item.dueDate || null)}}</span>
-                    </td>
-                    <td class="data-cell name-cell">
-                      <span class="cell-content name-content" [title]="item.assignedTo">{{item.assignedTo}}</span>
-                    </td>
-                    <td class="data-cell name-cell">
-                      <span class="cell-content name-content" [title]="item.lastModifiedBy || item.createdBy">{{item.lastModifiedBy || item.createdBy}}</span>
-                    </td>
-                  </tr>
-                  <tr *ngIf="displayedData.length === 0">
-                    <td colspan="14" class="text-center text-muted py-4">
-                      <div class="empty-state">
-                        <i class="bi bi-inbox display-1 text-muted mb-3"></i>
-                        <h5 class="text-muted">No Data Available</h5>
-                        <p class="text-muted mb-0">Try adjusting your filters or check back later.</p>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom Modern Pagination Navigation -->
-        <div *ngIf="totalRecords > 0 && !isProcessingData && getTotalPages() > 1" class="d-flex justify-content-center mt-4 p-3">
-          <div class="d-flex align-items-center gap-2 bg-light rounded px-4 py-2">
-            <button class="btn btn-sm btn-outline-primary" 
-                    [disabled]="currentPage <= 1"
-                    (click)="goToPage(currentPage - 1)"
-                    [class.disabled]="currentPage <= 1">
-              <i class="bi bi-chevron-left"></i>
-              Previous
-            </button>
-            
-            <!-- Page Numbers (show only a few around current page) -->
-            <div class="d-flex align-items-center gap-1 mx-2">
-              <button *ngFor="let page of [].constructor(getTotalPages()); let i = index" 
-                      class="btn btn-sm"
-                      [class.btn-primary]="currentPage === i + 1"
-                      [class.btn-outline-secondary]="currentPage !== i + 1"
-                      [class.d-none]="!shouldShowPageNumber(i + 1)"
-                      (click)="goToPage(i + 1)">
-                {{ i + 1 }}
-              </button>
-            </div>
-            
-            <button class="btn btn-sm btn-outline-primary" 
-                    [disabled]="currentPage >= getTotalPages()"
-                    (click)="goToPage(currentPage + 1)"
-                    [class.disabled]="currentPage >= getTotalPages()">
-              Next
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
-        </div>
+      <!-- Records Per Page -->
+      <div class="d-flex align-items-center mb-3">
+        <label class="me-2 fw-semibold">Records per page:</label>
+        <select class="form-select form-select-sm w-auto"
+                (change)="changeItemsPerPage(+$any($event.target).value)">
+          <option value="10">10</option>
+          <option value="25">25</option>
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+        </select>
       </div>
+
+      <!-- Loading message -->
+      <div *ngIf="isLoading" class="text-center py-4 fw-semibold">
+        <div class="spinner-border text-primary me-2"></div>
+        {{ filterForm.get('archive')?.value
+            ? 'Loading archive data…'
+            : 'Loading active data…' }}
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-responsive"
+           *ngIf="!isLoading && displayedData.length > 0">
+
+        <table class="table table-bordered mb-0">
+          <thead>
+            <tr>
+              <th class="sortable"><div class="header-cell">Row No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable" (click)="onSort('callNbr')"><div class="header-cell">Job No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th><div class="header-cell">Assembled</div></th>
+              <th><div class="header-cell">Reviewed</div></th>
+              <th><div class="header-cell">QC</div></th>
+              <th class="sortable" (click)="onSort('dcgPartNo')"><div class="header-cell">DCG Part No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Site ID <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Make <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Model <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Qty <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable" (click)="onSort('createdOn')"><div class="header-cell">Created On <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable" (click)="onSort('dueDate')"><div class="header-cell">Projected DueDt <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Assigned To <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Modified By <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of displayedData"
+                [ngClass]="getRowColorClass(item.dueDate)">
+
+              <td class="text-center">{{ item.rowIndex }}</td>
+              <td>{{ item.callNbr }}</td>
+
+              <td class="text-center">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [checked]="isAssembled(item)" disabled>
+                  <span></span>
+                </label>
+              </td>
+
+              <td class="text-center">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [checked]="item.isPassed" disabled>
+                  <span></span>
+                </label>
+              </td>
+
+              <td class="text-center">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [checked]="isQualityChecked(item)" disabled>
+                  <span></span>
+                </label>
+              </td>
+
+              <td>
+                <a (click)="navigateToPartTestEntry(item.rowIndex)">
+                  {{ item.dcgPartNo }}
+                </a>
+              </td>
+
+              <td>{{ item.siteID }}</td>
+              <td>{{ item.make }}</td>
+              <td>{{ item.model }}</td>
+              <td class="text-center">{{ item.quantity }}</td>
+              <td>{{ formatDate(item.createdOn) }}</td>
+              <td>{{ formatDate(item.dueDate) }}</td>
+              <td>{{ item.assignedTo }}</td>
+              <td>{{ item.lastModifiedBy || item.createdBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-info text-center"
+           *ngIf="!isLoading && displayedData.length === 0">
+        No records to display
+      </div>
+
     </div>
   </div>
 </div>
