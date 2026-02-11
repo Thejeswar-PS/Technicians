@@ -53,14 +53,15 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   errorMessage: string = '';
   showBoardSetup: boolean = false;
   showDeleteConfirm: boolean = false;
-  showComponentWork: boolean = true; // Show component work section
-  showAssemblyQC: boolean = true; // Show assembly & QC section (hidden for retests)
+  showComponentWork: boolean = false; // divGrp1
+  showAssemblyQC: boolean = false; // divGrp3
   
   // Priority options matching legacy system
   priorityOptions = [
-    { value: 'H', label: 'High' },
-    { value: 'M', label: 'Medium' },
-    { value: 'L', label: 'Low' }
+    { value: 'Urgent', label: 'Within 7 days' },
+    { value: 'High', label: 'Within 14 Days' },
+    { value: 'Normal', label: 'Within 30 Days' },
+    { value: 'Atc', label: 'Within 60+ Days' }
   ];
   
   // Board setup status options
@@ -102,6 +103,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     // Load required data and setup component
     this.loadEmployeeData();
     this.setupQueryParamSubscription();
+    this.setupJobTypeSubscription();
   }
   
   ngOnDestroy(): void {
@@ -143,7 +145,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       workType12: [false], // Board Setup
       
       // Assignment and priority
-      priority: ['M'], // Default to Medium
+      priority: ['High'], // Default to legacy High
       createdBy: ['', Validators.required],
       assignedTo: ['', Validators.required],
       dueDate: [today.toISOString().split('T')[0], Validators.required], // Today's date in YYYY-MM-DD format
@@ -156,36 +158,38 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       resolveNotes: [''],
       
       // Component work section
-      boardSetup: ['P'], // Default to Pending
+      boardSetup: ['0'], // Default to Please Select
       compWorkDone1: [false], // Component work checkboxes
       compWorkDone2: [false],
       compWorkDone3: [false],
       compWorkDone4: [false],
       compWorkDone5: [false],
       compWorkDone6: [false],
-      partRepairStatus: [''],
+      partRepairStatus: ['0'],
       
       // Testing work section  
       testWorkDone1: [false], // Testing work checkboxes
       testWorkDone2: [false],
       testWorkDone3: [false],
-      testWorkDone4: [false],
-      testWorkStatus: ['N'], // Default to Not Started
+      testWorkStatus: ['0'], // Default to Please Select
       
       // Assembly work section
       assyWorkDone1: [false], // Assembly work checkboxes
       assyWorkDone2: [false],
       assyWorkDone3: [false],
-      assyProcFollowed: ['N'], // Default to No
-      assyWorkStatus: ['N'], // Default to Not Started
+      assyWorkDone4: [false],
+      assyWorkDone5: [false],
+      assyWorkDone6: [false],
+      assyProcFollowed: [''],
+      assyWorkStatus: ['0'],
       
       // QC work section
       qcWorkDone1: [false], // QC work checkboxes
       qcWorkDone2: [false],
       qcWorkDone3: [false],
-      qcProcFollowed: ['N'], // Default to No
-      qcApproved: ['N'], // Default to No
-      qcWorkStatus: ['N'], // Default to Not Started
+      qcProcFollowed: [''],
+      qcApproved: [''],
+      qcWorkStatus: ['0'],
       
       // Completion information
       completedBy: [''],
@@ -204,6 +208,12 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
         this.prepareNewEntry();
       }
     });
+  }
+
+  private setupJobTypeSubscription(): void {
+    this.editForm.get('jobFrom')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((value) => this.applyJobTypeVisibility(value));
   }
   
   private loadEmployeeData(): void {
@@ -275,7 +285,6 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
             }
             
             this.editingItem = this.convertRowToPartsTestInfo(row);
-            this.showAssemblyQC = false; // Hide Assembly & QC section for retests
             this.saveMessage = ''; // Clear any previous messages
           } else {
             this.handleError('No data found for the specified entry');
@@ -304,7 +313,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
           this.autoGenId = response.maxRowIndex.toString();
           
           this.editingItem = null;
-          this.showAssemblyQC = true; // Show Assembly & QC section for new tests
+          this.applyJobTypeVisibility(this.editForm.get('jobFrom')?.value || '1');
           this.saveMessage = '';
           this.errorMessage = '';
         }
@@ -339,11 +348,14 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     let matchingEmployee = this.ptEmployees.find(emp => {
       const normalizedEmpName = emp.empName.toLowerCase();
       const normalizedEmpID = emp.empID.toLowerCase();
+      const normalizedWindowsID = (emp.windowsID || '').toLowerCase();
       
-      return normalizedEmpName === normalizedCreatedBy || normalizedEmpID === normalizedCreatedBy;
+      return normalizedEmpName === normalizedCreatedBy
+        || normalizedEmpID === normalizedCreatedBy
+        || normalizedWindowsID === normalizedCreatedBy;
     });
-    
-    const resolvedCreatedBy = matchingEmployee ? matchingEmployee.empID : createdByValue;
+
+    const resolvedCreatedBy = matchingEmployee?.windowsID || createdByValue;
     
     // Find matching assigned employee by case-insensitive name or ID comparison
     const assignedToValue = row.AssignedTo || row.assignedTo || '';
@@ -355,8 +367,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       
       return normalizedEmpName === normalizedAssignedTo || normalizedEmpID === normalizedAssignedTo;
     });
-    
-    const resolvedAssignedTo = matchingAssignedEmployee ? matchingAssignedEmployee.empID : assignedToValue;
+
+    const resolvedAssignedTo = matchingAssignedEmployee?.empName || assignedToValue;
     
     // Populate basic information
     this.editForm.patchValue({
@@ -384,14 +396,14 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       resolveNotes: row.ResolveNotes || row.resolveNotes || '',
       
       // Work stages
-      boardSetup: row.BoardSetupStatus || row.boardSetupStatus || 'P',
-      testWorkStatus: row.TestWorkStatus || row.testWorkStatus || 'N',
-      partRepairStatus: row.CompWorkStatus || row.compWorkStatus || '', 
-      assyWorkStatus: row.AssyWorkStatus || row.assyWorkStatus || 'N',
-      assyProcFollowed: row.AssyProcFollowed || row.assyProcFollowed || 'N',
-      qcWorkStatus: row.QCWorkStatus || row.qcWorkStatus || 'N',
-      qcProcFollowed: row.QCProcFollowed || row.qcProcFollowed || 'N',
-      qcApproved: row.QCApproved || row.qcApproved || 'N',
+      boardSetup: row.BoardSetupStatus || row.boardSetupStatus || '0',
+      testWorkStatus: row.TestWorkStatus || row.testWorkStatus || '0',
+      partRepairStatus: row.CompWorkStatus || row.compWorkStatus || '0', 
+      assyWorkStatus: row.AssyWorkStatus || row.assyWorkStatus || '0',
+      assyProcFollowed: row.AssyProcFollowed || row.assyProcFollowed || '',
+      qcWorkStatus: row.QCWorkStatus || row.qcWorkStatus || '0',
+      qcProcFollowed: row.QCProcFollowed || row.qcProcFollowed || '',
+      qcApproved: row.QCApproved || row.qcApproved || '',
       
       completedBy: row.CompletedBy || row.completedBy || '',
       reviewedBy: row.ReviewedBy || row.reviewedBy || '',
@@ -403,6 +415,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     
     // Populate work stage checkboxes
     this.populateWorkStageCheckboxes(row);
+    this.applyJobTypeVisibility(this.editForm.get('jobFrom')?.value || '1');
   }
   
   private populateWorkTypeCheckboxes(workType: string): void {
@@ -421,28 +434,40 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   
   private populateWorkStageCheckboxes(row: any): void {
     // Component work done - check multiple field name variations
-    const compWorkDone = (row.CompWorkDone || row.compWorkDone || row.CompWOrkDone || '').split(',').map((t: string) => t.trim()).filter((t: string) => t);
-    this.setCheckboxValues('compWorkDone', compWorkDone, 6);
+    const compWorkDone = (row.CompWorkDone || row.compWorkDone || row.CompWOrkDone || '')
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter((t: string) => t);
+    this.setCheckboxValuesByOptions('compWorkDone', compWorkDone, ['1', '2', '3', '4', '5', '6']);
     
     // Test work done
-    const testWorkDone = (row.TestWorkDone || row.testWorkDone || '').split(',').map((t: string) => t.trim()).filter((t: string) => t);
-    this.setCheckboxValues('testWorkDone', testWorkDone, 4);
+    const testWorkDone = (row.TestWorkDone || row.testWorkDone || '')
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter((t: string) => t);
+    this.setCheckboxValuesByOptions('testWorkDone', testWorkDone, ['1', '2', '3']);
     
-    // Assembly work done
-    const assyWorkDone = (row.AssyWorkDone || row.assyWorkDone || '').split(',').map((t: string) => t.trim()).filter((t: string) => t);
-    this.setCheckboxValues('assyWorkDone', assyWorkDone, 3);
+    // Assembly work done (non-contiguous values)
+    const assyWorkDone = (row.AssyWorkDone || row.assyWorkDone || '')
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter((t: string) => t);
+    this.setCheckboxValuesByOptions('assyWorkDone', assyWorkDone, ['1', '2', '4', '5', '6', '7']);
     
     // QC work done
-    const qcWorkDone = (row.QCWorkDone || row.qcWorkDone || '').split(',').map((t: string) => t.trim()).filter((t: string) => t);
-    this.setCheckboxValues('qcWorkDone', qcWorkDone, 3);
+    const qcWorkDone = (row.QCWorkDone || row.qcWorkDone || '')
+      .split(',')
+      .map((t: string) => t.trim())
+      .filter((t: string) => t);
+    this.setCheckboxValuesByOptions('qcWorkDone', qcWorkDone, ['1', '2', '3']);
   }
   
-  private setCheckboxValues(prefix: string, selectedValues: string[], maxCount: number): void {
-    for (let i = 1; i <= maxCount; i++) {
-      const controlName = `${prefix}${i}`;
-      const isSelected = selectedValues.includes(i.toString());
+  private setCheckboxValuesByOptions(prefix: string, selectedValues: string[], optionValues: string[]): void {
+    optionValues.forEach((value, index) => {
+      const controlName = `${prefix}${index + 1}`;
+      const isSelected = selectedValues.includes(value);
       this.editForm.get(controlName)?.setValue(isSelected);
-    }
+    });
   }
   
   private convertRowToPartsTestInfo(row: any): PartsTestInfo {
@@ -460,6 +485,9 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     if (!this.editForm.valid) {
       this.markFormGroupTouched(this.editForm);
       this.toastr.error('Please correct the validation errors', 'Form Invalid');
+      return;
+    }
+    if (!this.validateLegacyRules()) {
       return;
     }
     
@@ -502,9 +530,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     const formValue = this.editForm.value;
     const username = this.authService.currentUserValue?.userName || 'System';
     
-    // Convert empID back to empName for backend (backend expects names)
-    const createdByEmployee = this.ptEmployees.find(emp => emp.empID === formValue.createdBy);
-    const assignedToEmployee = this.tcEmployees.find(emp => emp.empID === formValue.assignedTo);
+    // Created By uses WindowsID in legacy; Assigned To uses EmpName
+    const createdByEmployee = this.ptEmployees.find(emp => emp.windowsID === formValue.createdBy);
     
     return {
       jobFrom: formValue.jobFrom || '1',
@@ -519,7 +546,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       workType: this.getSelectedWorkTypes(),
       description: formValue.description || '',
       priority: formValue.priority || 'M',
-      assignedTo: assignedToEmployee?.empName || formValue.assignedTo || '',
+      assignedTo: formValue.assignedTo || '',
       dueDate: new Date(formValue.dueDate),
       submittedDate: formValue.submittedDate ? new Date(formValue.submittedDate) : undefined,
       kva: formValue.kva || '',
@@ -527,22 +554,22 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       problemNotes: formValue.problemNotes || '',
       resolveNotes: formValue.resolveNotes || '',
       rowIndex: this.rowIndex,
-      boardStatus: formValue.boardSetup || 'P',
-      compWorkDone: this.getSelectedWorkStageItems('compWorkDone', 6),
-      compWorkStatus: 'N', // Default value since dropdown was removed
-      testWorkDone: this.getSelectedWorkStageItems('testWorkDone', 4),
-      testWorkStatus: formValue.testWorkStatus || 'N',
+      boardStatus: formValue.boardSetup || '0',
+      compWorkDone: this.getSelectedWorkStageItemsByOptions('compWorkDone', ['1', '2', '3', '4', '5', '6']),
+      compWorkStatus: formValue.partRepairStatus || '',
+      testWorkDone: this.getSelectedWorkStageItemsByOptions('testWorkDone', ['1', '2', '3']),
+      testWorkStatus: formValue.testWorkStatus || '0',
       completedBy: formValue.completedBy || '',
       reviewedBy: formValue.reviewedBy || '',
       isPassed: formValue.isPassed || false,
-      assyWorkDone: this.getSelectedWorkStageItems('assyWorkDone', 3),
-      assyProcFollowed: formValue.assyProcFollowed || 'N',
-      assyWorkStatus: formValue.assyWorkStatus || 'N',
-      qcWorkDone: this.getSelectedWorkStageItems('qcWorkDone', 3),
-      qcProcFollowed: formValue.qcProcFollowed || 'N',
-      qcApproved: formValue.qcApproved || 'N',
-      qcWorkStatus: formValue.qcWorkStatus || 'N',
-      createdBy: createdByEmployee?.empName || formValue.createdBy || '',
+      assyWorkDone: this.getSelectedWorkStageItemsByOptions('assyWorkDone', ['1', '2', '4', '5', '6', '7']),
+      assyProcFollowed: formValue.assyProcFollowed || '',
+      assyWorkStatus: formValue.assyWorkStatus || '0',
+      qcWorkDone: this.getSelectedWorkStageItemsByOptions('qcWorkDone', ['1', '2', '3']),
+      qcProcFollowed: formValue.qcProcFollowed || '',
+      qcApproved: formValue.qcApproved || '',
+      qcWorkStatus: formValue.qcWorkStatus || '0',
+      createdBy: createdByEmployee?.windowsID || formValue.createdBy || '',
       approved: formValue.approved || false,
       lastModifiedBy: username
     };
@@ -561,15 +588,15 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     return selectedTypes.join(',');
   }
   
-  private getSelectedWorkStageItems(prefix: string, maxCount: number): string {
+  private getSelectedWorkStageItemsByOptions(prefix: string, optionValues: string[]): string {
     const formValue = this.editForm.value;
     const selectedItems: string[] = [];
     
-    for (let i = 1; i <= maxCount; i++) {
-      if (formValue[`${prefix}${i}`]) {
-        selectedItems.push(i.toString());
+    optionValues.forEach((value, index) => {
+      if (formValue[`${prefix}${index + 1}`]) {
+        selectedItems.push(value);
       }
-    }
+    });
     
     return selectedItems.join(',');
   }
@@ -682,6 +709,19 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   get isAddEntryEnabled(): boolean {
     return !this.isLoading && !this.isSaving;
   }
+
+  get isBoardSetupJob(): boolean {
+    return this.getJobTypeValue() === '7';
+  }
+
+  get isAssemblyJob(): boolean {
+    const jobType = this.getJobTypeValue();
+    return jobType === '1' || jobType === '2' || jobType === '4';
+  }
+
+  get isComponentJob(): boolean {
+    return !this.isBoardSetupJob && !this.isAssemblyJob;
+  }
   
   // Employee helper methods
   getEmployeeOptions(): EmployeeDto[] {
@@ -733,8 +773,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
   
   onJobTypeChange(jobType: string): void {
-    // Handle any specific logic when job type changes
-    // This could include clearing or setting other fields based on job type
+    this.applyJobTypeVisibility(jobType);
   }
   
   // Utility methods for data conversion
@@ -767,11 +806,146 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
   
   onPassedCheck(): void {
-    // Handle passed checkbox change if needed
     const isPassed = this.editForm.get('isPassed')?.value;
-    if (isPassed) {
-      // Could auto-set some fields when passed is checked
+    if (!isPassed) {
+      return;
     }
+
+    const reviewedBy = this.editForm.get('reviewedBy')?.value;
+    const assyStatus = this.editForm.get('assyWorkStatus')?.value;
+    const completedBy = this.editForm.get('completedBy')?.value;
+
+    if (!reviewedBy) {
+      this.toastr.error('Select Reviewed By before marking Passed', 'Validation');
+      this.editForm.get('isPassed')?.setValue(false);
+      return;
+    }
+    if (assyStatus !== '1') {
+      this.toastr.error('Assembly Status must be Completed before marking Passed', 'Validation');
+      this.editForm.get('isPassed')?.setValue(false);
+      return;
+    }
+    if (!completedBy) {
+      this.toastr.error('Select Completed By before marking Passed', 'Validation');
+      this.editForm.get('isPassed')?.setValue(false);
+      return;
+    }
+  }
+
+  onApprovedChange(): void {
+    const approved = this.editForm.get('approved')?.value;
+    if (!approved) {
+      return;
+    }
+
+    const jobType = this.getJobTypeValue();
+    const boardSetup = this.editForm.get('boardSetup')?.value;
+    const testingWork = this.editForm.get('testWorkStatus')?.value;
+    const assyWork = this.editForm.get('assyWorkStatus')?.value;
+    const qcStatus = this.editForm.get('qcWorkStatus')?.value;
+    const completedBy = this.editForm.get('completedBy')?.value;
+    const reviewedBy = this.editForm.get('reviewedBy')?.value;
+
+    if (jobType === '7') {
+      if (boardSetup !== '1') {
+        this.toastr.error('Board setup must be Completed before approval', 'Validation');
+        this.editForm.get('approved')?.setValue(false);
+      }
+      return;
+    }
+
+    if (testingWork !== '1' || assyWork !== '1' || qcStatus !== '1' || !completedBy || !reviewedBy) {
+      this.toastr.error('You cannot approve this because the status is not completed', 'Validation');
+      this.editForm.get('approved')?.setValue(false);
+    }
+  }
+
+  private applyJobTypeVisibility(jobType: string): void {
+    const normalizedJobType = String(jobType || '');
+    if (normalizedJobType === '7') {
+      this.showBoardSetup = true;
+      this.showComponentWork = false;
+      this.showAssemblyQC = false;
+      return;
+    }
+
+    if (normalizedJobType === '1' || normalizedJobType === '2' || normalizedJobType === '4') {
+      this.showBoardSetup = false;
+      this.showComponentWork = false;
+      this.showAssemblyQC = true;
+      return;
+    }
+
+    this.showBoardSetup = false;
+    this.showComponentWork = true;
+    this.showAssemblyQC = false;
+  }
+
+  private validateLegacyRules(): boolean {
+    const formValue = this.editForm.value;
+
+    if (this.getSelectedWorkTypes().length === 0) {
+      this.toastr.error('You must check at least one checkbox in Work Type', 'Validation');
+      return false;
+    }
+
+    const dueDateValue = formValue.dueDate ? new Date(formValue.dueDate) : null;
+    if (!dueDateValue || isNaN(dueDateValue.getTime())) {
+      this.toastr.error('Please enter Due Date', 'Validation');
+      return false;
+    }
+
+    if (this.rowIndex === 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (dueDateValue < today) {
+        this.toastr.error("Due Date must be greater than today's date", 'Validation');
+        return false;
+      }
+      const daysDiff = Math.floor((Date.UTC(dueDateValue.getFullYear(), dueDateValue.getMonth(), dueDateValue.getDate())
+        - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / (1000 * 60 * 60 * 24));
+      const priority = formValue.priority;
+      const limitMap: { [key: string]: number } = {
+        Urgent: 7,
+        High: 30,
+        Normal: 90
+      };
+      const limit = limitMap[priority];
+      if (limit && daysDiff > limit) {
+        this.toastr.error(`If you select priority as ${priority} then Due Date must be within ${limit} Days.`, 'Validation');
+        return false;
+      }
+    }
+
+    if (formValue.testWorkStatus === '1' && !formValue.resolveNotes) {
+      this.toastr.error('Please enter after testing notes and resave your Part', 'Validation');
+      return false;
+    }
+
+    const jobType = this.getJobTypeValue();
+    if (jobType === '1' || jobType === '2' || jobType === '4') {
+      if (formValue.qcWorkStatus === '1') {
+        const qcWorkDone = this.getSelectedWorkStageItemsByOptions('qcWorkDone', ['1', '2', '3']);
+        if (!qcWorkDone) {
+          this.toastr.error('You cannot update without checking QC - WorkDone', 'Validation');
+          return false;
+        }
+        if (!formValue.qcProcFollowed) {
+          this.toastr.error('You cannot update without checking QC - Procedures Followed', 'Validation');
+          return false;
+        }
+        if (!formValue.qcApproved) {
+          this.toastr.error('You cannot update without checking Quality Approved', 'Validation');
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }
+
+  private getJobTypeValue(): string {
+    return String(this.editForm.get('jobFrom')?.value || '');
   }
   
   onTextareaInput(event: Event): void {
