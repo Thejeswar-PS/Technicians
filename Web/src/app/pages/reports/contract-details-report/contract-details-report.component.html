@@ -59,20 +59,20 @@
           <div class="col-md-12">
             <div class="filter-group mb-0">
               <label class="filter-label">
-                <i class="bi bi-person me-1"></i>
-                Sales Person
+                <i class="bi bi-building me-1"></i>
+                Customer Name
               </label>
               <div class="position-relative">
                 <input 
                   type="text" 
-                  id="salesPersonFilter" 
+                  id="customerNameFilter" 
                   class="form-control modern-select" 
-                  placeholder="Type to filter by Sales Person name..."
-                  [(ngModel)]="salesPersonFilter" 
-                  (input)="onSalesPersonFilterChange()"
+                  placeholder="Type to filter by Customer Name..."
+                  [(ngModel)]="customerNameFilter" 
+                  (input)="onCustomerNameFilterChange()"
                   [disabled]="loading">
-                <small class="d-block text-muted mt-1" *ngIf="salesPersonFilter">
-                  Filtering by: <strong>{{ salesPersonFilter }}</strong>
+                <small class="d-block text-muted mt-1" *ngIf="customerNameFilter">
+                  Filtering by: <strong>{{ customerNameFilter }}</strong>
                 </small>
               </div>
             </div>

@@ -540,15 +540,9 @@ export class SccReadingsComponent implements OnInit {
       reconciliation: this.equipmentService.saveEquipReconciliationInfo(reconciliationData)
     }).subscribe({
       next: (results) => {
-        // Calculate equipment status
-        this.calculateEquipStatusFromAPI().then(calculatedStatus => {
-          // Update equipment status
-          this.updateEquipmentStatus(calculatedStatus);
-        }).catch(error => {
-          console.error('Error calculating status:', error);
-          this.saving = false;
-          this.toastr.error('SCC saved but failed to update status');
-        });
+        // Use status from form input
+        const statusFromForm = this.equipmentVerificationForm.value.status;
+        this.updateEquipmentStatus(statusFromForm);
       },
       error: (error) => {
         console.error('Error saving SCC:', error);
@@ -624,14 +618,6 @@ export class SccReadingsComponent implements OnInit {
   }
 
   private updateEquipmentStatus(calculatedStatus: string): void {
-    // Legacy validation: if status is not Online, StatusNotes is required
-    if (calculatedStatus !== 'Online' && !this.equipmentVerificationForm.value.statusNotes) {
-      this.saving = false;
-      this.errorMessage = 'Please enter the reason for Equipment Status.';
-      this.toastr.error(this.errorMessage);
-      return;
-    }
-
     // Get manufacturer text from dropdown
     const manufacturerValue = this.equipmentVerificationForm.value.manufacturer;
     const manufacturer = this.manufacturers.find(m => m.value === manufacturerValue);

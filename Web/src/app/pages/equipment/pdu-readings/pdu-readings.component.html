@@ -430,7 +430,7 @@
             <!-- Input Configuration Dropdown -->
             <div class="config-item d-flex align-items-center">
               <label class="form-label mb-0 me-2 fw-semibold text-white input-label">
-                <i class="bi bi-arrow-down-circle me-1"></i>Input:
+                <i class="bi bi-arrow-down-circle me-1"></i>Input Configuration:
               </label>
               <select
                 class="form-select form-select-sm custom-select"
@@ -438,18 +438,15 @@
                 (change)="onInputVoltageChange($any($event.target).value)"
                 style="min-width: 150px; max-width: 150px;"
               >
-                <option value="0">Select...</option>
-                <option value="1">120V</option>
-                <option value="2">240V</option>
-                <option value="3">208V</option>
-                <option value="4">480V</option>
-                <option value="6">575V</option>
-                <option value="5">600V</option>
+                <option value="">Select...</option>
+                <option *ngFor="let config of voltageConfigs" [value]="config.id">
+                  {{ config.name }}
+                </option>
               </select>
             </div>
 
             <!-- Tolerance Display -->
-            <div class="tolerance-info d-flex align-items-center" *ngIf="selectedInputVoltage && selectedInputVoltage !== '0'">
+            <div class="tolerance-info d-flex align-items-center" *ngIf="selectedInputVoltage && selectedInputVoltage !== ''">
               <div class="d-flex flex-column">
                 <small class="text-primary fw-semibold mb-1">
                   <i class="bi bi-info-circle me-1"></i>
@@ -1878,7 +1875,7 @@
             <!-- Output Configuration Dropdown -->
             <div class="config-item d-flex align-items-center">
               <label class="form-label mb-0 me-2 fw-semibold text-white input-label">
-                <i class="bi bi-arrow-up-circle me-1"></i>Output:
+                <i class="bi bi-arrow-up-circle me-1"></i>Output Configuration:
               </label>
               <select
                 class="form-select form-select-sm custom-select"
@@ -1886,18 +1883,15 @@
                 (change)="onOutputVoltageChange($any($event.target).value)"
                 style="min-width: 150px; max-width: 150px;"
               >
-                <option value="0">Select...</option>
-                <option value="1">120V</option>
-                <option value="2">240V</option>
-                <option value="3">208V</option>
-                <option value="4">480V</option>
-                <option value="6">575V</option>
-                <option value="5">600V</option>
+                <option value="">Select...</option>
+                <option *ngFor="let config of outputVoltageConfigs" [value]="config.id">
+                  {{ config.name }}
+                </option>
               </select>
             </div>
 
             <!-- Tolerance Display -->
-            <div class="tolerance-info d-flex align-items-center" *ngIf="selectedOutputVoltage && selectedOutputVoltage !== '0'">
+            <div class="tolerance-info d-flex align-items-center" *ngIf="selectedOutputVoltage && selectedOutputVoltage !== ''">
               <div class="d-flex flex-column">
                 <small class="text-primary fw-semibold mb-1">
                   <i class="bi bi-info-circle me-1"></i>

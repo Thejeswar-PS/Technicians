@@ -312,7 +312,7 @@ export class AtsReadingsComponent implements OnInit {
               shouldCheckStatus = true;
             }
           } else {
-            if (tempField === 'N' || tempField === 'F' || tempField === 'True' || tempField === '12' || tempField === 'W') {
+            if (tempField === 'N' || tempField === 'F' || tempField === 'True' /*|| tempField === '12' */|| tempField === 'W') {
               shouldCheckStatus = true;
             }
           }

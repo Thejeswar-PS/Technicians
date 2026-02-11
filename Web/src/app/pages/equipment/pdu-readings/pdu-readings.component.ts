@@ -259,7 +259,7 @@ export class PduReadingsComponent implements OnInit {
 
     // Input Power Form
     this.inputForm = this.fb.group({
-      inputVoltage: ['0'],
+      inputVoltage: [''],
       inputFilterCurrent: [false],
       inputThdPercent: [false],
       // 120V Input
@@ -360,7 +360,7 @@ export class PduReadingsComponent implements OnInit {
 
     // Output Power Form
     this.outputForm = this.fb.group({
-      outputVoltage: ['0'],
+      outputVoltage: [''],
       outputFilterCurrent: [false],
       outputThdPercent: [false],
       // 120V Output
@@ -1157,7 +1157,9 @@ export class PduReadingsComponent implements OnInit {
     switch (voltage) {
       case '1': this.showInput120 = true; break;
       case '2': this.showInput240 = true; break;
-      case '3': this.showInput208 = true; break;
+      case '3': 
+      case '7':
+      case '8': this.showInput208 = true; break;
       case '4': this.showInput480 = true; break;
       case '6': this.showInput575 = true; break;
       case '5': this.showInput600 = true; break;
@@ -1179,7 +1181,9 @@ export class PduReadingsComponent implements OnInit {
     switch (voltage) {
       case '1': this.showOutput120 = true; break;
       case '2': this.showOutput240 = true; break;
-      case '3': this.showOutput208 = true; break;
+      case '3':
+      case '7':
+      case '8': this.showOutput208 = true; break;
       case '4': this.showOutput480 = true; break;
       case '6': this.showOutput575 = true; break;
       case '5': this.showOutput600 = true; break;
@@ -1203,28 +1207,14 @@ export class PduReadingsComponent implements OnInit {
 
   // Get input voltage tolerance based on selected voltage
   getInputVoltageTolerance(voltage: string): string {
-    switch(voltage) {
-      case '1': return '110V - 130V';  // 120V
-      case '2': return '228V - 252V';  // 240V
-      case '3': return '192V - 224V';  // 208V
-      case '4': return '455V - 505V';  // 480V
-      case '6': return '545V - 605V';  // 575V
-      case '5': return '570V - 630V';  // 600V
-      default: return '';
-    }
+    const config = this.voltageConfigs.find(c => c.id === voltage);
+    return config ? config.tolerance : '';
   }
 
   // Get output voltage tolerance based on selected voltage
   getOutputVoltageTolerance(voltage: string): string {
-    switch(voltage) {
-      case '1': return '114V - 126V';  // 120V
-      case '2': return '228V - 252V';  // 240V
-      case '3': return '197V - 219V';  // 208V
-      case '4': return '460V - 500V';  // 480V
-      case '6': return '547V - 603V';  // 575V
-      case '5': return '580V - 620V';  // 600V
-      default: return '';
-    }
+    const config = this.outputVoltageConfigs.find(c => c.id === voltage);
+    return config ? config.tolerance : '';
   }
 
   // Calculate load percentage

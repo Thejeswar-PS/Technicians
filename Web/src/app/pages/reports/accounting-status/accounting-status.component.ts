@@ -76,7 +76,7 @@ export class AccountingStatusComponent implements OnInit {
       }],
       chart: {
         type: 'bar',
-        height: 450,
+        height: 550,
         animations: { enabled: false },
         toolbar: { show: true },
         events: {
@@ -112,29 +112,41 @@ export class AccountingStatusComponent implements OnInit {
       dataLabels: {
         enabled: true,
         formatter: (val: number) => val.toString(),
-        style: { fontSize: '11px', fontWeight: 'bold' }
+        style: { fontSize: '16px', fontWeight: 'bold' },
+        offsetY: -5
       },
       xaxis: {
         categories: categories,
-        title: { text: '', style: { fontSize: '12px', fontWeight: 'bold' } },
+        title: { text: '', style: { fontSize: '18px', fontWeight: 'bold' } },
         labels: {
           rotate: -45,
           rotateAlways: true,
-          hideOverlappingLabels: true,
-          style: { fontSize: '10px', fontWeight: 'bold' }
+          hideOverlappingLabels: false,
+          trim: false,
+          style: { fontSize: '16px', fontWeight: 'bold' },
+          offsetY: 10,
+          maxHeight: 200
         }
       },
       yaxis: {
-        title: { text: 'No of Jobs', style: { fontSize: '12px', fontWeight: 'bold' } },
-        labels: { formatter: (val: number) => Math.round(val).toString() }
+        title: { text: 'No of Jobs', style: { fontSize: '18px', fontWeight: 'bold' } },
+        labels: { 
+          formatter: (val: number) => Math.round(val).toString(),
+          style: { fontSize: '16px', fontWeight: 'bold' }
+        }
       },
       title: {
         text: 'DC Group - Accounting Status',
         align: 'center',
-        style: { fontSize: '18px', fontWeight: 'bold', color: '#1f2937' }
+        style: { fontSize: '22px', fontWeight: 'bold', color: '#1f2937' }
       },
       tooltip: { enabled: true, y: { formatter: (val: number) => val.toString() + ' Jobs' } },
-      grid: { borderColor: '#e7e7e7' }
+      grid: { 
+        borderColor: '#e7e7e7',
+        padding: {
+          bottom: 80
+        }
+      }
     };
 
     this.cdr.markForCheck();
@@ -152,7 +164,7 @@ export class AccountingStatusComponent implements OnInit {
       }],
       chart: {
         type: 'bar',
-        height: 450,
+        height: 550,
         animations: { enabled: false },
         toolbar: { show: true },
         events: {
@@ -188,29 +200,41 @@ export class AccountingStatusComponent implements OnInit {
       dataLabels: {
         enabled: true,
         formatter: (val: number) => val.toString(),
-        style: { fontSize: '11px', fontWeight: 'bold' }
+        style: { fontSize: '16px', fontWeight: 'bold' },
+        offsetY: -5
       },
       xaxis: {
         categories: categories,
-        title: { text: '', style: { fontSize: '12px', fontWeight: 'bold' } },
+        title: { text: '', style: { fontSize: '18px', fontWeight: 'bold' } },
         labels: {
-          rotate: -90,
+          rotate: -45,
           rotateAlways: true,
-          hideOverlappingLabels: true,
-          style: { fontSize: '11px', fontWeight: 'bold' }
+          hideOverlappingLabels: false,
+          trim: false,
+          style: { fontSize: '16px', fontWeight: 'bold' },
+          offsetY: 10,
+          maxHeight: 200
         }
       },
       yaxis: {
-        title: { text: 'No of Contracts', style: { fontSize: '12px', fontWeight: 'bold' } },
-        labels: { formatter: (val: number) => Math.round(val).toString() }
+        title: { text: 'No of Contracts', style: { fontSize: '18px', fontWeight: 'bold' } },
+        labels: { 
+          formatter: (val: number) => Math.round(val).toString(),
+          style: { fontSize: '16px', fontWeight: 'bold' }
+        }
       },
       title: {
         text: 'DC Group - Contract Billing Status Graph',
         align: 'center',
-        style: { fontSize: '16px', fontWeight: 'bold', color: '#1f2937' }
+        style: { fontSize: '22px', fontWeight: 'bold', color: '#1f2937' }
       },
       tooltip: { enabled: true, y: { formatter: (val: number) => val.toString() + ' Contracts' } },
-      grid: { borderColor: '#e7e7e7' }
+      grid: { 
+        borderColor: '#e7e7e7',
+        padding: {
+          bottom: 80
+        }
+      }
     };
 
     this.cdr.markForCheck();

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
@@ -94,7 +95,7 @@ export class PastDueContractDetailsComponent implements OnInit {
     responsive: []
   };
 
-  constructor(private reportService: ReportService) {}
+  constructor(private reportService: ReportService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -357,5 +358,9 @@ export class PastDueContractDetailsComponent implements OnInit {
         }
       }]
     };
+  }
+
+  goBack(): void {
+    this.router.navigate(['/reports']);
   }
 }
