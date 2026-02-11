@@ -139,7 +139,9 @@ export interface PDUEquipInfo {
 }
 
 export interface VoltageConfiguration {
-  value: string;
+  id?: string;        // Unique identifier for the configuration
+  name?: string;      // Display name like "120 I Phase", "208 III Phase"
+  value?: string;
   label: string;
   tolerance: string;
   phaseToNeutral: string;
@@ -147,21 +149,23 @@ export interface VoltageConfiguration {
 }
 
 export const VOLTAGE_CONFIGS: VoltageConfiguration[] = [
-  { value: '0', label: 'Select', tolerance: '', phaseToNeutral: '', freqTolerance: '' },
-  { value: '1', label: '120', tolerance: '110V - 130V', phaseToNeutral: '', freqTolerance: '55 Hz - 65 Hz' },
-  { value: '2', label: '240', tolerance: '110V - 130V', phaseToNeutral: '', freqTolerance: '55 Hz - 65 Hz' },
-  { value: '3', label: '208', tolerance: '192V - 224V', phaseToNeutral: '120V', freqTolerance: '55 Hz - 65 Hz' },
-  { value: '4', label: '480', tolerance: '455V - 505V', phaseToNeutral: '277V', freqTolerance: '55 Hz - 65 Hz' },
-  { value: '6', label: '575', tolerance: '545V - 605V', phaseToNeutral: '346V', freqTolerance: '55 Hz - 65 Hz' },
-  { value: '5', label: '600', tolerance: '570V - 630V', phaseToNeutral: '346V', freqTolerance: '55 Hz - 65 Hz' }
+  { id: '1', name: '120 I Phase', value: '1', label: '120 I Phase', tolerance: '110V - 130V', phaseToNeutral: '', freqTolerance: '55 Hz - 65 Hz' },
+  { id: '2', name: '240 II Phase', value: '2', label: '240 II Phase', tolerance: '110V - 130V', phaseToNeutral: '', freqTolerance: '55 Hz - 65 Hz' },
+  { id: '7', name: '208 I Phase', value: '7', label: '208 I Phase', tolerance: '192V - 224V', phaseToNeutral: '', freqTolerance: '55 Hz - 65 Hz' },
+  { id: '8', name: '208 II Phase', value: '8', label: '208 II Phase', tolerance: '192V - 224V', phaseToNeutral: '', freqTolerance: '55 Hz - 65 Hz' },
+  { id: '3', name: '208 III Phase', value: '3', label: '208 III Phase', tolerance: '192V - 224V', phaseToNeutral: '120V', freqTolerance: '55 Hz - 65 Hz' },
+  { id: '4', name: '480 III Phase', value: '4', label: '480 III Phase', tolerance: '455V - 505V', phaseToNeutral: '277V', freqTolerance: '55 Hz - 65 Hz' },
+  { id: '6', name: '575 III Phase', value: '6', label: '575 III Phase', tolerance: '545V - 605V', phaseToNeutral: '346V', freqTolerance: '55 Hz - 65 Hz' },
+  { id: '5', name: '600 III Phase', value: '5', label: '600 III Phase', tolerance: '570V - 630V', phaseToNeutral: '346V', freqTolerance: '55 Hz - 65 Hz' }
 ];
 
 export const OUTPUT_VOLTAGE_CONFIGS: VoltageConfiguration[] = [
-  { value: '0', label: 'Select', tolerance: '', phaseToNeutral: '', freqTolerance: '' },
-  { value: '1', label: '120', tolerance: '114V - 126V', phaseToNeutral: '', freqTolerance: '58 Hz - 62 Hz' },
-  { value: '2', label: '240', tolerance: '114V - 126V', phaseToNeutral: '', freqTolerance: '58 Hz - 62 Hz' },
-  { value: '3', label: '208', tolerance: '197V - 219V', phaseToNeutral: '120V', freqTolerance: '58 Hz - 62 Hz' },
-  { value: '4', label: '480', tolerance: '460V - 500V', phaseToNeutral: '277V', freqTolerance: '58 Hz - 62 Hz' },
-  { value: '6', label: '575', tolerance: '547V - 603V', phaseToNeutral: '346V', freqTolerance: '58 Hz - 62 Hz' },
-  { value: '5', label: '600', tolerance: '580V - 620V', phaseToNeutral: '346V', freqTolerance: '58 Hz - 62 Hz' }
+  { id: '1', name: '120 I Phase', value: '1', label: '120 I Phase', tolerance: '114V - 126V', phaseToNeutral: '', freqTolerance: '58 Hz - 62 Hz' },
+  { id: '2', name: '240 II Phase', value: '2', label: '240 II Phase', tolerance: '114V - 126V', phaseToNeutral: '', freqTolerance: '58 Hz - 62 Hz' },
+  { id: '7', name: '208 I Phase', value: '7', label: '208 I Phase', tolerance: '197V - 219V', phaseToNeutral: '', freqTolerance: '58 Hz - 62 Hz' },
+  { id: '8', name: '208 II Phase', value: '8', label: '208 II Phase', tolerance: '197V - 219V', phaseToNeutral: '', freqTolerance: '58 Hz - 62 Hz' },
+  { id: '3', name: '208 III Phase', value: '3', label: '208 III Phase', tolerance: '197V - 219V', phaseToNeutral: '120V', freqTolerance: '58 Hz - 62 Hz' },
+  { id: '4', name: '480 III Phase', value: '4', label: '480 III Phase', tolerance: '460V - 500V', phaseToNeutral: '277V', freqTolerance: '58 Hz - 62 Hz' },
+  { id: '6', name: '575 III Phase', value: '6', label: '575 III Phase', tolerance: '547V - 603V', phaseToNeutral: '346V', freqTolerance: '58 Hz - 62 Hz' },
+  { id: '5', name: '600 III Phase', value: '5', label: '600 III Phase', tolerance: '580V - 620V', phaseToNeutral: '346V', freqTolerance: '58 Hz - 62 Hz' }
 ];

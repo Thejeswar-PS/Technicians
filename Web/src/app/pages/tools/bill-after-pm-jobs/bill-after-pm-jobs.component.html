@@ -6,22 +6,16 @@
     </div>
   </div>
 
-  <div class="card shadow-sm main-card">
-    <div class="card-header border-0 py-4">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div class="text-center flex-grow-1">
-          <h3 class="fw-bold text-primary mb-0">Bill After PM Jobs</h3>
-          <div class="text-muted fw-bold fs-7 mt-1">Review and move jobs between Active and Archive</div>
-        </div>
-        <div>
-          <button class="btn btn-sm btn-primary" (click)="loadJobs()" [disabled]="loading">
-            <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-            {{ loading ? 'Loading...' : 'Refresh' }}
-          </button>
-        </div>
+  <div class="mb-4">
+    <div class="d-flex justify-content-center align-items-center">
+      <div class="text-center">
+        <h3 class="fw-bold text-primary mb-0" style="font-size: calc(1.75rem + 1pt);">Bill After PM Jobs</h3>
+        <div class="text-muted fw-bold fs-7 mt-1">Review and move jobs between Active and Archive</div>
       </div>
     </div>
+  </div>
 
+  <div class="card shadow-sm main-card">
     <div class="card-body">
       <!-- Message -->
       <div class="mb-4" *ngIf="message">
@@ -51,9 +45,12 @@
             <option *ngFor="let month of months" [value]="month.value">{{ month.text }}</option>
           </select>
         </div>
-        <div class="col-md-3 d-flex align-items-end">
-          <button class="btn btn-primary w-100" (click)="moveSelected()" [disabled]="loading">
+        <div class="col-md-3 d-flex align-items-end gap-2">
+          <button class="btn btn-primary flex-grow-1" (click)="moveSelected()" [disabled]="loading">
             <i class="bi bi-archive me-2"></i>{{ moveButtonText }}
+          </button>
+          <button class="btn btn-secondary" (click)="loadJobs()" [disabled]="loading">
+            <i class="bi bi-arrow-clockwise"></i>
           </button>
         </div>
       </div>

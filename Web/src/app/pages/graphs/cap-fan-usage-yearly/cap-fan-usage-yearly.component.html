@@ -162,7 +162,9 @@
             <table class="table table-sm table-bordered table-hover">
               <thead class="table-light sticky-top">
                 <tr>
-                  <th *ngFor="let col of getColumnKeys(capsData); trackBy: trackByIndex">{{ col }}</th>
+                  <th *ngFor="let col of getColumnKeys(capsData); trackBy: trackByIndex">
+                    {{ col === 'partNo' ? 'Cap Part No' : col }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -191,7 +193,9 @@
             <table class="table table-sm table-bordered table-hover">
               <thead class="table-light sticky-top">
                 <tr>
-                  <th *ngFor="let col of getColumnKeys(fansData); trackBy: trackByIndex">{{ col }}</th>
+                  <th *ngFor="let col of getColumnKeys(fansData); trackBy: trackByIndex">
+                    {{ col === 'partNo' ? 'Fan Part No' : col }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -220,7 +224,9 @@
             <table class="table table-sm table-bordered table-hover">
               <thead class="table-light sticky-top">
                 <tr>
-                  <th *ngFor="let col of getColumnKeys(battsData); trackBy: trackByIndex">{{ col }}</th>
+                  <th *ngFor="let col of getColumnKeys(battsData); trackBy: trackByIndex">
+                    {{ col === 'partNo' ? 'Battery Part No' : col }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -249,7 +255,9 @@
             <table class="table table-sm table-bordered table-hover">
               <thead class="table-light sticky-top">
                 <tr>
-                  <th *ngFor="let col of getColumnKeys(igbData); trackBy: trackByIndex">{{ col }}</th>
+                  <th *ngFor="let col of getColumnKeys(igbData); trackBy: trackByIndex">
+                    {{ col === 'partNo' ? 'IGB Part No' : col }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -278,7 +286,9 @@
             <table class="table table-sm table-bordered table-hover">
               <thead class="table-light sticky-top">
                 <tr>
-                  <th *ngFor="let col of getColumnKeys(scrData); trackBy: trackByIndex">{{ col }}</th>
+                  <th *ngFor="let col of getColumnKeys(scrData); trackBy: trackByIndex">
+                    {{ col === 'partNo' ? 'SCR Part No' : col }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -307,7 +317,9 @@
             <table class="table table-sm table-bordered table-hover">
               <thead class="table-light sticky-top">
                 <tr>
-                  <th *ngFor="let col of getColumnKeys(fusData); trackBy: trackByIndex">{{ col }}</th>
+                  <th *ngFor="let col of getColumnKeys(fusData); trackBy: trackByIndex">
+                    {{ col === 'partNo' ? 'FUS Part No' : col }}
+                  </th>
                 </tr>
               </thead>
               <tbody>

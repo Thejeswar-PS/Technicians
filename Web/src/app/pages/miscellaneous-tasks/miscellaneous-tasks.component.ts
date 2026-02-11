@@ -134,13 +134,25 @@ export class MiscellaneousTasksComponent implements OnInit {
     this.reportService.handleMiscTask(operation, this.jobNo).pipe(
       catchError(err => {
         console.error('Misc task failed', err);
-        this.showError('Error processing task. Please try again.');
-        return of({ success: false, message: '' });
+        const errorMsg = err?.error?.message || err?.message || 'Error processing task. Please try again.';
+        this.showError(errorMsg);
+        this.loading = false;
+        return of(null);
       })
     ).subscribe(response => {
       this.loading = false;
-      if (response.success || response.message?.includes('Success')) {
+      
+      if (!response) {
+        // Error was already handled in catchError
+        return;
+      }
+
+      // Check if operation was successful
+      if (response.success === true) {
         this.showSuccess(response.message || `Job ${operation} successful`);
+      } else if (response.success === false && response.message) {
+        // Show the specific error message from the API
+        this.showError(response.message);
       } else {
         this.showError(response.message || 'Operation failed');
       }
@@ -180,9 +192,20 @@ export class MiscellaneousTasksComponent implements OnInit {
       })
     ).subscribe(response => {
       this.loading = false;
-      if (response && response.jobNo) {
-        // Redirect to parts page
-        window.location.href = `/DTechJobParts.aspx?CallNbr=${response.jobNo}&TechName=${response.techName}`;
+      if (response && response.exists) {
+        // Extract call number and tech name from the API response
+        const data = response.data;
+        if (data && data.callNbr && data.techName) {
+          // Navigate to job-parts page with query parameters
+          this.router.navigate(['/jobs/parts'], {
+            queryParams: {
+              CallNbr: data.callNbr.trim(),
+              TechName: data.techName.trim()
+            }
+          });
+        } else {
+          this.showError('Invalid job data returned');
+        }
       } else {
         this.showError('Job not found. Job status should match Great Plains job status and Service Type is Open');
       }
