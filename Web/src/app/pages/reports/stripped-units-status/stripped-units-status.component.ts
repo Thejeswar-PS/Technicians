@@ -428,6 +428,26 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
     }
   }
 
+  getVisiblePages(): number[] {
+    const pages: number[] = [];
+    const maxVisible = 5;
+    
+    if (this.totalPages <= maxVisible) {
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      const start = Math.max(1, this.currentPage - 2);
+      const end = Math.min(this.totalPages, start + maxVisible - 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  }
+
   changeItemsPerPage(newSize: number): void {
     this.itemsPerPage = newSize;
     this.currentPage = 1;
@@ -619,6 +639,7 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
         return 'status-not-started';
     }
   }
+
 
   trackByRowIndex(index: number, item: StrippedUnitsStatusItem): number {
     return item.rowIndex;
