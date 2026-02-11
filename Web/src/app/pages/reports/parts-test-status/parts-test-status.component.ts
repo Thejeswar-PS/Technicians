@@ -9,6 +9,7 @@ import {
   PartsTestStatusResponse,
   MakeModelDto
 } from '../../../core/model/parts-test-status.model';
+import { EmployeeDto } from '../../../core/model/parts-test-info.model';
 
 @Component({
   selector: 'app-parts-test-status',
@@ -22,6 +23,7 @@ export class PartsTestStatusComponent implements OnInit {
   distinctMakes: MakeModelDto[] = [];
   distinctModels: MakeModelDto[] = [];
   modelsForSelectedMake: MakeModelDto[] = [];
+  technicians: EmployeeDto[] = [];
   
   // Form and filters
   filterForm: FormGroup;
@@ -31,12 +33,14 @@ export class PartsTestStatusComponent implements OnInit {
   isLoadingMakes: boolean = false;
   isLoadingModels: boolean = false;
   isProcessingData: boolean = false;
+  isLoadingTechnicians: boolean = false;
   
   // Pagination
   currentPage: number = 1;
-  pageSize: number = 25;
+  pageSize: number = 100;
   totalRecords: number = 0;
   displayedData: PartsTestStatusDto[] = [];
+  totalPages: number = 0;
   
   // Sorting
   sortColumn: string = '';
@@ -44,6 +48,9 @@ export class PartsTestStatusComponent implements OnInit {
   
   // Error handling
   errorMessage: string = '';
+  
+  // Make Math available in template
+  Math = Math;
   
   // Job type options matching legacy system
   jobTypeOptions = [
@@ -55,14 +62,6 @@ export class PartsTestStatusComponent implements OnInit {
     { value: '7', label: 'Board Setup' },
     { value: '6', label: 'Retest' }
   ];
-  
-  priorityOptions = [
-    { value: 'All', label: 'All' },
-    { value: 'High', label: 'High' },
-    { value: 'Medium', label: 'Medium' },
-    { value: 'Low', label: 'Low' },
-    { value: 'Urgent', label: 'Urgent' }
-  ];
 
   constructor(
     private reportService: ReportService,
@@ -72,16 +71,17 @@ export class PartsTestStatusComponent implements OnInit {
   ) {
     this.filterForm = this.fb.group({
       jobType: ['All'],
-      priority: ['All'],
       make: ['All'],
       model: ['All'],
-      archive: [false]
+      archive: [false],
+      assignedTo: ['All']
     });
   }
 
   ngOnInit(): void {
     this.loadDistinctMakes();
     this.loadDistinctModels();
+    this.loadTechnicians();
     this.loadPartsTestStatus();
     this.setupFormSubscriptions();
   }
@@ -173,17 +173,40 @@ export class PartsTestStatusComponent implements OnInit {
     });
   }
 
+  loadTechnicians(): void {
+    this.isLoadingTechnicians = true;
+    this.reportService.getEmployeeNamesByDept('T').subscribe({
+      next: (response) => {
+        if (response && response.success) {
+          this.technicians = response.employees || [];
+        } else {
+          console.error('Failed to load technicians:', response?.message);
+          this.technicians = [];
+        }
+        this.isLoadingTechnicians = false;
+      },
+      error: (error) => {
+        console.error('Error loading technicians:', error);
+        this.errorMessage = 'Error loading technicians. Please try again.';
+        this.isLoadingTechnicians = false;
+        this.technicians = [];
+      }
+    });
+  }
+
   loadPartsTestStatus(): void {
     this.isLoading = true;
+    this.displayedData = [];
     this.errorMessage = '';
     
     const formValue = this.filterForm.value;
     const request: PartsTestStatusRequest = {
       jobType: formValue.jobType || '',
-      priority: formValue.priority || '',
+      priority: '',
       archive: formValue.archive || false,
       make: formValue.make || '',
-      model: formValue.model || ''
+      model: formValue.model || '',
+      assignedTo: formValue.assignedTo || ''
     };
 
     this.reportService.getPartsTestStatus(request).subscribe({
@@ -212,19 +235,9 @@ export class PartsTestStatusComponent implements OnInit {
   }
 
   onFilterChange(): void {
+    this.isLoading = true;
     this.currentPage = 1;
     this.clearErrorMessage();
-    this.loadPartsTestStatus();
-  }
-
-  onClearFilters(): void {
-    this.filterForm.reset({
-      jobType: 'All',
-      priority: 'All',
-      make: 'All',
-      model: 'All',
-      archive: false
-    });
     this.loadPartsTestStatus();
   }
 
@@ -259,18 +272,12 @@ export class PartsTestStatusComponent implements OnInit {
   applySorting(): void {
     if (!this.sortColumn) return;
 
+    const column = this.sortColumn;
+
     this.partsTestStatusList.sort((a, b) => {
-      let valueA = this.getNestedProperty(a, this.sortColumn);
-      let valueB = this.getNestedProperty(b, this.sortColumn);
+      const valueA = this.normalizeSortValue(this.getNestedProperty(a, column), column);
+      const valueB = this.normalizeSortValue(this.getNestedProperty(b, column), column);
 
-      // Handle dates
-      if (valueA instanceof Date && valueB instanceof Date) {
-        return this.sortDirection === 'asc' 
-          ? valueA.getTime() - valueB.getTime()
-          : valueB.getTime() - valueA.getTime();
-      }
-
-      // Handle strings and numbers
       if (valueA < valueB) {
         return this.sortDirection === 'asc' ? -1 : 1;
       }
@@ -285,6 +292,38 @@ export class PartsTestStatusComponent implements OnInit {
 
   getNestedProperty(obj: any, path: string): any {
     return path.split('.').reduce((o, p) => o && o[p], obj);
+  }
+
+  private normalizeSortValue(value: any, column: string): string | number {
+    if (value === null || value === undefined) return '';
+
+    if (typeof value === 'boolean') {
+      return value ? 1 : 0;
+    }
+
+    if (typeof value === 'number') {
+      return value;
+    }
+
+    if (value instanceof Date) {
+      return value.getTime();
+    }
+
+    if (typeof value === 'string') {
+      if (this.isDateColumn(column)) {
+        const parsed = new Date(value);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.getTime();
+        }
+      }
+      return value.toLowerCase();
+    }
+
+    return String(value).toLowerCase();
+  }
+
+  private isDateColumn(column: string): boolean {
+    return column === 'dueDate' || column === 'createdOn' || column === 'lastModifiedOn';
   }
 
   onPageChange(page: number, event?: Event): void {
@@ -341,6 +380,35 @@ export class PartsTestStatusComponent implements OnInit {
     }
     
     return pages;
+  }
+
+  // New methods to match stripped-units-status design
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+      this.updatePagination();
+    }
+  }
+
+  changeItemsPerPage(newSize: number): void {
+    this.pageSize = newSize;
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  shouldShowPageNumber(pageNumber: number): boolean {
+    const totalPagesCount = this.getTotalPages();
+    if (totalPagesCount <= 10) {
+      return true;
+    }
+    
+    const distance = Math.abs(this.currentPage - pageNumber);
+    return distance <= 2 || pageNumber === 1 || pageNumber === totalPagesCount;
+  }
+
+  updatePagination(): void {
+    this.totalPages = this.getTotalPages();
+    this.applyPagination();
   }
 
   exportToExcel(): void {
@@ -432,34 +500,49 @@ export class PartsTestStatusComponent implements OnInit {
     
     const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
     const today = new Date();
-    const diffTime = due.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
+    // Reset time to midnight for accurate day comparison (matching legacy .NET logic)
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    const diffTime = dueDay.getTime() - todayDay.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24); // Don't ceil - match .NET TotalDays exactly
+    
+    // Legacy logic: (DueDt - today).TotalDays
     if (diffDays <= 0) {
-      return 'row-overdue'; // Red gradient - Due same day or overdue (ACTIVE ONLY)
+      return 'row-overdue'; // Red (#ff6347, white text) - Due same day or overdue
     } else if (diffDays <= 3) {
-      return 'row-urgent'; // Orange gradient - Due within 3 days (ACTIVE ONLY)
+      return 'row-urgent'; // Orange - Due within 3 days
     } else if (diffDays <= 7) {
-      return 'row-upcoming'; // Yellow gradient - Due within a week (ACTIVE ONLY)
+      return 'row-upcoming'; // Yellow - Due within a week
     }
     return '';
   }
 
   isAssembled(item: PartsTestStatusDto): boolean {
-    return item.assyWorkStatus === 'Completed' || item.assyWorkStatus === 'Done';
+    // Match legacy logic: check if assyWorkStatus equals "1" or equivalent
+    return item.assyWorkStatus === '1' || item.assyWorkStatus === 'Completed' || item.assyWorkStatus === 'Done';
   }
 
   isQualityChecked(item: PartsTestStatusDto): boolean {
-    return item.qcWorkStatus === 'Completed' || item.qcWorkStatus === 'Done';
+    // Match legacy logic: check if qcWorkStatus equals "1" or equivalent  
+    return item.qcWorkStatus === '1' || item.qcWorkStatus === 'Completed' || item.qcWorkStatus === 'Done';
   }
 
   onStatusChange(item: PartsTestStatusDto, statusType: 'assembled' | 'reviewed' | 'qc', event: Event): void {
+    // Prevent changes - these checkboxes are for display only (matching legacy behavior)
+    event.preventDefault();
     const target = event.target as HTMLInputElement;
-    const checked = target?.checked || false;
-    
-    // TODO: Implement status update functionality
-    // This would call an API to update the status
-
+    if (target) {
+      // Reset checkbox to its original state
+      if (statusType === 'assembled') {
+        target.checked = this.isAssembled(item);
+      } else if (statusType === 'reviewed') {
+        target.checked = item.isPassed;
+      } else if (statusType === 'qc') {
+        target.checked = this.isQualityChecked(item);
+      }
+    }
   }
 
   getFilterBadgeClass(): string {

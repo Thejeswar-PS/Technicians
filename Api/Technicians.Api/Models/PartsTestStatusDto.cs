@@ -39,6 +39,7 @@ namespace Technicians.Api.Models
         public bool Archive { get; set; } = false;
         public string Make { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
+        public string AssignedTo { get; set; } = string.Empty;
     }
 
     /// <summary>

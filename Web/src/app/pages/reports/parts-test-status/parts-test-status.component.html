@@ -1,361 +1,240 @@
-<!-- Parts Test Status Report -->
 <div class="container-fluid parts-test-status-container">
-  <!-- Loading spinner -->
-  <div
-    *ngIf="isLoading"
-    class="d-flex justify-content-center align-items-center parts-test-status-loading"
-  >
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
+
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading"
+       class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay">
+    <div class="spinner-border text-primary"></div>
   </div>
 
-  <!-- Header Section -->
-  <div class="parts-test-status-header__top mb-4 d-flex justify-content-center align-items-center">
-    <!-- Page Title - Centered -->
-    <div class="parts-page-title">
-      <h2 class="fw-bold text-primary mb-0">
-        <i class="bi bi-clipboard-check me-2"></i>
-        Parts Test Status
-      </h2>
+  <div class="card shadow-sm main-card">
+
+    <!-- Header -->
+    <div class="card-header border-0 py-4">
+      <div class="d-flex align-items-center">
+        <!-- LEFT: Back button -->
+        <div class="flex-shrink-0">
+          <button class="btn btn-sm btn-primary" (click)="goBack()">
+            <i class="bi bi-arrow-left me-1"></i> Back
+          </button>
+        </div>
+
+        <!-- CENTER: Title -->
+        <div class="flex-grow-1 text-center">
+          <h3 class="fw-bold text-primary mb-0">
+            Parts Test Status
+          </h3>
+        </div>
+
+        <!-- RIGHT: spacer to balance layout -->
+        <div class="flex-shrink-0" style="width: 72px;"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- Main content -->
-  <div *ngIf="!isLoading">
+    <div class="card-body">
+      <!-- Error -->
+      <div class="mb-3" *ngIf="errorMessage">
+        <div class="alert alert-danger d-inline-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {{ errorMessage }}
+        </div>
+      </div>
 
-    <!-- Filter & Data Section -->
-    <div class="card shadow-sm parts-main-card">
-      <!-- Filter Header -->
-      <div class="card-header border-0 py-4">
-        <div class="parts-filter-header">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-funnel me-2 text-primary"></i>
-                Filters & Search
-                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
-                  {{totalRecords}} Result{{totalRecords === 1 ? '' : 's'}}
-                </span>
-              </h5>
-              <small class="text-muted">Customize your view with filters below</small>
-            </div>
-          </div>
+      <!-- Color Legend -->
+      <div class="color-legend justify-content-center"
+           *ngIf="!filterForm.get('archive')?.value">
+        <div class="legend-item">
+          <div class="legend-box red"></div>
+          <span>Red = Due Same day or Overdue</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box orange"></div>
+          <span>Orange = Due Within 3 days</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box yellow"></div>
+          <span>Yellow = Due within a week</span>
+        </div>
+      </div>
 
-          <!-- Filter Controls -->
-          <div class="filter-controls-section mt-3">
-            <form [formGroup]="filterForm" class="parts-filter-form">
-              <div class="row g-3">
-                <!-- Job Type Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-gear me-1"></i>
-                      Job Type
-                    </label>
-                    <select class="form-select modern-select" formControlName="jobType">
-                      <option *ngFor="let option of jobTypeOptions" [value]="option.value">
-                        {{option.label}}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                
-                <!-- Priority Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-exclamation-triangle me-1"></i>
-                      Priority
-                    </label>
-                    <select class="form-select modern-select" formControlName="priority">
-                      <option *ngFor="let option of priorityOptions" [value]="option.value">
-                        {{option.label}}
-                      </option>
-                    </select>
-                  </div>
-                </div>
+      <!-- Filters -->
+      <div class="row mb-3 filter-panel" [formGroup]="filterForm">
+        <div class="col-md-2">
+          <label class="form-label">Job Type</label>
+          <select class="form-select" formControlName="jobType">
+            <option *ngFor="let option of jobTypeOptions"
+                    [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
 
-                <!-- Make Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-building me-1"></i>
-                      Make
-                    </label>
-                    <div class="position-relative">
-                      <select class="form-select modern-select" formControlName="make" [disabled]="isLoadingMakes">
-                        <option value="All">All Makes</option>
-                        <option *ngFor="let make of distinctMakes" [value]="make.make">
-                          {{make.make}}
-                        </option>
-                      </select>
-                      <span *ngIf="isLoadingMakes" class="loading-indicator">
-                        <i class="bi bi-arrow-repeat spin"></i>
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        <div class="col-md-2">
+          <label class="form-label">Make</label>
+          <select class="form-select" formControlName="make">
+            <option value="All">All</option>
+            <option *ngFor="let make of distinctMakes"
+                    [value]="make.make">
+              {{ make.make }}
+            </option>
+          </select>
+        </div>
 
-                <!-- Model Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-diagram-3 me-1"></i>
-                      Model
-                    </label>
-                    <div class="position-relative">
-                      <select class="form-select modern-select" formControlName="model" [disabled]="isLoadingModels">
-                        <option value="All">All Models</option>
-                        <option *ngFor="let model of modelsForSelectedMake" [value]="model.make">
-                          {{model.make}}
-                        </option>
-                      </select>
-                      <span *ngIf="isLoadingModels" class="loading-indicator">
-                        <i class="bi bi-arrow-repeat spin"></i>
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        <div class="col-md-2">
+          <label class="form-label">Model</label>
+          <select class="form-select" formControlName="model">
+            <option value="All">All</option>
+            <option *ngFor="let model of modelsForSelectedMake"
+                    [value]="model.make">
+              {{ model.make }}
+            </option>
+          </select>
+        </div>
 
-                <!-- Include Archive Filter -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-archive me-1"></i>
-                      Include Archive
-                    </label>
-                    <div class="form-check form-switch mt-2">
-                      <input class="form-check-input" 
-                             type="checkbox" 
-                             role="switch"
-                             id="archive" 
-                             formControlName="archive">
-                      <label class="form-check-label" for="archive">
-                        Show Archived Parts
-                      </label>
-                    </div>
-                  </div>
-                </div>
+        <div class="col-md-3">
+          <label class="form-label">Assigned To</label>
+          <select class="form-select" formControlName="assignedTo">
+            <option value="All">All</option>
+            <option *ngFor="let tech of technicians"
+                    [value]="tech.empName">
+              {{ tech.empName }}
+            </option>
+          </select>
+        </div>
 
-                <!-- Clear Filters -->
-                <div class="col-md-2">
-                  <div class="filter-group">
-                    <label class="filter-label">&nbsp;</label>
-                    <button type="button" class="btn btn-outline-secondary w-100" (click)="onClearFilters()">
-                      <i class="bi bi-x-circle me-1"></i>
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </form>
+        <div class="col-md-3 d-flex align-items-end">
+          <div class="form-check form-switch">
+            <input class="form-check-input"
+                   type="checkbox"
+                   formControlName="archive">
+            <label class="form-check-label ms-2">
+              Include Archive
+            </label>
           </div>
         </div>
       </div>
 
-      <!-- Data Display Section -->
-      <div class="card-body py-4">
-        
-        <!-- Messages -->
-        <div class="parts-messages" *ngIf="errorMessage">
-          <div class="alert alert-danger d-inline-flex align-items-center">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <span>{{ errorMessage }}</span>
-          </div>
+      <!-- Records Per Page -->
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+          <label class="me-2 fw-semibold">Records per page:</label>
+          <select class="form-select form-select-sm w-auto"
+                  (change)="changeItemsPerPage(+$any($event.target).value)">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100" selected>100</option>
+          </select>
         </div>
 
-        <!-- Status Legend -->
-        <div class="row mb-3">
-          <div class="col-12">
-            <div class="subtle-legend">
-              <div class="legend-items">
-                <div class="legend-item">
-                  <div class="legend-dot legend-overdue"></div>
-                  <span class="legend-label">Due Same day or Overdue</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot legend-urgent"></div>
-                  <span class="legend-label">Due Within 3 days</span>
-                </div>
-                <div class="legend-item">
-                  <div class="legend-dot legend-upcoming"></div>
-                  <span class="legend-label">Due within a week</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="flex-fill text-center fw-semibold">
+          Showing
+          {{ totalRecords ? ((currentPage - 1) * pageSize + 1) : 0 }}
+          -
+          {{ totalRecords ? Math.min(currentPage * pageSize, totalRecords) : 0 }}
+          of {{ totalRecords }} records
         </div>
 
-        <!-- Loading indicator for data processing -->
-        <div *ngIf="isProcessingData" class="text-center py-4">
-          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-          <span class="text-muted">Processing data...</span>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="goToPage(currentPage - 1)"
+                  [disabled]="currentPage <= 1">
+            Prev
+          </button>
+          <span class="fw-semibold">Page {{ currentPage }} of {{ getTotalPages() }}</span>
+          <button type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="goToPage(currentPage + 1)"
+                  [disabled]="currentPage >= getTotalPages()">
+            Next
+          </button>
         </div>
-
-        <!-- Enhanced Results Summary -->
-        <div class="enhanced-pagination-card" *ngIf="!isProcessingData">
-          <div class="results-summary">
-            <div class="summary-icon">
-              <i class="bi bi-database"></i>
-            </div>
-            <div class="summary-details">
-              <div class="summary-title">Data Overview</div>
-              <div class="summary-count">
-                Displaying <span class="highlight-number">{{displayedData.length}}</span> 
-                of <span class="total-number">{{totalRecords}}</span> records
-              </div>
-            </div>
-          </div>
-          <div class="page-controls">
-            <div class="control-group">
-              <div class="control-label">
-                <i class="bi bi-eye-fill me-1"></i>
-                View
-              </div>
-              <select id="pageSize" class="premium-select" 
-                      [value]="pageSize" (change)="onPageSizeChange($event)">
-                <option value="10">10 entries</option>
-                <option value="25">25 entries</option>
-                <option value="50">50 entries</option>
-                <option value="100">100 entries</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Data Table Section -->
-        <div class="table-section" *ngIf="!isProcessingData">
-          <div class="table-responsive">
-            <table class="table modern-table">
-              <thead class="table-header">
-                <tr>
-                  <th class="header-cell text-center" style="width: 8%;">Assembled</th>
-                  <th class="header-cell text-center" style="width: 8%;">Reviewed</th>
-                  <th class="header-cell text-center" style="width: 10%;">Quality Check</th>
-                  <th class="sortable header-cell" (click)="onSort('dcgPartNo')" [ngClass]="getSortClass('dcgPartNo')" style="width: 12%;">
-                    <div class="header-content">
-                      <span class="header-text">DCG Part No</span>
-                      <i [class]="'sort-icon ' + sortIcon('dcgPartNo')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('siteID')" [ngClass]="getSortClass('siteID')" style="width: 12%;">
-                    <div class="header-content">
-                      <span class="header-text">Site ID</span>
-                      <i [class]="'sort-icon ' + sortIcon('siteID')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('make')" [ngClass]="getSortClass('make')" style="width: 8%;">
-                    <div class="header-content">
-                      <span class="header-text">Make</span>
-                      <i [class]="'sort-icon ' + sortIcon('make')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('model')" [ngClass]="getSortClass('model')" style="width: 8%;">
-                    <div class="header-content">
-                      <span class="header-text">Model</span>
-                      <i [class]="'sort-icon ' + sortIcon('model')"></i>
-                    </div>
-                  </th>
-                  <th class="sortable header-cell" (click)="onSort('quantity')" [ngClass]="getSortClass('quantity')" style="width: 5%;">
-                    <div class="header-content">
-                      <span class="header-text">Qty</span>
-                      <i [class]="'sort-icon ' + sortIcon('quantity')"></i>
-                    </div>
-                  </th>
-                  <th class="header-cell" style="width: 21%;">Description</th>
-                  <th class="sortable header-cell" (click)="onSort('dueDate')" [ngClass]="getSortClass('dueDate')" style="width: 8%;">
-                    <div class="header-content">
-                      <span class="header-text">Due Date</span>
-                      <i [class]="'sort-icon ' + sortIcon('dueDate')"></i>
-                    </div>
-                  </th>
-                  <th class="header-cell" style="width: 10%;">Modified By</th>
-                  <th class="header-cell" style="width: 10%;">Modified On</th>
-                </tr>
-              </thead>
-              <tbody class="table-body">
-                <tr *ngFor="let item of displayedData; trackBy: trackByUniqueId" 
-                    class="table-row" 
-                    [class]="getRowColorClass(item.dueDate || null)">
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" 
-                           [checked]="isAssembled(item)"
-                           (change)="onStatusChange(item, 'assembled', $event)">
-                  </td>
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" 
-                           [checked]="item.isPassed"
-                           (change)="onStatusChange(item, 'reviewed', $event)">
-                  </td>
-                  <td class="text-center">
-                    <input type="checkbox" class="form-check-input" 
-                           [checked]="isQualityChecked(item)"
-                           (change)="onStatusChange(item, 'qc', $event)">
-                  </td>
-                  <td>
-                    <a href="javascript:void(0)" class="call-link" (click)="navigateToPartTestEntry(item.rowIndex)">{{item.dcgPartNo}}</a>
-                  </td>
-                  <td class="cell-content">{{item.siteID}}</td>
-                  <td class="cell-content">{{item.make}}</td>
-                  <td class="cell-content">{{item.model}}</td>
-                  <td class="text-center cell-content">{{item.quantity}}</td>
-                  <td class="description-cell">
-                    <div class="description-text" [title]="item.description">
-                      {{item.description}}
-                    </div>
-                  </td>
-                  <td class="cell-content">{{formatDate(item.dueDate || null)}}</td>
-                  <td class="cell-content modified-by-cell">{{item.lastModifiedBy || item.createdBy}}</td>
-                  <td class="cell-content">{{formatDate(item.lastModifiedOn || item.createdOn)}}</td>
-                </tr>
-                <tr *ngIf="displayedData.length === 0">
-                  <td colspan="12" class="text-center text-muted py-4">
-                    <div class="empty-state">
-                      <i class="bi bi-inbox display-1 text-muted mb-3"></i>
-                      <h5 class="text-muted">No Data Available</h5>
-                      <p class="text-muted mb-0">Try adjusting your filters or check back later.</p>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Pagination -->
-        <nav aria-label="Parts test status pagination" class="mt-4" *ngIf="getTotalPages() > 1 && !isProcessingData">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="pagination-info">
-              <span class="text-muted">
-                Page {{currentPage}} of {{getTotalPages()}} 
-                ({{totalRecords}} total records)
-              </span>
-            </div>
-            <ul class="pagination pagination-sm mb-0">
-              <li class="page-item" [class.disabled]="currentPage === 1">
-                <a class="page-link" href="#" (click)="onPageChange(currentPage - 1, $event)">
-                  <i class="bi bi-chevron-left"></i>
-                  Previous
-                </a>
-              </li>
-              <li class="page-item" 
-                  *ngFor="let page of getPageNumbers()" 
-                  [class.active]="page === currentPage">
-                <a class="page-link" href="#" (click)="onPageChange(page, $event)">
-                  {{page}}
-                </a>
-              </li>
-              <li class="page-item" [class.disabled]="currentPage === getTotalPages()">
-                <a class="page-link" href="#" (click)="onPageChange(currentPage + 1, $event)">
-                  Next
-                  <i class="bi bi-chevron-right"></i>
-                </a>
-              </li>
-            </ul>
-          </div>
-        </nav>
       </div>
+
+      <!-- Loading message -->
+      <div *ngIf="isLoading" class="text-center py-4 fw-semibold">
+        <div class="spinner-border text-primary me-2"></div>
+        {{ filterForm.get('archive')?.value
+            ? 'Loading archive data…'
+            : 'Loading active data…' }}
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-responsive"
+           *ngIf="!isLoading && displayedData.length > 0">
+
+        <table class="table table-bordered mb-0">
+          <thead>
+            <tr>
+              <th class="sortable"><div class="header-cell">Row No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable" (click)="onSort('callNbr')"><div class="header-cell">Job No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th><div class="header-cell">Assembled</div></th>
+              <th><div class="header-cell">Reviewed</div></th>
+              <th><div class="header-cell">QC</div></th>
+              <th class="sortable" (click)="onSort('dcgPartNo')"><div class="header-cell">DCG Part No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Site ID <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Make <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Model <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Qty <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable" (click)="onSort('createdOn')"><div class="header-cell">Created On <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable" (click)="onSort('dueDate')"><div class="header-cell">Projected DueDt <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Assigned To <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable"><div class="header-cell">Modified By <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of displayedData"
+                [ngClass]="getRowColorClass(item.dueDate)">
+
+              <td class="text-center">{{ item.rowIndex }}</td>
+              <td>{{ item.callNbr }}</td>
+
+              <td class="text-center">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [checked]="isAssembled(item)" disabled>
+                  <span></span>
+                </label>
+              </td>
+
+              <td class="text-center">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [checked]="item.isPassed" disabled>
+                  <span></span>
+                </label>
+              </td>
+
+              <td class="text-center">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [checked]="isQualityChecked(item)" disabled>
+                  <span></span>
+                </label>
+              </td>
+
+              <td>
+                <a (click)="navigateToPartTestEntry(item.rowIndex)">
+                  {{ item.dcgPartNo }}
+                </a>
+              </td>
+
+              <td>{{ item.siteID }}</td>
+              <td>{{ item.make }}</td>
+              <td>{{ item.model }}</td>
+              <td class="text-center">{{ item.quantity }}</td>
+              <td>{{ formatDate(item.createdOn) }}</td>
+              <td>{{ formatDate(item.dueDate) }}</td>
+              <td>{{ item.assignedTo }}</td>
+              <td>{{ item.lastModifiedBy || item.createdBy }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-info text-center"
+           *ngIf="!isLoading && displayedData.length === 0">
+        No records to display
+      </div>
+
     </div>
   </div>
 </div>

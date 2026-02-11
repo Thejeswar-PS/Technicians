@@ -1,0 +1,510 @@
+<!-- DCG Employee Details Page -->
+<div class="container-fluid dcg-employee-container">
+  <!-- Loading spinner -->
+  <div
+    *ngIf="isLoading"
+    class="d-flex justify-content-center align-items-center dcg-employee-loading"
+  >
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="dcg-employee-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button
+      type="button"
+      class="btn btn-sm btn-primary dcg-employee-header__back"
+      (click)="goBack()"
+      [disabled]="isLoading"
+    >
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered between buttons -->
+    <div class="dcg-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-people me-2"></i>
+        DCG Employee Details
+      </h2>
+      <!-- Grid Type Information -->
+      <div class="text-dark mt-2">
+        <span class="fw-semibold">Current View: {{ isEmployeeGrid ? 'Employees' : 'Inventory Regions' }}</span>
+      </div>
+    </div>
+
+    <div></div> <!-- Empty div to maintain spacing -->
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+    <!-- Grid Type Toggle & Data Section -->
+    <div class="card shadow-sm dcg-main-card">
+      <!-- Header with Grid Toggle -->
+      <div class="card-header border-0 py-4">
+        <div class="dcg-filter-header">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h5 class="mb-0 fw-bold text-dark">
+                <i class="bi bi-grid-3x3-gap me-2 text-primary"></i>
+                Data View & Controls
+                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
+                  {{totalItems}} Result{{totalItems === 1 ? '' : 's'}}
+                </span>
+              </h5>
+              <small class="text-muted">Switch between employee and inventory region views</small>
+            </div>
+          </div>
+
+          <!-- Grid Toggle and Sort Controls -->
+          <div class="filter-controls-section mt-3">
+            <div class="d-flex align-items-center justify-content-between">
+              <!-- View Type Segmented Control -->
+              <div class="d-flex align-items-center">
+                <label class="control-label me-3">View Type</label>
+                <div class="segmented-control" role="group">
+                  <button 
+                    type="button" 
+                    class="segment-btn"
+                    [class.active]="currentGridType === GridType.Employee"
+                    (click)="switchGrid(GridType.Employee)"
+                    [disabled]="isLoading">
+                    <i class="bi bi-person me-1"></i>
+                    Employees
+                  </button>
+                  <button 
+                    type="button" 
+                    class="segment-btn"
+                    [class.active]="currentGridType === GridType.Inventory"
+                    (click)="switchGrid(GridType.Inventory)"
+                    [disabled]="isLoading">
+                    <i class="bi bi-building me-1"></i>
+                    Inventory Regions
+                  </button>
+                </div>
+              </div>
+
+              <!-- Add Button -->
+              <button
+                type="button"
+                class="btn btn-primary add-btn"
+                (click)="isEmployeeGrid ? showAddEmployee() : showAddOfficeAssignment()"
+                [disabled]="isLoading"
+              >
+                <i class="bi bi-plus me-1"></i>
+                Add {{ isEmployeeGrid ? 'Employee' : 'Inventory Region' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Display Section -->
+      <div class="card-body py-4">
+        
+        <!-- Messages -->
+        <div class="dcg-messages" *ngIf="errorMessage || successMessage">
+          <div class="alert alert-danger d-inline-flex align-items-center" *ngIf="errorMessage">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span>{{ errorMessage }}</span>
+          </div>
+          <div class="alert alert-success d-inline-flex align-items-center" *ngIf="successMessage">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span>{{ successMessage }}</span>
+          </div>
+        </div>
+
+        <!-- Data Table Section -->
+        <div class="table-section">
+          
+          <!-- Pagination Controls at Top -->
+          <div *ngIf="totalItems > 0 && !isLoading" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+            <!-- Records Per Page -->
+            <div class="d-flex align-items-center">
+              <label class="form-label me-2 mb-0 fw-semibold text-dark">Records per page:</label>
+              <select class="form-select form-select-sm w-auto border-primary" 
+                      [value]="pageSize" 
+                      (change)="changePageSize(+$any($event.target).value)"
+                      style="min-width: 70px;">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            
+            <!-- Results Summary Badge -->
+            <div class="badge px-4 py-2 fs-6 fw-semibold" 
+                 style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 25px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);">
+              Showing {{ startRecord }}-{{ endRecord }} of {{ totalItems }} records
+            </div>
+            
+            <!-- Page Navigation -->
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-sm btn-outline-secondary" 
+                      [disabled]="currentPage <= 1"
+                      (click)="goToPage(currentPage - 1)"
+                      [class.disabled]="currentPage <= 1">
+                <i class="bi bi-chevron-left"></i>
+                Previous
+              </button>
+              
+              <span class="mx-2 fw-semibold text-dark">
+                Page {{ currentPage }} of {{ totalPages }}
+              </span>
+              
+              <button class="btn btn-sm btn-outline-secondary" 
+                      [disabled]="currentPage >= totalPages"
+                      (click)="goToPage(currentPage + 1)"
+                      [class.disabled]="currentPage >= totalPages">
+                Next
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            
+            <!-- Employee Grid -->
+            <table class="table modern-table" *ngIf="isEmployeeGrid">
+              <thead class="table-header">
+                <tr>
+                  <th class="sortable header-cell" (click)="sortTable('empNo')" [ngClass]="getSortClass('empNo')">
+                    <div class="header-content">
+                      <span class="header-text">Emp No</span>
+                      <i [class]="'sort-icon ' + sortIcon('empNo')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('empID')" [ngClass]="getSortClass('empID')">
+                    <div class="header-content">
+                      <span class="header-text">Employee ID</span>
+                      <i [class]="'sort-icon ' + sortIcon('empID')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('empName')" [ngClass]="getSortClass('empName')">
+                    <div class="header-content">
+                      <span class="header-text">Employee Name</span>
+                      <i [class]="'sort-icon ' + sortIcon('empName')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('empStatus')" [ngClass]="getSortClass('empStatus')">
+                    <div class="header-content">
+                      <span class="header-text">Status</span>
+                      <i [class]="'sort-icon ' + sortIcon('empStatus')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('windowsID')" [ngClass]="getSortClass('windowsID')">
+                    <div class="header-content">
+                      <span class="header-text">Windows ID</span>
+                      <i [class]="'sort-icon ' + sortIcon('windowsID')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('email')" [ngClass]="getSortClass('email')">
+                    <div class="header-content">
+                      <span class="header-text">Email</span>
+                      <i [class]="'sort-icon ' + sortIcon('email')"></i>
+                    </div>
+                  </th>
+                  <th class="actions-column header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Actions</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="table-body">
+                <tr *ngFor="let employee of paginatedEmployees" class="table-row">
+                  <td class="data-cell">
+                    <span class="badge badge-light-primary">{{ employee.empNo }}</span>
+                  </td>
+                  <td class="data-cell">
+                    <span class="cell-content fw-bold">{{ employee.empID }}</span>
+                  </td>
+                  <td class="data-cell">
+                    <div class="employee-info">
+                      <i class="bi bi-person-badge me-1 text-muted"></i>
+                      <span class="cell-content">{{ employee.empName }}</span>
+                    </div>
+                  </td>
+                  <td class="data-cell">
+                    <span class="status-badge" [ngClass]="getStatusBadgeClass(employee.empStatus)">
+                      {{ employee.empStatus }}
+                    </span>
+                  </td>
+                  <td class="data-cell">
+                    <span class="cell-content">{{ employee.windowsID }}</span>
+                  </td>
+                  <td class="data-cell">
+                    <span class="cell-content">
+                      <a [href]="'mailto:' + employee.email" class="email-link">
+                        <i class="bi bi-envelope me-1"></i>
+                        {{ employee.email }}
+                      </a>
+                    </span>
+                  </td>
+                  <td class="actions-cell">
+                    <div class="action-buttons">
+                      <button class="btn btn-primary btn-sm action-btn" 
+                              (click)="editEmployee(employee)"
+                              [disabled]="isLoading"
+                              title="Edit Employee">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                      </button>
+                      <button class="btn btn-danger btn-sm action-btn" 
+                              (click)="deleteEmployee(employee)"
+                              [disabled]="isLoading"
+                              title="Delete Employee">
+                        <i class="bi bi-trash me-1"></i>Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Inventory Region Grid -->
+            <table class="table modern-table" *ngIf="isOfficeGrid">
+              <thead class="table-header">
+                <tr>
+                  <th class="sortable header-cell" (click)="sortTable('state')" [ngClass]="getSortClass('state')">
+                    <div class="header-content">
+                      <span class="header-text">State</span>
+                      <i [class]="'sort-icon ' + sortIcon('state')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('stateName')" [ngClass]="getSortClass('stateName')">
+                    <div class="header-content">
+                      <span class="header-text">State Name</span>
+                      <i [class]="'sort-icon ' + sortIcon('stateName')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('offID')" [ngClass]="getSortClass('offID')">
+                    <div class="header-content">
+                      <span class="header-text">Office ID</span>
+                      <i [class]="'sort-icon ' + sortIcon('offID')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('invUserID')" [ngClass]="getSortClass('invUserID')">
+                    <div class="header-content">
+                      <span class="header-text">Inventory User ID</span>
+                      <i [class]="'sort-icon ' + sortIcon('invUserID')"></i>
+                    </div>
+                  </th>
+                  <th class="sortable header-cell" (click)="sortTable('subRegion')" [ngClass]="getSortClass('subRegion')">
+                    <div class="header-content">
+                      <span class="header-text">Sub Region</span>
+                      <i [class]="'sort-icon ' + sortIcon('subRegion')"></i>
+                    </div>
+                  </th>
+                  <th class="actions-column header-cell">
+                    <div class="header-content">
+                      <span class="header-text">Actions</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="table-body">
+                <tr *ngFor="let office of paginatedOfficeAssignments" class="table-row">
+                  <td class="data-cell">
+                    <span class="state-badge">{{ office.state }}</span>
+                  </td>
+                  <td class="data-cell">
+                    <div class="state-info">
+                      <i class="bi bi-geo-alt me-1 text-muted"></i>
+                      <span class="cell-content fw-bold">{{ office.stateName }}</span>
+                    </div>
+                  </td>
+                  <td class="data-cell">
+                    <span class="badge badge-light-info">{{ office.offID }}</span>
+                  </td>
+                  <td class="data-cell">
+                    <span class="cell-content">{{ office.invUserID }}</span>
+                  </td>
+                  <td class="data-cell">
+                    <span class="cell-content">{{ office.subRegion }}</span>
+                  </td>
+                  <td class="actions-cell">
+                    <div class="action-buttons">
+                      <button class="btn btn-primary btn-sm action-btn" 
+                              (click)="editOfficeAssignment(office)"
+                              [disabled]="isLoading"
+                              title="Edit Office Assignment">
+                        <i class="bi bi-pencil me-1"></i>Edit
+                      </button>
+                      <button class="btn btn-danger btn-sm action-btn" 
+                              (click)="deleteOfficeAssignment(office)"
+                              [disabled]="isLoading"
+                              title="Delete Office Assignment">
+                        <i class="bi bi-trash me-1"></i>Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="totalItems === 0 && !isLoading" class="empty-state">
+          <div class="empty-state-content">
+            <i class="bi bi-inbox empty-icon"></i>
+            <h4 class="empty-title">No {{ isEmployeeGrid ? 'Employees' : 'Inventory Regions' }} Found</h4>
+            <p class="empty-text">There are no {{ isEmployeeGrid ? 'employees' : 'inventory regions' }} to display.</p>
+            <button class="btn btn-primary" (click)="isEmployeeGrid ? showAddEmployee() : showAddOfficeAssignment()">
+              <i class="bi bi-plus-lg me-2"></i>Add {{ isEmployeeGrid ? 'Employee' : 'Inventory Region' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Employee Modal -->
+<div class="modal-overlay" *ngIf="showEmployeeForm" (click)="hideEmployeeModal()">
+  <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-person-plus me-2"></i>
+          {{ modalTitle }}
+        </h5>
+        <button type="button" class="btn-close" (click)="hideEmployeeModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <form [formGroup]="employeeForm" (ngSubmit)="saveEmployee()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Employee ID</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="empID"
+                     [class.is-invalid]="isFieldInvalid(employeeForm, 'empID')"
+                     placeholder="Enter Employee ID">
+              <div class="invalid-feedback">{{ getFieldError(employeeForm, 'empID') }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Employee Name</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="empName"
+                     [class.is-invalid]="isFieldInvalid(employeeForm, 'empName')"
+                     placeholder="Enter Employee Name">
+              <div class="invalid-feedback">{{ getFieldError(employeeForm, 'empName') }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Status</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="empStatus"
+                     [class.is-invalid]="isFieldInvalid(employeeForm, 'empStatus')"
+                     placeholder="Enter Status">
+              <div class="invalid-feedback">{{ getFieldError(employeeForm, 'empStatus') }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Windows ID</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="windowsID"
+                     [class.is-invalid]="isFieldInvalid(employeeForm, 'windowsID')"
+                     placeholder="Enter Windows ID">
+              <div class="invalid-feedback">{{ getFieldError(employeeForm, 'windowsID') }}</div>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label fw-bold required">Email</label>
+              <input type="email" 
+                     class="form-control" 
+                     formControlName="email"
+                     [class.is-invalid]="isFieldInvalid(employeeForm, 'email')"
+                     placeholder="Enter Email Address">
+              <div class="invalid-feedback">{{ getFieldError(employeeForm, 'email') }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="hideEmployeeModal()" [disabled]="isSubmitting">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || employeeForm.invalid">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-save me-1" *ngIf="!isSubmitting"></i>
+            Save Employee
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Inventory Region Modal -->
+<div class="modal-overlay" *ngIf="showOfficeForm" (click)="hideOfficeModal()">
+  <div class="modal-dialog modal-lg" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-geo-alt-fill me-2"></i>
+          {{ modalTitle }}
+        </h5>
+        <button type="button" class="btn-close" (click)="hideOfficeModal()">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      <form [formGroup]="officeForm" (ngSubmit)="saveOfficeAssignment()">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">State</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="state"
+                     [class.is-invalid]="isFieldInvalid(officeForm, 'state')"
+                     placeholder="Enter State Code">
+              <div class="invalid-feedback">{{ getFieldError(officeForm, 'state') }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">State Name</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="stateName"
+                     [class.is-invalid]="isFieldInvalid(officeForm, 'stateName')"
+                     placeholder="Enter State Name">
+              <div class="invalid-feedback">{{ getFieldError(officeForm, 'stateName') }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Office ID</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="offID"
+                     [class.is-invalid]="isFieldInvalid(officeForm, 'offID')"
+                     placeholder="Enter Office ID">
+              <div class="invalid-feedback">{{ getFieldError(officeForm, 'offID') }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Inventory User ID</label>
+              <input type="text" 
+                     class="form-control" 
+                     formControlName="invUserID"
+                     [class.is-invalid]="isFieldInvalid(officeForm, 'invUserID')"
+                     placeholder="Enter Inventory User ID">
+              <div class="invalid-feedback">{{ getFieldError(officeForm, 'invUserID') }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="hideOfficeModal()" [disabled]="isSubmitting">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || officeForm.invalid">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-save me-1" *ngIf="!isSubmitting"></i>
+            Save Inventory Region
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

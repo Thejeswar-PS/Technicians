@@ -42,6 +42,7 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   currentPage = 1;
   itemsPerPage = 50;
   totalItems = 0;
+  pageSizeOptions = [10, 25, 50, 100];
   
   // Sorting
   sortColumn = '';
@@ -192,35 +193,45 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  // getStatusPillClass(status: string | null | undefined): string {
+  //   if (!status) {
+  //     return 'status-pill status-default';
+  //   }
+    
+  //   const normalizedStatus = status.toUpperCase();
+    
+  //   switch (normalizedStatus) {
+  //     case 'COM':
+  //     case 'COMPLETED':
+  //       return 'status-pill status-completed';
+  //     case 'ORD':
+  //     case 'ORDERED':
+  //       return 'status-pill status-ordered';
+  //     case 'SHI':
+  //     case 'SHIPPED':
+  //       return 'status-pill status-shipped';
+  //     case 'BOR':
+  //     case 'BACK ORDERED':
+  //       return 'status-pill status-backordered';
+  //     case 'NEW':
+  //       return 'status-pill status-new';
+  //     case 'CAN':
+  //     case 'CANCELLED':
+  //       return 'status-pill status-cancelled';
+  //     default:
+  //       return 'status-pill status-default';
+  //   }
+  // }
+
   getStatusPillClass(status: string | null | undefined): string {
-    if (!status) {
-      return 'status-pill status-default';
-    }
-    
-    const normalizedStatus = status.toUpperCase();
-    
-    switch (normalizedStatus) {
-      case 'COM':
-      case 'COMPLETED':
-        return 'status-pill status-completed';
-      case 'ORD':
-      case 'ORDERED':
-        return 'status-pill status-ordered';
-      case 'SHI':
-      case 'SHIPPED':
-        return 'status-pill status-shipped';
-      case 'BOR':
-      case 'BACK ORDERED':
-        return 'status-pill status-backordered';
-      case 'NEW':
-        return 'status-pill status-new';
-      case 'CAN':
-      case 'CANCELLED':
-        return 'status-pill status-cancelled';
-      default:
-        return 'status-pill status-default';
-    }
+  if (!status || status.toLowerCase() === 'n/a') {
+    return 'status-na';
   }
+
+  const normalized = status.toLowerCase().replace(/\s+/g, '-');
+
+  return `status-${normalized}`;
+}
 
   // Pagination
   getPaginatedData(): OrderRequestStatusDto[] {
@@ -291,10 +302,6 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   viewOrderRequest(orderRequest: OrderRequestStatusDto): void {
     if (!orderRequest) return;
     
-    // Debug: Log the order request data being passed
-    console.log('Order Request Status Data:', orderRequest);
-    console.log('Notes field value:', orderRequest.notes);
-    
     // Navigate to order request form with the order request data
     this.router.navigate(['/reports/order-request'], {
       queryParams: { 
@@ -309,7 +316,8 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
         orderDate: orderRequest.orderDate ? new Date(orderRequest.orderDate).toISOString().split('T')[0] : '',
         arriveDate: orderRequest.arriveDate ? new Date(orderRequest.arriveDate).toISOString().split('T')[0] : '',
         status: orderRequest.status || 'NEW',
-        notes: orderRequest.notes || ''
+        notes: orderRequest.notes || '',
+        createdOn: orderRequest.createdOn ? new Date(orderRequest.createdOn).toISOString() : ''
       }
     });
   }

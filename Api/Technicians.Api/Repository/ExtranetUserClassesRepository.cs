@@ -13,8 +13,8 @@ namespace Technicians.Api.Repository
         public ExtranetUserClassesRepository(IConfiguration configuration)
         {
             _configuration = configuration;
-            _connectionString = _configuration.GetConnectionString("ETechConnString") ??
-                throw new InvalidOperationException("ETechConnString string not found in configuration");
+            _connectionString = _configuration.GetConnectionString("ETechGreatPlainsConnString") ??
+                throw new InvalidOperationException("ETechGreatPlainsConnString string not found in configuration");
         }
 
         /// <summary>

@@ -276,6 +276,15 @@ data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="b
         <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">Accounting Status</span>
       </a>
     </div>
+    <div class="menu-item menu-lg-down-accordion me-lg-1" data-kt-menu-placement="right-start">
+      <a id="r27"
+      routerLinkActive="active menu-here"
+      [routerLink]="['/reports/dcg-emp-details']"
+      class="menu-link py-3" [ngClass]="calculateMenuItemCssClass('/crafted/widgets')">
+        <span class="menu-icon"><i class="bi fs-3 bi-people text-primary"></i></span>
+        <span class="menu-title fs-4 text-dark" data-link="/crafted/widgets">DCG Employee Details</span>
+      </a>
+    </div>
   </div>
 
 </div>

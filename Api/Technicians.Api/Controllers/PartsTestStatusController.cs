@@ -27,7 +27,9 @@ namespace Technicians.Api.Controllers
         /// <param name="archive">Archive filter (default: false)</param>
         /// <param name="make">Make filter (use 'All' or empty for no filter)</param>
         /// <param name="model">Model filter (use 'All' or empty for no filter)</param>
-        /// <returns>Parts test status data with distinct makes and models</returns>
+        /// <param name="assignedTo">AssignedTo filter (use 'All' or empty for no filter)</param>
+        /// <param name="assignedTo">AssignedTo filter (use 'All' or empty for no filter)</param>
+            /// <returns>Parts test status data with distinct makes and models</returns>
         [HttpGet("GetPartsTestStatus")]
         public async Task<ActionResult<PartsTestStatusResponse>> GetPartsTestStatus(
             [FromQuery] string jobType = "",

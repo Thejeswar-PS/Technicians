@@ -18,20 +18,15 @@
 
   <form [formGroup]="editForm">
     
-    <!-- Auto Generated ID Section - Compact Design -->
+    <!-- Auto Generated ID Section - Badge/Pill Style -->
     <div class="auto-gen-id-container d-flex align-items-center justify-content-center mb-4">
-      <div class="d-flex align-items-center gap-2">
-        <span class="text-primary fw-bold">
-          <i class="bi bi-hash me-1"></i>Auto Generated ID:
+      <div class="d-flex align-items-center gap-3">
+        <span class="auto-gen-label">
+          <i class="bi bi-hash me-2"></i>Auto Generated ID
         </span>
-        <div class="auto-gen-id-display d-flex align-items-center gap-1">
-          <input type="text" formControlName="autoGenYr" readonly class="auto-gen-field" />
-          <span class="text-muted">-</span>
-          <input type="text" formControlName="autoGenMon" readonly class="auto-gen-field" />
-          <span class="text-muted">-</span>
-          <input type="text" formControlName="autoGenDay" readonly class="auto-gen-field" />
-          <span class="text-muted">-</span>
-          <input type="text" formControlName="autoGenID" readonly class="auto-gen-field" />
+        <div class="auto-gen-badge">
+          <i class="bi bi-barcode-scan me-2"></i>
+          <span class="auto-gen-id-text">{{ getFormattedAutoGenId() }}</span>
         </div>
       </div>
     </div>
@@ -221,9 +216,9 @@
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-user-tick me-1 text-primary"></i>Created By <span class="text-danger">*</span>
                 </label>
-                <select class="form-select form-select-solid text-dark fw-semibold" formControlName="createdBy" [class.is-invalid]="isFieldInvalid('createdBy')" [disabled]="isLoadingCreatedByEmployees">
+                <select class="form-select form-select-solid text-dark fw-semibold" formControlName="createdBy" [class.is-invalid]="isFieldInvalid('createdBy')" [disabled]="isLoadingCreatedByEmployees || !!editingItem">
                   <option value="">{{ isLoadingCreatedByEmployees ? 'Loading P & T Employees...' : 'Select Employee' }}</option>
-                  <option *ngFor="let employee of getCreatedByEmployeeOptions()" [value]="employee.empName">
+                  <option *ngFor="let employee of getCreatedByEmployeeOptions()" [value]="employee.windowsID">
                     {{ getEmployeeDisplayName(employee) }}
                   </option>
                 </select>
@@ -248,9 +243,15 @@
                 <input type="date" class="form-control form-control-solid text-dark fw-semibold" formControlName="dueDate" [class.is-invalid]="isFieldInvalid('dueDate')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('dueDate') }}</div>
               </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-dark fs-6">
+                  <i class="ki-outline ki-calendar-2 me-1 text-primary"></i>Submitted Date
+                </label>
+                <input type="date" class="form-control form-control-solid text-dark fw-semibold" formControlName="submittedDate" />
+              </div>
               <div class="col-md-6 d-flex align-items-center">
                 <div class="form-check form-check-custom form-check-solid mt-8 p-3 border rounded bg-light">
-                  <input class="form-check-input" type="checkbox" formControlName="approved" id="approved" />
+                  <input class="form-check-input" type="checkbox" formControlName="approved" id="approved" (change)="onApprovedChange()" />
                   <label class="form-check-label fw-bold text-dark fs-6" for="approved">
                     <i class="ki-outline ki-verify me-1 text-success"></i>Approved
                   </label>
@@ -314,13 +315,13 @@
               <i class="ki-outline ki-check-circle fs-2 me-3"></i>
               <span class="text-dark fw-semibold">{{ saveMessage }}</span>
             </div>
-            <div *ngIf="saveError" class="alert alert-danger d-flex align-items-center mb-4">
+            <div *ngIf="errorMessage" class="alert alert-danger d-flex align-items-center mb-4">
               <i class="ki-outline ki-cross-circle fs-2 me-3"></i>
-              <span class="text-dark fw-semibold">{{ saveError }}</span>
+              <span class="text-dark fw-semibold">{{ errorMessage }}</span>
             </div>
 
             <!-- divGrp1: Inventory/Retest Job Types (3, 6) -->
-            <div *ngIf="showComponentWork" class="card border shadow-sm mb-4">
+            <div *ngIf="isComponentJob" class="card border shadow-sm mb-4">
               <div class="card-header bg-primary">
                 <h6 class="card-title mb-0 text-white fw-bold">
                   <i class="ki-outline ki-wrench me-2"></i>Component Testing & Work Done
@@ -333,12 +334,12 @@
                   <i class="ki-outline ki-wrench me-1 text-primary"></i>Component - Work Done:
                 </label>
                 <div class="row g-2">
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWork1" id="cw1" /><label class="form-check-label text-dark fw-bold fs-6" for="cw1">Cleaned</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWork2" id="cw2" /><label class="form-check-label text-dark fw-bold fs-6" for="cw2">Refurbished</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWork3" id="cw3" /><label class="form-check-label text-dark fw-bold fs-6" for="cw3">Parts Replaced</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWork4" id="cw4" /><label class="form-check-label text-dark fw-bold fs-6" for="cw4">Repaired</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWork5" id="cw5" /><label class="form-check-label text-dark fw-bold fs-6" for="cw5">Inspected for Damage</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWork6" id="cw6" /><label class="form-check-label text-dark fw-bold fs-6" for="cw6">Not Repairable</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWorkDone1" id="cw1" /><label class="form-check-label text-dark fw-bold fs-6" for="cw1">Cleaned</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWorkDone2" id="cw2" /><label class="form-check-label text-dark fw-bold fs-6" for="cw2">Refurbished</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWorkDone3" id="cw3" /><label class="form-check-label text-dark fw-bold fs-6" for="cw3">Parts Replaced</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWorkDone4" id="cw4" /><label class="form-check-label text-dark fw-bold fs-6" for="cw4">Repaired</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWorkDone5" id="cw5" /><label class="form-check-label text-dark fw-bold fs-6" for="cw5">Inspected for Damage</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compWorkDone6" id="cw6" /><label class="form-check-label text-dark fw-bold fs-6" for="cw6">Not Repairable</label></div></div>
                 </div>
               </div>
 
@@ -364,9 +365,9 @@
                   <i class="ki-outline ki-rocket me-1 text-primary"></i>Testing - Work Done:
                 </label>
                 <div class="row g-2">
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="testWork1" id="tw1" /><label class="form-check-label text-dark fw-bold fs-6" for="tw1">Testing In Unit</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="testWork2" id="tw2" /><label class="form-check-label text-dark fw-bold fs-6" for="tw2">Load Tested</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="testWork3" id="tw3" /><label class="form-check-label text-dark fw-bold fs-6" for="tw3">No Unit To Test</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="testWorkDone1" id="tw1" /><label class="form-check-label text-dark fw-bold fs-6" for="tw1">Testing In Unit</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="testWorkDone2" id="tw2" /><label class="form-check-label text-dark fw-bold fs-6" for="tw2">Load Tested</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="testWorkDone3" id="tw3" /><label class="form-check-label text-dark fw-bold fs-6" for="tw3">No Unit To Test</label></div></div>
                 </div>
               </div>
 
@@ -389,7 +390,7 @@
             </div>
 
             <!-- Assembly & QC Section (Conditional) -->
-            <div *ngIf="showAssemblyQC" class="card mb-4 border shadow-sm">
+            <div *ngIf="isAssemblyJob" class="card mb-4 border shadow-sm">
               <div class="card-header bg-primary">
                 <h6 class="card-title text-white mb-0 fw-bold">
                   <i class="ki-outline ki-delivery-3 me-2"></i>
@@ -418,12 +419,12 @@
                     <i class="ki-outline ki-abstract-35 me-1 text-primary"></i>Assembly - Work Done:
                   </label>
                 <div class="row g-2">
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWork1" id="aw1" /><label class="form-check-label text-dark fw-bold fs-6" for="aw1">Cleaned</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWork2" id="aw2" /><label class="form-check-label text-dark fw-bold fs-6" for="aw2">Parts Replaced</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWork4" id="aw4" /><label class="form-check-label text-dark fw-bold fs-6" for="aw4">Inspected For Damage</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWork5" id="aw5" /><label class="form-check-label text-dark fw-bold fs-6" for="aw5">Refurbished</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWork6" id="aw6" /><label class="form-check-label text-dark fw-bold fs-6" for="aw6">Repaired</label></div></div>
-                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWork7" id="aw7" /><label class="form-check-label text-dark fw-bold fs-6" for="aw7">Not Repairable</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWorkDone1" id="aw1" /><label class="form-check-label text-dark fw-bold fs-6" for="aw1">Cleaned</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWorkDone2" id="aw2" /><label class="form-check-label text-dark fw-bold fs-6" for="aw2">Parts Replaced</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWorkDone3" id="aw3" /><label class="form-check-label text-dark fw-bold fs-6" for="aw3">Inspected For Damage</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWorkDone4" id="aw4" /><label class="form-check-label text-dark fw-bold fs-6" for="aw4">Refurbished</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWorkDone5" id="aw5" /><label class="form-check-label text-dark fw-bold fs-6" for="aw5">Repaired</label></div></div>
+                  <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="assyWorkDone6" id="aw6" /><label class="form-check-label text-dark fw-bold fs-6" for="aw6">Not Repairable</label></div></div>
                 </div>
               </div>
 
@@ -448,16 +449,16 @@
                 </label>
                 <div class="d-flex gap-3">
                   <div class="form-check form-check-custom form-check-solid">
-                    <input type="radio" class="form-check-input" formControlName="procedureFollowed" value="1" id="proc1" />
+                    <input type="radio" class="form-check-input" formControlName="assyProcFollowed" value="1" id="proc1" />
                     <label class="form-check-label text-dark fw-bold" for="proc1">Yes</label>
                   </div>
                   <div class="form-check form-check-custom form-check-solid">
-                    <input type="radio" class="form-check-input" formControlName="procedureFollowed" value="2" id="proc2" />
+                    <input type="radio" class="form-check-input" formControlName="assyProcFollowed" value="2" id="proc2" />
                     <label class="form-check-label text-dark fw-bold" for="proc2">No</label>
                   </div>
                   <div class="form-check form-check-custom form-check-solid">
-                    <input type="radio" class="form-check-input" formControlName="procedureFollowed" value="3" id="proc3" />
-                    <label class="form-check-label text-dark fw-bold" for="proc3">N/A</label>
+                    <input type="radio" class="form-check-input" formControlName="assyProcFollowed" value="3" id="proc3" />
+                    <label class="form-check-label text-dark fw-bold" for="proc3">NA</label>
                   </div>
                 </div>
               </div>
@@ -507,9 +508,9 @@
                 </div>
                 <div class="card-body bg-white">
                   <div class="row g-2">
-                    <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="qcWork1" id="qc1" /><label class="form-check-label text-dark fw-bold fs-6" for="qc1">Cleaned</label></div></div>
-                    <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="qcWork2" id="qc2" /><label class="form-check-label text-dark fw-bold fs-6" for="qc2">Torqued</label></div></div>
-                    <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="qcWork3" id="qc3" /><label class="form-check-label text-dark fw-bold fs-6" for="qc3">Inspected</label></div></div>
+                    <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="qcWorkDone1" id="qc1" /><label class="form-check-label text-dark fw-bold fs-6" for="qc1">Cleaned</label></div></div>
+                    <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="qcWorkDone2" id="qc2" /><label class="form-check-label text-dark fw-bold fs-6" for="qc2">Torqued</label></div></div>
+                    <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="qcWorkDone3" id="qc3" /><label class="form-check-label text-dark fw-bold fs-6" for="qc3">Inspected</label></div></div>
                   </div>
                 </div>
               </div>
@@ -530,7 +531,7 @@
                   </div>
                   <div class="form-check form-check-custom form-check-solid">
                     <input type="radio" class="form-check-input" formControlName="qcProcFollowed" value="3" id="qcProc3" />
-                    <label class="form-check-label text-dark fw-bold" for="qcProc3">N/A</label>
+                    <label class="form-check-label text-dark fw-bold" for="qcProc3">NA</label>
                   </div>
                 </div>
               </div>
@@ -551,7 +552,7 @@
                   </div>
                   <div class="form-check form-check-custom form-check-solid">
                     <input type="radio" class="form-check-input" formControlName="qcApproved" value="3" id="qcApp3" />
-                    <label class="form-check-label text-dark fw-bold" for="qcApp3">N/A</label>
+                    <label class="form-check-label text-dark fw-bold" for="qcApp3">NA</label>
                   </div>
                 </div>
               </div>
@@ -568,11 +569,10 @@
                   <option value="3">Not Acceptable</option>
                 </select>
               </div>
-              </div>
             </div>
 
             <!-- Board Setup Section (Conditional) -->
-            <div *ngIf="showBoardSetup" class="card mb-4 border shadow-sm">
+            <div *ngIf="isBoardSetupJob" class="card mb-4 border shadow-sm">
               <div class="card-header bg-primary">
                 <h6 class="card-title text-white mb-0 fw-bold">
                   <i class="ki-outline ki-technology-4 me-2"></i>
@@ -586,7 +586,7 @@
                     <label class="form-label fw-bold text-dark fs-6">
                       <i class="ki-outline ki-technology-4 me-1 text-primary"></i>Board Setup Status:
                     </label>
-                    <select class="form-select form-select-solid text-dark fw-semibold" formControlName="boardStatus">
+                    <select class="form-select form-select-solid text-dark fw-semibold" formControlName="boardSetup">
                       <option value="0">Please Select</option>
                       <option value="1">Completed</option>
                       <option value="2">Boards Are Completed</option>
@@ -618,6 +618,7 @@
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </form>

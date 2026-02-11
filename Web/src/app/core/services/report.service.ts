@@ -579,26 +579,35 @@ export class ReportService {
               archive: false
             } as OrderRequestStatusDto;
           }
+          const notesValue = item.Notes || item.notes || item.NOTES || item.note || item.Note || item.NOTE ||
+            item.comment || item.Comment || item.COMMENT || item.comments || item.Comments || item.COMMENTS ||
+            item.description || item.Description || item.DESCRIPTION ||
+            item.remarks || item.Remarks || item.REMARKS ||
+            item.notesText || item.NotesText || item.NOTESTEXT ||
+            item.notes_text || item.Notes_Text || item.NOTES_TEXT ||
+            item.notesValue || item.NotesValue || item.NOTESVALUE ||
+            undefined;
+
           return {
-            rowIndex: item.rowIndex || (index + 1),
-            orderType: item.orderType || undefined,
-            requester: item.requester || undefined,
-            dcgPartNo: item.dcgPartNo || undefined,
-            manufPartNo: item.manufPartNo || undefined,
-            qtyNeeded: item.qtyNeeded || undefined,
-            vendor: item.vendor || undefined,
-            poNumber: item.poNumber || undefined,
-            orderDate: item.orderDate || undefined,
-            arriveDate: item.arriveDate || undefined,
-            notes: item.notes || item.comment || item.description || item.remarks || undefined,
-            status: item.status || undefined,
-            lastModifiedBy: item.lastModifiedBy || undefined,
+            rowIndex: item.RowIndex ?? item.rowIndex ?? (index + 1),
+            orderType: item.OrderType ?? item.orderType ?? undefined,
+            requester: item.Requester ?? item.requester ?? undefined,
+            dcgPartNo: item.DCGPartNo ?? item.dcgPartNo ?? undefined,
+            manufPartNo: item.ManufPartNo ?? item.manufPartNo ?? undefined,
+            qtyNeeded: item.QtyNeeded ?? item.qtyNeeded ?? undefined,
+            vendor: item.Vendor ?? item.vendor ?? undefined,
+            poNumber: item.PONumber ?? item.poNumber ?? undefined,
+            orderDate: item.OrderDate ?? item.orderDate ?? undefined,
+            arriveDate: item.ArriveDate ?? item.arriveDate ?? undefined,
+            notes: notesValue,
+            status: item.Status ?? item.status ?? undefined,
+            lastModifiedBy: item.LastModifiedBy ?? item.lastModifiedBy ?? undefined,
             // Map API fields to frontend expected fields
-            createdOn: item.lastModifiedOn || item.createdOn || item.modifiedOn || undefined,
-            createdBy: item.lastModifiedBy || item.createdBy || item.modifiedBy || undefined,
-            modifiedBy: item.lastModifiedBy || item.modifiedBy || undefined,
-            modifiedOn: item.lastModifiedOn || item.modifiedOn || undefined,
-            archive: item.archive || false
+            createdOn: item.LastModifiedOn || item.lastModifiedOn || item.CreatedOn || item.createdOn || item.ModifiedOn || item.modifiedOn || undefined,
+            createdBy: item.LastModifiedBy || item.lastModifiedBy || item.CreatedBy || item.createdBy || item.ModifiedBy || item.modifiedBy || undefined,
+            modifiedBy: item.LastModifiedBy || item.lastModifiedBy || item.ModifiedBy || item.modifiedBy || undefined,
+            modifiedOn: item.LastModifiedOn || item.lastModifiedOn || item.ModifiedOn || item.modifiedOn || undefined,
+            archive: item.Archive ?? item.archive ?? false
           } as OrderRequestStatusDto;
         });
       })
@@ -624,10 +633,6 @@ export class ReportService {
         return response.map((item: any, index: number) => {
           console.log(`Item ${index}:`, item);
           console.log(`Item ${index} all fields:`, Object.keys(item || {}));
-          console.log(`Item ${index} notes field:`, item?.notes);
-          console.log(`Item ${index} comment field:`, item?.comment);
-          console.log(`Item ${index} description field:`, item?.description);
-          console.log(`Item ${index} remarks field:`, item?.remarks);
           if (!item) {
             return {
               rowIndex: index + 1,
@@ -650,30 +655,100 @@ export class ReportService {
               archive: false
             } as OrderRequestStatusDto;
           }
+          const notesValue = item.Notes || item.notes || item.NOTES || item.note || item.Note || item.NOTE ||
+            item.comment || item.Comment || item.COMMENT || item.comments || item.Comments || item.COMMENTS ||
+            item.description || item.Description || item.DESCRIPTION ||
+            item.remarks || item.Remarks || item.REMARKS ||
+            item.notesText || item.NotesText || item.NOTESTEXT ||
+            item.notes_text || item.Notes_Text || item.NOTES_TEXT ||
+            item.notesValue || item.NotesValue || item.NOTESVALUE ||
+            undefined;
+
           return {
-            rowIndex: item.rowIndex || (index + 1),
-            orderType: item.orderType || undefined,
-            requester: item.requester || undefined,
-            dcgPartNo: item.dcgPartNo || undefined,
-            manufPartNo: item.manufPartNo || undefined,
-            qtyNeeded: item.qtyNeeded || undefined,
-            vendor: item.vendor || undefined,
-            poNumber: item.poNumber || undefined,
-            orderDate: item.orderDate || undefined,
-            arriveDate: item.arriveDate || undefined,
-            notes: item.notes || item.comment || item.description || item.remarks || undefined,
-            status: item.status || undefined,
-            lastModifiedBy: item.lastModifiedBy || undefined,
+            rowIndex: item.RowIndex ?? item.rowIndex ?? (index + 1),
+            orderType: item.OrderType ?? item.orderType ?? undefined,
+            requester: item.Requester ?? item.requester ?? undefined,
+            dcgPartNo: item.DCGPartNo ?? item.dcgPartNo ?? undefined,
+            manufPartNo: item.ManufPartNo ?? item.manufPartNo ?? undefined,
+            qtyNeeded: item.QtyNeeded ?? item.qtyNeeded ?? undefined,
+            vendor: item.Vendor ?? item.vendor ?? undefined,
+            poNumber: item.PONumber ?? item.poNumber ?? undefined,
+            orderDate: item.OrderDate ?? item.orderDate ?? undefined,
+            arriveDate: item.ArriveDate ?? item.arriveDate ?? undefined,
+            notes: notesValue,
+            status: item.Status ?? item.status ?? undefined,
+            lastModifiedBy: item.LastModifiedBy ?? item.lastModifiedBy ?? undefined,
             // Map API fields to frontend expected fields
-            createdOn: item.lastModifiedOn || item.createdOn || item.modifiedOn || undefined,
-            createdBy: item.lastModifiedBy || item.createdBy || item.modifiedBy || undefined,
-            modifiedBy: item.lastModifiedBy || item.modifiedBy || undefined,
-            modifiedOn: item.lastModifiedOn || item.modifiedOn || undefined,
-            archive: item.archive || false
+            createdOn: item.LastModifiedOn || item.lastModifiedOn || item.CreatedOn || item.createdOn || item.ModifiedOn || item.modifiedOn || undefined,
+            createdBy: item.LastModifiedBy || item.lastModifiedBy || item.CreatedBy || item.createdBy || item.ModifiedBy || item.modifiedBy || undefined,
+            modifiedBy: item.LastModifiedBy || item.lastModifiedBy || item.ModifiedBy || item.modifiedBy || undefined,
+            modifiedOn: item.LastModifiedOn || item.lastModifiedOn || item.ModifiedOn || item.modifiedOn || undefined,
+            archive: item.Archive ?? item.archive ?? false
           } as OrderRequestStatusDto;
         });
       })
     );
+  }
+
+  private getOrderRequestNotes(item: any): string | undefined {
+    if (!item || typeof item !== 'object') {
+      return undefined;
+    }
+
+    const candidates = [
+      item.notes,
+      item.Notes,
+      item.NOTES,
+      item.note,
+      item.Note,
+      item.NOTE,
+      item.comment,
+      item.Comment,
+      item.COMMENT,
+      item.comments,
+      item.Comments,
+      item.COMMENTS,
+      item.description,
+      item.Description,
+      item.DESCRIPTION,
+      item.remarks,
+      item.Remarks,
+      item.REMARKS,
+      item.notesText,
+      item.NotesText,
+      item.NOTESTEXT,
+      item.notes_text,
+      item.Notes_Text,
+      item.NOTES_TEXT,
+      item.notesValue,
+      item.NotesValue,
+      item.NOTESVALUE
+    ];
+
+    for (const value of candidates) {
+      if (value !== null && value !== undefined) {
+        const normalized = typeof value === 'string' ? value.trim() : value;
+        if (normalized !== '') {
+          return typeof normalized === 'string' ? normalized : String(normalized);
+        }
+      }
+    }
+
+    const key = Object.keys(item).find((name) =>
+      name && name.toString().replace(/[^a-z0-9]/gi, '').toLowerCase() === 'notes'
+    );
+
+    if (key) {
+      const value = item[key];
+      const normalized = typeof value === 'string' ? value.trim() : value;
+      const result = normalized !== null && normalized !== undefined && normalized !== ''
+        ? (typeof normalized === 'string' ? normalized : String(normalized))
+        : undefined;
+      console.log('OrderRequestStatus notes key match:', { key, value, result });
+      return result;
+    }
+
+    return undefined;
   }
 
   // Parts Test API methods
@@ -744,7 +819,8 @@ export class ReportService {
       priority: request?.priority || 'All', 
       archive: request?.archive || false,
       make: request?.make || 'All',
-      model: request?.model || 'All'
+      model: request?.model || 'All',
+      assignedTo: request?.assignedTo || 'All'
     };
 
     return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, requestBody, {
@@ -755,6 +831,29 @@ export class ReportService {
   getPartsTestStatusPost(request: PartsTestStatusRequest): Observable<PartsTestStatusApiResponse> {
     return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, request, {
       headers: this.headers
+    });
+  }
+
+  // GET method with query parameters to match backend
+  getPartsTestStatusByParams(
+    jobType: string = "",
+    priority: string = "",
+    archive: boolean = false,
+    make: string = "",
+    model: string = "",
+    assignedTo: string = ""
+  ): Observable<PartsTestStatusApiResponse> {
+    let params = new HttpParams()
+      .set('jobType', jobType)
+      .set('priority', priority)
+      .set('archive', archive.toString())
+      .set('make', make)
+      .set('model', model)
+      .set('assignedTo', assignedTo);
+
+    return this.http.get<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, {
+      headers: this.headers,
+      params: params
     });
   }
 
