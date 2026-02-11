@@ -164,7 +164,9 @@
           <td>{{ item.putAwayBy }}</td>
           <td>{{ formatDate(item.createdOn) }}</td>
           <td class="text-center">
-            <button class="btn btn-primary btn-sm rounded-circle"><i class="bi bi-pencil-fill"></i></button>
+            <button class="btn btn-primary btn-sm rounded-circle" (click)="addParts(item)">
+              <i class="bi bi-pencil-fill"></i>
+            </button>
           </td>
         </tr>
       </tbody>

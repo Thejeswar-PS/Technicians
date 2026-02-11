@@ -287,13 +287,10 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
 
   private transformUnitsData(units: StrippedUnitsStatusDto[]): StrippedUnitsStatusItem[] {
     return units.map(unit => {
-      // Set both strippedBy and putAwayBy to the same person (TIM H)
-      const handledBy = unit.strippedBy || unit.putAwayBy || 'TIM H';
-      
       return {
         ...unit,
-        strippedBy: handledBy,
-        putAwayBy: handledBy,
+        strippedBy: unit.strippedBy,
+        putAwayBy: unit.putAwayBy,
         displayStatus: this.getStatusLabel(unit.status),
         formattedCreatedOn: unit.createdOn ? new Date(unit.createdOn).toLocaleDateString() : '',
         formattedUnitCost: unit.unitCost ? `$${unit.unitCost.toFixed(2)}` : '',
