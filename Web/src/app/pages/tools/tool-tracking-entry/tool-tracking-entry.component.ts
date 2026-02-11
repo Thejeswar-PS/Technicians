@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ToolTrackingService } from 'src/app/core/services/tool-tracking.service';
 import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto, EquipmentFileDto, SaveEquipmentFileRequestDto } from 'src/app/core/model/tool-tracking.model';
 
@@ -27,10 +27,24 @@ export class ToolTrackingEntryComponent implements OnInit {
   selectedFiles: File[] = [];
   uploadingFiles: boolean = false;
   
-  constructor(private toolTrackingService: ToolTrackingService, private router: Router) {}
+  constructor(private toolTrackingService: ToolTrackingService, private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit(): void {
     this.loadTechnicians();
+    
+    // Check for TechID query parameter from calendar navigation
+    this.route.queryParams.subscribe(params => {
+      const techID = params['TechID'];
+      if (techID) {
+        // Pre-select the technician from calendar navigation
+        this.selectedTech = techID;
+        this.techId = techID;
+        // Load tools automatically after technicians are loaded
+        setTimeout(() => {
+          this.autoLoadTools();
+        }, 500);
+      }
+    });
   }
 
   loadTechnicians(): void {
