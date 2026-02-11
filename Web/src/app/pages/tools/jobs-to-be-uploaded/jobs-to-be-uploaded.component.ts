@@ -189,11 +189,32 @@ export class JobsToBeUploadedComponent implements OnInit {
       this.selectedAccountManager,
       this.currentEmpID
     ).subscribe(
-      (data: JobRecord[]) => {
-        this.jobs = data;
+      (response: any) => {
+        // Handle both array and wrapped response formats
+        let data: JobRecord[] = [];
+        
+        if (Array.isArray(response)) {
+          data = response;
+        } else if (response && Array.isArray(response.data)) {
+          data = response.data;
+        } else if (response && response.data) {
+          data = Array.isArray(response.data) ? response.data : [];
+        }
+
+        // Trim whitespace from string fields
+        this.jobs = data.map(job => ({
+          callNbr: job.callNbr?.trim() || '',
+          techName: job.techName?.trim() || '',
+          accMgr: job.accMgr?.trim() || '',
+          status: job.status?.trim() || '',
+          strtDate: job.strtDate,
+          custName: job.custName?.trim() || '',
+          changeAge: job.changeAge
+        }));
+
         this.isLoading = false;
 
-        if (data.length > 0) {
+        if (this.jobs.length > 0) {
           this.showSuccess(
             `Jobs to be Uploaded by - ${this.getTechnicianName()} For Account Manager : ${this.getAccountManagerName()}`
           );
@@ -212,7 +233,14 @@ export class JobsToBeUploadedComponent implements OnInit {
   }
 
   goToJobDetails(callNbr: string): void {
-    this.router.navigate(['/dashboard/jobs', callNbr]);
+    if (callNbr && callNbr.trim()) {
+      // Navigate to jobs list page with CallNbr as query parameter (similar to legacy: DTechJobsList.aspx?CallNbr={0})
+      this.router.navigate(['/jobs'], { 
+        queryParams: { 
+          CallNbr: callNbr.trim() 
+        } 
+      });
+    }
   }
 
   private getTechnicianName(): string {

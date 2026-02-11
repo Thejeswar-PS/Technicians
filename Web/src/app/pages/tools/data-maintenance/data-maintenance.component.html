@@ -7,26 +7,20 @@
     </div>
   </div>
 
-  <div class="card shadow-sm main-card">
-    <div class="card-header border-0 py-4">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-        <div class="header-spacer"></div>
-        <div class="text-center flex-grow-1">
-          <h3 class="fw-bold text-white mb-0">ETech Data Maintenance</h3>
-          <div class="text-white-50 fw-bold fs-7 mt-1">Manage Midtronics Reference Values and Equipment Data</div>
-        </div>
-        <div>
-          <button *ngIf="!addingNew" class="btn btn-sm btn-light" (click)="startAddNew()">
-            <i class="bi bi-plus-circle me-2"></i>Add New
-          </button>
-        </div>
+  <div class="mb-4">
+    <div class="d-flex justify-content-center align-items-center">
+      <div class="text-center">
+        <h3 class="fw-bold text-primary mb-0">ETech Data Maintenance</h3>
+        <div class="text-muted fw-bold fs-7 mt-1">Manage Midtronics Reference Values and Equipment Data</div>
       </div>
     </div>
+  </div>
 
+  <div class="card shadow-sm main-card">
     <div class="card-body">
       <!-- Error/Success Message -->
       <div class="mb-4" *ngIf="message">
-        <div [ngClass]="messageType === 'success' ? 'alert alert-success' : 'alert alert-danger'" class="d-inline-flex align-items-center" role="alert">
+        <div [ngClass]="messageType === 'success' ? 'alert alert-success' : 'alert alert-danger'" class="d-flex align-items-center" role="alert">
           <i [ngClass]="messageType === 'success' ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-triangle-fill'" class="me-2"></i>
           <span>{{ message }}</span>
         </div>
@@ -41,6 +35,11 @@
                   (change)="onMakeChange()">
             <option *ngFor="let make of makes" [value]="make.value">{{ make.text }}</option>
           </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button *ngIf="!addingNew" class="btn btn-primary" (click)="startAddNew()">
+            <i class="bi bi-plus-circle me-2"></i>Add New
+          </button>
         </div>
       </div>
 

@@ -42,7 +42,7 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
   filteredContractRows: ContractDetailRow[] = [];
   displayedContractRows: ContractDetailRow[] = [];
   selectedCategory = 'Non Liebert Contracts not billed as of yesterday';
-  salesPersonFilter = '';
+  customerNameFilter = '';
   sortField: SortField = 'contractNo';
   sortOrder: SortOrder = 'asc';
 
@@ -143,22 +143,22 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
   onCategoryChange(): void {
     this.sortField = 'contractNo';
     this.sortOrder = 'asc';
-    this.salesPersonFilter = '';
+    this.customerNameFilter = '';
     this.loadData();
   }
 
-  onSalesPersonFilterChange(): void {
+  onCustomerNameFilterChange(): void {
     this.currentPage = 1;
     this.filterChange$.next();
   }
 
   private applyFilters(): void {
-    if (!this.salesPersonFilter.trim()) {
+    if (!this.customerNameFilter.trim()) {
       this.filteredContractRows = [...this.contractRows];
     } else {
-      const filterLower = this.salesPersonFilter.toLowerCase().trim();
+      const filterLower = this.customerNameFilter.toLowerCase().trim();
       this.filteredContractRows = this.contractRows.filter(row =>
-        (row.salesPerson || '').toLowerCase().includes(filterLower)
+        (row.customerName || '').toLowerCase().includes(filterLower)
       );
     }
     this.applySorting();

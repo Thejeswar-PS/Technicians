@@ -24,6 +24,8 @@ const routes: Routes = [
   {
     path: 'tool-tracking-entry',
     component: ToolTrackingEntryComponent
+  },
+  {
     path: 'jobs-to-be-uploaded',
     component: JobsToBeUploadedComponent
   },

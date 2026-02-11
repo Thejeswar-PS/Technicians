@@ -19,7 +19,7 @@ import { BillAfterPMJobsComponent } from './bill-after-pm-jobs/bill-after-pm-job
     TechToolsComponent,
     NotesSearchComponent,
     ToolsTrackingCalendarComponent,
-    ToolTrackingEntryComponent
+    ToolTrackingEntryComponent,
     JobsToBeUploadedComponent,
     DataMaintenanceComponent,
     BillAfterPMJobsComponent

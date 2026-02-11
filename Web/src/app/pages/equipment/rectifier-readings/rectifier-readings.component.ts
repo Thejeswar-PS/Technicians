@@ -24,9 +24,15 @@ export class RectifierReadingsComponent implements OnInit {
   equipmentVerificationForm!: FormGroup;
   visualMechanicalForm!: FormGroup;
   powerVerificationForm!: FormGroup;
+  reconciliationForm!: FormGroup;
 
   // Data
   manufacturers: any[] = [];
+  yesNoOptions = [
+    { label: 'Yes', value: 'YS' },
+    { label: 'No', value: 'NO' },
+    { label: 'N/A', value: 'NA' }
+  ];
   passFailOptions = [
     { label: 'Pass', value: 'P' },
     { label: 'Fail', value: 'F' },
@@ -48,6 +54,7 @@ export class RectifierReadingsComponent implements OnInit {
   saving = false;
   errorMessage = '';
   successMessage = '';
+  showReconciliation = true;
   // Cache for GET response to align save payload
   private rectifierDataCache: any = null;
 
@@ -130,6 +137,53 @@ export class RectifierReadingsComponent implements OnInit {
       loadCurrent_PF: ['P'],
       filterCurrent: [''],
       filterCurrent_PF: ['P']
+    });
+
+    // Reconciliation Form
+    this.reconciliationForm = this.fb.group({
+      // Model reconciliation
+      recModel: [{ value: '', disabled: true }],
+      recModelCorrect: ['YS'],
+      actModel: [''],
+      
+      // Serial Number reconciliation
+      recSerialNo: [{ value: '', disabled: true }],
+      recSerialNoCorrect: ['YS'],
+      actSerialNo: [''],
+      
+      // Verification checkbox
+      verified: [false, Validators.requiredTrue]
+    });
+
+    // Setup reconciliation field enable/disable logic
+    this.setupReconciliationHandlers();
+  }
+
+  private setupReconciliationHandlers(): void {
+    // Model reconciliation
+    this.reconciliationForm.get('recModelCorrect')?.valueChanges.subscribe(value => {
+      const actModelControl = this.reconciliationForm.get('actModel');
+      if (value === 'NO') {
+        actModelControl?.enable();
+        actModelControl?.setValidators(Validators.required);
+      } else {
+        actModelControl?.disable();
+        actModelControl?.clearValidators();
+      }
+      actModelControl?.updateValueAndValidity();
+    });
+
+    // Serial Number reconciliation
+    this.reconciliationForm.get('recSerialNoCorrect')?.valueChanges.subscribe(value => {
+      const actSerialNoControl = this.reconciliationForm.get('actSerialNo');
+      if (value === 'NO') {
+        actSerialNoControl?.enable();
+        actSerialNoControl?.setValidators(Validators.required);
+      } else {
+        actSerialNoControl?.disable();
+        actSerialNoControl?.clearValidators();
+      }
+      actSerialNoControl?.updateValueAndValidity();
     });
   }
 
@@ -290,8 +344,8 @@ export class RectifierReadingsComponent implements OnInit {
       callNbr: this.callNbr, equipId: this.equipId, rectifierId: this.rectifierId
     });
     // Validate required fields
-    if (!this.validateForm()) {
-      console.warn('[Rectifier] Validation failed for status/statusNotes');
+    if (!this.validateForms()) {
+      console.warn('[Rectifier] Validation failed');
       return;
     }
 
@@ -402,6 +456,104 @@ export class RectifierReadingsComponent implements OnInit {
         console.error('Error saving rectifier data:', error);
       }
     });
+  }
+
+  private validateForms(): boolean {
+    // Validate manufacturer
+    if (!this.equipmentVerificationForm.value.manufacturer) {
+      this.errorMessage = 'Please select the manufacturer';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate model number
+    if (!this.equipmentVerificationForm.value.modelNo) {
+      this.errorMessage = 'Please enter the Model No';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate serial number
+    if (!this.equipmentVerificationForm.value.serialNo) {
+      this.errorMessage = 'Please enter the Serial No';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate location
+    if (!this.equipmentVerificationForm.value.location) {
+      this.errorMessage = 'Please enter the Location';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate date code
+    if (!this.equipmentVerificationForm.value.dateCode) {
+      this.errorMessage = 'Please enter the Date Code';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate date code is not in future
+    const dateCode = new Date(this.equipmentVerificationForm.value.dateCode);
+    const today = new Date();
+    if (dateCode > today) {
+      this.errorMessage = 'Date Code cannot be in the future';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate temperature
+    if (!this.equipmentVerificationForm.value.temperature) {
+      this.errorMessage = 'Please enter the Temperature';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate status notes if status is not Online
+    const currentStatus = this.equipmentVerificationForm.value.status;
+    const statusNotesControl = this.equipmentVerificationForm.get('statusNotes');
+    const statusNotesValue = (statusNotesControl?.value || '').trim();
+    
+    const isOnlineStatus = currentStatus?.toLowerCase() === 'online';
+    
+    if (!isOnlineStatus && !statusNotesValue) {
+      this.errorMessage = 'Please enter the reason for status in the Status Notes field';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate reconciliation checkbox
+    if (!this.reconciliationForm.value.verified) {
+      this.errorMessage = 'You must verify the Reconciliation section before saving';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate reconciliation actual fields when marked as incorrect
+    if (this.reconciliationForm.value.recModelCorrect === 'NO' && !this.reconciliationForm.value.actModel) {
+      this.errorMessage = 'Please enter the Actual Model when marked as incorrect';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    if (this.reconciliationForm.value.recSerialNoCorrect === 'NO' && !this.reconciliationForm.value.actSerialNo) {
+      this.errorMessage = 'Please enter the Actual Serial No when marked as incorrect';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    // Validate if any select is Fail, require comments
+    const comments1 = (this.visualMechanicalForm.get('comments')?.value || '').toString();
+    const hasFailures = this.checkForFailReadings();
+    
+    if (hasFailures && !comments1.trim()) {
+      this.errorMessage = 'You must enter comments if anything is selected as Fail';
+      this.toastr.error(this.errorMessage);
+      return false;
+    }
+
+    return true;
   }
 
   private validateForm(): boolean {

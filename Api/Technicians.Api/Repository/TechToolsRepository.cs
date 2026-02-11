@@ -11,12 +11,14 @@ namespace Technicians.Api.Repository
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly string _connectionStringProd;
         private readonly string _gpconnectionString;
 
         public TechToolsRepository(IConfiguration configuration)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
+            _connectionStringProd = _configuration.GetConnectionString("DefaultConnectionProd");
             _gpconnectionString = _configuration.GetConnectionString("ETechGreatPlainsConnString");
         }
 
@@ -506,7 +508,8 @@ namespace Technicians.Api.Repository
 
             try
             {
-                using var conn = new SqlConnection(_connectionString);
+                using var conn = new SqlConnection(_connectionStringProd);
+                //Need to be reverted to dev
                 using var cmd = new SqlCommand("JobsToBeUploadedByTech", conn)
                 {
                     CommandType = CommandType.StoredProcedure

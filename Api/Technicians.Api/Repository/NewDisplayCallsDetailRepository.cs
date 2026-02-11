@@ -1,8 +1,9 @@
-﻿using System.Data;
-using System.Data.SqlClient;
+﻿using Dapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Dapper;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using Technicians.Api.Models;
 
 namespace Technicians.Api.Repositories
@@ -113,12 +114,17 @@ namespace Technicians.Api.Repositories
     public class DisplayCallsDetailRepository : IDisplayCallsDetailRepository
     {
         private readonly string _connectionString;
+        private readonly string _eTechConnectionString;
         private readonly ILogger<DisplayCallsDetailRepository> _logger;
 
         public DisplayCallsDetailRepository(IConfiguration configuration, ILogger<DisplayCallsDetailRepository> logger)
         {
             _connectionString = configuration.GetConnectionString("ETechConnString")
                 ?? throw new ArgumentNullException(nameof(configuration), "Connection string 'ETechConnString' not found.");
+
+            _eTechConnectionString = configuration.GetConnectionString("ETechGreatPlainsConnString")
+                ?? throw new ArgumentNullException(nameof(configuration), "Connection string 'ETechGreatPlainsConnString' not found.");
+
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -132,7 +138,7 @@ namespace Technicians.Api.Repositories
                 _logger.LogInformation("Executing NewDisplayCallsDetail for detailPage: {DetailPage}, officeId: {OfficeId}",
                     detailPage, officeId);
 
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_eTechConnectionString);
                 await connection.OpenAsync();
 
                 var parameters = new DynamicParameters();

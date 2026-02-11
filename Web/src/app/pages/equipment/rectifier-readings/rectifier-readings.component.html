@@ -123,6 +123,83 @@
               </div>
             </section>
 
+            <!-- Reconciliation Section -->
+            <section class="ups-readings-section mt-4">
+              <div class="ups-section-card">
+                <div class="ups-section-header" (click)="showReconciliation = !showReconciliation">
+                  <div class="ups-section-title">
+                    <i class="bi bi-check2-square me-2 text-success"></i>
+                    <h5 class="mb-0">Equipment Reconciliation</h5>
+                    <small class="text-muted">Verify recorded information matches actual equipment</small>
+                  </div>
+                  <div class="d-flex align-items-center gap-3" [formGroup]="reconciliationForm" (click)="$event.stopPropagation()">
+                    <div class="verification-status">
+                      <div class="form-check d-flex align-items-center">
+                        <input type="checkbox" class="form-check-input" formControlName="verified" id="verifiedHeader" />
+                        <label class="form-check-label fw-semibold" [class]="reconciliationForm.get('verified')?.value ? 'text-success' : 'text-muted'" for="verifiedHeader">
+                          <i class="bi me-1" [class]="reconciliationForm.get('verified')?.value ? 'bi-check-circle-fill text-success' : 'bi-circle text-muted'"></i>
+                          Verified
+                        </label>
+                      </div>
+                    </div>
+                    <i class="bi transition-transform" [class.bi-chevron-down]="showReconciliation" [class.bi-chevron-right]="!showReconciliation" [class.rotate-90]="showReconciliation"></i>
+                  </div>
+                </div>
+
+                <div class="ups-section-content" [class.show]="showReconciliation">
+                  <form [formGroup]="reconciliationForm" class="ups-form">
+                    <div class="form-group-modern">
+                      <div class="row g-3">
+                        <!-- Model row -->
+                        <div class="col-md-4">
+                          <div class="form-floating">
+                            <input type="text" class="form-control" formControlName="recModel" [value]="reconciliationForm.get('recModel')?.value || ''" readonly id="recModel" placeholder="Model" style="color: #000 !important; opacity: 1 !important;" />
+                            <label for="recModel">Model</label>
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-floating">
+                            <select class="form-select" formControlName="recModelCorrect" id="recModelCorrect">
+                              <option *ngFor="let o of yesNoOptions" [value]="o.value">{{ o.label }}</option>
+                            </select>
+                            <label for="recModelCorrect">Is this Correct?</label>
+                          </div>
+                        </div>
+                        <div class="col-md-5">
+                          <div class="form-floating">
+                            <input type="text" class="form-control text-danger" formControlName="actModel" [readonly]="reconciliationForm.get('recModelCorrect')?.value !== 'NO'" id="actModel" placeholder="Actual Model" />
+                            <label for="actModel">Actual</label>
+                          </div>
+                        </div>
+
+                        <!-- Serial No row -->
+                        <div class="col-md-4">
+                          <div class="form-floating">
+                            <input type="text" class="form-control" formControlName="recSerialNo" [value]="reconciliationForm.get('recSerialNo')?.value || ''" readonly id="recSerialNo" placeholder="Serial No" style="color: #000 !important; opacity: 1 !important;" />
+                            <label for="recSerialNo">Serial No</label>
+                          </div>
+                        </div>
+                        <div class="col-md-3">
+                          <div class="form-floating">
+                            <select class="form-select" formControlName="recSerialNoCorrect" id="recSerialNoCorrect">
+                              <option *ngFor="let o of yesNoOptions" [value]="o.value">{{ o.label }}</option>
+                            </select>
+                            <label for="recSerialNoCorrect">Is this Correct?</label>
+                          </div>
+                        </div>
+                        <div class="col-md-5">
+                          <div class="form-floating">
+                            <input type="text" class="form-control text-danger" formControlName="actSerialNo" [readonly]="reconciliationForm.get('recSerialNoCorrect')?.value !== 'NO'" id="actSerialNo" placeholder="Actual Serial No" />
+                            <label for="actSerialNo">Actual</label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </section>
+
             <!-- Visual and Mechanical Verification Section -->
             <section class="ups-readings-section mt-4">
               <div class="ups-section-card">
