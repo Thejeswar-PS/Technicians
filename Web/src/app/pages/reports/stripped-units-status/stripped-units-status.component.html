@@ -141,7 +141,7 @@
         <tr *ngFor="let item of paginatedItems" 
             [className]="item.stripExists > 0 ? 'has-stripped-parts' : ''">
           <td class="text-center">{{ item.rowIndex }}</td>
-          <td><a class="make-link">{{ item.make }}</a></td>
+          <td><a class="make-link" (click)="redirectToStrippedParts($event, item)" style="cursor: pointer; color: #007bff; text-decoration: none;">{{ item.make }}</a></td>
           <td>{{ item.model }}</td>
           <td class="wrap">{{ item.serialNo }}</td>
           <td class="text-center">{{ item.kva }}</td>

@@ -655,7 +655,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       .pipe(finalize(() => this.isLoadingParts = false))
       .subscribe({
         next: (response: StrippedPartsInUnitApiResponse) => {
-
           
           if (response.success && response.data) {
             this.strippedPartsResponse = response.data;
@@ -681,8 +680,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
                 stripNo: part.stripNo || part.StripNo || 1
               };
             });
-            
-            console.log('Normalized parts data:', this.partsDetails.map(p => ({dcgPartNo: p.dcgPartNo, keepThrow: p.keepThrow})));
             
             this.groupCounts = response.data.groupCounts || [];
             this.costAnalysis = response.data.costAnalysis || [];
@@ -938,6 +935,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Chart and Summary Calculation Methods
   private calculateSummaryAndChart(): void {
+    
     // Check if costAnalysis has the correct summary data (this might be ds.Tables[2])
     if (this.costAnalysis && this.costAnalysis.length > 0) {
       const firstCostItem = this.costAnalysis[0];
@@ -948,8 +946,11 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         firstCostItem.DollarOfTotal !== undefined
       );
       
+
+      
       if (hasCostSummaryData) {
         
+        // Create summaryData from costAnalysis for the summary table
         this.summaryData = this.costAnalysis.map(item => {
           
           const summaryItem = {
@@ -963,6 +964,23 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
           
           return summaryItem;
         });
+        
+        // BUT create chart data from complete groupCounts (which has all groups including missing ones from costAnalysis)
+        if (this.groupCounts && this.groupCounts.length > 0) {
+          
+          // Create complete summary data for chart display from groupCounts
+          const completeSummaryData = this.groupCounts.map(group => ({
+            partGroup: (group.dcgPartGroup || 'Unknown').trim(),
+            partPercent: '0%', // We don't have percentage data in groupCounts
+            dollarOfTotal: '$0.00', // We don't have dollar data in groupCounts
+            quantity: group.count || 0,
+            dollarPerPart: '$0.00', // We don't have dollar per part data in groupCounts
+            partsStripped: (group.dcgPartGroup || 'Unknown').trim()
+          }));
+          
+          // Use complete data for chart display
+          this.summaryData = completeSummaryData;
+        }
         
         // Create grouped parts for display (needed for UI templates)
         this.createGroupedPartsFromAPI();
@@ -985,6 +1003,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       // Check if the first group has pre-calculated summary data
       const firstGroup = this.groupCounts[0];
       const hasPreCalculatedData = firstGroup && (firstGroup['Part %'] || firstGroup['$ of Total'] || firstGroup['$Per Part']);
+      
+
       
       if (hasPreCalculatedData) {
         // Use the existing logic for pre-calculated data
@@ -1073,6 +1093,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   }
 
   private createGroupedPartsFromAPI(): void {
+    
     // Group parts by group type using both database and API property names
     const groupedPartsMap = this.partsDetails.reduce((groups: any, part) => {
       const group = part.group || part.Group || part.GroupType || 'Unknown';
@@ -1177,6 +1198,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   }
 
   private setupChartFromCostAnalysis(): void {
+    
     // Sort groupCounts alphabetically by group name
     const sortedGroupCounts = [...this.groupCounts].sort((a, b) => {
       const groupA = a.dcgPartGroup || 'Unknown';
@@ -1281,8 +1303,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     if (!part.group && part.Group) {
       part.group = part.Group;
     }
-    
-    console.log('Editing part - keepThrow value:', part.keepThrow, 'Original value:', keepThrowValue);
     
     this.editingParts.add(part);
     
@@ -1400,8 +1420,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
                         (p.partDesc === part.partDesc || p.Description === part.Description)
                       ) + 1); // Add 1 since rowIndex is 1-based
       
-      console.log('Deleting part with masterRowIndex:', this.masterRowIndex, 'rowIndex:', rowIndex);
-      
       const deleteSubscription = this.reportService.deleteStrippedPartInUnit(this.masterRowIndex, rowIndex)
         .pipe(finalize(() => this.isDeleting = false))
         .subscribe({
@@ -1508,7 +1526,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   onPartsLocationClick(event: Event): void {
     event.preventDefault();
     // Implementation depends on requirements - could open modal, navigate to location page, etc.
-    this.toastr.info('Parts Location feature to be implemented');
+    // Feature implementation can be added here as needed
   }
 
   // Group collapse state tracking
