@@ -206,7 +206,7 @@ export class ToolTrackingEntryComponent implements OnInit {
 
     // Call the actual API to save the data
     this.toolTrackingService.saveToolTrackingBulk(modifiedData).subscribe({
-      next: (response) => {
+      next: (response: any) => {
         this.isSaving = false;
         
         if (response.success) {
@@ -220,7 +220,7 @@ export class ToolTrackingEntryComponent implements OnInit {
           this.error = response.message || 'Failed to save tool tracking data';
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         this.isSaving = false;
         this.error = err.error?.message || 'An error occurred while saving the data';
         console.error('Error saving tool tracking data:', err);
