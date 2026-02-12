@@ -68,7 +68,7 @@
           <div class="job-overview__grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem;">
             <div class="job-overview__item">
               <span class="job-overview__label">Site ID</span>
-              <a [href]="getSiteHistoryUrl()" target="_blank" rel="noopener" class="job-overview__value link-primary">
+              <a (click)="onViewSiteHistory()" class="job-overview__value link-primary" style="cursor: pointer;">
                 {{ jobInfo.custNmbr || '—' }}
               </a>
               <small class="text-muted">Click to view history</small>
