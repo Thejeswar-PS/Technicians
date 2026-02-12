@@ -95,16 +95,4 @@ export class ToolTrackingService {
       }
     );
   }
-
-  /**
-   * Save bulk tool tracking data updates
-   * @param toolTrackingData Array of modified tool tracking records
-   */
-  saveToolTrackingBulk(toolTrackingData: any[]): Observable<any> {
-    return this.http.put<any>(
-      `${this.apiUrl}/ToolsTrackingTechs/bulk-update`,
-      toolTrackingData,
-      { headers: this.headers }
-    );
-  }
 }
