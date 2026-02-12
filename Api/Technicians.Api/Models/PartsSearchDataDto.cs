@@ -19,7 +19,7 @@ namespace Technicians.Api.Models
 
     /// <summary>
     /// Response DTO for GetPartsSearchData stored procedure results
-    /// Matches the actual SP output columns
+    /// Matches the actual SP output columns exactly
     /// </summary>
     public class PartsSearchDataDto
     {
@@ -30,7 +30,9 @@ namespace Technicians.Api.Models
         public string Make { get; set; } = string.Empty;
         public string Model { get; set; } = string.Empty;
         public string KVA { get; set; } = string.Empty;
-        public string IOVolt { get; set; } = string.Empty; // Maps to 'I/OVolt' (IPVoltage+'/'+OPVoltage)
+        
+        public string IOVolt { get; set; } = string.Empty;
+        
         public string ManufPartNo { get; set; } = string.Empty;
         public string DCGPartNo { get; set; } = string.Empty;
         public string TechName { get; set; } = string.Empty;

@@ -98,15 +98,15 @@ export class PartsSearchComponent implements OnInit, OnDestroy {
     
     const request: PartsSearchRequestDto = {
       address: formValue.address || '',
-      status: formValue.status || '%',
-      siteID: formValue.siteID || '%',
-      make: formValue.make || '%',
-      model: formValue.model || '%',
-      kva: formValue.kva || '%',
-      ipVoltage: formValue.ipVoltage || '%',
-      opVoltage: formValue.opVoltage || '%',
-      manufPartNo: formValue.manufPartNo || '%',
-      dcgPartNo: formValue.dcgPartNo || '%'
+      status: formValue.status || '',
+      siteID: formValue.siteID || '',
+      make: formValue.make || '',
+      model: formValue.model || '',
+      kva: formValue.kva || '',
+      ipVoltage: formValue.ipVoltage || '',
+      opVoltage: formValue.opVoltage || '',
+      manufPartNo: formValue.manufPartNo || '',
+      dcgPartNo: formValue.dcgPartNo || ''
     };
 
     const searchSub = this.reportService.searchPartsData(request)

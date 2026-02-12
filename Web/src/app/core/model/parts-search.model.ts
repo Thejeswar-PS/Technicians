@@ -34,7 +34,7 @@ export interface PartsSearchDataResponse {
   totalRecords: number;
 }
 
-// Filter options for dropdowns
+// Filter options for dropdowns - matching legacy exactly
 export const PARTS_SEARCH_STATUS_OPTIONS = [
   { value: '', label: 'All' },
   { value: 'Initiated', label: 'Initiated' },
