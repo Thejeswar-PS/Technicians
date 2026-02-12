@@ -21,6 +21,8 @@ export class ToolTrackingEntryComponent implements OnInit {
   loadingTechnicians: boolean = false;
   error: string = '';
   successMessage: string = '';
+  isSaving: boolean = false;
+  modifiedRows = new Set<number>();
   
   // File attachment properties - BLOB storage like legacy
   equipmentFiles: EquipmentFileDto[] = [];
@@ -189,9 +191,41 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   onSave(): void {
-    console.log('Saving tool tracking data:', this.trackingData);
-    // TODO: Implement save functionality with API call
-    alert('Save functionality will be implemented with backend integration');
+    if (this.modifiedRows.size === 0) {
+      this.error = 'No changes to save';
+      return;
+    }
+
+    this.isSaving = true;
+    this.error = '';
+
+    // Get only the modified rows
+    const modifiedData = Array.from(this.modifiedRows).map(index => this.trackingData[index]);
+
+    console.log('Saving modified tool tracking data:', modifiedData);
+
+    // Call the actual API to save the data
+    this.toolTrackingService.saveToolTrackingBulk(modifiedData).subscribe({
+      next: (response) => {
+        this.isSaving = false;
+        
+        if (response.success) {
+          this.modifiedRows.clear();
+          this.successMessage = `Successfully saved ${modifiedData.length} tool records`;
+          
+          setTimeout(() => {
+            this.successMessage = '';
+          }, 3000);
+        } else {
+          this.error = response.message || 'Failed to save tool tracking data';
+        }
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.error = err.error?.message || 'An error occurred while saving the data';
+        console.error('Error saving tool tracking data:', err);
+      }
+    });
   }
 
   // Simple methods for editable grid functionality
@@ -379,10 +413,13 @@ export class ToolTrackingEntryComponent implements OnInit {
     }
   }
 
-  updateReceived(item: TechToolsTrackingDto, event: any): void {
+  updateReceived(item: TechToolsTrackingDto, event: any, index: number): void {
     // Convert checkbox boolean to string as expected by backend
     const isChecked = event.target.checked;
     item.received = isChecked ? 'true' : 'false';
+    
+    // Track this row as modified
+    this.modifiedRows.add(index);
     
     // Ensure the value is properly set for immediate UI update
     if (isChecked) {
@@ -430,7 +467,15 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   formatDateForInput(date: any): string {
     if (!date) return '';
+    
     const dateObj = new Date(date);
+    
+    // Check if date is invalid
+    if (isNaN(dateObj.getTime())) return '';
+    
+    // Check if date is from 1900 or earlier (commonly used as "empty" dates in databases)
+    if (dateObj.getFullYear() <= 1900) return '';
+    
     return dateObj.toISOString().split('T')[0];
   }
 
@@ -479,7 +524,7 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   trackByFn(index: number, item: TechToolsTrackingDto): any {
-    return item.toolName + item.serialNo; // Unique identifier for tracking
+    return index; // Use stable index to prevent re-rendering during edits
   }
 
   // New methods for the redesigned UI
@@ -556,6 +601,19 @@ export class ToolTrackingEntryComponent implements OnInit {
   clearMessages(): void {
     this.error = '';
     this.successMessage = '';
+  }
+
+  // Bulk editing methods
+  onFieldChange(index: number, field: string, value: any): void {
+    // Update the field value
+    (this.trackingData[index] as any)[field] = value;
+    
+    // Track this row as modified
+    this.modifiedRows.add(index);
+  }
+
+  getInputValue(event: any): string {
+    return (event.target as HTMLInputElement)?.value || '';
   }
 
 }
