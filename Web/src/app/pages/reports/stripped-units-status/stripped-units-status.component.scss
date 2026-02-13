@@ -1,17 +1,309 @@
+/* ==========================================================
+   STRIPPED UNITS STATUS
+   CLEAN ENTERPRISE VERSION
+========================================================== */
+
+/* ================= PAGE ================= */
+
 .stripped-units-status-container {
-  padding: 20px;
+  background: #f3f6fb;
+  min-height: 100vh;
+  padding: 24px;
+  font-family: "Inter", system-ui, sans-serif;
+  overflow-x: hidden;
 }
 
+/* ================= HEADER ================= */
+
+.order-request-header__top {
+  margin-bottom: 20px;
+
+  .parts-request-header__back {
+    border-radius: 6px;
+    font-weight: 500;
+  }
+}
+
+.order-request-page-title h2 {
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #1f2937;
+
+  i {
+    color: #2563eb;
+  }
+}
+
+/* ================= MAIN CARD ================= */
+
 .main-card {
+  background: #ffffff;
   border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  margin-bottom: 20px;
 
   .card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 16px 20px;
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #111827;
+
+      i {
+        color: #2563eb;
+      }
+    }
   }
 
   .card-body {
     padding: 24px;
+  }
+}
+
+/* ================= LOADING OVERLAY ================= */
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* ==========================================================
+   MODERN ENTERPRISE BAR CHART
+========================================================== */
+
+.vertical-bar-chart {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+}
+
+/* Header */
+.chart-header {
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  
+  i {
+    color: #2563eb;
+  }
+}
+
+.chart-subtitle {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+/* Chart Layout */
+.chart-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex: 1;
+  min-height: 300px;
+  position: relative;
+}
+
+/* Y Axis */
+.y-axis {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  width: 40px;
+  min-height: 300px;
+  flex-shrink: 0;
+}
+
+.y-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+/* Bars Container */
+.bars-area {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
+  flex: 1;
+  height: 300px;
+  position: relative;
+  padding: 0 20px;
+}
+
+/* Grid Lines */
+.bars-area::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+    to top,
+    rgba(203, 213, 225, 0.3) 1px,
+    transparent 1px
+  );
+  background-size: 100% 20%;
+}
+
+/* Individual Bar */
+.bar {
+  flex: 1;
+  max-width: 90px;
+  min-width: 30px;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  
+  /* Ensure very small values are still visible */
+  min-height: 5px;
+}
+
+/* Value bubble */
+.bar-value {
+  position: absolute;
+  top: -28px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #ffffff;
+  padding: 3px 8px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* X Axis */
+.x-axis {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 0 20px;
+}
+
+.x-label {
+  flex: 1;
+  max-width: 90px;
+  min-width: 30px;
+  text-align: center;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  color: #374151;
+}
+
+/* No Data Placeholder */
+.no-data-placeholder {
+  text-align: center;
+  padding: 60px 20px;
+  
+  .no-data-content {
+    color: #9ca3af;
+    
+    i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    h5 {
+      font-size: 1.25rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    p {
+      font-size: 0.95rem;
+    }
+  }
+}
+
+/* ==========================================================
+   RESPONSIVE DESIGN
+========================================================== */
+
+@media (max-width: 992px) {
+  .bars-area {
+    gap: 16px;
+  }
+
+  .x-axis {
+    gap: 16px;
+  }
+
+  .bar {
+    width: 60px;
+    min-width: 50px;
+  }
+
+  .x-label {
+    width: 60px;
+    min-width: 50px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .vertical-bar-chart {
+    padding: 16px;
+  }
+
+  .bars-area {
+    gap: 12px;
+    min-height: 250px;
+    height: 250px;
+  }
+
+  .chart-wrapper {
+    min-height: 250px;
+  }
+
+  .y-axis {
+    min-height: 250px;
+  }
+
+  .x-axis {
+    gap: 12px;
+  }
+
+  .bar {
+    width: 50px;
+    min-width: 40px;
+  }
+
+  .x-label {
+    width: 50px;
+    min-width: 40px;
+    font-size: 0.65rem;
+  }
+
+  .chart-title {
+    font-size: 1rem;
+  }
+
+  .chart-subtitle {
+    font-size: 0.8rem;
   }
 }
 

@@ -1,55 +1,91 @@
 <!-- Stripped Units Status Page -->
 <div class="container-fluid stripped-units-status-container">
 
+  <!-- Header Section -->
+  <div class="order-request-header__top mb-2 d-flex justify-content-between align-items-center">
+    <!-- Back Button -->
+    <button class="btn btn-outline-primary parts-request-header__back" (click)="goBack()" [disabled]="isLoading">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="order-request-page-title flex-grow-1 text-center">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-clipboard-data me-2"></i>
+        Stripped Units Status
+      </h2>
+    </div>
+    
+    <!-- Spacer for balance -->
+    <div style="width: 80px;"></div>
+  </div>
+
   <!-- Loading Overlay -->
   <div *ngIf="isLoading" class="loading-overlay">
     <div class="spinner-border text-primary"></div>
   </div>
 
-  <!-- PAGE HEADER -->
-  <div class="card shadow-sm main-card mb-12">
-    <div class="card-header border-0 py-16">
-      <div class="position-relative d-flex align-items-center">
-        <button
-          class="btn btn-sm btn-primary position-absolute start-0"
-          (click)="goBack()"
-          [disabled]="isLoading">
-          <i class="bi bi-arrow-left me-4"></i> Back
-        </button>
-
-        <h3 class="fw-bold text-primary mb-0 w-100 text-center">
-          Stripped Units Status
-        </h3>
-      </div>
-    </div>
-  </div>
-
   <!-- =======================
        MAKE DISTRIBUTION (BAR)
        ======================= -->
-  <div class="card shadow-sm main-card mb-16">
-    <div class="card-header fw-semibold">
-      Make Distribution
+  <div class="vertical-bar-chart mb-4">
+    <div *ngIf="isLoadingMakeChart" class="text-center py-24">
+      <div class="spinner-border text-primary"></div>
     </div>
 
-    <div class="card-body">
-      <div *ngIf="isLoadingMakeChart" class="text-center py-24">
-        <div class="spinner-border text-primary"></div>
+    <div *ngIf="!isLoadingMakeChart && makeCountsList.length > 0">
+      <!-- Chart Header -->
+      <div class="chart-header">
+        <h6 class="chart-title">
+          <i class="bi bi-bar-chart-fill me-2 text-primary"></i>
+          Make Distribution
+        </h6>
+        <span class="chart-subtitle">Units by Make Type</span>
       </div>
 
-      <div *ngIf="!isLoadingMakeChart && makeCountsList.length > 0">
-        <apx-chart
-          [series]="barChartOptions.series"
-          [chart]="barChartOptions.chart"
-          [plotOptions]="barChartOptions.plotOptions"
-          [dataLabels]="barChartOptions.dataLabels"
-          [xaxis]="barChartOptions.xaxis"
-          [yaxis]="barChartOptions.yaxis"
-          [colors]="barChartOptions.colors"
-          [tooltip]="barChartOptions.tooltip"
-          [grid]="barChartOptions.grid"
-          [states]="barChartOptions.states">
-        </apx-chart>
+      <!-- Chart Body -->
+      <div class="chart-wrapper">
+
+        <!-- Y Axis -->
+        <div class="y-axis">
+          <div class="y-label" *ngFor="let tick of getYAxisTicks()">
+            {{ tick }}
+          </div>
+        </div>
+
+        <!-- Bars Area -->
+        <div class="bars-area">
+
+          <div class="bar"
+               *ngFor="let make of makeCountsList; let i = index"
+               [style.height.%]="getBarHeightPercentage(make.makeCount)"
+               [style.background]="getProgressColor(i)">
+
+            <div class="bar-value">
+              {{ make.makeCount }}
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- X Axis Labels -->
+      <div class="x-axis">
+        <div class="x-label"
+             *ngFor="let make of makeCountsList">
+          {{ make.make }}
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!isLoadingMakeChart && makeCountsList.length === 0" class="no-data-placeholder">
+      <div class="no-data-content">
+        <i class="bi bi-bar-chart display-1 mb-3 text-muted"></i>
+        <h5 class="text-muted">No Make Data Available</h5>
+        <p class="text-muted mb-0">Chart will appear when make data is loaded</p>
       </div>
     </div>
   </div>

@@ -1245,4 +1245,65 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
       ctx.fillText(item.makeCount.toString(), x + barWidth/2, y - 5);
     });
   }
+
+  // ========================================
+  // MODERN CHART HELPER METHODS
+  // ========================================
+
+  // Helper method to get progress bar colors
+  getProgressColor(index: number): string {
+    const colors = [
+      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      'linear-gradient(135deg, #00a8ff 0%, #0078cc 100%)', 
+      'linear-gradient(135deg, #00d4ff 0%, #17a2b8 100%)',
+      'linear-gradient(135deg, #32cd32 0%, #228b22 100%)',
+      'linear-gradient(135deg, #ffa500 0%, #ff6347 100%)',
+      'linear-gradient(135deg, #da70d6 0%, #ba55d3 100%)',
+      'linear-gradient(135deg, #ff69b4 0%, #ff1493 100%)',
+      'linear-gradient(135deg, #00ffff 0%, #008b8b 100%)'
+    ];
+    return colors[index % colors.length];
+  }
+
+  // Get maximum count for auto-scaling
+  getMaxCount(): number {
+    if (!this.makeCountsList || this.makeCountsList.length === 0) {
+      return 10; // Default max value
+    }
+    const maxCount = Math.max(...this.makeCountsList.map(item => item.makeCount || 0));
+    // Round up to next nice number for better Y-axis labels
+    return Math.max(10, Math.ceil(maxCount * 1.2));
+  }
+
+  // Generate Y-axis tick marks based on max value
+  getYAxisTicks(): number[] {
+    const max = this.getMaxCount();
+    const tickCount = 6;
+    const step = Math.ceil(max / (tickCount - 1));
+    const ticks = [];
+    
+    for (let i = tickCount - 1; i >= 0; i--) {
+      ticks.push(i * step);
+    }
+    
+    return ticks;
+  }
+
+  // Calculate bar height percentage based on max value
+  getBarHeightPercentage(value: number): number {
+    if (!this.makeCountsList?.length) {
+      return 0;
+    }
+
+    const maxValue = Math.max(...this.makeCountsList.map(x => x.makeCount || 0));
+    
+    if (!maxValue || maxValue === 0) {
+      return 10; // minimum visible height
+    }
+
+    const percent = (value / maxValue) * 90; // Use 90% of container height
+    const finalPercent = Math.max(percent, 5); // minimum 5% height
+    
+    return finalPercent;
+  }
 }
