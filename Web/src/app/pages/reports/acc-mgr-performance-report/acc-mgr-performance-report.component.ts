@@ -14,6 +14,9 @@ import {
   styleUrls: ['./acc-mgr-performance-report.component.scss']
 })
 export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
+  // Math object for template access
+  Math = Math;
+  
   reportForm: FormGroup;
   reportData: AccMgrPerformanceReportResponseDto | null = null;
   summaryData: AccMgrPerformanceReportSummaryDto | null = null;
@@ -23,7 +26,12 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   errorMessage: string | null = null;
   
   // Active section for tabbed view
-  activeSection = 'summary';
+  activeSection = 'returnedForProcessing';
+  
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 100;
+  totalItems = 0;
   
   private subscriptions: Subscription[] = [];
 
@@ -79,6 +87,36 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.reportData = data;
         this.isLoading = false;
+        
+        console.log('Report data received:', data);
+        
+        // If this is a RedOrange (Critical Jobs) filter, set active section to show data
+        if (filterType === 'RedOrange') {
+          console.log('Processing RedOrange filter - checking data sections...');
+          
+          // Check which section has data and set it as active
+          if (data.CompletedNotReturned?.length || data.completedNotReturned?.length) {
+            this.activeSection = 'completedNotReturned';
+            console.log('Found data in completedNotReturned:', data.CompletedNotReturned || data.completedNotReturned);
+          } else if (data.ReturnedForProcessing?.length || data.returnedForProcessing?.length) {
+            this.activeSection = 'returnedForProcessing';
+            console.log('Found data in returnedForProcessing:', data.ReturnedForProcessing || data.returnedForProcessing);
+          } else if (data.PastDueUnscheduled?.length || data.pastDueUnscheduled?.length) {
+            this.activeSection = 'pastDueUnscheduled';
+            console.log('Found data in pastDueUnscheduled:', data.PastDueUnscheduled || data.pastDueUnscheduled);
+          } else if (data.FirstMonth?.length || data.firstMonth?.length) {
+            this.activeSection = 'firstMonth';
+            console.log('Found data in firstMonth:', data.FirstMonth || data.firstMonth);
+          } else if (data.ReturnedWithIncompleteData?.length || data.returnedWithIncompleteData?.length) {
+            this.activeSection = 'returnedWithIncompleteData';
+            console.log('Found data in returnedWithIncompleteData:', data.ReturnedWithIncompleteData || data.returnedWithIncompleteData);
+          } else {
+            // Default to first available section for critical jobs
+            this.activeSection = 'completedNotReturned';
+            console.log('No data found in any section, defaulting to completedNotReturned');
+          }
+          console.log('Critical jobs filter applied, active section set to:', this.activeSection);
+        }
       },
       error: (error) => {
         this.isLoading = false;
@@ -264,27 +302,6 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get badge class for status display
-   */
-  getStatusBadgeClass(status: string): string {
-    if (!status) return 'badge badge-light';
-    
-    const statusLower = status.toLowerCase();
-    
-    if (statusLower.includes('complete') || statusLower.includes('approved')) {
-      return 'badge badge-success';
-    }
-    if (statusLower.includes('pending') || statusLower.includes('processing')) {
-      return 'badge badge-warning';
-    }
-    if (statusLower.includes('returned') || statusLower.includes('incomplete')) {
-      return 'badge badge-danger';
-    }
-    
-    return 'badge badge-light';
-  }
-
-  /**
    * Get badge class for priority display
    */
   getPriorityBadgeClass(priority: string): string {
@@ -313,6 +330,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    */
   setActiveSection(section: string): void {
     this.activeSection = section;
+    this.currentPage = 1; // Reset to first page when switching sections
   }
 
   /**
@@ -354,7 +372,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     this.reportData = null;
     this.summaryData = null;
     this.errorMessage = null;
-    this.activeSection = 'summary';
+    this.activeSection = 'returnedForProcessing';
   }
 
   /**
@@ -526,5 +544,86 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     const currentAge = item.currentAge || item.changeAge || 0;
     const quotedAmount = item.quotedAmount || item.amount || 0;
     return currentAge > 30 && quotedAmount > 0;
+  }
+
+  // Status badge color methods
+  getStatusBadgeClass(item: any, sectionType?: string): string {
+    const status = this.getStatusText(item);
+    const statusLower = status.toLowerCase();
+    
+    // Handle different status types with appropriate colors
+    if (statusLower.includes('opn') || statusLower === 'open') {
+      // OPN (Open) - Green normally, Red if in critical sections
+      const isCriticalSection = sectionType === 'completedNotReturned' || 
+                               sectionType === 'returnedForProcessing' || 
+                               sectionType === 'pastDueUnscheduled';
+      return isCriticalSection ? 'bg-danger' : 'bg-success';
+    }
+    
+    if (status === 'Bill After PM' || statusLower.includes('blb') || status === 'Could be billed') {
+      // BLB (Bill After PM) - Orange/Warning color
+      return 'bg-warning text-dark';
+    }
+    
+    if (statusLower.includes('fcd') || statusLower === 'forced close') {
+      // FCD (Forced Close) - Purple color
+      return 'bg-primary';
+    }
+    
+    if (statusLower.includes('complete') || statusLower.includes('confirmed')) {
+      // Completed/Confirmed statuses - Green
+      return 'bg-success';
+    }
+    
+    if (statusLower.includes('pending') || statusLower.includes('processing')) {
+      // Pending/Processing statuses - Blue
+      return 'bg-info';
+    }
+    
+    if (statusLower.includes('returned') || statusLower.includes('incomplete')) {
+      // Returned/Incomplete statuses - Red
+      return 'bg-danger';
+    }
+    
+    // Default status color
+    return 'bg-secondary';
+  }
+
+  // Pagination methods
+  getPaginatedData(): any[] {
+    const activeData = this.getActiveData();
+    this.totalItems = activeData.length;
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    return activeData.slice(startIndex, endIndex);
+  }
+
+  getTotalPages(): number {
+    return Math.ceil(this.totalItems / this.itemsPerPage);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
   }
 }
