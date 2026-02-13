@@ -2091,10 +2091,10 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   // #region Navigation and UI Methods
 
   /**
-   * Navigates back to the previous page or unit test list
+   * Navigates back to the UPS test status page
    */
   onBack(): void {
-    this.location.back();
+    this.router.navigate(['/reports/ups-test-status']);
   }
 
   /**

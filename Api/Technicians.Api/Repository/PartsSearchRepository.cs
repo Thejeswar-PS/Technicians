@@ -1,4 +1,3 @@
-
 using Dapper;
 using Microsoft.Data.SqlClient;
 using System.Data;
@@ -62,22 +61,27 @@ namespace Technicians.Api.Repository
                     commandTimeout: 1000
                 );
 
-                // Manually map the results to handle the I/OVolt column
-                var data = dynamicResults.Select(row => new PartsSearchDataDto
+                // Manually map the results to handle the I/OVolt column safely
+                var data = dynamicResults.Select(row => 
                 {
-                    CallNbr = row.CallNbr ?? string.Empty,
-                    CUSTNMBR = row.CUSTNMBR ?? string.Empty,
-                    Status = row.Status ?? string.Empty,
-                    Address = row.Address ?? string.Empty,
-                    Make = row.Make ?? string.Empty,
-                    Model = row.Model ?? string.Empty,
-                    KVA = row.KVA ?? string.Empty,
-                    IOVolt = row["I/OVolt"] ?? string.Empty, // Handle the special column name
-                    ManufPartNo = row.ManufPartNo ?? string.Empty,
-                    DCGPartNo = row.DCGPartNo ?? string.Empty,
-                    TechName = row.TechName ?? string.Empty,
-                    JobType = row.JobType ?? string.Empty,
-                    RequestedDate = row.RequestedDate
+                    var rowDict = (IDictionary<string, object>)row;
+                    
+                    return new PartsSearchDataDto
+                    {
+                        CallNbr = GetSafeStringValue(rowDict, "CallNbr"),
+                        CUSTNMBR = GetSafeStringValue(rowDict, "CUSTNMBR"),
+                        Status = GetSafeStringValue(rowDict, "Status"),
+                        Address = GetSafeStringValue(rowDict, "Address"),
+                        Make = GetSafeStringValue(rowDict, "Make"),
+                        Model = GetSafeStringValue(rowDict, "Model"),
+                        KVA = GetSafeStringValue(rowDict, "KVA"),
+                        IOVolt = GetSafeStringValue(rowDict, "I/OVolt"), // Handle the special column name safely
+                        ManufPartNo = GetSafeStringValue(rowDict, "ManufPartNo"),
+                        DCGPartNo = GetSafeStringValue(rowDict, "DCGPartNo"),
+                        TechName = GetSafeStringValue(rowDict, "TechName"),
+                        JobType = GetSafeStringValue(rowDict, "JobType"),
+                        RequestedDate = GetSafeDateTimeValue(rowDict, "RequestedDate")
+                    };
                 }).ToList();
 
                 return new PartsSearchDataResponse
@@ -126,6 +130,27 @@ namespace Technicians.Api.Repository
                    string.IsNullOrEmpty(request.OPVoltage) &&
                    string.IsNullOrEmpty(request.ManufPartNo) &&
                    string.IsNullOrEmpty(request.DCGPartNo);
+        }
+
+        private static string GetSafeStringValue(IDictionary<string, object> row, string columnName)
+        {
+            if (row.TryGetValue(columnName, out var value) && value != null)
+            {
+                return value.ToString() ?? string.Empty;
+            }
+            return string.Empty;
+        }
+
+        private static DateTime? GetSafeDateTimeValue(IDictionary<string, object> row, string columnName)
+        {
+            if (row.TryGetValue(columnName, out var value) && value != null && value != DBNull.Value)
+            {
+                if (DateTime.TryParse(value.ToString(), out var dateValue))
+                {
+                    return dateValue;
+                }
+            }
+            return null;
         }
     }
 }
