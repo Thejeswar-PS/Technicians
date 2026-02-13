@@ -75,9 +75,9 @@
               <!-- Chart Content -->
               <div class="chart-content">
                 <!-- Show chart if we have summary data or grouped parts data -->
-                <div *ngIf="(summaryData && summaryData.length > 0) || (groupedParts && groupedParts.length > 0); else noChartData" 
-                     class="modern-chart-wrapper"
-                     [style.height.px]="getChartHeight()">
+                <<div *ngIf="summaryData && summaryData.length > 0; else noChartData"
+     class="modern-chart-wrapper">
+
                   <!-- Modern Vertical Bar Chart -->
                   <div class="vertical-bar-chart">
 
@@ -326,17 +326,21 @@
                         <span class="badge" [ngClass]="{
                           'bg-success': !isThrowItem(part.keepThrow || part.KeepThrow),
                           'bg-danger': isThrowItem(part.keepThrow || part.KeepThrow)
-                        }">
+                        }" *ngIf="part.keepThrow || part.KeepThrow">
                           {{ part.keepThrow || part.KeepThrow }}
+                        </span>
+                        <span class="text-muted" *ngIf="!(part.keepThrow || part.KeepThrow)">
+                          Not Set
                         </span>
                       </div>
                       <ng-template #editStatusTemplate>
                         <select class="form-control form-control-sm mx-auto" 
                                 [(ngModel)]="part.keepThrow" 
-                                [value]="part.keepThrow || part.KeepThrow || 'Keep'"
+                                [value]="part.keepThrow || part.KeepThrow || ''"
                                 style="width: 90px;">
-                          <option value="Keep" [selected]="(part.keepThrow || part.KeepThrow) === 'Keep'">Keep</option>
-                          <option value="Throw" [selected]="(part.keepThrow || part.KeepThrow) === 'Throw'">Throw</option>
+                          <option value="">Select...</option>
+                          <option value="KEEP" [selected]="(part.keepThrow || part.KeepThrow)?.toUpperCase() === 'KEEP'">Keep</option>
+                          <option value="THROW" [selected]="(part.keepThrow || part.KeepThrow)?.toUpperCase() === 'THROW'">Throw</option>
                         </select>
                       </ng-template>
                     </td>

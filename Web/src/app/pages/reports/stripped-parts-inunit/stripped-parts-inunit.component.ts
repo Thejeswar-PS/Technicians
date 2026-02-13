@@ -670,10 +670,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
               
               return {
                 ...part,
-                // Force consistent property naming with validated values
-                keepThrow: (normalizedKeepThrow === 'Keep' || normalizedKeepThrow === 'Throw') 
-                          ? normalizedKeepThrow 
-                          : 'Keep', // Default to 'Keep' if invalid
+                // Force consistent property naming - preserve original API values
+                keepThrow: normalizedKeepThrow || '', // No default, use empty string if nothing from API
                 dcgPartNo: part.dcgPartNo || part.DCGPartNo || '',
                 partDesc: part.partDesc || part.Description || '',
                 group: part.group || part.Group || '',
@@ -802,14 +800,29 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   }
 
   // Calculate bar height percentage based on max value
-  getBarHeightPercentage(quantity: number): number {
-    const max = this.getMaxQuantity();
-    if (max === 0) return 0;
+  getBarHeightPercentage(value: number): number {
+    console.log('Calculating height for value:', value, 'summaryData:', this.summaryData?.map(x => ({ part: x.partsStripped, quantity: x.quantity })));
     
-    const percentage = (quantity / max) * 100;
-    // Ensure minimum height for visibility
-    return Math.max(percentage, 3);
+    if (!this.summaryData?.length) {
+      console.log('No summary data, returning 0');
+      return 0;
+    }
+
+    const maxValue = Math.max(...this.summaryData.map(x => x.quantity));
+    console.log('Max value:', maxValue);
+    
+    if (!maxValue || maxValue === 0) {
+      console.log('Max value is 0, returning minimum height');
+      return 10; // minimum visible height
+    }
+
+    const percent = (value / maxValue) * 90; // Use 90% of container height
+    const finalPercent = Math.max(percent, 5); // minimum 5% height
+    
+    console.log(`Value ${value} / Max ${maxValue} = ${percent}% (final: ${finalPercent}%)`);
+    return finalPercent;
   }
+
 
   // Calculate dynamic chart height based on data
   getChartHeight(): number {
@@ -1288,10 +1301,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     // Handle different property name variations from API (KeepThrow vs keepThrow)
     const keepThrowValue = part.keepThrow || part.KeepThrow || part['KeepThrow'] || part['keepThrow'];
     
-    // Force set the keepThrow value - override any blank/undefined states
-    part.keepThrow = keepThrowValue && (keepThrowValue.toString().trim() === 'Keep' || keepThrowValue.toString().trim() === 'Throw') 
-                     ? keepThrowValue.toString().trim() 
-                     : 'Keep'; // Default fallback
+    // Preserve the original keepThrow value from API
+    part.keepThrow = keepThrowValue ? keepThrowValue.toString().trim() : '';
     
     // Normalize other properties
     if (!part.dcgPartNo && part.DCGPartNo) {
@@ -1314,7 +1325,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       const selectElements = document.querySelectorAll('select.form-select');
       selectElements.forEach((element: Element) => {
         const select = element as HTMLSelectElement;
-        const currentValue = part.keepThrow || 'Keep';
+        const currentValue = part.keepThrow || '';
         if (select.value !== currentValue) {
           select.value = currentValue;
           // Trigger change event
@@ -1358,7 +1369,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       dcgPartGroup: dcgPartGroup.trim(),
       dcgPartNo: part.dcgPartNo?.trim() || '',
       partDesc: part.partDesc?.trim() || '',
-      keepThrow: part.keepThrow || 'Keep',
+      keepThrow: part.keepThrow || '',
       stripNo: part.stripNo ? parseInt(part.stripNo.toString()) : 1,
       lastModifiedBy: username
     };

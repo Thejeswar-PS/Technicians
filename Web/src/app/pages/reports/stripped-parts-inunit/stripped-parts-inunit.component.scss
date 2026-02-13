@@ -107,17 +107,21 @@
    CHART SECTION
 ========================================================== */
 
-/* =============================
-   MODERN ENTERPRISE BAR CHART
-============================= */
+/* ==========================================================
+   ENTERPRISE AUTO-FIT BAR CHART (NO SCROLL)
+========================================================== */
 
 .vertical-bar-chart {
   width: 100%;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #e5e7eb;
 }
 
 /* Header */
 .chart-header {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .chart-title {
@@ -130,23 +134,21 @@
   color: #6b7280;
 }
 
-/* Chart Layout */
-
+/* Layout */
 .chart-wrapper {
   display: flex;
   align-items: flex-end;
-  min-height: 350px;
-  position: relative;
+  min-height: 340px;
 }
 
 /* Y Axis */
-
 .y-axis {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  margin-right: 12px;
+  margin-right: 16px;
   min-height: 300px;
+  flex-shrink: 0;
 }
 
 .y-label {
@@ -154,20 +156,19 @@
   color: #6b7280;
 }
 
-/* Bars */
-
+/* Bars Container */
 .bars-area {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
-  align-items: end;
-  gap: 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 12px;
   flex: 1;
-  min-height: 300px;
+  height: 300px;
   position: relative;
+  padding: 0 20px;
 }
 
 /* Grid Lines */
-
 .bars-area::before {
   content: "";
   position: absolute;
@@ -175,53 +176,60 @@
   pointer-events: none;
   background-image: linear-gradient(
     to top,
-    rgba(203, 213, 225, 0.25) 1px,
+    rgba(203, 213, 225, 0.3) 1px,
     transparent 1px
   );
   background-size: 100% 20%;
 }
 
-/* Individual Bar */
-
+/* Bar */
 .bar {
-  position: relative;
+  flex: 1;
+  max-width: 90px;
+  min-width: 30px;
   border-radius: 6px 6px 0 0;
   transition: height 0.3s ease;
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  
+  /* Ensure very small values are still visible */
+  min-height: 5px;
 }
 
-/* Value bubble */
-
+/* Value Bubble */
 .bar-value {
   position: absolute;
   top: -28px;
   font-size: 0.75rem;
   font-weight: 600;
   background: #ffffff;
-  padding: 2px 8px;
+  padding: 3px 8px;
   border-radius: 12px;
   border: 1px solid #e5e7eb;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 /* X Axis */
-
 .x-axis {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
-  margin-top: 12px;
-  gap: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 0 20px;
 }
 
 .x-label {
+  flex: 1;
+  max-width: 90px;
+  min-width: 30px;
   text-align: center;
   font-size: 0.75rem;
   line-height: 1.2;
-  word-break: break-word;
   color: #374151;
 }
+
 
 
 /* ==========================================================
@@ -232,7 +240,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px; /* Further reduced from 4px to 2px */
-  margin-top: -180px; /* Increased negative margin from -20px to -35px */
+  margin-top: 5px; /* Increased negative margin from -20px to -35px */
 }
 
 .compact-summary-card {
@@ -325,5 +333,50 @@
 
   .chart-area {
     min-height: 360px;
+  }
+
+  .bars-area {
+    gap: 16px;
+  }
+
+  .x-axis {
+    gap: 16px;
+  }
+
+  .bar {
+    width: 60px;
+    min-width: 50px;
+  }
+
+  .x-label {
+    width: 60px;
+    min-width: 50px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .vertical-bar-chart {
+    padding: 16px;
+  }
+
+  .bars-area {
+    gap: 12px;
+    min-height: 250px;
+  }
+
+  .x-axis {
+    gap: 12px;
+  }
+
+  .bar {
+    width: 50px;
+    min-width: 40px;
+  }
+
+  .x-label {
+    width: 50px;
+    min-width: 40px;
+    font-size: 0.65rem;
   }
 }
