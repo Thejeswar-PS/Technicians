@@ -497,10 +497,23 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: any) => {
-        if (response.success && response.data) {
-          this.upsTestStatusList = response.data.unitsData || [];
-          this.makeCounts = response.data.makeCounts || [];
-          this.totalRecords = response.totalRecords || this.upsTestStatusList.length;
+        const dataRoot = response?.data ?? response;
+        const unitsData = Array.isArray(dataRoot)
+          ? dataRoot
+          : Array.isArray(dataRoot?.unitsData)
+            ? dataRoot.unitsData
+            : Array.isArray(dataRoot?.data)
+              ? dataRoot.data
+              : Array.isArray(response)
+                ? response
+                : [];
+        const makeCounts = dataRoot?.makeCounts || response?.makeCounts || [];
+        const totalRecords = response?.totalRecords || dataRoot?.totalRecords || unitsData.length;
+
+        if (unitsData.length > 0 || response?.success) {
+          this.upsTestStatusList = unitsData;
+          this.makeCounts = makeCounts;
+          this.totalRecords = totalRecords;
           
           // Update filter options based on new data
           this.updateAvailableFilterOptions();
@@ -514,17 +527,19 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
           // Process chart data
           this.processChartData();
         } else {
-          this.errorMessage = response.message || 'Failed to load UPS test status data';
+          this.errorMessage = response?.message || 'Failed to load UPS test status data';
           this.upsTestStatusList = [];
           this.totalRecords = 0;
         }
         this.isLoading = false;
+        this.cdr.markForCheck();
       },
       error: (error: any) => {
         this.errorMessage = error.error?.message || 'Failed to load UPS test status data. Please try again.';
         this.upsTestStatusList = [];
         this.totalRecords = 0;
         this.isLoading = false;
+        this.cdr.markForCheck();
       }
     });
     
@@ -566,6 +581,9 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.totalRecords = this.filteredData.length;
     this.currentPage = 1; // Reset to first page when filters change
     this.updateDisplayedData();
+    
+    // Also update new template properties
+    this.applyFilters();
     
     this.isProcessingData = false;
   }
@@ -953,7 +971,7 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   get totalPages(): number {
-    return Math.ceil(this.totalRecords / this.pageSize);
+    return Math.ceil(this.totalItems / this.itemsPerPage);
   }
 
   getStatusBadgeClass(status: string): string {
@@ -1054,13 +1072,13 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(numValue);
   }
 
-  formatDate(dateString: string): string {
-    if (!dateString) return 'N/A';
+  formatDate(dateValue: string | Date | undefined): string {
+    if (!dateValue) return 'N/A';
     try {
-      const date = new Date(dateString);
+      const date = new Date(dateValue);
       return date.toLocaleDateString();
     } catch {
-      return dateString; // Return original if parsing fails
+      return typeof dateValue === 'string' ? dateValue : 'N/A';
     }
   }
 
@@ -1123,6 +1141,141 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     const total = this.filteredData.length;
     const makeCount = this.makeSummary[make] || 0;
     return total > 0 ? Math.round((makeCount / total) * 100) : 0;
+  }
+
+  // ===== STRIPPED UNITS STATUS TEMPLATE PROPERTIES =====
+  
+  // Additional properties for template compatibility
+  filteredUnitsList: UPSTestStatusDto[] = [];
+  itemsPerPage: number = 25;
+  totalItems: number = 0;
+  paginatedItems: UPSTestStatusDto[] = [];
+  
+  // ==== CHART METHODS ====
+  
+  /**
+   * Get progress color for chart bars
+   */
+  getProgressColor(index: number): string {
+    const colors = [
+      '#4f46e5', '#06b6d4', '#10b981', '#f59e0b',  
+      '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6',
+      '#f97316', '#6366f1', '#84cc16', '#f43f5e'
+    ];
+    return colors[index % colors.length];
+  }
+  
+  /**
+   * Apply filters to the data
+   */
+  private applyFilters(): void {
+    const baseList = this.filteredData.length > 0 ? this.filteredData : this.upsTestStatusList;
+    let filtered = [...baseList];
+    
+    const assignedToValue = this.filterForm.get('assignedTo')?.value;
+    const statusValue = this.filterForm.get('status')?.value;
+    const priorityValue = this.filterForm.get('priority')?.value;
+
+    if (assignedToValue && assignedToValue !== 'All') {
+      filtered = filtered.filter(item => item.assignedTo === assignedToValue);
+    }
+
+    if (statusValue && statusValue !== 'All') {
+      const statusLabel = this.statusLabels?.[statusValue] || statusValue;
+      const normalizedValue = statusValue.toString().toLowerCase().trim();
+      const normalizedLabel = statusLabel.toString().toLowerCase().trim();
+      filtered = filtered.filter(item => {
+        const itemStatus = (item.status || '').toString().toLowerCase().trim();
+        return itemStatus === normalizedValue || itemStatus === normalizedLabel;
+      });
+    }
+
+    if (priorityValue && priorityValue !== 'All') {
+      filtered = filtered.filter(item => item.priority === priorityValue);
+    }
+
+    this.filteredUnitsList = filtered;
+    this.totalItems = filtered.length;
+    this.totalRecords = filtered.length;
+    this.updatePaginatedItems();
+    this.cdr.markForCheck();
+  }
+  
+  /**
+   * Handle status filter change
+   */
+  onStatusChange(): void {
+    this.currentPage = 1;
+    this.loadUPSTestStatusData();
+  }
+  
+  /**
+   * Change items per page
+   */
+  changeItemsPerPage(newSize: number): void {
+    this.itemsPerPage = newSize;
+    this.currentPage = 1;
+    this.updatePaginatedItems();
+  }
+  
+  /**
+   * Navigate to specific page
+   */
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedItems();
+    }
+  }
+  
+  /**
+   * Sort table by column
+   */
+  sortBy(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    
+    this.filteredUnitsList.sort((a: any, b: any) => {
+      let aVal = a[column];
+      let bVal = b[column];
+      
+      // Handle null/undefined values
+      if (aVal == null) aVal = '';
+      if (bVal == null) bVal = '';
+      
+      // Convert to string for comparison
+      aVal = aVal.toString().toLowerCase();
+      bVal = bVal.toString().toLowerCase();
+      
+      if (this.sortDirection === 'asc') {
+        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      } else {
+        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+      }
+    });
+    
+    this.updatePaginatedItems();
+  }
+  
+  /**
+   * Update paginated items based on current page
+   */
+  private updatePaginatedItems(): void {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    this.paginatedItems = this.filteredUnitsList.slice(startIndex, endIndex);
+  }
+  
+  /**
+   * Edit UPS item
+   */
+  editItem(item: UPSTestStatusDto): void {
+    // TODO: Implement edit functionality
+    console.log('Edit UPS item:', item);
   }
 
   // Utility method for parsing numeric values
