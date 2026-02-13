@@ -4,9 +4,10 @@
 ========================================================== */
 
 .parts-search-container {
-  background: #f3f6fb;
-  min-height: 100vh;
-  padding: 20px 24px;
+
+  .table-body-small td a {
+    font-weight: 400 !important;
+  }
 
   /* ================= HEADER ================= */
 
@@ -141,6 +142,60 @@
     }
   }
 
+  /* ================= SORTABLE HEADER CELLS ================= */
+
+  .header-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  /* Container for both arrows */
+  .sort-icons {
+    display: inline-flex;
+    flex-direction: column;
+    margin-left: 2px;
+    opacity: 1; /* always visible */
+  }
+
+  /* Active column */
+  .sort-icons.active {
+    opacity: 1;
+  }
+
+  /* Arrow base */
+  .sort-icons i {
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+  }
+
+  /* Up arrow */
+  .sort-icons i.up {
+    border-bottom: 6px solid #ffffff;
+    margin-bottom: 1px;
+  }
+
+  /* Down arrow */
+  .sort-icons i.down {
+    border-top: 6px solid #ffffff;
+  }
+
+  /* Hide inactive direction */
+  .sort-icons i:not(.on) {
+    opacity: 0.7;
+  }
+
+  /* Active direction */
+  .sort-icons i.on {
+    opacity: 1;
+  }
+
+  /* ================= TABLE BODY ================= */
+
   .table-body-small {
     tr {
       border-bottom: 1px solid #f1f5f9;
@@ -156,26 +211,30 @@
     padding: 12px;
     vertical-align: middle;
     color: #111827;
+    font-size: 0.85rem;
+    font-weight: 400;  // Base typography
   }
 
-  /* ================= STATUS BADGE ================= */
-
-  .badge-small {
-    font-size: 0.7rem;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-weight: 600;
-  }
-
-  /* ================= JOB LINK ================= */
+  /* ================= SITE ID (MATCH ADDRESS FONT) ================= */
 
   .job-link-small {
-    color: #2563eb;
-    font-weight: 600;
+    color: #2563eb;       // Keep existing color coding
+    font-size: 0.85rem;   // Match table
+    font-weight: 400;     // Remove bold
+    text-decoration: none;
 
     &:hover {
       text-decoration: underline;
     }
+  }
+
+  /* ================= STATUS BADGE (MATCH ADDRESS FONT) ================= */
+
+  .badge-small {
+    font-size: 0.85rem;   // Match table text
+    font-weight: 400;     // Remove bold
+    padding: 4px 10px;
+    border-radius: 20px;  // Keep pill style
   }
 
   /* ================= PAGINATION ================= */
@@ -240,5 +299,30 @@
     td {
       padding: 8px;
     }
+  }
+
+  /* ================= ADDITIONAL HEADER STYLING ================= */
+
+  /* Ensure Site ID and Status labels match Address exactly */
+  .site-id-label,
+  .status-label {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    font-family: inherit !important;
+    line-height: 1.2 !important;
+    letter-spacing: normal !important;
+  }
+
+  /* Site ID and Status header cells match Address exactly */
+  .header-cell.site-id-header,
+  .header-cell.status-header {
+    font-size: inherit !important;
+    font-weight: inherit !important;
+    color: inherit !important;
+    font-family: inherit !important;
+    line-height: inherit !important;
+    letter-spacing: inherit !important;
+    text-transform: inherit !important;
   }
 }
