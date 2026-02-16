@@ -150,9 +150,9 @@
       <select class="form-select form-select-sm w-auto"
               [value]="itemsPerPage"
               (change)="changeItemsPerPage(+$any($event.target).value)">
-        <option value="10">10</option>
-        <option value="25">25</option>
-        <option value="50">50</option>
+        <option value="200">200</option>
+        <option value="300">300</option>
+        <option value="400">400</option>
         <option value="100">100</option>
       </select>
     </div>
@@ -205,42 +205,68 @@
         </tr>
       </thead>
 
-      <tbody>
-        <tr *ngFor="let item of paginatedItems">
-          <td class="text-center">{{ item.rowIndex }}</td>
-          <td>{{ item.make }}</td>
-          <td>{{ item.model }}</td>
-          <td class="wrap">{{ item.serialNo }}</td>
-          <td class="wrap">{{ item.poNumber }}</td>
-          <td class="wrap">{{ item.shippingPO }}</td>
-          <td class="text-end">{{ formatCurrency(item.unitCost) }}</td>
-          <td class="text-end">{{ formatCurrency(item.shipCost) }}</td>
-          <td class="text-center">
-            <span class="status-badge"
-                  [ngClass]="{
-                    'status-new': item.status === 'New',
-                    'status-inprogress': item.status === 'In Progress',
-                    'status-completed': item.status === 'Completed',
-                    'status-failed': item.status === 'Failed'
-                  }">
-              {{ item.status }}
-            </span>
-          </td>
-          <td class="text-center">
-            <span class="priority-badge"
-                  [ngClass]="{
-                    'priority-high': item.priority === 'High',
-                    'priority-medium': item.priority === 'Medium',
-                    'priority-low': item.priority === 'Low'
-                  }">
-              {{ item.priority }}
-            </span>
-          </td>
-          <td>{{ item.assignedTo }}</td>
-          <td class="text-center">{{ item.kva }}</td>
-          <td>{{ formatDate(item.createdOn) }}</td>
-        </tr>
-      </tbody>
+<tbody>
+  <tr *ngFor="let item of paginatedItems"
+    [ngClass]="{
+      'row-high-priority': item.priority === 'High' && !hasStripSerial(item),
+      'row-strip-serial': hasStripSerial(item)
+    }">
+
+
+    <td class="text-center">{{ item.rowIndex }}</td>
+
+    <td>
+      <button class="btn btn-link p-0"
+              type="button"
+              (click)="navigateToNewUnitTest(item)"
+              [style.color]="'#2563eb'"
+              [style.text-decoration]="'underline'"
+              [style.font-weight]="'500'">
+        {{ item.make }}
+      </button>
+    </td>
+
+    <td>{{ item.model }}</td>
+    <td class="wrap">{{ item.serialNo }}</td>
+    <td class="wrap">{{ item.poNumber }}</td>
+    <td class="wrap">{{ item.shippingPO }}</td>
+    <td class="text-end">{{ formatCurrency(item.unitCost) }}</td>
+    <td class="text-end">{{ formatCurrency(item.shipCost) }}</td>
+
+    <td class="text-center">
+  <span class="status-badge ups-status-badge"
+        [ngClass]="{
+          'status-completed': item.status === 'Completed',
+          'status-inprogress': item.status === 'In Progress',
+          'status-needs-components': item.status === 'Needs Components' 
+                                     || item.status === 'NEEDS COMPONENTS FOR REPAIR',
+          'status-missing-parts': item.status === 'Missing Parts from Job'
+        }"
+        [style.background-color]="(item.status === 'Needs Components' || item.status === 'NEEDS COMPONENTS FOR REPAIR') ? '#f59e0b' : null"
+        [style.color]="(item.status === 'Needs Components' || item.status === 'NEEDS COMPONENTS FOR REPAIR') ? '#ffffff' : null">
+    {{ item.status }}
+  </span>
+</td>
+
+
+    <td class="text-center">
+      <span class="priority-badge"
+            [ngClass]="{
+              'priority-high': item.priority === 'High',
+              'priority-medium': item.priority === 'Medium',
+              'priority-low': item.priority === 'Low'
+            }">
+        {{ item.priority }}
+      </span>
+    </td>
+
+    <td>{{ item.assignedTo }}</td>
+    <td class="text-center">{{ item.kva }}</td>
+    <td>{{ formatDate(item.createdOn) }}</td>
+
+  </tr>
+</tbody>
+
     </table>
   </div>
 

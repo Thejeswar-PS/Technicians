@@ -980,16 +980,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           // This ensures database changes are reflected on page refresh or direct URL access
           this.loadUnitFromApi(rowIndex, archive);
           
-          // Clear query parameters after processing to keep URL clean, but keep the rowIndex in the path
-          if (loadFromApi) {
-            setTimeout(() => {
-              this.router.navigate([], {
-                relativeTo: this.route,
-                queryParams: {},
-                replaceUrl: true
-              });
-            }, 100);
-          }
+          // Keep query parameters so the URL remains shareable and stable
         });
       } else {
         // No route parameter - check for stored data or legacy query parameters
@@ -1007,15 +998,16 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   private handleLegacyQueryParameters(): void {
     this.routeSubscription = this.route.queryParams.subscribe(params => {
       if (Object.keys(params).length > 0) {
+        const rowIndexParam = params['rowIndex'] ?? params['ROWINDEX'] ?? params['RowIndex'];
         
         // If we have loadFromApi flag and rowIndex, fetch data from API
-        if (params['loadFromApi'] === 'true' && params['rowIndex']) {
-          const rowIndex = parseInt(params['rowIndex']);
+        if (params['loadFromApi'] === 'true' && rowIndexParam) {
+          const rowIndex = parseInt(rowIndexParam);
           const archive = params['archive'] === 'true';
           this.loadUnitFromApi(rowIndex, archive);
         }
         // If we have unit data from UPS Test Status (fallback), populate the edit form and show modal
-        else if (params['rowIndex'] || params['make']) {
+        else if (rowIndexParam || params['make']) {
           // Populate the form first with the data from query params
           this.populateFormFromQueryParams(params);
           
@@ -1024,14 +1016,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           this.editingUnit = null;
           this.showEditModal = true;
           
-          // Clear query parameters after processing to keep URL clean
-          setTimeout(() => {
-            this.router.navigate([], {
-              relativeTo: this.route,
-              queryParams: {},
-              replaceUrl: true
-            });
-          }, 100);
+          // Keep query parameters so the URL remains shareable and stable
         }
       }
     });
@@ -1061,14 +1046,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
             this.populateFormFromUnitData(response.data);
           }, 150);
           
-          // Clear query parameters after processing
-          setTimeout(() => {
-            this.router.navigate([], {
-              relativeTo: this.route,
-              queryParams: {},
-              replaceUrl: true
-            });
-          }, 300);
+          // Keep query parameters so the URL remains shareable and stable
           
         } else {
           // If not found and we haven't tried archive yet, try with archive=true
@@ -1222,8 +1200,9 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private populateFormFromQueryParams(params: any): void {
     // Create a unit object from query params
+    const rowIndexParam = params['rowIndex'] ?? params['ROWINDEX'] ?? params['RowIndex'];
     const unitData: Partial<UPSTestStatusDto> = {
-      rowIndex: params['rowIndex'] ? parseInt(params['rowIndex']) : 0,
+      rowIndex: rowIndexParam ? parseInt(rowIndexParam) : 0,
       make: params['make'] || '',
       model: params['model'] || '',
       serialNo: params['serialNo'] || '',

@@ -269,6 +269,13 @@
     min-width: 80px;
   }
   
+  /* Make column styling - Blue and Underlined */
+  tbody td:nth-child(2) { /* Make column data */
+    color: #2563eb !important;
+    text-decoration: underline !important;
+    font-weight: 500 !important;
+  }
+  
   th:nth-child(3), td:nth-child(3) { /* Model */
     width: 90px;
     min-width: 90px;
@@ -376,6 +383,46 @@
         background: #f1f5f9;
       }
     }
+    
+    /* STRIP SERIAL ROWS - HIGHEST SPECIFICITY */
+    &.row-strip-serial {
+      background: #FFCC99 !important;
+      
+      td {
+        background: #FFCC99 !important;
+        color: #003300 !important;
+      }
+      
+      &:hover {
+        background: #FFCC99 !important;
+        
+        td {
+          background: #FFCC99 !important;
+        }
+      }
+      
+      &:nth-child(even) {
+        background: #FFCC99 !important;
+        
+        td {
+          background: #FFCC99 !important;
+        }
+        
+        &:hover {
+          background: #FFCC99 !important;
+          
+          td {
+            background: #FFCC99 !important;
+          }
+        }
+      }
+    }
+    
+    /* HIGH PRIORITY ROWS */
+    &.row-high-priority td {
+      color: red !important;
+      font-weight: 600 !important;
+    }
   }
 
   /* Wrap class for long content */
@@ -397,37 +444,6 @@
     &:first-child {
       margin-bottom: -2px;
     }
-  }
-}
-
-/* STATUS BADGES */
-.status-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  
-  &.status-new {
-    background: #dbeafe;
-    color: #1d4ed8;
-  }
-  
-  &.status-inprogress {
-    background: #fef3c7;
-    color: #d97706;
-  }
-  
-  &.status-completed {
-    background: #dcfce7;
-    color: #16a34a;
-  }
-  
-  &.status-failed {
-    background: #fee2e2;
-    color: #dc2626;
   }
 }
 
@@ -594,9 +610,10 @@
     background: inherit !important;
   }
 
-  tbody tr.stripped-unit {
-    background-color: #FFCC66 !important;
-  }
+.parts-status-table tbody tr.stripped-unit {
+  background-color: #FFCC66 !important;
+}
+
 }
 
 /* ================= SORT ================= */
@@ -607,22 +624,85 @@
   color: #ffffff !important;
 }
 
-/* ================= STATUS ================= */
+//* ================= STATUS BADGES ================= */
 
 .status-badge {
-  padding: 6px 14px;
-  min-width: 95px;
-  font-size: 12px;
-  font-weight: 700;
-  border-radius: 999px;
   display: inline-flex;
+  align-items: center;
   justify-content: center;
+  padding: 6px 14px;
+  min-width: 113px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.status-open { background: #e7f1ff; color: #0d6efd; }
-.status-inprogress { background: #fff4e5; color: #000; }
-.status-completed { background: #d1e7dd; color: #0f5132; }
-.status-cancelled { background: #f8d7da; color: #842029; }
+/* MAXIMUM SPECIFICITY OVERRIDE */
+.ups-test-status-container .parts-status-table .status-badge.ups-status-badge.status-needs-components,
+.ups-test-status-container .status-badge.ups-status-badge.status-needs-components,
+.parts-status-table .status-badge.ups-status-badge.status-needs-components,
+.status-badge.ups-status-badge.status-needs-components,
+span.status-badge.ups-status-badge.status-needs-components {
+  background: #f59e0b !important;
+  background-color: #f59e0b !important; 
+  color: #ffffff !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+/* NUCLEAR OPTION - GLOBAL DEEP OVERRIDE */
+::ng-deep .status-badge.status-needs-components,
+::ng-deep .status-badge.ups-status-badge.status-needs-components,
+::ng-deep span.status-badge.status-needs-components,
+::ng-deep span.status-badge.ups-status-badge.status-needs-components {
+  background: #f59e0b !important;
+  background-color: #f59e0b !important; 
+  color: #ffffff !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+/* COMPLETED — Vibrant Green */
+.status-completed {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+/* IN PROGRESS — Orange */
+.status-inprogress {
+  background: #f59e0b !important;
+  color: #ffffff !important;
+}
+
+/* NEEDS COMPONENTS — Orange (Same as IN PROGRESS) */
+.status-needs-components,
+.status-badge.status-needs-components,
+.parts-status-table .status-needs-components,
+.ups-test-status-container .status-needs-components {
+  background: #f59e0b !important;
+  background-color: #f59e0b !important;
+  color: #ffffff !important;
+}
+
+/* MISSING PARTS — Red */
+.status-missing-parts {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+/* NEW — Teal */
+.status-new {
+  background: #06b6d4 !important;
+  color: #ffffff !important;
+}
+
+/* FAILED — Dark Red */
+.status-failed {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
 
 /* ================= PAGINATION ================= */
 
@@ -665,5 +745,61 @@
     position: sticky;
     top: 0;
     z-index: 2;
+  }
+}
+
+/* ==========================================================
+   ROW COLOR CODING (ADDED BACK — DESIGN UNCHANGED)
+========================================================== */
+
+.parts-status-table {
+
+  tbody tr {
+
+    /* Status based row coloring */
+
+    &.row-new {
+      background-color: #eff6ff;
+    }
+
+    &.row-inprogress {
+      background-color: #fff7ed;
+    }
+
+    &.row-completed {
+      background-color: #ecfdf5;
+    }
+
+    &.row-failed {
+      background-color: #fef2f2;
+    }
+
+    /* High Priority override */
+
+    &.row-high-priority {
+      background-color: #fff1f2;
+    }
+
+    /* Hover states */
+
+    &.row-new:hover {
+      background-color: #dbeafe;
+    }
+
+    &.row-inprogress:hover {
+      background-color: #fed7aa;
+    }
+
+    &.row-completed:hover {
+      background-color: #d1fae5;
+    }
+
+    &.row-failed:hover {
+      background-color: #fecaca;
+    }
+
+    &.row-high-priority:hover {
+      background-color: #ffe4e6;
+    }
   }
 }

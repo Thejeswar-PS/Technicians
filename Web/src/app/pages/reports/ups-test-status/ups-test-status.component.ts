@@ -136,6 +136,9 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   viewMode: 'list' | 'details' = 'list';
   selectedUnit: UPSTestStatusDto | null = null;
 
+  // Track archive value to detect archive-only changes
+  private lastArchiveValue: boolean = false;
+
   // Status options matching backend - New Units Test Status system
   statusOptions = [
     { value: 'All', label: 'All' },
@@ -184,6 +187,8 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   ngOnInit(): void {
     // Setup chart options first
     this.initializeCharts();
+
+    this.lastArchiveValue = this.filterForm.get('archive')?.value ?? false;
     
     this.loadMetadata();
     this.setupFormSubscriptions();
@@ -497,23 +502,10 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: any) => {
-        const dataRoot = response?.data ?? response;
-        const unitsData = Array.isArray(dataRoot)
-          ? dataRoot
-          : Array.isArray(dataRoot?.unitsData)
-            ? dataRoot.unitsData
-            : Array.isArray(dataRoot?.data)
-              ? dataRoot.data
-              : Array.isArray(response)
-                ? response
-                : [];
-        const makeCounts = dataRoot?.makeCounts || response?.makeCounts || [];
-        const totalRecords = response?.totalRecords || dataRoot?.totalRecords || unitsData.length;
-
-        if (unitsData.length > 0 || response?.success) {
-          this.upsTestStatusList = unitsData;
-          this.makeCounts = makeCounts;
-          this.totalRecords = totalRecords;
+        if (response.success && response.data) {
+          this.upsTestStatusList = response.data.unitsData || [];
+          this.makeCounts = response.data.makeCounts || [];
+          this.totalRecords = response.totalRecords || this.upsTestStatusList.length;
           
           // Update filter options based on new data
           this.updateAvailableFilterOptions();
@@ -527,19 +519,17 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
           // Process chart data
           this.processChartData();
         } else {
-          this.errorMessage = response?.message || 'Failed to load UPS test status data';
+          this.errorMessage = response.message || 'Failed to load UPS test status data';
           this.upsTestStatusList = [];
           this.totalRecords = 0;
         }
         this.isLoading = false;
-        this.cdr.markForCheck();
       },
       error: (error: any) => {
         this.errorMessage = error.error?.message || 'Failed to load UPS test status data. Please try again.';
         this.upsTestStatusList = [];
         this.totalRecords = 0;
         this.isLoading = false;
-        this.cdr.markForCheck();
       }
     });
     
@@ -581,9 +571,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.totalRecords = this.filteredData.length;
     this.currentPage = 1; // Reset to first page when filters change
     this.updateDisplayedData();
-    
-    // Also update new template properties
-    this.applyFilters();
     
     this.isProcessingData = false;
   }
@@ -702,15 +689,24 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     return colors[index % colors.length];
   }
 
+  public getProgressColor(index: number): string {
+    return this.chartColors[index % this.chartColors.length];
+  }
+
   // TrackBy function to prevent unnecessary re-rendering
   public trackByMake(index: number, item: {make: string, count: number}): string {
     return item.make;
   }
 
   // Check if a unit is stripped (has stripSNo value)
-  public isUnitStripped(item: UPSTestStatusDto): boolean {
-    return !!(item.stripSNo && item.stripSNo.trim());
-  }
+public isUnitStripped(item: any): boolean {
+  return !!(item.stripSNo && item.stripSNo.trim());
+}
+
+public hasStripSerial(item: any): boolean {
+  return !!(item.stripSNo && item.stripSNo.trim().length > 0);
+}
+
 
   // Mark animation as complete after initial load
   public markAnimationComplete(): void {
@@ -828,10 +824,11 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     // Get current archive status from filter form
     const isArchived = this.filterForm.get('archive')?.value || false;
     
-    // Navigate to new unit test page with rowIndex in the URL path
+    // Navigate to new unit test page with rowIndex as query param
     // The New Unit Test page will fetch complete data using the API
-    this.router.navigate([`/reports/new-unit-test/${unit.rowIndex}`], {
+    this.router.navigate(['/reports/new-unit-test'], {
       queryParams: {
+        rowIndex: unit.rowIndex,
         loadFromApi: 'true',
         archive: isArchived
       }
@@ -848,6 +845,16 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   // Public methods for template
+  onStatusChange(): void {
+    const currentArchiveValue = this.filterForm.get('archive')?.value ?? false;
+    if (currentArchiveValue !== this.lastArchiveValue) {
+      this.lastArchiveValue = currentArchiveValue;
+      this.loadMetadata();
+    }
+
+    this.loadUPSTestStatusData();
+  }
+
   onFilterChange(): void {
     this.loadUPSTestStatusData();
   }
@@ -870,6 +877,38 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.pageSize = size;
     this.currentPage = 1;
     this.updateDisplayedData();
+  }
+
+  get filteredUnitsList(): UPSTestStatusDto[] {
+    return this.filteredData;
+  }
+
+  get paginatedItems(): UPSTestStatusDto[] {
+    return this.displayedData;
+  }
+
+  get itemsPerPage(): number {
+    return this.pageSize;
+  }
+
+  get totalItems(): number {
+    return this.totalRecords;
+  }
+
+  changeItemsPerPage(size: number): void {
+    this.onPageSizeChange(size);
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) {
+      return;
+    }
+
+    this.onPageChange(page);
+  }
+
+  sortBy(column: string): void {
+    this.sortData(column);
   }
 
   sortData(column: string): void {
@@ -971,7 +1010,7 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   get totalPages(): number {
-    return Math.ceil(this.totalItems / this.itemsPerPage);
+    return Math.ceil(this.totalRecords / this.pageSize);
   }
 
   getStatusBadgeClass(status: string): string {
@@ -1075,20 +1114,20 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   formatDate(dateValue: string | Date | undefined): string {
     if (!dateValue) return 'N/A';
     try {
-      const date = new Date(dateValue);
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
       return date.toLocaleDateString();
     } catch {
-      return typeof dateValue === 'string' ? dateValue : 'N/A';
+      return dateValue instanceof Date ? dateValue.toISOString() : dateValue;
     }
   }
 
-  formatDateTime(dateString: string): string {
-    if (!dateString) return 'N/A';
+  formatDateTime(dateValue: string | Date | undefined): string {
+    if (!dateValue) return 'N/A';
     try {
-      const date = new Date(dateString);
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
       return date.toLocaleString(); // Includes both date and time
     } catch {
-      return dateString; // Return original if parsing fails
+      return dateValue instanceof Date ? dateValue.toISOString() : dateValue;
     }
   }
 
@@ -1141,141 +1180,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     const total = this.filteredData.length;
     const makeCount = this.makeSummary[make] || 0;
     return total > 0 ? Math.round((makeCount / total) * 100) : 0;
-  }
-
-  // ===== STRIPPED UNITS STATUS TEMPLATE PROPERTIES =====
-  
-  // Additional properties for template compatibility
-  filteredUnitsList: UPSTestStatusDto[] = [];
-  itemsPerPage: number = 25;
-  totalItems: number = 0;
-  paginatedItems: UPSTestStatusDto[] = [];
-  
-  // ==== CHART METHODS ====
-  
-  /**
-   * Get progress color for chart bars
-   */
-  getProgressColor(index: number): string {
-    const colors = [
-      '#4f46e5', '#06b6d4', '#10b981', '#f59e0b',  
-      '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6',
-      '#f97316', '#6366f1', '#84cc16', '#f43f5e'
-    ];
-    return colors[index % colors.length];
-  }
-  
-  /**
-   * Apply filters to the data
-   */
-  private applyFilters(): void {
-    const baseList = this.filteredData.length > 0 ? this.filteredData : this.upsTestStatusList;
-    let filtered = [...baseList];
-    
-    const assignedToValue = this.filterForm.get('assignedTo')?.value;
-    const statusValue = this.filterForm.get('status')?.value;
-    const priorityValue = this.filterForm.get('priority')?.value;
-
-    if (assignedToValue && assignedToValue !== 'All') {
-      filtered = filtered.filter(item => item.assignedTo === assignedToValue);
-    }
-
-    if (statusValue && statusValue !== 'All') {
-      const statusLabel = this.statusLabels?.[statusValue] || statusValue;
-      const normalizedValue = statusValue.toString().toLowerCase().trim();
-      const normalizedLabel = statusLabel.toString().toLowerCase().trim();
-      filtered = filtered.filter(item => {
-        const itemStatus = (item.status || '').toString().toLowerCase().trim();
-        return itemStatus === normalizedValue || itemStatus === normalizedLabel;
-      });
-    }
-
-    if (priorityValue && priorityValue !== 'All') {
-      filtered = filtered.filter(item => item.priority === priorityValue);
-    }
-
-    this.filteredUnitsList = filtered;
-    this.totalItems = filtered.length;
-    this.totalRecords = filtered.length;
-    this.updatePaginatedItems();
-    this.cdr.markForCheck();
-  }
-  
-  /**
-   * Handle status filter change
-   */
-  onStatusChange(): void {
-    this.currentPage = 1;
-    this.loadUPSTestStatusData();
-  }
-  
-  /**
-   * Change items per page
-   */
-  changeItemsPerPage(newSize: number): void {
-    this.itemsPerPage = newSize;
-    this.currentPage = 1;
-    this.updatePaginatedItems();
-  }
-  
-  /**
-   * Navigate to specific page
-   */
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.updatePaginatedItems();
-    }
-  }
-  
-  /**
-   * Sort table by column
-   */
-  sortBy(column: string): void {
-    if (this.sortColumn === column) {
-      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-    } else {
-      this.sortColumn = column;
-      this.sortDirection = 'asc';
-    }
-    
-    this.filteredUnitsList.sort((a: any, b: any) => {
-      let aVal = a[column];
-      let bVal = b[column];
-      
-      // Handle null/undefined values
-      if (aVal == null) aVal = '';
-      if (bVal == null) bVal = '';
-      
-      // Convert to string for comparison
-      aVal = aVal.toString().toLowerCase();
-      bVal = bVal.toString().toLowerCase();
-      
-      if (this.sortDirection === 'asc') {
-        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-      } else {
-        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
-      }
-    });
-    
-    this.updatePaginatedItems();
-  }
-  
-  /**
-   * Update paginated items based on current page
-   */
-  private updatePaginatedItems(): void {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = startIndex + this.itemsPerPage;
-    this.paginatedItems = this.filteredUnitsList.slice(startIndex, endIndex);
-  }
-  
-  /**
-   * Edit UPS item
-   */
-  editItem(item: UPSTestStatusDto): void {
-    // TODO: Implement edit functionality
-    console.log('Edit UPS item:', item);
   }
 
   // Utility method for parsing numeric values
