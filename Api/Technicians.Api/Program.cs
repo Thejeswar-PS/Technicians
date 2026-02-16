@@ -119,6 +119,7 @@ builder.Services.AddScoped<ExtranetUserClassesRepository>();
 builder.Services.AddScoped<ToolsTrackingTechsRepository>();
 builder.Services.AddScoped<DCGEmployeeRepository>();
 builder.Services.AddScoped<PartsSearchRepository>();
+builder.Services.AddScoped<ITestEngineerJobsRepository, TestEngineerJobsRepository>();
 
 var app = builder.Build();
 

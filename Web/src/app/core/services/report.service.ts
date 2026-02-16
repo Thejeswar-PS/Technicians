@@ -118,6 +118,13 @@ import {
   ExtranetDeleteUserResponse,
   ExtranetDeleteCustnmbrResponse
 } from '../model/extranet-user-classes.model';
+import {
+  TestEngineerJobsRequestDto,
+  TestEngineerJobsResponse,
+  TestEngineerJobsChartsResponse,
+  EngineersResponse,
+  ChartDataResponse
+} from '../model/test-engineer-jobs.model';
 
 @Injectable({
   providedIn: 'root'
@@ -1700,6 +1707,56 @@ export class ReportService {
     
     return this.http.delete<ExtranetDeleteCustnmbrResponse>(
       `${this.API}/ExtranetUserClasses/${encodeURIComponent(trimmedLogin)}/customer-numbers/${encodeURIComponent(trimmedCustNmbr)}`,
+      {
+        headers: this.headers
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // TestEngineerJobs methods
+  getTestEngineerJobs(request: TestEngineerJobsRequestDto): Observable<TestEngineerJobsResponse> {
+    const params = new HttpParams()
+      .set('engineer', request.engineer || '')
+      .set('status', request.status || '')
+      .set('location', request.location || '')
+      .set('search', request.search || '')
+      .set('sortColumn', request.sortColumn || 'ProjectedDate')
+      .set('sortDirection', request.sortDirection || 'DESC');
+
+    return this.http.get<TestEngineerJobsResponse>(
+      `${this.API}/TestEngineerJobs`,
+      {
+        headers: this.headers,
+        params: params
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getTestEngineerJobsCharts(request: TestEngineerJobsRequestDto): Observable<ChartDataResponse> {
+    const params = new HttpParams()
+      .set('engineer', request.engineer || '')
+      .set('status', request.status || '')
+      .set('location', request.location || '')
+      .set('search', request.search || '');
+
+    return this.http.get<ChartDataResponse>(
+      `${this.API}/TestEngineerJobs/charts`,
+      {
+        headers: this.headers,
+        params: params
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getTestEngineerJobsEngineers(): Observable<EngineersResponse> {
+    return this.http.get<EngineersResponse>(
+      `${this.API}/TestEngineerJobs/engineers`,
       {
         headers: this.headers
       }

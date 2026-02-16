@@ -1,0 +1,269 @@
+<!-- Test Engineer Jobs Page - Clean and Simple -->
+<div class="test-engineer-jobs-container">
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center test-engineer-jobs-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading" class="container-fluid px-3 px-lg-4 mt-3 mb-4">
+    <div class="card p-3">
+
+      <!-- HEADER -->
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="page-title">Engineer Testing List</div>
+        <button type="button" class="btn btn-new" (click)="addNewJob()">+ New Job</button>
+      </div>
+
+      <!-- FILTER BAR -->
+      <form [formGroup]="filterForm" class="filter-bar">
+        <input
+          type="text"
+          formControlName="search"
+          class="form-control form-control-sm"
+          placeholder="Search Job / Engineer" />
+
+        <select formControlName="engineer" class="form-select form-select-sm">
+          <option value="">All Engineers</option>
+          <option *ngFor="let engineer of engineersList" [value]="engineer.empName">
+            {{ engineer.empName }}
+          </option>
+        </select>
+
+        <select formControlName="status" class="form-select form-select-sm">
+          <option value="">All Status</option>
+          <option value="Open">Open</option>
+          <option value="In-Progress">In-Progress</option>
+          <option value="Closed">Closed</option>
+        </select>
+
+        <select formControlName="location" class="form-select form-select-sm">
+          <option value="">All Locations</option>
+          <option value="DC1">DC1</option>
+          <option value="DC2">DC2</option>
+        </select>
+
+        <button type="button" class="btn btn-sm btn-primary" (click)="loadTestEngineerJobs()">
+          Search
+        </button>
+      </form>
+
+      <!-- Error Message -->
+      <div *ngIf="errorMessage" class="alert alert-danger mt-3" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- CHARTS -->
+      <div class="row g-3 mb-3" *ngIf="showCharts && jobsList.length > 0">
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">
+              <i class="bi bi-graph-up me-2"></i>Data Visualization
+            </h6>
+            <button type="button" 
+                    class="btn btn-outline-secondary btn-sm" 
+                    (click)="clearChartFilters()"
+                    title="Clear chart filters">
+              <i class="bi bi-funnel me-1"></i>Clear Filters
+            </button>
+          </div>
+        </div>
+        <div class="col-md-8">
+          <div class="card p-3 chart-card interactive-chart">
+            <div class="chart-title mb-3">
+              Engineer vs Jobs (by Status)
+              <small class="text-muted d-block mt-1">Click on bars to filter table</small>
+            </div>
+            <div *ngIf="engineerChartData.length > 0; else noEngineerData" class="chart-container">
+              <canvas #engineerChart id="engineerChart" height="300"></canvas>
+            </div>
+            <ng-template #noEngineerData>
+              <div class="text-center text-muted py-3">
+                <i class="bi bi-bar-chart me-2"></i>
+                No engineer data available
+              </div>
+            </ng-template>
+          </div>
+        </div>
+        <div class="col-lg-4 col-xl-4">
+          <div class="card p-3 chart-card interactive-chart">
+            <div class="chart-title mb-3">
+              Jobs by Status
+              <small class="text-muted d-block mt-1">Click on segments to filter</small>
+            </div>
+            <div *ngIf="statusChartData.length > 0; else noStatusData" class="chart-container">
+              <canvas #statusChart id="statusChart" height="250"></canvas>
+            </div>
+            <ng-template #noStatusData>
+              <div class="text-center text-muted py-3">
+                <i class="bi bi-pie-chart me-2"></i>
+                No status data available
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div *ngIf="paginatedData.length > 0" class="table-responsive">
+        <table id="gvJobs" class="table table-bordered table-hover table-sm modern-table">
+          <thead class="table-header">
+            <tr>
+              <th class="header-cell sortable-header" (click)="onSort('jobNumber')" [class.active]="sortColumn === 'jobNumber'">
+                <div class="header-content">
+                  <span class="header-text">Job #</span>
+                  <i [ngClass]="'bi ' + getSortIcon('jobNumber')" class="sort-icon ms-1"></i>
+                </div>
+              </th>
+              <th class="header-cell sortable-header" (click)="onSort('workType')" [class.active]="sortColumn === 'workType'">
+                <div class="header-content">
+                  <span class="header-text">Work Type</span>
+                  <i [ngClass]="'bi ' + getSortIcon('workType')" class="sort-icon ms-1"></i>
+                </div>
+              </th>
+              <th class="header-cell sortable-header" (click)="onSort('location')" [class.active]="sortColumn === 'location'">
+                <div class="header-content">
+                  <span class="header-text">Location</span>
+                  <i [ngClass]="'bi ' + getSortIcon('location')" class="sort-icon ms-1"></i>
+                </div>
+              </th>
+              <th class="header-cell sortable-header" (click)="onSort('assignedEngineer')" [class.active]="sortColumn === 'assignedEngineer'">
+                <div class="header-content">
+                  <span class="header-text">Engineer</span>
+                  <i [ngClass]="'bi ' + getSortIcon('assignedEngineer')" class="sort-icon ms-1"></i>
+                </div>
+              </th>
+              <th class="header-cell sortable-header" (click)="onSort('status')" [class.active]="sortColumn === 'status'">
+                <div class="header-content">
+                  <span class="header-text">Status</span>
+                  <i [ngClass]="'bi ' + getSortIcon('status')" class="sort-icon ms-1"></i>
+                </div>
+              </th>
+              <th class="header-cell sortable-header" (click)="onSort('projectedDate')" [class.active]="sortColumn === 'projectedDate'">
+                <div class="header-content">
+                  <span class="header-text">Projected</span>
+                  <i [ngClass]="'bi ' + getSortIcon('projectedDate')" class="sort-icon ms-1"></i>
+                </div>
+              </th>
+              <th class="header-cell sortable-header" (click)="onSort('createdOn')" [class.active]="sortColumn === 'createdOn'">
+                <div class="header-content">
+                  <span class="header-text">Completed</span>
+                  <i [ngClass]="'bi ' + getSortIcon('createdOn')" class="sort-icon ms-1"></i>
+                </div>
+              </th>
+              <th class="header-cell">
+                <div class="header-content">
+                  <span class="header-text">ETA</span>
+                </div>
+              </th>
+              <th class="header-cell">
+                <div class="header-content">
+                  <span class="header-text">Cleaned</span>
+                </div>
+              </th>
+              <th class="header-cell">
+                <div class="header-content">
+                  <span class="header-text">Torque</span>
+                </div>
+              </th>
+              <th class="header-cell">
+                <div class="header-content">
+                  <span class="header-text">Inspected</span>
+                </div>
+              </th>
+              <th class="header-cell">
+                <div class="header-content">
+                  <span class="header-text">Action</span>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let job of paginatedData" [ngClass]="getRowClass(job)">
+              <td class="job-number-cell">{{ job.jobNumber }}</td>
+              <td>{{ job.workType }}</td>
+              <td>{{ job.location }}</td>
+              <td>{{ job.assignedEngineer }}</td>
+              <td>
+                <span class="status-pill"
+                      [ngClass]="{
+                        'status-open': job.status === 'Open',
+                        'status-in-progress': job.status === 'In-Progress',
+                        'status-closed': job.status === 'Closed'
+                      }">
+                  {{ job.status }}
+                </span>
+              </td>
+              <td>{{ formatDate(job.projectedDate) }}</td>
+              <td>{{ formatDate(job.createdOn) }}</td>
+              <td>{{ formatDateTime(job.projectedDate) }}</td>
+              <td><input type="checkbox" disabled></td>
+              <td><input type="checkbox" disabled></td>
+              <td><input type="checkbox" disabled></td>
+              <td>
+                <button type="button" 
+                        class="btn btn-outline-primary btn-edit" 
+                        (click)="editJob(job.jobNumber)">
+                  Edit
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoading && paginatedData.length === 0 && !errorMessage" class="text-center py-5">
+        <i class="bi bi-database-x text-muted" style="font-size: 4rem;"></i>
+        <h5 class="text-muted mt-3">No jobs found</h5>
+        <p class="text-muted">Try adjusting your search criteria or add a new job.</p>
+      </div>
+
+      <!-- Simple Pagination -->
+      <nav *ngIf="totalPages > 1" aria-label="Table pagination" class="mt-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center">
+            <span class="text-muted me-3">
+              Page {{ currentPage }} of {{ totalPages }} ({{ totalItems }} total)
+            </span>
+            <select 
+              class="form-select form-select-sm" 
+              style="width: auto;" 
+              [ngModel]="itemsPerPage" 
+              (ngModelChange)="onItemsPerPageChange($event)">
+              <option [value]="10">10</option>
+              <option [value]="25">25</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+            <span class="text-muted ms-2">per page</span>
+          </div>
+          
+          <ul class="pagination pagination-sm mb-0">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="onPageChange(currentPage - 1)" [disabled]="currentPage === 1">
+                Previous
+              </button>
+            </li>
+            
+            <li *ngFor="let page of getPageNumbers()" 
+                class="page-item" 
+                [class.active]="page === currentPage">
+              <button class="page-link" (click)="onPageChange(page)">{{ page }}</button>
+            </li>
+            
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="onPageChange(currentPage + 1)" [disabled]="currentPage === totalPages">
+                Next
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+    </div>
+  </div>
+</div>
