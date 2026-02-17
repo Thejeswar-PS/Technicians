@@ -93,16 +93,28 @@
       tr {
         transition: background-color 0.2s ease;
 
-        &:hover {
-          background-color: #f8f9fa;
-        }
-
         td {
           padding: 12px;
           vertical-align: middle;
         }
       }
     }
+  }
+
+  .table-hover tbody tr:hover {
+    background-color: inherit !important;
+    color: inherit !important;
+  }
+
+  .table-hover tbody tr:hover > * {
+    background-color: inherit !important;
+    color: inherit !important;
+  }
+
+  .table-hover tbody tr.bill-after-pm-critical:hover > *,
+  .table-hover tbody tr.critical-with-amount:hover > * {
+    background-color: #dc3545 !important;
+    color: white !important;
   }
 
   // Status and badge styling
@@ -126,6 +138,12 @@
   .bill-after-pm-critical {
     background-color: #dc3545 !important;
     color: white !important;
+
+    td,
+    a,
+    .text-primary {
+      color: white !important;
+    }
   }
 
   .bill-after-pm-warning {
@@ -136,6 +154,16 @@
   .critical-with-amount {
     background-color: #dc3545 !important;
     color: white !important;
+
+    td,
+    a,
+    .text-primary {
+      color: white !important;
+    }
+  }
+
+  .today-with-amount {
+    color: #dc3545 !important;
   }
 
   .unscheduled-with-amount {
@@ -229,4 +257,19 @@
       }
     }
   }
+ /* 🔥 FORCE RED ROWS TO STAY RED ON HOVER (Bootstrap 5 correct override) */
+
+.acc-mgr-performance-container
+.table-hover
+> tbody
+> tr.bill-after-pm-critical:hover
+> *,
+.acc-mgr-performance-container
+.table-hover
+> tbody
+> tr.critical-with-amount:hover
+> * {
+  background-color: #dc3545 !important;
+  color: #ffffff !important;
+}
 }

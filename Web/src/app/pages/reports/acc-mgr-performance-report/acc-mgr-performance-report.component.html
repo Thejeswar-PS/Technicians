@@ -6,12 +6,9 @@
     </div>
   </div>
 
-  <!-- Header Section -->
-  <div class="mb-4">
-    <div class="d-flex justify-content-center align-items-center">
-      <div class="text-center">
-        <h3 class="fw-bold text-primary mb-0" style="font-size: calc(1.75rem + 1pt);">Account Manager Performance Report</h3>
-    </div>
+  <!-- Page Title -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-primary mb-02 display-4.9">Account Manager Performance Report</h2>
   </div>
 
   <div class="card shadow-sm main-card">
@@ -32,7 +29,8 @@
             class="form-select"
             formControlName="officeId"
             [class.is-invalid]="hasError('officeId')"
-            [disabled]="isLoadingAccountManagers">
+            [disabled]="isLoadingAccountManagers"
+            (change)="onOfficeChange()">
             <option value="" disabled>
               {{ isLoadingAccountManagers ? 'Loading account managers...' : 'Select Office/Account Manager' }}
             </option>
@@ -122,7 +120,7 @@
                     (click)="setActiveSection('firstMonth')"
                     type="button">
               <i class="bi bi-calendar me-2"></i>
-              January
+              {{ monthLabels[0] || 'Current Month' }}
               <span class="badge bg-info ms-2">{{ (reportData.FirstMonth || reportData.firstMonth || []).length }}</span>
             </button>
             <button class="nav-link" 
@@ -130,7 +128,7 @@
                     (click)="setActiveSection('secondMonth')"
                     type="button">
               <i class="bi bi-calendar me-2"></i>
-              February
+              {{ monthLabels[1] || 'Next Month' }}
               <span class="badge bg-info ms-2">{{ (reportData.SecondMonth || reportData.secondMonth || []).length }}</span>
             </button>
             <button class="nav-link" 
@@ -138,7 +136,7 @@
                     (click)="setActiveSection('thirdMonth')"
                     type="button">
               <i class="bi bi-calendar me-2"></i>
-              March
+              {{ monthLabels[2] || 'Month 3' }}
               <span class="badge bg-info ms-2">{{ (reportData.ThirdMonth || reportData.thirdMonth || []).length }}</span>
             </button>
             <button class="nav-link" 
@@ -146,7 +144,7 @@
                     (click)="setActiveSection('fourthMonth')"
                     type="button">
               <i class="bi bi-calendar me-2"></i>
-              April
+              {{ monthLabels[3] || 'Month 4' }}
               <span class="badge bg-info ms-2">{{ (reportData.FourthMonth || reportData.fourthMonth || []).length }}</span>
             </button>
             <button class="nav-link" 
@@ -154,7 +152,7 @@
                     (click)="setActiveSection('fifthMonth')"
                     type="button">
               <i class="bi bi-calendar me-2"></i>
-              May
+              {{ monthLabels[4] || 'Month 5' }}
               <span class="badge bg-info ms-2">{{ (reportData.FifthMonth || reportData.fifthMonth || []).length }}</span>
             </button>
           </div>
@@ -205,7 +203,7 @@
         <!-- Completed Not Returned -->
         <div *ngIf="activeSection === 'completedNotReturned'">
           <h5 class="mb-3"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Completed Jobs Not Returned from Technician</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -234,11 +232,11 @@
                   </span>
                 </td>
                 <td>{{ item.techName }}</td>
-                <td>{{ formatDate(item.responseDate) }}</td>
+                <td>{{ formatDate(item.scheduledEnd) }}</td>
                 <td [class.fw-bold]="shouldBoldAge(item)">{{ item.changeAge }}</td>
                 <td>{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
-                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
+                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
             </tbody>
           </table>
@@ -247,7 +245,7 @@
         <!-- Returned for Processing -->
         <div *ngIf="activeSection === 'returnedForProcessing'">
           <h5 class="mb-3"><i class="bi bi-arrow-clockwise text-warning me-2"></i>Jobs Returned from Technician for Processing</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -278,11 +276,11 @@
                 </td>
                 <td>{{ item.techName }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
-                <td>{{ formatDate(item.responseDate) }}</td>
-                <td [class.fw-bold]="shouldBoldAge(item)">{{ item.changeAge }}</td>
+                <td>{{ formatDate(item.returned || item.responseDate) }}</td>
+                <td [class.fw-bold]="shouldBoldAge(item)">{{ item.changeAge1 ?? item.changeAge }}</td>
                 <td>{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
-                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
+                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
             </tbody>
           </table>
@@ -291,7 +289,7 @@
         <!-- Jobs Scheduled Today -->
         <div *ngIf="activeSection === 'jobsScheduledToday'">
           <h5 class="mb-3"><i class="bi bi-calendar-day text-info me-2"></i>Jobs Scheduled Today</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -320,7 +318,7 @@
         <!-- Returned with Incomplete Data -->
         <div *ngIf="activeSection === 'returnedWithIncompleteData'">
           <h5 class="mb-3"><i class="bi bi-exclamation-circle text-warning me-2"></i>Returned with Incomplete Data</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -353,7 +351,7 @@
                 <td [class.fw-bold]="shouldBoldAge(item)">{{ item.changeAge }}</td>
                 <td>{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
-                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(item.invoiceAmount) }}</td>
+                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
             </tbody>
           </table>
@@ -362,7 +360,7 @@
         <!-- Customer Confirmed Next 120 Hours -->
         <div *ngIf="activeSection === 'jobsConfirmedNext120Hours'">
           <h5 class="mb-3"><i class="bi bi-clock text-success me-2"></i>Customer Confirmed Next 120 Hours</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -389,7 +387,7 @@
         <!-- Past Due Unscheduled -->
         <div *ngIf="activeSection === 'pastDueUnscheduled'">
           <h5 class="mb-3"><i class="bi bi-calendar-x text-danger me-2"></i>Past Due Unscheduled Jobs</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -421,10 +419,10 @@
           </table>
         </div>
 
-        <!-- Monthly Unscheduled Jobs (January) -->
+        <!-- Monthly Unscheduled Jobs (Current Month) -->
         <div *ngIf="activeSection === 'firstMonth'">
-          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>January Unscheduled Jobs</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[0] || 'Current Month' }} Unscheduled Jobs</h5>
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -457,10 +455,10 @@
           </table>
         </div>
 
-        <!-- Monthly Unscheduled Jobs (February) -->
+        <!-- Monthly Unscheduled Jobs (Next Month) -->
         <div *ngIf="activeSection === 'secondMonth'">
-          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>February Unscheduled Jobs</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[1] || 'Next Month' }} Unscheduled Jobs</h5>
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -492,10 +490,10 @@
           </table>
         </div>
 
-        <!-- Monthly Unscheduled Jobs (March) -->
+        <!-- Monthly Unscheduled Jobs (Month 3) -->
         <div *ngIf="activeSection === 'thirdMonth'">
-          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>March Unscheduled Jobs</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[2] || 'Month 3' }} Unscheduled Jobs</h5>
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -527,10 +525,10 @@
           </table>
         </div>
 
-        <!-- Monthly Unscheduled Jobs (April) -->
+        <!-- Monthly Unscheduled Jobs (Month 4) -->
         <div *ngIf="activeSection === 'fourthMonth'">
-          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>April Unscheduled Jobs</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[3] || 'Month 4' }} Unscheduled Jobs</h5>
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
@@ -562,10 +560,10 @@
           </table>
         </div>
 
-        <!-- Monthly Unscheduled Jobs (May) -->
+        <!-- Monthly Unscheduled Jobs (Month 5) -->
         <div *ngIf="activeSection === 'fifthMonth'">
-          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>May Unscheduled Jobs</h5>
-          <table class="table table-hover table-bordered mb-0">
+          <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[4] || 'Month 5' }} Unscheduled Jobs</h5>
+          <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
                 <th class="fw-bold">Call Number</th>
