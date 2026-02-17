@@ -100,10 +100,10 @@
     <!-- Bars Area -->
     <div class="bars-area">
 
-      <div class="bar"
-           *ngFor="let part of summaryData; let i = index"
-           [style.height.%]="getBarHeightPercentage(part.quantity)"
-           [style.background]="getProgressColor(i)">
+       <div class="bar"
+         *ngFor="let part of summaryData; let i = index"
+         [style.height.%]="getBarHeightPercentage(part.quantity)"
+         [style.background]="getProgressColor(i)">
 
         <div class="bar-value">
           {{ part.quantity }}
@@ -276,6 +276,7 @@
               <table class="table table-sm table-hover mb-0 stripped-parts-table" style="table-layout: fixed; width: 100%;">
                 <thead class="table-primary">
                   <tr>
+                    <th class="fw-semibold text-center row-index-col" style="width: 8%; min-width: 70px;">RowIndex</th>
                     <th class="fw-semibold part-no-col" style="width: 18%; min-width: 120px;">DCG Part No</th>
                     <th class="fw-semibold description-col" style="width: 40%; min-width: 200px;">Description</th>
                     <th class="fw-semibold text-center strip-no-col" style="width: 12%; min-width: 80px;">Strip No</th>
@@ -286,6 +287,10 @@
                 <tbody>
                   <tr *ngFor="let part of group.parts; let j = index" 
                       [class.table-danger]="isThrowItem(part.keepThrow || part.KeepThrow)">
+                    <!-- RowIndex (Legacy) -->
+                    <td class="align-middle text-center row-index-col" style="width: 8%; padding: 8px;">
+                      {{ part.RowIndex || part.rowIndex || '' }}
+                    </td>
                     <!-- DCG Part No - Editable -->
                     <td class="align-middle part-no-col" style="width: 18%; word-wrap: break-word; padding: 8px;">
                       <div *ngIf="!isEditingPart(part); else editPartNoTemplate" class="text-truncate" [title]="part.dcgPartNo">

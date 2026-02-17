@@ -239,6 +239,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   summaryData: any[] = [];
   totalStrippedParts: number = 0;
   partsLocation: string = '';
+  partsLocationUrl: string = '';
   groupedParts: any[] = [];
 
   // Chart colors - same as stripped units status
@@ -694,13 +695,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             }
             
             if (!response.data.hasData || this.partsDetails.length === 0) {
-
-              // Show specific message for Master Row Index = 0 vs other units
-              if (masterRowIndex === 0) {
-                this.partsErrorMessage = 'No direct part entries found. Add parts using the "Add Parts" functionality to see them here.';
-              } else {
-                this.partsErrorMessage = 'No stripped parts found for this unit.';
-              }
+              this.partsErrorMessage = 'Please add the stripped parts before viewing this page';
               
               if (masterRowIndex === 0) {
                 // Additional processing for MasterRowIndex = 0 when no data
@@ -715,6 +710,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
               // Set parts location from first location if available
               if (this.partsLocations.length > 0) {
                 this.partsLocation = this.partsLocations[0].partsLocation || this.partsLocations[0].locationDescription || '';
+                this.partsLocationUrl = this.buildPartsLocationUrl(this.partsLocation);
               }
               
               if (masterRowIndex === 0) {
@@ -756,6 +752,11 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Helper method to get progress bar colors
   getProgressColor(index: number): string {
+    const item = this.summaryData?.[index];
+    const keepThrow = (item?.keepThrow || item?.KeepThrow || '').toString().trim().toUpperCase();
+    if (keepThrow === 'THROW') {
+      return '#ff4560';
+    }
     const colors = [
       'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       'linear-gradient(135deg, #00a8ff 0%, #0078cc 100%)', 
@@ -988,7 +989,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             dollarOfTotal: '$0.00', // We don't have dollar data in groupCounts
             quantity: group.count || 0,
             dollarPerPart: '$0.00', // We don't have dollar per part data in groupCounts
-            partsStripped: (group.dcgPartGroup || 'Unknown').trim()
+            partsStripped: (group.dcgPartGroup || 'Unknown').trim(),
+            keepThrow: (group.keepThrow || group.KeepThrow || '').toString().trim()
           }));
           
           // Use complete data for chart display
@@ -1047,7 +1049,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
           dollarOfTotal: dollarOfTotal,    // Use pre-calculated "$ of Total" from database
           quantity: quantity,              // Use "Quantity" from database (SUM(StripNo))
           dollarPerPart: dollarPerPart,    // Use pre-calculated "$Per Part" from database  
-          partsStripped: partsStripped     // Use "Parts Stripped" group name from database
+          partsStripped: partsStripped,    // Use "Parts Stripped" group name from database
+          keepThrow: (group.keepThrow || group.KeepThrow || '').toString().trim()
         };
         
         return summaryItem;
@@ -1186,7 +1189,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         dollarOfTotal: `$${totalValue.toFixed(2)}`, // Use calculated or estimated costs
         quantity: quantity, // Sum of strip quantities  
         dollarPerPart: `$${dollarPerPart.toFixed(2)}`, // Calculate $/Part
-        partsStripped: groupName // Use group name
+        partsStripped: groupName, // Use group name
+        keepThrow: ''
       };
       
       return summaryItem;
@@ -1536,8 +1540,32 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   // Parts Location Click Handler
   onPartsLocationClick(event: Event): void {
     event.preventDefault();
-    // Implementation depends on requirements - could open modal, navigate to location page, etc.
-    // Feature implementation can be added here as needed
+    const url = this.partsLocationUrl || this.buildPartsLocationUrl(this.partsLocation);
+    if (!url) {
+      this.toastr.info('No parts location assigned');
+      return;
+    }
+    window.open(url, '_blank');
+  }
+
+  private buildPartsLocationUrl(path: string): string {
+    const trimmed = (path || '').trim();
+    if (!trimmed) {
+      return '';
+    }
+    const lower = trimmed.toLowerCase();
+    if (lower.startsWith('file://') || lower.startsWith('http://') || lower.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('\\\\')) {
+      const normalized = trimmed.replace(/^\\\\+/, '').replace(/\\/g, '/');
+      return `file://${normalized}`;
+    }
+    if (/^[A-Za-z]:\\/.test(trimmed)) {
+      const normalized = trimmed.replace(/\\/g, '/');
+      return `file:///${normalized}`;
+    }
+    return `file://${trimmed.replace(/\\/g, '/')}`;
   }
 
   // Group collapse state tracking
