@@ -458,11 +458,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   }
 
   onSave(): void {
-    if (this.unitInfoForm.invalid) {
-      this.markFormGroupTouched(this.unitInfoForm);
-      return;
-    }
-
     this.isSaving = true;
     this.errorMessage = '';
 
@@ -494,18 +489,22 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
 
     // Validate required fields before sending
     if (!unitData.make?.trim()) {
+      this.isSaving = false;
       this.toastr.error('Make is required');
       return;
     }
     if (!unitData.serialNo?.trim()) {
+      this.isSaving = false;
       this.toastr.error('Serial Number is required');
       return;
     }
     if (!unitData.status?.trim()) {
+      this.isSaving = false;
       this.toastr.error('Status is required');
       return;
     }
     if (!unitData.lastModifiedBy?.trim()) {
+      this.isSaving = false;
       this.toastr.error('User information is required');
       return;
     }

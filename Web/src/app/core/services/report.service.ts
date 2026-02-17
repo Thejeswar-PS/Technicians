@@ -1019,13 +1019,7 @@ export class ReportService {
       LastModifiedOn: dto.lastModifiedOn ? new Date(dto.lastModifiedOn).toISOString() : new Date().toISOString()
     };
 
-    // Wrap the dto in the expected structure
-    const payload = { dto: transformedDto };
-    
-    // Debug: Log the payload to console
-    console.log('API Payload being sent:', JSON.stringify(payload, null, 2));
-    
-    return this.http.post<{success: boolean; message: string; rowIndex?: number}>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippingUnit`, payload, {
+    return this.http.post<{success: boolean; message: string; rowIndex?: number}>(`${this.API}/StrippedUnitsStatus/SaveUpdateStrippingUnit`, transformedDto, {
       headers: this.headers
     });
   }
@@ -1056,13 +1050,7 @@ export class ReportService {
       LastModifiedOn: dto.lastModifiedOn ? new Date(dto.lastModifiedOn).toISOString() : new Date().toISOString()
     };
 
-    // Wrap the dto in the expected structure
-    const payload = { dto: transformedDto };
-    
-    // Debug: Log the payload to console
-    console.log('API Payload being sent:', JSON.stringify(payload, null, 2));
-    
-    return this.http.put<{success: boolean; message: string; rowIndex: number}>(`${this.API}/StrippedUnitsStatus/UpdateStrippingUnit/${rowIndex}`, payload, {
+    return this.http.put<{success: boolean; message: string; rowIndex: number}>(`${this.API}/StrippedUnitsStatus/UpdateStrippingUnit/${rowIndex}`, transformedDto, {
       headers: this.headers
     });
   }
