@@ -3,11 +3,6 @@
 
   <!-- Header Section -->
   <div class="order-request-header__top mb-2 d-flex justify-content-between align-items-center">
-    <!-- Back Button -->
-    <button class="btn btn-outline-primary parts-request-header__back" (click)="goBack()" [disabled]="isLoading">
-      <i class="bi bi-arrow-left me-2"></i>
-      Back
-    </button>
     
     <!-- Page Title - Centered -->
     <div class="order-request-page-title flex-grow-1 text-center">
@@ -117,9 +112,9 @@
       <select class="form-select form-select-sm w-auto"
               [value]="itemsPerPage"
               (change)="changeItemsPerPage(+$any($event.target).value)">
-        <option value="10">10</option>
-        <option value="25">25</option>
         <option value="50">50</option>
+        <option value="150">150</option>
+        <option value="200">200</option>
         <option value="100">100</option>
       </select>
     </div>
@@ -186,7 +181,7 @@
           <td class="text-end">{{ item.unitCost | currency }}</td>
           <td class="text-end">{{ item.shipCost | currency }}</td>
           <td class="text-center">
-            <span class="status-badge"
+            <span class="status-pill"
                   [ngClass]="{
                     'status-open': item.status === 'Open',
                     'status-inprogress': item.status === 'In Progress',
@@ -200,13 +195,24 @@
           <td>{{ item.putAwayBy }}</td>
           <td>{{ formatDate(item.createdOn) }}</td>
           <td class="text-center">
-            <button class="btn btn-primary btn-sm rounded-circle" (click)="addParts(item)">
-              <i class="bi bi-pencil-fill"></i>
+            <button class="btn btn-primary btn-sm edit-btn"
+                    style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                    (click)="addParts(item)"
+                    title="Add Parts">
+              <i class="bi bi-pencil-square"></i>
             </button>
           </td>
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <div *ngIf="!isLoading && filteredUnitsList.length === 0" class="no-data-placeholder">
+    <div class="no-data-content">
+      <i class="bi bi-inbox"></i>
+      <h5>No Data Available</h5>
+      <p>No data available for the selected filter.</p>
+    </div>
   </div>
 
   <!-- PAGINATION FOOTER -->
