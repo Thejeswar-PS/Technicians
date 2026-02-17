@@ -273,13 +273,45 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   formatDate(date: Date | string | null | undefined): string {
     if (!date) return '';
     
+    // Check for common default date strings first
+    if (typeof date === 'string') {
+      if (date === '1900-01-01' || 
+          date.startsWith('1900-') || 
+          date === '01/01/1900' ||
+          date === '1/1/1900') {
+        return '';
+      }
+    }
+    
     try {
       const dateObj = typeof date === 'string' ? new Date(date) : date;
+      
       if (isNaN(dateObj.getTime())) {
         return '';
       }
+      
+      // Don't show default dates (01/01/1900 or similar invalid dates)
+      const year = dateObj.getFullYear();
+      const month = dateObj.getMonth() + 1; // getMonth() returns 0-11
+      const day = dateObj.getDate();
+      
+      // Check for common default dates and invalid years
+      if (year <= 1900 || 
+          (year === 1900 && month === 1 && day === 1) ||
+          year < 1980 ||
+          year > 2050) { // Future dates beyond reasonable range
+        return '';
+      }
+      
+      // Additional check for the exact 1900-01-01 timestamp
+      const time = dateObj.getTime();
+      const defaultDate1900 = new Date(1900, 0, 1).getTime(); // January 1, 1900
+      if (time === defaultDate1900) {
+        return '';
+      }
+      
       return dateObj.toLocaleDateString();
-    } catch {
+    } catch (error) {
       return '';
     }
   }
