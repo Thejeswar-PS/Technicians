@@ -145,6 +145,18 @@
     }
   }
 
+  /* ================= CALL NUMBER LINK ================= */
+
+  .call-number-link {
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: #3b69e0 !important;
+      text-decoration: underline;
+    }
+  }
+
   /* ================= CUSTOMER & TECHNICIAN INFO ================= */
 
   .customer-info,

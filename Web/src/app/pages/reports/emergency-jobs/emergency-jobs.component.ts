@@ -285,4 +285,14 @@ export class EmergencyJobsComponent implements OnInit, OnDestroy {
     }
     return 'bi-arrow-down-up';
   }
+
+  navigateToJobInfo(callNbr: string, techName: string | null): void {
+    const safeTechName = (techName || '').trim();
+    this.router.navigate(['/jobs/job-notes-info'], {
+      queryParams: {
+        CallNbr: callNbr.trim(),
+        TechName: safeTechName
+      }
+    });
+  }
 }
