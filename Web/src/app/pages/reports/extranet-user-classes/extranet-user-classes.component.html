@@ -12,72 +12,52 @@
   </div>
 
   <!-- Header Section -->
-  <div class="extranet-user-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button
-      type="button"
-      class="btn btn-sm btn-primary extranet-user-header__back"
-      (click)="onBack()"
-      [disabled]="isLoading"
-      title="Back to Reports">
-      <i class="fa fa-arrow-left me-2"></i>
-      Back
-    </button>
-    
-    <!-- Page Title - Centered -->
-    <div class="extranet-user-page-title">
-      <h2 class="fw-bold text-primary mb-0">
-        <i class="fa fa-users me-2"></i>
-        Extranet User Management
-      </h2>
-    </div>
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-primary mb-0">Extranet User Management</h2>
   </div>
 
   <!-- Main content -->
   <div *ngIf="!isLoading">
 
-    <!-- Extranet User Management Section -->
-    <div class="card shadow-sm extranet-main-card">
-      
-      <!-- Status Messages -->
-      <div class="message-section" *ngIf="successMessage || errorMessage">
-        <!-- SUCCESS -->
-        <div *ngIf="successMessage && !isSaving" class="modern-alert success">
-          <div class="alert-icon">
-            <i class="fa fa-check-circle"></i>
-          </div>
-          <div class="alert-content">
-            <span class="alert-message">{{ successMessage }}</span>
-          </div>
+    <!-- Status Messages -->
+    <div class="message-section mb-4" *ngIf="successMessage || errorMessage">
+      <!-- SUCCESS -->
+      <div *ngIf="successMessage && !isSaving" class="modern-alert success">
+        <div class="alert-icon">
+          <i class="fa fa-check-circle"></i>
         </div>
-
-        <!-- ERROR -->
-        <div *ngIf="errorMessage && !isSaving" class="modern-alert error">
-          <div class="alert-icon">
-            <i class="fa fa-exclamation-triangle"></i>
-          </div>
-          <div class="alert-content">
-            <span class="alert-message">{{ errorMessage }}</span>
-          </div>
+        <div class="alert-content">
+          <span class="alert-message">{{ successMessage }}</span>
         </div>
       </div>
 
-      <!-- Form Content -->
-      <div class="form-content">
-        
-        <!-- Loading overlay -->
-        <div *ngIf="isSaving || isDeleting" class="loading-overlay">
-          <div class="loading-content">
-            <div class="loading-spinner"></div>
-            <span class="loading-text" *ngIf="isSaving">Saving user information...</span>
-            <span class="loading-text" *ngIf="isDeleting">Deleting user...</span>
-          </div>
+      <!-- ERROR -->
+      <div *ngIf="errorMessage && !isSaving" class="modern-alert error">
+        <div class="alert-icon">
+          <i class="fa fa-exclamation-triangle"></i>
         </div>
+        <div class="alert-content">
+          <span class="alert-message">{{ errorMessage }}</span>
+        </div>
+      </div>
+    </div>
 
-        <!-- Form Sections Grid -->
-        <div class="form-sections" *ngIf="!isSaving && !isDeleting">
-          
-          <!-- User Management Section -->
-          <div class="modern-card-section">
+    <!-- Loading overlay -->
+    <div *ngIf="isSaving || isDeleting" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <span class="loading-text" *ngIf="isSaving">Saving user information...</span>
+        <span class="loading-text" *ngIf="isDeleting">Deleting user...</span>
+      </div>
+    </div>
+
+    <!-- Form Sections Grid - Two Column Layout -->
+    <div class="row g-4" *ngIf="!isSaving && !isDeleting">
+      
+      <!-- User Information Card (Left) -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm modern-card-section">
+          <div class="card-body">
             <div class="section-header">
               <div class="section-icon">
                 <i class="fa fa-user-cog"></i>
@@ -400,9 +380,13 @@
 
             </form>
           </div>
+        </div>
+      </div>
 
-          <!-- User List & Customer Assignment Section -->
-          <div class="modern-card-section">
+      <!-- Customer Assignment Card (Right) -->
+      <div class="col-lg-6">
+        <div class="card shadow-sm modern-card-section">
+          <div class="card-body">
             <div class="section-header">
               <div class="section-icon">
                 <i class="fa fa-list-ul"></i>
@@ -484,12 +468,10 @@
                 </div>
               </div>
             </div>
-
           </div>
-
         </div>
-
       </div>
+
     </div>
 
   </div>
