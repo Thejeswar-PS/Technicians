@@ -1,13 +1,17 @@
 .order-request-status-container {
   padding: 20px;
 
-  /* ---------- Loading Overlay ---------- */
+  /* ================================
+     LOADING OVERLAY
+  ================================= */
   .loading-overlay {
     background: rgba(0, 0, 0, 0.3);
     z-index: 9999;
   }
 
-  /* ---------- Main Card ---------- */
+  /* ================================
+     MAIN CARD
+  ================================= */
   .main-card {
     border-radius: 8px;
 
@@ -17,11 +21,13 @@
     }
 
     .card-body {
-      padding: 30px;
+      padding: 25px;
     }
   }
 
-  /* ---------- Filter Panel ---------- */
+  /* ================================
+     FILTER PANEL
+  ================================= */
   .filter-panel {
     background-color: #f8f9fa;
     padding: 20px;
@@ -34,158 +40,98 @@
     }
   }
 
-  /* ---------- Table Wrapper ---------- */
+  /* ================================
+     TABLE WRAPPER
+     Scroll only when needed
+  ================================= */
   .table-responsive {
-    max-height: 70vh;
+    width: 100%;
+    overflow-x: auto;     // shows horizontal scroll ONLY if needed
     overflow-y: auto;
-    overflow-x: hidden;
-    position: relative;
+    max-height: 70vh;
   }
 
-  /* ---------- Table ---------- */
+  /* ================================
+     TABLE BASE
+  ================================= */
   table {
     width: 100%;
-    table-layout: fixed; /* critical for width control */
-    font-size: 14px;
+    min-width: 100%;
     border-collapse: collapse;
+    table-layout: auto;   // allows natural resizing
+    font-size: 14px;
   }
 
-  /* ---------- Sticky Header ---------- */
+  /* ================================
+     TABLE HEADER
+  ================================= */
   thead th {
     position: sticky;
     top: 0;
     z-index: 5;
     background: linear-gradient(180deg, #5f82f3, #5a7bf0);
-    color: #fff;
-    text-align: center;
+    color: #ffffff;
     font-weight: 600;
-    padding: 12px;
-    white-space: nowrap;
+    padding: 10px 12px;
+    text-align: center;
+    white-space: nowrap;   // header stays single-line
     border-bottom: 2px solid #dee2e6;
   }
 
-  /* ---------- Body ---------- */
-  tbody {
-    tr {
-      transition: background-color 0.2s ease;
+  /* ================================
+     TABLE BODY
+  ================================= */
+  tbody tr {
+    transition: background-color 0.2s ease;
 
-      &:hover {
-        background-color: #f8f9fa;
-      }
-
-      td {
-        padding: 12px;
-        vertical-align: top;
-        line-height: 1.35;
-        white-space: normal;
-        word-break: break-word;
-        overflow-wrap: anywhere;
-      }
+    &:hover {
+      background-color: #f8f9fa;
     }
   }
 
-  /* ==================================================
-     COLUMN WIDTHS (BALANCED / CLEAN)
-     ================================================== */
+  tbody td {
+    padding: 10px 12px;
+    vertical-align: middle;
+
+    /* Prevent overlapping */
+    white-space: normal;       // allow wrapping
+    word-break: break-word;    // break long part numbers
+  }
+
+  /* ================================
+     ALIGNMENTS
+  ================================= */
 
   /* Row # */
-  th:nth-child(1),
   td:nth-child(1) {
-    width: 75px;
     text-align: center;
     font-weight: 600;
-  }
-
-  /* Order Type */
-  th:nth-child(2),
-  td:nth-child(2) {
-    width: 110px;
-    text-align: center;
-  }
-
-  /* Requester */
-  th:nth-child(3),
-  td:nth-child(3) {
-    width: 110px;
-  }
-
-  /* DCG Part # (long text) */
-  th:nth-child(4),
-  td:nth-child(4) {
-    width:120px;
-  }
-
-  /* Manuf Part # (long text) */
-  th:nth-child(5),
-  td:nth-child(5) {
-    width: 120px;
+    white-space: nowrap;
   }
 
   /* Qty */
-  th:nth-child(6),
   td:nth-child(6) {
-    width: 60px;
     text-align: center;
+    white-space: nowrap;
   }
 
-  /* Vendor */
-  th:nth-child(7),
-  td:nth-child(7) {
-    width: 110px;
-  }
-
-  /* PO Number */
-  th:nth-child(8),
-  td:nth-child(8) {
-    width: 120px;
-    word-break: break-all;
-  }
-
-  /* Order Date */
-  th:nth-child(9),
-  td:nth-child(9) {
-    width: 120px;
+  /* Dates */
+  td:nth-child(9),
+  td:nth-child(10),
+  td:nth-child(12) {
     text-align: center;
-  }
-
-  /* Arrive Date (slightly smaller) */
-  th:nth-child(10),
-  td:nth-child(10) {
-    width: 95px;
-    text-align: center;
+    white-space: nowrap;
   }
 
   /* Status */
-  th:nth-child(11),
   td:nth-child(11) {
-    width: 90px;
     text-align: center;
+    white-space: nowrap;
   }
 
- /* Created On (date + time stacked ONLY in body) */
-th:nth-child(12) {
-  width: 120px;
-  text-align: center;
-}
-
-td:nth-child(12) {
-  width: 120px;
-  text-align: center;
-
-  span,
-  div {
-    display: block;
-  }
-}
-
-
-  /* Created By */
-  th:nth-child(13),
-  td:nth-child(13) {
-    width: 110px;
-  }
-
-  /* ---------- Pagination ---------- */
+  /* ================================
+     PAGINATION
+  ================================= */
   .pagination {
     .page-link {
       font-size: 13px;
@@ -194,41 +140,18 @@ td:nth-child(12) {
   }
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 992px) {
-  .order-request-status-container table {
-    font-size: 13px;
-  }
-}
-
-@media (max-width: 768px) {
-  .order-request-status-container {
-    padding: 12px;
-
-    table {
-      font-size: 12px;
-    }
-
-    .card-body {
-      padding: 20px;
-    }
-  }
-}
-
-/* ==================================================
-   STATUS PILLS (GLOBAL & STABLE)
-   ================================================== */
+/* =========================================
+   STATUS PILLS
+========================================= */
 
 .status-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 65px;
   padding: 4px 12px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  line-height: 1.2;
   white-space: nowrap;
   text-transform: capitalize;
 }
@@ -269,9 +192,9 @@ td:nth-child(12) {
   color: #6c757d;
 }
 
-/* ===============================
-   INLINE SORT ICONS (↕ ▲ ▼)
-   =============================== */
+/* =========================================
+   SORTING ICONS
+========================================= */
 
 th.sortable {
   cursor: pointer;
@@ -286,20 +209,12 @@ th.sortable {
   width: 100%;
 }
 
-/* Container for both arrows */
 .sort-icons {
   display: inline-flex;
   flex-direction: column;
   margin-left: 2px;
-  opacity: 1; /* always visible */
 }
 
-/* Active column */
-.sort-icons.active {
-  opacity: 1;
-}
-
-/* Arrow base */
 .sort-icons i {
   width: 0;
   height: 0;
@@ -307,23 +222,59 @@ th.sortable {
   border-right: 4px solid transparent;
 }
 
-/* Up arrow */
 .sort-icons i.up {
   border-bottom: 6px solid #ffffff;
   margin-bottom: 1px;
 }
 
-/* Down arrow */
 .sort-icons i.down {
   border-top: 6px solid #ffffff;
 }
 
-/* Hide inactive direction */
 .sort-icons i:not(.on) {
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
-/* Active direction */
 .sort-icons i.on {
   opacity: 1;
+}
+
+/* =========================================
+   RESPONSIVE ADJUSTMENTS
+========================================= */
+
+@media (max-width: 992px) {
+  .order-request-status-container {
+    padding: 15px;
+
+    table {
+      font-size: 13px;
+    }
+
+    .main-card .card-body {
+      padding: 20px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .order-request-status-container {
+    padding: 12px;
+
+    table {
+      font-size: 12px;
+    }
+
+    .main-card .card-body {
+      padding: 15px;
+    }
+
+    .filter-panel {
+      padding: 15px;
+    }
+
+    .table-responsive {
+      max-height: none;
+    }
+  }
 }

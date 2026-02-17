@@ -1,5 +1,10 @@
 <div class="container-fluid order-request-status-container">
 
+  <!-- Page Title -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-primary mb-02 display-4.9">Order Request Status</h2>
+  </div>
+
   <!-- Loading Overlay -->
   <div *ngIf="isLoading"
        class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay">
@@ -8,12 +13,38 @@
 
   <div class="card shadow-sm main-card">
 
-    <!-- Header -->
-    <div class="card-header border-0 py-4 text-center">
-      <h3 class="fw-bold text-primary mb-0">
-        <i class="bi bi-clipboard-check me-2"></i>
-        Order Request Status
-      </h3>
+    <!-- Filters Header -->
+    <div class="card-header border-0 py-4">
+      <form [formGroup]="orderStatusFilterForm">
+        <div class="row g-3">
+          <div class="col-md-5">
+            <label class="form-label fw-bold">Status</label>
+            <select class="form-select" formControlName="status">
+              <option *ngFor="let option of statusOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-5">
+            <label class="form-label fw-bold">Order Type</label>
+            <select class="form-select" formControlName="orderType">
+              <option *ngFor="let option of orderTypeOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-2 d-flex align-items-end">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" formControlName="archive">
+              <label class="form-check-label fw-bold ms-2">
+                Include Archived
+              </label>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
 
     <div class="card-body">
@@ -24,50 +55,16 @@
         {{ errorMessage }}
       </div>
 
-      <!-- Filters -->
-      <div class="row filter-panel mb-3">
-        <form class="row g-3 w-100" [formGroup]="orderStatusFilterForm">
-
-          <div class="col-md-4">
-            <label class="form-label fw-bold">Status</label>
-            <select class="form-select" formControlName="status">
-              <option *ngFor="let option of statusOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-4">
-            <label class="form-label fw-bold">Order Type</label>
-            <select class="form-select" formControlName="orderType">
-              <option *ngFor="let option of orderTypeOptions" [value]="option.value">
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-
-          <div class="col-md-4 d-flex align-items-end">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" formControlName="archive">
-              <label class="form-check-label fw-bold ms-2">
-                Include Archived
-              </label>
-            </div>
-          </div>
-
-        </form>
-      </div>
-
-            <!-- Records Per Page -->
+      <!-- Records Per Page -->
       <div class="d-flex align-items-center justify-content-between mb-3">
         <div class="d-flex align-items-center">
           <label class="me-2 fw-semibold">Records per page:</label>
           <select class="form-select form-select-sm w-auto"
                   [(ngModel)]="itemsPerPage"
                   (change)="currentPage = 1">
-            <option value="10">10</option>
-            <option value="25">25</option>
             <option value="50">50</option>
+            <option value="150">150</option>
+            <option value="200">200</option>
             <option value="100" selected>100</option>
           </select>
         </div>
@@ -105,10 +102,10 @@
           <!-- =======================
                TABLE HEADER (SORTABLE)
                ======================= -->
-          <thead>
+          <thead class="table-light">
             <tr>
 
-              <th class="sortable" (click)="sortData('rowIndex')">
+              <th class="fw-bold sortable" (click)="sortData('rowIndex')">
                 <span class="header-cell">
                   Row #
                   <span class="sort-icons" [class.active]="sortColumn === 'rowIndex'">
@@ -118,7 +115,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('orderType')">
+              <th class="fw-bold sortable" (click)="sortData('orderType')">
                 <span class="header-cell">
                   Order Type
                   <span class="sort-icons" [class.active]="sortColumn === 'orderType'">
@@ -128,7 +125,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('requester')">
+              <th class="fw-bold sortable" (click)="sortData('requester')">
                 <span class="header-cell">
                   Requester
                   <span class="sort-icons" [class.active]="sortColumn === 'requester'">
@@ -138,7 +135,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('dcgPartNo')">
+              <th class="fw-bold sortable" (click)="sortData('dcgPartNo')">
                 <span class="header-cell">
                   DCG Part #
                   <span class="sort-icons" [class.active]="sortColumn === 'dcgPartNo'">
@@ -148,7 +145,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('manufPartNo')">
+              <th class="fw-bold sortable" (click)="sortData('manufPartNo')">
                 <span class="header-cell">
                   Manuf Part #
                   <span class="sort-icons" [class.active]="sortColumn === 'manufPartNo'">
@@ -158,7 +155,7 @@
                 </span>
               </th>
 
-              <th class="sortable text-center" (click)="sortData('qtyNeeded')">
+              <th class="fw-bold sortable text-center" (click)="sortData('qtyNeeded')">
                 <span class="header-cell">
                   Qty
                   <span class="sort-icons" [class.active]="sortColumn === 'qtyNeeded'">
@@ -168,7 +165,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('vendor')">
+              <th class="fw-bold sortable" (click)="sortData('vendor')">
                 <span class="header-cell">
                   Vendor
                   <span class="sort-icons" [class.active]="sortColumn === 'vendor'">
@@ -178,7 +175,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('poNumber')">
+              <th class="fw-bold sortable" (click)="sortData('poNumber')">
                 <span class="header-cell">
                   PO Number
                   <span class="sort-icons" [class.active]="sortColumn === 'poNumber'">
@@ -188,7 +185,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('orderDate')">
+              <th class="fw-bold sortable" (click)="sortData('orderDate')">
                 <span class="header-cell">
                   Order Date
                   <span class="sort-icons" [class.active]="sortColumn === 'orderDate'">
@@ -198,7 +195,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('arriveDate')">
+              <th class="fw-bold sortable" (click)="sortData('arriveDate')">
                 <span class="header-cell">
                   Arrive Date
                   <span class="sort-icons" [class.active]="sortColumn === 'arriveDate'">
@@ -208,7 +205,7 @@
                 </span>
               </th>
 
-              <th class="sortable text-center" (click)="sortData('status')">
+              <th class="fw-bold sortable text-center" (click)="sortData('status')">
                 <span class="header-cell">
                   Status
                   <span class="sort-icons" [class.active]="sortColumn === 'status'">
@@ -218,7 +215,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('createdOn')">
+              <th class="fw-bold sortable" (click)="sortData('createdOn')">
                 <span class="header-cell">
                   Created On
                   <span class="sort-icons" [class.active]="sortColumn === 'createdOn'">
@@ -228,7 +225,7 @@
                 </span>
               </th>
 
-              <th class="sortable" (click)="sortData('createdBy')">
+              <th class="fw-bold sortable" (click)="sortData('createdBy')">
                 <span class="header-cell">
                   Created By
                   <span class="sort-icons" [class.active]="sortColumn === 'createdBy'">
@@ -245,6 +242,18 @@
                TABLE BODY
                ======================= -->
           <tbody>
+            <!-- No Data Message -->
+            <tr *ngIf="!filteredList || filteredList.length === 0">
+              <td colspan="12" class="text-center py-5">
+                <div class="d-flex flex-column align-items-center text-muted">
+                  <i class="bi bi-inbox fs-1 mb-3" style="color: #6c757d;"></i>
+                  <h5 class="fw-bold mb-2">No Data Available</h5>
+                  <p class="mb-0">No rows available for the selected filters.</p>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Data Rows -->
             <tr *ngFor="let orderRequest of getPaginatedData(); trackBy: trackByRowIndex">
 
               <td class="text-center fw-bold">{{ orderRequest.rowIndex }}</td>
