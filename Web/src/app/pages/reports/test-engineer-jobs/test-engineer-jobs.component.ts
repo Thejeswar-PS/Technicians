@@ -14,9 +14,7 @@ import {
   EngineerChartDto,
   StatusChartDto
 } from 'src/app/core/model/test-engineer-jobs.model';
-import { Chart, ChartConfiguration, ChartType, registerables } from 'chart.js';
-
-Chart.register(...registerables);
+// Chart.js removed - not in dependencies
 
 @Component({
   selector: 'app-test-engineer-jobs',
@@ -33,8 +31,8 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   Math = Math;
   
   // Chart instances
-  private engineerChart?: Chart<any>;
-  private statusChart?: Chart<any>;
+  private engineerChart?: any;
+  private statusChart?: any;
   
   // Data properties
   jobsList: TestEngineerJobDto[] = [];
@@ -525,7 +523,8 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
       }
     };
 
-    this.engineerChart = new Chart(ctx, config);
+    // Chart initialization disabled - chart.js not available
+    // this.engineerChart = new Chart(ctx, config);
   }
 
   private initializeStatusChart(): void {
@@ -653,7 +652,8 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
       }
     };
 
-    this.statusChart = new Chart(ctx, config);
+    // Chart initialization disabled - chart.js not available
+    // this.statusChart = new Chart(ctx, config);
   }
 
   onChartClick(type: 'engineer' | 'status', value: string, status?: string): void {
