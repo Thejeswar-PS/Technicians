@@ -119,7 +119,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'High', label: 'High' },
     { value: 'Normal', label: 'Normal' },
     { value: 'Low', label: 'Low' },
-    { value: 'At Convenience', label: 'At Convenience' }
+    { value: 'Atc', label: 'At Convenience' }
   ];
 
   // Technician options (populated from API)
@@ -679,15 +679,75 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     return field ? (field.invalid && (field.dirty || field.touched)) : false;
   }
 
+  // Helper method to mark all form fields as touched (for showing validation on submit)
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+      
+      if (control && control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+    });
+  }
+
+  // Helper method to trigger validation display for all fields
+  public showAllValidationErrors(): void {
+    this.markFormGroupTouched(this.editForm);
+    this.markFormGroupTouched(this.resultForm);
+  }
+
   // Helper method to get field error message
   public getFieldErrorMessage(form: FormGroup, fieldName: string): string {
     const field = form.get(fieldName);
     if (!field || !field.errors) return '';
 
-    if (field.errors['required']) return `${fieldName} is required.`;
-    if (field.errors['maxlength']) return `${fieldName} exceeds maximum length.`;
-    if (field.errors['numeric']) return `${fieldName} must be a numeric value.`;
-    if (field.errors['notPS']) return `Please select a valid option.`;
+    // Required field errors with specific messages matching legacy validation
+    if (field.errors['required']) {
+      switch (fieldName) {
+        case 'make':
+          return "Please enter 'Make' and resave your Unit.";
+        case 'model':
+          return "Please enter 'Model' and resave your Unit.";
+        case 'serialNo':
+          return "Please enter 'Serial No' and resave your Unit.";
+        case 'assignedTo':
+          return "Please select 'Assigned To' and resave your Unit.";
+        case 'dueDate':
+          return "Please enter 'Due Date' and resave your Unit.";
+        case 'deficiencyNotes':
+          return "Please enter 'Deficiency Notes' and resave your Unit.";
+        case 'testEngineer':
+          return "Please enter 'Test Engineer' and resave your Unit.";
+        case 'inspectionNotes':
+          return "Please enter 'Inspection Notes' and resave your Unit.";
+        case 'currentStatus':
+          return "Please select a valid status.";
+        default:
+          return `${fieldName} is required.`;
+      }
+    }
+    
+    // Numeric validation errors
+    if (field.errors['numeric']) {
+      return "Please enter only integer value for fields like Quantity, Year, KVA...etc";
+    }
+    
+    // Assigned To validation (cannot be "PS" - Please Select)
+    if (field.errors['notPS']) {
+      return "Please select a valid technician from Assigned To dropdown.";
+    }
+    
+    // Max length errors
+    if (field.errors['maxlength']) {
+      const maxLength = field.errors['maxlength'].requiredLength;
+      return `Maximum ${maxLength} characters allowed.`;
+    }
+    
+    // Min validation
+    if (field.errors['min']) {
+      return "Value must be greater than 0.";
+    }
     
     return 'Invalid value.';
   }
@@ -732,6 +792,45 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       currentStatus: ['', [Validators.maxLength(20)]],
       testEngineer: ['', [Validators.maxLength(100)]], // Will be required conditionally when Status = "COM"
       inspectionNotes: ['', [Validators.maxLength(1000)]] // Will be required conditionally when Status = "COM"
+    });
+
+    // Setup real-time validation for conditional fields
+    this.setupConditionalValidation();
+  }
+
+  // Setup conditional validation that updates in real-time
+  private setupConditionalValidation(): void {
+    // Watch for changes in currentStatus to update validation requirements
+    this.resultForm.get('currentStatus')?.valueChanges.subscribe(status => {
+      const testEngineerControl = this.resultForm.get('testEngineer');
+      const inspectionNotesControl = this.resultForm.get('inspectionNotes');
+      
+      if (status === 'COM') {
+        // When status is Completed, make testEngineer and inspectionNotes required
+        testEngineerControl?.setValidators([Validators.required, Validators.maxLength(100)]);
+        inspectionNotesControl?.setValidators([Validators.required, Validators.maxLength(1000)]);
+      } else {
+        // When status is not Completed, remove required validation
+        testEngineerControl?.setValidators([Validators.maxLength(100)]);
+        inspectionNotesControl?.setValidators([Validators.maxLength(1000)]);
+      }
+      
+      // Update the validation state
+      testEngineerControl?.updateValueAndValidity();
+      inspectionNotesControl?.updateValueAndValidity();
+    });
+
+    // Also watch for approved checkbox changes to validate other checkboxes
+    this.editForm.get('approved')?.valueChanges.subscribe(approved => {
+      if (!approved) {
+        // If approved is unchecked, also uncheck moveToArchive and moveToStrip
+        if (this.editForm.get('moveToArchive')?.value) {
+          this.editForm.patchValue({ moveToArchive: false });
+        }
+        if (this.editForm.get('moveToStrip')?.value) {
+          this.editForm.patchValue({ moveToStrip: false });
+        }
+      }
     });
   }
 
@@ -1578,6 +1677,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'low':
         return 'badge-light-info';
       case 'at convenience':
+      case 'atc':
         return 'badge-light-secondary';
       default:
         return 'badge-light-secondary';
@@ -1969,16 +2069,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           );
         }
       });
-  }
-
-  /**
-   * Marks all form controls as touched to show validation errors
-   */
-  private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach(key => {
-      const control = formGroup.get(key);
-      control?.markAsTouched();
-    });
   }
 
   /**

@@ -77,7 +77,7 @@
   background: #ffffff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  padding: 24px;
+  padding: 20px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
 
@@ -99,7 +99,7 @@
 
 .section-title {
   font-weight: 600;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   color: #111827;
 }
 
@@ -122,10 +122,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 
   i {
     color: #2563eb;
@@ -136,13 +136,13 @@
 .modern-select,
 .modern-textarea {
   width: 100%;
-  padding: 14px 16px;
+  padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 1.25rem;
+  font-size: 1rem;
   background: #ffffff;
   transition: border 0.2s ease;
-  min-height: 48px;
+  min-height: 40px;
 }
 
 .modern-input:focus,
@@ -155,7 +155,7 @@
 
 .modern-textarea {
   resize: vertical;
-  min-height: 120px;
+  min-height: 100px;
 }
 
 /* ================= CHECKBOXES ================= */
@@ -183,14 +183,14 @@
 }
 
 .modern-btn {
-  padding: 12px 24px;
+  padding: 10px 20px;
   border-radius: 6px;
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   font-weight: 600;
   border: 1px solid transparent;
   cursor: pointer;
-  min-width: 130px;
-  min-height: 45px;
+  min-width: 110px;
+  min-height: 38px;
 }
 
 /* Primary */
@@ -239,6 +239,79 @@
   background: #fef2f2;
   border-color: #ef4444;
   color: #7f1d1d;
+}
+
+/* ================= REAL-TIME VALIDATION ================= */
+
+.modern-input.error,
+.modern-select.error,
+.modern-textarea.error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1) !important;
+  background-color: #fef7f7 !important;
+}
+
+.modern-input.error:focus,
+.modern-select.error:focus,
+.modern-textarea.error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+  outline: none;
+}
+
+.validation-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 6px 12px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+  animation: slideIn 0.2s ease-out;
+}
+
+.validation-error i {
+  color: #ef4444;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.validation-error span {
+  line-height: 1.4;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 50px;
+  }
+}
+
+/* Field error states */
+.field-label {
+  transition: color 0.2s ease;
+}
+
+.form-field:has(.modern-input.error) .field-label,
+.form-field:has(.modern-select.error) .field-label,
+.form-field:has(.modern-textarea.error) .field-label {
+  color: #dc2626 !important;
+}
+
+.form-field:has(.modern-input.error) .field-icon,
+.form-field:has(.modern-select.error) .field-icon,
+.form-field:has(.modern-textarea.error) .field-icon {
+  color: #ef4444 !important;
 }
 
 /* ================= RESPONSIVE ================= */
