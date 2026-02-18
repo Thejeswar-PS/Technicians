@@ -129,7 +129,7 @@
 }
 
 /* ==========================================================
-   ANIMATED GRADIENT BAR COLORS - SIMPLIFIED
+   ANIMATED GRADIENT BAR COLORS - MANUFACTURER SPECIFIC
 ========================================================== */
 
 .bar {
@@ -147,6 +147,29 @@
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   border: 1px solid rgba(0,0,0,0.05);
   overflow: visible;
+}
+
+/* Manufacturer-specific colors */
+.bar-abc { background: linear-gradient(180deg, #3b82f6 0%, #1d4fd8 100%); }
+.bar-abs { background: linear-gradient(180deg, #10b981 0%, #059669 100%); }
+.bar-apc { background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); }
+.bar-best { background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%); }
+.bar-chloride { background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%); }
+.bar-eaton { background: linear-gradient(180deg, #64748b 0%, #475569 100%); }
+.bar-gamatro { background: linear-gradient(180deg, #06b6d4 0%, #0891b2 100%); }
+.bar-ge { background: linear-gradient(180deg, #ec4899 0%, #db2777 100%); }
+.bar-liebert { background: linear-gradient(180deg, #f97316 0%, #ea580c 100%); }
+.bar-mge { background: linear-gradient(180deg, #84cc16 0%, #65a30d 100%); }
+.bar-mitsubishi { background: linear-gradient(180deg, #eab308 0%, #ca8a04 100%); }
+.bar-powerware { background: linear-gradient(180deg, #a855f7 0%, #9333ea 100%); }
+.bar-ss { background: linear-gradient(180deg, #f43f5e 0%, #e11d48 100%); }
+.bar-sss { background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%); }
+.bar-toshiba { background: linear-gradient(180deg, #fb7185 0%, #f43f5e 100%); }
+.bar-transtector { background: linear-gradient(180deg, #a3a3a3 0%, #737373 100%); }
+
+/* Default fallback color */
+.bar:not([class*="bar-"]) {
+  background: linear-gradient(180deg, #6b7280 0%, #4b5563 100%);
 }
 
 /* Subtle gradient overlay */
@@ -210,7 +233,8 @@
   justify-content: space-between;
   gap: 8px;
   margin-top: 16px;
-  padding: 0 68px;
+  padding: 0 20px;
+  margin-left: 60px;
   overflow: hidden;
 }
 
@@ -305,6 +329,22 @@
 
 .parts-status-table tbody tr:hover {
   background-color: #f8f9fa;
+}
+
+/* ==========================================================
+   LEGACY COLOR-CODING SYSTEM 
+   (Based on NewUnitsTestStatus.aspx.cs logic)
+========================================================== */
+
+/*  Orange Background for Strip Serial Units */
+.parts-status-table tbody tr.row-strip-serial {
+  background-color: #FFCC99 !important; /* Orange background */
+  color: #003300 !important;             /* Dark green text */
+}
+
+/*  Red Text for High Priority (when not strip serial) */
+.parts-status-table tbody tr.row-high-priority {
+  color: #dc2626 !important; /* Red text for high priority */
 }
 
 /* ==========================================================
@@ -551,7 +591,8 @@
   
   .x-axis {
     gap: 6px;
-    padding: 0 61px;
+    padding: 0 15px;
+    margin-left: 60px;
   }
 }
 
@@ -571,7 +612,8 @@
   
   .x-axis {
     gap: 4px;
-    padding: 0 58px;
+    padding: 0 10px;
+    margin-left: 60px;
   }
 }
 
@@ -588,7 +630,8 @@
   
   .x-axis {
     gap: 2px;
-    padding: 0 53px;
+    padding: 0 5px;
+    margin-left: 60px;
   }
   
   .bar {

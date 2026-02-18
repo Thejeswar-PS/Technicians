@@ -46,10 +46,9 @@
         <!-- Bars Area -->
         <div class="bars-area">
 
-          <div class="bar"
+          <div [class]="getBarCssClass(make.make)"
                *ngFor="let make of makeCounts; let i = index"
-               [style.height.%]="getBarHeightPercentage(make.makeCount)"
-               [style.background]="getProgressColor(i)">
+               [style.height.%]="getBarHeightPercentage(make.makeCount)">
 
             <div class="bar-value">
               {{ make.makeCount }}

@@ -693,6 +693,12 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     return this.chartColors[index % this.chartColors.length];
   }
 
+  // Get CSS class based on manufacturer name (for legacy color-coding)
+  public getBarCssClass(makeName: string): string {
+    const normalizedMake = makeName.toLowerCase().trim();
+    return `bar bar-${normalizedMake}`;
+  }
+
   // TrackBy function to prevent unnecessary re-rendering
   public trackByMake(index: number, item: {make: string, count: number}): string {
     return item.make;
