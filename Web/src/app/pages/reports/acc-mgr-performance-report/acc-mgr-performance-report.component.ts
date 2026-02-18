@@ -14,6 +14,9 @@ import {
   styleUrls: ['./acc-mgr-performance-report.component.scss']
 })
 export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
+  // Math object for template access
+  Math = Math;
+  
   reportForm: FormGroup;
   reportData: AccMgrPerformanceReportResponseDto | null = null;
   summaryData: AccMgrPerformanceReportSummaryDto | null = null;
@@ -23,7 +26,14 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   errorMessage: string | null = null;
   
   // Active section for tabbed view
-  activeSection = 'summary';
+  activeSection = 'returnedForProcessing';
+
+  monthLabels: string[] = [];
+  
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 100;
+  totalItems = 0;
   
   private subscriptions: Subscription[] = [];
 
@@ -39,11 +49,22 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Load account managers first
     this.loadAccountManagers();
+
+    this.monthLabels = this.getMonthLabels();
     
     // Set default values
     this.reportForm.patchValue({
       officeId: '' // Will be set after account managers load
     });
+  }
+
+  private getMonthLabels(baseDate: Date = new Date()): string[] {
+    const labels: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(baseDate.getFullYear(), baseDate.getMonth() + i, 1);
+      labels.push(date.toLocaleString('en-US', { month: 'long' }));
+    }
+    return labels;
   }
 
   ngOnDestroy(): void {
@@ -58,12 +79,9 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     
     // Check if we have a valid office ID instead of form validation
     if (!officeId || officeId.trim() === '') {
-      console.log('Cannot generate report: No office ID provided');
       this.markFormGroupTouched();
       return;
     }
-
-    console.log('Generating report for office ID:', officeId, 'Filter:', filterType);
     this.isLoading = true;
     this.errorMessage = null;
     
@@ -79,11 +97,29 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.reportData = data;
         this.isLoading = false;
+        
+        // If this is a RedOrange (Critical Jobs) filter, set active section to show data
+        if (filterType === 'RedOrange') {
+          // Check which section has data and set it as active
+          if (data.CompletedNotReturned?.length || data.completedNotReturned?.length) {
+            this.activeSection = 'completedNotReturned';
+          } else if (data.ReturnedForProcessing?.length || data.returnedForProcessing?.length) {
+            this.activeSection = 'returnedForProcessing';
+          } else if (data.PastDueUnscheduled?.length || data.pastDueUnscheduled?.length) {
+            this.activeSection = 'pastDueUnscheduled';
+          } else if (data.FirstMonth?.length || data.firstMonth?.length) {
+            this.activeSection = 'firstMonth';
+          } else if (data.ReturnedWithIncompleteData?.length || data.returnedWithIncompleteData?.length) {
+            this.activeSection = 'returnedWithIncompleteData';
+          } else {
+            // Default to first available section for critical jobs
+            this.activeSection = 'completedNotReturned';
+          }
+        }
       },
       error: (error) => {
         this.isLoading = false;
         this.errorMessage = 'An error occurred while generating the report';
-        console.error('Report generation error:', error);
       }
     });
 
@@ -93,7 +129,6 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
         this.summaryData = data;
       },
       error: (error) => {
-        console.error('Summary generation error:', error);
       }
     });
 
@@ -104,12 +139,10 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    * Load account managers from the existing service
    */
   loadAccountManagers(): void {
-    console.log('Loading account managers...');
     this.isLoadingAccountManagers = true;
     
     const accountManagerSub = this.reportService.getAccountManagerNames().subscribe({
       next: (data: any[]) => {
-        console.log('Account managers loaded:', data);
         if (data && data.length > 0) {
           // Convert to AccountManager format, preserving original properties
           this.accountManagers = data.map(item => ({
@@ -122,40 +155,30 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             OFFID: item.OFFID || item.officeId || item.offid || item.empId || item.id
           }));
           
-          console.log('Processed account managers:', this.accountManagers);
-          
           // Set DCG account manager as default if available, otherwise use first
           let defaultManager = this.accountManagers.find(manager => 
             (manager.OFFNAME && manager.OFFNAME.toUpperCase().includes('DCG')) ||
             (manager.empName && manager.empName.toUpperCase().includes('DCG')) ||
             (manager.offname && manager.offname.toUpperCase().includes('DCG'))
           );
-          
-          console.log('Found DCG manager:', defaultManager);
-          
+
           if (!defaultManager && this.accountManagers.length > 0) {
             defaultManager = this.accountManagers[0];
-            console.log('Using first manager as default:', defaultManager);
           }
           
           if (defaultManager) {
             const defaultOfficeId = defaultManager.OFFID || defaultManager.empId || '';
-            console.log('Setting default office ID:', defaultOfficeId);
             this.reportForm.patchValue({ officeId: defaultOfficeId });
             
             // Auto-generate report with DCG account manager
-            console.log('Auto-generating report in 500ms...');
             setTimeout(() => {
               this.generateReport();
             }, 500);
           }
-        } else {
-          console.log('No account managers found');
         }
         this.isLoadingAccountManagers = false;
       },
       error: (error) => {
-        console.error('Error loading account managers:', error);
         this.isLoadingAccountManagers = false;
       }
     });
@@ -264,27 +287,6 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get badge class for status display
-   */
-  getStatusBadgeClass(status: string): string {
-    if (!status) return 'badge badge-light';
-    
-    const statusLower = status.toLowerCase();
-    
-    if (statusLower.includes('complete') || statusLower.includes('approved')) {
-      return 'badge badge-success';
-    }
-    if (statusLower.includes('pending') || statusLower.includes('processing')) {
-      return 'badge badge-warning';
-    }
-    if (statusLower.includes('returned') || statusLower.includes('incomplete')) {
-      return 'badge badge-danger';
-    }
-    
-    return 'badge badge-light';
-  }
-
-  /**
    * Get badge class for priority display
    */
   getPriorityBadgeClass(priority: string): string {
@@ -313,6 +315,15 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    */
   setActiveSection(section: string): void {
     this.activeSection = section;
+    this.currentPage = 1; // Reset to first page when switching sections
+  }
+
+  onOfficeChange(): void {
+    const officeId = this.reportForm.get('officeId')?.value || '';
+    if (!officeId || officeId.trim() === '') {
+      return;
+    }
+    this.generateReport();
   }
 
   /**
@@ -354,7 +365,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     this.reportData = null;
     this.summaryData = null;
     this.errorMessage = null;
-    this.activeSection = 'summary';
+    this.activeSection = 'returnedForProcessing';
   }
 
   /**
@@ -482,31 +493,38 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   }
 
   getRowColorClass(item: any, sectionType: string): string {
-    // Handle "Could be billed" -> "Bill After PM" logic
-    if (item.status === 'Could be billed' || item.jobStatus === 'Could be billed') {
-      if (sectionType.includes('returned') || sectionType === 'returnedForProcessing') {
-        return 'bill-after-pm-critical'; // White text, Red background
-      } else {
-        return 'bill-after-pm-warning'; // Black text, Orange background
-      }
+    const statusRaw = (item.status || item.jobStatus || '').toString();
+    const isBillAfterPm = statusRaw === 'Bill After PM' ||
+      statusRaw === 'Could be billed';
+
+    const isUnscheduled = this.isUnscheduledSection(sectionType);
+    const isCritical = this.isCriticalSection(sectionType);
+    const isTodaySection = this.isTodaySection(sectionType);
+    const isReturnedSection = this.isReturnedSection(sectionType);
+    const isExpiredSection = this.isExpiredSection(sectionType, item);
+    const quotedAmount = this.getQuotedAmount(item);
+    const currentAge = this.getCurrentAge(item);
+
+    if (isUnscheduled) {
+      // Legacy: only highlight "Could be billed" in Unscheduled sections
+      return isBillAfterPm ? 'bill-after-pm-warning' : '';
     }
 
-    // Handle quoted amounts > 0
-    const quotedAmount = item.quotedAmount || item.amount || 0;
-    if (quotedAmount > 0) {
-      if (sectionType === 'completedNotReturned' || 
-          sectionType === 'returnedForProcessing' || 
-          sectionType === 'returnedIncomplete') {
-        return 'critical-with-amount'; // White text, Red background, Bold amount
-      } else if (sectionType.includes('Month') || sectionType === 'pastDueUnscheduled') {
-        return 'unscheduled-with-amount'; // Black text, Orange background, Bold amount
-      }
+    if (isBillAfterPm) {
+      return isReturnedSection ? 'bill-after-pm-critical' : 'bill-after-pm-warning';
     }
 
-    // Handle expired jobs over 30 days
-    const currentAge = item.currentAge || item.changeAge || 0;
-    if (currentAge > 30 && quotedAmount > 0) {
-      return 'expired-critical'; // Bold text with section colors
+    const shouldHighlightAmount = isExpiredSection
+      ? currentAge > 30 && quotedAmount > 0
+      : quotedAmount > 0;
+
+    if (shouldHighlightAmount) {
+      if (isCritical) {
+        return 'critical-with-amount';
+      }
+      if (isTodaySection) {
+        return 'today-with-amount';
+      }
     }
 
     return '';
@@ -514,17 +532,158 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
 
   getStatusText(item: any): string {
     const status = item.status || item.jobStatus || '';
-    return status === 'Could be billed' ? 'Bill After PM' : status;
+    if (status === 'Could be billed') {
+      return 'Bill After PM';
+    }
+    return status;
   }
 
-  shouldBoldAmount(item: any): boolean {
-    const quotedAmount = item.quotedAmount || item.amount || 0;
+  shouldBoldAmount(item: any, sectionType?: string): boolean {
+    const quotedAmount = this.getQuotedAmount(item);
+    if (this.isExpiredSection(sectionType, item)) {
+      const currentAge = this.getCurrentAge(item);
+      return currentAge > 30 && quotedAmount > 0;
+    }
     return quotedAmount > 0;
   }
 
-  shouldBoldAge(item: any): boolean {
-    const currentAge = item.currentAge || item.changeAge || 0;
-    const quotedAmount = item.quotedAmount || item.amount || 0;
+  shouldBoldAge(item: any, sectionType?: string): boolean {
+    if (!this.isExpiredSection(sectionType, item)) {
+      return false;
+    }
+    const currentAge = this.getCurrentAge(item);
+    const quotedAmount = this.getQuotedAmount(item);
     return currentAge > 30 && quotedAmount > 0;
+  }
+
+  getQuotedAmount(item: any): number {
+    return Number(item.totalAmount ?? item.TotalAmount ?? 0);
+  }
+
+  private getCurrentAge(item: any): number {
+    return Number(item.currentAge ?? item.changeAge ?? 0);
+  }
+
+  private isUnscheduledSection(sectionType: string): boolean {
+    return sectionType === 'pastDueUnscheduled' ||
+      sectionType === 'firstMonth' ||
+      sectionType === 'secondMonth' ||
+      sectionType === 'thirdMonth' ||
+      sectionType === 'fourthMonth' ||
+      sectionType === 'fifthMonth';
+  }
+
+  private isCriticalSection(sectionType: string): boolean {
+    return sectionType === 'completedNotReturned' ||
+      sectionType === 'returnedForProcessing' ||
+      sectionType === 'returnedWithIncompleteData' ||
+      sectionType === 'returnedIncomplete';
+  }
+
+  private isReturnedSection(sectionType: string): boolean {
+    return sectionType === 'returnedForProcessing' ||
+      sectionType === 'returnedWithIncompleteData' ||
+      sectionType === 'returnedIncomplete';
+  }
+
+  private isTodaySection(sectionType: string): boolean {
+    return sectionType === 'jobsScheduledToday' ||
+      sectionType === 'jobsConfirmedNext120Hours';
+  }
+
+  private isExpiredSection(sectionType?: string, item?: any): boolean {
+    const sectionText = (sectionType || '').toLowerCase();
+    if (sectionText.includes('expired')) {
+      return true;
+    }
+    const itemText = (
+      item?.sectionLabel ||
+      item?.sectionName ||
+      item?.sectionType ||
+      item?.statusLabel ||
+      ''
+    ).toString().toLowerCase();
+    return itemText.includes('expired');
+  }
+
+  // Status badge color methods
+  getStatusBadgeClass(item: any, sectionType?: string): string {
+    const status = this.getStatusText(item);
+    const statusLower = status.toLowerCase();
+    
+    // Handle different status types with appropriate colors
+    if (statusLower.includes('opn') || statusLower === 'open') {
+      // OPN (Open) - Green normally, Red if in critical sections
+      const isCriticalSection = sectionType === 'completedNotReturned' || 
+                               sectionType === 'returnedForProcessing' || 
+                               sectionType === 'pastDueUnscheduled';
+      return isCriticalSection ? 'bg-danger' : 'bg-success';
+    }
+    
+    if (status === 'Bill After PM' || statusLower.includes('blb') || status === 'Could be billed') {
+      // BLB (Bill After PM) - Orange/Warning color
+      return 'bg-warning text-dark';
+    }
+    
+    if (statusLower.includes('fcd') || statusLower === 'forced close') {
+      // FCD (Forced Close) - Purple color
+      return 'bg-primary';
+    }
+    
+    if (statusLower.includes('complete') || statusLower.includes('confirmed')) {
+      // Completed/Confirmed statuses - Green
+      return 'bg-success';
+    }
+    
+    if (statusLower.includes('pending') || statusLower.includes('processing')) {
+      // Pending/Processing statuses - Blue
+      return 'bg-info';
+    }
+    
+    if (statusLower.includes('returned') || statusLower.includes('incomplete')) {
+      // Returned/Incomplete statuses - Red
+      return 'bg-danger';
+    }
+    
+    // Default status color
+    return 'bg-secondary';
+  }
+
+  // Pagination methods
+  getPaginatedData(): any[] {
+    const activeData = this.getActiveData();
+    this.totalItems = activeData.length;
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    return activeData.slice(startIndex, endIndex);
+  }
+
+  getTotalPages(): number {
+    return Math.ceil(this.totalItems / this.itemsPerPage);
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+    }
+  }
+
+  getPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    const pages: number[] = [];
+    const maxPagesToShow = 5;
+    
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
   }
 }

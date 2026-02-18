@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Location } from '@angular/common';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TechToolsService } from '../../../core/services/tech-tools.service';
 import { ToolsTrackingTechsDto, TechToolSerialNoDto, ToolsCalendarTrackingDto, ToolsCalendarDueCountsDto, ToolsCalendarTrackingResultDto } from '../../../core/model/tech-tools.model';
@@ -77,7 +78,8 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
 
   constructor(
     private techToolsService: TechToolsService,
-    private location: Location
+    private location: Location,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -507,13 +509,14 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Open tool details (Legacy navigation: ToolsTracking.aspx?TechID=)
+   * Open tool details (Navigate to: /tools/tool-tracking-entry?TechID=)
    */
   openToolDetails(entry: ToolsCalendarTrackingDto): void {
-    // Legacy: string url = "ToolsTracking.aspx?TechID=" + TechID;
-    // Navigate to tools tracking page with techID parameter
-    const url = `/pages/tools/tech-tools?techID=${entry.techID}`;
-    window.open(url, '_blank');
+    // Navigate to Angular tool tracking entry page with TechID parameter
+    // Example: /tools/tool-tracking-entry?TechID=SARIQ.MO
+    this.router.navigate(['/tools/tool-tracking-entry'], {
+      queryParams: { TechID: entry.techID }
+    });
   }
 
   /**

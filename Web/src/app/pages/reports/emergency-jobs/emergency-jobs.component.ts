@@ -209,14 +209,42 @@ export class EmergencyJobsComponent implements OnInit, OnDestroy {
   }
 
   getStatusBadgeClass(status: string): string {
-    if (!status) return 'badge-secondary';
+    if (!status) return 'status-unknown';
     
-    switch (status.toUpperCase()) {
-      case 'COMPLETED': return 'badge-success';
-      case 'IN_PROGRESS': return 'badge-primary';
-      case 'PENDING': return 'badge-warning';
-      case 'OPEN': return 'badge-info';
-      default: return 'badge-secondary';
+    const statusKey = status.toUpperCase().replace(/\s+/g, '-');
+    
+    switch (statusKey) {
+      case 'OPEN':
+      case 'NEW':
+        return 'status-open';
+      case 'PENDING':
+      case 'ON-HOLD':
+        return 'status-pending';
+      case 'IN-PROGRESS':
+      case 'IN_PROGRESS':
+      case 'ASSIGNED':
+        return 'status-in-progress';
+      case 'COMPLETED':
+      case 'RESOLVED':
+      case 'CLOSED':
+        return 'status-completed';
+      case 'CANCELLED':
+      case 'CANCELED':
+        return 'status-cancelled';
+      case 'EMERGENCY':
+        return 'status-emergency';
+      case 'URGENT':
+        return 'status-urgent';
+      case 'DISPATCHED':
+        return 'status-dispatched';
+      case 'SCHEDULED':
+        return 'status-scheduled';
+      case 'AWAITING-PARTS':
+        return 'status-awaiting-parts';
+      case 'REVIEW':
+        return 'status-review';
+      default:
+        return 'status-unknown';
     }
   }
 
@@ -256,5 +284,15 @@ export class EmergencyJobsComponent implements OnInit, OnDestroy {
       return this.sortDirection === 'asc' ? 'bi-arrow-up' : 'bi-arrow-down';
     }
     return 'bi-arrow-down-up';
+  }
+
+  navigateToJobInfo(callNbr: string, techName: string | null): void {
+    const safeTechName = (techName || '').trim();
+    this.router.navigate(['/jobs/job-notes-info'], {
+      queryParams: {
+        CallNbr: callNbr.trim(),
+        TechName: safeTechName
+      }
+    });
   }
 }

@@ -108,7 +108,6 @@ export class DTechUsersDataComponent implements OnInit {
           this.calculateStatistics();
           this.updateDisplayedData();
           
-          this.successMessage = `Successfully loaded ${this.totalRecords} user records.`;
           this.updateActiveFilters();
         } else {
           this.errorMessage = response.message || 'Failed to load DTech users data';

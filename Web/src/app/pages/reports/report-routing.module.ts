@@ -22,6 +22,7 @@ import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-u
 import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-report.component';
 import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
 import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.component';
+import { TestEngineerJobsComponent } from './test-engineer-jobs/test-engineer-jobs.component';
 
 const routes: Routes = [
   {
@@ -124,6 +125,10 @@ const routes: Routes = [
   {
     path: 'dcg-emp-details',
     component: DcgEmpDetailsComponent
+  },
+  {
+    path: 'test-engineer-jobs',
+    component: TestEngineerJobsComponent
   }
 ];
 

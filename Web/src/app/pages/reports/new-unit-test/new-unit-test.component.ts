@@ -119,7 +119,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     { value: 'High', label: 'High' },
     { value: 'Normal', label: 'Normal' },
     { value: 'Low', label: 'Low' },
-    { value: 'At Convenience', label: 'At Convenience' }
+    { value: 'Atc', label: 'At Convenience' }
   ];
 
   // Technician options (populated from API)
@@ -679,15 +679,75 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
     return field ? (field.invalid && (field.dirty || field.touched)) : false;
   }
 
+  // Helper method to mark all form fields as touched (for showing validation on submit)
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      control?.markAsTouched();
+      
+      if (control && control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+    });
+  }
+
+  // Helper method to trigger validation display for all fields
+  public showAllValidationErrors(): void {
+    this.markFormGroupTouched(this.editForm);
+    this.markFormGroupTouched(this.resultForm);
+  }
+
   // Helper method to get field error message
   public getFieldErrorMessage(form: FormGroup, fieldName: string): string {
     const field = form.get(fieldName);
     if (!field || !field.errors) return '';
 
-    if (field.errors['required']) return `${fieldName} is required.`;
-    if (field.errors['maxlength']) return `${fieldName} exceeds maximum length.`;
-    if (field.errors['numeric']) return `${fieldName} must be a numeric value.`;
-    if (field.errors['notPS']) return `Please select a valid option.`;
+    // Required field errors with specific messages matching legacy validation
+    if (field.errors['required']) {
+      switch (fieldName) {
+        case 'make':
+          return "Please enter 'Make' and resave your Unit.";
+        case 'model':
+          return "Please enter 'Model' and resave your Unit.";
+        case 'serialNo':
+          return "Please enter 'Serial No' and resave your Unit.";
+        case 'assignedTo':
+          return "Please select 'Assigned To' and resave your Unit.";
+        case 'dueDate':
+          return "Please enter 'Due Date' and resave your Unit.";
+        case 'deficiencyNotes':
+          return "Please enter 'Deficiency Notes' and resave your Unit.";
+        case 'testEngineer':
+          return "Please enter 'Test Engineer' and resave your Unit.";
+        case 'inspectionNotes':
+          return "Please enter 'Inspection Notes' and resave your Unit.";
+        case 'currentStatus':
+          return "Please select a valid status.";
+        default:
+          return `${fieldName} is required.`;
+      }
+    }
+    
+    // Numeric validation errors
+    if (field.errors['numeric']) {
+      return "Please enter only integer value for fields like Quantity, Year, KVA...etc";
+    }
+    
+    // Assigned To validation (cannot be "PS" - Please Select)
+    if (field.errors['notPS']) {
+      return "Please select a valid technician from Assigned To dropdown.";
+    }
+    
+    // Max length errors
+    if (field.errors['maxlength']) {
+      const maxLength = field.errors['maxlength'].requiredLength;
+      return `Maximum ${maxLength} characters allowed.`;
+    }
+    
+    // Min validation
+    if (field.errors['min']) {
+      return "Value must be greater than 0.";
+    }
     
     return 'Invalid value.';
   }
@@ -732,6 +792,45 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       currentStatus: ['', [Validators.maxLength(20)]],
       testEngineer: ['', [Validators.maxLength(100)]], // Will be required conditionally when Status = "COM"
       inspectionNotes: ['', [Validators.maxLength(1000)]] // Will be required conditionally when Status = "COM"
+    });
+
+    // Setup real-time validation for conditional fields
+    this.setupConditionalValidation();
+  }
+
+  // Setup conditional validation that updates in real-time
+  private setupConditionalValidation(): void {
+    // Watch for changes in currentStatus to update validation requirements
+    this.resultForm.get('currentStatus')?.valueChanges.subscribe(status => {
+      const testEngineerControl = this.resultForm.get('testEngineer');
+      const inspectionNotesControl = this.resultForm.get('inspectionNotes');
+      
+      if (status === 'COM') {
+        // When status is Completed, make testEngineer and inspectionNotes required
+        testEngineerControl?.setValidators([Validators.required, Validators.maxLength(100)]);
+        inspectionNotesControl?.setValidators([Validators.required, Validators.maxLength(1000)]);
+      } else {
+        // When status is not Completed, remove required validation
+        testEngineerControl?.setValidators([Validators.maxLength(100)]);
+        inspectionNotesControl?.setValidators([Validators.maxLength(1000)]);
+      }
+      
+      // Update the validation state
+      testEngineerControl?.updateValueAndValidity();
+      inspectionNotesControl?.updateValueAndValidity();
+    });
+
+    // Also watch for approved checkbox changes to validate other checkboxes
+    this.editForm.get('approved')?.valueChanges.subscribe(approved => {
+      if (!approved) {
+        // If approved is unchecked, also uncheck moveToArchive and moveToStrip
+        if (this.editForm.get('moveToArchive')?.value) {
+          this.editForm.patchValue({ moveToArchive: false });
+        }
+        if (this.editForm.get('moveToStrip')?.value) {
+          this.editForm.patchValue({ moveToStrip: false });
+        }
+      }
     });
   }
 
@@ -980,16 +1079,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           // This ensures database changes are reflected on page refresh or direct URL access
           this.loadUnitFromApi(rowIndex, archive);
           
-          // Clear query parameters after processing to keep URL clean, but keep the rowIndex in the path
-          if (loadFromApi) {
-            setTimeout(() => {
-              this.router.navigate([], {
-                relativeTo: this.route,
-                queryParams: {},
-                replaceUrl: true
-              });
-            }, 100);
-          }
+          // Keep query parameters so the URL remains shareable and stable
         });
       } else {
         // No route parameter - check for stored data or legacy query parameters
@@ -1007,15 +1097,16 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   private handleLegacyQueryParameters(): void {
     this.routeSubscription = this.route.queryParams.subscribe(params => {
       if (Object.keys(params).length > 0) {
+        const rowIndexParam = params['rowIndex'] ?? params['ROWINDEX'] ?? params['RowIndex'];
         
         // If we have loadFromApi flag and rowIndex, fetch data from API
-        if (params['loadFromApi'] === 'true' && params['rowIndex']) {
-          const rowIndex = parseInt(params['rowIndex']);
+        if (params['loadFromApi'] === 'true' && rowIndexParam) {
+          const rowIndex = parseInt(rowIndexParam);
           const archive = params['archive'] === 'true';
           this.loadUnitFromApi(rowIndex, archive);
         }
         // If we have unit data from UPS Test Status (fallback), populate the edit form and show modal
-        else if (params['rowIndex'] || params['make']) {
+        else if (rowIndexParam || params['make']) {
           // Populate the form first with the data from query params
           this.populateFormFromQueryParams(params);
           
@@ -1024,14 +1115,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
           this.editingUnit = null;
           this.showEditModal = true;
           
-          // Clear query parameters after processing to keep URL clean
-          setTimeout(() => {
-            this.router.navigate([], {
-              relativeTo: this.route,
-              queryParams: {},
-              replaceUrl: true
-            });
-          }, 100);
+          // Keep query parameters so the URL remains shareable and stable
         }
       }
     });
@@ -1061,14 +1145,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
             this.populateFormFromUnitData(response.data);
           }, 150);
           
-          // Clear query parameters after processing
-          setTimeout(() => {
-            this.router.navigate([], {
-              relativeTo: this.route,
-              queryParams: {},
-              replaceUrl: true
-            });
-          }, 300);
+          // Keep query parameters so the URL remains shareable and stable
           
         } else {
           // If not found and we haven't tried archive yet, try with archive=true
@@ -1222,8 +1299,9 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private populateFormFromQueryParams(params: any): void {
     // Create a unit object from query params
+    const rowIndexParam = params['rowIndex'] ?? params['ROWINDEX'] ?? params['RowIndex'];
     const unitData: Partial<UPSTestStatusDto> = {
-      rowIndex: params['rowIndex'] ? parseInt(params['rowIndex']) : 0,
+      rowIndex: rowIndexParam ? parseInt(rowIndexParam) : 0,
       make: params['make'] || '',
       model: params['model'] || '',
       serialNo: params['serialNo'] || '',
@@ -1599,6 +1677,7 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
       case 'low':
         return 'badge-light-info';
       case 'at convenience':
+      case 'atc':
         return 'badge-light-secondary';
       default:
         return 'badge-light-secondary';
@@ -1993,16 +2072,6 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Marks all form controls as touched to show validation errors
-   */
-  private markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach(key => {
-      const control = formGroup.get(key);
-      control?.markAsTouched();
-    });
-  }
-
-  /**
    * Gets validation error message for a form field
    */
   getFieldError(fieldName: string): string {
@@ -2091,10 +2160,10 @@ export class NewUnitTestComponent implements OnInit, OnDestroy, AfterViewInit {
   // #region Navigation and UI Methods
 
   /**
-   * Navigates back to the previous page or unit test list
+   * Navigates back to the UPS test status page
    */
   onBack(): void {
-    this.location.back();
+    this.router.navigate(['/reports/ups-test-status']);
   }
 
   /**

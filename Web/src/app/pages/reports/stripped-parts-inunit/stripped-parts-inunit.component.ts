@@ -239,6 +239,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   summaryData: any[] = [];
   totalStrippedParts: number = 0;
   partsLocation: string = '';
+  partsLocationUrl: string = '';
   groupedParts: any[] = [];
 
   // Chart colors - same as stripped units status
@@ -655,7 +656,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       .pipe(finalize(() => this.isLoadingParts = false))
       .subscribe({
         next: (response: StrippedPartsInUnitApiResponse) => {
-
           
           if (response.success && response.data) {
             this.strippedPartsResponse = response.data;
@@ -671,18 +671,14 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
               
               return {
                 ...part,
-                // Force consistent property naming with validated values
-                keepThrow: (normalizedKeepThrow === 'Keep' || normalizedKeepThrow === 'Throw') 
-                          ? normalizedKeepThrow 
-                          : 'Keep', // Default to 'Keep' if invalid
+                // Force consistent property naming - preserve original API values
+                keepThrow: normalizedKeepThrow || '', // No default, use empty string if nothing from API
                 dcgPartNo: part.dcgPartNo || part.DCGPartNo || '',
                 partDesc: part.partDesc || part.Description || '',
                 group: part.group || part.Group || '',
                 stripNo: part.stripNo || part.StripNo || 1
               };
             });
-            
-            console.log('Normalized parts data:', this.partsDetails.map(p => ({dcgPartNo: p.dcgPartNo, keepThrow: p.keepThrow})));
             
             this.groupCounts = response.data.groupCounts || [];
             this.costAnalysis = response.data.costAnalysis || [];
@@ -699,13 +695,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
             }
             
             if (!response.data.hasData || this.partsDetails.length === 0) {
-
-              // Show specific message for Master Row Index = 0 vs other units
-              if (masterRowIndex === 0) {
-                this.partsErrorMessage = 'No direct part entries found. Add parts using the "Add Parts" functionality to see them here.';
-              } else {
-                this.partsErrorMessage = 'No stripped parts found for this unit.';
-              }
+              this.partsErrorMessage = 'Please add the stripped parts before viewing this page';
               
               if (masterRowIndex === 0) {
                 // Additional processing for MasterRowIndex = 0 when no data
@@ -720,6 +710,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
               // Set parts location from first location if available
               if (this.partsLocations.length > 0) {
                 this.partsLocation = this.partsLocations[0].partsLocation || this.partsLocations[0].locationDescription || '';
+                this.partsLocationUrl = this.buildPartsLocationUrl(this.partsLocation);
               }
               
               if (masterRowIndex === 0) {
@@ -761,6 +752,11 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Helper method to get progress bar colors
   getProgressColor(index: number): string {
+    const item = this.summaryData?.[index];
+    const keepThrow = (item?.keepThrow || item?.KeepThrow || '').toString().trim().toUpperCase();
+    if (keepThrow === 'THROW') {
+      return '#ff4560';
+    }
     const colors = [
       'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       'linear-gradient(135deg, #00a8ff 0%, #0078cc 100%)', 
@@ -805,14 +801,29 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   }
 
   // Calculate bar height percentage based on max value
-  getBarHeightPercentage(quantity: number): number {
-    const max = this.getMaxQuantity();
-    if (max === 0) return 0;
+  getBarHeightPercentage(value: number): number {
+    console.log('Calculating height for value:', value, 'summaryData:', this.summaryData?.map(x => ({ part: x.partsStripped, quantity: x.quantity })));
     
-    const percentage = (quantity / max) * 100;
-    // Ensure minimum height for visibility
-    return Math.max(percentage, 3);
+    if (!this.summaryData?.length) {
+      console.log('No summary data, returning 0');
+      return 0;
+    }
+
+    const maxValue = Math.max(...this.summaryData.map(x => x.quantity));
+    console.log('Max value:', maxValue);
+    
+    if (!maxValue || maxValue === 0) {
+      console.log('Max value is 0, returning minimum height');
+      return 10; // minimum visible height
+    }
+
+    const percent = (value / maxValue) * 90; // Use 90% of container height
+    const finalPercent = Math.max(percent, 5); // minimum 5% height
+    
+    console.log(`Value ${value} / Max ${maxValue} = ${percent}% (final: ${finalPercent}%)`);
+    return finalPercent;
   }
+
 
   // Calculate dynamic chart height based on data
   getChartHeight(): number {
@@ -938,6 +949,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
 
   // Chart and Summary Calculation Methods
   private calculateSummaryAndChart(): void {
+    
     // Check if costAnalysis has the correct summary data (this might be ds.Tables[2])
     if (this.costAnalysis && this.costAnalysis.length > 0) {
       const firstCostItem = this.costAnalysis[0];
@@ -948,8 +960,11 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         firstCostItem.DollarOfTotal !== undefined
       );
       
+
+      
       if (hasCostSummaryData) {
         
+        // Create summaryData from costAnalysis for the summary table
         this.summaryData = this.costAnalysis.map(item => {
           
           const summaryItem = {
@@ -963,6 +978,24 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
           
           return summaryItem;
         });
+        
+        // BUT create chart data from complete groupCounts (which has all groups including missing ones from costAnalysis)
+        if (this.groupCounts && this.groupCounts.length > 0) {
+          
+          // Create complete summary data for chart display from groupCounts
+          const completeSummaryData = this.groupCounts.map(group => ({
+            partGroup: (group.dcgPartGroup || 'Unknown').trim(),
+            partPercent: '0%', // We don't have percentage data in groupCounts
+            dollarOfTotal: '$0.00', // We don't have dollar data in groupCounts
+            quantity: group.count || 0,
+            dollarPerPart: '$0.00', // We don't have dollar per part data in groupCounts
+            partsStripped: (group.dcgPartGroup || 'Unknown').trim(),
+            keepThrow: (group.keepThrow || group.KeepThrow || '').toString().trim()
+          }));
+          
+          // Use complete data for chart display
+          this.summaryData = completeSummaryData;
+        }
         
         // Create grouped parts for display (needed for UI templates)
         this.createGroupedPartsFromAPI();
@@ -985,6 +1018,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       // Check if the first group has pre-calculated summary data
       const firstGroup = this.groupCounts[0];
       const hasPreCalculatedData = firstGroup && (firstGroup['Part %'] || firstGroup['$ of Total'] || firstGroup['$Per Part']);
+      
+
       
       if (hasPreCalculatedData) {
         // Use the existing logic for pre-calculated data
@@ -1014,7 +1049,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
           dollarOfTotal: dollarOfTotal,    // Use pre-calculated "$ of Total" from database
           quantity: quantity,              // Use "Quantity" from database (SUM(StripNo))
           dollarPerPart: dollarPerPart,    // Use pre-calculated "$Per Part" from database  
-          partsStripped: partsStripped     // Use "Parts Stripped" group name from database
+          partsStripped: partsStripped,    // Use "Parts Stripped" group name from database
+          keepThrow: (group.keepThrow || group.KeepThrow || '').toString().trim()
         };
         
         return summaryItem;
@@ -1073,6 +1109,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   }
 
   private createGroupedPartsFromAPI(): void {
+    
     // Group parts by group type using both database and API property names
     const groupedPartsMap = this.partsDetails.reduce((groups: any, part) => {
       const group = part.group || part.Group || part.GroupType || 'Unknown';
@@ -1152,7 +1189,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         dollarOfTotal: `$${totalValue.toFixed(2)}`, // Use calculated or estimated costs
         quantity: quantity, // Sum of strip quantities  
         dollarPerPart: `$${dollarPerPart.toFixed(2)}`, // Calculate $/Part
-        partsStripped: groupName // Use group name
+        partsStripped: groupName, // Use group name
+        keepThrow: ''
       };
       
       return summaryItem;
@@ -1177,6 +1215,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   }
 
   private setupChartFromCostAnalysis(): void {
+    
     // Sort groupCounts alphabetically by group name
     const sortedGroupCounts = [...this.groupCounts].sort((a, b) => {
       const groupA = a.dcgPartGroup || 'Unknown';
@@ -1266,10 +1305,8 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     // Handle different property name variations from API (KeepThrow vs keepThrow)
     const keepThrowValue = part.keepThrow || part.KeepThrow || part['KeepThrow'] || part['keepThrow'];
     
-    // Force set the keepThrow value - override any blank/undefined states
-    part.keepThrow = keepThrowValue && (keepThrowValue.toString().trim() === 'Keep' || keepThrowValue.toString().trim() === 'Throw') 
-                     ? keepThrowValue.toString().trim() 
-                     : 'Keep'; // Default fallback
+    // Preserve the original keepThrow value from API
+    part.keepThrow = keepThrowValue ? keepThrowValue.toString().trim() : '';
     
     // Normalize other properties
     if (!part.dcgPartNo && part.DCGPartNo) {
@@ -1282,8 +1319,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       part.group = part.Group;
     }
     
-    console.log('Editing part - keepThrow value:', part.keepThrow, 'Original value:', keepThrowValue);
-    
     this.editingParts.add(part);
     
     // Force change detection and dropdown update
@@ -1294,7 +1329,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       const selectElements = document.querySelectorAll('select.form-select');
       selectElements.forEach((element: Element) => {
         const select = element as HTMLSelectElement;
-        const currentValue = part.keepThrow || 'Keep';
+        const currentValue = part.keepThrow || '';
         if (select.value !== currentValue) {
           select.value = currentValue;
           // Trigger change event
@@ -1338,7 +1373,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
       dcgPartGroup: dcgPartGroup.trim(),
       dcgPartNo: part.dcgPartNo?.trim() || '',
       partDesc: part.partDesc?.trim() || '',
-      keepThrow: part.keepThrow || 'Keep',
+      keepThrow: part.keepThrow || '',
       stripNo: part.stripNo ? parseInt(part.stripNo.toString()) : 1,
       lastModifiedBy: username
     };
@@ -1399,8 +1434,6 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
                         (p.dcgPartNo === part.dcgPartNo || p.DCGPartNo === part.DCGPartNo) &&
                         (p.partDesc === part.partDesc || p.Description === part.Description)
                       ) + 1); // Add 1 since rowIndex is 1-based
-      
-      console.log('Deleting part with masterRowIndex:', this.masterRowIndex, 'rowIndex:', rowIndex);
       
       const deleteSubscription = this.reportService.deleteStrippedPartInUnit(this.masterRowIndex, rowIndex)
         .pipe(finalize(() => this.isDeleting = false))
@@ -1507,8 +1540,32 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   // Parts Location Click Handler
   onPartsLocationClick(event: Event): void {
     event.preventDefault();
-    // Implementation depends on requirements - could open modal, navigate to location page, etc.
-    this.toastr.info('Parts Location feature to be implemented');
+    const url = this.partsLocationUrl || this.buildPartsLocationUrl(this.partsLocation);
+    if (!url) {
+      this.toastr.info('No parts location assigned');
+      return;
+    }
+    window.open(url, '_blank');
+  }
+
+  private buildPartsLocationUrl(path: string): string {
+    const trimmed = (path || '').trim();
+    if (!trimmed) {
+      return '';
+    }
+    const lower = trimmed.toLowerCase();
+    if (lower.startsWith('file://') || lower.startsWith('http://') || lower.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('\\\\')) {
+      const normalized = trimmed.replace(/^\\\\+/, '').replace(/\\/g, '/');
+      return `file://${normalized}`;
+    }
+    if (/^[A-Za-z]:\\/.test(trimmed)) {
+      const normalized = trimmed.replace(/\\/g, '/');
+      return `file:///${normalized}`;
+    }
+    return `file://${trimmed.replace(/\\/g, '/')}`;
   }
 
   // Group collapse state tracking

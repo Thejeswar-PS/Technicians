@@ -19,24 +19,16 @@
       (click)="onBack()"
       [disabled]="isLoading"
       title="Back to New Unit Test List">
-      <i class="fa fa-arrow-left me-2"></i>
+      <i class="bi bi-arrow-left me-2"></i>
       Back
     </button>
     
     <!-- Page Title - Centered -->
     <div class="new-unit-test-page-title">
       <h2 class="fw-bold text-primary mb-0">
-        <i class="fa fa-clipboard-check me-2"></i>
+        <i class="bi bi-clipboard-check me-2"></i>
         New Unit Test
       </h2>
-    </div>
-    
-    <!-- Unit Index Badge -->
-    <div class="unit-badge-compact" *ngIf="!isLoading && (selectedUnit?.rowIndex || currentRowIndex)">
-      <small class="text-danger fw-bold">
-        <i class="fa fa-hashtag me-1"></i>Unit:
-      </small>
-      <span class="unit-value">{{ selectedUnit?.rowIndex || currentRowIndex }}</span>
     </div>
   </div>
 
@@ -98,8 +90,12 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="make"
-                      placeholder="Enter make">
+                      [class.error]="hasFieldError(editForm, 'make')"
+                      formControlName="make">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'make')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'make') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -115,8 +111,12 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="model"
-                      placeholder="Enter model">
+                      [class.error]="hasFieldError(editForm, 'model')"
+                      formControlName="model">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'model')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'model') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -132,8 +132,12 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="serialNo"
-                      placeholder="Enter serial number">
+                      [class.error]="hasFieldError(editForm, 'serialNo')"
+                      formControlName="serialNo">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'serialNo')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'serialNo') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -149,8 +153,12 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="kva"
-                      placeholder="Enter KVA">
+                      [class.error]="hasFieldError(editForm, 'kva')"
+                      formControlName="kva">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'kva')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'kva') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -166,8 +174,12 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="voltage"
-                      placeholder="Enter voltage">
+                      [class.error]="hasFieldError(editForm, 'voltage')"
+                      formControlName="voltage">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'voltage')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'voltage') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -183,9 +195,13 @@
                     <input 
                       type="text" 
                       class="modern-input"
+                      [class.error]="hasFieldError(editForm, 'poNumber')"
                       formControlName="poNumber"
-                      placeholder="Enter PO number"
                       [readonly]="isLoadedFromApi">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'poNumber')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'poNumber') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -201,11 +217,15 @@
                     <input 
                       type="number" 
                       class="modern-input"
+                      [class.error]="hasFieldError(editForm, 'unitCost')"
                       formControlName="unitCost"
-                      placeholder="Enter unit cost"
                       step="0.01"
                       min="0"
                       [readonly]="isLoadedFromApi">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'unitCost')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'unitCost') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -221,9 +241,13 @@
                     <input 
                       type="text" 
                       class="modern-input"
+                      [class.error]="hasFieldError(editForm, 'shippingPO')"
                       formControlName="shippingPO"
-                      placeholder="Enter shipping PO"
                       [readonly]="isLoadedFromApi">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'shippingPO')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'shippingPO') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -239,11 +263,15 @@
                     <input 
                       type="number" 
                       class="modern-input"
+                      [class.error]="hasFieldError(editForm, 'shipCost')"
                       formControlName="shipCost"
-                      placeholder="Enter shipping cost"
                       step="0.01"
                       min="0"
                       [readonly]="isLoadedFromApi">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'shipCost')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'shipCost') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -258,12 +286,18 @@
                   <div class="field-input">
                     <select 
                       class="modern-select"
+                      [class.error]="hasFieldError(editForm, 'priority')"
                       formControlName="priority">
-                      <option value="High">High</option>
-                      <option value="Normal">Normal</option>
-                      <option value="Low">Low</option>
-                      <option value="At Convenience">At Convenience</option>
+                      <ng-container *ngFor="let priority of priorityOptions">
+                        <option [value]="priority.value" *ngIf="priority.value !== 'All'">
+                          {{ priority.label }}
+                        </option>
+                      </ng-container>
                     </select>
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'priority')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'priority') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -278,6 +312,7 @@
                   <div class="field-input">
                     <select 
                       class="modern-select"
+                      [class.error]="hasFieldError(editForm, 'assignedTo')"
                       formControlName="assignedTo">
                       <option value="">Please Select</option>
                       <ng-container *ngFor="let tech of technicianOptions">
@@ -286,6 +321,10 @@
                         </option>
                       </ng-container>
                     </select>
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'assignedTo')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'assignedTo') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -301,7 +340,12 @@
                     <input 
                       type="date" 
                       class="modern-input"
+                      [class.error]="hasFieldError(editForm, 'dueDate')"
                       formControlName="dueDate">
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'dueDate')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'dueDate') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -316,10 +360,14 @@
                   <div class="field-input">
                     <textarea 
                       class="modern-textarea"
+                      [class.error]="hasFieldError(editForm, 'deficiencyNotes')"
                       formControlName="deficiencyNotes"
-                      placeholder="Enter deficiency notes and observations"
                       rows="4">
                     </textarea>
+                    <div class="validation-error" *ngIf="hasFieldError(editForm, 'deficiencyNotes')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(editForm, 'deficiencyNotes') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -431,12 +479,8 @@
             <!-- No Unit State -->
             <div class="empty-state" *ngIf="!selectedUnit && !isCreatingNew">
               <div class="empty-icon">
-                <i class="fa fa-search"></i>
               </div>
-              <h5 class="empty-title">No unit selected</h5>
-              <p class="empty-description">Select a unit from the list or create a new unit test entry.</p>
             </div>
-
           </div>
           
           <!-- Test Results Section (Right Column) -->
@@ -482,11 +526,16 @@
                   <div class="field-input">
                     <select 
                       class="modern-select"
+                      [class.error]="hasFieldError(resultForm, 'followedProcedure')"
                       formControlName="followedProcedure">
                       <option value="Yes">Yes</option>
                       <option value="No">No</option>
                       <option value="N/A">N/A</option>
                     </select>
+                    <div class="validation-error" *ngIf="hasFieldError(resultForm, 'followedProcedure')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(resultForm, 'followedProcedure') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -501,6 +550,7 @@
                   <div class="field-input">
                     <select 
                       class="modern-select"
+                      [class.error]="hasFieldError(resultForm, 'currentStatus')"
                       formControlName="currentStatus">
                       <option value="">Select Status</option>
                       <option value="INP">In Progress</option>
@@ -508,6 +558,10 @@
                       <option value="MPJ">Missing Parts from Job</option>
                       <option value="COM">Completed</option>
                     </select>
+                    <div class="validation-error" *ngIf="hasFieldError(resultForm, 'currentStatus')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(resultForm, 'currentStatus') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -523,8 +577,12 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="testEngineer"
-                      placeholder="Enter test engineer name">
+                      [class.error]="hasFieldError(resultForm, 'testEngineer')"
+                      formControlName="testEngineer">
+                    <div class="validation-error" *ngIf="hasFieldError(resultForm, 'testEngineer')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(resultForm, 'testEngineer') }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -539,10 +597,14 @@
                   <div class="field-input">
                     <textarea 
                       class="modern-textarea"
+                      [class.error]="hasFieldError(resultForm, 'inspectionNotes')"
                       formControlName="inspectionNotes"
-                      placeholder="Enter inspection notes and test results"
                       rows="6">
                     </textarea>
+                    <div class="validation-error" *ngIf="hasFieldError(resultForm, 'inspectionNotes')">
+                      <i class="fa fa-exclamation-circle"></i>
+                      <span>{{ getFieldErrorMessage(resultForm, 'inspectionNotes') }}</span>
+                    </div>
                   </div>
                 </div>
                 
@@ -587,18 +649,11 @@
             <!-- No Results State -->
             <div class="empty-state" *ngIf="!selectedUnit">
               <div class="empty-icon">
-                <i class="fa fa-chart-bar"></i>
               </div>
-              <h5 class="empty-title">No test results</h5>
-              <p class="empty-description">Select a unit to view and edit test results.</p>
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
-
   </div>
 </div>

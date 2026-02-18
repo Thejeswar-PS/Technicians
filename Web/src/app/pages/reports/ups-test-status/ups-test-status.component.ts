@@ -136,6 +136,9 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   viewMode: 'list' | 'details' = 'list';
   selectedUnit: UPSTestStatusDto | null = null;
 
+  // Track archive value to detect archive-only changes
+  private lastArchiveValue: boolean = false;
+
   // Status options matching backend - New Units Test Status system
   statusOptions = [
     { value: 'All', label: 'All' },
@@ -184,6 +187,8 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   ngOnInit(): void {
     // Setup chart options first
     this.initializeCharts();
+
+    this.lastArchiveValue = this.filterForm.get('archive')?.value ?? false;
     
     this.loadMetadata();
     this.setupFormSubscriptions();
@@ -684,15 +689,30 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     return colors[index % colors.length];
   }
 
+  public getProgressColor(index: number): string {
+    return this.chartColors[index % this.chartColors.length];
+  }
+
+  // Get CSS class based on manufacturer name (for legacy color-coding)
+  public getBarCssClass(makeName: string): string {
+    const normalizedMake = makeName.toLowerCase().trim();
+    return `bar bar-${normalizedMake}`;
+  }
+
   // TrackBy function to prevent unnecessary re-rendering
   public trackByMake(index: number, item: {make: string, count: number}): string {
     return item.make;
   }
 
   // Check if a unit is stripped (has stripSNo value)
-  public isUnitStripped(item: UPSTestStatusDto): boolean {
-    return !!(item.stripSNo && item.stripSNo.trim());
-  }
+public isUnitStripped(item: any): boolean {
+  return !!(item.stripSNo && item.stripSNo.trim());
+}
+
+public hasStripSerial(item: any): boolean {
+  return !!(item.stripSNo && item.stripSNo.trim().length > 0);
+}
+
 
   // Mark animation as complete after initial load
   public markAnimationComplete(): void {
@@ -810,10 +830,11 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     // Get current archive status from filter form
     const isArchived = this.filterForm.get('archive')?.value || false;
     
-    // Navigate to new unit test page with rowIndex in the URL path
+    // Navigate to new unit test page with rowIndex as query param
     // The New Unit Test page will fetch complete data using the API
-    this.router.navigate([`/reports/new-unit-test/${unit.rowIndex}`], {
+    this.router.navigate(['/reports/new-unit-test'], {
       queryParams: {
+        rowIndex: unit.rowIndex,
         loadFromApi: 'true',
         archive: isArchived
       }
@@ -830,6 +851,16 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   }
 
   // Public methods for template
+  onStatusChange(): void {
+    const currentArchiveValue = this.filterForm.get('archive')?.value ?? false;
+    if (currentArchiveValue !== this.lastArchiveValue) {
+      this.lastArchiveValue = currentArchiveValue;
+      this.loadMetadata();
+    }
+
+    this.loadUPSTestStatusData();
+  }
+
   onFilterChange(): void {
     this.loadUPSTestStatusData();
   }
@@ -852,6 +883,38 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     this.pageSize = size;
     this.currentPage = 1;
     this.updateDisplayedData();
+  }
+
+  get filteredUnitsList(): UPSTestStatusDto[] {
+    return this.filteredData;
+  }
+
+  get paginatedItems(): UPSTestStatusDto[] {
+    return this.displayedData;
+  }
+
+  get itemsPerPage(): number {
+    return this.pageSize;
+  }
+
+  get totalItems(): number {
+    return this.totalRecords;
+  }
+
+  changeItemsPerPage(size: number): void {
+    this.onPageSizeChange(size);
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) {
+      return;
+    }
+
+    this.onPageChange(page);
+  }
+
+  sortBy(column: string): void {
+    this.sortData(column);
   }
 
   sortData(column: string): void {
@@ -1054,23 +1117,23 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(numValue);
   }
 
-  formatDate(dateString: string): string {
-    if (!dateString) return 'N/A';
+  formatDate(dateValue: string | Date | undefined): string {
+    if (!dateValue) return 'N/A';
     try {
-      const date = new Date(dateString);
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
       return date.toLocaleDateString();
     } catch {
-      return dateString; // Return original if parsing fails
+      return dateValue instanceof Date ? dateValue.toISOString() : dateValue;
     }
   }
 
-  formatDateTime(dateString: string): string {
-    if (!dateString) return 'N/A';
+  formatDateTime(dateValue: string | Date | undefined): string {
+    if (!dateValue) return 'N/A';
     try {
-      const date = new Date(dateString);
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
       return date.toLocaleString(); // Includes both date and time
     } catch {
-      return dateString; // Return original if parsing fails
+      return dateValue instanceof Date ? dateValue.toISOString() : dateValue;
     }
   }
 
@@ -1094,10 +1157,6 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
   refreshData(): void {
     this.loadMetadata();
     this.loadUPSTestStatusData();
-  }
-
-  goBack(): void {
-    this.location.back();
   }
 
   get makeSummaryItems(): any[] {
@@ -1124,6 +1183,4 @@ export class UPSTestStatusComponent implements OnInit, OnDestroy, AfterViewInit 
     const makeCount = this.makeSummary[make] || 0;
     return total > 0 ? Math.round((makeCount / total) * 100) : 0;
   }
-
-  // Utility method for parsing numeric values
 }

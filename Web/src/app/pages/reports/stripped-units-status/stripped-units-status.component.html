@@ -1,664 +1,252 @@
 <!-- Stripped Units Status Page -->
-<div class="container-fluid order-request-container">
-  <!-- Loading spinner -->
-  <div
-    *ngIf="isLoading"
-    class="d-flex justify-content-center align-items-center order-request-loading"
-  >
-    <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Loading...</span>
-    </div>
-  </div>
+<div class="container-fluid stripped-units-status-container">
 
   <!-- Header Section -->
-  <div class="order-request-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button
-      type="button"
-      class="btn btn-sm btn-primary order-request-header__back"
-      (click)="goBack()"
-      [disabled]="isLoading">
-      <i class="bi bi-arrow-left me-2"></i>
-      Back
-    </button>
+  <div class="order-request-header__top mb-2 d-flex justify-content-between align-items-center">
     
     <!-- Page Title - Centered -->
-    <div class="order-request-page-title">
+    <div class="order-request-page-title flex-grow-1 text-center">
       <h2 class="fw-bold text-primary mb-0">
-        <i class="bi bi-pc-display-horizontal me-2"></i>
-        Stripped Units Status Report
+        <i class="bi bi-clipboard-data me-2"></i>
+        Stripped Units Status
       </h2>
     </div>
     
-    <!-- Empty div for spacing balance -->
-    <div></div>
+    <!-- Spacer for balance -->
+    <div style="width: 80px;"></div>
   </div>
 
-  <!-- Main content -->
-  <div *ngIf="!isLoading">
+  <!-- Loading Overlay -->
+  <div *ngIf="isLoading" class="loading-overlay">
+    <div class="spinner-border text-primary"></div>
+  </div>
 
-    <!--begin::Make Distribution Chart Section-->
-    <div class="card shadow-sm order-main-card mb-4">
-      <!-- Header -->
-      <div class="card-header border-0 py-4">
-        <h3 class="card-title">
-          <i class="bi bi-pie-chart me-2"></i>
+  <!-- =======================
+       MAKE DISTRIBUTION (BAR)
+       ======================= -->
+  <div class="vertical-bar-chart mb-4">
+    <div *ngIf="isLoadingMakeChart" class="text-center py-24">
+      <div class="spinner-border text-primary"></div>
+    </div>
+
+    <div *ngIf="!isLoadingMakeChart && makeCountsList.length > 0">
+      <!-- Chart Header -->
+      <div class="chart-header">
+        <h6 class="chart-title">
+          <i class="bi bi-bar-chart-fill me-2 text-primary"></i>
           Make Distribution
-        </h3>
+        </h6>
+        <span class="chart-subtitle">Units by Make Type</span>
       </div>
 
-      <!--begin::Card body-->
-      <div class="card-body py-2">
+      <!-- Chart Body -->
+      <div class="chart-wrapper">
 
-        <!-- Loading -->
-        <div *ngIf="isLoadingMakeChart || isLoadingMakeCounts" 
-             class="d-flex justify-content-center py-10 chart-loading">
-          <div class="d-flex flex-column align-items-center">
-            <div class="spinner-border text-primary mb-3"></div>
-            <span class="text-muted">
-              <span *ngIf="isLoadingMakeCounts">Loading make data...</span>
-              <span *ngIf="!isLoadingMakeCounts && isLoadingMakeChart">Preparing chart...</span>
-            </span>
+        <!-- Y Axis -->
+        <div class="y-axis">
+          <div class="y-label" *ngFor="let tick of getYAxisTicks()">
+            {{ tick }}
           </div>
         </div>
 
-        <!-- Error -->
-        <div *ngIf="(makeChartErrorMessage || makeCountsErrorMessage) && !isLoadingMakeChart && !isLoadingMakeCounts"
-             class="alert alert-warning d-flex align-items-center p-5 mb-10">
-          <i class="ki-duotone ki-information-5 fs-2hx text-warning me-4"></i>
-          <div class="d-flex flex-column">
-            <h4 class="mb-1 text-warning">Chart Data Unavailable</h4>
-            <div *ngIf="makeCountsErrorMessage">{{ makeCountsErrorMessage }}</div>
-            <div *ngIf="makeChartErrorMessage">{{ makeChartErrorMessage }}</div>
-          </div>
-        </div>
+        <!-- Bars Area -->
+        <div class="bars-area">
 
-        <!-- Content -->
-        <div *ngIf="!isLoadingMakeChart && !isLoadingMakeCounts && hasChartData()">
+          <div class="bar"
+               *ngFor="let make of makeCountsList; let i = index"
+               [style.height.%]="getBarHeightPercentage(make.makeCount)"
+               [style.background]="getProgressColor(i)">
 
-                        <!-- Chart and Summary Layout -->
-                        <div class="row g-4">
-                          <!-- Chart Section - Left Side -->
-                          <div class="col-lg-8">
-                            <div class="chart-container">
-
-                              <!-- Chart Type Selector -->
-                              <div class="chart-selector-section">
-                                <h4 class="chart-selector-title">Data Visualization</h4>
-
-                                <div class="chart-type-controls">
-                                  <input type="radio" class="btn-check" 
-                                         name="makeChartType" id="makeBarChart"
-                                         checked (change)="setMakeChartType('bar')">
-                                  <label class="chart-type-btn" for="makeBarChart">
-                                    <i class="bi bi-bar-chart"></i>
-                                    Bar Chart
-                                  </label>
-
-                                  <input type="radio" class="btn-check" 
-                                         name="makeChartType" id="makePieChart"
-                                         (change)="setMakeChartType('pie')">
-                                  <label class="chart-type-btn" for="makePieChart">
-                                    <i class="bi bi-pie-chart"></i>
-                                    Pie Chart
-                                  </label>
-                                </div>
-                              </div>
-
-              <!-- Interactive Bar Chart -->
-              <div *ngIf="currentMakeChartType === 'bar'" class="chart-wrapper">
-                <div class="interactive-bar-chart-container">
-                  <apx-chart *ngIf="barChartOptions && barChartOptions.series"
-                    [series]="barChartOptions.series"
-                    [chart]="barChartOptions.chart"
-                    [dataLabels]="barChartOptions.dataLabels"
-                    [plotOptions]="barChartOptions.plotOptions"
-                    [xaxis]="barChartOptions.xaxis"
-                    [yaxis]="barChartOptions.yaxis"
-                    [colors]="barChartOptions.colors"
-                    [tooltip]="barChartOptions.tooltip"
-                    [grid]="barChartOptions.grid"
-                    [theme]="barChartOptions.theme">
-                  </apx-chart>
-                </div>
-              </div>              <!-- Interactive Donut Chart -->
-              <div *ngIf="currentMakeChartType === 'pie'" class="chart-wrapper">
-                <div class="interactive-donut-chart-container">
-                  <apx-chart *ngIf="donutChartOptions && donutChartOptions.series"
-                    [series]="donutChartOptions.series"
-                    [chart]="donutChartOptions.chart"
-                    [labels]="donutChartOptions.labels"
-                    [colors]="donutChartOptions.colors"
-                    [legend]="donutChartOptions.legend"
-                    [tooltip]="donutChartOptions.tooltip"
-                    [plotOptions]="donutChartOptions.plotOptions"
-                    [dataLabels]="donutChartOptions.dataLabels"
-                    [responsive]="donutChartOptions.responsive">
-                  </apx-chart>
-                </div>
-              </div>
-
-                            </div>
-                            <!--end::Chart Container-->
-                          </div>
-
-                          <!-- Unit Summary Section - Right Side -->
-                          <div class="col-lg-4">
-                            <div class="parts-return-summary-sidebar">
-                              <div class="summary-header mb-3">
-                                <h5 class="summary-title">
-                                  <i class="bi bi-clipboard-data me-2"></i>
-                                  Unit Summary
-                                </h5>
-                                <p class="summary-subtitle">Overall stripped units overview</p>
-                              </div>
-
-                              <div class="summary-cards">
-                                <!-- Total Units -->
-                                <div class="summary-card total-units mb-3">
-                                  <div class="card-body p-3">
-                                    <div class="d-flex align-items-center">
-                                      <div class="summary-icon me-3">
-                                        <i class="bi bi-boxes"></i>
-                                      </div>
-                                      <div class="summary-content flex-grow-1">
-                                        <h6 class="summary-label mb-1">Total Units</h6>
-                                        <div class="summary-value">{{ filteredUnitsList.length }}</div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <!-- Completed Units -->
-                                <div class="summary-card completed-units mb-3">
-                                  <div class="card-body p-3">
-                                    <div class="d-flex align-items-center">
-                                      <div class="summary-icon me-3">
-                                        <i class="bi bi-check-circle-fill text-success"></i>
-                                      </div>
-                                      <div class="summary-content flex-grow-1">
-                                        <h6 class="summary-label mb-1">Completed</h6>
-                                        <div class="summary-value">{{ getStatusCount('Completed') }}</div>
-                                        <small class="text-muted">{{ getStatusPercentage('Completed') }}% of total</small>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <!-- In Progress Units -->
-                                <div class="summary-card in-progress-units mb-3">
-                                  <div class="card-body p-3">
-                                    <div class="d-flex align-items-center">
-                                      <div class="summary-icon me-3">
-                                        <i class="bi bi-clock-fill text-warning"></i>
-                                      </div>
-                                      <div class="summary-content flex-grow-1">
-                                        <h6 class="summary-label mb-1">In Progress</h6>
-                                        <div class="summary-value">{{ getStatusCount('In Progress') }}</div>
-                                        <small class="text-muted">{{ getStatusPercentage('In Progress') }}% of total</small>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <!-- Not Started Units -->
-                                <div class="summary-card not-started-units mb-3">
-                                  <div class="card-body p-3">
-                                    <div class="d-flex align-items-center">
-                                      <div class="summary-icon me-3">
-                                        <i class="bi bi-circle text-secondary"></i>
-                                      </div>
-                                      <div class="summary-content flex-grow-1">
-                                        <h6 class="summary-label mb-1">Not Started</h6>
-                                        <div class="summary-value">{{ getStatusCount('Not Started') }}</div>
-                                        <small class="text-muted">{{ getStatusPercentage('Not Started') }}% of total</small>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <!-- Summary Totals -->
-                                <div class="summary-totals mt-4">
-                                  <div class="total-row filtered-count mb-2">
-                                    <span class="total-label">Filtered Results:</span>
-                                    <span class="total-value">{{ paginatedItems.length }} of {{ filteredUnitsList.length }}</span>
-                                  </div>
-                                  
-                                  <!-- Current Status Filter -->
-                                  <div class="total-row current-filter mb-2">
-                                    <span class="total-label">Current Filter:</span>
-                                    <span class="total-value text-primary">{{ filterForm.get('status')?.value || 'All' }}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <!--end::Chart and Summary Layout-->
-
-                      </div>
-                      <!--end::Content-->
-
-      </div>
-      <!--end::Card body-->
-    </div>
-    <!--end::Charts Section-->
-
-    <!-- Filter & Data Section -->
-    <div class="card shadow-sm order-main-card mt-3">
-      <!-- Filter Header -->
-      <div class="card-header border-0 py-2 bg-white">
-        <div class="parts-filter-header">
-          <div class="d-flex align-items-center justify-content-between mb-2">
-            <h6 class="mb-0 fw-bold text-dark d-flex align-items-center">
-              <i class="bi bi-funnel me-2 text-primary"></i>
-              Filters & Search
-              <span class="badge ms-2 px-2 py-1 fs-7 fw-bold" style="background: linear-gradient(45deg, #3b82f6, #1d4ed8); color: white !important; border-radius: 15px; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);">
-                {{ totalItems }} Result{{ totalItems === 1 ? '' : 's' }}
-              </span>
-            </h6>
-          </div>
-
-          <!-- Filter Controls -->
-          <div class="filter-controls-section">
-            <form [formGroup]="filterForm" class="parts-filter-form">
-              <!-- First Row of Filters -->
-              <div class="row g-3 mb-2">
-                <!-- Status Filter -->
-                <div class="col-12">
-                  <div class="filter-group">
-                    <label class="filter-label">
-                      <i class="bi bi-tag me-1"></i>
-                      Status
-                    </label>
-                    <select class="form-select modern-select" 
-                            formControlName="status"
-                            (change)="onStatusChange()">
-                      <option *ngFor="let option of statusOptions" [value]="option.value">
-                        {{ option.label }}
-                      </option>
-                    </select>
-                  </div>
-                </div>
-                
-
-              </div>
-
-
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Data Display Section -->
-      <div class="card-body py-2">
-        
-        <!-- Modern Pagination Controls at Top -->
-        <div *ngIf="filteredUnitsList.length > 0 && !isLoading" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
-          <!-- Records Per Page -->
-          <div class="d-flex align-items-center">
-            <label class="form-label me-2 mb-0 fw-semibold text-dark">Records per page:</label>
-            <select class="form-select form-select-sm w-auto border-primary" 
-                    [value]="itemsPerPage" 
-                    (change)="changeItemsPerPage(+$any($event.target).value)"
-                    style="min-width: 70px;">
-              <option value="10">10</option>
-              <option value="25">25</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </select>
-          </div>
-          
-          <!-- Results Summary Badge -->
-          <div class="badge px-4 py-2 fs-6 fw-semibold" 
-               style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 25px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);">
-            Showing {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, filteredUnitsList.length) }} of {{ filteredUnitsList.length }} records
-          </div>
-          
-          <!-- Page Navigation -->
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-sm btn-outline-secondary" 
-                    [disabled]="currentPage <= 1"
-                    (click)="goToPage(currentPage - 1)"
-                    [class.disabled]="currentPage <= 1">
-              <i class="bi bi-chevron-left"></i>
-              Previous
-            </button>
-            
-            <span class="mx-2 fw-semibold text-dark">
-              Page {{ currentPage }} of {{ totalPages }}
-            </span>
-            
-            <button class="btn btn-sm btn-outline-secondary" 
-                    [disabled]="currentPage >= totalPages"
-                    (click)="goToPage(currentPage + 1)"
-                    [class.disabled]="currentPage >= totalPages">
-              Next
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-        
-        <!-- Messages -->
-        <div class="parts-messages" *ngIf="errorMessage">
-          <div class="alert alert-danger d-inline-flex align-items-center">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>
-            <span>{{ errorMessage }}</span>
-          </div>
-        </div>
-
-        <!-- Loading indicator for data processing -->
-        <div *ngIf="isLoading" class="text-center py-4">
-          <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-          <span class="text-muted">Processing data...</span>
-        </div>
-
-        <!-- Data Table Section -->
-        <div *ngIf="viewMode === 'list'">
-        <!-- Error State -->
-        <div *ngIf="errorMessage" class="alert alert-danger">
-          <i class="bi bi-exclamation-triangle me-2"></i>
-          {{ errorMessage }}
-        </div>
-        
-        <!-- Modern Data Table -->
-        <div *ngIf="!errorMessage" class="parts-data-table-wrapper">
-          <div class="table-responsive modern-table-container rounded-3 overflow-hidden border">
-            <table class="table parts-data-table modern-table table-layout-fixed mb-0">
-              <thead>
-                <tr class="compact-header">
-                  <th class="ps-4 text-center cursor-pointer" (click)="sortBy('rowIndex')" style="width: 4%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Row</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('make')" style="width: 7%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Make</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('model')" style="width: 8%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Model</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('serialNo')" style="width: 11%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Serial</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('kva')" style="width: 4%; min-width: 60px;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">KVA</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('poNumber')" style="width: 6.5%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">PO#</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('shippingPO')" style="width: 5.5%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Shipping PO#</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('unitCost')" style="width: 5.5%; min-width: 80px;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Unit Cost</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('shipCost')" style="width: 5.5%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Shipping Cost</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('status')" style="width: 7%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Status</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('strippedBy')" style="width: 6%; min-width: 100px;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Stripped By</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('putAwayBy')" style="width: 6%; min-width: 100px;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Put Away By</span>
-                    </div>
-                  </th>
-                  <th class="cursor-pointer text-center" (click)="sortBy('createdOn')" style="width: 8%;">
-                    <div class="header-content-compact d-flex align-items-center justify-content-center">
-                      <span class="header-text">Created On</span>
-                    </div>
-                  </th>
-
-                  <th class="text-center sticky-actions" style="width: 6%;">
-                    <div class="header-content-compact">
-                      <span class="header-text">Add Parts</span>
-                    </div>
-                  </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let unit of paginatedItems; let i = index; trackBy: trackByRowIndex" 
-                  class="compact-row" 
-                  [class.striped]="i % 2 === 1"
-                  [class.row-stripped-exists]="hasStrippedParts(unit)">
-                <td class="ps-4 text-center compact-cell numeric-cell table-text-medium">
-                  <span class="text-dark fw-bold" 
-                          [title]="'Row ' + unit.rowIndex" style="font-size: 1em;">
-                    {{ unit.rowIndex }}
-                  </span>
-                </td>
-                <td class="compact-cell flexible-text text-center table-text-medium" [title]="unit.make">
-                  <button 
-                    type="button"
-                    class="btn btn-link p-0 text-primary fw-bold text-decoration-none"
-                    (click)="redirectToStrippedParts($event, unit)"
-                    [title]="'View stripped parts for ' + unit.make + ' ' + unit.model"
-                    style="border: none; background: none; font-size: 1em; line-height: inherit; cursor: pointer;">
-                    {{ unit.make }}
-                  </button>
-                </td>
-                <td class="compact-cell flexible-text text-center table-text-medium" [title]="unit.model" style="font-size: 0.8em;">{{ unit.model }}</td>
-                <td class="compact-cell flexible-text text-center table-text-medium">
-                  <span class="serial-number" [title]="unit.serialNo" style="font-size: 1em;">{{ unit.serialNo }}</span>
-                </td>
-                <td class="compact-cell compact-data text-center table-text-medium" style="font-size: 0.8em;">{{ unit.kva }}</td>
-                <td class="compact-cell compact-data text-center table-text-medium" [title]="unit.poNumber" style="font-size: 0.8em;">{{ unit.poNumber }}</td>
-                <td class="compact-cell flexible-text text-center table-text-medium" [title]="unit.shippingPO" style="font-size: 0.8em;">{{ unit.shippingPO }}</td>
-                <td class="compact-cell compact-data text-center table-text-medium" style="font-size: 0.8em;">{{ formatCurrency(unit.unitCost) }}</td>
-                <td class="compact-cell compact-data text-center table-text-medium" style="font-size: 0.8em;">{{ formatCurrency(unit.shipCost) }}</td>
-                <td class="compact-cell compact-data text-center table-text-medium">
-                  <span class="badge status-badge" [ngClass]="getStatusBadgeClass(unit.status)" style="font-size: 0.8em;">
-                    {{ unit.displayStatus }}
-                  </span>
-                </td>
-                <td class="compact-cell flexible-text text-center table-text-medium" [title]="unit.strippedBy || 'Not assigned'">
-                  <span style="font-size: 1em;">{{ unit.strippedBy || '-' }}</span>
-                </td>
-                <td class="compact-cell flexible-text text-center table-text-medium" [title]="unit.putAwayBy || 'Not assigned'">
-                  <span style="font-size: 1em;">{{ unit.putAwayBy || '-' }}</span>
-                </td>
-                <td class="compact-cell text-center multi-line-text table-text-medium" [title]="formatDateTimeTooltip(unit.createdOn)">
-                  <div class="d-flex flex-column">
-                    <span style="font-size: 0.9em; color: #000000; font-weight: 600;">{{ formatDate(unit.createdOn) }}</span>
-                    <span style="font-size: 0.8em; color: #000000; font-weight: 600;">{{ formatTime(unit.createdOn) }}</span>
-                  </div>
-                </td>
-
-                <td class="text-center compact-cell compact-data sticky-actions-cell">
-                  <div class="action-buttons d-flex justify-content-center">
-                    <button class="btn btn-success btn-sm enhanced-add-btn" (click)="addParts(unit)" title="Add Parts">
-                      <i class="bi bi-plus-circle"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          
-          <!-- Enhanced Empty State -->
-          <div *ngIf="paginatedItems.length === 0 && !isLoading" class="empty-state">
-            <div class="empty-icon">
-              <i class="bi bi-inbox"></i>
+            <div class="bar-value">
+              {{ make.makeCount }}
             </div>
-            <h5>No stripped units found</h5>
-            <p>Try adjusting your filters or check back later for new data.</p>
-            <button class="btn btn-outline-primary btn-sm mt-2" (click)="loadStrippedUnitsStatus()">
-              <i class="bi bi-arrow-clockwise me-1"></i>
-              Refresh Data
-            </button>
+
           </div>
-          
-          <!-- Bottom Modern Pagination Navigation -->
-          <div *ngIf="filteredUnitsList.length > 0 && !isLoading && totalPages > 1" class="d-flex justify-content-center mt-4 p-3">
-            <div class="d-flex align-items-center gap-2 bg-light rounded px-4 py-2">
-              <button class="btn btn-sm btn-outline-primary" 
-                      [disabled]="currentPage <= 1"
-                      (click)="goToPage(currentPage - 1)"
-                      [class.disabled]="currentPage <= 1">
-                <i class="bi bi-chevron-left"></i>
-                Previous
-              </button>
-              
-              <!-- Page Numbers (show only a few around current page) -->
-              <div class="d-flex align-items-center gap-1 mx-2">
-                <button *ngFor="let page of [].constructor(totalPages); let i = index" 
-                        class="btn btn-sm"
-                        [class.btn-primary]="currentPage === i + 1"
-                        [class.btn-outline-secondary]="currentPage !== i + 1"
-                        [class.d-none]="!shouldShowPageNumber(i + 1)"
-                        (click)="goToPage(i + 1)">
-                  {{ i + 1 }}
-                </button>
-              </div>
-              
-              <button class="btn btn-sm btn-outline-primary" 
-                      [disabled]="currentPage >= totalPages"
-                      (click)="goToPage(currentPage + 1)"
-                      [class.disabled]="currentPage >= totalPages">
-                Next
-                <i class="bi bi-chevron-right"></i>
-              </button>
-            </div>
-          </div>
-        </div>
 
         </div>
 
-    <!-- Details View -->
-    <div class="card" *ngIf="isDetailsMode() && selectedUnit">
-      <div class="card-header">
-        <div class="card-title">
-          <h5 class="m-0">Unit Details - {{ selectedUnit!.make }} {{ selectedUnit!.model }}</h5>
-        </div>
-        <div class="card-toolbar">
-          <button class="btn btn-sm btn-light-secondary" (click)="backToList()">
-            <i class="fa fa-arrow-left"></i>
-            Back to List
-          </button>
-        </div>
       </div>
-      
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-6">
-            <h6 class="fw-bold mb-3">Basic Information</h6>
-            <table class="table table-borderless">
-              <tr>
-                <td class="fw-semibold w-50">Make:</td>
-                <td>{{ selectedUnit!.make }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Model:</td>
-                <td>{{ selectedUnit!.model }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Serial Number:</td>
-                <td class="text-primary fw-semibold">{{ selectedUnit!.serialNo }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">KVA:</td>
-                <td>{{ selectedUnit!.kva }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Voltage:</td>
-                <td>{{ selectedUnit!.voltage }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Row Index:</td>
-                <td>{{ selectedUnit!.rowIndex }}</td>
-              </tr>
-            </table>
-          </div>
-          
-          <div class="col-md-6">
-            <h6 class="fw-bold mb-3">Order & Cost Information</h6>
-            <table class="table table-borderless">
-              <tr>
-                <td class="fw-semibold w-50">PO Number:</td>
-                <td>{{ selectedUnit!.poNumber }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Shipping PO:</td>
-                <td>{{ selectedUnit!.shippingPO }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Unit Cost:</td>
-                <td>{{ formatCurrency(selectedUnit!.unitCost) }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Ship Cost:</td>
-                <td>{{ formatCurrency(selectedUnit!.shipCost) }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Status:</td>
-                <td>
-                  <span class="badge fs-7" [ngClass]="getStatusBadgeClass(selectedUnit!.status)">
-                    {{ selectedUnit!.displayStatus }}
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Strip Exists:</td>
-                <td>
-                  <span class="badge" [class.badge-success]="selectedUnit!.stripExists === 1" [class.badge-secondary]="selectedUnit!.stripExists !== 1">
-                    {{ selectedUnit!.stripExists === 1 ? 'Yes' : 'No' }}
-                  </span>
-                </td>
-              </tr>
-            </table>
-          </div>
-        </div>
-        
-        <div class="row mt-4">
-          <div class="col-md-6">
-            <h6 class="fw-bold mb-3">Personnel Information</h6>
-            <table class="table table-borderless">
-              <tr>
-                <td class="fw-semibold w-50">Stripped By:</td>
-                <td>{{ selectedUnit!.strippedBy }}</td>
-              </tr>
-              <tr>
-                <td class="fw-semibold">Put Away By:</td>
-                <td>{{ selectedUnit!.putAwayBy }}</td>
-              </tr>
-            </table>
-          </div>
-          
-          <div class="col-md-6">
-            <h6 class="fw-bold mb-3">Dates</h6>
-            <table class="table table-borderless">
-              <tr>
-                <td class="fw-semibold w-50">Created On:</td>
-                <td>{{ selectedUnit!.formattedCreatedOn }}</td>
-              </tr>
-            </table>
-          </div>
+
+      <!-- X Axis Labels -->
+      <div class="x-axis">
+        <div class="x-label"
+             *ngFor="let make of makeCountsList">
+          {{ make.make }}
         </div>
       </div>
     </div>
 
+    <div *ngIf="!isLoadingMakeChart && makeCountsList.length === 0" class="no-data-placeholder">
+      <div class="no-data-content">
+        <i class="bi bi-bar-chart display-1 mb-3 text-muted"></i>
+        <h5 class="text-muted">No Make Data Available</h5>
+        <p class="text-muted mb-0">Chart will appear when make data is loaded</p>
+      </div>
+    </div>
   </div>
+
+  <!-- FILTER PANEL -->
+  <div class="filter-panel mb-16" [formGroup]="filterForm">
+    <div class="row g-12">
+      <div class="col-md-3">
+        <label class="form-label">Status</label>
+        <select class="form-select"
+                formControlName="status"
+                (change)="onStatusChange()">
+          <option *ngFor="let option of statusOptions"
+                  [value]="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGINATION HEADER -->
+  <div class="d-flex align-items-center justify-content-between mb-3" 
+       *ngIf="!isLoading && filteredUnitsList.length > 0">
+    
+    <!-- LEFT: Records per page -->
+    <div class="d-flex align-items-center">
+      <label class="me-2 fw-semibold">Records per page:</label>
+      <select class="form-select form-select-sm w-auto"
+              [value]="itemsPerPage"
+              (change)="changeItemsPerPage(+$any($event.target).value)">
+        <option value="50">50</option>
+        <option value="150">150</option>
+        <option value="200">200</option>
+        <option value="100">100</option>
+      </select>
+    </div>
+
+    <!-- CENTER: Showing X - Y of Z records -->
+    <div class="flex-fill text-center fw-semibold">
+      Showing
+      {{ totalItems ? ((currentPage - 1) * itemsPerPage + 1) : 0 }}
+      -
+      {{ totalItems ? Math.min(currentPage * itemsPerPage, totalItems) : 0 }}
+      of {{ totalItems }} records
+    </div>
+
+    <!-- RIGHT: Prev, Page X of Y, Next -->
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm btn-outline-secondary" 
+              [disabled]="currentPage <= 1"
+              (click)="goToPage(currentPage - 1)">
+        Prev
+      </button>
+      <span class="fw-semibold">Page {{ currentPage }} of {{ totalPages }}</span>
+      <button class="btn btn-sm btn-outline-secondary" 
+              [disabled]="currentPage >= totalPages"
+              (click)="goToPage(currentPage + 1)">
+        Next
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-scroll-wrapper"
+       *ngIf="!isLoading && paginatedItems.length > 0">
+
+    <table class="table parts-status-table">
+      <thead>
+        <tr>
+          <th class="sortable" (click)="sortBy('rowIndex')">Row <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('make')">Make <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('model')">Model <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('serialNo')">Serial <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('kva')">KVA <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('poNumber')">PO# <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('shippingPO')">Shipping PO <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('unitCost')">Unit Cost <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('shipCost')">Ship Cost <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('status')">Status <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('strippedBy')">Stripped By <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('putAwayBy')">Put Away By <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('createdOn')">Created On <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th>Add Parts</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let item of paginatedItems" 
+            [className]="item.stripExists > 0 ? 'has-stripped-parts' : ''">
+          <td class="text-center">{{ item.rowIndex }}</td>
+          <td><a class="make-link" (click)="redirectToStrippedParts($event, item)" style="cursor: pointer; color: #007bff; text-decoration: none;">{{ item.make }}</a></td>
+          <td>{{ item.model }}</td>
+          <td class="wrap">{{ item.serialNo }}</td>
+          <td class="text-center">{{ item.kva }}</td>
+          <td class="wrap">{{ item.poNumber }}</td>
+          <td class="wrap">{{ item.shippingPO }}</td>
+          <td class="text-end">{{ item.unitCost | currency }}</td>
+          <td class="text-end">{{ item.shipCost | currency }}</td>
+          <td class="text-center">
+            <span class="status-pill"
+                  [ngClass]="{
+                    'status-open': item.status === 'Open',
+                    'status-inprogress': item.status === 'In Progress',
+                    'status-completed': item.status === 'Completed',
+                    'status-cancelled': item.status === 'Cancelled'
+                  }">
+              {{ item.status }}
+            </span>
+          </td>
+          <td>{{ item.strippedBy }}</td>
+          <td>{{ item.putAwayBy }}</td>
+          <td>{{ formatDate(item.createdOn) }}</td>
+          <td class="text-center">
+            <button class="btn btn-primary btn-sm edit-btn"
+                    style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                    (click)="addParts(item)"
+                    title="Add Parts">
+              <i class="bi bi-pencil-square"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="!isLoading && filteredUnitsList.length === 0" class="no-data-placeholder">
+    <div class="no-data-content">
+      <i class="bi bi-inbox"></i>
+      <h5>No Data Available</h5>
+      <p>No data available for the selected filter.</p>
+    </div>
+  </div>
+
+  <!-- PAGINATION FOOTER -->
+  <div class="d-flex align-items-center justify-content-between mt-16 pagination-footer"
+       *ngIf="!isLoading && filteredUnitsList.length > 0 && totalPages > 1">
+    
+    <!-- LEFT: Previous button -->
+    <div>
+      <button class="btn btn-sm btn-outline-primary" 
+              [disabled]="currentPage <= 1"
+              (click)="goToPage(currentPage - 1)">
+        Previous
+      </button>
+    </div>
+
+    <!-- CENTER: Page numbers -->
+    <div class="d-flex align-items-center gap-2">
+      <button *ngFor="let page of getVisiblePages()" 
+              class="btn btn-sm"
+              [class.btn-primary]="page === currentPage"
+              [class.btn-outline-secondary]="page !== currentPage"
+              (click)="goToPage(page)">
+        {{ page }}
+      </button>
+    </div>
+
+    <!-- RIGHT: Next button -->
+    <div>
+      <button class="btn btn-sm btn-outline-primary" 
+              [disabled]="currentPage >= totalPages"
+              (click)="goToPage(currentPage + 1)">
+        Next
+      </button>
+    </div>
+  </div>
+
 </div>

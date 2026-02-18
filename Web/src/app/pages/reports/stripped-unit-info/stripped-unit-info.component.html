@@ -93,7 +93,7 @@
               <h3 class="section-title">Unit Information</h3>
             </div>
 
-            <form [formGroup]="unitInfoForm" class="modern-form" (ngSubmit)="onSave()">
+            <form id="unitInfoForm" [formGroup]="unitInfoForm" class="modern-form" (ngSubmit)="onSave()">
               <div class="form-grid">
                 
                 <!-- Make -->
@@ -109,8 +109,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="make"
-                      [class.error]="isFieldInvalid('make')"
-                      placeholder="Enter make">
+                      [class.error]="isFieldInvalid('make')">
                     <div class="field-error" *ngIf="isFieldInvalid('make')">
                       {{ getFieldError('make') }}
                     </div>
@@ -130,8 +129,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="model"
-                      [class.error]="isFieldInvalid('model')"
-                      placeholder="Enter model">
+                      [class.error]="isFieldInvalid('model')">
                     <div class="field-error" *ngIf="isFieldInvalid('model')">
                       {{ getFieldError('model') }}
                     </div>
@@ -151,8 +149,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="serialNo"
-                      [class.error]="isFieldInvalid('serialNo')"
-                      placeholder="Enter serial number">
+                      [class.error]="isFieldInvalid('serialNo')">
                     <div class="field-error" *ngIf="isFieldInvalid('serialNo')">
                       {{ getFieldError('serialNo') }}
                     </div>
@@ -172,7 +169,9 @@
                       type="text" 
                       class="modern-input"
                       formControlName="kva"
-                      placeholder="Enter KVA">
+                      inputmode="numeric"
+                      maxlength="3"
+                      pattern="[0-9]*">
                   </div>
                 </div>
 
@@ -189,7 +188,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="voltage"
-                      placeholder="Enter voltage">
+                      >
                   </div>
                 </div>
 
@@ -206,9 +205,7 @@
                       class="modern-select"
                       [value]="unitInfoForm.get('status')?.value || ''"
                       (change)="onStatusChange($event)"
-                      [disabled]="!isFieldEditable()"
-                      #statusSelect
-                      style="pointer-events: auto !important; cursor: pointer !important;">
+                      #statusSelect>
                       <option *ngFor="let status of getStatusOptions()" 
                               [value]="status.value"
                               [selected]="status.value === (unitInfoForm.get('status')?.value || '')">
@@ -220,7 +217,7 @@
                     <div class="field-error" *ngIf="isFieldInvalid('status')">
                       {{ getFieldError('status') }}
                     </div>
-                  </div>"
+                  </div>
                 </div>
                 
               </div>
@@ -248,8 +245,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="poNumber"
-                      readonly
-                      placeholder="PO Number (Read-only)">
+                      readonly>
                   </div>
                 </div>
 
@@ -266,8 +262,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="shippingPO"
-                      readonly
-                      placeholder="Shipping PO (Read-only)">
+                      readonly>
                   </div>
                 </div>
 
@@ -285,7 +280,6 @@
                       class="modern-input"
                       formControlName="unitCost"
                       readonly
-                      placeholder="Unit Cost (Read-only)"
                       step="0.01"
                       min="0">
                     <div class="field-error" *ngIf="isFieldInvalid('unitCost')">
@@ -308,7 +302,6 @@
                       class="modern-input"
                       formControlName="shipCost"
                       readonly
-                      placeholder="Shipping Cost (Read-only)"
                       step="0.01"
                       min="0">
                   </div>
@@ -339,7 +332,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="strippedBy"
-                      placeholder="Enter stripped by">
+                      >
                   </div>
                 </div>
 
@@ -356,7 +349,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="putAwayBy"
-                      placeholder="Enter put away by">
+                      >
                   </div>
                 </div>
 
@@ -373,7 +366,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="partsLocation"
-                      placeholder="Enter stripped parts location">
+                      >
                   </div>
                 </div>
                 
@@ -397,7 +390,6 @@
                     (click)="onDelete()"
                     [disabled]="isSaving || isDeleting">
                     <span class="btn-spinner" *ngIf="isDeleting"></span>
-                    <i class="fa fa-trash btn-icon" *ngIf="!isDeleting"></i>
                     <span>{{ isDeleting ? 'Deleting...' : 'Delete Unit' }}</span>
                   </button>
                 </div>
@@ -406,8 +398,10 @@
                 <div *ngIf="isEditMode || fromAddParts" class="d-flex gap-3 justify-content-center">
                   <button 
                     type="submit" 
-                    class="modern-btn success"
-                    [disabled]="unitInfoForm.invalid || isSaving || isDeleting">
+                    class="modern-btn primary"
+                    form="unitInfoForm"
+                    (click)="onSave()"
+                    [disabled]="isSaving || isDeleting">
                     <span class="btn-spinner" *ngIf="isSaving"></span>
                     <i class="fa fa-save btn-icon" *ngIf="!isSaving"></i>
                     <span>{{ isSaving ? 'Updating...' : 'Update' }}</span>
@@ -418,7 +412,6 @@
                     (click)="onDelete()"
                     [disabled]="isSaving || isDeleting">
                     <span class="btn-spinner" *ngIf="isDeleting"></span>
-                    <i class="fa fa-trash btn-icon" *ngIf="!isDeleting"></i>
                     <span>{{ isDeleting ? 'Deleting...' : 'Delete' }}</span>
                   </button>
                 </div>
@@ -436,7 +429,7 @@
                 </button>
                 <button 
                   type="submit" 
-                  class="modern-btn success"
+                  class="modern-btn primary"
                   [disabled]="unitInfoForm.invalid || isSaving">
                   <span class="btn-spinner" *ngIf="isSaving"></span>
                   <i class="fa fa-save btn-icon" *ngIf="!isSaving"></i>
@@ -445,15 +438,6 @@
               </div>
 
             </form>
-
-            <!-- No Unit State -->
-            <div class="empty-state" *ngIf="!currentUnit && !isNewUnit">
-              <div class="empty-icon">
-                <i class="fa fa-search"></i>
-              </div>
-              <h5 class="empty-title">No unit selected</h5>
-              <p class="empty-description">Use the search form above to find a specific unit or create a new one.</p>
-            </div>
 
           </div>
           
@@ -513,8 +497,7 @@
                       type="text" 
                       class="modern-input"
                       formControlName="dcgPartNo"
-                      [class.error]="isPartsFieldInvalid('dcgPartNo')"
-                      placeholder="Enter DCG part number">
+                      [class.error]="isPartsFieldInvalid('dcgPartNo')">
                     <div class="field-error" *ngIf="isPartsFieldInvalid('dcgPartNo')">
                       DCG Part Number is required
                     </div>
@@ -536,7 +519,6 @@
                       class="modern-input"
                       formControlName="stripNo"
                       [class.error]="isPartsFieldInvalid('stripNo')"
-                      placeholder="Enter strip number"
                       min="1">
                     <div class="field-error" *ngIf="isPartsFieldInvalid('stripNo')">
                       Strip Number is required and must be at least 1
@@ -583,7 +565,6 @@
                       class="modern-textarea"
                       formControlName="partDesc"
                       [class.error]="isPartsFieldInvalid('partDesc')"
-                      placeholder="Enter part description"
                       rows="3">
                     </textarea>
                     <div class="field-error" *ngIf="isPartsFieldInvalid('partDesc')">
@@ -614,7 +595,7 @@
                 </button>
                 <button 
                   type="submit" 
-                  class="modern-btn success"
+                  class="modern-btn primary"
                   [disabled]="isSavingPart || strippedPartsForm.invalid"
                   title="Add or Update stripped part">
                   <span class="btn-spinner" *ngIf="isSavingPart"></span>

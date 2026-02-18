@@ -30,6 +30,7 @@ import { ExtranetUserClassesComponent } from './extranet-user-classes/extranet-u
 import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-report.component';
 import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
 import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.component';
+import { TestEngineerJobsComponent } from './test-engineer-jobs/test-engineer-jobs.component';
 
 @NgModule({
   declarations: [
@@ -54,7 +55,8 @@ import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.compon
     ExtranetUserClassesComponent,
     UnscheduledReportComponent,
     AccountingStatusComponent,
-    DcgEmpDetailsComponent
+    DcgEmpDetailsComponent,
+    TestEngineerJobsComponent
   ],
   imports: [
     CommonModule,
