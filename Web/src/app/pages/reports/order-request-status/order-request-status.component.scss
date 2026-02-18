@@ -142,65 +142,6 @@
 
 /* =========================================
    STATUS PILLS
-========================================= */
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  text-transform: capitalize;
-}
-
-.status-new {
-  background-color: #e7f1ff;
-  color: #0d6efd;
-}
-
-.status-ordered {
-  background-color: #fff4e5;
-  color: #fd7e14;
-}
-
-.status-shipped {
-  background-color: #e6f4ea;
-  color: #198754;
-}
-
-.status-back-ordered {
-  background-color: #fff3cd;
-  color: #856404;
-}
-
-.status-cancelled {
-  background-color: #f8d7da;
-  color: #842029;
-}
-
-.status-completed {
-  background-color: #d1e7dd;
-  color: #0f5132;
-}
-
-.status-na,
-.status-unknown {
-  background-color: #e9ecef;
-  color: #6c757d;
-}
-
-/* =========================================
-   SORTING ICONS
-========================================= */
-
-th.sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
 .header-cell {
   display: flex;
   align-items: center;
@@ -241,40 +182,4 @@ th.sortable {
 
 /* =========================================
    RESPONSIVE ADJUSTMENTS
-========================================= */
-
-@media (max-width: 992px) {
-  .order-request-status-container {
-    padding: 15px;
-
-    table {
-      font-size: 13px;
-    }
-
-    .main-card .card-body {
-      padding: 20px;
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .order-request-status-container {
-    padding: 12px;
-
-    table {
-      font-size: 12px;
-    }
-
-    .main-card .card-body {
-      padding: 15px;
-    }
-
-    .filter-panel {
-      padding: 15px;
-    }
-
-    .table-responsive {
-      max-height: none;
-    }
-  }
 }

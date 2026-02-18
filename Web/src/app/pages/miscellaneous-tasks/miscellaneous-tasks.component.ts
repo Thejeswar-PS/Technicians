@@ -65,6 +65,7 @@ export class MiscellaneousTasksComponent implements OnInit {
   ngOnInit(): void {
     this.clearMessages();
     this.filterTasksByRole();
+    this.checkNavigationState();
     this.checkQueryStringPrePopulation();
   }
 
@@ -75,6 +76,21 @@ export class MiscellaneousTasksComponent implements OnInit {
       this.taskOptions = this.taskOptions.filter(
         option => option.value !== 'RDJ' && option.value !== 'RMT'
       );
+    }
+  }
+
+  // Check for navigation state (from job-notes-info)
+  private checkNavigationState(): void {
+    const navigation = this.router.getCurrentNavigation();
+    const state = navigation?.extras?.state || history.state;
+    
+    if (state && state.task && state.siteId) {
+      this.selectedTask = state.task;
+      this.siteID = state.siteId;
+      
+      if (state.autoSearch && this.selectedTask === 'PSH') {
+        setTimeout(() => this.viewSiteHistory(), 500);
+      }
     }
   }
 

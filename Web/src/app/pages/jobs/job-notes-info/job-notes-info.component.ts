@@ -890,6 +890,18 @@ export class JobNotesInfoComponent implements OnInit, OnDestroy {
     }
   }
 
+  onViewSiteHistory(): void {
+    if (!this.jobInfo?.custNmbr) return;
+    
+    this.router.navigate(['/miscellaneous-tasks'], {
+      state: {
+        task: 'PSH',
+        siteId: this.jobInfo.custNmbr,
+        autoSearch: true
+      }
+    });
+  }
+
   getSiteHistoryUrl(): string {
     if (!this.jobInfo?.custNmbr) return '#';
     
