@@ -11,30 +11,14 @@
   </div>
 
   <!-- Header Section -->
-  <div class="dcg-employee-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button
-      type="button"
-      class="btn btn-sm btn-primary dcg-employee-header__back"
-      (click)="goBack()"
-      [disabled]="isLoading"
-    >
-      <i class="bi bi-arrow-left me-2"></i>
-      Back
-    </button>
-    
-    <!-- Page Title - Centered between buttons -->
-    <div class="dcg-page-title">
-      <h2 class="fw-bold text-primary mb-0">
+  <div class="dcg-employee-header__top mb-4 d-flex justify-content-center align-items-center">
+    <!-- Page Title - Centered -->
+    <div class="dcg-employee-page-title">
+      <h2 class="fw-bold text-primary mb-0 text-center">
         <i class="bi bi-people me-2"></i>
         DCG Employee Details
       </h2>
-      <!-- Grid Type Information -->
-      <div class="text-dark mt-2">
-        <span class="fw-semibold">Current View: {{ isEmployeeGrid ? 'Employees' : 'Inventory Regions' }}</span>
-      </div>
     </div>
-
-    <div></div> <!-- Empty div to maintain spacing -->
   </div>
 
   <!-- Main content -->
@@ -44,26 +28,15 @@
       <!-- Header with Grid Toggle -->
       <div class="card-header border-0 py-4">
         <div class="dcg-filter-header">
-          <div class="row align-items-center">
-            <div class="col-md-8">
-              <h5 class="mb-0 fw-bold text-dark">
-                <i class="bi bi-grid-3x3-gap me-2 text-primary"></i>
-                Data View & Controls
-                <span class="badge ms-2" [ngClass]="getFilterBadgeClass()">
-                  {{totalItems}} Result{{totalItems === 1 ? '' : 's'}}
-                </span>
-              </h5>
-              <small class="text-muted">Switch between employee and inventory region views</small>
-            </div>
-          </div>
-
           <!-- Grid Toggle and Sort Controls -->
-          <div class="filter-controls-section mt-3">
-            <div class="d-flex align-items-center justify-content-between">
-              <!-- View Type Segmented Control -->
-              <div class="d-flex align-items-center">
-                <label class="control-label me-3">View Type</label>
-                <div class="segmented-control" role="group">
+          <div class="filter-controls-section">
+            <div class="d-flex align-items-center">
+              <!-- Left side - View Type Only -->
+              <div class="d-flex align-items-center me-5">
+                <!-- View Type Segmented Control -->
+                <div class="d-flex align-items-center">
+                  <label class="control-label me-3">View Type</label>
+                  <div class="segmented-control" role="group">
                   <button 
                     type="button" 
                     class="segment-btn"
@@ -84,17 +57,40 @@
                   </button>
                 </div>
               </div>
+              </div>
 
-              <!-- Add Button -->
-              <button
-                type="button"
-                class="btn btn-primary add-btn"
-                (click)="isEmployeeGrid ? showAddEmployee() : showAddOfficeAssignment()"
-                [disabled]="isLoading"
-              >
-                <i class="bi bi-plus me-1"></i>
-                Add {{ isEmployeeGrid ? 'Employee' : 'Inventory Region' }}
-              </button>
+              <!-- Right side - Add Button and Search Box -->
+              <div class="d-flex align-items-center gap-3 ms-auto">
+                <button
+                  type="button"
+                  class="btn btn-primary add-btn"
+                  (click)="isEmployeeGrid ? showAddEmployee() : showAddOfficeAssignment()"
+                  [disabled]="isLoading"
+                >
+                  <i class="bi bi-plus me-1"></i>
+                  Add {{ isEmployeeGrid ? 'Employee' : 'Inventory Region' }}
+                </button>
+                
+                <!-- Search Box -->
+                <div class="search-container-inline">
+                  <div class="input-group input-group-sm">
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      placeholder="search employee"
+                      [(ngModel)]="searchTerm"
+                      (input)="onSearchChange()"
+                    >
+                    <button 
+                      class="btn btn-primary btn-sm" 
+                      type="button"
+                      (click)="performSearch()"
+                      title="Search">
+                      <i class="bi bi-search"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -119,47 +115,41 @@
         <div class="table-section">
           
           <!-- Pagination Controls at Top -->
-          <div *ngIf="totalItems > 0 && !isLoading" class="d-flex justify-content-between align-items-center mb-4 p-3 bg-light rounded">
+          <div *ngIf="totalItems > 0 && !isLoading" class="d-flex align-items-center justify-content-between mb-3">
             <!-- Records Per Page -->
             <div class="d-flex align-items-center">
-              <label class="form-label me-2 mb-0 fw-semibold text-dark">Records per page:</label>
-              <select class="form-select form-select-sm w-auto border-primary" 
+              <label class="me-2 fw-semibold">Records per page:</label>
+              <select class="form-select form-select-sm w-auto" 
                       [value]="pageSize" 
-                      (change)="changePageSize(+$any($event.target).value)"
-                      style="min-width: 70px;">
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
+                      (change)="changePageSize(+$any($event.target).value)">
+                <option value="200">200</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
                 <option value="100">100</option>
               </select>
             </div>
             
-            <!-- Results Summary Badge -->
-            <div class="badge px-4 py-2 fs-6 fw-semibold" 
-                 style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 25px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);">
+            <!-- Results Summary -->
+            <div class="flex-fill text-center fw-semibold">
               Showing {{ startRecord }}-{{ endRecord }} of {{ totalItems }} records
             </div>
             
             <!-- Page Navigation -->
             <div class="d-flex align-items-center gap-2">
-              <button class="btn btn-sm btn-outline-secondary" 
+              <button type="button" 
+                      class="btn btn-sm btn-outline-secondary" 
                       [disabled]="currentPage <= 1"
-                      (click)="goToPage(currentPage - 1)"
-                      [class.disabled]="currentPage <= 1">
-                <i class="bi bi-chevron-left"></i>
-                Previous
+                      (click)="goToPage(currentPage - 1)">
+                Prev
               </button>
               
-              <span class="mx-2 fw-semibold text-dark">
-                Page {{ currentPage }} of {{ totalPages }}
-              </span>
+              <span class="fw-semibold">Page {{ currentPage }} of {{ totalPages }}</span>
               
-              <button class="btn btn-sm btn-outline-secondary" 
+              <button type="button" 
+                      class="btn btn-sm btn-outline-secondary" 
                       [disabled]="currentPage >= totalPages"
-                      (click)="goToPage(currentPage + 1)"
-                      [class.disabled]="currentPage >= totalPages">
+                      (click)="goToPage(currentPage + 1)">
                 Next
-                <i class="bi bi-chevron-right"></i>
               </button>
             </div>
           </div>
@@ -167,95 +157,101 @@
           <div class="table-responsive">
             
             <!-- Employee Grid -->
-            <table class="table modern-table" *ngIf="isEmployeeGrid">
-              <thead class="table-header">
+            <table class="table table-hover table-bordered mb-0" *ngIf="isEmployeeGrid">
+              <thead class="table-light">
                 <tr>
-                  <th class="sortable header-cell" (click)="sortTable('empNo')" [ngClass]="getSortClass('empNo')">
-                    <div class="header-content">
-                      <span class="header-text">Emp No</span>
-                      <i [class]="'sort-icon ' + sortIcon('empNo')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('empNo')">
+                    <span class="header-cell">
+                      Emp No
+                      <span class="sort-icons" [class.active]="sortColumn === 'empNo'">
+                        <i class="up" [class.on]="sortColumn === 'empNo' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'empNo' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('empID')" [ngClass]="getSortClass('empID')">
-                    <div class="header-content">
-                      <span class="header-text">Employee ID</span>
-                      <i [class]="'sort-icon ' + sortIcon('empID')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('empID')">
+                    <span class="header-cell">
+                      Employee ID
+                      <span class="sort-icons" [class.active]="sortColumn === 'empID'">
+                        <i class="up" [class.on]="sortColumn === 'empID' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'empID' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('empName')" [ngClass]="getSortClass('empName')">
-                    <div class="header-content">
-                      <span class="header-text">Employee Name</span>
-                      <i [class]="'sort-icon ' + sortIcon('empName')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('empName')">
+                    <span class="header-cell">
+                      Employee Name
+                      <span class="sort-icons" [class.active]="sortColumn === 'empName'">
+                        <i class="up" [class.on]="sortColumn === 'empName' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'empName' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('empStatus')" [ngClass]="getSortClass('empStatus')">
-                    <div class="header-content">
-                      <span class="header-text">Status</span>
-                      <i [class]="'sort-icon ' + sortIcon('empStatus')"></i>
-                    </div>
+                  <th class="fw-bold sortable text-center" (click)="sortTable('empStatus')">
+                    <span class="header-cell">
+                      Status
+                      <span class="sort-icons" [class.active]="sortColumn === 'empStatus'">
+                        <i class="up" [class.on]="sortColumn === 'empStatus' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'empStatus' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('windowsID')" [ngClass]="getSortClass('windowsID')">
-                    <div class="header-content">
-                      <span class="header-text">Windows ID</span>
-                      <i [class]="'sort-icon ' + sortIcon('windowsID')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('windowsID')">
+                    <span class="header-cell">
+                      Windows ID
+                      <span class="sort-icons" [class.active]="sortColumn === 'windowsID'">
+                        <i class="up" [class.on]="sortColumn === 'windowsID' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'windowsID' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('email')" [ngClass]="getSortClass('email')">
-                    <div class="header-content">
-                      <span class="header-text">Email</span>
-                      <i [class]="'sort-icon ' + sortIcon('email')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('email')">
+                    <span class="header-cell">
+                      Email
+                      <span class="sort-icons" [class.active]="sortColumn === 'email'">
+                        <i class="up" [class.on]="sortColumn === 'email' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'email' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="actions-column header-cell">
-                    <div class="header-content">
-                      <span class="header-text">Actions</span>
-                    </div>
+                  <th class="fw-bold text-center">
+                    Actions
                   </th>
                 </tr>
               </thead>
-              <tbody class="table-body">
-                <tr *ngFor="let employee of paginatedEmployees" class="table-row">
-                  <td class="data-cell">
-                    <span class="badge badge-light-primary">{{ employee.empNo }}</span>
-                  </td>
-                  <td class="data-cell">
-                    <span class="cell-content fw-bold">{{ employee.empID }}</span>
-                  </td>
-                  <td class="data-cell">
-                    <div class="employee-info">
-                      <i class="bi bi-person-badge me-1 text-muted"></i>
-                      <span class="cell-content">{{ employee.empName }}</span>
+              <tbody>
+                <!-- No Data Message -->
+                <tr *ngIf="!paginatedEmployees || paginatedEmployees.length === 0">
+                  <td colspan="7" class="text-center py-5">
+                    <div class="d-flex flex-column align-items-center text-muted">
+                      <i class="bi bi-inbox fs-1 mb-3" style="color: #6c757d;"></i>
+                      <h5 class="fw-bold mb-2">No Data Available</h5>
+                      <p class="mb-0">No employees available for the selected criteria.</p>
                     </div>
                   </td>
-                  <td class="data-cell">
-                    <span class="status-badge" [ngClass]="getStatusBadgeClass(employee.empStatus)">
-                      {{ employee.empStatus }}
-                    </span>
-                  </td>
-                  <td class="data-cell">
-                    <span class="cell-content">{{ employee.windowsID }}</span>
-                  </td>
-                  <td class="data-cell">
-                    <span class="cell-content">
-                      <a [href]="'mailto:' + employee.email" class="email-link">
-                        <i class="bi bi-envelope me-1"></i>
-                        {{ employee.email }}
-                      </a>
-                    </span>
-                  </td>
-                  <td class="actions-cell">
-                    <div class="action-buttons">
-                      <button class="btn btn-primary btn-sm action-btn" 
+                </tr>
+                
+                <!-- Data Rows -->
+                <tr *ngFor="let employee of paginatedEmployees">
+                  <td class="text-center">{{ employee.empNo }}</td>
+                  <td>{{ employee.empID || 'N/A' }}</td>
+                  <td>{{ employee.empName || 'N/A' }}</td>
+                  <td class="text-center">{{ employee.empStatus || 'N/A' }}</td>
+                  <td>{{ employee.windowsID || 'N/A' }}</td>
+                  <td>{{ employee.email || 'N/A' }}</td>
+                  <td class="text-center">
+                    <div class="d-flex gap-1 justify-content-center">
+                      <button class="btn btn-primary btn-sm" 
                               (click)="editEmployee(employee)"
                               [disabled]="isLoading"
                               title="Edit Employee">
-                        <i class="bi bi-pencil me-1"></i>Edit
+                        <i class="bi bi-pencil"></i>
                       </button>
-                      <button class="btn btn-danger btn-sm action-btn" 
+                      <button class="btn btn-danger btn-sm" 
                               (click)="deleteEmployee(employee)"
                               [disabled]="isLoading"
                               title="Delete Employee">
-                        <i class="bi bi-trash me-1"></i>Delete
+                        <i class="bi bi-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -264,79 +260,91 @@
             </table>
 
             <!-- Inventory Region Grid -->
-            <table class="table modern-table" *ngIf="isOfficeGrid">
-              <thead class="table-header">
+            <table class="table table-hover table-bordered mb-0" *ngIf="isOfficeGrid">
+              <thead class="table-light">
                 <tr>
-                  <th class="sortable header-cell" (click)="sortTable('state')" [ngClass]="getSortClass('state')">
-                    <div class="header-content">
-                      <span class="header-text">State</span>
-                      <i [class]="'sort-icon ' + sortIcon('state')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('state')">
+                    <span class="header-cell">
+                      State
+                      <span class="sort-icons" [class.active]="sortColumn === 'state'">
+                        <i class="up" [class.on]="sortColumn === 'state' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'state' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('stateName')" [ngClass]="getSortClass('stateName')">
-                    <div class="header-content">
-                      <span class="header-text">State Name</span>
-                      <i [class]="'sort-icon ' + sortIcon('stateName')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('stateName')">
+                    <span class="header-cell">
+                      State Name
+                      <span class="sort-icons" [class.active]="sortColumn === 'stateName'">
+                        <i class="up" [class.on]="sortColumn === 'stateName' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'stateName' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('offID')" [ngClass]="getSortClass('offID')">
-                    <div class="header-content">
-                      <span class="header-text">Office ID</span>
-                      <i [class]="'sort-icon ' + sortIcon('offID')"></i>
-                    </div>
+                  <th class="fw-bold sortable text-center" (click)="sortTable('offID')">
+                    <span class="header-cell">
+                      Office ID
+                      <span class="sort-icons" [class.active]="sortColumn === 'offID'">
+                        <i class="up" [class.on]="sortColumn === 'offID' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'offID' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('invUserID')" [ngClass]="getSortClass('invUserID')">
-                    <div class="header-content">
-                      <span class="header-text">Inventory User ID</span>
-                      <i [class]="'sort-icon ' + sortIcon('invUserID')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('invUserID')">
+                    <span class="header-cell">
+                      Inventory User ID
+                      <span class="sort-icons" [class.active]="sortColumn === 'invUserID'">
+                        <i class="up" [class.on]="sortColumn === 'invUserID' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'invUserID' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('subRegion')" [ngClass]="getSortClass('subRegion')">
-                    <div class="header-content">
-                      <span class="header-text">Sub Region</span>
-                      <i [class]="'sort-icon ' + sortIcon('subRegion')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('subRegion')">
+                    <span class="header-cell">
+                      Sub Region
+                      <span class="sort-icons" [class.active]="sortColumn === 'subRegion'">
+                        <i class="up" [class.on]="sortColumn === 'subRegion' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'subRegion' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="actions-column header-cell">
-                    <div class="header-content">
-                      <span class="header-text">Actions</span>
-                    </div>
+                  <th class="fw-bold text-center">
+                    Actions
                   </th>
                 </tr>
               </thead>
-              <tbody class="table-body">
-                <tr *ngFor="let office of paginatedOfficeAssignments" class="table-row">
-                  <td class="data-cell">
-                    <span class="state-badge">{{ office.state }}</span>
-                  </td>
-                  <td class="data-cell">
-                    <div class="state-info">
-                      <i class="bi bi-geo-alt me-1 text-muted"></i>
-                      <span class="cell-content fw-bold">{{ office.stateName }}</span>
+              <tbody>
+                <!-- No Data Message -->
+                <tr *ngIf="!paginatedOfficeAssignments || paginatedOfficeAssignments.length === 0">
+                  <td colspan="6" class="text-center py-5">
+                    <div class="d-flex flex-column align-items-center text-muted">
+                      <i class="bi bi-inbox fs-1 mb-3" style="color: #6c757d;"></i>
+                      <h5 class="fw-bold mb-2">No Data Available</h5>
+                      <p class="mb-0">No inventory regions available for the selected criteria.</p>
                     </div>
                   </td>
-                  <td class="data-cell">
-                    <span class="badge badge-light-info">{{ office.offID }}</span>
-                  </td>
-                  <td class="data-cell">
-                    <span class="cell-content">{{ office.invUserID }}</span>
-                  </td>
-                  <td class="data-cell">
-                    <span class="cell-content">{{ office.subRegion }}</span>
-                  </td>
-                  <td class="actions-cell">
-                    <div class="action-buttons">
-                      <button class="btn btn-primary btn-sm action-btn" 
+                </tr>
+                
+                <!-- Data Rows -->
+                <tr *ngFor="let office of paginatedOfficeAssignments">
+                  <td class="text-center">{{ office.state }}</td>
+                  <td>{{ office.stateName || 'N/A' }}</td>
+                  <td class="text-center">{{ office.offID }}</td>
+                  <td>{{ office.invUserID || 'N/A' }}</td>
+                  <td>{{ office.subRegion || 'N/A' }}</td>
+                  <td class="text-center">
+                    <div class="d-flex gap-1 justify-content-center">
+                      <button class="btn btn-primary btn-sm" 
                               (click)="editOfficeAssignment(office)"
                               [disabled]="isLoading"
                               title="Edit Office Assignment">
-                        <i class="bi bi-pencil me-1"></i>Edit
+                        <i class="bi bi-pencil"></i>
                       </button>
-                      <button class="btn btn-danger btn-sm action-btn" 
+                      <button class="btn btn-danger btn-sm" 
                               (click)="deleteOfficeAssignment(office)"
                               [disabled]="isLoading"
                               title="Delete Office Assignment">
-                        <i class="bi bi-trash me-1"></i>Delete
+                        <i class="bi bi-trash"></i>
                       </button>
                     </div>
                   </td>
@@ -425,14 +433,14 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer d-flex gap-2 justify-content-end">
           <button type="button" class="btn btn-secondary" (click)="hideEmployeeModal()" [disabled]="isSubmitting">
             Cancel
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || employeeForm.invalid">
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || (employeeForm.invalid && !editingEmployee)">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
             <i class="bi bi-save me-1" *ngIf="!isSubmitting"></i>
-            Save Employee
+            {{ editingEmployee ? 'Update' : 'Save' }} Employee
           </button>
         </div>
       </form>
@@ -458,24 +466,32 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label fw-bold required">State</label>
-              <input type="text" 
-                     class="form-control" 
-                     formControlName="state"
-                     [class.is-invalid]="isFieldInvalid(officeForm, 'state')"
-                     placeholder="Enter State Code">
+              <select class="form-select" 
+                      formControlName="state"
+                      (change)="onStateChange()"
+                      [class.is-invalid]="isFieldInvalid(officeForm, 'state')">
+                <option value="">Select State</option>
+                <option *ngFor="let state of stateOptions" [value]="state.state">
+                  {{ state.state }} - {{ state.stateName }}
+                </option>
+              </select>
               <div class="invalid-feedback">{{ getFieldError(officeForm, 'state') }}</div>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold required">State Name</label>
-              <input type="text" 
-                     class="form-control" 
-                     formControlName="stateName"
-                     [class.is-invalid]="isFieldInvalid(officeForm, 'stateName')"
-                     placeholder="Enter State Name">
+              <select class="form-select" 
+                      formControlName="stateName"
+                      (change)="onStateNameChange()"
+                      [class.is-invalid]="isFieldInvalid(officeForm, 'stateName')">
+                <option value="">Select State Name</option>
+                <option *ngFor="let state of stateOptions" [value]="state.stateName">
+                  {{ state.stateName }}
+                </option>
+              </select>
               <div class="invalid-feedback">{{ getFieldError(officeForm, 'stateName') }}</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold required">Office ID</label>
+              <label class="form-label fw-bold required">Office ID (Manager)</label>
               <input type="text" 
                      class="form-control" 
                      formControlName="offID"
@@ -484,7 +500,7 @@
               <div class="invalid-feedback">{{ getFieldError(officeForm, 'offID') }}</div>
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold required">Inventory User ID</label>
+              <label class="form-label fw-bold required">Inventory User ID (Parts Employee)</label>
               <input type="text" 
                      class="form-control" 
                      formControlName="invUserID"
@@ -494,14 +510,14 @@
             </div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer d-flex gap-2 justify-content-end">
           <button type="button" class="btn btn-secondary" (click)="hideOfficeModal()" [disabled]="isSubmitting">
             Cancel
           </button>
           <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || officeForm.invalid">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
             <i class="bi bi-save me-1" *ngIf="!isSubmitting"></i>
-            Save Inventory Region
+            {{ editingOffice ? 'Update' : 'Save' }} Inventory Region
           </button>
         </div>
       </form>

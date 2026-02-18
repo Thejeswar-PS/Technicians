@@ -88,6 +88,9 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   // Current date for ID badge
   currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '-');
   
+  // Dropdown options for office assignment editing (matching legacy)
+  stateOptions: { state: string, stateName: string }[] = [];
+  
   // Make Math available in template
   Math = Math;
   
@@ -104,6 +107,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadData();
+    this.loadDropdownData(); // Load dropdown options for office assignment editing
   }
 
   ngOnDestroy(): void {
@@ -180,7 +184,31 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
         }
       });
   }
-
+  // Load dropdown data for office assignment editing (only state options needed)
+  private loadDropdownData(): void {
+    // Load state options from office assignments  
+    this.dcgEmployeeService.getOfficeStateAssignments('State')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            // Get distinct states with their names
+            const uniqueStates = response.data.reduce((acc, curr) => {
+              const existing = acc.find(item => item.state === curr.state);
+              if (!existing) {
+                acc.push({ state: curr.state, stateName: curr.stateName });
+              }
+              return acc;
+            }, [] as { state: string, stateName: string }[]);
+            
+            this.stateOptions = uniqueStates.sort((a, b) => a.stateName.localeCompare(b.stateName));
+          }
+        },
+        error: (error) => {
+          console.error('Error loading state options:', error);
+        }
+      });
+  }
   // Table Sorting
   sortTable(column: string): void {
     if (this.sortColumn === column) {
@@ -225,11 +253,84 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     return this.sortDirection === 'asc' ? 'bi-sort-up' : 'bi-sort-down';
   }
 
+  // State/StateName synchronization (matching legacy behavior)
+  onStateChange(): void {
+    const selectedState = this.officeForm.get('state')?.value;
+    if (selectedState) {
+      const stateOption = this.stateOptions.find(opt => opt.state === selectedState);
+      if (stateOption) {
+        this.officeForm.patchValue({
+          stateName: stateOption.stateName
+        });
+      }
+    }
+  }
+
+  onStateNameChange(): void {
+    const selectedStateName = this.officeForm.get('stateName')?.value;
+    if (selectedStateName) {
+      const stateOption = this.stateOptions.find(opt => opt.stateName === selectedStateName);
+      if (stateOption) {
+        this.officeForm.patchValue({
+          state: stateOption.state
+        });
+      }
+    }
+  }
+
   getSortClass(column: string): string {
     if (this.sortColumn === column) {
       return this.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc';
     }
     return '';
+  }
+
+  // Search Functionality
+  applySearchFilter(): void {
+    this.currentPage = 1;
+    this.updatePagination();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.applySearchFilter();
+  }
+
+  performSearch(): void {
+    this.applySearch();
+    this.applySearchFilter();
+  }
+
+  private applySearch(): void {
+    const searchLower = this.searchTerm.toLowerCase().trim();
+    
+    if (this.currentGridType === GridType.Employee) {
+      this.paginatedEmployees = searchLower 
+        ? this.employees.filter(emp => 
+            emp.empID?.toLowerCase().includes(searchLower) ||
+            emp.empName?.toLowerCase().includes(searchLower) ||
+            emp.empStatus?.toLowerCase().includes(searchLower) ||
+            emp.windowsID?.toLowerCase().includes(searchLower) ||
+            emp.email?.toLowerCase().includes(searchLower) ||
+            emp.empNo?.toString().includes(searchLower)
+          )
+        : this.employees;
+    } else {
+      this.paginatedOfficeAssignments = searchLower
+        ? this.officeAssignments.filter(office => 
+            office.state?.toLowerCase().includes(searchLower) ||
+            office.stateName?.toLowerCase().includes(searchLower) ||
+            office.offID?.toLowerCase().includes(searchLower) ||
+            office.invUserID?.toLowerCase().includes(searchLower) ||
+            office.subRegion?.toLowerCase().includes(searchLower)
+          )
+        : this.officeAssignments;
+    }
+    
+    // Update total items count for filtered results
+    this.totalItems = this.currentGridType === GridType.Employee 
+      ? this.paginatedEmployees.length 
+      : this.paginatedOfficeAssignments.length;
   }
 
   // Employee Operations
@@ -243,29 +344,60 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
 
   editEmployee(employee: DCGEmployeeDto): void {
     this.editingEmployee = employee;
-    this.employeeForm.patchValue(employee);
+    
+    // Ensure all fields have proper values before patching and trim whitespace
+    const patchData = {
+      empNo: employee.empNo || 0,
+      empID: (employee.empID || '').trim(),
+      empName: (employee.empName || '').trim(),
+      empStatus: (employee.empStatus || '').trim(),
+      windowsID: (employee.windowsID || '').trim(),
+      email: (employee.email || '').trim()
+    };
+    
+    this.employeeForm.patchValue(patchData);
+    this.employeeForm.updateValueAndValidity();
+    
     this.showEmployeeForm = true;
     this.clearMessages();
   }
 
   saveEmployee(): void {
-    if (this.employeeForm.invalid) {
+    // For new employees, enforce full validation
+    if (!this.editingEmployee && this.employeeForm.invalid) {
       this.markFormGroupTouched(this.employeeForm);
       return;
+    }
+    
+    // For existing employees, check only essential fields
+    if (this.editingEmployee) {
+      const formData = this.employeeForm.value;
+      
+      // Check essential fields are not completely empty
+      if (!formData.empID?.trim() || !formData.empName?.trim()) {
+        this.showError('Employee ID and Name are required');
+        return;
+      }
+      
+      // If email is provided, it should be valid
+      if (formData.email && formData.email.trim() && !this.isValidEmail(formData.email)) {
+        this.showError('Please provide a valid email address');
+        return;
+      }
     }
 
     this.isSubmitting = true;
     const formData = this.employeeForm.value;
 
     if (this.editingEmployee) {
-      // Update existing employee
+      // Update existing employee - trim all string fields
       const updateData: UpdateDCGEmployeeDto = {
         empNo: formData.empNo!,
-        empID: formData.empID,
-        empName: formData.empName,
-        empStatus: formData.empStatus,
-        windowsID: formData.windowsID,
-        email: formData.email
+        empID: (formData.empID || '').trim(),
+        empName: (formData.empName || '').trim(),
+        empStatus: (formData.empStatus || '').trim(),
+        windowsID: (formData.windowsID || '').trim(),
+        email: (formData.email || '').trim()
       };
 
       this.dcgEmployeeService.updateDCGEmployee(updateData.empNo, updateData)
@@ -289,13 +421,13 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
           }
         });
     } else {
-      // Create new employee
+      // Create new employee - trim all string fields
       const createData: CreateDCGEmployeeDto = {
-        empID: formData.empID,
-        empName: formData.empName,
-        empStatus: formData.empStatus,
-        windowsID: formData.windowsID,
-        email: formData.email
+        empID: (formData.empID || '').trim(),
+        empName: (formData.empName || '').trim(),
+        empStatus: (formData.empStatus || '').trim(),
+        windowsID: (formData.windowsID || '').trim(),
+        email: (formData.email || '').trim()
       };
 
       this.dcgEmployeeService.createDCGEmployee(createData)
@@ -356,12 +488,22 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.clearMessages();
   }
 
-  editOfficeAssignment(office: OfficeStateAssignmentDto): void {
-    this.editingOffice = office;
-    this.officeForm.patchValue(office);
-    this.showOfficeForm = true;
-    this.clearMessages();
-  }
+ editOfficeAssignment(office: OfficeStateAssignmentDto): void {
+  this.editingOffice = office;
+  this.showOfficeForm = true;
+
+  // Wait for next tick so dropdown options are present
+  setTimeout(() => {
+    this.officeForm.patchValue({
+      state: (office.state || '').trim(),
+      stateName: (office.stateName || '').trim(),
+      offID: (office.offID || '').trim(),
+      invUserID: (office.invUserID || '').trim()
+    });
+
+    console.log('Patched after dropdown ready');
+  });
+}
 
   saveOfficeAssignment(): void {
     if (this.officeForm.invalid) {
@@ -373,12 +515,12 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     const formData = this.officeForm.value;
 
     if (this.editingOffice) {
-      // Update existing office assignment
+      // Update existing office assignment - trim all string fields
       const updateData: UpdateOfficeStateAssignmentDto = {
-        state: formData.state,
-        stateName: formData.stateName,
-        offID: formData.offID,
-        invUserID: formData.invUserID
+        state: (formData.state || '').trim(),
+        stateName: (formData.stateName || '').trim(),
+        offID: (formData.offID || '').trim(),
+        invUserID: (formData.invUserID || '').trim()
       };
 
       this.dcgEmployeeService.updateOfficeStateAssignment(updateData.state, updateData)
@@ -402,12 +544,12 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
           }
         });
     } else {
-      // Create new office assignment
+      // Create new office assignment - trim all string fields
       const createData: CreateOfficeStateAssignmentDto = {
-        state: formData.state,
-        stateName: formData.stateName,
-        offID: formData.offID,
-        invUserID: formData.invUserID
+        state: (formData.state || '').trim(),
+        stateName: (formData.stateName || '').trim(),
+        offID: (formData.offID || '').trim(),
+        invUserID: (formData.invUserID || '').trim()
       };
 
       this.dcgEmployeeService.createOfficeStateAssignment(createData)
@@ -485,6 +627,23 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  private getFormErrors(formGroup: FormGroup): any {
+    let formErrors: any = {};
+    Object.keys(formGroup.controls).forEach(key => {
+      const controlErrors = formGroup.get(key)?.errors;
+      if (controlErrors) {
+        formErrors[key] = controlErrors;
+      }
+    });
+    return formErrors;
+  }
+
+  private isValidEmail(email: string): boolean {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+
   private showSuccess(message: string): void {
     this.successMessage = message;
     this.errorMessage = '';
@@ -541,8 +700,8 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
 
   // Search functionality
   onSearchChange(): void {
-    // Implement search logic here
-    this.loadData();
+    this.applySearch();
+    this.applySearchFilter();
   }
 
   // Filter badge styling
@@ -563,20 +722,30 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     if (!status) return 'status-default';
     return 'status-' + status.toLowerCase().replace(/\s+/g, '-');
   }
+// Compare function for dropdown value matching
+compareByValue(o1: any, o2: any): boolean {
+  return String(o1).trim() === String(o2).trim();
+}
 
   // Pagination methods
   updatePagination(): void {
-    const currentData = this.isEmployeeGrid ? this.employees : this.officeAssignments;
-    this.totalItems = currentData.length;
+    // First apply search filter
+    this.applySearch();
+    
+    // Then calculate pagination based on filtered results
     this.totalPages = Math.ceil(this.totalItems / this.pageSize);
     
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
     
     if (this.isEmployeeGrid) {
-      this.paginatedEmployees = this.employees.slice(startIndex, endIndex);
+      // Apply pagination to already filtered results
+      const filteredData = this.paginatedEmployees;
+      this.paginatedEmployees = filteredData.slice(startIndex, endIndex);
     } else {
-      this.paginatedOfficeAssignments = this.officeAssignments.slice(startIndex, endIndex);
+      // Apply pagination to already filtered results
+      const filteredData = this.paginatedOfficeAssignments;
+      this.paginatedOfficeAssignments = filteredData.slice(startIndex, endIndex);
     }
   }
 
@@ -593,11 +762,20 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.updatePagination();
   }
 
+  getTotalPages(): number {
+    return this.totalPages;
+  }
+
   get startRecord(): number {
     return (this.currentPage - 1) * this.pageSize + 1;
   }
 
   get endRecord(): number {
     return Math.min(this.currentPage * this.pageSize, this.totalItems);
+  }
+
+  // TrackBy function for ngFor performance
+  trackByEmpID(index: number, item: any): string {
+    return item?.empID || index;
   }
 }
