@@ -19,24 +19,16 @@
       (click)="onBack()"
       [disabled]="isLoading"
       title="Back to New Unit Test List">
-      <i class="fa fa-arrow-left me-2"></i>
+      <i class="bi bi-arrow-left me-2"></i>
       Back
     </button>
     
     <!-- Page Title - Centered -->
     <div class="new-unit-test-page-title">
       <h2 class="fw-bold text-primary mb-0">
-        <i class="fa fa-clipboard-check me-2"></i>
+        <i class="bi bi-clipboard-check me-2"></i>
         New Unit Test
       </h2>
-    </div>
-    
-    <!-- Unit Index Badge -->
-    <div class="unit-badge-compact" *ngIf="!isLoading && (selectedUnit?.rowIndex || currentRowIndex)">
-      <small class="text-danger fw-bold">
-        <i class="fa fa-hashtag me-1"></i>Unit:
-      </small>
-      <span class="unit-value">{{ selectedUnit?.rowIndex || currentRowIndex }}</span>
     </div>
   </div>
 
@@ -98,8 +90,7 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="make"
-                      placeholder="Enter make">
+                      formControlName="make">
                   </div>
                 </div>
 
@@ -115,8 +106,7 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="model"
-                      placeholder="Enter model">
+                      formControlName="model">
                   </div>
                 </div>
 
@@ -132,8 +122,7 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="serialNo"
-                      placeholder="Enter serial number">
+                      formControlName="serialNo">
                   </div>
                 </div>
 
@@ -149,8 +138,7 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="kva"
-                      placeholder="Enter KVA">
+                      formControlName="kva">
                   </div>
                 </div>
 
@@ -166,8 +154,7 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="voltage"
-                      placeholder="Enter voltage">
+                      formControlName="voltage">
                   </div>
                 </div>
 
@@ -184,7 +171,6 @@
                       type="text" 
                       class="modern-input"
                       formControlName="poNumber"
-                      placeholder="Enter PO number"
                       [readonly]="isLoadedFromApi">
                   </div>
                 </div>
@@ -202,7 +188,6 @@
                       type="number" 
                       class="modern-input"
                       formControlName="unitCost"
-                      placeholder="Enter unit cost"
                       step="0.01"
                       min="0"
                       [readonly]="isLoadedFromApi">
@@ -222,7 +207,6 @@
                       type="text" 
                       class="modern-input"
                       formControlName="shippingPO"
-                      placeholder="Enter shipping PO"
                       [readonly]="isLoadedFromApi">
                   </div>
                 </div>
@@ -240,7 +224,6 @@
                       type="number" 
                       class="modern-input"
                       formControlName="shipCost"
-                      placeholder="Enter shipping cost"
                       step="0.01"
                       min="0"
                       [readonly]="isLoadedFromApi">
@@ -317,7 +300,6 @@
                     <textarea 
                       class="modern-textarea"
                       formControlName="deficiencyNotes"
-                      placeholder="Enter deficiency notes and observations"
                       rows="4">
                     </textarea>
                   </div>
@@ -431,12 +413,8 @@
             <!-- No Unit State -->
             <div class="empty-state" *ngIf="!selectedUnit && !isCreatingNew">
               <div class="empty-icon">
-                <i class="fa fa-search"></i>
               </div>
-              <h5 class="empty-title">No unit selected</h5>
-              <p class="empty-description">Select a unit from the list or create a new unit test entry.</p>
             </div>
-
           </div>
           
           <!-- Test Results Section (Right Column) -->
@@ -523,8 +501,7 @@
                     <input 
                       type="text" 
                       class="modern-input"
-                      formControlName="testEngineer"
-                      placeholder="Enter test engineer name">
+                      formControlName="testEngineer">
                   </div>
                 </div>
 
@@ -540,7 +517,6 @@
                     <textarea 
                       class="modern-textarea"
                       formControlName="inspectionNotes"
-                      placeholder="Enter inspection notes and test results"
                       rows="6">
                     </textarea>
                   </div>
@@ -587,18 +563,11 @@
             <!-- No Results State -->
             <div class="empty-state" *ngIf="!selectedUnit">
               <div class="empty-icon">
-                <i class="fa fa-chart-bar"></i>
               </div>
-              <h5 class="empty-title">No test results</h5>
-              <p class="empty-description">Select a unit to view and edit test results.</p>
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
-
   </div>
 </div>
