@@ -1,70 +1,33 @@
 /* ==========================================================
    UPS TEST STATUS
-   CLEAN ENTERPRISE VERSION
+   ENTERPRISE CLEAN VERSION
+   FULL WIDTH + IMPROVED TABLE
+   GRAPH DESIGN UNTOUCHED
 ========================================================== */
 
 /* ================= PAGE ================= */
 
+* {
+  box-sizing: border-box;
+}
+
 .ups-test-status-container {
   background: #f3f6fb;
   min-height: 100vh;
-  padding: 24px;
-  font-family: "Inter", system-ui, sans-serif;
-  overflow-x: hidden;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-/* ================= HEADER ================= */
-
-.ups-test-status-header__top {
-  margin-bottom: 20px;
-
-  .ups-test-status-header__back {
-    border-radius: 6px;
-    font-weight: 500;
-  }
+/* Remove bootstrap container side padding */
+.container-fluid {
+  padding-left: 8px !important;
+  padding-right: 8px !important;
 }
 
-.ups-test-status-page-title h2 {
-  font-size: 1.7rem;
-  font-weight: 700;
-  color: #1f2937;
-
-  i {
-    color: #2563eb;
-  }
-}
-
-/* ================= MAIN CARD ================= */
-
-.main-card {
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-  margin-bottom: 20px;
-
-  .card-header {
-    background: #ffffff;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 16px 20px;
-
-    .card-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      color: #111827;
-
-      i {
-        color: #2563eb;
-      }
-    }
-  }
-
-  .card-body {
-    padding: 24px;
-  }
-}
-
-/* ================= LOADING OVERLAY ================= */
+/* ================= LOADING ================= */
 
 .loading-overlay {
   position: fixed;
@@ -77,7 +40,8 @@
 }
 
 /* ==========================================================
-   MODERN ENTERPRISE BAR CHART
+   GRAPH SECTION
+   DO NOT TOUCH — ORIGINAL DESIGN PRESERVED
 ========================================================== */
 
 .vertical-bar-chart {
@@ -87,24 +51,21 @@
   padding: 24px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border: 1px solid #e5e7eb;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
-/* Header */
-.chart-header {
-  margin-bottom: 20px;
-}
+.chart-header { margin-bottom: 20px; }
 
 .chart-title {
   font-size: 1.2rem;
   font-weight: 600;
   color: #111827;
-  margin-bottom: 2px;
   display: flex;
   align-items: center;
-  
-  i {
-    color: #2563eb;
-  }
+
+  i { color: #2563eb; }
 }
 
 .chart-subtitle {
@@ -112,16 +73,18 @@
   color: #6b7280;
 }
 
-/* Chart Layout */
 .chart-wrapper {
   position: relative;
+  width: 100%;
   height: 280px;
   display: flex;
-  align-items: end;
+  align-items: flex-end;
+  overflow: hidden;
+  box-sizing: border-box;
   margin: 20px 0;
+  padding-top: 40px;
 }
 
-/* Y Axis */
 .y-axis {
   display: flex;
   flex-direction: column;
@@ -136,384 +99,22 @@
 .y-label {
   font-size: 0.75rem;
   color: #6b7280;
-  text-align: right;
-  line-height: 1;
 }
 
-/* Bars Area */
 .bars-area {
   flex: 1;
   display: flex;
-  align-items: end;
-  justify-content: center;
-  gap: 12px;
-  height: 100%;
-  padding: 0 8px;
-}
-
-.bar {
-  position: relative;
-  width: 60px;
-  max-width: 80px;
-  min-height: 8px;
-  border-radius: 4px 4px 0 0;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  display: flex;
-  align-items: start;
-  justify-content: center;
-}
-
-.bar:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.bar-value {
-  position: absolute;
-  top: -24px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #374151;
-  text-align: center;
-  white-space: nowrap;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 2px 6px;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* X Axis */
-.x-axis {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 16px;
-  padding: 0 56px;
-}
-
-.x-label {
-  width: 60px;
-  max-width: 80px;
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-align: center;
-  line-height: 1.2;
-  font-weight: 500;
-}
-
-/* No Data */
-.no-data-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-}
-
-.no-data-content {
-  text-align: center;
-  
-  i {
-    opacity: 0.3;
-  }
-}
-
-/* ==========================================================
-   FILTER PANEL
-========================================================== */
-
-.filter-panel {
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
-
-  .form-label {
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 8px;
-  }
-
-  .form-select {
-    font-size: 14px;
-  }
-}
-
-/* TABLE WRAPPER */
-.table-scroll-wrapper {
-  overflow: visible;
-}
-
-/* TABLE */
-.parts-status-table {
-  width: 100%;
-  table-layout: fixed;
-  border-collapse: collapse;
-
-  th, td {
-    font-size: 13px;
-    white-space: normal;
-    word-break: break-word;
-  }
-
-  /* Column width adjustments */
-  th:nth-child(1), td:nth-child(1) { /* No. */
-    width: 55px;
-    min-width: 55px;
-    text-align: center;
-  }
-  
-  th:nth-child(2), td:nth-child(2) { /* Make */
-    width: 80px;
-    min-width: 80px;
-  }
-  
-  /* Make column styling - Blue and Underlined */
-  tbody td:nth-child(2) { /* Make column data */
-    color: #2563eb !important;
-    text-decoration: underline !important;
-    font-weight: 500 !important;
-  }
-  
-  th:nth-child(3), td:nth-child(3) { /* Model */
-    width: 90px;
-    min-width: 90px;
-  }
-  
-  th:nth-child(4), td:nth-child(4) { /* Serial No */
-    width: 110px;
-    min-width: 110px;
-  }
-  
-  th:nth-child(5), td:nth-child(5) { /* PO # */
-    width: 80px;
-    min-width: 80px;
-  }
-  
-  th:nth-child(6), td:nth-child(6) { /* Shipping PO# */
-    width: 90px;
-    min-width: 90px;
-  }
-  
-  th:nth-child(7), td:nth-child(7) { /* Unit Cost */
-    width: 80px;
-    min-width: 90px;
-    text-align: right;
-  }
-  
-  th:nth-child(8), td:nth-child(8) { /* Shipping Cost */
-    width: 80px;
-    min-width: 90px;
-    text-align: right;
-  }
-  
-  th:nth-child(9), td:nth-child(9) { /* Status */
-    width: 100px;
-    min-width: 80px;
-    text-align: center;
-  }
-  
-  th:nth-child(10), td:nth-child(10) { /* Priority */
-    width: 80px;
-    min-width: 80px;
-    text-align: center;
-  }
-  
-  th:nth-child(11), td:nth-child(11) { /* Assigned To */
-    width: 100px;
-    min-width: 100px;
-  }
-  
-  th:nth-child(12), td:nth-child(12) { /* KVA */
-    width: 60px;
-    min-width: 60px;
-    text-align: center;
-  }
-  
-  th:nth-child(13), td:nth-child(13) { /* Created On */
-    width: 100px;
-    min-width: 100px;
-  }
-
-  /* Header styling */
-  thead th {
-    background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-    color: #1e293b;
-    font-weight: 600;
-    padding: 14px 12px;
-    border: 1px solid #cbd5e1;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    
-    &.sortable {
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.2s ease;
-      
-      &:hover {
-        background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-      }
-    }
-  }
-  
-  /* Body styling */
-  tbody td {
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    vertical-align: middle;
-  }
-  
-  tbody tr {
-    transition: background-color 0.15s ease;
-    
-    &:hover {
-      background: #f8fafc;
-    }
-    
-    &:nth-child(even) {
-      background: #fafbfc;
-      
-      &:hover {
-        background: #f1f5f9;
-      }
-    }
-    
-    /* STRIP SERIAL ROWS - HIGHEST SPECIFICITY */
-    &.row-strip-serial {
-      background: #FFCC99 !important;
-      
-      td {
-        background: #FFCC99 !important;
-        color: #003300 !important;
-      }
-      
-      &:hover {
-        background: #FFCC99 !important;
-        
-        td {
-          background: #FFCC99 !important;
-        }
-      }
-      
-      &:nth-child(even) {
-        background: #FFCC99 !important;
-        
-        td {
-          background: #FFCC99 !important;
-        }
-        
-        &:hover {
-          background: #FFCC99 !important;
-          
-          td {
-            background: #FFCC99 !important;
-          }
-        }
-      }
-    }
-    
-    /* HIGH PRIORITY ROWS */
-    &.row-high-priority td {
-      color: red !important;
-      font-weight: 600 !important;
-    }
-  }
-
-  /* Wrap class for long content */
-  .wrap {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-  }
-}
-
-/* Sort icons */
-.sort-icon {
-  margin-left: 4px;
-  opacity: 0.5;
-  
-  i {
-    font-size: 10px;
-    
-    &:first-child {
-      margin-bottom: -2px;
-    }
-  }
-}
-
-/* PRIORITY BADGES */
-.priority-badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  
-  &.priority-high {
-    background: #fee2e2;
-    color: #dc2626;
-  }
-  
-  &.priority-medium {
-    background: #fef3c7;
-    color: #d97706;
-  }
-  
-  &.priority-low {
-    background: #dcfce7;
-    color: #16a34a;
-  }
-}
-
-/* PAGINATION */
-.pagination-footer {
-  margin-top: 20px;
-  padding: 16px 0;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* NO DATA MESSAGE */
-.no-data-message {
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  margin: 20px 0;
-}
-
-.y-axis {
-  display: flex;
-  flex-direction: column;
+  align-items: flex-end;
   justify-content: space-between;
-  align-items: flex-end;
-  width: 40px;
-  min-height: 300px;
-  flex-shrink: 0;
-}
-
-.y-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.bars-area {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 12px;
-  flex: 1;
-  height: 300px;
-  position: relative;
+  gap: 8px;
+  height: 100%;
   padding: 0 20px;
+  overflow: visible;
+  position: relative;
 }
 
+
+/* Grid Lines */
 .bars-area::before {
   content: "";
   position: absolute;
@@ -527,279 +128,566 @@
   background-size: 100% 20%;
 }
 
+/* ==========================================================
+   ANIMATED GRADIENT BAR COLORS - SIMPLIFIED
+========================================================== */
+
 .bar {
-  flex: 1;
-  max-width: 90px;
-  min-width: 30px;
-  border-radius: 6px 6px 0 0;
-  transition: height 0.3s ease;
   position: relative;
+  flex: 1;
+  min-width: 30px;
+  max-width: 80px;
+  min-height: 8px;
+  border-radius: 6px 6px 0 0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  min-height: 5px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid rgba(0,0,0,0.05);
+  overflow: visible;
+}
+
+/* Subtle gradient overlay */
+.bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 25%;
+  background: rgba(255,255,255,0.2);
+  border-radius: 6px 6px 0 0;
+  pointer-events: none;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Simplified animations without staggered delays */
+
+.bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.bar:hover::before {
+  background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.2) 100%);
+}
+
+.bar:hover .bar-value {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
 .bar-value {
   position: absolute;
-  top: -28px;
+  top: -36px;
   font-size: 0.75rem;
-  font-weight: 600;
-  background: #ffffff;
-  padding: 3px 8px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-weight: 700;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  padding: 4px 10px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.12);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  color: #1e293b;
+  white-space: nowrap;
+  z-index: 10;
 }
 
 .x-axis {
   display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 10px;
-  padding: 0 20px;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 0 68px;
+  overflow: hidden;
 }
+
 
 .x-label {
   flex: 1;
-  max-width: 90px;
   min-width: 30px;
+  max-width: 80px;
   text-align: center;
   font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #6b7280;
   line-height: 1.2;
-  color: #374151;
+}
+
+
+/* No Data Placeholder for Chart */
+.no-data-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 280px;
+  text-align: center;
+}
+
+.no-data-content {
+  color: #6b7280;
+}
+
+
+/* ==========================================================
+   FILTER PANEL
+========================================================== */
+
+.filter-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  padding: 20px;
 }
 
 /* ==========================================================
-   TABLE (IDENTICAL SYSTEM)
+   TABLE WRAPPER
 ========================================================== */
 
 .table-scroll-wrapper {
-  overflow: visible;
-}
-
-.ups-status-table {
   width: 100%;
-  table-layout: fixed;
+  margin: 0;
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  box-sizing: border-box;
+}
+
+/* ==========================================================
+   TABLE STRUCTURE
+========================================================== */
+
+.parts-status-table {
+  width: 100%;
+  min-width: 1000px;
   border-collapse: collapse;
-
-  th, td {
-    font-size: 13px;
-    white-space: normal;
-    word-break: break-word;
-  }
-
-  thead th {
-    background: linear-gradient(180deg, #5f82f3, #5a7bf0);
-    color: #ffffff;
-    padding: 12px 4px;
-    font-weight: 600;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  tbody td {
-    padding: 10px 8px;
-    vertical-align: middle;
-    overflow-wrap: anywhere;
-  }
-
-  tbody tr:hover {
-    background: inherit !important;
-  }
-
-.parts-status-table tbody tr.stripped-unit {
-  background-color: #FFCC66 !important;
+  table-layout: auto;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
+/* ================= HEADER ================= */
+
+.parts-status-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: linear-gradient(180deg, #5f82f3, #5a7bf0);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 8px;
+  text-align: center;
+  white-space: nowrap;
+  border-bottom: 2px solid #dee2e6;
 }
 
-/* ================= SORT ================= */
+/* ================= BODY ================= */
 
-.sort-icon {
-  font-size: 8px;
-  margin-left: 2px;
-  color: #ffffff !important;
+.parts-status-table tbody td {
+  padding: 8px 8px;
+  vertical-align: middle;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
-//* ================= STATUS BADGES ================= */
+.parts-status-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* ==========================================================
+   COLUMN WIDTH CONTROL — RESPONSIVE PERCENTAGES
+========================================================== */
+
+/* No */
+.parts-status-table th:nth-child(1),
+.parts-status-table td:nth-child(1) {
+  width: 4%;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* MAKE */
+.parts-status-table th:nth-child(2),
+.parts-status-table td:nth-child(2) {
+  width: 8%;
+  min-width: 80px;
+}
+
+/* Model */
+.parts-status-table th:nth-child(3),
+.parts-status-table td:nth-child(3) { 
+  width: 8%;
+  min-width: 80px;
+}
+
+/* Serial */
+.parts-status-table th:nth-child(4),
+.parts-status-table td:nth-child(4) { 
+  width: 12%;
+  min-width: 100px;
+}
+
+/* PO */
+.parts-status-table th:nth-child(5),
+.parts-status-table td:nth-child(5) {
+  width: 8%;
+  min-width: 80px;
+}
+
+/* Shipping PO */
+.parts-status-table th:nth-child(6),
+.parts-status-table td:nth-child(6) {
+  width: 10%;
+  min-width: 90px;
+}
+
+/* Unit Cost */
+.parts-status-table th:nth-child(7),
+.parts-status-table td:nth-child(7) {
+  width: 8%;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Shipping Cost */
+.parts-status-table th:nth-child(8),
+.parts-status-table td:nth-child(8) {
+  width: 8%;
+  min-width: 80px;
+  text-align: right;
+}
+
+/* Status */
+.parts-status-table th:nth-child(9),
+.parts-status-table td:nth-child(9) {
+  width: 12%;
+  min-width: 100px;
+  text-align: center;
+}
+
+/* Priority */
+.parts-status-table th:nth-child(10),
+.parts-status-table td:nth-child(10) {
+  width: 6%;
+  min-width: 70px;
+  text-align: center;
+}
+
+/* Assigned */
+.parts-status-table th:nth-child(11),
+.parts-status-table td:nth-child(11) { 
+  width: 10%;
+  min-width: 90px;
+}
+
+/* KVA */
+.parts-status-table th:nth-child(12),
+.parts-status-table td:nth-child(12) {
+  width: 4%;
+  min-width: 50px;
+  text-align: center;
+}
+
+/* Created */
+.parts-status-table th:nth-child(13),
+.parts-status-table td:nth-child(13) {
+  width: 10%;
+  min-width: 90px;
+}
+
+/* ==========================================================
+   STATUS BADGES — PILL STYLE (DIFFERENT COLORS)
+========================================================== */
 
 .status-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 14px;
-  min-width: 113px;
+  padding: 6px 18px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  min-width: 140px;
 }
 
-/* MAXIMUM SPECIFICITY OVERRIDE */
-.ups-test-status-container .parts-status-table .status-badge.ups-status-badge.status-needs-components,
-.ups-test-status-container .status-badge.ups-status-badge.status-needs-components,
-.parts-status-table .status-badge.ups-status-badge.status-needs-components,
-.status-badge.ups-status-badge.status-needs-components,
-span.status-badge.ups-status-badge.status-needs-components {
-  background: #f59e0b !important;
-  background-color: #f59e0b !important; 
-  color: #ffffff !important;
-  border: none !important;
-  border-color: transparent !important;
-}
-
-/* NUCLEAR OPTION - GLOBAL DEEP OVERRIDE */
-::ng-deep .status-badge.status-needs-components,
-::ng-deep .status-badge.ups-status-badge.status-needs-components,
-::ng-deep span.status-badge.status-needs-components,
-::ng-deep span.status-badge.ups-status-badge.status-needs-components {
-  background: #f59e0b !important;
-  background-color: #f59e0b !important; 
-  color: #ffffff !important;
-  border: none !important;
-  border-color: transparent !important;
-}
-
-/* COMPLETED — Vibrant Green */
 .status-completed {
-  background: #10b981 !important;
-  color: #ffffff !important;
+  background: #10b981;
+  color: #fff;
 }
 
-/* IN PROGRESS — Orange */
 .status-inprogress {
-  background: #f59e0b !important;
-  color: #ffffff !important;
+  background: #f59e0b;
+  color: #fff;
 }
 
-/* NEEDS COMPONENTS — Orange (Same as IN PROGRESS) */
-.status-needs-components,
-.status-badge.status-needs-components,
-.parts-status-table .status-needs-components,
-.ups-test-status-container .status-needs-components {
-  background: #f59e0b !important;
-  background-color: #f59e0b !important;
-  color: #ffffff !important;
+.status-needs-components {
+  background: #5c9af6;
+  color: #fff;
 }
 
-/* MISSING PARTS — Red */
 .status-missing-parts {
-  background: #ef4444 !important;
-  color: #ffffff !important;
+  background: #ef4444;
+  color: #fff;
 }
 
-/* NEW — Teal */
+/* New */
 .status-new {
-  background: #06b6d4 !important;
-  color: #ffffff !important;
+  background: #06b6d4;
+  color: #ffffff;
 }
 
-/* FAILED — Dark Red */
+/* Failed */
 .status-failed {
-  background: #dc2626 !important;
-  color: #ffffff !important;
-}
-
-/* ================= PAGINATION ================= */
-
-.pagination-header,
-.pagination-footer {
-  padding: 16px 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-}
-
-.pagination-header .btn,
-.pagination-footer .btn {
-  font-size: 13px;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-weight: 600;
-}
-
-/* ================= RESPONSIVE ================= */
-
-@media (max-width: 1400px) {
-  .table-scroll-wrapper {
-    overflow-x: auto;
-  }
-
-  .ups-status-table {
-    min-width: 1500px;
-  }
-}
-
-@media (max-height: 900px) {
-  .table-scroll-wrapper {
-    max-height: 650px;
-    overflow-y: auto;
-  }
-}
-
-@media (max-width: 1400px), (max-height: 900px) {
-  .ups-status-table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
+  background: #7c3aed;
+  color: #ffffff;
 }
 
 /* ==========================================================
-   ROW COLOR CODING (ADDED BACK — DESIGN UNCHANGED)
+   PRIORITY BADGES
 ========================================================== */
 
-.parts-status-table {
+.priority-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
 
-  tbody tr {
+.priority-high {
+  background: #fee2e2;
+  color: #dc2626;
+}
 
-    /* Status based row coloring */
+.priority-medium {
+  background: #fef3c7;
+  color: #d97706;
+}
 
-    &.row-new {
-      background-color: #eff6ff;
-    }
+.priority-low {
+  background: #dcfce7;
+  color: #16a34a;
+}
 
-    &.row-inprogress {
-      background-color: #fff7ed;
-    }
+/* ==========================================================
+   SORT ICONS — ORDER REQUEST STATUS STYLE
+========================================================== */
 
-    &.row-completed {
-      background-color: #ecfdf5;
-    }
+.sort-icons {
+  display: inline-flex;
+  flex-direction: column;
+  margin-left: 2px;
+}
 
-    &.row-failed {
-      background-color: #fef2f2;
-    }
+.sort-icons i {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
 
-    /* High Priority override */
+.sort-icons i.up {
+  border-bottom: 6px solid #ffffff;
+  margin-bottom: 1px;
+}
 
-    &.row-high-priority {
-      background-color: #fff1f2;
-    }
+.sort-icons i.down {
+  border-top: 6px solid #ffffff;
+}
 
-    /* Hover states */
+.sort-icons i:not(.on) {
+  opacity: 0.5;
+}
 
-    &.row-new:hover {
-      background-color: #dbeafe;
-    }
+.sort-icons i.on {
+  opacity: 1;
+}
 
-    &.row-inprogress:hover {
-      background-color: #fed7aa;
-    }
+.header-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-    &.row-completed:hover {
-      background-color: #d1fae5;
-    }
+/* ==========================================================
+   PAGINATION
+========================================================== */
 
-    &.row-failed:hover {
-      background-color: #fecaca;
-    }
+.pagination-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e5e7eb;
+}
 
-    &.row-high-priority:hover {
-      background-color: #ffe4e6;
-    }
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+/* Chart responsive behavior for split screens and zoom */
+@media (max-width: 1400px) {
+  .x-label {
+    font-size: 0.7rem;
+    max-width: 70px;
   }
+  
+  .bars-area {
+    gap: 6px;
+    padding: 0 15px;
+  }
+  
+  .x-axis {
+    gap: 6px;
+    padding: 0 61px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .x-label {
+    font-size: 0.65rem;
+    max-width: 60px;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.1;
+  }
+  
+  .bars-area {
+    gap: 4px;
+    padding: 0 10px;
+  }
+  
+  .x-axis {
+    gap: 4px;
+    padding: 0 58px;
+  }
+}
+
+@media (max-width: 900px) {
+  .x-label {
+    font-size: 0.6rem;
+    max-width: 50px;
+  }
+  
+  .bars-area {
+    gap: 2px;
+    padding: 0 5px;
+  }
+  
+  .x-axis {
+    gap: 2px;
+    padding: 0 53px;
+  }
+  
+  .bar {
+    min-width: 25px;
+    max-width: 50px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .parts-status-table {
+    font-size: 13px;
+  }
+  
+  .parts-status-table th,
+  .parts-status-table td {
+    padding: 6px 4px;
+  }
+}
+
+@media (max-width: 992px) {
+  .parts-status-table {
+    font-size: 12px;
+  }
+  
+  .parts-status-table th,
+  .parts-status-table td {
+    padding: 4px 2px;
+  }
+  
+  /* Adjust min-widths for medium screens */
+  .parts-status-table th:nth-child(4),
+  .parts-status-table td:nth-child(4) { min-width: 80px; }
+  
+  .parts-status-table th:nth-child(6),
+  .parts-status-table td:nth-child(6) { min-width: 70px; }
+  
+  .parts-status-table th:nth-child(9),
+  .parts-status-table td:nth-child(9) { min-width: 80px; }
+}
+
+@media (max-width: 768px) {
+  .parts-status-table {
+    font-size: 11px;
+  }
+  
+  .parts-status-table th,
+  .parts-status-table td {
+    padding: 3px 2px;
+  }
+  
+  /* Further reduce min-widths for mobile */
+  .parts-status-table th:nth-child(1),
+  .parts-status-table td:nth-child(1) { min-width: 40px; }
+  
+  .parts-status-table th:nth-child(2),
+  .parts-status-table td:nth-child(2) { min-width: 60px; }
+  
+  .parts-status-table th:nth-child(3),
+  .parts-status-table td:nth-child(3) { min-width: 60px; }
+  
+  .parts-status-table th:nth-child(4),
+  .parts-status-table td:nth-child(4) { min-width: 70px; }
+  
+  .parts-status-table th:nth-child(5),
+  .parts-status-table td:nth-child(5) { min-width: 60px; }
+  
+  .parts-status-table th:nth-child(6),
+  .parts-status-table td:nth-child(6) { min-width: 60px; }
+  
+  .parts-status-table th:nth-child(7),
+  .parts-status-table td:nth-child(7) { min-width: 60px; }
+  
+  .parts-status-table th:nth-child(8),
+  .parts-status-table td:nth-child(8) { min-width: 60px; }
+  
+  .parts-status-table th:nth-child(9),
+  .parts-status-table td:nth-child(9) { min-width: 70px; }
+  
+  .parts-status-table th:nth-child(10),
+  .parts-status-table td:nth-child(10) { min-width: 50px; }
+  
+  .parts-status-table th:nth-child(11),
+  .parts-status-table td:nth-child(11) { min-width: 70px; }
+  
+  .parts-status-table th:nth-child(12),
+  .parts-status-table td:nth-child(12) { min-width: 40px; }
+  
+  .parts-status-table th:nth-child(13),
+  .parts-status-table td:nth-child(13) { min-width: 70px; }
+}
+
+/* ==========================================================
+   NO DATA MESSAGE
+========================================================== */
+
+.no-data-message {
+  color: #6b7280;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  margin: 20px 0;
 }

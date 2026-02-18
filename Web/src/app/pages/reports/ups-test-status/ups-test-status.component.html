@@ -1,24 +1,14 @@
 <!-- UPS Test Status Page -->
 <div class="container-fluid ups-test-status-container">
 
-  <!-- Header Section -->
-  <div class="order-request-header__top mb-2 d-flex justify-content-between align-items-center">
-    <!-- Back Button -->
-    <button class="btn btn-outline-primary parts-request-header__back" (click)="goBack()" [disabled]="isLoading">
-      <i class="bi bi-arrow-left me-2"></i>
-      Back
-    </button>
-    
-    <!-- Page Title - Centered -->
-    <div class="order-request-page-title flex-grow-1 text-center">
-      <h2 class="fw-bold text-primary mb-0">
+  <!-- Page Title -->
+  <div class="container-fluid">
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-primary mb-02 display-4.9">
         <i class="bi bi-activity me-2"></i>
         UPS Test Status
       </h2>
     </div>
-    
-    <!-- Spacer for balance -->
-    <div style="width: 80px;"></div>
   </div>
 
   <!-- Loading Overlay -->
@@ -26,10 +16,9 @@
     <div class="spinner-border text-primary"></div>
   </div>
 
-  <!-- =======================
-       MAKE DISTRIBUTION (BAR)
-       ======================= -->
-  <div class="vertical-bar-chart mb-4">
+  <!-- Make Distribution Chart -->
+  <div class="container-fluid">
+    <div class="vertical-bar-chart mb-4">
     <div *ngIf="isLoadingMakeChart" class="text-center py-24">
       <div class="spinner-border text-primary"></div>
     </div>
@@ -88,10 +77,12 @@
         <p class="text-muted mb-0">Chart will appear when make data is loaded</p>
       </div>
     </div>
+    </div>
   </div>
 
   <!-- FILTER PANEL -->
-  <div class="filter-panel mb-16" [formGroup]="filterForm">
+  <div class="container-fluid">
+    <div class="filter-panel mb-16" [formGroup]="filterForm">
     <div class="row g-12">
       <div class="col-md-3">
         <label class="form-label">Assigned To</label>
@@ -141,7 +132,8 @@
   </div>
 
   <!-- PAGINATION HEADER -->
-  <div class="d-flex align-items-center justify-content-between mb-3" 
+  <div class="container-fluid">
+    <div class="d-flex align-items-center justify-content-between mb-3" 
        *ngIf="!isLoading && filteredUnitsList.length > 0">
     
     <!-- LEFT: Records per page -->
@@ -189,19 +181,123 @@
     <table class="table parts-status-table">
       <thead>
         <tr>
-          <th class="sortable" (click)="sortBy('rowIndex')">No. <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('make')">Make <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('model')">Model <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('serialNo')">Serial No <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('poNumber')">PO # <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('shippingPO')">Shipping PO# <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('unitCost')">Unit Cost <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('shipCost')">Shipping Cost <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('status')">Status <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('priority')">Priority <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('assignedTo')">Assigned To <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('kva')">KVA <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
-          <th class="sortable" (click)="sortBy('createdOn')">Created On <span class="sort-icon"><i class="bi bi-caret-up-fill"></i><i class="bi bi-caret-down-fill"></i></span></th>
+          <th class="sortable" (click)="sortBy('rowIndex')">
+            <span class="header-cell">
+              No.
+              <span class="sort-icons" [class.active]="sortColumn === 'rowIndex'">
+                <i class="up" [class.on]="sortColumn === 'rowIndex' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'rowIndex' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('make')">
+            <span class="header-cell">
+              Make
+              <span class="sort-icons" [class.active]="sortColumn === 'make'">
+                <i class="up" [class.on]="sortColumn === 'make' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'make' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('model')">
+            <span class="header-cell">
+              Model
+              <span class="sort-icons" [class.active]="sortColumn === 'model'">
+                <i class="up" [class.on]="sortColumn === 'model' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'model' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('serialNo')">
+            <span class="header-cell">
+              Serial No
+              <span class="sort-icons" [class.active]="sortColumn === 'serialNo'">
+                <i class="up" [class.on]="sortColumn === 'serialNo' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'serialNo' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('poNumber')">
+            <span class="header-cell">
+              PO #
+              <span class="sort-icons" [class.active]="sortColumn === 'poNumber'">
+                <i class="up" [class.on]="sortColumn === 'poNumber' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'poNumber' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('shippingPO')">
+            <span class="header-cell">
+              Shipping PO#
+              <span class="sort-icons" [class.active]="sortColumn === 'shippingPO'">
+                <i class="up" [class.on]="sortColumn === 'shippingPO' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'shippingPO' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('unitCost')">
+            <span class="header-cell">
+              Unit Cost
+              <span class="sort-icons" [class.active]="sortColumn === 'unitCost'">
+                <i class="up" [class.on]="sortColumn === 'unitCost' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'unitCost' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('shipCost')">
+            <span class="header-cell">
+              Shipping Cost
+              <span class="sort-icons" [class.active]="sortColumn === 'shipCost'">
+                <i class="up" [class.on]="sortColumn === 'shipCost' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'shipCost' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('status')">
+            <span class="header-cell">
+              Status
+              <span class="sort-icons" [class.active]="sortColumn === 'status'">
+                <i class="up" [class.on]="sortColumn === 'status' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'status' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('priority')">
+            <span class="header-cell">
+              Priority
+              <span class="sort-icons" [class.active]="sortColumn === 'priority'">
+                <i class="up" [class.on]="sortColumn === 'priority' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'priority' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('assignedTo')">
+            <span class="header-cell">
+              Assigned To
+              <span class="sort-icons" [class.active]="sortColumn === 'assignedTo'">
+                <i class="up" [class.on]="sortColumn === 'assignedTo' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'assignedTo' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('kva')">
+            <span class="header-cell">
+              KVA
+              <span class="sort-icons" [class.active]="sortColumn === 'kva'">
+                <i class="up" [class.on]="sortColumn === 'kva' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'kva' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
+          <th class="sortable" (click)="sortBy('createdOn')">
+            <span class="header-cell">
+              Created On
+              <span class="sort-icons" [class.active]="sortColumn === 'createdOn'">
+                <i class="up" [class.on]="sortColumn === 'createdOn' && sortDirection === 'asc'"></i>
+                <i class="down" [class.on]="sortColumn === 'createdOn' && sortDirection === 'desc'"></i>
+              </span>
+            </span>
+          </th>
         </tr>
       </thead>
 
@@ -234,18 +330,15 @@
     <td class="text-end">{{ formatCurrency(item.shipCost) }}</td>
 
     <td class="text-center">
-  <span class="status-badge ups-status-badge"
-        [ngClass]="{
-          'status-completed': item.status === 'Completed',
-          'status-inprogress': item.status === 'In Progress',
-          'status-needs-components': item.status === 'Needs Components' 
-                                     || item.status === 'NEEDS COMPONENTS FOR REPAIR',
-          'status-missing-parts': item.status === 'Missing Parts from Job'
-        }"
-        [style.background-color]="(item.status === 'Needs Components' || item.status === 'NEEDS COMPONENTS FOR REPAIR') ? '#f59e0b' : null"
-        [style.color]="(item.status === 'Needs Components' || item.status === 'NEEDS COMPONENTS FOR REPAIR') ? '#ffffff' : null">
-    {{ item.status }}
-  </span>
+  <span class="status-badge"
+      [ngClass]="{
+        'status-completed': item.status?.toLowerCase() === 'completed',
+        'status-inprogress': item.status?.toLowerCase() === 'in progress',
+        'status-needs-components': item.status?.toLowerCase()?.includes('needs') || false,
+        'status-missing-parts': item.status?.toLowerCase()?.includes('missing') || false
+      }">
+  {{ item.status }}
+</span>
 </td>
 
 
@@ -303,13 +396,16 @@
       </button>
     </div>
   </div>
+  </div>
 
   <!-- NO DATA MESSAGE -->
-  <div *ngIf="!isLoading && paginatedItems.length === 0" 
-       class="text-center py-5 no-data-message">
-    <i class="bi bi-inbox display-1 text-muted"></i>
-    <h4 class="text-muted mt-3">No UPS Units Found</h4>
-    <p class="text-muted">No units match the current filter criteria.</p>
+  <div class="container-fluid">
+    <div *ngIf="!isLoading && paginatedItems.length === 0" 
+         class="text-center py-5 no-data-message">
+      <i class="bi bi-inbox display-1 text-muted"></i>
+      <h4 class="text-muted mt-3">No UPS Units Found</h4>
+      <p class="text-muted">No units match the current filter criteria.</p>
+    </div>
   </div>
 
 </div>

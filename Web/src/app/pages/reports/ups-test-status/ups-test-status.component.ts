@@ -1153,10 +1153,6 @@ public hasStripSerial(item: any): boolean {
     this.loadUPSTestStatusData();
   }
 
-  goBack(): void {
-    this.location.back();
-  }
-
   get makeSummaryItems(): any[] {
     return Object.entries(this.makeSummary).map(([make, count]) => ({
       make,
@@ -1181,6 +1177,4 @@ public hasStripSerial(item: any): boolean {
     const makeCount = this.makeSummary[make] || 0;
     return total > 0 ? Math.round((makeCount / total) * 100) : 0;
   }
-
-  // Utility method for parsing numeric values
 }
