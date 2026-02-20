@@ -70,10 +70,14 @@ export interface PartsTestInfo {
   qcProcFollowed?: string;
   qcApproved?: string;
   qcWorkStatus?: string;
+  // qcPassed?: boolean;   // Missing QC passed field
+  // qcApprovedBy?: string; // Missing QC approved by field
   createdBy?: string;
   createdOn?: Date | string; // Creation date for auto-generated ID calculation
   autoGenID?: string; // Existing auto-generated ID from database
   approved?: boolean;
+  archive?: boolean;     // Archive status
+  finalApproval?: boolean; // Final approval status
   lastModifiedBy?: string;
 }
 
@@ -87,7 +91,7 @@ export interface PartsTestFilter {
   dateTo?: Date;
 }
 
-// DTO interface for SaveUpdatePartsTestList - matches backend SaveUpdatePartsTestDto
+// DTO interface for SaveUpdatePartsTestList - matches backend SaveUpdatePartsTestDto (39 parameters)
 export interface SaveUpdatePartsTestDto {
   jobFrom: string;
   callNbr: string;
@@ -103,9 +107,8 @@ export interface SaveUpdatePartsTestDto {
   priority: string;
   assignedTo: string;
   dueDate?: Date;
-  submittedDate?: Date;
-  kva: string;
-  voltage: string;
+  KVA: string;                 // Case-sensitive: KVA not kva
+  Voltage: string;             // Case-sensitive: Voltage not voltage
   problemNotes: string;
   resolveNotes: string;
   rowIndex: number;
@@ -124,10 +127,10 @@ export interface SaveUpdatePartsTestDto {
   qcProcFollowed: string;
   qcApproved: string;
   qcWorkStatus: string;
-  createdBy: string;
-  createdOn?: Date | string; // Creation date for auto-generated ID calculation
-  approved: boolean;
-  lastModifiedBy: string;
+  CreatedBy: string;           // PascalCase for backend
+  Approved: boolean;           // PascalCase for backend
+  LastModifiedBy: string;      // PascalCase for backend
+  
 }
 
 // Response interface for save/update operations
@@ -167,5 +170,31 @@ export interface DeletePartsTestResponse {
   result?: string;
   rowIndex?: number;
   source?: string;
+  error?: string;
+}
+
+// Job exists response interface
+export interface JobExistsResponse {
+  success: boolean;
+  exists: boolean;
+  jobNo: string;
+  message?: string;
+  error?: string;
+}
+
+// Submitted date response interface
+export interface SubmittedDateResponse {
+  success: boolean;
+  submittedDate: string;
+  jobNo: string;
+  message?: string;
+  error?: string;
+}
+
+// Archive record response interface
+export interface ArchiveRecordResponse {
+  success: boolean;
+  message: string;
+  rowIndex?: number;
   error?: string;
 }

@@ -39,8 +39,13 @@ namespace Technicians.Api.Models
         public string QCProcFollowed { get; set; } = string.Empty;
         public string QCApproved { get; set; } = string.Empty;
         public string QCWorkStatus { get; set; } = string.Empty;
+        //public bool QCPassed { get; set; }
+        //public string QCApprovedBy { get; set; } = string.Empty;
         public string CreatedBy { get; set; } = string.Empty;
         public bool Approved { get; set; }
         public string LastModifiedBy { get; set; } = string.Empty;
+        public string? SubmittedDate { get; set; }
+        public bool Archive { get; set; } = false;
+        public DateTime? ApprovedOn { get; set; }
     }
 }

@@ -54,14 +54,16 @@ import {
   AccMgrUnscheduledJobDto
 } from '../model/account-manager-performance-report.model';
 import { 
-  PartsTestRequest, 
+  PartsTestRequest,
   PartsTestResponse,
   SaveUpdatePartsTestDto,
   SaveUpdatePartsTestResponse,
-  EmployeeDto,
   EmployeeRequest,
   EmployeeResponse,
-  DeletePartsTestResponse
+  DeletePartsTestResponse,
+  JobExistsResponse,
+  SubmittedDateResponse,
+  ArchiveRecordResponse
 } from '../model/parts-test-info.model';
 import { 
   PartsTestStatusDto,
@@ -123,7 +125,10 @@ import {
   TestEngineerJobsResponse,
   TestEngineerJobsChartsResponse,
   EngineersResponse,
-  ChartDataResponse
+  ChartDataResponse,
+  EngineerDto,
+  EngineerChartDto,
+  StatusChartDto
 } from '../model/test-engineer-jobs.model';
 
 @Injectable({
@@ -173,7 +178,8 @@ export class ReportService {
     return this.http.get<any>(`${this.API}/TechTools/GetSiteHistory?siteID=${encodeURIComponent(siteID)}`, { headers: this.headers });
   }
 
-  checkJobExists(jobNo: string, jobStatus: string): Observable<any>
+  // Legacy checkJobExists method - keeping for backward compatibility
+  checkJobExistsLegacy(jobNo: string, jobStatus: string): Observable<any>
   {
     return this.http.get<any>(`${this.API}/TechTools/CheckJobExists?jobNo=${encodeURIComponent(jobNo)}&jobStatus=${jobStatus}`, { headers: this.headers });
   }
@@ -815,6 +821,31 @@ export class ReportService {
     return this.http.delete<DeletePartsTestResponse>(`${this.API}/PartsTest/DeletePartsTestList`, { 
       headers: this.headers,
       params: params 
+    });
+  }
+
+  // Check if job exists
+  checkJobExists(jobNo: string): Observable<JobExistsResponse> {
+    const params = new HttpParams().set('jobNo', jobNo.trim());
+    return this.http.get<JobExistsResponse>(`${this.API}/PartsTest/CheckJobExists`, {
+      headers: this.headers,
+      params: params
+    });
+  }
+
+  // Get submitted date for job
+  getSubmittedDate(jobNo: string): Observable<SubmittedDateResponse> {
+    const params = new HttpParams().set('jobNo', jobNo.trim());
+    return this.http.get<SubmittedDateResponse>(`${this.API}/PartsTest/GetSubmittedDate`, {
+      headers: this.headers,
+      params: params
+    });
+  }
+
+  // Archive parts test record
+  archivePartsTestRecord(rowIndex: number): Observable<ArchiveRecordResponse> {
+    return this.http.post<ArchiveRecordResponse>(`${this.API}/PartsTest/ArchiveRecord`, rowIndex, { 
+      headers: this.headers 
     });
   }
 
@@ -1703,22 +1734,44 @@ export class ReportService {
     );
   }
 
-  // TestEngineerJobs methods
+  // TestEngineerJobs methods - Enhanced for better null handling
   getTestEngineerJobs(request: TestEngineerJobsRequestDto): Observable<TestEngineerJobsResponse> {
+    // Ensure all parameters are properly defined to match backend expectations
     const params = new HttpParams()
       .set('engineer', request.engineer || '')
       .set('status', request.status || '')
       .set('location', request.location || '')
       .set('search', request.search || '')
-      .set('sortColumn', request.sortColumn || 'ProjectedDate')
+      .set('sortColumn', request.sortColumn || 'RowID')
       .set('sortDirection', request.sortDirection || 'DESC');
 
     return this.http.get<TestEngineerJobsResponse>(
-      `${this.API}/TestEngineerJobs`,
+      `${this.API}/TestEngineerJobs/GetJobs`,
       {
         headers: this.headers,
         params: params
       }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // POST version for complex filter requests - Enhanced with proper defaults
+  getTestEngineerJobsPost(request: TestEngineerJobsRequestDto): Observable<TestEngineerJobsResponse> {
+    // Ensure request has proper defaults to match backend expectations
+    const safeRequest: TestEngineerJobsRequestDto = {
+      engineer: request.engineer || '',
+      status: request.status || '',
+      location: request.location || '',
+      search: request.search || '',
+      sortColumn: request.sortColumn || 'RowID',
+      sortDirection: request.sortDirection || 'DESC'
+    };
+    
+    return this.http.post<TestEngineerJobsResponse>(
+      `${this.API}/TestEngineerJobs/GetJobs`,
+      safeRequest,
+      { headers: this.headers }
     ).pipe(
       catchError(this.handleError)
     );
@@ -1732,7 +1785,7 @@ export class ReportService {
       .set('search', request.search || '');
 
     return this.http.get<ChartDataResponse>(
-      `${this.API}/TestEngineerJobs/charts`,
+      `${this.API}/TestEngineerJobs/GetChartsData`,
       {
         headers: this.headers,
         params: params
@@ -1742,11 +1795,63 @@ export class ReportService {
     );
   }
 
-  getTestEngineerJobsEngineers(): Observable<EngineersResponse> {
+  // Combined chart data using POST - Enhanced with proper defaults
+  getTestEngineerJobsChartsPost(request: TestEngineerJobsRequestDto): Observable<ChartDataResponse> {
+    return this.http.post<ChartDataResponse>(
+      `${this.API}/TestEngineerJobs/GetChartsData`,
+      request,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // Get all data in one call for efficiency - Enhanced with proper defaults
+  getAllTestEngineerJobsData(request: TestEngineerJobsRequestDto): Observable<any> {
+    return this.http.post<any>(
+      `${this.API}/TestEngineerJobs/GetAllData`,
+      request,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // Note: Separate chart endpoints don't exist in backend. Use getTestEngineerJobsCharts instead.
+  // The GetChartsData endpoint returns both engineer and status data in one call.
+  
+  // Utility methods to extract specific chart data from combined response
+  getEngineerChartDataOnly(request: TestEngineerJobsRequestDto): Observable<EngineerChartDto[]> {
+    return this.getTestEngineerJobsCharts(request).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return response.data.engineerData || [];
+        }
+        return [];
+      })
+    );
+  }
+
+  getStatusChartDataOnly(request: TestEngineerJobsRequestDto): Observable<StatusChartDto[]> {
+    return this.getTestEngineerJobsCharts(request).pipe(
+      map(response => {
+        if (response.success && response.data) {
+          return response.data.statusData || [];
+        }
+        return [];
+      })
+    );
+  }
+  
+  getTestEngineerJobsEngineers(department: string = 'T'): Observable<EngineersResponse> {
+    // Only add department parameter if it's not the default to match backend expectations
+    const params = department !== 'T' ? new HttpParams().set('department', department) : new HttpParams();
+
     return this.http.get<EngineersResponse>(
-      `${this.API}/TestEngineerJobs/engineers`,
+      `${this.API}/TestEngineerJobs/GetEngineers`,
       {
-        headers: this.headers
+        headers: this.headers,
+        params: params
       }
     ).pipe(
       catchError(this.handleError)
