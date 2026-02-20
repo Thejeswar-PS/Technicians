@@ -81,6 +81,107 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<TestEngineerJobsEntryResponse>> GetTestEngineerJobById(int id)
+        {
+            try
+            {
+                _logger.LogInformation("GetTestEngineerJobById called with id: {Id}", id);
+                var result = await _repository.GetTestEngineerJobByIdAsync(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting test engineer job by id: {Id}", id);
+                return StatusCode(500, new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = "Failed to retrieve test engineer job"
+                });
+            }
+        }
+
+        [HttpPost("create")]
+        public async Task<ActionResult<TestEngineerJobsEntryResponse>> CreateTestEngineerJob([FromBody] SaveUpdateTestEngineerJobsDto request)
+        {
+            try
+            {
+                _logger.LogInformation("CreateTestEngineerJob called for JobNumber: {JobNumber}", request.JobNumber);
+                var result = await _repository.CreateTestEngineerJobAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating test engineer job");
+                return StatusCode(500, new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = "Failed to create test engineer job"
+                });
+            }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<TestEngineerJobsEntryResponse>> UpdateTestEngineerJob(int id, [FromBody] SaveUpdateTestEngineerJobsDto request)
+        {
+            try
+            {
+                request.RowID = id;
+                _logger.LogInformation("UpdateTestEngineerJob called for id: {Id}", id);
+                var result = await _repository.UpdateTestEngineerJobAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating test engineer job with id: {Id}", id);
+                return StatusCode(500, new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = "Failed to update test engineer job"
+                });
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<TestEngineerJobsEntryResponse>> DeleteTestEngineerJob(int id)
+        {
+            try
+            {
+                _logger.LogInformation("DeleteTestEngineerJob called for id: {Id}", id);
+                var result = await _repository.DeleteTestEngineerJobAsync(id);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting test engineer job with id: {Id}", id);
+                return StatusCode(500, new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = "Failed to delete test engineer job"
+                });
+            }
+        }
+
+        [HttpGet("nextrowid")]
+        public async Task<ActionResult<NextRowIdResponse>> GetNextRowId()
+        {
+            try
+            {
+                _logger.LogInformation("GetNextRowId called");
+                var result = await _repository.GetNextRowIdAsync();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting next row id");
+                return StatusCode(500, new NextRowIdResponse
+                {
+                    Success = false,
+                    Message = "Failed to get next row id"
+                });
+            }
+        }
+
         [HttpGet("charts")]
         public async Task<ActionResult<TestEngineerJobsChartsResponse>> GetChartData(
             [FromQuery] string? engineer = null,

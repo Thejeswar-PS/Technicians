@@ -1,0 +1,327 @@
+<!-- Test Engineer Jobs Entry Page -->
+<div class="container-fluid test-engineer-jobs-entry-container">
+
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading" class="d-flex justify-content-center align-items-center test-engineer-jobs-loading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Header Section -->
+  <div class="test-engineer-jobs-header__top mb-4 d-flex justify-content-between align-items-center">
+    <button type="button" class="btn btn-sm btn-primary test-engineer-jobs-header__back" [routerLink]="['../../']" [disabled]="isLoading">
+      <i class="bi bi-arrow-left me-2"></i>
+      Back
+    </button>
+    
+    <!-- Page Title - Centered -->
+    <div class="test-engineer-jobs-page-title">
+      <h2 class="fw-bold text-primary mb-0">
+        <i class="bi bi-clipboard-check me-2"></i>
+        {{ isEditMode ? 'Edit Engineer Testing Entry' : 'Engineer Testing Entry' }}
+      </h2>
+    </div>
+    
+    <!-- Job Number Badge -->
+    <div class="id-badge-compact" *ngIf="!isLoading && entryForm.get('jobNumber')?.value">
+      <i class="bi bi-hash"></i>
+      <span>Job: {{ entryForm.get('jobNumber')?.value }}</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div *ngIf="!isLoading">
+
+    <!-- Test Engineer Jobs Entry Form Section -->
+    <div class="card shadow-sm test-engineer-jobs-main-card">
+
+      <!-- Status Messages -->
+      <div class="message-section" *ngIf="successMessage || errorMessage">
+        <!-- SUCCESS -->
+        <div *ngIf="successMessage && !isLoading" class="modern-alert success">
+          <div class="alert-icon">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ successMessage }}</span>
+          </div>
+        </div>
+
+        <!-- ERROR -->
+        <div *ngIf="errorMessage && !isLoading" class="modern-alert error">
+          <div class="alert-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ errorMessage }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Content -->
+      <div class="form-content">
+        
+        <!-- Loading indicator -->
+        <div *ngIf="isLoading" class="loading-overlay">
+          <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <span class="loading-text">Saving job entry...</span>
+          </div>
+        </div>
+
+        <!-- Test Engineer Jobs Entry Form -->
+        <div class="form-wrapper" *ngIf="!isLoading">
+          <form [formGroup]="entryForm" class="modern-form" novalidate="novalidate" (ngSubmit)="onSave()">
+
+            <!-- Form Grid -->
+            <div class="form-grid">
+          
+<!-- Job Number -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-hash field-icon"></i>
+                    <span>Job Number</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <input type="text" class="modern-input" formControlName="jobNumber" readonly placeholder="Auto-generated">
+                </div>
+              </div>
+              <!-- Serial Number -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-upc field-icon"></i>
+                    <span>Serial No</span>
+                    <span class="required-indicator">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <input type="text" class="modern-input" formControlName="serialNo" placeholder="Enter serial number">
+                  <div *ngIf="entryForm.get('serialNo')?.invalid && entryForm.get('serialNo')?.touched" class="field-error">
+                    Serial number is required
+                  </div>
+                </div>
+              </div>
+
+              <!-- Assigned Engineer -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-person-badge field-icon"></i>
+                    <span>Assigned Engineer</span>
+                    <span class="required-indicator">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <select class="modern-select" formControlName="assignedEngineer">
+                    <option value="">-- Select Engineer --</option>
+                    <option *ngFor="let engineer of engineersList" [value]="engineer.empName">
+                      {{ engineer.empName }}
+                    </option>
+                  </select>
+                  <div *ngIf="entryForm.get('assignedEngineer')?.invalid && entryForm.get('assignedEngineer')?.touched" class="field-error">
+                    Assigned engineer is required
+                  </div>
+                </div>
+              </div>
+
+              <!-- Location -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-geo-alt field-icon"></i>
+                    <span>Location</span>
+                    <span class="required-indicator">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <select class="modern-select" formControlName="location">
+                    <option *ngFor="let option of locationOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <div *ngIf="entryForm.get('location')?.invalid && entryForm.get('location')?.touched" class="field-error">
+                    Location is required
+                  </div>
+                </div>
+              </div>
+
+              <!-- Work Type -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-tools field-icon"></i>
+                    <span>Work Type</span>
+                    <span class="required-indicator">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <select class="modern-select" formControlName="workType">
+                    <option *ngFor="let option of workTypeOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <div *ngIf="entryForm.get('workType')?.invalid && entryForm.get('workType')?.touched" class="field-error">
+                    Work type is required
+                  </div>
+                </div>
+              </div>
+
+              <!-- Emergency ETA -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-alarm field-icon"></i>
+                    <span>Emergency ETA</span>
+                    <span class="required-indicator" *ngIf="isEmergencyType">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <input type="datetime-local" class="modern-input" formControlName="emergencyETA" [disabled]="!isEmergencyType">
+                  <div *ngIf="entryForm.get('emergencyETA')?.invalid && entryForm.get('emergencyETA')?.touched" class="field-error">
+                    Emergency ETA is required for Emergency work type
+                  </div>
+                </div>
+              </div>
+
+              <!-- Status -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-flag field-icon"></i>
+                    <span>Status</span>
+                    <span class="required-indicator">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <select class="modern-select" formControlName="status">
+                    <option *ngFor="let option of statusOptions" [value]="option.value">
+                      {{ option.label }}
+                    </option>
+                  </select>
+                  <div *ngIf="entryForm.get('status')?.invalid && entryForm.get('status')?.touched" class="field-error">
+                    Status is required
+                  </div>
+                </div>
+              </div>
+
+              <!-- Projected Date -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-calendar-event field-icon"></i>
+                    <span>Projected Date</span>
+                    <span class="required-indicator">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <input type="date" class="modern-input" formControlName="projectedDate">
+                  <div *ngIf="entryForm.get('projectedDate')?.invalid && entryForm.get('projectedDate')?.touched" class="field-error">
+                    Projected date is required
+                  </div>
+                </div>
+              </div>
+
+              <!-- Completed Date -->
+              <div class="form-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-calendar-check field-icon"></i>
+                    <span>Completed Date</span>
+                    <span class="required-indicator" *ngIf="isClosedStatus">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <input type="date" class="modern-input" formControlName="completedDate">
+                  <div *ngIf="entryForm.get('completedDate')?.invalid && entryForm.get('completedDate')?.touched" class="field-error">
+                    Completed date is required when status is Closed
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quality Checks -->
+              <div class="form-field quality-check-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-check-circle field-icon"></i>
+                    <span>Quality Check</span>
+                    <span class="required-indicator" *ngIf="isClosedStatus">*</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <div class="quality-checks">
+                    <!-- Cleaned -->
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" formControlName="qcCleaned" id="qcCleaned">
+                      <label class="form-check-label" for="qcCleaned">
+                        <i class="bi bi-droplet me-2"></i>Cleaned
+                      </label>
+                    </div>
+                    <!-- Torque -->
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" formControlName="qcTorque" id="qcTorque">
+                      <label class="form-check-label" for="qcTorque">
+                        <i class="bi bi-wrench me-2"></i>Torque
+                      </label>
+                    </div>
+                    <!-- Inspected -->
+                    <div class="form-check">
+                      <input type="checkbox" class="form-check-input" formControlName="qcInspected" id="qcInspected">
+                      <label class="form-check-label" for="qcInspected">
+                        <i class="bi bi-search me-2"></i>Inspected
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notes -->
+              <div class="form-field notes-field">
+                <div class="field-header">
+                  <label class="field-label">
+                    <i class="bi bi-sticky field-icon"></i>
+                    <span>Notes</span>
+                  </label>
+                </div>
+                <div class="field-input">
+                  <textarea class="modern-textarea" formControlName="descriptionNotes" placeholder="Enter additional notes, descriptions, or comments..."></textarea>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Read-Only Mode Notice -->
+            <div *ngIf="isReadOnlyMode" class="modern-alert error">
+              <div class="alert-icon">
+                <i class="bi bi-lock-fill"></i>
+              </div>
+              <div class="alert-content">
+                <span class="alert-message">This job is marked as "Closed" and is in read-only mode. Most fields cannot be modified.</span>
+              </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary me-3" [disabled]="isLoading || isReadOnlyMode">
+                <span *ngIf="!isLoading">
+                  <i class="bi bi-check-circle me-2"></i>Save Job
+                </span>
+                <span *ngIf="isLoading">
+                  <i class="spinner-border spinner-border-sm me-2"></i>Saving...
+                </span>
+              </button>
+              
+              <button type="button" class="btn btn-secondary" [routerLink]="['../../']">
+                <i class="bi bi-arrow-left me-2"></i>Back
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

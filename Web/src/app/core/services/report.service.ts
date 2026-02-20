@@ -128,7 +128,11 @@ import {
   ChartDataResponse,
   EngineerDto,
   EngineerChartDto,
-  StatusChartDto
+  StatusChartDto,
+  SaveUpdateTestEngineerJobsDto,
+  TestEngineerJobsEntryDto,
+  TestEngineerJobsEntryResponse,
+  NextRowIdResponse
 } from '../model/test-engineer-jobs.model';
 
 @Injectable({
@@ -1746,7 +1750,7 @@ export class ReportService {
       .set('sortDirection', request.sortDirection || 'DESC');
 
     return this.http.get<TestEngineerJobsResponse>(
-      `${this.API}/TestEngineerJobs/GetJobs`,
+      `${this.API}/TestEngineerJobs`,
       {
         headers: this.headers,
         params: params
@@ -1769,7 +1773,7 @@ export class ReportService {
     };
     
     return this.http.post<TestEngineerJobsResponse>(
-      `${this.API}/TestEngineerJobs/GetJobs`,
+      `${this.API}/TestEngineerJobs`,
       safeRequest,
       { headers: this.headers }
     ).pipe(
@@ -1785,7 +1789,7 @@ export class ReportService {
       .set('search', request.search || '');
 
     return this.http.get<ChartDataResponse>(
-      `${this.API}/TestEngineerJobs/GetChartsData`,
+      `${this.API}/TestEngineerJobs/charts`,
       {
         headers: this.headers,
         params: params
@@ -1798,7 +1802,7 @@ export class ReportService {
   // Combined chart data using POST - Enhanced with proper defaults
   getTestEngineerJobsChartsPost(request: TestEngineerJobsRequestDto): Observable<ChartDataResponse> {
     return this.http.post<ChartDataResponse>(
-      `${this.API}/TestEngineerJobs/GetChartsData`,
+      `${this.API}/TestEngineerJobs/charts`,
       request,
       { headers: this.headers }
     ).pipe(
@@ -1809,7 +1813,7 @@ export class ReportService {
   // Get all data in one call for efficiency - Enhanced with proper defaults
   getAllTestEngineerJobsData(request: TestEngineerJobsRequestDto): Observable<any> {
     return this.http.post<any>(
-      `${this.API}/TestEngineerJobs/GetAllData`,
+      `${this.API}/TestEngineerJobs/all`,
       request,
       { headers: this.headers }
     ).pipe(
@@ -1848,11 +1852,59 @@ export class ReportService {
     const params = department !== 'T' ? new HttpParams().set('department', department) : new HttpParams();
 
     return this.http.get<EngineersResponse>(
-      `${this.API}/TestEngineerJobs/GetEngineers`,
+      `${this.API}/TestEngineerJobs/engineers`,
       {
         headers: this.headers,
         params: params
       }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  // Entry-specific methods for Test Engineer Jobs
+  getTestEngineerJobsNextRowId(): Observable<NextRowIdResponse> {
+    return this.http.get<NextRowIdResponse>(
+      `${this.API}/TestEngineerJobs/nextrowid`,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getTestEngineerJobById(id: number): Observable<TestEngineerJobsEntryResponse> {
+    return this.http.get<TestEngineerJobsEntryResponse>(
+      `${this.API}/TestEngineerJobs/${id}`,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  createTestEngineerJob(job: SaveUpdateTestEngineerJobsDto): Observable<TestEngineerJobsEntryResponse> {
+    return this.http.post<TestEngineerJobsEntryResponse>(
+      `${this.API}/TestEngineerJobs/create`,
+      job,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  updateTestEngineerJob(id: number, job: SaveUpdateTestEngineerJobsDto): Observable<TestEngineerJobsEntryResponse> {
+    return this.http.put<TestEngineerJobsEntryResponse>(
+      `${this.API}/TestEngineerJobs/${id}`,
+      job,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  deleteTestEngineerJob(id: number): Observable<TestEngineerJobsEntryResponse> {
+    return this.http.delete<TestEngineerJobsEntryResponse>(
+      `${this.API}/TestEngineerJobs/${id}`,
+      { headers: this.headers }
     ).pipe(
       catchError(this.handleError)
     );

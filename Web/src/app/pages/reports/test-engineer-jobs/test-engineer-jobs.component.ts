@@ -283,15 +283,17 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   addNewJob(): void {
-    // TODO: Navigate to new job entry form
-    console.log('Add new job clicked');
-    // this.router.navigate(['/jobs/new']); // Implement when route is available
+    this.router.navigate(['entry'], { relativeTo: this.route });
   }
 
   editJob(jobNumber: string): void {
-    // TODO: Navigate to job edit form
-    console.log('Edit job clicked:', jobNumber);
-    // this.router.navigate(['/jobs/edit', jobNumber]); // Implement when route is available
+    // Find the job to get the RowID
+    const job = this.jobsList.find(j => j.jobNumber === jobNumber);
+    if (job && job.rowID) {
+      this.router.navigate(['entry', job.rowID], { relativeTo: this.route });
+    } else {
+      console.error('Job RowID not found:', jobNumber);
+    }
   }
 
   getPageNumbers(): number[] {

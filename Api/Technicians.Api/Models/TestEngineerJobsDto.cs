@@ -32,6 +32,72 @@ namespace Technicians.Api.Models
     }
 
     /// <summary>
+    /// DTO for creating and updating TestEngineerJobs entries
+    /// </summary>
+    public class SaveUpdateTestEngineerJobsDto
+    {
+        public int RowID { get; set; }
+        public string JobNumber { get; set; } = string.Empty;
+        public string WorkType { get; set; } = string.Empty;
+        public DateTime? EmergencyETA { get; set; }
+        public string AssignedEngineer { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
+        public DateTime? ProjectedDate { get; set; }
+        public DateTime? CompletedDate { get; set; }
+        public string DescriptionNotes { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public bool QCCleaned { get; set; }
+        public bool QCTorque { get; set; }
+        public bool QCInspected { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
+        public string ModifiedBy { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO for TestEngineerJobs entry details (for editing)
+    /// </summary>
+    public class TestEngineerJobsEntryDto
+    {
+        public int RowID { get; set; }
+        public string JobNumber { get; set; } = string.Empty;
+        public string WorkType { get; set; } = string.Empty;
+        public string AssignedEngineer { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime? ProjectedDate { get; set; }
+        public DateTime? CompletedDate { get; set; }
+        public DateTime? EmergencyETA { get; set; }
+        public string DescriptionNotes { get; set; } = string.Empty;
+        public string Location { get; set; } = string.Empty;
+        public bool QC_Cleaned { get; set; }
+        public bool QC_Torque { get; set; }
+        public bool QC_Inspected { get; set; }
+        public DateTime? CreatedOn { get; set; }
+        public DateTime? ModifiedOn { get; set; }
+        public string CreatedBy { get; set; } = string.Empty;
+        public string ModifiedBy { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Response wrapper for TestEngineerJobs entry operations
+    /// </summary>
+    public class TestEngineerJobsEntryResponse
+    {
+        public bool Success { get; set; } = true;
+        public string Message { get; set; } = string.Empty;
+        public TestEngineerJobsEntryDto? Data { get; set; }
+    }
+
+    /// <summary>
+    /// Request for getting next RowID
+    /// </summary>
+    public class NextRowIdResponse
+    {
+        public bool Success { get; set; } = true;
+        public string Message { get; set; } = string.Empty;
+        public int NextRowId { get; set; }
+    }
+
+    /// <summary>
     /// Response wrapper for TestEngineerJobs
     /// </summary>
     public class TestEngineerJobsResponse
