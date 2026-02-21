@@ -14,7 +14,10 @@ import {
   EngineerChartDto,
   StatusChartDto
 } from 'src/app/core/model/test-engineer-jobs.model';
-// Chart.js removed - not in dependencies
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
+
+// Register Chart.js components
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-test-engineer-jobs',
@@ -31,8 +34,8 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   Math = Math;
   
   // Chart instances
-  private engineerChart?: any;
-  private statusChart?: any;
+  private engineerChart?: Chart;
+  private statusChart?: Chart;
   
   // Data properties
   jobsList: TestEngineerJobDto[] = [];
@@ -392,7 +395,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
     const inProgressData = engineers.map(engineer => groupedData[engineer]['In-Progress'] || 0);
     const closedData = engineers.map(engineer => groupedData[engineer]['Closed'] || 0);
 
-    const config: any = {
+    const config: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
         labels: engineers,
@@ -400,29 +403,29 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
           {
             label: 'Open',
             data: openData,
-            backgroundColor: '#0d6efd',
-            borderColor: '#0d6efd',
+            backgroundColor: '#6ba6ff',
+            borderColor: '#6ba6ff',
             borderWidth: 1,
-            hoverBackgroundColor: '#0a58ca',
-            hoverBorderColor: '#0a58ca'
+            hoverBackgroundColor: '#5b9eff',
+            hoverBorderColor: '#5b9eff'
           },
           {
             label: 'In-Progress',
             data: inProgressData,
-            backgroundColor: '#fd7e14',
-            borderColor: '#fd7e14',
+            backgroundColor: '#f4993d',
+            borderColor: '#faa24b',
             borderWidth: 1,
-            hoverBackgroundColor: '#e8690b',
-            hoverBorderColor: '#e8690b'
+            hoverBackgroundColor: '#ff9f4d',
+            hoverBorderColor: '#ff9f4d'
           },
           {
             label: 'Closed',
             data: closedData,
-            backgroundColor: '#198754',
-            borderColor: '#198754',
+            backgroundColor: '#38de85',
+            borderColor: '#27de7c',
             borderWidth: 1,
-            hoverBackgroundColor: '#146c43',
-            hoverBorderColor: '#146c43'
+            hoverBackgroundColor: '#4dd88c',
+            hoverBorderColor: '#4bbf7f'
           }
         ]
       },
@@ -467,6 +470,10 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
             borderWidth: 1,
             cornerRadius: 6,
             displayColors: true,
+            filter: (tooltipItem: any) => {
+              // Only show tooltip items where the value is greater than 0
+              return Number(tooltipItem.raw) > 0;
+            },
             callbacks: {
               title: (tooltipItems: any) => {
                 return `Engineer: ${tooltipItems[0].label}`;
@@ -511,22 +518,12 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
               }
             }
           }
-        },
-        onClick: (event: any, elements: any) => {
-          if (elements.length > 0) {
-            const element = elements[0];
-            const datasetIndex = element.datasetIndex;
-            const index = element.index;
-            const engineer = engineers[index];
-            const status = ['Open', 'In-Progress', 'Closed'][datasetIndex];
-            this.onChartClick('engineer', engineer, status);
-          }
         }
       }
     };
 
-    // Chart initialization disabled - chart.js not available
-    // this.engineerChart = new Chart(ctx, config);
+    // Initialize Chart
+    this.engineerChart = new Chart(ctx, config);
   }
 
   private initializeStatusChart(): void {
@@ -546,14 +543,14 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
     const data = this.statusChartData.map(item => item.count);
     const colors = this.statusChartData.map(item => {
       switch (item.status) {
-        case 'Open': return '#0d6efd';
-        case 'In-Progress': return '#fd7e14';
-        case 'Closed': return '#198754';
-        default: return '#6c757d';
+        case 'Open': return '#6ba6ff';
+        case 'In-Progress': return '#f4993d';
+        case 'Closed': return '#38de85';
+        default: return '#9ca5af';
       }
     });
 
-    const config: any = {
+    const config: ChartConfiguration<'doughnut'> = {
       type: 'doughnut',
       data: {
         labels: labels,
@@ -598,7 +595,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
                     const borderColors = Array.isArray(dataset.borderColor) ? dataset.borderColor : [dataset.borderColor];
                     
                     return {
-                      text: `${label} (${value}) - ${percentage}%`,
+                      text: `${label} (${value})`,
                       fillStyle: (bgColors[i] || bgColors[0]) as string,
                       strokeStyle: (borderColors[i] || borderColors[0]) as string,
                       lineWidth: dataset.borderWidth as number,
@@ -636,88 +633,16 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
               label: (context: any) => {
                 const label = context.label || '';
                 const value = context.raw as number;
-                const total = (context.dataset.data as number[]).reduce((sum, val) => sum + val, 0);
-                const percentage = ((value / total) * 100).toFixed(1);
-                return `${label}: ${value} job${value !== 1 ? 's' : ''} (${percentage}%)`;
+                return `${label}: ${value} job${value !== 1 ? 's' : ''}`;
               }
             }
-          }
-        },
-        onClick: (event: any, elements: any) => {
-          if (elements.length > 0) {
-            const element = elements[0];
-            const index = element.index;
-            const status = labels[index];
-            this.onChartClick('status', status);
           }
         }
       }
     };
 
-    // Chart initialization disabled - chart.js not available
-    // this.statusChart = new Chart(ctx, config);
-  }
-
-  onChartClick(type: 'engineer' | 'status', value: string, status?: string): void {
-    // Update filter form based on chart click
-    if (type === 'engineer') {
-      this.filterForm.patchValue({
-        assignedEngineer: value,
-        status: status || ''
-      });
-    } else if (type === 'status') {
-      this.filterForm.patchValue({
-        status: value
-      });
-    }
-
-    // Scroll to table to show filtered results
-    setTimeout(() => {
-      const tableElement = document.querySelector('.data-table');
-      if (tableElement) {
-        tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
-
-    // Show user feedback
-    this.showChartClickMessage(type, value, status);
-  }
-
-  private showChartClickMessage(type: 'engineer' | 'status', value: string, status?: string): void {
-    let message = '';
-    if (type === 'engineer' && status) {
-      message = `Filtered by ${value} - ${status} jobs`;
-    } else if (type === 'engineer') {
-      message = `Filtered by engineer: ${value}`;
-    } else {
-      message = `Filtered by status: ${value}`;
-    }
-
-    // Create a temporary toast notification
-    this.showToast(message);
-  }
-
-  private showToast(message: string): void {
-    // Create toast element
-    const toast = document.createElement('div');
-    toast.className = 'chart-filter-toast';
-    toast.innerHTML = `
-      <i class="bi bi-funnel me-2"></i>
-      ${message}
-      <button type="button" class="btn-close btn-close-white ms-2" onclick="this.parentElement.remove()">
-        <span aria-hidden="true">&times;</span>
-      </button>
-    `;
-    
-    // Add to body
-    document.body.appendChild(toast);
-    
-    // Auto remove after 4 seconds
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.parentNode.removeChild(toast);
-      }
-    }, 4000);
+    // Initialize Chart
+    this.statusChart = new Chart(ctx, config);
   }
 
   clearChartFilters(): void {

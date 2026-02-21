@@ -80,7 +80,6 @@
           <div class="card p-3 chart-card interactive-chart">
             <div class="chart-title mb-3">
               Engineer vs Jobs (by Status)
-              <small class="text-muted d-block mt-1">Click on bars to filter table</small>
             </div>
             <div *ngIf="engineerChartData.length > 0; else noEngineerData" class="chart-container">
               <canvas #engineerChart id="engineerChart" height="300"></canvas>
@@ -97,7 +96,6 @@
           <div class="card p-3 chart-card interactive-chart">
             <div class="chart-title mb-3">
               Jobs by Status
-              <small class="text-muted d-block mt-1">Click on segments to filter</small>
             </div>
             <div *ngIf="statusChartData.length > 0; else noStatusData" class="chart-container">
               <canvas #statusChart id="statusChart" height="250"></canvas>
