@@ -4158,8 +4158,7 @@
             ></i>
           </div>
 
-          <div class="ups-section-content" [class.show]="showCapacitor"
-            [class.calendar-open]="showDcCapsYearCalendar || showAcInputCapsYearCalendar || showAcOutputCapsYearCalendar || showCommCapsYearCalendar || showFansYearCalendar">
+          <div class="ups-section-content" [class.show]="showCapacitor">
             <form [formGroup]="capacitorForm" class="ups-form">
               <div class="measurements-grid">
                 <div class="measurement-card">
@@ -4181,67 +4180,7 @@
                         </select>
                       </div>
                       <div class="col-6">
-                        <div class="position-relative">
-                          <input
-                            type="text"
-                            class="form-control"
-                            id="dcCapsYear"
-                            formControlName="dcCapsAge"
-                            placeholder="Year"
-                            maxlength="4"
-                            (focus)="toggleDcCapsYearCalendar($event)"
-                          />
-                          
-                          <!-- Year calendar toggle button -->
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleDcCapsYearCalendar($event)"
-                            [title]="showDcCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
-                          >
-                            <i class="bi bi-calendar-date"></i>
-                          </button>
-                          
-                          <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown dc-caps-dropdown" *ngIf="showDcCapsYearCalendar" (click)="$event.stopPropagation()">
-                            <div class="calendar-header">
-                              <div class="year-navigation-header" (click)="$event.stopPropagation()">
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateDcCapsYearRange('prev'); $event.stopPropagation()"
-                                  title="Previous years"
-                                  [disabled]="dcCapsYearRangeStart <= minYear"
-                                >
-                                  <i class="bi bi-chevron-double-left"></i>
-                                </button>
-                                <span class="year-range-display">{{ getDcCapsYearRange() }}</span>
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateDcCapsYearRange('next'); $event.stopPropagation()"
-                                  title="Next years"
-                                  [disabled]="dcCapsYearRangeEnd >= maxYear"
-                                >
-                                  <i class="bi bi-chevron-double-right"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <div class="year-list-scroll" [attr.data-change-counter]="dcCapsYearRangeChangeCounter">
-                              <button
-                                type="button"
-                                *ngFor="let year of currentDcCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-list-item"
-                                [class.btn-primary]="isDcCapsYearSelected(year)"
-                                [class.btn-outline-primary]="!isDcCapsYearSelected(year)"
-                                (click)="onDcCapsYearSelect(year)"
-                                title="Select {{ year }}"
-                              >
-                                {{ year }}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                        <input type="date" class="form-control" formControlName="dcCapsAge" placeholder="Select date">
                       </div>
                     </div>
                   </div>
@@ -4266,67 +4205,7 @@
                         </select>
                       </div>
                       <div class="col-6">
-                        <div class="position-relative">
-                          <input
-                            type="text"
-                            class="form-control"
-                            id="acInputCapsYear"
-                            formControlName="acInputCapsAge"
-                            placeholder="Year"
-                            maxlength="4"
-                            (focus)="toggleAcInputCapsYearCalendar($event)"
-                          />
-                          
-                          <!-- Year calendar toggle button -->
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleAcInputCapsYearCalendar($event)"
-                            [title]="showAcInputCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
-                          >
-                            <i class="bi bi-calendar-date"></i>
-                          </button>
-                          
-                          <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown ac-input-caps-dropdown" *ngIf="showAcInputCapsYearCalendar" (click)="$event.stopPropagation()">
-                            <div class="calendar-header">
-                              <div class="year-navigation-header" (click)="$event.stopPropagation()">
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateAcInputCapsYearRange('prev'); $event.stopPropagation()"
-                                  title="Previous years"
-                                  [disabled]="acInputCapsYearRangeStart <= minYear"
-                                >
-                                  <i class="bi bi-chevron-double-left"></i>
-                                </button>
-                                <span class="year-range-display">{{ getAcInputCapsYearRange() }}</span>
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateAcInputCapsYearRange('next'); $event.stopPropagation()"
-                                  title="Next years"
-                                  [disabled]="acInputCapsYearRangeEnd >= maxYear"
-                                >
-                                  <i class="bi bi-chevron-double-right"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <div class="year-list-scroll" [attr.data-change-counter]="acInputCapsYearRangeChangeCounter">
-                              <button
-                                type="button"
-                                *ngFor="let year of currentAcInputCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-list-item"
-                                [class.btn-primary]="isAcInputCapsYearSelected(year)"
-                                [class.btn-outline-primary]="!isAcInputCapsYearSelected(year)"
-                                (click)="onAcInputCapsYearSelect(year)"
-                                title="Select {{ year }}"
-                              >
-                                {{ year }}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                        <input type="date" class="form-control" formControlName="acInputCapsAge" placeholder="Select date">
                       </div>
                     </div>
                   </div>
@@ -4351,67 +4230,7 @@
                         </select>
                       </div>
                       <div class="col-6">
-                        <div class="position-relative">
-                          <input
-                            type="text"
-                            class="form-control"
-                            id="acOutputCapsYear"
-                            formControlName="acOutputCapsAge"
-                            placeholder="Year"
-                            maxlength="4"
-                            (focus)="toggleAcOutputCapsYearCalendar($event)"
-                          />
-                          
-                          <!-- Year calendar toggle button -->
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleAcOutputCapsYearCalendar($event)"
-                            [title]="showAcOutputCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
-                          >
-                            <i class="bi bi-calendar-date"></i>
-                          </button>
-                          
-                          <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown ac-output-caps-dropdown" *ngIf="showAcOutputCapsYearCalendar" (click)="$event.stopPropagation()">
-                            <div class="calendar-header">
-                              <div class="year-navigation-header" (click)="$event.stopPropagation()">
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateAcOutputCapsYearRange('prev'); $event.stopPropagation()"
-                                  title="Previous years"
-                                  [disabled]="acOutputCapsYearRangeStart <= minYear"
-                                >
-                                  <i class="bi bi-chevron-double-left"></i>
-                                </button>
-                                <span class="year-range-display">{{ getAcOutputCapsYearRange() }}</span>
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateAcOutputCapsYearRange('next'); $event.stopPropagation()"
-                                  title="Next years"
-                                  [disabled]="acOutputCapsYearRangeEnd >= maxYear"
-                                >
-                                  <i class="bi bi-chevron-double-right"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <div class="year-list-scroll" [attr.data-change-counter]="acOutputCapsYearRangeChangeCounter">
-                              <button
-                                type="button"
-                                *ngFor="let year of currentAcOutputCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-list-item"
-                                [class.btn-primary]="isAcOutputCapsYearSelected(year)"
-                                [class.btn-outline-primary]="!isAcOutputCapsYearSelected(year)"
-                                (click)="onAcOutputCapsYearSelect(year)"
-                                title="Select {{ year }}"
-                              >
-                                {{ year }}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                        <input type="date" class="form-control" formControlName="acOutputCapsAge" placeholder="Select date">
                       </div>
                     </div>
                   </div>
@@ -4436,67 +4255,7 @@
                         </select>
                       </div>
                       <div class="col-6">
-                        <div class="position-relative">
-                          <input
-                            type="text"
-                            class="form-control"
-                            id="commCapsYear"
-                            formControlName="commCapsAge"
-                            placeholder="Year"
-                            maxlength="4"
-                            (focus)="toggleCommCapsYearCalendar($event)"
-                          />
-                          
-                          <!-- Year calendar toggle button -->
-                          <button
-                            type="button"
-                            class="btn btn-sm btn-primary calendar-toggle-btn"
-                            (click)="toggleCommCapsYearCalendar($event)"
-                            [title]="showCommCapsYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
-                          >
-                            <i class="bi bi-calendar-date"></i>
-                          </button>
-                          
-                          <!-- Year Calendar Picker -->
-                          <div class="compact-calendar-dropdown comm-caps-dropdown" *ngIf="showCommCapsYearCalendar" (click)="$event.stopPropagation()">
-                            <div class="calendar-header">
-                              <div class="year-navigation-header" (click)="$event.stopPropagation()">
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateCommCapsYearRange('prev'); $event.stopPropagation()"
-                                  title="Previous years"
-                                  [disabled]="commCapsYearRangeStart <= minYear"
-                                >
-                                  <i class="bi bi-chevron-double-left"></i>
-                                </button>
-                                <span class="year-range-display">{{ getCommCapsYearRange() }}</span>
-                                <button 
-                                  type="button" 
-                                  class="btn btn-sm btn-link text-white year-nav-btn"
-                                  (click)="navigateCommCapsYearRange('next'); $event.stopPropagation()"
-                                  title="Next years"
-                                  [disabled]="commCapsYearRangeEnd >= maxYear"
-                                >
-                                  <i class="bi bi-chevron-double-right"></i>
-                                </button>
-                              </div>
-                            </div>
-                            <div class="year-list-scroll" [attr.data-change-counter]="commCapsYearRangeChangeCounter">
-                              <button
-                                type="button"
-                                *ngFor="let year of currentCommCapsYears; trackBy: trackByYear"
-                                class="btn btn-sm year-list-item"
-                                [class.btn-primary]="isCommCapsYearSelected(year)"
-                                [class.btn-outline-primary]="!isCommCapsYearSelected(year)"
-                                (click)="onCommCapsYearSelect(year)"
-                                title="Select {{ year }}"
-                              >
-                                {{ year }}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
+                        <input type="date" class="form-control" formControlName="commCapsAge" placeholder="Select date">
                       </div>
                     </div>
                   </div>
@@ -4511,67 +4270,14 @@
                     <label class="form-label"
                       >Fans DateCode:</label
                     >
-                    <div class="position-relative">
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="fansYear"
-                        formControlName="fansYear"
-                        placeholder="Enter year (e.g., 2024, 2025...)"
-                        maxlength="4"
-                        (focus)="toggleFansYearCalendar($event)"
-                      />
-                      
-                      <!-- Year calendar toggle button -->
-                      <button
-                        type="button"
-                        class="btn btn-sm btn-primary calendar-toggle-btn"
-                        (click)="toggleFansYearCalendar($event)"
-                        [title]="showFansYearCalendar ? 'Hide Year Picker' : 'Show Year Picker'"
-                      >
-                        <i class="bi bi-calendar-date"></i>
-                      </button>
-                      
-                      <!-- Year Calendar Picker -->
-                      <div class="compact-calendar-dropdown fans-year-dropdown" *ngIf="showFansYearCalendar" (click)="$event.stopPropagation()">
-                        <div class="calendar-header">
-                          <div class="year-navigation-header" (click)="$event.stopPropagation()">
-                            <button 
-                              type="button" 
-                              class="btn btn-sm btn-link text-white year-nav-btn"
-                              (click)="navigateFansYearRange('prev'); $event.stopPropagation()"
-                              title="Previous years"
-                              [disabled]="fansYearRangeStart <= minYear"
-                            >
-                              <i class="bi bi-chevron-double-left"></i>
-                            </button>
-                            <span class="year-range-display">{{ getFansYearRange() }}</span>
-                            <button 
-                              type="button" 
-                              class="btn btn-sm btn-link text-white year-nav-btn"
-                              (click)="navigateFansYearRange('next'); $event.stopPropagation()"
-                              title="Next years"
-                              [disabled]="fansYearRangeEnd >= maxYear"
-                            >
-                              <i class="bi bi-chevron-double-right"></i>
-                            </button>
-                          </div>
-                        </div>
-                        <div class="year-list-scroll" [attr.data-change-counter]="fansYearRangeChangeCounter">
-                          <button
-                            type="button"
-                            *ngFor="let year of currentFansYears; trackBy: trackByYear"
-                            class="btn btn-sm year-list-item"
-                            [class.btn-primary]="isFansYearSelected(year)"
-                            [class.btn-outline-primary]="!isFansYearSelected(year)"
-                            (click)="onFansYearSelect(year)"
-                            title="Select {{ year }}"
-                          >
-                            {{ year }}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="fansYear"
+                      formControlName="fansYear"
+                      placeholder="Enter year (e.g., 2024, 2025...)"
+                      maxlength="4"
+                    />
                   </div>
                 </div>
               </div>
