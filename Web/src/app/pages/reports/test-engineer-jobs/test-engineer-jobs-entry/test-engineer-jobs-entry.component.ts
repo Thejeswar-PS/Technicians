@@ -49,7 +49,6 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   ];
   
   locationOptions = [
-    { value: '', label: '-- Select Location --' },
     { value: 'DC1', label: 'DC1' },
     { value: 'DC2', label: 'DC2' }
   ];
@@ -78,15 +77,20 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   private buildForm(): void {
     const today = new Date().toISOString().split('T')[0];
     
+    // Form validation rules match legacy TestEngineerJobsEntry.aspx:
+    // ALWAYS REQUIRED: assignedEngineer, workType, projectedDate
+    // CONDITIONALLY REQUIRED: emergencyETA (if workType='Emergency'), 
+    //                        completedDate & qcCheckboxes (if status='Closed')
+    // OPTIONAL: serialNo, location (defaults to DC1), notes
     this.entryForm = this.fb.group({
       rowID: [0],
       jobNumber: [''],
-      serialNo: ['', Validators.required],
-      workType: ['', Validators.required],
+      serialNo: [''], // Optional - no validation required
+      workType: ['', Validators.required], // Always required
       emergencyETA: [''],
-      assignedEngineer: ['', Validators.required],
-      location: ['', Validators.required],
-      projectedDate: [today, Validators.required],
+      assignedEngineer: ['', Validators.required], // Always required
+      location: ['DC1'], // Optional with default, no validation required
+      projectedDate: [today, Validators.required], // Always required
       completedDate: [''],
       descriptionNotes: [''],
       status: ['Open', Validators.required],

@@ -95,14 +95,10 @@
                   <label class="field-label">
                     <i class="bi bi-upc field-icon"></i>
                     <span>Serial No</span>
-                    <span class="required-indicator">*</span>
                   </label>
                 </div>
                 <div class="field-input">
                   <input type="text" class="modern-input" formControlName="serialNo" placeholder="Enter serial number">
-                  <div *ngIf="entryForm.get('serialNo')?.invalid && entryForm.get('serialNo')?.touched" class="field-error">
-                    Serial number is required
-                  </div>
                 </div>
               </div>
 
@@ -134,7 +130,6 @@
                   <label class="field-label">
                     <i class="bi bi-geo-alt field-icon"></i>
                     <span>Location</span>
-                    <span class="required-indicator">*</span>
                   </label>
                 </div>
                 <div class="field-input">
@@ -143,9 +138,6 @@
                       {{ option.label }}
                     </option>
                   </select>
-                  <div *ngIf="entryForm.get('location')?.invalid && entryForm.get('location')?.touched" class="field-error">
-                    Location is required
-                  </div>
                 </div>
               </div>
 
