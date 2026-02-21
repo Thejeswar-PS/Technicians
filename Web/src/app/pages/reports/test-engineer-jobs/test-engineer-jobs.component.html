@@ -9,11 +9,16 @@
 
   <!-- Main content -->
   <div *ngIf="!isLoading" class="container-fluid px-3 px-lg-4 mt-3 mb-4">
+
+    <!-- Page Title -->
+    <div class="text-center mb-4">
+      <h2 class="fw-bold text-primary mb-02 display-4.9">Engineer Testing List</h2>
+    </div>
+
     <div class="card p-3">
 
       <!-- HEADER -->
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <div class="page-title">Engineer Testing List</div>
+      <div class="d-flex justify-content-end align-items-center mb-2">
         <button type="button" class="btn btn-new" (click)="addNewJob()">+ New Job</button>
       </div>
 
@@ -110,80 +115,111 @@
       <!-- TABLE -->
       <div *ngIf="paginatedData.length > 0" class="table-responsive">
         <table id="gvJobs" class="table table-bordered table-hover table-sm modern-table">
-          <thead class="table-header">
+          <thead class="table-light">
             <tr>
-              <th class="header-cell sortable-header" (click)="onSort('jobNumber')" [class.active]="sortColumn === 'jobNumber'">
-                <div class="header-content">
-                  <span class="header-text">Job #</span>
-                  <i [ngClass]="'bi ' + getSortIcon('jobNumber')" class="sort-icon ms-1"></i>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('jobNumber')" [class.active]="sortColumn === 'jobNumber'">
+                <span class="header-cell">
+                  Job #
+                  <span class="sort-icons" [class.active]="sortColumn === 'jobNumber'">
+                    <i class="up" [class.on]="sortColumn === 'jobNumber' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'jobNumber' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell sortable-header" (click)="onSort('workType')" [class.active]="sortColumn === 'workType'">
-                <div class="header-content">
-                  <span class="header-text">Work Type</span>
-                  <i [ngClass]="'bi ' + getSortIcon('workType')" class="sort-icon ms-1"></i>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('serialNo')" [class.active]="sortColumn === 'serialNo'">
+                <span class="header-cell">
+                  SERIAL NO
+                  <span class="sort-icons" [class.active]="sortColumn === 'serialNo'">
+                    <i class="up" [class.on]="sortColumn === 'serialNo' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'serialNo' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell sortable-header" (click)="onSort('location')" [class.active]="sortColumn === 'location'">
-                <div class="header-content">
-                  <span class="header-text">Location</span>
-                  <i [ngClass]="'bi ' + getSortIcon('location')" class="sort-icon ms-1"></i>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('workType')" [class.active]="sortColumn === 'workType'">
+                <span class="header-cell">
+                  Work Type
+                  <span class="sort-icons" [class.active]="sortColumn === 'workType'">
+                    <i class="up" [class.on]="sortColumn === 'workType' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'workType' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell sortable-header" (click)="onSort('assignedEngineer')" [class.active]="sortColumn === 'assignedEngineer'">
-                <div class="header-content">
-                  <span class="header-text">Engineer</span>
-                  <i [ngClass]="'bi ' + getSortIcon('assignedEngineer')" class="sort-icon ms-1"></i>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('location')" [class.active]="sortColumn === 'location'">
+                <span class="header-cell">
+                  Location
+                  <span class="sort-icons" [class.active]="sortColumn === 'location'">
+                    <i class="up" [class.on]="sortColumn === 'location' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'location' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell sortable-header" (click)="onSort('status')" [class.active]="sortColumn === 'status'">
-                <div class="header-content">
-                  <span class="header-text">Status</span>
-                  <i [ngClass]="'bi ' + getSortIcon('status')" class="sort-icon ms-1"></i>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('assignedEngineer')" [class.active]="sortColumn === 'assignedEngineer'">
+                <span class="header-cell">
+                  Engineer
+                  <span class="sort-icons" [class.active]="sortColumn === 'assignedEngineer'">
+                    <i class="up" [class.on]="sortColumn === 'assignedEngineer' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'assignedEngineer' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell sortable-header" (click)="onSort('projectedDate')" [class.active]="sortColumn === 'projectedDate'">
-                <div class="header-content">
-                  <span class="header-text">Projected</span>
-                  <i [ngClass]="'bi ' + getSortIcon('projectedDate')" class="sort-icon ms-1"></i>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('status')" [class.active]="sortColumn === 'status'">
+                <span class="header-cell">
+                  Status
+                  <span class="sort-icons" [class.active]="sortColumn === 'status'">
+                    <i class="up" [class.on]="sortColumn === 'status' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'status' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell sortable-header" (click)="onSort('createdOn')" [class.active]="sortColumn === 'createdOn'">
-                <div class="header-content">
-                  <span class="header-text">Completed</span>
-                  <i [ngClass]="'bi ' + getSortIcon('createdOn')" class="sort-icon ms-1"></i>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('projectedDate')" [class.active]="sortColumn === 'projectedDate'">
+                <span class="header-cell">
+                  Projected
+                  <span class="sort-icons" [class.active]="sortColumn === 'projectedDate'">
+                    <i class="up" [class.on]="sortColumn === 'projectedDate' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'projectedDate' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell">
-                <div class="header-content">
-                  <span class="header-text">ETA</span>
-                </div>
+              <th class="fw-bold sortable" (click)="onSort('completedDate')" [class.active]="sortColumn === 'completedDate'">
+                <span class="header-cell">
+                  Completed
+                  <span class="sort-icons" [class.active]="sortColumn === 'completedDate'">
+                    <i class="up" [class.on]="sortColumn === 'completedDate' && sortDirection === 'ASC'"></i>
+                    <i class="down" [class.on]="sortColumn === 'completedDate' && sortDirection === 'DESC'"></i>
+                  </span>
+                </span>
               </th>
-              <th class="header-cell">
-                <div class="header-content">
-                  <span class="header-text">Cleaned</span>
-                </div>
+              <th class="fw-bold">
+                <span class="header-cell">
+                  ETA
+                </span>
               </th>
-              <th class="header-cell">
-                <div class="header-content">
-                  <span class="header-text">Torque</span>
-                </div>
+              <th class="fw-bold">
+                <span class="header-cell">
+                  Cleaned
+                </span>
               </th>
-              <th class="header-cell">
-                <div class="header-content">
-                  <span class="header-text">Inspected</span>
-                </div>
+              <th class="fw-bold">
+                <span class="header-cell">
+                  Torque
+                </span>
               </th>
-              <th class="header-cell">
-                <div class="header-content">
-                  <span class="header-text">Action</span>
-                </div>
+              <th class="fw-bold">
+                <span class="header-cell">
+                  Inspected
+                </span>
+              </th>
+              <th class="fw-bold">
+                <span class="header-cell">
+                  Action
+                </span>
               </th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let job of paginatedData" [ngClass]="getRowClass(job)">
               <td class="job-number-cell">{{ job.jobNumber }}</td>
+              <td class="serial-no-cell">{{ job.serialNo }}</td>
               <td>{{ job.workType }}</td>
               <td>{{ job.location }}</td>
               <td>{{ job.assignedEngineer }}</td>
@@ -198,16 +234,18 @@
                 </span>
               </td>
               <td>{{ formatDate(job.projectedDate) }}</td>
-              <td>{{ formatDate(job.createdOn) }}</td>
-              <td>{{ formatDateTime(job.projectedDate) }}</td>
-              <td><input type="checkbox" disabled></td>
-              <td><input type="checkbox" disabled></td>
-              <td><input type="checkbox" disabled></td>
+              <td>{{ formatDate(job.completedDate) }}</td>
+              <td>{{ formatDateTime(job.emergencyETA) }}</td>
+              <td><input type="checkbox" [checked]="job.qC_Cleaned" disabled></td>
+              <td><input type="checkbox" [checked]="job.qC_Torque" disabled></td>
+              <td><input type="checkbox" [checked]="job.qC_Inspected" disabled></td>
               <td>
                 <button type="button" 
-                        class="btn btn-outline-primary btn-edit" 
-                        (click)="editJob(job.jobNumber)">
-                  Edit
+                        class="btn btn-primary btn-sm edit-btn" 
+                        style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"
+                        (click)="editJob(job.jobNumber)"
+                        title="Edit Job">
+                  <i class="bi bi-pencil-square"></i>
                 </button>
               </td>
             </tr>

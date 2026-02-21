@@ -11,15 +11,21 @@ export interface TestEngineerJobsRequestDto {
 
 export interface TestEngineerJobDto {
   rowID?: number;
+  serialNo: string;
   jobNumber: string;
   assignedEngineer: string;
   status: string;
   location: string;
   workType: string;
   projectedDate: string | null;
+  completedDate: string | null;
+  emergencyETA: string | null;
   createdOn: string | null;
   description: string;
   customer: string;
+  qC_Cleaned: boolean;
+  qC_Torque: boolean;
+  qC_Inspected: boolean;
   isOverdue: boolean;
   isEmergency: boolean;
 }

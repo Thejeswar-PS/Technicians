@@ -2,6 +2,7 @@ using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using System.Transactions;
 using Technicians.Api.Models;
+using Technicians.Api.Repositories;
 using Technicians.Api.Repository;
 
 namespace Technicians.Api.Controllers
@@ -44,15 +45,25 @@ namespace Technicians.Api.Controllers
                     request.Engineer, request.Status, request.Location, request.Search);
 
                 var result = await _repository.GetTestEngineerJobsAsync(request);
+                
+                // Add detailed logging for debugging
+                _logger.LogInformation("Repository returned: Success={Success}, Message='{Message}', RecordCount={RecordCount}", 
+                    result.Success, result.Message, result.Data?.Count ?? 0);
+                
+                if (!result.Success)
+                {
+                    _logger.LogWarning("Repository failed with message: {Message}", result.Message);
+                }
+                
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting test engineer jobs");
+                _logger.LogError(ex, "Error getting test engineer jobs: {Message}", ex.Message);
                 return StatusCode(500, new TestEngineerJobsResponse
                 {
                     Success = false,
-                    Message = "Failed to retrieve test engineer jobs"
+                    Message = $"Failed to retrieve test engineer jobs: {ex.Message}"
                 });
             }
         }
@@ -224,54 +235,87 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        [HttpGet("debug")]
-        public async Task<ActionResult> DebugDatabase()
-        {
-            try
-            {
-                // Using ReadOnlyTransactionScope to ensure the connection is read-only
-                using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
-                using var connection = new Microsoft.Data.SqlClient.SqlConnection("Server=DCG-SQL-DEV;Database=DCGETech;User Id=sa;Password=DcG-S@l-D3v-22!!;MultipleActiveResultSets=True;Encrypt=False");
-                await connection.OpenAsync();
+        //[HttpGet("debug")]
+        //public async Task<ActionResult> DebugDatabase()
+        //{
+        //    try
+        //    {
+        //        // Using ReadOnlyTransactionScope to ensure the connection is read-only
+        //        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+        //        using var connection = new Microsoft.Data.SqlClient.SqlConnection("Server=DCG-SQL-DEV;Database=DCGETech;User Id=sa;Password=DcG-S@l-D3v-22!!;MultipleActiveResultSets=True;Encrypt=False");
+        //        await connection.OpenAsync();
                 
-                // Check if table exists
-                var tableExists = await connection.QuerySingleOrDefaultAsync<int?>(
-                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TestEngineerJobs'"
-                ) ?? 0;
+        //        // Check if table exists
+        //        var tableExists = await connection.QuerySingleOrDefaultAsync<int?>(
+        //            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TestEngineerJobs'"
+        //        ) ?? 0;
                 
-                if (tableExists == 0)
-                {
-                    return Ok(new { 
-                        success = false, 
-                        message = "TestEngineerJobs table does not exist in DCGETech database",
-                        database = "DCGETech"
-                    });
-                }
+        //        if (tableExists == 0)
+        //        {
+        //            return Ok(new { 
+        //                success = false, 
+        //                message = "TestEngineerJobs table does not exist in DCGETech database",
+        //                database = "DCGETech"
+        //            });
+        //        }
                 
-                // Check row count
-                var rowCount = await connection.QuerySingleAsync<int>("SELECT COUNT(*) FROM TestEngineerJobs");
+        //        // Check row count
+        //        var rowCount = await connection.QuerySingleAsync<int>("SELECT COUNT(*) FROM TestEngineerJobs");
                 
-                // Get sample data
-                var sampleData = await connection.QueryAsync("SELECT TOP 3 * FROM TestEngineerJobs");
+        //        // Get sample data
+        //        var sampleData = await connection.QueryAsync("SELECT TOP 3 * FROM TestEngineerJobs");
                 
-                scope.Complete(); // Mark the transaction scope as complete
+        //        scope.Complete(); // Mark the transaction scope as complete
                 
-                return Ok(new { 
-                    success = true,
-                    tableExists = true,
-                    rowCount = rowCount,
-                    sampleData = sampleData,
-                    database = "DCGETech"
-                });
-            }
-            catch (Exception ex)
-            {
-                return Ok(new { 
-                    success = false, 
-                    error = ex.Message,
-                    connectionString = "Server=DCG-SQL-DEV;Database=DCGETech;..."
-                });
-            }
-        }
+        //        return Ok(new { 
+        //            success = true,
+        //            tableExists = true,
+        //            rowCount = rowCount,
+        //            sampleData = sampleData,
+        //            database = "DCGETech"
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Ok(new { 
+        //            success = false, 
+        //            error = ex.Message,
+        //            connectionString = "Server=DCG-SQL-DEV;Database=DCGETech;..."
+        //        });
+        //    }
+        //}
+
+        //  endpoint to test the repository directly
+        //[HttpGet("test-connection")]
+        //public async Task<ActionResult> TestConnection()
+        //{
+        //    try
+        //    {
+        //        _logger.LogInformation("Testing database connection and repository...");
+                
+        //        // Test the repository method directly
+        //        var testRequest = new TestEngineerJobsRequestDto();
+        //        var result = await _repository.GetTestEngineerJobsAsync(testRequest);
+                
+        //        return Ok(new
+        //        {
+        //            success = true,
+        //            repositorySuccess = result.Success,
+        //            message = result.Message,
+        //            recordCount = result.Data?.Count ?? 0,
+        //            totalRecords = result.TotalRecords
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error testing connection: {Message}", ex.Message);
+        //        return Ok(new
+        //        {
+        //            success = false,
+        //            error = ex.Message,
+        //            stackTrace = ex.StackTrace
+        //        });
+        //    }
+        //}
     }
 }

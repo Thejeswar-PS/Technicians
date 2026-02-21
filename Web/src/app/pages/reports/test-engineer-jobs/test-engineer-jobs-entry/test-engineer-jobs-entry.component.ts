@@ -388,6 +388,11 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Navigation method
+  goBack(): void {
+    this.router.navigate(['/reports/test-engineer-jobs']);
+  }
+
   // Utility methods
   private formatDate(dateString: string): string {
     if (!dateString) return '';

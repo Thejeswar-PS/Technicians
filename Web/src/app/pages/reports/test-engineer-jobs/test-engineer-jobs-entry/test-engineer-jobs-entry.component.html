@@ -10,7 +10,7 @@
 
   <!-- Header Section -->
   <div class="test-engineer-jobs-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button type="button" class="btn btn-sm btn-primary test-engineer-jobs-header__back" [routerLink]="['../../']" [disabled]="isLoading">
+    <button type="button" class="btn btn-sm btn-primary test-engineer-jobs-header__back" (click)="goBack()" [disabled]="isLoading">
       <i class="bi bi-arrow-left me-2"></i>
       Back
     </button>
@@ -314,7 +314,7 @@
                 </span>
               </button>
               
-              <button type="button" class="btn btn-secondary" [routerLink]="['../../']">
+              <button type="button" class="btn btn-secondary" (click)="goBack()">
                 <i class="bi bi-arrow-left me-2"></i>Back
               </button>
             </div>
