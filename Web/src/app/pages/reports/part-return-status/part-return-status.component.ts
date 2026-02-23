@@ -37,8 +37,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   partReturnStatusList: PartReturnStatusItem[] = [];
   inventoryUsers: InventoryUser[] = [];
-  sortedColumn: string = '';
-  sortDirection: number = 1;
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
   isLoading: boolean = false;
   isLoadingInventoryUsers: boolean = false;
   currentUserStatus: EmployeeStatusDto | null = null;
@@ -796,12 +796,12 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     });
   }
 
-  sortTable(column: string): void {
-    if (this.sortedColumn === column) {
-      this.sortDirection = -this.sortDirection;
+  sortData(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
-      this.sortedColumn = column;
-      this.sortDirection = 1;
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
     }
 
     this.partReturnStatusList.sort((a: any, b: any) => {
@@ -810,8 +810,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
       // Handle null or undefined
       if (aValue == null && bValue == null) return 0;
-      if (aValue == null) return 1 * this.sortDirection;
-      if (bValue == null) return -1 * this.sortDirection;
+      if (aValue == null) return this.sortDirection === 'asc' ? 1 : -1;
+      if (bValue == null) return this.sortDirection === 'asc' ? -1 : 1;
 
       // Handle different data types
       if (column === 'totalQty' || column === 'faultyParts' || column === 'unusedParts') {
@@ -825,27 +825,44 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         bValue = bValue.toLowerCase();
       }
 
-      if (aValue < bValue) return -1 * this.sortDirection;
-      if (aValue > bValue) return 1 * this.sortDirection;
-      return 0;
+      let comparison = 0;
+      if (aValue > bValue) {
+        comparison = 1;
+      } else if (aValue < bValue) {
+        comparison = -1;
+      }
+
+      return this.sortDirection === 'asc' ? comparison : -comparison;
     });
 
     this.currentPage = 1;
     this.updateDisplayedData();
   }
 
-  sortIcon(column: string): string {
-    if (this.sortedColumn === column) {
-      return this.sortDirection === 1 ? 'bi-arrow-up' : 'bi-arrow-down';
+  getSortIcon(column: string): string {
+    if (this.sortColumn !== column) {
+      return 'fa-sort';
     }
-    return 'bi-arrow-down-up';
+    return this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
   }
 
   getSortClass(column: string): string {
-    if (this.sortedColumn === column) {
-      return this.sortDirection === 1 ? 'sorted-asc' : 'sorted-desc';
+    if (this.sortColumn === column) {
+      return this.sortDirection === 'asc' ? 'sorted-asc' : 'sorted-desc';
     }
     return '';
+  }
+
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+      this.updateDisplayedData();
+    }
+  }
+
+  getTotalPages(): number {
+    return Math.ceil(this.totalRecords / this.pageSize);
   }
 
   exportToExcel(): void {

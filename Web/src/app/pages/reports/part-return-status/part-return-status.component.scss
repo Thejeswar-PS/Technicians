@@ -1,4 +1,88 @@
 // Modern Parts Return Status Component - Matching Parts Request Status Design
+
+/* EXACT ORDER REQUEST STATUS FONT IMPLEMENTATION */
+.parts-request-container {
+  /* ================================
+     TABLE BASE
+  ================================= */
+  table {
+    width: 100%;
+    min-width: 1200px; // Ensure minimum width to prevent crushing
+    border-collapse: collapse;
+    table-layout: fixed; // Use fixed layout for better control
+    font-size: 14px;
+  }
+
+  /* ================================
+     TABLE HEADER - SAME AS ORDER REQUEST STATUS
+  ================================= */
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: linear-gradient(180deg, #5f82f3, #5a7bf0);
+    color: #ffffff;
+    font-weight: 600;
+    padding: 10px 12px;
+    text-align: center;
+    white-space: nowrap;
+    border-bottom: 2px solid #dee2e6;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    // Specific column widths to prevent overlapping
+    &:nth-child(1) { width: 120px; } // Service Call ID
+    &:nth-child(2) { width: 140px; } // Part Number  
+    &:nth-child(3) { width: 140px; } // DC Part Number
+    &:nth-child(4) { width: 200px; } // Description
+    &:nth-child(5) { width: 100px; } // Total Qty
+    &:nth-child(6) { width: 80px; }  // Faulty
+    &:nth-child(7) { width: 80px; }  // Unused
+    &:nth-child(8) { width: 140px; } // Technician
+    &:nth-child(9) { width: 160px; } // Last Modified
+  }
+
+  /* ================================
+     TABLE BODY
+  ================================= */
+  tbody tr {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #f8f9fa;
+    }
+  }
+
+  tbody td {
+    padding: 10px 12px;
+    vertical-align: middle;
+    white-space: normal;
+    word-break: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    
+    // Match header column widths
+    &:nth-child(1) { width: 120px; } // Service Call ID
+    &:nth-child(2) { width: 140px; } // Part Number  
+    &:nth-child(3) { width: 140px; } // DC Part Number
+    &:nth-child(4) { width: 200px; } // Description
+    &:nth-child(5) { width: 100px; } // Total Qty
+    &:nth-child(6) { width: 80px; }  // Faulty
+    &:nth-child(7) { width: 80px; }  // Unused
+    &:nth-child(8) { width: 140px; } // Technician
+    &:nth-child(9) { width: 160px; } // Last Modified
+  }
+
+  /* ================================
+     TABLE WRAPPER
+  ================================= */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 70vh;
+  }
+}
 .parts-request-container {
   background: #f8f9fa;
   min-height: 100vh;
@@ -854,9 +938,83 @@
 }
 
 // Responsive Design
+@media (max-width: 1400px) {
+  .parts-request-container {
+    table {
+      min-width: 1000px; // Adjust minimum width for medium screens
+    }
+    
+    thead th {
+      font-size: 12px;
+      padding: 8px 10px;
+      
+      // Adjust column widths for medium screens
+      &:nth-child(1) { width: 110px; } // Service Call ID
+      &:nth-child(2) { width: 120px; } // Part Number  
+      &:nth-child(3) { width: 120px; } // DC Part Number
+      &:nth-child(4) { width: 180px; } // Description
+      &:nth-child(5) { width: 85px; }  // Total Qty
+      &:nth-child(6) { width: 70px; }  // Faulty
+      &:nth-child(7) { width: 70px; }  // Unused
+      &:nth-child(8) { width: 120px; } // Technician
+      &:nth-child(9) { width: 140px; } // Last Modified
+    }
+    
+    tbody td {
+      // Match header column widths for medium screens
+      &:nth-child(1) { width: 110px; } // Service Call ID
+      &:nth-child(2) { width: 120px; } // Part Number  
+      &:nth-child(3) { width: 120px; } // DC Part Number
+      &:nth-child(4) { width: 180px; } // Description
+      &:nth-child(5) { width: 85px; }  // Total Qty
+      &:nth-child(6) { width: 70px; }  // Faulty
+      &:nth-child(7) { width: 70px; }  // Unused
+      &:nth-child(8) { width: 120px; } // Technician
+      &:nth-child(9) { width: 140px; } // Last Modified
+    }
+  }
+}
+
 @media (max-width: 1200px) {
-  .parts-return-container {
+  .parts-request-container {
     padding: 1.5rem 0.75rem;
+    
+    table {
+      min-width: 900px; // Further reduce for smaller screens
+      font-size: 13px;
+    }
+    
+    thead th {
+      font-size: 11px;
+      padding: 6px 8px;
+      
+      // Smaller column widths for smaller screens
+      &:nth-child(1) { width: 100px; } // Service Call ID
+      &:nth-child(2) { width: 110px; } // Part Number  
+      &:nth-child(3) { width: 110px; } // DC Part Number
+      &:nth-child(4) { width: 160px; } // Description
+      &:nth-child(5) { width: 75px; }  // Total Qty
+      &:nth-child(6) { width: 60px; }  // Faulty
+      &:nth-child(7) { width: 60px; }  // Unused
+      &:nth-child(8) { width: 110px; } // Technician
+      &:nth-child(9) { width: 120px; } // Last Modified
+    }
+    
+    tbody td {
+      padding: 8px 6px;
+      font-size: 12px;
+      
+      // Match header column widths
+      &:nth-child(1) { width: 100px; } // Service Call ID
+      &:nth-child(2) { width: 110px; } // Part Number  
+      &:nth-child(3) { width: 110px; } // DC Part Number
+      &:nth-child(4) { width: 160px; } // Description
+      &:nth-child(5) { width: 75px; }  // Total Qty
+      &:nth-child(6) { width: 60px; }  // Faulty
+      &:nth-child(7) { width: 60px; }  // Unused
+      &:nth-child(8) { width: 110px; } // Technician
+      &:nth-child(9) { width: 120px; } // Last Modified
+    }
   }
   
   .modern-stats-card {
@@ -1386,113 +1544,86 @@
   }
 }
 
-// Modern table styling to match Parts Request Status
-.modern-table {
+// Modern table styling to match Order Request Status
+.table.modern-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 0.95rem;
+  font-family: -webkit-system-font, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  font-size: 13px !important;
   
   td, th {
-    font-weight: 500;
+    font-weight: 400 !important;
+    font-family: -webkit-system-font, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
   }
   
-  .table-header {
-    th {
-      background: linear-gradient(135deg, #5486ff 0%, #667eea 100%);
-      color: white;
-      border: none;
+  thead.table-header {
+    th, th.fw-bold, th.sortable {
+      background: linear-gradient(180deg, #5f82f3, #5a7bf0) !important;
+      color: #ffffff !important;
+      border: none !important;
       position: relative;
-      padding: 0;
-      height: 60px;
+      padding: 10px 12px !important;
+      height: auto;
       vertical-align: middle;
       text-align: center;
-      
-      &.header-cell {
-        .header-content {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.2rem;
-          padding: 0.4rem 0.3rem;
-          height: 100%;
-          min-height: 40px;
-          
-          .header-text {
-            font-weight: 700;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            white-space: normal;
-            line-height: 1.2;
-            text-align: center;
-            word-wrap: break-word;
-          }
-          
-          .sort-icon {
-            opacity: 0.6;
-            transition: opacity 0.3s ease;
-            font-size: 0.8rem;
-            flex-shrink: 0;
-          }
-        }
-      }
+      font-weight: 400 !important;
+      font-family: -webkit-system-font, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      font-size: 13px !important;
+      white-space: nowrap;
+      border-bottom: 2px solid #dee2e6;
       
       &.sortable {
         cursor: pointer;
         transition: all 0.3s ease;
         
         &:hover {
-          background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%);
+          background: linear-gradient(180deg, #4c7bff, #5a67d8);
           transform: translateY(-1px);
-          
-          .sort-icon {
-            opacity: 1;
-          }
         }
 
         &.sorted-asc,
         &.sorted-desc {
-          background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%);
-          
-          .sort-icon {
-            opacity: 1;
-            color: #fff;
-          }
+          background: linear-gradient(180deg, #4c7bff, #5a67d8);
         }
       }
       
       &:first-child {
-        border-radius: 16px 0 0 0;
+        border-radius: 0;
       }
       
       &:last-child {
-        border-radius: 0 16px 0 0;
+        border-radius: 0;
       }
     }
   }
   
   .table-body {
     .table-row {
-      transition: all 0.3s ease;
+      transition: background-color 0.2s ease;
       border: none;
       
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        z-index: 2;
-        position: relative;
+        background-color: #f8f9fa;
+        transform: none;
+        box-shadow: none;
+        z-index: auto;
+        position: static;
       }
       
       td {
-        padding: 0.4rem 0.6rem;
+        padding: 10px 12px !important;
         border: none;
         border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         vertical-align: middle;
         background: white;
-        text-align: center;
-        height: 40px;
+        text-align: left;
+        height: auto;
+        white-space: normal;
+        word-break: break-word;
+        font-family: -webkit-system-font, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
         
         &.call-number-cell,
         &.data-cell,
@@ -3276,4 +3407,46 @@
     td:nth-child(8), th:nth-child(8) { min-width: 70px; max-width: 90px; }
     td:nth-child(9), th:nth-child(9) { min-width: 110px; max-width: 130px; }
   }
+}
+
+/* =========================================
+   ORDER REQUEST STATUS STYLE HEADER & SORT ICONS
+   ========================================= */
+
+.header-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.sort-icons {
+  display: inline-flex;
+  flex-direction: column;
+  margin-left: 2px;
+}
+
+.sort-icons i {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+.sort-icons i.up {
+  border-bottom: 6px solid #ffffff;
+  margin-bottom: 1px;
+}
+
+.sort-icons i.down {
+  border-top: 6px solid #ffffff;
+}
+
+.sort-icons i:not(.on) {
+  opacity: 0.5;
+}
+
+.sort-icons i.on {
+  opacity: 1;
 }
