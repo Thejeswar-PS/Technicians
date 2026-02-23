@@ -22,6 +22,7 @@ import { AsideMenuComponent } from './components/aside/aside-menu/aside-menu.com
 import { TopbarComponent } from './components/topbar/topbar.component';
 import { PageTitleComponent } from './components/header/page-title/page-title.component';
 import { HeaderMenuComponent } from './components/header/header-menu/header-menu.component';
+import { HorizontalNavigationComponent } from './components/horizontal-navigation/horizontal-navigation.component';
 import {
   DrawersModule,
   DropdownMenusModule,
@@ -64,6 +65,7 @@ const routes: Routes = [
     TopbarComponent,
     PageTitleComponent,
     HeaderMenuComponent,
+    HorizontalNavigationComponent,
     EngagesComponent,
     SidebarComponent,
     SidebarLogoComponent,
@@ -107,6 +109,7 @@ const routes: Routes = [
     TopbarComponent,
     PageTitleComponent,
     HeaderMenuComponent,
+    HorizontalNavigationComponent,
     EngagesComponent,
     SidebarComponent,
     SidebarLogoComponent,

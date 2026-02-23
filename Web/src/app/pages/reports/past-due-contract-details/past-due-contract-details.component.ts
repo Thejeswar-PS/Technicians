@@ -38,8 +38,10 @@ export class PastDueContractDetailsComponent implements OnInit {
   loading = false;
   errorMessage = '';
   pastDueRows: PastDueRow[] = [];
+  filteredPastDueRows: PastDueRow[] = [];
   chartData: ChartDataPoint[] = [];
   selectedStatus = '30';
+  siteNameFilter = '';
   
   // Sorting
   sortField: SortField = 'contractNo';
@@ -105,6 +107,7 @@ export class PastDueContractDetailsComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     this.pastDueRows = [];
+    this.filteredPastDueRows = [];
     this.chartData = [];
 
     this.reportService.getPastDueContractDetails(this.selectedStatus).pipe(
@@ -116,15 +119,20 @@ export class PastDueContractDetailsComponent implements OnInit {
       })
     ).subscribe(data => {
       this.pastDueRows = data.rows;
+      this.applySiteNameFilter();
       this.chartData = data.chartData;
-      this.applySorting();
       this.renderChart();
       this.loading = false;
     });
   }
 
   onStatusChange(): void {
+    this.siteNameFilter = '';
     this.loadData();
+  }
+
+  onSiteNameFilterChange(): void {
+    this.applySiteNameFilter();
   }
 
   sortBy(field: SortField): void {
@@ -137,10 +145,22 @@ export class PastDueContractDetailsComponent implements OnInit {
     this.applySorting();
   }
 
-  private applySorting(): void {
-    if (!this.pastDueRows.length) return;
+  private applySiteNameFilter(): void {
+    if (!this.siteNameFilter.trim()) {
+      this.filteredPastDueRows = [...this.pastDueRows];
+    } else {
+      const filterLower = this.siteNameFilter.toLowerCase().trim();
+      this.filteredPastDueRows = this.pastDueRows.filter(row =>
+        (row.siteName || '').toLowerCase().includes(filterLower)
+      );
+    }
+    this.applySorting();
+  }
 
-    this.pastDueRows.sort((a, b) => {
+  private applySorting(): void {
+    if (!this.filteredPastDueRows.length) return;
+
+    this.filteredPastDueRows.sort((a, b) => {
       let aVal: any = a[this.sortField];
       let bVal: any = b[this.sortField];
 

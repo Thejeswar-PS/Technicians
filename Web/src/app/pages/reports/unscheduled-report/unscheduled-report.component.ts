@@ -28,7 +28,7 @@ export class UnscheduledReportComponent implements OnInit {
     { key: 'origAge', header: 'Original Age', width: '100px' }
   ];
   currentPage = 1;
-  pageSize = 20;
+  pageSize = 50;
   sortField = '';
   sortDirection: 'asc' | 'desc' = 'asc';
 
@@ -62,23 +62,41 @@ export class UnscheduledReportComponent implements OnInit {
         console.log('Unscheduled Report API Response:', response);
         
         if (response.success && response.data) {
-          // Table 0: Grid data
-          this.gridData = response.data.gridData || [];
-          
-          // Table 1: Past Due / Bill After PM
-          this.pastDueData = response.data.pastDueData || [];
+          const data = response.data;
+
+          // Grid data
+          const jobDetails = data.jobDetails || data.gridData || [];
+          this.gridData = jobDetails.map((item: any) => ({
+            callnbr: (item.callNbr || item.callnbr || '').toString().trim(),
+            custName: (item.custName || item.custname || '').toString().trim(),
+            accMgr: (item.accMgr || item.accmgr || '').toString().trim(),
+            jobstatus: (item.jobStatus || item.jobstatus || '').toString().trim(),
+            custclas: (item.custClas || item.custclas || '').toString().trim(),
+            scheduledstart: item.scheduledStart
+              ? new Date(item.scheduledStart)
+              : item.scheduledstart
+                ? new Date(item.scheduledstart)
+                : null,
+            contnbr: (item.contNbr || item.contnbr || '').toString().trim(),
+            description: item.description || '',
+            changeAge: item.changeAge ?? item.changeage ?? '',
+            origAge: item.origAge ?? item.origage ?? ''
+          }));
+
+          // Past Due / Bill After PM
+          this.pastDueData = data.summaryByManager || data.pastDueData || [];
           this.createPastDueChart();
-          
-          // Table 2: Scheduled Percentage
-          this.scheduledPercentageData = response.data.scheduledPercentageData || [];
+
+          // Scheduled Percentage
+          this.scheduledPercentageData = data.scheduledPercent || data.scheduledPercentageData || [];
           this.createScheduledPercentageChart();
-          
-          // Table 3: Total Jobs to be Scheduled
-          this.totalJobsData = response.data.totalJobsData || [];
+
+          // Total Jobs to be Scheduled
+          this.totalJobsData = data.totalUnscheduledJobs || data.totalJobsData || [];
           this.createTotalJobsChart();
-          
-          // Table 4: Total Jobs Scheduled
-          this.totalJobsScheduledData = response.data.totalJobsScheduledData || [];
+
+          // Total Jobs Scheduled
+          this.totalJobsScheduledData = data.totalScheduledJobs || data.totalJobsScheduledData || [];
           this.createTotalJobsScheduledChart();
         } else {
           this.errorMessage = 'Failed to load unscheduled report data';
@@ -99,7 +117,7 @@ export class UnscheduledReportComponent implements OnInit {
   private createPastDueChart(): void {
     const accountManagers = this.pastDueData.map(d => d.accMgr || d.AccMgr || '');
     const pastDueJobs = this.pastDueData.map(d => parseInt(d.pastDueJobs || d.PastDueJobs || 0));
-    const billAfterPM = this.pastDueData.map(d => parseInt(d.couldbebilled || d.Couldbebilled || 0));
+    const billAfterPM = this.pastDueData.map(d => parseInt(d.couldBeBilled || d.couldbebilled || d.Couldbebilled || 0));
 
     this.pastDueChartOptions = {
       series: [
