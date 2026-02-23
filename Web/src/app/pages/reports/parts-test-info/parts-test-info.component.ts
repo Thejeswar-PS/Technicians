@@ -244,7 +244,6 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       resolveNotes: [''],
       
       // Status flags for Final Approve functionality
-      approved: [false],
       archive: [false],
       finalApproval: [false],
     });
@@ -490,7 +489,6 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       resolveNotes: row.ResolveNotes || row.resolveNotes || '',
       
       // Archive and approval status
-      approved: this.convertToBoolean(row.Approved || row.approved),
       archive: this.convertToBoolean(row.Archive || row.archive),
       finalApproval: this.convertToBoolean(row.FinalApproval || row.finalApproval)
     });
@@ -694,7 +692,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       
       // Backend audit fields (matching stored procedure exactly)
       CreatedBy: createdByEmployee?.windowsID || formValue.createdBy || username,
-      Approved: formValue.approved || false,
+      Approved: false,  // Always false since checkbox was removed from UI
       LastModifiedBy: username
       
       // REMOVED: SubmittedDate, CreatedOn, Archive, FinalApproval (not in backend)
@@ -967,33 +965,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     return true;
   }
 
-  onApprovedChange(): void {
-    const approved = this.editForm.get('approved')?.value;
-    if (!approved) {
-      return;
-    }
 
-    const jobType = this.getJobTypeValue();
-    const boardSetup = this.editForm.get('boardSetup')?.value;
-    const testingWork = this.editForm.get('testWorkStatus')?.value;
-    const assyWork = this.editForm.get('assyWorkStatus')?.value;
-    const qcStatus = this.editForm.get('qcWorkStatus')?.value;
-    const completedBy = this.editForm.get('completedBy')?.value;
-    const reviewedBy = this.editForm.get('reviewedBy')?.value;
-
-    if (jobType === '7') {
-      if (boardSetup !== '1') {
-        this.toastr.error('Board setup must be Completed before approval', 'Validation');
-        this.editForm.get('approved')?.setValue(false);
-      }
-      return;
-    }
-
-    if (testingWork !== '1' || assyWork !== '1' || qcStatus !== '1' || !completedBy || !reviewedBy) {
-      this.toastr.error('You cannot approve this because the status is not completed', 'Validation');
-      this.editForm.get('approved')?.setValue(false);
-    }
-  }
 
   private applyJobTypeVisibility(jobType: string): void {
     const normalizedJobType = String(jobType || '').trim();
