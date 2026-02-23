@@ -14,7 +14,6 @@ tbody .urgent-row,
 table .urgent-row,
 .parts-request-container .urgent-row {
   color: #FF0000 !important;
-  font-weight: bold !important;
   background: rgba(255, 0, 0, 0.1) !important;
   border-left: 5px solid #FF0000 !important;
   
@@ -31,7 +30,6 @@ table .urgent-row,
   .cell-content,
   * {
     color: #FF0000 !important;
-    font-weight: bold !important;
   }
   
   // Force all nested elements to be red with higher specificity
@@ -54,22 +52,18 @@ table .urgent-row,
 // Even more specific targeting for table cells
 .parts-request-container table tbody tr.urgent-row td {
   color: red !important;
-  font-weight: bold !important;
 }
 
 .parts-request-container table tbody tr.urgent-row td * {
   color: red !important;
-  font-weight: bold !important;
 }
 
 // Ultra-specific targeting - this should override everything
 :host ::ng-deep .urgent-row {
   color: red !important;
-  font-weight: bold !important;
   
   td, span, div, a, p, * {
     color: red !important;
-    font-weight: bold !important;
   }
 }
 
@@ -91,7 +85,7 @@ table tr[style*="color: #FF0000"] {
 }
 
 .parts-request-container {
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: transparent;
   min-height: 100vh;
   padding: 2rem 1rem;
   max-width: 100%;
@@ -628,7 +622,7 @@ table tr[style*="color: #FF0000"] {
             min-height: 60px;
             
             .header-text {
-              font-weight: 700;
+              font-weight: 400;
               font-size: 1.05rem;
               text-transform: uppercase;
               letter-spacing: 0.5px;
@@ -722,11 +716,9 @@ table tr[style*="color: #FF0000"] {
         &.urgent-row {
           // Apply red color to all text in the row
           color: #dc2626 !important;
-          font-weight: 600 !important;
           
           td {
             color: #dc2626 !important; // Red text for urgent rows
-            font-weight: 600 !important; // Make urgent rows bolder
             
             // Apply red to all text content
             * {
@@ -769,7 +761,7 @@ table tr[style*="color: #FF0000"] {
     .call-number-cell {
       .call-link {
         color: #1d4ed8;
-        font-weight: 700;
+        font-weight: 400;
         font-size: 1.1rem;
         cursor: pointer;
         text-decoration: none;
@@ -794,7 +786,7 @@ table tr[style*="color: #FF0000"] {
     .data-cell {
       .cell-content {
         font-size: 1.1rem;
-        font-weight: 500;
+        font-weight: 400;
         color: #1f2937;
       }
       
@@ -887,7 +879,7 @@ table tr[style*="color: #FF0000"] {
       padding: 0.25rem 0.75rem;
       border-radius: 12px;
       font-size: 1.0rem;
-      font-weight: 700;
+      font-weight: 400;
     }
     
     .age-cell {
@@ -895,7 +887,7 @@ table tr[style*="color: #FF0000"] {
         display: flex;
         align-items: center;
         font-size: 1.15rem;
-        font-weight: 700;
+        font-weight: 400;
         color: #374151;
         
         &.age-warning {
@@ -911,7 +903,7 @@ table tr[style*="color: #FF0000"] {
     .date-cell {
       .date-content {
         font-size: 1.15rem;
-        font-weight: 600;
+        font-weight: 400;
         color: #374151;
       }
     }
@@ -924,7 +916,7 @@ table tr[style*="color: #FF0000"] {
         
         &.urgent-yes {
           color: #f59e0b;
-          font-weight: 600;
+          font-weight: 400;
         }
       }
 
@@ -938,7 +930,7 @@ table tr[style*="color: #FF0000"] {
           display: inline-block !important;
           min-width: 20px;
           color: #1f2937;
-          font-weight: 600;
+          font-weight: 400;
         }
 
         i {
@@ -998,7 +990,6 @@ table tr[style*="color: #FF0000"] {
 .mydatagrid .rows tr.status-ordered-tracking.urgent-row td,
 .mydatagrid .rows tr.status-ordered-tracking.urgent-row td * {
   color: #ff0000 !important;
-  font-weight: bold !important;
 }
 
 .mydatagrid .rows tr.status-in-assembly td {
@@ -1116,7 +1107,6 @@ table tr[style*="color: #FF0000"] {
 .status-ordered-tracking.urgent-row,
 .status-ordered-tracking.urgent-row * {
   color: #ff0000 !important;
-  font-weight: bold !important;
 }
 
 .status-in-assembly {
@@ -1665,7 +1655,6 @@ table tbody tr.urgent-row.status-orderedtrackingreq td,
 .mydatagrid .rows tr.urgent-row.status-ordered-tracking td,
 .mydatagrid .rows tr.urgent-row.status-orderedtrackingreq td {
   color: #ff0000 !important;
-  font-weight: bold !important;
   text-shadow: none !important;
 }
 
@@ -1678,10 +1667,56 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
 .mydatagrid .rows tr.urgent-row.status-ordered-tracking td *,
 .mydatagrid .rows tr.urgent-row.status-orderedtrackingreq td * {
   color: #ff0000 !important;
-  font-weight: bold !important;
   text-shadow: none !important;
 }
 
+/* =====================================================
+   OVERRIDE: Match Order Request Status Header Styling
+   ===================================================== */
+
+.modern-table .table-header th {
+  background: linear-gradient(180deg, #5f82f3, #5a7bf0) !important;
+  color: #ffffff !important;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.3px !important;
+  text-transform: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Remove uppercase styling */
+.modern-table .table-header th .header-text {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+/* Remove heavy hover effect */
+.modern-table .table-header th.sortable:hover {
+  transform: none !important;
+}
+
+/* Keep sort icon subtle like Order page */
+.modern-table .table-header th .sort-icon {
+  opacity: 0.7 !important;
+  font-size: 12px !important;
+}
+/* =====================================================
+   MATCH ORDER PAGE TABLE FONT
+   ===================================================== */
+
+.modern-table {
+  font-family: "Inter", "Segoe UI", Arial, sans-serif !important;
+  font-size: 14px !important;
+}
+
+.modern-table td {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
 // Print styles
 @media print {
   .card-toolbar,
@@ -1694,4 +1729,20 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
     border: none !important;
     box-shadow: none !important;
   }
+
+  /* =========================================
+   REMOVE BOLD FROM TABLE HEADER & BODY
+   ========================================= */
+
+.modern-table .table-header th,
+.modern-table .table-header th .header-text {
+  font-weight: 500 !important;   // normal medium weight
+}
+
+.modern-table td,
+.modern-table td .cell-content,
+.modern-table td span,
+.modern-table td div {
+  font-weight: 400 !important;   // normal font
+}
 }

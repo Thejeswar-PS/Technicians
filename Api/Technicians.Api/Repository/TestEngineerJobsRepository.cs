@@ -10,6 +10,11 @@ namespace Technicians.Api.Repository
         Task<TestEngineerJobsResponse> GetTestEngineerJobsAsync(TestEngineerJobsRequestDto request);
         Task<TestEngineerJobsChartsResponse> GetChartDataAsync(TestEngineerJobsRequestDto request);
         Task<IEnumerable<EngineerDto>> GetEngineersAsync();
+        Task<TestEngineerJobsEntryResponse> GetTestEngineerJobByIdAsync(int id);
+        Task<TestEngineerJobsEntryResponse> CreateTestEngineerJobAsync(SaveUpdateTestEngineerJobsDto request);
+        Task<TestEngineerJobsEntryResponse> UpdateTestEngineerJobAsync(SaveUpdateTestEngineerJobsDto request);
+        Task<TestEngineerJobsEntryResponse> DeleteTestEngineerJobAsync(int id);
+        Task<NextRowIdResponse> GetNextRowIdAsync();
     }
 
     public class TestEngineerJobsRepository : ITestEngineerJobsRepository
@@ -17,12 +22,17 @@ namespace Technicians.Api.Repository
         private readonly string _connectionString;
         private readonly ILogger<TestEngineerJobsRepository> _logger;
 
-        public TestEngineerJobsRepository(IConfiguration configuration, ILogger<TestEngineerJobsRepository> logger)
+        public TestEngineerJobsRepository(
+            IConfiguration configuration,
+            ILogger<TestEngineerJobsRepository> logger)
         {
             _connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("DefaultConnection not found");
+
             _logger = logger;
         }
+
+        #region GET ALL (GRID)
 
         public async Task<TestEngineerJobsResponse> GetTestEngineerJobsAsync(TestEngineerJobsRequestDto request)
         {
@@ -30,88 +40,311 @@ namespace Technicians.Api.Repository
             {
                 using var connection = new SqlConnection(_connectionString);
 
-                var sql = @"
-                    SELECT *
+                // Fixed query based on actual database schema from debug output
+                var sql = $@"
+                    SELECT
+                        RowId as RowID,
+                        JobNumber,
+                        AssignedEngineer,
+                        Status,
+                        Location,
+                        WorkType,
+                        ProjectedDate,
+                        CompletedDate,
+                        EmergencyETA,
+                        CreatedOn,
+                        DescriptionNotes AS Description,
+                        '' as Customer,
+                        QC_Cleaned,
+                        QC_Torque,
+                        QC_Inspected
                     FROM TestEngineerJobs
                     WHERE
-                        (@Engineer = '' OR AssignedEngineer = @Engineer)
-                    AND (@Status = '' OR Status = @Status)
-                    AND (@Location = '' OR Location = @Location)
+                        (@Engineer IS NULL OR @Engineer = '' OR AssignedEngineer = @Engineer)
+                    AND (@Status IS NULL OR @Status = '' OR Status = @Status)
+                    AND (@Location IS NULL OR @Location = '' OR Location = @Location)
                     AND (
-                        @Search = '' OR
+                        @Search IS NULL OR @Search = '' OR
                         JobNumber LIKE '%' + @Search + '%' OR
                         AssignedEngineer LIKE '%' + @Search + '%'
                     )
-                    ORDER BY " + GetSafeSortColumn(request.SortColumn) + " " + GetSafeSortDirection(request.SortDirection);
+                    ORDER BY {GetSafeSortColumn(request.SortColumn)} {GetSafeSortDirection(request.SortDirection)}";
 
-                var parameters = new DynamicParameters();
-                parameters.Add("@Engineer", request.Engineer ?? string.Empty);
-                parameters.Add("@Status", request.Status ?? string.Empty);
-                parameters.Add("@Location", request.Location ?? string.Empty);
-                parameters.Add("@Search", request.Search ?? string.Empty);
-
-                var dynamicResults = await connection.QueryAsync(sql, parameters, commandTimeout: 30);
-
-                var data = dynamicResults.Select(row =>
+                var parameters = new
                 {
-                    var rowDict = (IDictionary<string, object>)row;
+                    Engineer = string.IsNullOrWhiteSpace(request.Engineer) ? "" : request.Engineer,
+                    Status = string.IsNullOrWhiteSpace(request.Status) ? "" : request.Status,
+                    Location = string.IsNullOrWhiteSpace(request.Location) ? "" : request.Location,
+                    Search = string.IsNullOrWhiteSpace(request.Search) ? "" : request.Search
+                };
 
-                    var job = new TestEngineerJobDto
-                    {
-                        JobNumber = GetSafeStringValue(rowDict, "JobNumber"),
-                        AssignedEngineer = GetSafeStringValue(rowDict, "AssignedEngineer"),
-                        Status = GetSafeStringValue(rowDict, "Status"),
-                        Location = GetSafeStringValue(rowDict, "Location"),
-                        WorkType = GetSafeStringValue(rowDict, "WorkType"),
-                        ProjectedDate = GetSafeDateTimeValue(rowDict, "ProjectedDate"),
-                        CreatedOn = GetSafeDateTimeValue(rowDict, "CreatedOn"),
-                        Description = GetSafeStringValue(rowDict, "Description"),
-                        Customer = GetSafeStringValue(rowDict, "Customer")
-                    };
+                _logger.LogInformation("Executing SQL: {SQL}", sql);
+                _logger.LogInformation("Parameters: Engineer='{Engineer}', Status='{Status}', Location='{Location}', Search='{Search}'", 
+                    parameters.Engineer, parameters.Status, parameters.Location, parameters.Search);
 
-                    // Apply business logic for overdue and emergency status
+                var jobs = (await connection.QueryAsync<TestEngineerJobDto>(sql, parameters)).ToList();
+
+                _logger.LogInformation("Query returned {Count} records", jobs.Count);
+
+                // Compute UI fields and legacy logic
+                foreach (var job in jobs)
+                {
+                    // CHANGED: JobNumber now gets the formatted RowID value (000001, 000002, etc.)
+                    var originalJobNumber = job.JobNumber; // Store original job number
+                    job.JobNumber = job.RowID.ToString("000000"); // JobNumber now shows formatted RowID
+                    job.SerialNo = originalJobNumber; // SerialNo keeps the original JobNumber from database
+                    
+                    // COMMENTED OUT: JobNumberFormatted is no longer set
+                    // job.JobNumberFormatted = job.RowID.ToString("000000");
+
                     var isClosed = job.Status?.Equals("Closed", StringComparison.OrdinalIgnoreCase) == true;
-                    var isOverdue = !isClosed &&
-                                   job.ProjectedDate.HasValue &&
-                                   job.ProjectedDate.Value.Date < DateTime.Today;
-                    var isEmergency = job.WorkType?.Equals("Emergency", StringComparison.OrdinalIgnoreCase) == true;
+
+                    var isOverdue =
+                        !isClosed &&
+                        job.ProjectedDate.HasValue &&
+                        job.ProjectedDate.Value.Date < DateTime.Today;
+
+                    var isEmergency =
+                        job.WorkType?.Equals("Emergency", StringComparison.OrdinalIgnoreCase) == true;
 
                     job.IsOverdue = isOverdue;
-                    job.IsEmergency = isEmergency && !isOverdue; // Emergency only if not overdue
-
-                    return job;
-                }).ToList();
+                    job.IsEmergency = isEmergency && !isOverdue;
+                }
 
                 return new TestEngineerJobsResponse
                 {
                     Success = true,
-                    Data = data,
-                    TotalRecords = data.Count
-                };
-            }
-            catch (SqlException sqlEx)
-            {
-                _logger.LogError(sqlEx, "SQL error occurred in GetTestEngineerJobsAsync: {Message}", sqlEx.Message);
-                return new TestEngineerJobsResponse
-                {
-                    Success = false,
-                    Message = $"Database error: {sqlEx.Message}",
-                    Data = new List<TestEngineerJobDto>(),
-                    TotalRecords = 0
+                    Data = jobs,
+                    TotalRecords = jobs.Count
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error in GetTestEngineerJobsAsync: {Message}", ex.Message);
+                _logger.LogError(ex, "Error retrieving TestEngineerJobs: {Message}", ex.Message);
                 return new TestEngineerJobsResponse
                 {
                     Success = false,
-                    Message = "An unexpected error occurred while retrieving test engineer jobs",
+                    Message = $"Failed to retrieve test engineer jobs: {ex.Message}",
                     Data = new List<TestEngineerJobDto>(),
                     TotalRecords = 0
                 };
             }
         }
+
+        #endregion
+
+        #region GET BY ID
+
+        public async Task<TestEngineerJobsEntryResponse> GetTestEngineerJobByIdAsync(int id)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+
+                var sql = @"
+                    SELECT
+                        RowId as RowID,
+                        JobNumber,
+                        WorkType,
+                        AssignedEngineer,
+                        Status,
+                        ProjectedDate,
+                        CompletedDate,
+                        EmergencyETA,
+                        DescriptionNotes,
+                        Location,
+                        QC_Cleaned,
+                        QC_Torque,
+                        QC_Inspected,
+                        CreatedOn,
+                        ModifiedOn,
+                        CreatedBy,
+                        ModifiedBy
+                    FROM TestEngineerJobs
+                    WHERE RowId = @Id";
+
+                var job = await connection.QuerySingleOrDefaultAsync<TestEngineerJobsEntryDto>(sql, new { Id = id });
+
+                if (job == null)
+                {
+                    return new TestEngineerJobsEntryResponse
+                    {
+                        Success = false,
+                        Message = "Record not found"
+                    };
+                }
+
+                return new TestEngineerJobsEntryResponse
+                {
+                    Success = true,
+                    Data = job
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving TestEngineerJob by ID: {Message}", ex.Message);
+                return new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = $"Error retrieving record: {ex.Message}"
+                };
+            }
+        }
+
+        #endregion
+
+        #region CREATE
+
+        public async Task<TestEngineerJobsEntryResponse> CreateTestEngineerJobAsync(SaveUpdateTestEngineerJobsDto request)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+
+                var sql = @"
+                    INSERT INTO TestEngineerJobs
+                    (JobNumber, WorkType, EmergencyETA, AssignedEngineer, Location,
+                     ProjectedDate, CompletedDate, DescriptionNotes, Status,
+                     QC_Cleaned, QC_Torque, QC_Inspected,
+                     CreatedBy, CreatedOn, ModifiedBy, ModifiedOn)
+                    VALUES
+                    (@JobNumber, @WorkType, @EmergencyETA, @AssignedEngineer, @Location,
+                     @ProjectedDate, @CompletedDate, @DescriptionNotes, @Status,
+                     @QCCleaned, @QCTorque, @QCInspected,
+                     @CreatedBy, GETDATE(), @ModifiedBy, GETDATE());
+
+                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                var newId = await connection.QuerySingleAsync<int>(sql, request);
+
+                return await GetTestEngineerJobByIdAsync(newId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating TestEngineerJob: {Message}", ex.Message);
+                return new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = $"Error creating record: {ex.Message}"
+                };
+            }
+        }
+
+        #endregion
+
+        #region UPDATE
+
+        public async Task<TestEngineerJobsEntryResponse> UpdateTestEngineerJobAsync(SaveUpdateTestEngineerJobsDto request)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+
+                var sql = @"
+                    UPDATE TestEngineerJobs
+                    SET
+                        JobNumber = @JobNumber,
+                        WorkType = @WorkType,
+                        EmergencyETA = @EmergencyETA,
+                        AssignedEngineer = @AssignedEngineer,
+                        Location = @Location,
+                        ProjectedDate = @ProjectedDate,
+                        CompletedDate = @CompletedDate,
+                        DescriptionNotes = @DescriptionNotes,
+                        Status = @Status,
+                        QC_Cleaned = @QCCleaned,
+                        QC_Torque = @QCTorque,
+                        QC_Inspected = @QCInspected,
+                        ModifiedBy = @ModifiedBy,
+                        ModifiedOn = GETDATE()
+                    WHERE RowId = @RowID";
+
+                var rows = await connection.ExecuteAsync(sql, request);
+
+                if (rows == 0)
+                {
+                    return new TestEngineerJobsEntryResponse
+                    {
+                        Success = false,
+                        Message = "Record not found"
+                    };
+                }
+
+                return await GetTestEngineerJobByIdAsync(request.RowID);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating TestEngineerJob: {Message}", ex.Message);
+                return new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = $"Error updating record: {ex.Message}"
+                };
+            }
+        }
+
+        #endregion
+
+        #region DELETE
+
+        public async Task<TestEngineerJobsEntryResponse> DeleteTestEngineerJobAsync(int id)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+
+                var sql = "DELETE FROM TestEngineerJobs WHERE RowId = @Id";
+
+                var rows = await connection.ExecuteAsync(sql, new { Id = id });
+
+                if (rows == 0)
+                {
+                    return new TestEngineerJobsEntryResponse
+                    {
+                        Success = false,
+                        Message = "Record not found"
+                    };
+                }
+
+                return new TestEngineerJobsEntryResponse
+                {
+                    Success = true,
+                    Message = "Deleted successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting TestEngineerJob: {Message}", ex.Message);
+                return new TestEngineerJobsEntryResponse
+                {
+                    Success = false,
+                    Message = $"Error deleting record: {ex.Message}"
+                };
+            }
+        }
+
+        #endregion
+
+        #region NEXT ROW ID
+
+        public async Task<NextRowIdResponse> GetNextRowIdAsync()
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var nextId = await connection.QuerySingleAsync<int>(
+                "SELECT ISNULL(MAX(RowId),0) + 1 FROM TestEngineerJobs");
+
+            return new NextRowIdResponse
+            {
+                Success = true,
+                NextRowId = nextId,
+                FormattedRowId = nextId.ToString("000000")
+            };
+        }
+
+        #endregion
+
+        #region CHART DATA
 
         public async Task<TestEngineerJobsChartsResponse> GetChartDataAsync(TestEngineerJobsRequestDto request)
         {
@@ -123,33 +356,31 @@ namespace Technicians.Api.Repository
                     SELECT AssignedEngineer, Status, COUNT(*) AS JobCount
                     FROM TestEngineerJobs
                     WHERE
-                        (@Engineer = '' OR AssignedEngineer = @Engineer)
-                    AND (@Status = '' OR Status = @Status)
-                    AND (@Location = '' OR Location = @Location)
+                        (@Engineer IS NULL OR @Engineer = '' OR AssignedEngineer = @Engineer)
+                    AND (@Status IS NULL OR @Status = '' OR Status = @Status)
+                    AND (@Location IS NULL OR @Location = '' OR Location = @Location)
                     AND (
-                        @Search = '' OR
+                        @Search IS NULL OR @Search = '' OR
                         JobNumber LIKE '%' + @Search + '%' OR
                         AssignedEngineer LIKE '%' + @Search + '%'
                     )
                     GROUP BY AssignedEngineer, Status";
 
-                var parameters = new DynamicParameters();
-                parameters.Add("@Engineer", request.Engineer ?? string.Empty);
-                parameters.Add("@Status", request.Status ?? string.Empty);
-                parameters.Add("@Location", request.Location ?? string.Empty);
-                parameters.Add("@Search", request.Search ?? string.Empty);
-
-                var dynamicResults = await connection.QueryAsync(sql, parameters, commandTimeout: 30);
-
-                var engineerData = dynamicResults.Select(row =>
+                var parameters = new
                 {
-                    var rowDict = (IDictionary<string, object>)row;
-                    return new EngineerChartDto
-                    {
-                        Engineer = GetSafeStringValue(rowDict, "AssignedEngineer"),
-                        Status = GetSafeStringValue(rowDict, "Status"),
-                        Count = GetSafeIntValue(rowDict, "JobCount")
-                    };
+                    Engineer = string.IsNullOrWhiteSpace(request.Engineer) ? "" : request.Engineer,
+                    Status = string.IsNullOrWhiteSpace(request.Status) ? "" : request.Status,
+                    Location = string.IsNullOrWhiteSpace(request.Location) ? "" : request.Location,
+                    Search = string.IsNullOrWhiteSpace(request.Search) ? "" : request.Search
+                };
+
+                var results = await connection.QueryAsync(sql, parameters);
+
+                var engineerData = results.Select(row => new EngineerChartDto
+                {
+                    Engineer = row.AssignedEngineer?.ToString() ?? "",
+                    Status = row.Status?.ToString() ?? "",
+                    Count = Convert.ToInt32(row.JobCount)
                 }).ToList();
 
                 var statusData = engineerData
@@ -172,6 +403,10 @@ namespace Technicians.Api.Repository
                 return new TestEngineerJobsChartsResponse();
             }
         }
+
+        #endregion
+
+        #region ENGINEERS
 
         public async Task<IEnumerable<EngineerDto>> GetEngineersAsync()
         {
@@ -198,8 +433,10 @@ namespace Technicians.Api.Repository
                     };
                 }).ToList();
 
-                // Add hardcoded engineer
+                // Add hardcoded engineers like in legacy
                 engineers.Add(new EngineerDto { EmpName = "Senthil Munuswamy" });
+                engineers.Add(new EngineerDto { EmpName = "Bharathi Mathivanan" });
+                engineers.Add(new EngineerDto { EmpName = "Raja Ranganathan" });
 
                 return engineers;
             }
@@ -210,16 +447,37 @@ namespace Technicians.Api.Repository
             }
         }
 
-        private static string GetSafeSortColumn(string sortColumn)
+        #endregion
+
+        #region SAFE SORT
+
+        private static string GetSafeSortColumn(string? column)
         {
-            var allowedColumns = new[] { "JobNumber", "AssignedEngineer", "Status", "Location", "WorkType", "ProjectedDate", "CreatedOn" };
-            return allowedColumns.Contains(sortColumn, StringComparer.OrdinalIgnoreCase) ? sortColumn : "ProjectedDate";
+            var allowed = new[]
+            {
+                "RowId",
+                "JobNumber",
+                "AssignedEngineer",
+                "Status",
+                "Location",
+                "WorkType",
+                "ProjectedDate",
+                "CreatedOn"
+            };
+
+            return allowed.Contains(column, StringComparer.OrdinalIgnoreCase)
+                ? column!
+                : "RowId";
         }
 
-        private static string GetSafeSortDirection(string sortDirection)
+        private static string GetSafeSortDirection(string? direction)
         {
-            return sortDirection?.ToUpper() == "ASC" ? "ASC" : "DESC";
+            return direction?.ToUpper() == "ASC" ? "ASC" : "DESC";
         }
+
+        #endregion
+
+        #region HELPER METHODS
 
         private static string GetSafeStringValue(IDictionary<string, object> row, string columnName)
         {
@@ -230,28 +488,6 @@ namespace Technicians.Api.Repository
             return string.Empty;
         }
 
-        private static DateTime? GetSafeDateTimeValue(IDictionary<string, object> row, string columnName)
-        {
-            if (row.TryGetValue(columnName, out var value) && value != null && value != DBNull.Value)
-            {
-                if (DateTime.TryParse(value.ToString(), out var dateValue))
-                {
-                    return dateValue;
-                }
-            }
-            return null;
-        }
-
-        private static int GetSafeIntValue(IDictionary<string, object> row, string columnName)
-        {
-            if (row.TryGetValue(columnName, out var value) && value != null && value != DBNull.Value)
-            {
-                if (int.TryParse(value.ToString(), out var intValue))
-                {
-                    return intValue;
-                }
-            }
-            return 0;
-        }
+        #endregion
     }
 }

@@ -31,6 +31,7 @@ import { UnscheduledReportComponent } from './unscheduled-report/unscheduled-rep
 import { AccountingStatusComponent } from './accounting-status/accounting-status.component';
 import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.component';
 import { TestEngineerJobsComponent } from './test-engineer-jobs/test-engineer-jobs.component';
+import { TestEngineerJobsEntryComponent } from './test-engineer-jobs/test-engineer-jobs-entry/test-engineer-jobs-entry.component';
 
 @NgModule({
   declarations: [
@@ -56,7 +57,8 @@ import { TestEngineerJobsComponent } from './test-engineer-jobs/test-engineer-jo
     UnscheduledReportComponent,
     AccountingStatusComponent,
     DcgEmpDetailsComponent,
-    TestEngineerJobsComponent
+    TestEngineerJobsComponent,
+    TestEngineerJobsEntryComponent
   ],
   imports: [
     CommonModule,

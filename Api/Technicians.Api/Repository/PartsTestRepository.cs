@@ -117,8 +117,8 @@ namespace Technicians.Api.Repository
                 parameters.Add("@Priority", dto.Priority, DbType.AnsiStringFixedLength, size: 15);
                 parameters.Add("@AssignedTo", dto.AssignedTo, DbType.String, size: 50);
                 parameters.Add("@DueDate", dto.DueDate, DbType.DateTime);
-                parameters.Add("@KVA", dto.KVA, DbType.String, size: 10); // Changed from StringFixedLength to String for nchar compatibility
-                parameters.Add("@Voltage", dto.Voltage, DbType.String, size: 10); // Changed from StringFixedLength to String for nchar compatibility
+                parameters.Add("@KVA", dto.KVA, DbType.String, size: 10);
+                parameters.Add("@Voltage", dto.Voltage, DbType.String, size: 10);
                 parameters.Add("@ProblemNotes", dto.ProblemNotes, DbType.String, size: 500);
                 parameters.Add("@ResolveNotes", dto.ResolveNotes, DbType.String, size: 500);
                 parameters.Add("@RowIndex", dto.RowIndex, DbType.Int32);
@@ -209,6 +209,99 @@ namespace Technicians.Api.Repository
             catch (Exception ex)
             {
                 return $"Error Occured : <br/>{ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Check if job exists in Part_Logs_Job tables
+        /// </summary>
+        public async Task<bool> CheckJobExistsAsync(string jobNo)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = @"
+                    SELECT 1 FROM Part_Logs_Job WHERE Service_Call_ID = @Service_Call_ID 
+                    UNION ALL 
+                    SELECT 1 FROM dcgetechca.dbo.Part_Logs_Job WHERE Service_Call_ID = @Service_Call_ID";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Service_Call_ID", jobNo.Trim());
+
+                var result = await command.ExecuteScalarAsync();
+                return result != null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error checking job existence for {jobNo}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Load submitted date for job from Part_Logs_Job tables
+        /// </summary>
+        public async Task<string> LoadSubmittedDateAsync(string jobNo)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(jobNo))
+                    return "NA";
+
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = @"
+                    SELECT COALESCE(plj.RequestedDate, pljCA.RequestedDate) AS SubmittedOn
+                    FROM dbo.Part_Logs_Job plj
+                    LEFT JOIN dcgetechca.dbo.Part_Logs_Job pljCA 
+                        ON plj.Service_Call_ID = pljCA.Service_Call_ID
+                    WHERE plj.Service_Call_ID = @Service_Call_ID";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Service_Call_ID", jobNo.Trim());
+
+                var result = await command.ExecuteScalarAsync();
+                
+                if (result != null && DateTime.TryParse(result.ToString(), out DateTime dt))
+                    return dt.ToString();
+                    
+                return "NA";
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error loading submitted date for {jobNo}: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Archive parts test record (Final Approval functionality)
+        /// </summary>
+        public async Task<bool> ArchivePartsTestRecordAsync(int rowIndex)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = @"
+                    UPDATE dbo.PartsTestList
+                    SET Archive = 1,
+                        LastModifiedOn = GETDATE(),
+                        LastModifiedBy = @User
+                    WHERE RowIndex = @RowIndex";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@RowIndex", rowIndex);
+                command.Parameters.AddWithValue("@User", "System"); // You can pass this as parameter
+
+                int rowsAffected = await command.ExecuteNonQueryAsync();
+                return rowsAffected > 0;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error archiving record {rowIndex}: {ex.Message}", ex);
             }
         }
     }

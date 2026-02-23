@@ -55,14 +55,16 @@
   .table-responsive {
     max-height: 70vh;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: auto;
   }
 
-  table {
+  /* ---------- TABLE DESIGN (MATCH ORDER REQUEST STATUS) ---------- */
+  .modern-table {
     width: 100%;
-    table-layout: fixed;
-    font-size: 14px;
+    min-width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
+    font-size: 14px;
   }
 
   /* ---------- STICKY HEADER ---------- */
@@ -71,12 +73,57 @@
     top: 0;
     z-index: 5;
     background: linear-gradient(180deg, #5f82f3, #5a7bf0);
-    color: #fff;
-    text-align: center;
+    color: #ffffff;
     font-weight: 600;
-    padding: 12px;
+    padding: 10px 12px;
+    text-align: center;
     white-space: nowrap;
     border-bottom: 2px solid #dee2e6;
+    cursor: pointer;
+    
+    &.sortable:hover {
+      background: linear-gradient(180deg, #4f72e3, #4a6be0);
+    }
+  }
+
+  /* HEADER CELL STRUCTURE */
+  .header-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  /* CUSTOM SORT ICONS (TRIANGLES) */
+  .sort-icons {
+    display: inline-flex;
+    flex-direction: column;
+    margin-left: 2px;
+  }
+
+  .sort-icons i {
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+  }
+
+  .sort-icons i.up {
+    border-bottom: 6px solid #ffffff;
+    margin-bottom: 1px;
+  }
+
+  .sort-icons i.down {
+    border-top: 6px solid #ffffff;
+  }
+
+  .sort-icons i:not(.on) {
+    opacity: 0.5;
+  }
+
+  .sort-icons i.on {
+    opacity: 1;
   }
 
   /* ---------- TABLE BODY ---------- */
@@ -90,16 +137,107 @@
     }
 
     td {
-      padding: 12px;
+      padding: 10px 12px;
       vertical-align: middle;
       word-break: break-word;
     }
   }
 
+  /* ---------- QC CHECKBOXES (BLUE WHEN CHECKED) ---------- */
+  .modern-table {
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #cbd5e0;
+      border-radius: 4px;
+      cursor: pointer;
+      accent-color: #0d6efd;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-color: white;
+      position: relative;
+
+      &:checked {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        
+        &::after {
+          content: '✓';
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          line-height: 1;
+        }
+      }
+
+      &:disabled:checked {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        opacity: 0.8;
+        
+        &::after {
+          content: '✓';
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          line-height: 1;
+        }
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+        outline: none;
+      }
+
+      &:not(:disabled):hover {
+        border-color: #0d6efd;
+      }
+    }
+  }
+
   /* ---------- COLUMN WIDTHS ---------- */
+  /* Action Column - Narrow */
+  th:last-child,
+  td:last-child {
+    width: 60px;
+    min-width: 60px;
+    text-align: center;
+  }
+  
+  /* QC Columns - Narrow */
+  th:nth-last-child(2),
+  th:nth-last-child(3), 
+  th:nth-last-child(4),
+  td:nth-last-child(2),
+  td:nth-last-child(3),
+  td:nth-last-child(4) {
+    width: 70px;
+    min-width: 70px;
+    text-align: center;
+  }
+
+  /* Edit Button Styling */
+  .edit-btn {
+    border-radius: 4px;
+    font-size: 14px;
+    
+    &:hover {
+      background-color: #0b5ed7;
+      border-color: #0a58ca;
+    }
+  }
 
   th:nth-child(1),
-  td:nth-child(1) { width: 100px; font-weight: 600; }
+  td:nth-child(1) { width: 100px; }
 
   th:nth-child(2),
   td:nth-child(2) { width: 120px; }

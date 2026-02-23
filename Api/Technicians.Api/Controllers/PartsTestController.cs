@@ -369,5 +369,131 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Check if job exists in system
+        /// </summary>
+        [HttpGet("CheckJobExists")]
+        public async Task<IActionResult> CheckJobExists([FromQuery] string jobNo)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(jobNo))
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        exists = false,
+                        message = "Job number is required" 
+                    });
+                }
+
+                var exists = await _repository.CheckJobExistsAsync(jobNo);
+
+                return Ok(new
+                {
+                    success = true,
+                    exists = exists,
+                    jobNo = jobNo
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking job existence for JobNo: {JobNo}", jobNo);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    exists = false,
+                    message = "Failed to check job existence", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get submitted date for job
+        /// </summary>
+        [HttpGet("GetSubmittedDate")]
+        public async Task<IActionResult> GetSubmittedDate([FromQuery] string jobNo)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(jobNo))
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        submittedDate = "NA",
+                        message = "Job number is required" 
+                    });
+                }
+
+                var submittedDate = await _repository.LoadSubmittedDateAsync(jobNo);
+
+                return Ok(new
+                {
+                    success = true,
+                    submittedDate = submittedDate,
+                    jobNo = jobNo
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting submitted date for JobNo: {JobNo}", jobNo);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    submittedDate = "NA",
+                    message = "Failed to get submitted date", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Archive parts test record (Final Approval)
+        /// </summary>
+        [HttpPost("ArchiveRecord")]
+        public async Task<IActionResult> ArchiveRecord([FromBody] int rowIndex)
+        {
+            try
+            {
+                if (rowIndex <= 0)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Valid RowIndex is required" 
+                    });
+                }
+
+                var success = await _repository.ArchivePartsTestRecordAsync(rowIndex);
+
+                if (success)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Record archived successfully",
+                        rowIndex = rowIndex
+                    });
+                }
+                else
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Failed to archive record"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error archiving record for RowIndex: {RowIndex}", rowIndex);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to archive record", 
+                    error = ex.Message 
+                });
+            }
+        }
     }
 }

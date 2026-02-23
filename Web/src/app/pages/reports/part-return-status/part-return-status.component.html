@@ -12,15 +12,6 @@
 
   <!-- Header Section -->
   <div class="parts-request-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button
-      type="button"
-      class="btn btn-sm btn-primary parts-request-header__back"
-      (click)="goBack()"
-      [disabled]="isLoading"
-    >
-      <i class="bi bi-arrow-left me-2"></i>
-      Back
-    </button>
     
     <!-- Page Title - Centered between buttons -->
     <div class="parts-page-title">
@@ -31,7 +22,6 @@
       </h2>
       <!-- Filter Information -->
       <div class="text-dark mt-2" *ngIf="!isLoading">
-        <span class="fw-semibold" *ngIf="!showWeeklyDataGrid">Filtered by: {{ partReturnFilterForm.get('inventoryUser')?.value }}</span>
         <span class="fw-semibold" *ngIf="showWeeklyDataGrid">Week {{ selectedWeekNo }} Details - {{ getCurrentGridRecordCount() }} records</span>
         <button class="btn btn-sm btn-outline-secondary ms-3" *ngIf="showWeeklyDataGrid" (click)="switchToMainGrid()">
           <i class="bi bi-arrow-left me-1"></i>
@@ -1115,68 +1105,132 @@
           <span class="text-muted">Processing data...</span>
         </div>
 
+        <!-- Records Per Page -->
+        <div class="d-flex align-items-center justify-content-between mb-3" *ngIf="!isLoading && !showWeeklyDataGrid">
+          <div class="d-flex align-items-center">
+            <label class="me-2 fw-semibold">Records per page:</label>
+            <select class="form-select form-select-sm w-auto"
+                    [(ngModel)]="pageSize"
+                    (change)="currentPage = 1; updateDisplayedData()">
+              <option value="100">100</option>
+              <option value="150">150</option>
+              <option value="200">200</option>
+            </select>
+          </div>
+
+          <div class="flex-fill text-center fw-semibold">
+            Showing
+            {{ totalRecords ? ((currentPage - 1) * pageSize + 1) : 0 }}
+            -
+            {{ totalRecords ? Math.min(currentPage * pageSize, totalRecords) : 0 }}
+            of {{ totalRecords }} records
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="goToPage(currentPage - 1)"
+                    [disabled]="currentPage <= 1">
+              Prev
+            </button>
+            <span class="fw-semibold">Page {{ currentPage }} of {{ getTotalPages() }}</span>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="goToPage(currentPage + 1)"
+                    [disabled]="currentPage >= getTotalPages()">
+              Next
+            </button>
+          </div>
+        </div>
 
 
 
         <!-- Main Parts Return Data Table (Legacy: dgReturns table) -->
         <div class="table-section" *ngIf="!isLoading && !showWeeklyDataGrid">
           <div class="table-responsive">
-            <table class="table modern-table">
-              <thead class="table-header">
+            <table class="table table-hover table-bordered mb-0">
+              <thead class="table-light">
                 <tr>
-                  <th class="sortable header-cell" (click)="sortTable('serviceCallId')" [ngClass]="getSortClass('serviceCallId')">
-                    <div class="header-content">
-                      <span class="header-text">Service Call ID</span>
-                      <i [class]="'sort-icon ' + sortIcon('serviceCallId')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('serviceCallId')">
+                    <span class="header-cell">
+                      Service Call ID
+                      <span class="sort-icons" [class.active]="sortColumn === 'serviceCallId'">
+                        <i class="up" [class.on]="sortColumn === 'serviceCallId' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'serviceCallId' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('partNum')" [ngClass]="getSortClass('partNum')">
-                    <div class="header-content">
-                      <span class="header-text">Part Number</span>
-                      <i [class]="'sort-icon ' + sortIcon('partNum')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('partNum')">
+                    <span class="header-cell">
+                      Part Number
+                      <span class="sort-icons" [class.active]="sortColumn === 'partNum'">
+                        <i class="up" [class.on]="sortColumn === 'partNum' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'partNum' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('dcPartNum')" [ngClass]="getSortClass('dcPartNum')">
-                    <div class="header-content">
-                      <span class="header-text">DC Part Number</span>
-                      <i [class]="'sort-icon ' + sortIcon('dcPartNum')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('dcPartNum')">
+                    <span class="header-cell">
+                      DC Part Number
+                      <span class="sort-icons" [class.active]="sortColumn === 'dcPartNum'">
+                        <i class="up" [class.on]="sortColumn === 'dcPartNum' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'dcPartNum' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('description')" [ngClass]="getSortClass('description')">
-                    <div class="header-content">
-                      <span class="header-text">Description</span>
-                      <i [class]="'sort-icon ' + sortIcon('description')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('description')">
+                    <span class="header-cell">
+                      Description
+                      <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                        <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('totalQty')" [ngClass]="getSortClass('totalQty')">
-                    <div class="header-content">
-                      <span class="header-text">Total Qty</span>
-                      <i [class]="'sort-icon ' + sortIcon('totalQty')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('totalQty')">
+                    <span class="header-cell">
+                      Total Qty
+                      <span class="sort-icons" [class.active]="sortColumn === 'totalQty'">
+                        <i class="up" [class.on]="sortColumn === 'totalQty' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'totalQty' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('faultyParts')" [ngClass]="getSortClass('faultyParts')">
-                    <div class="header-content">
-                      <span class="header-text">Faulty</span>
-                      <i [class]="'sort-icon ' + sortIcon('faultyParts')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('faultyParts')">
+                    <span class="header-cell">
+                      Faulty
+                      <span class="sort-icons" [class.active]="sortColumn === 'faultyParts'">
+                        <i class="up" [class.on]="sortColumn === 'faultyParts' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'faultyParts' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('unusedParts')" [ngClass]="getSortClass('unusedParts')">
-                    <div class="header-content">
-                      <span class="header-text">Unused</span>
-                      <i [class]="'sort-icon ' + sortIcon('unusedParts')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('unusedParts')">
+                    <span class="header-cell">
+                      Unused
+                      <span class="sort-icons" [class.active]="sortColumn === 'unusedParts'">
+                        <i class="up" [class.on]="sortColumn === 'unusedParts' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'unusedParts' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('technician')" [ngClass]="getSortClass('technician')">
-                    <div class="header-content">
-                      <span class="header-text">Technician</span>
-                      <i [class]="'sort-icon ' + sortIcon('technician')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('technician')">
+                    <span class="header-cell">
+                      Technician
+                      <span class="sort-icons" [class.active]="sortColumn === 'technician'">
+                        <i class="up" [class.on]="sortColumn === 'technician' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'technician' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('lastModified')" [ngClass]="getSortClass('lastModified')">
-                    <div class="header-content">
-                      <span class="header-text">Last Modified</span>
-                      <i [class]="'sort-icon ' + sortIcon('lastModified')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortData('lastModified')">
+                    <span class="header-cell">
+                      Last Modified
+                      <span class="sort-icons" [class.active]="sortColumn === 'lastModified'">
+                        <i class="up" [class.on]="sortColumn === 'lastModified' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'lastModified' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -1387,85 +1441,6 @@
               <button class="btn btn-primary" (click)="showWeeklyDataGrid = false">
                 <i class="bi bi-arrow-left me-2"></i>Back to Main View
               </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Enhanced Pagination Controls - Below Table -->
-        <div class="enhanced-pagination-wrapper" *ngIf="totalRecords > 0 && !showWeeklyDataGrid">
-          <div class="enhanced-pagination-controls">
-            <div class="row align-items-center g-3">
-              <!-- Left side - Page size and record info -->
-              <div class="col-md-6">
-                <div class="pagination-info">
-                  <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <div class="page-size-selector">
-                      <label class="form-label mb-0 fw-semibold">Records per page:</label>
-                      <select class="form-select form-select-lg" 
-                              [value]="pageSize" #pageSizeSelect (change)="onPageSizeChange(+pageSizeSelect.value)">
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="200">200</option>
-                      </select>
-                    </div>
-                    <div class="record-info">
-                      <span class="badge badge-info-custom">
-                        <i class="bi bi-list-ol me-1"></i>
-                        Showing {{startRecord}}-{{endRecord}} of {{totalRecords}} records
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Right side - Navigation controls -->
-              <div class="col-md-6">
-                <div class="pagination-navigation">
-                  <div class="d-flex justify-content-end align-items-center gap-2">
-                    <!-- First page -->
-                    <button class="btn btn-pagination btn-first" 
-                            [disabled]="currentPage === 1" 
-                            (click)="onPageChange(1)"
-                            title="First page">
-                      <i class="bi bi-chevron-double-left"></i>
-                    </button>
-                    
-                    <!-- Previous page -->
-                    <button class="btn btn-pagination btn-prev" 
-                            [disabled]="currentPage === 1" 
-                            (click)="onPageChange(currentPage - 1)"
-                            title="Previous page">
-                      <i class="bi bi-chevron-left"></i>
-                      <span class="d-none d-sm-inline">Previous</span>
-                    </button>
-                    
-                    <!-- Current page indicator -->
-                    <div class="current-page-indicator">
-                      <span class="page-display">
-                        Page <strong>{{currentPage}}</strong> of <strong>{{totalPages}}</strong>
-                      </span>
-                    </div>
-                    
-                    <!-- Next page -->
-                    <button class="btn btn-pagination btn-next" 
-                            [disabled]="currentPage === totalPages" 
-                            (click)="onPageChange(currentPage + 1)"
-                            title="Next page">
-                      <span class="d-none d-sm-inline">Next</span>
-                      <i class="bi bi-chevron-right"></i>
-                    </button>
-                    
-                    <!-- Last page -->
-                    <button class="btn btn-pagination btn-last" 
-                            [disabled]="currentPage === totalPages" 
-                            (click)="onPageChange(totalPages)"
-                            title="Last page">
-                      <i class="bi bi-chevron-double-right"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

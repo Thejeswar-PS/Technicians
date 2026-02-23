@@ -200,7 +200,7 @@ export class MiscellaneousTasksComponent implements OnInit {
   addViewParts(): void {
     this.loading = true;
 
-    this.reportService.checkJobExists(this.callNbr, this.jobStatus).pipe(
+    this.reportService.checkJobExistsLegacy(this.callNbr, this.jobStatus).pipe(
       catchError(err => {
         console.error('Job check failed', err);
         this.showError('Unable to check job');
@@ -210,13 +210,13 @@ export class MiscellaneousTasksComponent implements OnInit {
       this.loading = false;
       if (response && response.exists) {
         // Extract call number and tech name from the API response
-        const data = response.data;
-        if (data && data.callNbr && data.techName) {
+        const data = response.data || response;
+        if (data && (data.callNbr || data.CallNbr) && (data.techName || data.TechName)) {
           // Navigate to job-parts page with query parameters
           this.router.navigate(['/jobs/parts'], {
             queryParams: {
-              CallNbr: data.callNbr.trim(),
-              TechName: data.techName.trim()
+              CallNbr: (data.callNbr || data.CallNbr || '').toString().trim(),
+              TechName: (data.techName || data.TechName || '').toString().trim()
             }
           });
         } else {
