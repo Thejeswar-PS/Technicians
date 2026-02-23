@@ -175,7 +175,10 @@
             <tbody>
               <tr *ngFor="let row of getDisplayData()" [ngClass]="{'bill-after-pm': row.jobstatus === 'Could be billed' || row.jobstatus === 'Bill After PM'}">
                 <td *ngFor="let col of displayColumns" [style.width]="col.width">
-                  {{ row[col.key] | date: 'dd-MMM-yyyy' || row[col.key] }}
+                  <ng-container *ngIf="col.key === 'scheduledstart'; else textValue">
+                    {{ row[col.key] | date: 'dd-MMM-yyyy' }}
+                  </ng-container>
+                  <ng-template #textValue>{{ row[col.key] }}</ng-template>
                 </td>
               </tr>
             </tbody>

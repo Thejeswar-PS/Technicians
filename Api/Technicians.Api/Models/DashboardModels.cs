@@ -27,13 +27,10 @@
     public class WeekJobDto
     {
         public string CallNbr { get; set; }
-        public string CustNbr { get; set; }
         public string CustName { get; set; }
-        public string TechID { get; set; }
-        public string TechName { get; set; }
         public string AccMgr { get; set; }
-        public string Status { get; set; }
-        public DateTime ScheduledDate { get; set; }
+        public string JobStatus { get; set; }
+        public DateTime DateStatusChanged { get; set; }
     }
 
     public class MonthlyScheduledChartDto

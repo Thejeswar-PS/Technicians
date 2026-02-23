@@ -44,7 +44,15 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Charts
   monthlyChart: any;
-  jobChart: any;
+  scheduledUploadedChart: any;
+  topTechChart: any;
+  showScheduledUploadedEmpty = false;
+  showTopTechEmpty = false;
+
+  scheduledUploadedValues = { scheduled: 0, uploaded: 0 };
+
+  topTechLabels: string[] = [];
+  topTechData: number[] = [];
 
   dashboardData: any = {
     sales: {},
@@ -89,9 +97,13 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
       this.monthlyChart.destroy();
       this.monthlyChart = null;
     }
-    if (this.jobChart) {
-      this.jobChart.destroy();
-      this.jobChart = null;
+    if (this.scheduledUploadedChart) {
+      this.scheduledUploadedChart.destroy();
+      this.scheduledUploadedChart = null;
+    }
+    if (this.topTechChart) {
+      this.topTechChart.destroy();
+      this.topTechChart = null;
     }
     this.loadTechDashboardData();
   }
@@ -142,8 +154,20 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
         };
         this.filterSharedService.setDashboardData(this.dashboardData);
         this.cdr.detectChanges();
+
+        this.updateScheduledUploadedChart();
       },
       error: (err) => console.error('Error loading KPIs:', err)
+    });
+
+    this.techDashboardService.getScheduledVsUploaded(this.selectedAccMgr, this.selectedTech).subscribe({
+      next: (counts) => {
+        this.updateScheduledUploadedChart(counts.scheduled, counts.uploaded);
+      },
+      error: (err) => {
+        console.warn('Error loading scheduled vs uploaded data:', err);
+        this.updateScheduledUploadedChart();
+      }
     });
 
     // Load Activity Log
@@ -188,7 +212,7 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
         this.cdr.detectChanges();
         
         // Update charts - reinitialize if not yet created
-        if (!this.monthlyChart || !this.jobChart) {
+        if (!this.monthlyChart) {
           console.log('Charts not initialized, initializing now');
           this.initCharts();
           // Wait a bit for DOM to update before updating chart data
@@ -201,22 +225,110 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
       },
       error: (err) => console.error('Error loading chart data:', err)
     });
+
+    this.techDashboardService.getTopTechsDaysToUpload(this.selectedAccMgr, this.selectedTech).subscribe({
+      next: (rows) => {
+        this.topTechLabels = rows.map(item => item.techName);
+        this.topTechData = rows.map(item => item.medianDays);
+        this.updateTopTechChart();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.warn('Error loading top tech chart data:', err);
+        this.topTechLabels = [];
+        this.topTechData = [];
+        this.updateTopTechChart();
+      }
+    });
   }
 
   initCharts(): void {
+    // Scheduled vs Uploaded (Doughnut)
+    const scheduledCanvas = document.getElementById('scheduledUploadedChart') as HTMLCanvasElement;
+    if (scheduledCanvas && typeof Chart !== 'undefined') {
+      const scheduledCtx = scheduledCanvas.getContext('2d');
+      if (scheduledCtx) {
+        this.scheduledUploadedChart = new Chart(scheduledCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Scheduled', 'Uploaded'],
+            datasets: [{
+              data: [0, 0],
+              backgroundColor: ['#60c5d6', '#b794f4'],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            rotation: -90,
+            circumference: 180,
+            cutout: '70%',
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { position: 'bottom' }
+            }
+          }
+        });
+      }
+    }
+
+    // Top 10 Techs - Days To Upload (Horizontal Bar)
+    const topTechCanvas = document.getElementById('topTechChart') as HTMLCanvasElement;
+    if (topTechCanvas && typeof Chart !== 'undefined') {
+      const topTechCtx = topTechCanvas.getContext('2d');
+      if (topTechCtx) {
+        this.topTechChart = new Chart(topTechCtx, {
+          type: 'bar',
+          data: {
+            labels: [],
+            datasets: [{
+              data: [],
+              backgroundColor: ['#60c5d6', '#34d399', '#f472b6', '#6366f1', '#b794f4'],
+              borderRadius: 6
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                position: 'left',
+                ticks: {
+                  align: 'start',
+                  padding: 6,
+                  font: { size: 13, weight: '500' }
+                },
+                grid: { display: false }
+              },
+              x: {
+                grid: { color: 'rgba(0,0,0,0.08)' }
+              }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      }
+    }
+
     // Monthly Chart (Bar)
     const monthlyCanvas = document.getElementById('monthlyChart') as HTMLCanvasElement;
     if (monthlyCanvas && typeof Chart !== 'undefined') {
       const monthlyCtx = monthlyCanvas.getContext('2d');
       if (monthlyCtx) {
+        const gradient = monthlyCtx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, '#60c5d6');
+        gradient.addColorStop(1, '#DDF5F9');
+
         this.monthlyChart = new Chart(monthlyCtx, {
           type: 'bar',
           data: {
             labels: [],
             datasets: [{
               data: [],
-              backgroundColor: 'rgba(63,174,154,.75)',
-              borderRadius: 10
+              backgroundColor: gradient,
+              borderRadius: 8
             }]
           },
           options: {
@@ -234,45 +346,16 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
       }
     }
 
-    // Job Upload Trend Chart (Line)
-    const jobCanvas = document.getElementById('jobChart') as HTMLCanvasElement;
-    if (jobCanvas && typeof Chart !== 'undefined') {
-      const jobCtx = jobCanvas.getContext('2d');
-      if (jobCtx) {
-        this.jobChart = new Chart(jobCtx, {
-          type: 'line',
-          data: {
-            labels: [],
-            datasets: [{
-              data: [],
-              fill: true,
-              tension: 0.4,
-              borderColor: '#3FAE9A',
-              backgroundColor: 'rgba(111,213,195,.45)',
-              pointRadius: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false }
-            },
-            scales: {
-              x: { grid: { display: false }, ticks: { color: '#134E4A' } },
-              y: { grid: { color: 'rgba(0,0,0,.08)' }, ticks: { color: '#134E4A' } }
-            }
-          }
-        });
-      }
-    }
+    // Populate charts with latest data
+    this.updateScheduledUploadedChart();
+    this.updateTopTechChart();
   }
 
   updateCharts(chartData: any[]): void {
     const labels = chartData.map(item => item.monthName);
     const values = chartData.map(item => item.jobs);
 
-    console.log('updateCharts called with:', { labels, values, monthlyChart: this.monthlyChart, jobChart: this.jobChart });
+    console.log('updateCharts called with:', { labels, values, monthlyChart: this.monthlyChart });
 
     // Update Monthly Chart
     if (this.monthlyChart) {
@@ -284,14 +367,38 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
       console.warn('Monthly chart not initialized yet');
     }
 
-    // Update Job Trend Chart
-    if (this.jobChart) {
-      this.jobChart.data.labels = labels;
-      this.jobChart.data.datasets[0].data = values;
-      this.jobChart.update('none'); // Use 'none' to avoid animation and update immediately
-      console.log('Job chart updated:', { labels, values });
-    } else {
-      console.warn('Job chart not initialized yet');
+  }
+
+  updateScheduledUploadedChart(scheduledValue?: number, uploadedValue?: number): void {
+    if (scheduledValue != null || uploadedValue != null) {
+      this.scheduledUploadedValues = {
+        scheduled: Number(scheduledValue ?? this.scheduledUploadedValues.scheduled),
+        uploaded: Number(uploadedValue ?? this.scheduledUploadedValues.uploaded)
+      };
+    } else if (this.scheduledUploadedValues.scheduled === 0 && this.scheduledUploadedValues.uploaded === 0) {
+      this.scheduledUploadedValues = {
+        scheduled: Number(this.kpis.jobsScheduled || 0),
+        uploaded: Number(this.kpis.jobsToBeUploaded || 0)
+      };
+    }
+
+    const scheduled = this.scheduledUploadedValues.scheduled;
+    const uploaded = this.scheduledUploadedValues.uploaded;
+    this.showScheduledUploadedEmpty = scheduled === 0 && uploaded === 0;
+
+    if (this.scheduledUploadedChart) {
+      this.scheduledUploadedChart.data.datasets[0].data = [scheduled, uploaded];
+      this.scheduledUploadedChart.update('none');
+    }
+  }
+
+  updateTopTechChart(): void {
+    this.showTopTechEmpty = !this.topTechData || this.topTechData.length === 0;
+
+    if (this.topTechChart) {
+      this.topTechChart.data.labels = this.topTechLabels;
+      this.topTechChart.data.datasets[0].data = this.topTechData;
+      this.topTechChart.update('none');
     }
   }
 
@@ -302,8 +409,19 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.monthlyChart) {
       this.monthlyChart.destroy();
     }
-    if (this.jobChart) {
-      this.jobChart.destroy();
+    if (this.scheduledUploadedChart) {
+      this.scheduledUploadedChart.destroy();
     }
+    if (this.topTechChart) {
+      this.topTechChart.destroy();
+    }
+  }
+
+  trackByActivity(index: number, item: any): string {
+    return `${item.activityDate}-${item.jobID}-${index}`;
+  }
+
+  trackByWeekJob(index: number, item: any): string {
+    return `${item.callNbr}-${index}`;
   }
 }
