@@ -275,7 +275,7 @@ currentUser: any;
       // Add URL only for numeric call numbers (real jobs)
       if (isNumericCall) {
         const techName = encodeURIComponent(((list.techName as any) || '').toString().trim());
-        event.url = `${this.document.location.origin}/#/jobs/job-notes-info?CallNbr=${call}&TechName=${techName}`;
+        event.url = `${this.document.location.origin}/TechniciansWeb/#/jobs/job-notes-info?CallNbr=${call}&TechName=${techName}`;
       }
 
       if (!isNumericCall) {

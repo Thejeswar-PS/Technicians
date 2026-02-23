@@ -37,8 +37,34 @@ export class PartsPerformanceGraphComponent implements OnInit {
     this.service.getPartsPerformanceData().subscribe({
       next: (response: any) => {
         console.log('Parts Performance API Response:', response);
-        
-        if (response && response.tables && response.tables.length >= 5) {
+
+        const hasNewShape = response && (
+          Array.isArray(response.foldersPerMonth) ||
+          Array.isArray(response.avgFolderDays) ||
+          Array.isArray(response.partsReturnedStatus) ||
+          Array.isArray(response.avgReturnDays) ||
+          Array.isArray(response.partsTestedStatus) ||
+          Array.isArray(response.avgTestingDays) ||
+          Array.isArray(response.partsUnitsByCategory)
+        );
+
+        if (hasNewShape) {
+          const foldersPerMonth = response.foldersPerMonth || [];
+          const avgFolderDays = response.avgFolderDays || [];
+          const partsReturnedStatus = response.partsReturnedStatus || [];
+          const avgReturnDays = response.avgReturnDays || [];
+          const partsTestedStatus = response.partsTestedStatus || [];
+          const avgTestingDays = response.avgTestingDays || [];
+          const partsUnitsByCategory = response.partsUnitsByCategory || [];
+
+          this.createFoldersChart(foldersPerMonth);
+          this.createFolderDaysChart(avgFolderDays);
+          this.createReturnsChart(partsReturnedStatus);
+          this.createReturnDaysChart(avgReturnDays);
+          this.createTestedChart(partsTestedStatus);
+          this.createTestedDaysChart(avgTestingDays);
+          this.createPartsUnitsChart(partsUnitsByCategory);
+        } else if (response && response.tables && response.tables.length >= 5) {
           const table0 = response.tables[0] || [];
           const table1 = response.tables[1] || [];
           const table2 = response.tables[2] || [];
@@ -55,7 +81,7 @@ export class PartsPerformanceGraphComponent implements OnInit {
         } else {
           this.errorMessage = 'Failed to load parts performance data';
         }
-        
+
         this.isLoading = false;
         this.cdr.markForCheck();
       },

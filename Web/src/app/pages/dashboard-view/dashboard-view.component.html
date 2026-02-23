@@ -1,91 +1,150 @@
+<div class="dashboard-page">
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <div class="dashboard-title">Technician Dashboard</div>
+      <button type="button" class="btn btn-dark" (click)="toggleFilterPanel()">Filter</button>
+    </div>
 
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-  <div class="menu-item me-lg-1">
-    <span class="menu-link py-1"><span class="menu-title fs-1 fw-bolder text-dark" style="justify-content: center;">Tech Dashboard</span></span>
-  </div>
-  <button class="btn btn-sm btn-primary" (click)="toggleFilterPanel()">
-    Filter
-  </button>
-</div>
+    <div class="filter-panel" [class.show]="showFilterPanel">
+      <select class="form-select mb-3" [(ngModel)]="selectedAccMgr">
+        <option value="ALL">All</option>
+        <option *ngFor="let mgr of accountManagers" [value]="mgr.empID">{{ mgr.empName }}</option>
+      </select>
+      <select class="form-select mb-3" [(ngModel)]="selectedTech">
+        <option value="ALL">All</option>
+        <option *ngFor="let tech of technicians" [value]="tech.techID">{{ tech.techName }}</option>
+      </select>
+      <select class="form-select mb-3" [(ngModel)]="selectedDateRange">
+        <option *ngFor="let range of dateRangeOptions" [value]="range.value">{{ range.text }}</option>
+      </select>
+      <button type="button" class="btn btn-primary w-100" (click)="applyFilters()">Apply Filter</button>
+    </div>
 
-<div class="card shadow-sm mb-4" *ngIf="showFilterPanel">
-  <div class="card-body">
-    <div class="row g-3">
-      <div class="col-md-4">
-        <label class="form-label fw-bold">Account Manager</label>
-        <select class="form-select" [(ngModel)]="selectedAccMgr">
-          <option value="ALL">All</option>
-          <option *ngFor="let mgr of accountManagers" [value]="mgr.empID">{{ mgr.empName }}</option>
-        </select>
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi-card kpi-blue">
+        <div class="kpi-header">Jobs Scheduled</div>
+        <div class="kpi-number">{{ kpis.jobsScheduled }}</div>
       </div>
-      <div class="col-md-4">
-        <label class="form-label fw-bold">Technician</label>
-        <select class="form-select" [(ngModel)]="selectedTech">
-          <option value="ALL">All</option>
-          <option *ngFor="let tech of technicians" [value]="tech.techID">{{ tech.techName }}</option>
-        </select>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-header">To Be Uploaded</div>
+        <div class="kpi-number">{{ kpis.jobsToBeUploaded }}</div>
       </div>
-      <div class="col-md-4">
-        <label class="form-label fw-bold">Date Range</label>
-        <select class="form-select" [(ngModel)]="selectedDateRange">
-          <option *ngFor="let range of dateRangeOptions" [value]="range.value">{{ range.text }}</option>
-        </select>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-header">Emergency Jobs</div>
+        <div class="kpi-number">{{ kpis.emergencyJobs }}</div>
       </div>
-      <div class="col-12 d-flex justify-content-end">
-        <button class="btn btn-success" (click)="applyFilters()">Apply Filter</button>
+      <div class="kpi-card kpi-yellow">
+        <div class="kpi-header">Missing Jobs</div>
+        <div class="kpi-number">{{ kpis.missingJobs }}</div>
       </div>
     </div>
-  </div>
-</div>
 
-<div class="row g-5 g-xl-8">
-  <!-- LEFT: KPI Cards + Monthly Chart -->
-  <div class="col-xl-4">
-    <div class="row">
-      <app-dashboard-sales
-      class="card card-xl-stretch mb-xl-8"
-      color="danger"
-      [data]="dashboardData"
-      chartHeight="400px"
-    ></app-dashboard-sales>
-    </div>
-    <!-- Monthly Scheduled Jobs Chart -->
-    <div class="row">
-      <div class="card card-xl-stretch mb-xl-8">
-        <div class="card-body">
-          <h6 class="mb-4 fw-bold">Monthly Scheduled Jobs Count</h6>
-          <div style="height: 320px; position: relative; width: 100%;">
-            <canvas id="monthlyChart" style="display: block;"></canvas>
+    <!-- QUICK LINKS + WEEKLY JOBS -->
+    <div class="row g-4 mb-4 align-items-stretch">
+      <!-- Quick Links -->
+      <div class="col-md-3 d-flex">
+        <div class="section-card w-100">
+          <div class="section-title">Quick Links</div>
+          <div class="quick-links">
+            <a [routerLink]="['/jobs/job-list']">
+              <i class="bi bi-list-task text-primary me-2"></i> My Jobs List
+            </a>
+            <a [routerLink]="['/tools/jobs-to-be-uploaded']">
+              <i class="bi bi-upload text-success me-2"></i> Jobs To Be Uploaded
+            </a>
+            <a [routerLink]="['/tools/notes-search']">
+              <i class="bi bi-search text-info me-2"></i> PM Notes Search
+            </a>
+            <a href="https://dcgroupinc.sharepoint.com/Tech%20Training%20Documents/Forms/AllItems.aspx" target="_blank" rel="noopener">
+              <i class="bi bi-journal-text text-warning me-2"></i> Tech Training Documents
+            </a>
+            <a href="https://dcgroupinc.sharepoint.com/Lists/IT%20Tickets/SubmitForm.aspx" target="_blank" rel="noopener">
+              <i class="bi bi-ticket-perforated text-danger me-2"></i> Submit an IT Ticket
+            </a>
+            <a href="#">
+              <i class="bi bi-shield-lock text-secondary me-2"></i> VPN Setup Instructions
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Log -->
+      <div class="col-md-3 d-flex">
+        <div class="section-card w-100 activity-card">
+          <div class="section-title">Recent Activity Log</div>
+          <div class="activity-scroll">
+            <ng-container *ngIf="dashboardData.recentActivityLog?.length; else noActivity">
+              <ng-container *ngFor="let item of dashboardData.recentActivityLog; trackBy: trackByActivity">
+                <div *ngIf="item.isNewDate === 1" class="activity-date-header">{{ item.activityDate }}</div>
+                <div class="activity-item">
+                  <b>{{ item.jobID }}</b><br />
+                  {{ item.message }}
+                </div>
+              </ng-container>
+            </ng-container>
+            <ng-template #noActivity>
+              <div class="text-muted">No recent activity.</div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly Jobs -->
+      <div class="col-md-6 d-flex">
+        <div class="section-card w-100 week-jobs-card">
+          <div class="section-title">Current Week Jobs</div>
+          <div class="table-responsive">
+            <table class="elegant-grid">
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Customer</th>
+                  <th>Manager</th>
+                  <th style="width: 180px;">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let job of dashboardData.todaysJobList; trackBy: trackByWeekJob">
+                  <td>{{ job.callNbr }}</td>
+                  <td>{{ job.custName }}</td>
+                  <td>{{ job.accmgr }}</td>
+                  <td>{{ job.dateStatusChanged | date: 'MMM d yyyy HH:mm' }}</td>
+                </tr>
+                <tr *ngIf="!dashboardData.todaysJobList?.length">
+                  <td colspan="4" class="text-center text-muted">No jobs found.</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- CENTER: Activity Log -->
-  <div class="col-xl-3">
-    <app-dashboard-recent-activities
-        class="card card-xl-stretch mb-xl-8"
-        chartHeight="350px"
-      ></app-dashboard-recent-activities>
-  </div>
-
-  <!-- RIGHT: Week Jobs + Trend Chart -->
-  <div class="col-xl-5">
-    <div class="row">
-      <app-dashboard-jobs-list
-        class="card card-xl-stretch mb-xl-8"
-        chartHeight="650px"
-      ></app-dashboard-jobs-list>
-    </div>
-    <!-- Job Upload Trend Chart -->
-    <div class="row">
-      <div class="card card-xl-stretch mb-xl-8">
-        <div class="card-body">
-          <h6 class="mb-4 fw-bold">Job Upload Trend</h6>
-          <div style="height: 320px; position: relative; width: 100%;">
-            <canvas id="jobChart" style="display: block;"></canvas>
+    <!-- BOTTOM CHARTS -->
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="chart-container">
+          <div class="section-title">Scheduled Vs Upload</div>
+          <div class="fixed-chart-wrapper">
+            <canvas id="scheduledUploadedChart"></canvas>
           </div>
+          <div class="text-center text-muted small" *ngIf="showScheduledUploadedEmpty">No data available.</div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="chart-container">
+          <div class="section-title">Top 10 Techs - Days To Upload</div>
+          <canvas id="topTechChart"></canvas>
+          <div class="text-center text-muted small" *ngIf="showTopTechEmpty">No data available.</div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="chart-container">
+          <div class="section-title">Monthly Scheduled Jobs</div>
+          <canvas id="monthlyChart"></canvas>
         </div>
       </div>
     </div>

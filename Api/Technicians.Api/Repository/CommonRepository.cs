@@ -218,14 +218,11 @@ namespace Technicians.Api.Repository
                 results.Add(new WeekJobDto
                 {
                     CallNbr = reader["CallNbr"]?.ToString(),
-                    CustNbr = reader["CustNbr"]?.ToString(),
                     CustName = reader["CustName"]?.ToString(),
-                    TechID = reader["TechID"]?.ToString(),
-                    TechName = reader["TechName"]?.ToString(),
                     AccMgr = reader["AccMgr"]?.ToString(),
-                    Status = reader["Status"]?.ToString(),
-                    ScheduledDate = reader["ScheduledDate"] != DBNull.Value
-                        ? Convert.ToDateTime(reader["ScheduledDate"])
+                    JobStatus = reader["JobStatus"]?.ToString(),
+                    DateStatusChanged = reader["DateStatusChanged"] != DBNull.Value
+                        ? Convert.ToDateTime(reader["DateStatusChanged"])
                         : DateTime.MinValue
                 });
             }
@@ -259,6 +256,34 @@ namespace Technicians.Api.Repository
             }
 
             return chart;
+        }
+
+        public async Task<List<MenuLinkDto>> GetMenuLinksWithLoginAsync(string userId, int menuId)
+        {
+            var menuLinks = new List<MenuLinkDto>();
+
+            await using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand("GetLinkswithLogin", connection);
+            command.CommandType = CommandType.StoredProcedure;
+            command.Parameters.AddWithValue("@UserID", userId);
+            command.Parameters.AddWithValue("@MenuID", menuId);
+
+            using var reader = await command.ExecuteReaderAsync();
+
+            while (await reader.ReadAsync())
+            {
+                menuLinks.Add(new MenuLinkDto
+                {
+                    Menu_ID = reader["Menu_ID"] != DBNull.Value ? Convert.ToInt32(reader["Menu_ID"]) : 0,
+                    Menu_ParentID = reader["Menu_ParentID"] != DBNull.Value ? Convert.ToInt32(reader["Menu_ParentID"]) : null,
+                    Menu_Name = reader["Menu_Name"] != DBNull.Value ? reader["Menu_Name"].ToString() : null,
+                    Menu_Page_URL = reader["Menu_Page_URL"] != DBNull.Value ? reader["Menu_Page_URL"].ToString() : null
+                });
+            }
+
+            return menuLinks;
         }
 
     }

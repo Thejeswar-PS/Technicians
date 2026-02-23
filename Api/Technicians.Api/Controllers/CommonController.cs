@@ -142,6 +142,39 @@ namespace Technicians.Api.Controllers
             return Ok(result);
         }
 
+        [HttpGet("GetLinkswithLogin")]
+        public async Task<IActionResult> GetLinkswithLogin(
+            [FromQuery] string UserID,
+            [FromQuery] int MenuID = 0)
+        {
+            if (string.IsNullOrWhiteSpace(UserID))
+                return BadRequest("UserID is required.");
+
+            try
+            {
+                var menuLinks = await _repository.GetMenuLinksWithLoginAsync(UserID, MenuID);
+
+                return Ok(new MenuLinksResponse
+                {
+                    Success = true,
+                    Message = menuLinks.Count > 0 ? "Menu links retrieved successfully." : "No menu links found for the specified user.",
+                    Data = menuLinks,
+                    UserID = UserID,
+                    MenuID = MenuID
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MenuLinksResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred while retrieving menu links: {ex.Message}",
+                    Data = new List<MenuLinkDto>(),
+                    UserID = UserID,
+                    MenuID = MenuID
+                });
+            }
+        }
 
     }
 }

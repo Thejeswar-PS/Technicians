@@ -33,6 +33,16 @@ export interface MonthlyChartData {
   jobs: number;
 }
 
+export interface ScheduledVsUploaded {
+  scheduled: number;
+  uploaded: number;
+}
+
+export interface TopTechUpload {
+  techName: string;
+  medianDays: number;
+}
+
 export interface AccountManager {
   empID: string;
   empName: string;
@@ -167,7 +177,7 @@ export class TechDashboardService {
           return response.columns.map((item: any) => ({
             callNbr: item.CallNbr || item.callNbr || '',
             custName: item.CustName || item.custName || '',
-            accmgr: item.Accmgr || item.accmgr || '',
+            accmgr: item.Accmgr || item.accmgr || item.accMgr || '',
             dateStatusChanged: item.DateStatusChanged || item.dateStatusChanged || ''
           }));
         }
@@ -203,6 +213,65 @@ export class TechDashboardService {
             monthNo: Number(item.MonthNo || item.monthNo || 0),
             monthName: item.MonthName || item.monthName || '',
             jobs: Number(item.Jobs || item.jobs || 0)
+          }));
+        }
+        return [];
+      })
+    );
+  }
+
+  /**
+   * Get scheduled vs uploaded counts
+   */
+  getScheduledVsUploaded(accMgr: string, techID: string): Observable<ScheduledVsUploaded> {
+    const params = new HttpParams()
+      .set('pOffid', accMgr)
+      .set('TechID', techID);
+
+    return this.http.get<any>(`${this.apiUrl}/Common/GetScheduledVsUploaded`, { params }).pipe(
+      map(response => {
+        if (Array.isArray(response) && response.length) {
+          const item = response[0];
+          return {
+            scheduled: Number(item.ScheduledCount || item.scheduledCount || item.scheduled || 0),
+            uploaded: Number(item.UploadedCount || item.uploadedCount || item.uploaded || 0)
+          };
+        }
+        if (response.columns) {
+          const item = response.columns;
+          return {
+            scheduled: Number(item.ScheduledCount || item.scheduledCount || item.scheduled || 0),
+            uploaded: Number(item.UploadedCount || item.uploadedCount || item.uploaded || 0)
+          };
+        }
+        return {
+          scheduled: Number(response?.scheduled || 0),
+          uploaded: Number(response?.uploaded || 0)
+        };
+      })
+    );
+  }
+
+  /**
+   * Get top techs by median days to upload
+   */
+  getTopTechsDaysToUpload(accMgr: string, techID: string): Observable<TopTechUpload[]> {
+    const params = new HttpParams()
+      .set('pOffid', accMgr)
+      .set('TechID', techID);
+
+    return this.http.get<any>(`${this.apiUrl}/Common/GetTopTechsUploadedIn12Months`, { params }).pipe(
+      map(response => {
+        if (Array.isArray(response)) {
+          return response.map((item: any) => ({
+            techName: item.TechName || item.techName || '',
+            medianDays: Number(item.MedianDays || item.medianDays || 0)
+          }));
+        }
+        if (response.columns && Array.isArray(response.columns)) {
+          return response.columns.map((item: any) => ({
+            techName: item.TechName || item.techName || '',
+            medianDays: Number(item.MedianDays || item.medianDays || 0)
           }));
         }
         return [];
