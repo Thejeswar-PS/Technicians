@@ -1427,6 +1427,9 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
     if (confirm(confirmMessage)) {
       this.isDeleting = true;
       
+      // Check if this is the last part before deletion
+      const isLastPart = this.partsDetails.length === 1;
+      
       // Get the actual rowIndex from the part data
       // Use the part's rowIndex if available, otherwise use its position in the array
       const rowIndex = part.rowIndex || part.RowIndex || 
@@ -1440,31 +1443,20 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
         .subscribe({
           next: (response: any) => {
             if (response.success) {
-              // Remove from local arrays
-              this.partsDetails = this.partsDetails.filter((p: StrippedPartsDetailDto) => 
-                !((p.dcgPartNo === part.dcgPartNo || p.DCGPartNo === part.DCGPartNo) &&
-                  (p.partDesc === part.partDesc || p.Description === part.Description))
-              );
-              
-              // Update grouped parts
-              this.groupedParts = this.groupedParts.map(group => ({
-                ...group,
-                parts: group.parts.filter((p: StrippedPartsDetailDto) => 
-                  !((p.dcgPartNo === part.dcgPartNo || p.DCGPartNo === part.DCGPartNo) &&
-                    (p.partDesc === part.partDesc || p.Description === part.Description))
-                )
-              })).filter(group => group.parts.length > 0);
-              
-              // Remove from editing state if it was being edited
-              this.editingParts.delete(part);
-              
-              // Recalculate summary data and totals
-              this.calculateFromPartsDetails();
-              
               this.toastr.success(
                 `Part ${part.dcgPartNo || part.DCGPartNo} deleted successfully`, 
                 'Deleted'
               );
+              
+              // Navigate to Stripped Units Status page if this was the last part
+              if (isLastPart) {
+                setTimeout(() => {
+                  this.router.navigate(['/reports/stripped-units-status']);
+                }, 1500); // Delay to show success message
+              } else {
+                // Reload the data to get updated parts list
+                this.loadStrippedPartsData(this.masterRowIndex);
+              }
             } else {
               this.toastr.error(
                 response.message || 'Failed to delete part', 
