@@ -214,7 +214,6 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
           this.updateAvailableMakes();
           this.loadChartData();
           this.applyFilters();
-          this.toastr.success(`Loaded ${this.strippedUnitsList.length} stripped units`, 'Success');
         } else {
           console.log('❌ [MAIN ERROR] Failed to load units:', response.message);
           this.handleError(response.message || 'Failed to load stripped units status');
