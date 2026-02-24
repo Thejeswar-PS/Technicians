@@ -46,19 +46,10 @@
         </div>
         <div class="col-md-6 d-flex align-items-end gap-2">
           <button 
-            class="btn btn-primary flex-grow-1" 
-            (click)="generateReport()" 
-            [disabled]="isLoading || isLoadingAccountManagers">
-            <i class="bi bi-bar-chart me-2"></i>{{ reportData ? 'Refresh Report' : 'Generate Report' }}
-          </button>
-          <button 
-            class="btn btn-warning" 
+            class="btn btn-red-orange" 
             (click)="generateReport('RedOrange')" 
             [disabled]="isLoading || isLoadingAccountManagers">
             <i class="bi bi-filter me-2"></i>Critical Jobs
-          </button>
-          <button class="btn btn-secondary" (click)="clearReport()" *ngIf="reportData" [disabled]="isLoading">
-            <i class="bi bi-arrow-clockwise"></i>
           </button>
         </div>
       </form>
@@ -206,16 +197,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Technician</th>
-                <th class="fw-bold">Job Completion Date</th>
-                <th class="fw-bold">Days Tech Holding</th>
-                <th class="fw-bold">Description</th>
-                <th class="fw-bold">Contract No</th>
-                <th class="fw-bold">Quoted Amount</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('status')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'status'">
+                      <i class="up" [class.on]="sortColumn === 'status' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'status' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('techName')">
+                  <span class="header-cell">
+                    Technician
+                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
+                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledEnd')">
+                  <span class="header-cell">
+                    Job Completion Date
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledEnd'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Days Tech Holding
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('contractNo')">
+                  <span class="header-cell">
+                    Contract No
+                    <span class="sort-icons" [class.active]="sortColumn === 'contractNo'">
+                      <i class="up" [class.on]="sortColumn === 'contractNo' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'contractNo' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('quotedAmount')">
+                  <span class="header-cell">
+                    Quoted Amount
+                    <span class="sort-icons" [class.active]="sortColumn === 'quotedAmount'">
+                      <i class="up" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -248,17 +319,105 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Technician</th>
-                <th class="fw-bold">Job Scheduled On</th>
-                <th class="fw-bold">Job Returned On</th>
-                <th class="fw-bold">Days Acc Mgr Holding</th>
-                <th class="fw-bold">Description</th>
-                <th class="fw-bold">Contract No</th>
-                <th class="fw-bold">Quoted Amount</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('status')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'status'">
+                      <i class="up" [class.on]="sortColumn === 'status' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'status' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('techName')">
+                  <span class="header-cell">
+                    Technician
+                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
+                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Job Scheduled On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('returnedDate')">
+                  <span class="header-cell">
+                    Job Returned On
+                    <span class="sort-icons" [class.active]="sortColumn === 'returnedDate'">
+                      <i class="up" [class.on]="sortColumn === 'returnedDate' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'returnedDate' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Days Acc Mgr Holding
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('contractNo')">
+                  <span class="header-cell">
+                    Contract No
+                    <span class="sort-icons" [class.active]="sortColumn === 'contractNo'">
+                      <i class="up" [class.on]="sortColumn === 'contractNo' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'contractNo' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('quotedAmount')">
+                  <span class="header-cell">
+                    Quoted Amount
+                    <span class="sort-icons" [class.active]="sortColumn === 'quotedAmount'">
+                      <i class="up" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -292,13 +451,69 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer</th>
-                <th class="fw-bold">Job Status</th>
-                <th class="fw-bold">Scheduled Start</th>
-                <th class="fw-bold">Scheduled End</th>
-                <th class="fw-bold">Tech Name</th>
-                <th class="fw-bold">Description</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                  <span class="header-cell">
+                    Job Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
+                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Scheduled Start
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledEnd')">
+                  <span class="header-cell">
+                    Scheduled End
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledEnd'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('techName')">
+                  <span class="header-cell">
+                    Tech Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
+                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -321,16 +536,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Technician</th>
-                <th class="fw-bold">Job Completion Date</th>
-                <th class="fw-bold">Days Tech Holding</th>
-                <th class="fw-bold">Description</th>
-                <th class="fw-bold">Contract No</th>
-                <th class="fw-bold">Quoted Amount</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('status')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'status'">
+                      <i class="up" [class.on]="sortColumn === 'status' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'status' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('techName')">
+                  <span class="header-cell">
+                    Technician
+                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
+                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('responseDate')">
+                  <span class="header-cell">
+                    Job Completion Date
+                    <span class="sort-icons" [class.active]="sortColumn === 'responseDate'">
+                      <i class="up" [class.on]="sortColumn === 'responseDate' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'responseDate' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Days Tech Holding
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('contractNo')">
+                  <span class="header-cell">
+                    Contract No
+                    <span class="sort-icons" [class.active]="sortColumn === 'contractNo'">
+                      <i class="up" [class.on]="sortColumn === 'contractNo' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'contractNo' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('quotedAmount')">
+                  <span class="header-cell">
+                    Quoted Amount
+                    <span class="sort-icons" [class.active]="sortColumn === 'quotedAmount'">
+                      <i class="up" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -363,12 +658,60 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Scheduled Date</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Technician Assigned</th>
-                <th class="fw-bold">Call Type</th>
-                <th class="fw-bold">Confirmation Status</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Scheduled Date
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('techName')">
+                  <span class="header-cell">
+                    Technician Assigned
+                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
+                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobType')">
+                  <span class="header-cell">
+                    Call Type
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobType'">
+                      <i class="up" [class.on]="sortColumn === 'jobType' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobType' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('confirmationStatus')">
+                  <span class="header-cell">
+                    Confirmation Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'confirmationStatus'">
+                      <i class="up" [class.on]="sortColumn === 'confirmationStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'confirmationStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -390,16 +733,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Site Contact</th>
-                <th class="fw-bold">City</th>
-                <th class="fw-bold">Job Due On</th>
-                <th class="fw-bold">No Of Days</th>
-                <th class="fw-bold">Original Age</th>
-                <th class="fw-bold">Description</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
+                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('siteContact')">
+                  <span class="header-cell">
+                    Site Contact
+                    <span class="sort-icons" [class.active]="sortColumn === 'siteContact'">
+                      <i class="up" [class.on]="sortColumn === 'siteContact' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'siteContact' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('city')">
+                  <span class="header-cell">
+                    City
+                    <span class="sort-icons" [class.active]="sortColumn === 'city'">
+                      <i class="up" [class.on]="sortColumn === 'city' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'city' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Job Due On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    No Of Days
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('origAge')">
+                  <span class="header-cell">
+                    Original Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'origAge'">
+                      <i class="up" [class.on]="sortColumn === 'origAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'origAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -425,16 +848,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Site Contact</th>
-                <th class="fw-bold">City</th>
-                <th class="fw-bold">Job Due On</th>
-                <th class="fw-bold">Current Age</th>
-                <th class="fw-bold">Original Age</th>
-                <th class="fw-bold">Description</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
+                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('siteContact')">
+                  <span class="header-cell">
+                    Site Contact
+                    <span class="sort-icons" [class.active]="sortColumn === 'siteContact'">
+                      <i class="up" [class.on]="sortColumn === 'siteContact' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'siteContact' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('city')">
+                  <span class="header-cell">
+                    City
+                    <span class="sort-icons" [class.active]="sortColumn === 'city'">
+                      <i class="up" [class.on]="sortColumn === 'city' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'city' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Job Due On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Current Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('origAge')">
+                  <span class="header-cell">
+                    Original Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'origAge'">
+                      <i class="up" [class.on]="sortColumn === 'origAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'origAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -461,16 +964,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Site Contact</th>
-                <th class="fw-bold">City</th>
-                <th class="fw-bold">Job Due On</th>
-                <th class="fw-bold">Current Age</th>
-                <th class="fw-bold">Original Age</th>
-                <th class="fw-bold">Description</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
+                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('siteContact')">
+                  <span class="header-cell">
+                    Site Contact
+                    <span class="sort-icons" [class.active]="sortColumn === 'siteContact'">
+                      <i class="up" [class.on]="sortColumn === 'siteContact' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'siteContact' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('city')">
+                  <span class="header-cell">
+                    City
+                    <span class="sort-icons" [class.active]="sortColumn === 'city'">
+                      <i class="up" [class.on]="sortColumn === 'city' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'city' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Job Due On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Current Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('origAge')">
+                  <span class="header-cell">
+                    Original Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'origAge'">
+                      <i class="up" [class.on]="sortColumn === 'origAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'origAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -496,16 +1079,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Site Contact</th>
-                <th class="fw-bold">City</th>
-                <th class="fw-bold">Job Due On</th>
-                <th class="fw-bold">Current Age</th>
-                <th class="fw-bold">Original Age</th>
-                <th class="fw-bold">Description</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
+                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('siteContact')">
+                  <span class="header-cell">
+                    Site Contact
+                    <span class="sort-icons" [class.active]="sortColumn === 'siteContact'">
+                      <i class="up" [class.on]="sortColumn === 'siteContact' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'siteContact' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('city')">
+                  <span class="header-cell">
+                    City
+                    <span class="sort-icons" [class.active]="sortColumn === 'city'">
+                      <i class="up" [class.on]="sortColumn === 'city' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'city' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Job Due On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Current Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('origAge')">
+                  <span class="header-cell">
+                    Original Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'origAge'">
+                      <i class="up" [class.on]="sortColumn === 'origAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'origAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -531,16 +1194,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Site Contact</th>
-                <th class="fw-bold">City</th>
-                <th class="fw-bold">Job Due On</th>
-                <th class="fw-bold">Current Age</th>
-                <th class="fw-bold">Original Age</th>
-                <th class="fw-bold">Description</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
+                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('siteContact')">
+                  <span class="header-cell">
+                    Site Contact
+                    <span class="sort-icons" [class.active]="sortColumn === 'siteContact'">
+                      <i class="up" [class.on]="sortColumn === 'siteContact' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'siteContact' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('city')">
+                  <span class="header-cell">
+                    City
+                    <span class="sort-icons" [class.active]="sortColumn === 'city'">
+                      <i class="up" [class.on]="sortColumn === 'city' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'city' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Job Due On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Current Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('origAge')">
+                  <span class="header-cell">
+                    Original Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'origAge'">
+                      <i class="up" [class.on]="sortColumn === 'origAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'origAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -566,16 +1309,96 @@
           <table class="table table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                <th class="fw-bold">Call Number</th>
-                <th class="fw-bold">Customer ID</th>
-                <th class="fw-bold">Customer Name</th>
-                <th class="fw-bold">Status</th>
-                <th class="fw-bold">Site Contact</th>
-                <th class="fw-bold">City</th>
-                <th class="fw-bold">Job Due On</th>
-                <th class="fw-bold">Current Age</th>
-                <th class="fw-bold">Original Age</th>
-                <th class="fw-bold">Description</th>
+                <th class="fw-bold sortable" (click)="sortData('callNbr')">
+                  <span class="header-cell">
+                    Call Number
+                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('custName')">
+                  <span class="header-cell">
+                    Customer Name
+                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
+                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('siteContact')">
+                  <span class="header-cell">
+                    Site Contact
+                    <span class="sort-icons" [class.active]="sortColumn === 'siteContact'">
+                      <i class="up" [class.on]="sortColumn === 'siteContact' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'siteContact' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('city')">
+                  <span class="header-cell">
+                    City
+                    <span class="sort-icons" [class.active]="sortColumn === 'city'">
+                      <i class="up" [class.on]="sortColumn === 'city' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'city' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                  <span class="header-cell">
+                    Job Due On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
+                  <span class="header-cell">
+                    Current Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('origAge')">
+                  <span class="header-cell">
+                    Original Age
+                    <span class="sort-icons" [class.active]="sortColumn === 'origAge'">
+                      <i class="up" [class.on]="sortColumn === 'origAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'origAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>

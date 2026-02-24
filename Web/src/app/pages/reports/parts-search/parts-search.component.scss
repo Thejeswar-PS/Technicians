@@ -313,6 +313,10 @@
       &:hover {
         background-color: #f8f9fa;
       }
+
+      td {
+        text-align: center;
+      }
     }
   }
 
@@ -324,6 +328,7 @@
     font-weight: 400;
     white-space: normal;
     word-break: break-word;
+    text-align: center;
 
     &.nowrap {
       white-space: nowrap;

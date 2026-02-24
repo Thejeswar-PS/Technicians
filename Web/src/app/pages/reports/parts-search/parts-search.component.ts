@@ -28,7 +28,7 @@ export class PartsSearchComponent implements OnInit, OnDestroy {
   
   // Pagination
   currentPage = 1;
-  itemsPerPage = 25;
+  itemsPerPage = 50;
   totalPages = 0;
   
   // Filter options
@@ -167,7 +167,8 @@ export class PartsSearchComponent implements OnInit, OnDestroy {
   }
 
   private updatePagination(): void {
-    this.totalPages = Math.ceil(this.filteredPartsSearchData.length / this.itemsPerPage);
+    const dataLength = this.filteredPartsSearchData.length || this.totalRecords;
+    this.totalPages = dataLength > 0 ? Math.ceil(dataLength / this.itemsPerPage) : 0;
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
       this.currentPage = 1;
     }
@@ -306,8 +307,8 @@ export class PartsSearchComponent implements OnInit, OnDestroy {
   onPageSizeChange(event: Event): void {
     const target = event.target as HTMLSelectElement;
     this.itemsPerPage = parseInt(target.value, 10);
-    this.updatePagination();
     this.currentPage = 1;
+    this.updatePagination();
   }
 
   // Utility methods for display
