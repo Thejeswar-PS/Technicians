@@ -685,10 +685,26 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       assyWorkDone: this.getAssyWorkDoneValue(),
       assyProcFollowed: this.getAssyProcFollowedValue(),
       assyWorkStatus: formValue.assyWorkStatus || '0',
-      qcWorkDone: this.getQcWorkDoneValue(),
-      qcProcFollowed: this.getQcProcFollowedValue(),
-      qcApproved: this.getQcApprovedValue(),
-      qcWorkStatus: formValue.qcWorkStatus || '0',
+      qcWorkDone: (() => {
+        const jobType = this.getJobTypeValue();
+        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        return isAssembly ? (this.getQcWorkDoneValue() || null) : null;
+      })(),
+      qcProcFollowed: (() => {
+        const jobType = this.getJobTypeValue();
+        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        return isAssembly ? (this.getQcProcFollowedValue() || null) : null;
+      })(),
+      qcApproved: (() => {
+        const jobType = this.getJobTypeValue();
+        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        return isAssembly ? (this.getQcApprovedValue() || null) : null;
+      })(),
+      qcWorkStatus: (() => {
+        const jobType = this.getJobTypeValue();
+        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        return isAssembly ? (formValue.qcWorkStatus || null) : null;
+      })(),
       
       // Backend audit fields (matching stored procedure exactly)
       CreatedBy: createdByEmployee?.windowsID || formValue.createdBy || username,

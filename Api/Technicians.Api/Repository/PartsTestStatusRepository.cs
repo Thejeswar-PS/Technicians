@@ -30,12 +30,28 @@ namespace Technicians.Api.Repository
                 await connection.OpenAsync();
 
                 var parameters = new DynamicParameters();
-                parameters.Add("@JobType", string.IsNullOrEmpty(request.JobType) || request.JobType == "All" ? string.Empty : request.JobType, DbType.AnsiStringFixedLength, size: 5);
-                parameters.Add("@Priority", string.IsNullOrEmpty(request.Priority) || request.Priority == "All" ? string.Empty : request.Priority, DbType.AnsiStringFixedLength, size: 15);
+                // Handle nullable strings properly - pass empty string if null or "All"
+                parameters.Add("@JobType", 
+                    string.IsNullOrWhiteSpace(request.JobType) || request.JobType == "All" ? string.Empty : request.JobType, 
+                    DbType.AnsiStringFixedLength, size: 5);
+                    
+                parameters.Add("@Priority", 
+                    string.IsNullOrWhiteSpace(request.Priority) || request.Priority == "All" ? string.Empty : request.Priority, 
+                    DbType.AnsiStringFixedLength, size: 15);
+                    
                 parameters.Add("@Archive", request.Archive, DbType.Boolean);
-                parameters.Add("@Make", string.IsNullOrEmpty(request.Make) || request.Make == "All" ? string.Empty : request.Make, DbType.String, size: 50);
-                parameters.Add("@Model", string.IsNullOrEmpty(request.Model) || request.Model == "All" ? string.Empty : request.Model, DbType.String, size: 50);
-                parameters.Add("@AssignedTo", string.IsNullOrEmpty(request.AssignedTo) || request.AssignedTo == "All" ? string.Empty : request.AssignedTo, DbType.String, size: 50);
+                
+                parameters.Add("@Make", 
+                    string.IsNullOrWhiteSpace(request.Make) || request.Make == "All" ? string.Empty : request.Make, 
+                    DbType.String, size: 50);
+                    
+                parameters.Add("@Model", 
+                    string.IsNullOrWhiteSpace(request.Model) || request.Model == "All" ? string.Empty : request.Model, 
+                    DbType.String, size: 50);
+                    
+                parameters.Add("@AssignedTo", 
+                    string.IsNullOrWhiteSpace(request.AssignedTo) || request.AssignedTo == "All" ? string.Empty : request.AssignedTo, 
+                    DbType.String, size: 50);
 
                 // Execute stored procedure and get multiple result sets
                 using var multi = await connection.QueryMultipleAsync("GetPartsTestStatus", parameters, commandType: CommandType.StoredProcedure);
@@ -67,12 +83,12 @@ namespace Technicians.Api.Repository
         {
             var defaultRequest = new PartsTestStatusRequest
             {
-                JobType = string.Empty,
-                Priority = string.Empty,
+                JobType = null,
+                Priority = null,
                 Archive = false,
-                Make = string.Empty,
-                Model = string.Empty,
-                AssignedTo = string.Empty
+                Make = null,
+                Model = null,
+                AssignedTo = null
             };
 
             return await GetPartsTestStatusAsync(defaultRequest);
@@ -135,7 +151,7 @@ namespace Technicians.Api.Repository
         /// </summary>
         /// <param name="make">Make to filter models by</param>
         /// <returns>List of distinct models for the specified make</returns>
-        public async Task<IEnumerable<MakeModelDto>> GetDistinctModelsByMakeAsync(string make)
+        public async Task<IEnumerable<MakeModelDto>> GetDistinctModelsByMakeAsync(string? make)
         {
             try
             {
@@ -146,11 +162,11 @@ namespace Technicians.Api.Repository
                     SELECT DISTINCT Model as Make
                     FROM dbo.PartsTestList 
                     WHERE Model IS NOT NULL AND Model <> '' AND Archive = 0
-                    AND (@Make = '' OR Make = @Make)
+                    AND (@Make = '' OR @Make IS NULL OR Make = @Make)
                     ORDER BY Model";
 
                 var parameters = new DynamicParameters();
-                parameters.Add("@Make", make ?? string.Empty, DbType.String);
+                parameters.Add("@Make", string.IsNullOrWhiteSpace(make) ? string.Empty : make, DbType.String);
 
                 var models = await connection.QueryAsync<MakeModelDto>(query, parameters);
                 return models;

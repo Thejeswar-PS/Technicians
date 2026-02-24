@@ -123,10 +123,10 @@ export interface SaveUpdatePartsTestDto {
   assyWorkDone: string;
   assyProcFollowed: string;
   assyWorkStatus: string;
-  qcWorkDone: string;
-  qcProcFollowed: string;
-  qcApproved: string;
-  qcWorkStatus: string;
+  qcWorkDone: string | null;
+  qcProcFollowed: string | null;
+  qcApproved: string | null;
+  qcWorkStatus: string | null;
   CreatedBy: string;           // PascalCase for backend
   Approved: boolean;           // PascalCase for backend
   LastModifiedBy: string;      // PascalCase for backend
