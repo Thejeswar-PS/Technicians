@@ -73,84 +73,36 @@
 }
 
 .search-section {
-  .modern-input {
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-
-    &:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-      outline: none;
-    }
-
-    &:disabled {
-      background: #f8f9fa;
-      cursor: not-allowed;
-    }
-  }
-
-  .modern-select {
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 0.95rem;
-    transition: all 0.2s ease;
-
-    &:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-      outline: none;
-    }
-
-    &:disabled {
-      background: #f8f9fa;
-      cursor: not-allowed;
-    }
-  }
-
   .search-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 4px 12px;
+    font-size: 0.875rem;
     border: none;
+    background-color: #007bff;
     color: white;
-    font-weight: 600;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-
+    
     &:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      background-color: #0056b3;
     }
-
+    
     &:disabled {
-      opacity: 0.7;
+      opacity: 0.65;
       cursor: not-allowed;
     }
   }
-
-  .meta-text {
-    color: #6c757d;
-    font-size: 0.95rem;
-    font-style: italic;
-  }
-}
 
 .table-section {
   .table-responsive {
     overflow-x: auto;
   }
 
-  .modern-table {
-    width: 100%;
-    margin: 0;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.9rem;
-
+    .modern-table {
+      width: 100%;
+      margin: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.9rem;
+      table-layout: auto;
+    }
     .table-header {
       th {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -162,13 +114,13 @@
         padding: 0;
         height: 60px;
         vertical-align: middle;
-        text-align: center;
+        text-align: left;
 
         &.header-cell {
           .header-content {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             padding: 1rem 0.75rem;
             height: 100%;
             min-height: 60px;
@@ -186,6 +138,7 @@
 
         &.notes-column {
           min-width: 600px;
+          width: auto;
         }
       }
     }
@@ -205,9 +158,12 @@
           border: none;
 
           &.notes-cell {
-            max-width: 800px;
+            max-width: none;
+            width: auto;
 
             .notes-content {
+              display: block;
+              width: 100%;
               word-wrap: break-word;
               white-space: normal;
               line-height: 1.5;

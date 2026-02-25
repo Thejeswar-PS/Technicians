@@ -1,89 +1,122 @@
-<!-- begin::Header -->
-<div class="card" style="min-width: 90vw;">
-    <div class="card-body border-0 pt-5">
-
-      <form [formGroup]="jobFilterForm" novalidate="" class="form">
-        <table>
-          <tr>
-              <td style="border: 0px;">
-                <select
-                  class="form-select form-select-solid fw-bold text-dark"
-                  formControlName="ownerId"
-                  style="font-size:9pt;width:150px;"
-                >
-                  <option value="All" selected>All</option>
-                  <option *ngFor="let mgr of accountManagers" [value]="mgr.offid?.trim() || mgr.empID?.trim()">
-                    {{mgr.offname || mgr.empName}}
-                  </option>
-                </select>
-              </td>
-              <td>
-                <select
-                  class="form-select form-select-solid fw-bold text-dark"
-                  formControlName="tech"
-                  style="font-size:9pt;width:150px;"
-                >
-                <option value="All">All</option>
-                <option *ngFor="let tech of technicians" [value]="tech.techID">{{tech.techname}}</option>
-              </select>
-              </td>
-              <td>
-                <select
-                  class="form-select form-select-solid fw-bold text-dark"
-                  style="font-size:9pt;width:150px;"
-                  formControlName="state"
-                 >
-                 <option value="All" selected>All</option>
-                  <option *ngFor="let location of locations" [value]="location.stateCode">
-                    {{location.stateName}}
-                  </option>
-                </select>
-              </td>
-              <td>
-                <select
-                  class="form-select form-select-solid fw-bold text-dark"
-                  style="font-size:9pt;width:150px;"
-                  formControlName="type"
-                 >
-                  <option *ngFor = "let type of appTypes" [value]="type.value">{{type.Text}}</option>
-                </select>
-              </td>
-
-            <td>
-              <button class="btn btn-primary" type="button" (click)="SearchJobs()" style="padding: 4px 12px;">
-                Get Jobs
-              </button>
-            </td>
-          </tr>
-        </table>
-      </form>
-
-      <!-- Statistics Bar matching legacy -->
-      <table style="width: 100%; margin-top: 10px;" *ngIf="statistics">
-        <tr>
-          <td class="tblmstrtd" style="background-color: #e60000; color: White">
-            <span class="statistics-title">OVERDUE</span>
-            <span class="statistics-no">{{statistics.overDue}}</span>
-          </td>
-          <td class="tblmstrtd" style="background-color: #E8A90E; color: White">
-            <span class="statistics-title">DUE TOMORROW</span>
-            <span class="statistics-no">{{statistics.tomorrow}}</span>
-          </td>
-          <td class="tblmstrtd" style="background-color: #f4d24e; color: White">
-            <span class="statistics-title">DUE 3 DAYS</span>
-            <span class="statistics-no">{{statistics.due3}}</span>
-          </td>
-          <td class="tblmstrtd" style="background-color: #b3b300; color: White">
-            <span class="statistics-title">DUE 5 DAYS</span>
-            <span class="statistics-no">{{statistics.due5}}</span>
-          </td>
-          <td class="tblmstrtd" style="background-color: #86b300; color: White">
-            <span class="statistics-title">DUE 10 DAYS</span>
-            <span class="statistics-no">{{statistics.due10}}</span>
-          </td>
-        </tr>
-      </table>
-
-      </div>
-      <full-calendar #calendar [options]="calendarOptions" class="ms-10 mb-10" style="width: 95%; font-size: large;"></full-calendar>
+<div class="container-fluid calendar-page-container">
+  <div class="calendar-header__top mb-4 d-flex justify-content-between align-items-center">
+    <div class="calendar-page-title">
+      <h2 class="fw-bold mb-0">
+        <i class="bi bi-calendar3 me-2"></i>
+        Tech Calendar
+      </h2>
+    </div>
+    <div></div>
   </div>
+
+  <div class="card shadow-sm calendar-main-card">
+    <div class="card-header border-0 py-4">
+      <form [formGroup]="jobFilterForm" novalidate="" class="calendar-filter-form">
+        <div class="row g-3 align-items-end">
+          <div class="col-md-2">
+            <label class="form-label fw-bold">
+              <i class="bi bi-person-badge me-2"></i>Account Manager
+            </label>
+            <select class="form-select" formControlName="ownerId">
+              <option value="All" selected>All</option>
+              <option *ngFor="let mgr of accountManagers" [value]="mgr.offid?.trim() || mgr.empID?.trim()">
+                {{mgr.offname || mgr.empName}}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label fw-bold">
+              <i class="bi bi-person me-2"></i>Technician
+            </label>
+            <select class="form-select" formControlName="tech">
+              <option value="All">All</option>
+              <option *ngFor="let tech of technicians" [value]="tech.techID">{{tech.techname}}</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label fw-bold">
+              <i class="bi bi-geo-alt me-2"></i>State
+            </label>
+            <select class="form-select" formControlName="state">
+              <option value="All" selected>All</option>
+              <option *ngFor="let location of locations" [value]="location.stateCode">
+                {{location.stateName}}
+              </option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <label class="form-label fw-bold">
+              <i class="bi bi-tag me-2"></i>Type
+            </label>
+            <select class="form-select" formControlName="type">
+              <option *ngFor = "let type of appTypes" [value]="type.value">{{type.Text}}</option>
+            </select>
+          </div>
+
+          <div class="col-md-2">
+            <button class="btn btn-primary calendar-action-btn" type="button" (click)="SearchJobs()">
+              Get Jobs
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="card-body pt-0">
+      <div class="calendar-statistics mb-4" *ngIf="statistics">
+        <div class="row g-3">
+          <div class="col-md-2">
+            <div class="stat-card overdue">
+              <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+              <div class="stat-content">
+                <div class="stat-number">{{statistics.overDue}}</div>
+                <div class="stat-label">Overdue</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card due-tomorrow">
+              <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
+              <div class="stat-content">
+                <div class="stat-number">{{statistics.tomorrow}}</div>
+                <div class="stat-label">Due Tomorrow</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card due-3">
+              <div class="stat-icon"><i class="bi bi-calendar-week"></i></div>
+              <div class="stat-content">
+                <div class="stat-number">{{statistics.due3}}</div>
+                <div class="stat-label">Due 3 Days</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card due-5">
+              <div class="stat-icon"><i class="bi bi-calendar2-week"></i></div>
+              <div class="stat-content">
+                <div class="stat-number">{{statistics.due5}}</div>
+                <div class="stat-label">Due 5 Days</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card due-10">
+              <div class="stat-icon"><i class="bi bi-calendar3-week"></i></div>
+              <div class="stat-content">
+                <div class="stat-number">{{statistics.due10}}</div>
+                <div class="stat-label">Due 10 Days</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <full-calendar #calendar [options]="calendarOptions" class="calendar-full" style="width: 100%; font-size: large;"></full-calendar>
+    </div>
+  </div>
+</div>

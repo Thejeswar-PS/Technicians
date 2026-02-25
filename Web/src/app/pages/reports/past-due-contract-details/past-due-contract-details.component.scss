@@ -430,8 +430,16 @@
         border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         vertical-align: middle;
         background: white;
-        text-align: center;
+        text-align: left;
         height: 60px;
+
+        &.text-center {
+          text-align: center;
+        }
+
+        &.text-end {
+          text-align: right;
+        }
       }
 
       &:last-child td {

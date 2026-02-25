@@ -20,19 +20,19 @@
       <div class="search-section mb-4">
         <div class="row align-items-end">
           <div class="col-md-8">
-            <label class="form-label fw-semibold">Search Query</label>
+            <label class="form-label fw-bold fs-6">Search Query</label>
             <input 
               type="text" 
-              class="form-control modern-input" 
+              class="form-control form-control-sm fw-bold text-dark fs-6" 
               [(ngModel)]="searchQuery"
               (keyup.enter)="onSearch()"
               placeholder="Enter keywords to search PM notes..."
               [disabled]="loading">
           </div>
           <div class="col-md-2">
-            <label class="form-label fw-semibold">Page Size</label>
+            <label class="form-label fw-bold fs-6">Page Size</label>
             <select 
-              class="form-select modern-select" 
+              class="form-select form-select-solid fw-bold text-dark fs-6" 
               [(ngModel)]="pageSize"
               (change)="onPageSizeChange()"
               [disabled]="loading">
@@ -42,7 +42,7 @@
           <div class="col-md-2">
             <button 
               type="button" 
-              class="btn btn-primary w-100 search-btn"
+              class="btn btn-primary btn-sm btn-search fw-bold"
               (click)="onSearch()"
               [disabled]="loading || !searchQuery.trim()">
               <i class="bi bi-search me-2"></i>
@@ -71,6 +71,14 @@
       <div class="table-section" *ngIf="!loading && results.length > 0">
         <div class="table-responsive">
           <table class="table modern-table">
+            <colgroup>
+              <col style="width: 120px">
+              <col style="width: 120px">
+              <col style="width: 160px">
+              <col style="width: 160px">
+              <col style="width: 140px">
+              <col style="width: auto">
+            </colgroup>
             <thead class="table-header">
               <tr>
                 <th class="header-cell">

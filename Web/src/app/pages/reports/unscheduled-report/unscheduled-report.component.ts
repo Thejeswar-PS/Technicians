@@ -14,6 +14,8 @@ export class UnscheduledReportComponent implements OnInit {
 
   // Grid data
   gridData: any[] = [];
+  filteredGridData: any[] = [];
+  managerFilter = '';
   gridColumns = ['callnbr', 'custName', 'accMgr', 'jobstatus', 'custclas', 'scheduledstart', 'contnbr', 'description', 'changeAge', 'origAge'];
   displayColumns = [
     { key: 'callnbr', header: 'Job No', width: '120px' },
@@ -82,6 +84,7 @@ export class UnscheduledReportComponent implements OnInit {
             changeAge: item.changeAge ?? item.changeage ?? '',
             origAge: item.origAge ?? item.origage ?? ''
           }));
+          this.applyManagerFilter();
 
           // Past Due / Bill After PM
           this.pastDueData = data.summaryByManager || data.pastDueData || [];
@@ -303,11 +306,11 @@ export class UnscheduledReportComponent implements OnInit {
 
   getDisplayData(): any[] {
     const start = (this.currentPage - 1) * this.pageSize;
-    return this.gridData.slice(start, start + this.pageSize);
+    return this.filteredGridData.slice(start, start + this.pageSize);
   }
 
   getTotalPages(): number {
-    return Math.ceil(this.gridData.length / this.pageSize);
+    return Math.ceil(this.filteredGridData.length / this.pageSize);
   }
 
   nextPage(): void {
@@ -332,7 +335,7 @@ export class UnscheduledReportComponent implements OnInit {
       this.sortDirection = 'asc';
     }
 
-    this.gridData.sort((a, b) => {
+    this.filteredGridData.sort((a, b) => {
       const aVal = a[field];
       const bVal = b[field];
       
@@ -341,6 +344,26 @@ export class UnscheduledReportComponent implements OnInit {
       return 0;
     });
 
+    this.cdr.markForCheck();
+  }
+
+  onManagerFilterChange(): void {
+    this.applyManagerFilter();
+  }
+
+  private applyManagerFilter(): void {
+    const query = this.managerFilter.trim().toLowerCase();
+    if (!query) {
+      this.filteredGridData = [...this.gridData];
+      this.currentPage = 1;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.filteredGridData = this.gridData.filter(row =>
+      (row.accMgr || '').toString().toLowerCase().includes(query)
+    );
+    this.currentPage = 1;
     this.cdr.markForCheck();
   }
 
@@ -353,7 +376,7 @@ export class UnscheduledReportComponent implements OnInit {
     // Excel export functionality
     const ws = document.createElement('table');
     ws.innerHTML = '<tr>' + this.displayColumns.map(col => '<th>' + col.header + '</th>').join('') + '</tr>';
-    this.gridData.forEach(row => {
+    this.filteredGridData.forEach(row => {
       ws.innerHTML += '<tr>' + this.displayColumns.map(col => '<td>' + (row[col.key] || '') + '</td>').join('') + '</tr>';
     });
     
