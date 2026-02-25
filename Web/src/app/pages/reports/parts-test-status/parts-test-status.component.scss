@@ -3,8 +3,7 @@
    ========================================================= */
 
 .parts-test-status-container {
-  padding: 8px;
-  max-width: 100%;
+  padding: 20px;
 
   .loading-overlay {
     background: rgba(0, 0, 0, 0.3);
@@ -14,14 +13,8 @@
   .main-card {
     border-radius: 8px;
 
-    .card-header {
-      background: #f8f9fa;
-      border-bottom: 1px solid #dee2e6;
-      padding: 16px 20px;
-    }
-
     .card-body {
-      padding: 16px;
+      padding: 25px;
     }
   }
 
@@ -66,9 +59,9 @@
       border: 1px solid #999;
     }
 
-    .legend-box.red { background: #ff6347; }
-    .legend-box.orange { background: orange; }
-    .legend-box.yellow { background: yellow; }
+    .legend-box.red { background: #ffb3b3; }
+    .legend-box.orange { background: #ffd580; }
+    .legend-box.yellow { background: #ffffe0; }
   }
 
   /* ================= CHARTS ================= */
@@ -134,17 +127,18 @@
     word-break: break-word;
     overflow-wrap: anywhere;
     white-space: normal;
+    text-align: center;
   }
 
   /* ================= COLUMN WIDTHS ================= */
 
   th:nth-child(1), td:nth-child(1) { width: 7%; text-align: center; }
-  th:nth-child(2), td:nth-child(2) { width: 7%; }
+  th:nth-child(2), td:nth-child(2) { width: 9%; }
   th:nth-child(3), td:nth-child(3) { width: 6%; text-align: center; }
   th:nth-child(4), td:nth-child(4) { width: 6%; text-align: center; }
   th:nth-child(5), td:nth-child(5) { width: 4%; text-align: center; }
   th:nth-child(6), td:nth-child(6) { width: 9%; }
-  th:nth-child(7), td:nth-child(7) { width: 9%; }
+  th:nth-child(7), td:nth-child(7) { width: 10%; }
   th:nth-child(8), td:nth-child(8) { width: 7%; }
   th:nth-child(9), td:nth-child(9) { width: 10%; }
   th:nth-child(10), td:nth-child(10) { width: 4%; text-align: center; }
@@ -156,17 +150,17 @@
   /* ================= LEGACY ROW COLORS ================= */
 
   tbody tr.row-overdue > td {
-    background-color: #ff6347 !important;
-    color: #ffffff !important;
+    background-color: #ffb3b3 !important;
+    color: #000000 !important;
   }
 
   tbody tr.row-urgent > td {
-    background-color: orange !important;
+    background-color: #ffd580 !important;
     color: #000000 !important;
   }
 
   tbody tr.row-upcoming > td {
-    background-color: yellow !important;
+    background-color: #ffffe0 !important;
     color: #000000 !important;
   }
 

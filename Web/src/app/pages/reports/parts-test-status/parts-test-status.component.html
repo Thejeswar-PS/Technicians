@@ -1,5 +1,10 @@
 <div class="container-fluid parts-test-status-container">
 
+  <!-- Page Title -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-primary mb-02 display-4.9">Parts Test Status</h2>
+  </div>
+
   <!-- Loading Overlay -->
   <div *ngIf="isLoading"
        class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay">
@@ -7,22 +12,6 @@
   </div>
 
   <div class="card shadow-sm main-card">
-
-    <!-- Header -->
-    <div class="card-header border-0 py-4">
-      <div class="d-flex align-items-center">
-       
-        <!-- CENTER: Title -->
-        <div class="flex-grow-1 text-center">
-          <h3 class="fw-bold text-primary mb-0">
-            Parts Test Status
-          </h3>
-        </div>
-
-        <!-- RIGHT: spacer to balance layout -->
-        <div class="flex-shrink-0" style="width: 72px;"></div>
-      </div>
-    </div>
 
     <div class="card-body">
       <!-- Error -->

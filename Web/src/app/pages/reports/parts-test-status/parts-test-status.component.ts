@@ -577,9 +577,7 @@ export class PartsTestStatusComponent implements OnInit {
   }
 
   getRowColorClass(dueDate: Date | string | null | undefined): string {
-    // Only apply colors to ACTIVE items (not archived) - matches legacy behavior
-    const isShowingArchived = this.filterForm.get('archive')?.value === true;
-    if (isShowingArchived || !dueDate) return '';
+    if (!dueDate) return '';
     
     const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
     const today = new Date();
@@ -593,7 +591,7 @@ export class PartsTestStatusComponent implements OnInit {
     
     // Legacy logic: (DueDt - today).TotalDays
     if (diffDays <= 0) {
-      return 'row-overdue'; // Red (#ff6347, white text) - Due same day or overdue
+      return 'row-overdue'; // Red - Due same day or overdue
     } else if (diffDays <= 3) {
       return 'row-urgent'; // Orange - Due within 3 days
     } else if (diffDays <= 7) {
