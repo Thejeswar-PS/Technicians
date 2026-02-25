@@ -32,35 +32,37 @@
 
       <!-- Task Selection -->
       <div class="task-selection mb-4">
-        <label class="form-label fw-semibold fs-5">Select a Task</label>
-        <select 
-          class="form-select task-select" 
-          [(ngModel)]="selectedTask"
-          (change)="onTaskChange()"
-          [disabled]="loading">
-          <option *ngFor="let option of taskOptions" [value]="option.value">
-            {{ option.label }}
-          </option>
-        </select>
+        
+        <div class="task-dropdown-wrapper">
+          <select 
+            class="form-select form-select-solid fw-bold text-dark fs-6" 
+            [(ngModel)]="selectedTask"
+            (change)="onTaskChange()"
+            [disabled]="loading">
+            <option *ngFor="let option of taskOptions" [value]="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+        </div>
       </div>
 
       <!-- Add / View Parts Request (AVP) -->
       <div class="task-section" *ngIf="selectedTask === 'AVP'">
-        <div class="section-title">Add / View Parts Request</div>
+        <!-- <div class="section-title">Add / View Parts Request</div> -->
         <div class="form-group mb-3">
-          <label class="form-label">Job Number</label>
+          <label class="form-label fw-bold fs-6">Job Number</label>
           <input 
             type="text" 
-            class="form-control input-field" 
+            class="form-control form-control-sm fw-bold text-dark fs-6" 
             [(ngModel)]="callNbr"
             placeholder="Enter Job Number"
             [disabled]="loading"
             maxlength="10">
         </div>
         <div class="form-group mb-3">
-          <label class="form-label">Job Status</label>
+          <label class="form-label fw-bold fs-6">Job Status</label>
           <select 
-            class="form-select input-field" 
+            class="form-select form-select-solid fw-bold text-dark fs-6" 
             [(ngModel)]="jobStatus"
             [disabled]="loading">
             <option *ngFor="let option of jobStatusOptions" [value]="option.value">
@@ -70,24 +72,25 @@
         </div>
         <button 
           type="button" 
-          class="btn btn-primary action-btn"
+          class="btn btn-primary btn-sm fw-bold"
           (click)="onGoClick()"
-          [disabled]="loading">
-          <i class="bi bi-plus-circle me-2"></i>
+          [disabled]="loading"
+          style="padding: 4px 12px;">
+          <i class="fa fa-plus me-1"></i>
           Add / View
         </button>
       </div>
 
       <!-- Re-Download Job (RDJ) / Remove Tech From Job (RMT) -->
       <div class="task-section" *ngIf="selectedTask === 'RDJ' || selectedTask === 'RMT'">
-        <div class="section-title">
+        <!-- <div class="section-title">
           {{ selectedTask === 'RDJ' ? 'Re-Download Job' : 'Remove Tech From Job' }}
-        </div>
+        </div> -->
         <div class="form-group mb-3">
-          <label class="form-label">Job Number</label>
+          <label class="form-label fw-bold fs-6">Job Number</label>
           <input 
             type="text" 
-            class="form-control input-field" 
+            class="form-control form-control-sm fw-bold text-dark fs-6" 
             [(ngModel)]="jobNo"
             placeholder="Enter Job Number"
             [disabled]="loading"
@@ -95,22 +98,23 @@
         </div>
         <button 
           type="button" 
-          class="btn btn-primary action-btn"
+          class="btn btn-primary btn-sm fw-bold"
           (click)="onGoClick()"
-          [disabled]="loading">
-          <i class="bi bi-download me-2"></i>
+          [disabled]="loading"
+          style="padding: 4px 12px;">
+          <i class="fa fa-download me-1"></i>
           {{ selectedTask === 'RDJ' ? 'Submit' : 'Remove' }}
         </button>
       </div>
 
       <!-- Previous Site History (PSH) -->
       <div class="task-section" *ngIf="selectedTask === 'PSH'">
-        <div class="section-title">Previous Site History</div>
+        <!-- <div class="section-title">Previous Site History</div> -->
         <div class="form-group mb-3">
-          <label class="form-label">Site ID / Job No</label>
+          <label class="form-label fw-bold fs-6">Site ID / Job No</label>
           <input 
             type="text" 
-            class="form-control input-field" 
+            class="form-control form-control-sm fw-bold text-dark fs-6" 
             [(ngModel)]="siteID"
             placeholder="Enter Site ID or Job Number"
             [disabled]="loading"
@@ -118,10 +122,11 @@
         </div>
         <button 
           type="button" 
-          class="btn btn-primary action-btn"
+          class="btn btn-primary btn-sm fw-bold"
           (click)="onGoClick()"
-          [disabled]="loading">
-          <i class="bi bi-search me-2"></i>
+          [disabled]="loading"
+          style="padding: 4px 12px;">
+          <i class="fa fa-search me-1"></i>
           View History
         </button>
 
@@ -132,22 +137,22 @@
             <table class="table modern-table">
               <thead class="table-header">
                 <tr>
-                  <th class="header-cell" style="width: 12%;">
+                  <th class="header-cell">
                     <div class="header-content">
                       <span class="header-text">Job No</span>
                     </div>
                   </th>
-                  <th class="header-cell" style="width: 15%;">
+                  <th class="header-cell tech-column">
                     <div class="header-content">
                       <span class="header-text">Technician</span>
                     </div>
                   </th>
-                  <th class="header-cell" style="width: 15%;">
+                  <th class="header-cell scheduled-column">
                     <div class="header-content">
                       <span class="header-text">Scheduled</span>
                     </div>
                   </th>
-                  <th class="header-cell" style="width: 58%;">
+                  <th class="header-cell notes-column">
                     <div class="header-content">
                       <span class="header-text">Notes</span>
                     </div>
@@ -156,15 +161,15 @@
               </thead>
               <tbody class="table-body">
                 <tr class="table-row" *ngFor="let row of siteHistoryRows; trackBy: trackByHistoryRow">
-                  <td class="fw-bold text-primary" style="width: 12%; word-break: break-word;">
+                  <td class="fw-bold text-primary">
                     <a [routerLink]="['/jobs/job-notes-info']" [queryParams]="{ CallNbr: row.jobNo, TechName: row.techName }">
                       {{ row.jobNo }}
                     </a>
                   </td>
-                  <td style="width: 15%; word-break: break-word;">{{ row.techName || 'N/A' }}</td>
-                  <td style="width: 15%; word-break: break-word;">{{ row.scheduledOn | date: 'dd-MMM-yyyy' }}</td>
-                  <td class="notes-cell" style="width: 58%;">
-                    <div class="notes-text" [innerHTML]="row.techNotes" style="word-wrap: break-word; white-space: normal;"></div>
+                  <td class="tech-column">{{ row.techName || 'N/A' }}</td>
+                  <td class="scheduled-column">{{ row.scheduledOn | date: 'dd-MMM-yyyy' }}</td>
+                  <td class="notes-cell">
+                    <div class="notes-content" [innerHTML]="row.techNotes"></div>
                   </td>
                 </tr>
               </tbody>

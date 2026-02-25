@@ -99,6 +99,27 @@
     font-size: 0.875rem;
   }
 
+  .fa-edit,
+  .fa-trash {
+    font-size: 1.2rem;
+    transition: transform 0.15s ease, color 0.15s ease;
+  }
+
+  .fa-edit:hover {
+    color: #0b5ed7 !important;
+    transform: scale(1.1);
+  }
+
+  .fa-trash:hover {
+    color: #b02a37 !important;
+    transform: scale(1.1);
+  }
+
+  .delete-action,
+  .delete-action .fa-trash {
+    color: #dc3545 !important;
+  }
+
   .alert {
     border: none;
     border-radius: 0.75rem;

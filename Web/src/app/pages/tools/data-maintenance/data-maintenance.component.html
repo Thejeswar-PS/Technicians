@@ -118,13 +118,13 @@
                     <input *ngIf="editingIndex === i" type="number" class="form-control form-control-sm" [(ngModel)]="item.resistance" placeholder="0">
                   </td>
                   <td>
-                    <div *ngIf="editingIndex !== i" class="btn-group btn-group-sm" role="group">
-                      <button type="button" class="btn btn-outline-primary btn-sm" (click)="startEdit(i)" title="Edit">
-                        <i class="bi bi-pencil"></i>
-                      </button>
-                      <button type="button" class="btn btn-outline-danger btn-sm" (click)="deleteRefValue(item, i)" title="Delete">
-                        <i class="bi bi-trash"></i>
-                      </button>
+                    <div *ngIf="editingIndex !== i" class="d-flex justify-content-center gap-4">
+                      <a href="javascript:void(0)" (click)="startEdit(i)" class="text-primary" title="Edit">
+                        <i class="fa fa-edit"></i>
+                      </a>
+                      <a href="javascript:void(0)" (click)="deleteRefValue(item, i)" class="text-danger delete-action" title="Delete">
+                        <i class="fa fa-trash"></i>
+                      </a>
                     </div>
                     <div *ngIf="editingIndex === i" class="btn-group btn-group-sm" role="group">
                       <button type="button" class="btn btn-success btn-sm" (click)="updateRefValue(item)" title="Update">
