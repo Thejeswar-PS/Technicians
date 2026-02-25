@@ -120,6 +120,7 @@ builder.Services.AddScoped<ToolsTrackingTechsRepository>();
 builder.Services.AddScoped<DCGEmployeeRepository>();
 builder.Services.AddScoped<PartsSearchRepository>();
 builder.Services.AddScoped<ITestEngineerJobsRepository, TestEngineerJobsRepository>();
+builder.Services.AddScoped<TechMileageRepository>();
 
 var app = builder.Build();
 

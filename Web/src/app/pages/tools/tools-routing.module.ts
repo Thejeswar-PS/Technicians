@@ -7,6 +7,7 @@ import { ToolTrackingEntryComponent } from './tool-tracking-entry/tool-tracking-
 import { JobsToBeUploadedComponent } from './jobs-to-be-uploaded/jobs-to-be-uploaded.component';
 import { DataMaintenanceComponent } from './data-maintenance/data-maintenance.component';
 import { BillAfterPMJobsComponent } from './bill-after-pm-jobs/bill-after-pm-jobs.component';
+import { TechMileageDashboardComponent } from './tech-mileage-dashboard/tech-mileage-dashboard.component';
 
 const routes: Routes = [
   {
@@ -24,6 +25,10 @@ const routes: Routes = [
   {
     path: 'tool-tracking-entry',
     component: ToolTrackingEntryComponent
+  },
+  {
+    path: 'tech-mileage-dashboard',
+    component: TechMileageDashboardComponent
   },
   {
     path: 'jobs-to-be-uploaded',
