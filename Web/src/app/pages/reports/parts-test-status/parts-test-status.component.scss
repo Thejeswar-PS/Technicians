@@ -3,7 +3,8 @@
    ========================================================= */
 
 .parts-test-status-container {
-  padding: 20px;
+  padding: 8px;
+  max-width: 100%;
 
   .loading-overlay {
     background: rgba(0, 0, 0, 0.3);
@@ -16,10 +17,11 @@
     .card-header {
       background: #f8f9fa;
       border-bottom: 1px solid #dee2e6;
+      padding: 16px 20px;
     }
 
     .card-body {
-      padding: 30px;
+      padding: 16px;
     }
   }
 
@@ -27,7 +29,7 @@
 
   .filter-panel {
     background: #f8f9fa;
-    padding: 20px;
+    padding: 16px;
     border-radius: 6px;
     margin-bottom: 12px;
 
@@ -69,17 +71,44 @@
     .legend-box.yellow { background: yellow; }
   }
 
+  /* ================= CHARTS ================= */
+
+  .charts-panel {
+    .chart-card {
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    }
+
+    .chart-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 12px;
+    }
+
+    .no-chart {
+      text-align: center;
+      color: #6b7280;
+      padding: 24px 0;
+      font-weight: 600;
+    }
+  }
+
   /* ================= TABLE ================= */
 
   .table-responsive {
-    overflow-x: hidden; /* NO sideways scroll */
+    overflow-x: auto;
+    margin: 0;
+    padding: 0;
   }
 
   table {
     width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
     font-size: 14px;
     border-collapse: collapse;
+    margin: 0;
   }
 
   /* ---------- Header ---------- */
@@ -109,20 +138,20 @@
 
   /* ================= COLUMN WIDTHS ================= */
 
-  th:nth-child(1), td:nth-child(1) { width: 70px; text-align: center; }
-  th:nth-child(2), td:nth-child(2) { width: 95px; }
-  th:nth-child(3), td:nth-child(3) { width: 90px; text-align: center; }
-  th:nth-child(4), td:nth-child(4) { width: 90px; text-align: center; }
-  th:nth-child(5), td:nth-child(5) { width: 60px; text-align: center; }
-  th:nth-child(6), td:nth-child(6) { width: 115px; }
-  th:nth-child(7), td:nth-child(7) { width: 115px; }
-  th:nth-child(8), td:nth-child(8) { width: 90px; }
-  th:nth-child(9), td:nth-child(9) { width: 120px; }
-  th:nth-child(10), td:nth-child(10) { width: 55px; text-align: center; }
-  th:nth-child(11), td:nth-child(11) { width: 100px; }
-  th:nth-child(12), td:nth-child(12) { width: 124px; }
-  th:nth-child(13), td:nth-child(13) { width: 120px; }
-  th:nth-child(14), td:nth-child(14) { width: 120px; }
+  th:nth-child(1), td:nth-child(1) { width: 7%; text-align: center; }
+  th:nth-child(2), td:nth-child(2) { width: 7%; }
+  th:nth-child(3), td:nth-child(3) { width: 6%; text-align: center; }
+  th:nth-child(4), td:nth-child(4) { width: 6%; text-align: center; }
+  th:nth-child(5), td:nth-child(5) { width: 4%; text-align: center; }
+  th:nth-child(6), td:nth-child(6) { width: 9%; }
+  th:nth-child(7), td:nth-child(7) { width: 9%; }
+  th:nth-child(8), td:nth-child(8) { width: 7%; }
+  th:nth-child(9), td:nth-child(9) { width: 10%; }
+  th:nth-child(10), td:nth-child(10) { width: 4%; text-align: center; }
+  th:nth-child(11), td:nth-child(11) { width: 8%; }
+  th:nth-child(12), td:nth-child(12) { width: 9%; }
+  th:nth-child(13), td:nth-child(13) { width: 10%; }
+  th:nth-child(14), td:nth-child(14) { width: 10%; }
 
   /* ================= LEGACY ROW COLORS ================= */
 

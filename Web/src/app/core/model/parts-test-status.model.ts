@@ -8,6 +8,7 @@ export interface PartsTestStatusDto {
   serialNo: string;
   quantity: number;
   description: string;
+  priority: string;
   qcWorkStatus: string;
   assyWorkStatus: string;
   isPassed: boolean;
@@ -24,54 +25,56 @@ export interface PartsTestStatusDto {
 }
 
 export interface PartsTestStatusRequest {
-  jobType: string;
-  priority: string;
-  archive: boolean;
-  make: string;
-  model: string;
-  assignedTo: string;
-}
-
-export interface MakeModelDto {
-  make: string;
+  jobType?: string;
+  priority?: string;
+  archive?: boolean;
+  make?: string;
+  model?: string;
+  assignedTo?: string;
 }
 
 export interface PartsTestStatusResponse {
   partsTestData: PartsTestStatusDto[];
-  distinctMakes: MakeModelDto[];
-  distinctModels: MakeModelDto[];
+  distinctMakes: string[];
+  distinctModels: string[];
 }
 
 export interface PartsTestStatusApiResponse {
   success: boolean;
   data: PartsTestStatusResponse;
-  totalRecords: number;
+  totalRecords?: number;
   filters?: PartsTestStatusRequest;
   message?: string;
   error?: string;
 }
 
-export interface DistinctMakesResponse {
+export interface PartsTestStatusAllApiResponse {
   success: boolean;
-  makes: MakeModelDto[];
-  count: number;
+  data: PartsTestStatusDto[];
+  makes: string[];
+  models: string[];
+  totalRecords: number;
   message?: string;
   error?: string;
 }
 
-export interface DistinctModelsResponse {
+export interface PartsTestStatusDashboardResponse {
   success: boolean;
-  models: MakeModelDto[];
-  count: number;
+  statusChart: PartsTestStatusStatusChartDto;
+  jobTypeChart: PartsTestStatusJobTypeChartDto[];
+  filters?: PartsTestStatusRequest;
   message?: string;
   error?: string;
 }
 
-export interface DistinctModelsByMakeResponse {
-  success: boolean;
-  make: string;
-  models: MakeModelDto[];
-  count: number;
-  message?: string;
-  error?: string;
+export interface PartsTestStatusStatusChartDto {
+  emergencyCount: number;
+  overdueCount: number;
+  sameDayCount: number;
+  currentWeekCount: number;
+}
+
+export interface PartsTestStatusJobTypeChartDto {
+  jobType: string;
+  totalCount: number;
 }

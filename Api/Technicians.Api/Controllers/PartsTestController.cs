@@ -499,48 +499,48 @@ namespace Technicians.Api.Controllers
         /// <summary>
         /// Gets parts test status with filtering - LEGACY FUNCTIONALITY
         /// </summary>
-        [HttpGet("GetPartsTestStatus")]
-        public async Task<ActionResult<PartsTestStatusResponseDto>> GetPartsTestStatus(
-            [FromQuery] string jobType = "",
-            [FromQuery] string priority = "All", 
-            [FromQuery] string archive = "0",
-            [FromQuery] string make = "",
-            [FromQuery] string model = "",
-            [FromQuery] string assignedTo = "")
-        {
-            try
-            {
-                var request = new PartsTestStatusRequestDto
-                {
-                    JobType = jobType,
-                    Priority = priority,
-                    Archive = archive,
-                    Make = make,
-                    Model = model,
-                    AssignedTo = assignedTo
-                };
+        //[HttpGet("GetPartsTestStatus")]
+        //public async Task<ActionResult<PartsTestStatusResponse>> GetPartsTestStatus(
+        //    [FromQuery] string jobType = "",
+        //    [FromQuery] string priority = "All", 
+        //    [FromQuery] string archive = "0",
+        //    [FromQuery] string make = "",
+        //    [FromQuery] string model = "",
+        //    [FromQuery] string assignedTo = "")
+        //{
+        //    try
+        //    {
+        //        var request = new PartsTestStatusRequest
+        //        {
+        //            JobType = jobType,
+        //            Priority = priority,
+        //            Archive = archive == "1" || archive.ToLower() == "true",  // ? Convert string to bool
+        //            Make = make,
+        //            Model = model,
+        //            AssignedTo = assignedTo
+        //        };
 
-                var result = await _repository.GetPartsTestStatusWithLogicAsync(request);
+        //        var result = await _repository.GetPartsTestStatusWithLogicAsync(request);
                 
-                return Ok(new
-                {
-                    success = true,
-                    data = result.PartsData,
-                    makes = result.Makes,
-                    models = result.Models,
-                    assignedToOptions = result.AssignedToOptions
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting parts test status");
-                return StatusCode(500, new { 
-                    success = false, 
-                    message = "Failed to retrieve parts test status", 
-                    error = ex.Message 
-                });
-            }
-        }
+        //        return Ok(new
+        //        {
+        //            success = true,
+        //            data = result.PartsData,
+        //            makes = result.Makes,
+        //            models = result.Models,
+        //            assignedToOptions = result.AssignedToOptions
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error getting parts test status");
+        //        return StatusCode(500, new { 
+        //            success = false, 
+        //            message = "Failed to retrieve parts test status", 
+        //            error = ex.Message 
+        //        });
+        //    }
+        //}
 
         /// <summary>
         /// Gets dashboard chart data for Parts Test Status - LEGACY FUNCTIONALITY

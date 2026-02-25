@@ -7,7 +7,9 @@ import {
   PartsTestStatusDto, 
   PartsTestStatusRequest, 
   PartsTestStatusResponse,
-  MakeModelDto
+  PartsTestStatusDashboardResponse,
+  PartsTestStatusJobTypeChartDto,
+  PartsTestStatusStatusChartDto
 } from '../../../core/model/parts-test-status.model';
 import { EmployeeDto } from '../../../core/model/parts-test-info.model';
 
@@ -20,9 +22,9 @@ export class PartsTestStatusComponent implements OnInit {
 
   partsTestStatusList: PartsTestStatusDto[] = [];
   filteredData: PartsTestStatusDto[] = [];
-  distinctMakes: MakeModelDto[] = [];
-  distinctModels: MakeModelDto[] = [];
-  modelsForSelectedMake: MakeModelDto[] = [];
+  distinctMakes: string[] = [];
+  distinctModels: string[] = [];
+  modelsForSelectedMake: string[] = [];
   technicians: EmployeeDto[] = [];
   
   // Form and filters
@@ -34,6 +36,7 @@ export class PartsTestStatusComponent implements OnInit {
   isLoadingModels: boolean = false;
   isProcessingData: boolean = false;
   isLoadingTechnicians: boolean = false;
+  isLoadingCharts: boolean = false;
   
   // Pagination
   currentPage: number = 1;
@@ -48,9 +51,13 @@ export class PartsTestStatusComponent implements OnInit {
   
   // Error handling
   errorMessage: string = '';
+  chartErrorMessage: string = '';
   
   // Make Math available in template
   Math = Math;
+
+  statusChartOptions: any;
+  jobTypeChartOptions: any;
   
   // Job type options matching legacy system
   jobTypeOptions = [
@@ -79,24 +86,17 @@ export class PartsTestStatusComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadDistinctMakes();
-    this.loadDistinctModels();
     this.loadTechnicians();
     this.loadPartsTestStatus();
+    this.loadDashboardData();
     this.setupFormSubscriptions();
   }
 
   setupFormSubscriptions(): void {
     // Watch for make changes to update models dropdown
     this.filterForm.get('make')?.valueChanges.subscribe(make => {
-      if (make && make !== '' && make !== 'All') {
-        this.loadModelsByMake(make);
-        // Clear model selection when make changes
-        this.filterForm.patchValue({ model: 'All' }, { emitEvent: false });
-      } else {
-        this.modelsForSelectedMake = [...this.distinctModels];
-        this.filterForm.patchValue({ model: 'All' }, { emitEvent: false });
-      }
+      this.modelsForSelectedMake = [...this.distinctModels];
+      this.filterForm.patchValue({ model: 'All' }, { emitEvent: false });
     });
 
     // Watch for any form changes to trigger filtering with debounce
@@ -105,71 +105,6 @@ export class PartsTestStatusComponent implements OnInit {
       setTimeout(() => {
         this.onFilterChange();
       }, 300);
-    });
-  }
-
-  loadDistinctMakes(): void {
-    this.isLoadingMakes = true;
-    this.reportService.getDistinctMakes().subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.distinctMakes = response.makes || [];
-        } else {
-          this.errorMessage = response?.message || 'Failed to load makes';
-        }
-        this.isLoadingMakes = false;
-      },
-      error: (error) => {
-        console.error('Error loading makes:', error);
-        this.errorMessage = 'Error loading makes. Please try again.';
-        this.isLoadingMakes = false;
-        this.distinctMakes = [];
-      }
-    });
-  }
-
-  loadDistinctModels(): void {
-    this.isLoadingModels = true;
-    this.reportService.getDistinctModels().subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.distinctModels = response.models || [];
-          this.modelsForSelectedMake = [...this.distinctModels];
-        } else {
-          this.errorMessage = response?.message || 'Failed to load models';
-        }
-        this.isLoadingModels = false;
-      },
-      error: (error) => {
-        console.error('Error loading models:', error);
-        this.errorMessage = 'Error loading models. Please try again.';
-        this.isLoadingModels = false;
-        this.distinctModels = [];
-        this.modelsForSelectedMake = [];
-      }
-    });
-  }
-
-  loadModelsByMake(make: string): void {
-    if (!make || make.trim() === '' || make === 'All') {
-      this.modelsForSelectedMake = [...this.distinctModels];
-      return;
-    }
-
-    this.reportService.getDistinctModelsByMake(make).subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.modelsForSelectedMake = response.models || [];
-        } else {
-          console.warn(`Failed to load models for make "${make}": ${response?.message}`);
-          this.modelsForSelectedMake = [...this.distinctModels];
-        }
-      },
-      error: (error) => {
-        console.error('Error loading models by make:', error);
-        // Fallback to all models if there's an error
-        this.modelsForSelectedMake = [...this.distinctModels];
-      }
     });
   }
 
@@ -210,23 +145,22 @@ export class PartsTestStatusComponent implements OnInit {
     };
 
     this.reportService.getPartsTestStatus(request).subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.partsTestStatusList = response.data?.partsTestData || [];
-          this.totalRecords = response.totalRecords || 0;
-          this.applyPagination();
-        } else {
-          this.errorMessage = response?.message || 'Failed to load parts test status';
-          this.partsTestStatusList = [];
-          this.totalRecords = 0;
-          this.displayedData = [];
-        }
+      next: (response: PartsTestStatusResponse) => {
+        this.partsTestStatusList = response.partsTestData || [];
+        this.distinctMakes = response.distinctMakes || [];
+        this.distinctModels = response.distinctModels || [];
+        this.modelsForSelectedMake = [...this.distinctModels];
+        this.totalRecords = this.partsTestStatusList.length;
+        this.applyPagination();
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading parts test status:', error);
         this.errorMessage = 'Error loading parts test status data. Please try again.';
         this.partsTestStatusList = [];
+        this.distinctMakes = [];
+        this.distinctModels = [];
+        this.modelsForSelectedMake = [];
         this.totalRecords = 0;
         this.displayedData = [];
         this.isLoading = false;
@@ -239,6 +173,7 @@ export class PartsTestStatusComponent implements OnInit {
     this.currentPage = 1;
     this.clearErrorMessage();
     this.loadPartsTestStatus();
+    this.loadDashboardData();
   }
 
   navigateToPartTestEntry(rowIndex: number): void {
@@ -255,6 +190,150 @@ export class PartsTestStatusComponent implements OnInit {
 
   clearErrorMessage(): void {
     this.errorMessage = '';
+  }
+
+  clearChartErrorMessage(): void {
+    this.chartErrorMessage = '';
+  }
+
+  loadDashboardData(): void {
+    this.isLoadingCharts = true;
+    this.clearChartErrorMessage();
+
+    const formValue = this.filterForm.value;
+    const request: PartsTestStatusRequest = {
+      jobType: formValue.jobType || '',
+      priority: '',
+      archive: formValue.archive || false,
+      make: formValue.make || '',
+      model: formValue.model || '',
+      assignedTo: formValue.assignedTo || ''
+    };
+
+    this.reportService.getPartsTestStatusDashboard(request).subscribe({
+      next: (response: PartsTestStatusDashboardResponse) => {
+        if (!response || response.success === false) {
+          this.chartErrorMessage = response?.message || 'Failed to load dashboard charts';
+          this.statusChartOptions = null;
+          this.jobTypeChartOptions = null;
+          this.isLoadingCharts = false;
+          return;
+        }
+
+        this.statusChartOptions = this.buildStatusChartOptions(response.statusChart);
+        this.jobTypeChartOptions = this.buildJobTypeChartOptions(response.jobTypeChart || []);
+        this.isLoadingCharts = false;
+      },
+      error: (error) => {
+        console.error('Error loading dashboard charts:', error);
+        this.chartErrorMessage = 'Error loading dashboard charts. Please try again.';
+        this.statusChartOptions = null;
+        this.jobTypeChartOptions = null;
+        this.isLoadingCharts = false;
+      }
+    });
+  }
+
+  private buildStatusChartOptions(statusChart?: PartsTestStatusStatusChartDto): any {
+    const counts = [
+      statusChart?.emergencyCount ?? 0,
+      statusChart?.overdueCount ?? 0,
+      statusChart?.sameDayCount ?? 0,
+      statusChart?.currentWeekCount ?? 0
+    ];
+
+    return {
+      series: [{
+        name: 'Count',
+        data: counts
+      }],
+      chart: {
+        type: 'bar',
+        height: 280,
+        toolbar: { show: false }
+      },
+      plotOptions: {
+        bar: {
+          distributed: true,
+          borderRadius: 6,
+          columnWidth: '55%'
+        }
+      },
+      dataLabels: {
+        enabled: true
+      },
+      colors: ['#ff6b57', '#f59e0b', '#facc15', '#22c55e'],
+      xaxis: {
+        categories: ['Emergency', 'Overdue', 'Same Day', 'Current Week'],
+        labels: {
+          style: { fontSize: '12px' }
+        }
+      },
+      yaxis: {
+        title: { text: 'Count' },
+        labels: { style: { fontSize: '12px' } }
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 3
+      },
+      tooltip: {
+        y: { formatter: (val: number) => `${val}` }
+      }
+    };
+  }
+
+  private buildJobTypeChartOptions(jobTypes: PartsTestStatusJobTypeChartDto[]): any {
+    if (!jobTypes || jobTypes.length === 0) {
+      return null;
+    }
+
+    const labels = jobTypes.map(item => this.getJobTypeLabel(item.jobType));
+    const values = jobTypes.map(item => item.totalCount ?? 0);
+
+    return {
+      series: [{
+        name: 'Jobs',
+        data: values
+      }],
+      chart: {
+        type: 'bar',
+        height: 280,
+        toolbar: { show: false }
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          borderRadius: 6,
+          barHeight: '60%'
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: (val: number) => `${val}`
+      },
+      colors: ['#3b82f6'],
+      xaxis: {
+        categories: labels,
+        labels: { style: { fontSize: '12px' } }
+      },
+      yaxis: {
+        labels: { style: { fontSize: '12px' } }
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 3
+      },
+      tooltip: {
+        y: { formatter: (val: number) => `${val}` }
+      }
+    };
+  }
+
+  private getJobTypeLabel(jobType: string): string {
+    const match = this.jobTypeOptions.find(option => option.value === jobType);
+    if (match) return match.label;
+    return jobType || 'Unknown';
   }
 
 
@@ -463,8 +542,6 @@ export class PartsTestStatusComponent implements OnInit {
   onRefresh(): void {
     this.clearErrorMessage();
     this.loadPartsTestStatus();
-    this.loadDistinctMakes();
-    this.loadDistinctModels();
   }
 
   getStatusBadgeClass(status: string): string {
@@ -486,7 +563,13 @@ export class PartsTestStatusComponent implements OnInit {
   formatDate(date: Date | string | null | undefined): string {
     if (!date) return '';
     const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString();
+    
+    const day = d.getDate().toString().padStart(2, '0');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    
+    return `${day}-${month}-${year}`;
   }
 
   trackByUniqueId(index: number, item: PartsTestStatusDto): string {

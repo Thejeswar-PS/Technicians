@@ -70,10 +70,8 @@ import {
   PartsTestStatusRequest,
   PartsTestStatusResponse,
   PartsTestStatusApiResponse,
-  MakeModelDto,
-  DistinctMakesResponse,
-  DistinctModelsResponse,
-  DistinctModelsByMakeResponse
+  PartsTestStatusAllApiResponse,
+  PartsTestStatusDashboardResponse
 } from '../model/parts-test-status.model';
 import { 
   AcctStatusGraphDto,
@@ -854,75 +852,74 @@ export class ReportService {
   }
 
   // Parts Test Status API methods
-  getPartsTestStatus(request?: PartsTestStatusRequest): Observable<PartsTestStatusApiResponse> {
-    // Always use POST method to avoid query parameter validation issues
-    const requestBody: PartsTestStatusRequest = {
-      jobType: request?.jobType || 'All',
-      priority: request?.priority || 'All', 
-      archive: request?.archive || false,
-      make: request?.make || 'All',
-      model: request?.model || 'All',
-      assignedTo: request?.assignedTo || 'All'
+  getPartsTestStatus(request?: PartsTestStatusRequest): Observable<PartsTestStatusResponse> {
+    const normalizeFilter = (value?: string): string => {
+      if (!value || value.trim() === '' || value === 'All') {
+        return '';
+      }
+      return value.trim();
     };
 
-    return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, requestBody, {
-      headers: this.headers
-    });
-  }
-
-  getPartsTestStatusPost(request: PartsTestStatusRequest): Observable<PartsTestStatusApiResponse> {
-    return this.http.post<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, request, {
-      headers: this.headers
-    });
-  }
-
-  // GET method with query parameters to match backend
-  getPartsTestStatusByParams(
-    jobType: string = "",
-    priority: string = "",
-    archive: boolean = false,
-    make: string = "",
-    model: string = "",
-    assignedTo: string = ""
-  ): Observable<PartsTestStatusApiResponse> {
     let params = new HttpParams()
-      .set('jobType', jobType)
-      .set('priority', priority)
-      .set('archive', archive.toString())
-      .set('make', make)
-      .set('model', model)
-      .set('assignedTo', assignedTo);
+      .set('jobType', normalizeFilter(request?.jobType))
+      .set('priority', normalizeFilter(request?.priority))
+      .set('archive', (request?.archive ?? false).toString())
+      .set('make', normalizeFilter(request?.make))
+      .set('model', normalizeFilter(request?.model))
+      .set('assignedTo', normalizeFilter(request?.assignedTo));
 
-    return this.http.get<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetPartsTestStatus`, {
+    return this.http.get<PartsTestStatusResponse | PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus`, {
       headers: this.headers,
       params: params
-    });
+    }).pipe(
+      map((response) => {
+        if ('partsTestData' in response) {
+          return response;
+        }
+
+        if ('success' in response) {
+          if (!response.success) {
+            throw new Error(response.message || 'Failed to load parts test status');
+          }
+          return response.data;
+        }
+
+        return { partsTestData: [], distinctMakes: [], distinctModels: [] };
+      }),
+      catchError((error) => this.handleError(error))
+    );
   }
 
-  getAllPartsTestStatus(): Observable<PartsTestStatusApiResponse> {
-    return this.http.get<PartsTestStatusApiResponse>(`${this.API}/PartsTestStatus/GetAllPartsTestStatus`, {
+  getAllPartsTestStatus(): Observable<PartsTestStatusAllApiResponse> {
+    return this.http.get<PartsTestStatusAllApiResponse>(`${this.API}/PartsTestStatus/all`, {
       headers: this.headers
-    });
+    }).pipe(
+      catchError((error) => this.handleError(error))
+    );
   }
 
-  getDistinctMakes(): Observable<DistinctMakesResponse> {
-    return this.http.get<DistinctMakesResponse>(`${this.API}/PartsTestStatus/GetDistinctMakes`, {
-      headers: this.headers
-    });
-  }
+  getPartsTestStatusDashboard(request?: PartsTestStatusRequest): Observable<PartsTestStatusDashboardResponse> {
+    const normalizeFilter = (value?: string): string => {
+      if (!value || value.trim() === '' || value === 'All') {
+        return '';
+      }
+      return value.trim();
+    };
 
-  getDistinctModels(): Observable<DistinctModelsResponse> {
-    return this.http.get<DistinctModelsResponse>(`${this.API}/PartsTestStatus/GetDistinctModels`, {
-      headers: this.headers
-    });
-  }
+    let params = new HttpParams()
+      .set('jobType', normalizeFilter(request?.jobType))
+      .set('priority', normalizeFilter(request?.priority))
+      .set('archive', (request?.archive ?? false).toString())
+      .set('make', normalizeFilter(request?.make))
+      .set('model', normalizeFilter(request?.model))
+      .set('assignedTo', normalizeFilter(request?.assignedTo));
 
-  getDistinctModelsByMake(make: string): Observable<DistinctModelsByMakeResponse> {
-    let params = new HttpParams().set('make', make);
-    return this.http.get<DistinctModelsByMakeResponse>(`${this.API}/PartsTestStatus/GetDistinctModelsByMake`, {
+    return this.http.get<PartsTestStatusDashboardResponse>(`${this.API}/PartsTestStatus/dashboard`, {
       headers: this.headers,
       params: params
-    });
+    }).pipe(
+      catchError((error) => this.handleError(error))
+    );
   }
 
   // Stripped Units Status API methods

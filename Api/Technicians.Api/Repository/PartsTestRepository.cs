@@ -155,100 +155,100 @@ namespace Technicians.Api.Repository
         /// <summary>
         /// Gets parts test status with business logic applied - LEGACY FUNCTIONALITY
         /// </summary>
-        public async Task<PartsTestStatusResponseDto> GetPartsTestStatusWithLogicAsync(PartsTestStatusRequestDto request)
-        {
-            try
-            {
-                var dataSet = await GetPartsTestStatusAsync(
-                    request.JobType, 
-                    request.Priority, 
-                    request.Archive, 
-                    request.Make, 
-                    request.Model, 
-                    request.AssignedTo);
+        //public async Task<PartsTestStatusResponseDto> GetPartsTestStatusWithLogicAsync(PartsTestStatusRequestDto request)
+        //{
+        //    try
+        //    {
+        //        var dataSet = await GetPartsTestStatusAsync(
+        //            request.JobType, 
+        //            request.Priority, 
+        //            request.Archive, 
+        //            request.Make, 
+        //            request.Model, 
+        //            request.AssignedTo);
 
-                var response = new PartsTestStatusResponseDto();
+        //        var response = new PartsTestStatusResponseDto();
 
-                if (dataSet.Tables.Count > 0 && dataSet.Tables[0].Rows.Count > 0)
-                {
-                    // Main data with business logic applied
-                    var partsData = new List<PartsTestStatusItemDto>();
+        //        if (dataSet.Tables.Count > 0 && dataSet.Tables[0].Rows.Count > 0)
+        //        {
+        //            // Main data with business logic applied
+        //            var partsData = new List<PartsTestStatusItemDto>();
                     
-                    foreach (DataRow row in dataSet.Tables[0].Rows)
-                    {
-                        var item = new PartsTestStatusItemDto
-                        {
-                            CallNbr = row["CallNbr"]?.ToString() ?? "",
-                            SiteID = row["SiteID"]?.ToString() ?? "",
-                            Make = row["Make"]?.ToString() ?? "",
-                            Model = row["Model"]?.ToString() ?? "",
-                            ManufPartNo = row["ManufPartNo"]?.ToString() ?? "",
-                            DCGPartNo = row["DCGPartNo"]?.ToString() ?? "",
-                            SerialNo = row["SerialNo"]?.ToString() ?? "",
-                            Quantity = Convert.ToInt32(row["Quantity"] ?? 0),
-                            Description = row["Description"]?.ToString() ?? "",
-                            Priority = row["Priority"]?.ToString() ?? "",
-                            AssignedTo = row["AssignedTo"]?.ToString() ?? "",
-                            DueDate = row["DueDate"] == DBNull.Value ? null : Convert.ToDateTime(row["DueDate"]),
-                            QCWorkStatus = row["QCWorkStatus"]?.ToString() ?? "",
-                            AssyWorkStatus = row["AssyWorkStatus"]?.ToString() ?? "",
-                            IsPassed = Convert.ToBoolean(row["IsPassed"] ?? false),
-                            ProblemNotes = row["ProblemNotes"]?.ToString() ?? "",
-                            ResolveNotes = row["ResolveNotes"]?.ToString() ?? "",
-                            RowIndex = Convert.ToInt32(row["RowIndex"] ?? 0),
-                            CreatedBy = row["CreatedBy"]?.ToString() ?? "",
-                            CreatedOn = row["CreatedOn"] == DBNull.Value ? null : Convert.ToDateTime(row["CreatedOn"]),
-                            LastModifiedBy = row["LastModifiedBy"]?.ToString() ?? "",
-                            LastModifiedOn = row["LastModifiedOn"] == DBNull.Value ? null : Convert.ToDateTime(row["LastModifiedOn"])
-                        };
+        //            foreach (DataRow row in dataSet.Tables[0].Rows)
+        //            {
+        //                var item = new PartsTestStatusItemDto
+        //                {
+        //                    CallNbr = row["CallNbr"]?.ToString() ?? "",
+        //                    SiteID = row["SiteID"]?.ToString() ?? "",
+        //                    Make = row["Make"]?.ToString() ?? "",
+        //                    Model = row["Model"]?.ToString() ?? "",
+        //                    ManufPartNo = row["ManufPartNo"]?.ToString() ?? "",
+        //                    DCGPartNo = row["DCGPartNo"]?.ToString() ?? "",
+        //                    SerialNo = row["SerialNo"]?.ToString() ?? "",
+        //                    Quantity = Convert.ToInt32(row["Quantity"] ?? 0),
+        //                    Description = row["Description"]?.ToString() ?? "",
+        //                    Priority = row["Priority"]?.ToString() ?? "",
+        //                    AssignedTo = row["AssignedTo"]?.ToString() ?? "",
+        //                    DueDate = row["DueDate"] == DBNull.Value ? null : Convert.ToDateTime(row["DueDate"]),
+        //                    QCWorkStatus = row["QCWorkStatus"]?.ToString() ?? "",
+        //                    AssyWorkStatus = row["AssyWorkStatus"]?.ToString() ?? "",
+        //                    IsPassed = Convert.ToBoolean(row["IsPassed"] ?? false),
+        //                    ProblemNotes = row["ProblemNotes"]?.ToString() ?? "",
+        //                    ResolveNotes = row["ResolveNotes"]?.ToString() ?? "",
+        //                    RowIndex = Convert.ToInt32(row["RowIndex"] ?? 0),
+        //                    CreatedBy = row["CreatedBy"]?.ToString() ?? "",
+        //                    CreatedOn = row["CreatedOn"] == DBNull.Value ? null : Convert.ToDateTime(row["CreatedOn"]),
+        //                    LastModifiedBy = row["LastModifiedBy"]?.ToString() ?? "",
+        //                    LastModifiedOn = row["LastModifiedOn"] == DBNull.Value ? null : Convert.ToDateTime(row["LastModifiedOn"])
+        //                };
 
-                        // Apply business logic like legacy
-                        ApplyBusinessLogic(item);
-                        partsData.Add(item);
-                    }
+        //                // Apply business logic like legacy
+        //                ApplyBusinessLogic(item);
+        //                partsData.Add(item);
+        //            }
 
-                    // Apply legacy sorting: Urgent first, then by due date
-                    response.PartsData = partsData
-                        .OrderBy(p => p.Priority?.Equals("Urgent", StringComparison.OrdinalIgnoreCase) == true ? 0 : 1)
-                        .ThenBy(p => p.DueDate)
-                        .ToList();
+        //            // Apply legacy sorting: Urgent first, then by due date
+        //            response.PartsData = partsData
+        //                .OrderBy(p => p.Priority?.Equals("Urgent", StringComparison.OrdinalIgnoreCase) == true ? 0 : 1)
+        //                .ThenBy(p => p.DueDate)
+        //                .ToList();
 
-                    // Filter options (tables 1, 2, 3 like legacy)
-                    if (dataSet.Tables.Count > 1)
-                    {
-                        response.Makes = dataSet.Tables[1].AsEnumerable()
-                            .Select(row => row["Make"]?.ToString() ?? "")
-                            .Where(make => !string.IsNullOrEmpty(make))
-                            .Distinct()
-                            .ToList();
-                    }
+        //            // Filter options (tables 1, 2, 3 like legacy)
+        //            if (dataSet.Tables.Count > 1)
+        //            {
+        //                response.Makes = dataSet.Tables[1].AsEnumerable()
+        //                    .Select(row => row["Make"]?.ToString() ?? "")
+        //                    .Where(make => !string.IsNullOrEmpty(make))
+        //                    .Distinct()
+        //                    .ToList();
+        //            }
 
-                    if (dataSet.Tables.Count > 2)
-                    {
-                        response.Models = dataSet.Tables[2].AsEnumerable()
-                            .Select(row => row["Model"]?.ToString() ?? "")
-                            .Where(model => !string.IsNullOrEmpty(model))
-                            .Distinct()
-                            .ToList();
-                    }
+        //            if (dataSet.Tables.Count > 2)
+        //            {
+        //                response.Models = dataSet.Tables[2].AsEnumerable()
+        //                    .Select(row => row["Model"]?.ToString() ?? "")
+        //                    .Where(model => !string.IsNullOrEmpty(model))
+        //                    .Distinct()
+        //                    .ToList();
+        //            }
 
-                    if (dataSet.Tables.Count > 3)
-                    {
-                        response.AssignedToOptions = dataSet.Tables[3].AsEnumerable()
-                            .Select(row => row["AssignedTo"]?.ToString() ?? "")
-                            .Where(assignedTo => !string.IsNullOrEmpty(assignedTo))
-                            .Distinct()
-                            .ToList();
-                    }
-                }
+        //            if (dataSet.Tables.Count > 3)
+        //            {
+        //                response.AssignedToOptions = dataSet.Tables[3].AsEnumerable()
+        //                    .Select(row => row["AssignedTo"]?.ToString() ?? "")
+        //                    .Where(assignedTo => !string.IsNullOrEmpty(assignedTo))
+        //                    .Distinct()
+        //                    .ToList();
+        //            }
+        //        }
 
-                return response;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error retrieving parts test status with logic: {ex.Message}", ex);
-            }
-        }
+        //        return response;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        throw new Exception($"Error retrieving parts test status with logic: {ex.Message}", ex);
+        //    }
+        //}
 
         /// <summary>
         /// Apply business logic like legacy system

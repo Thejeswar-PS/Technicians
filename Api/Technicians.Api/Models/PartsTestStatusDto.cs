@@ -1,8 +1,5 @@
 namespace Technicians.Api.Models
 {
-    /// <summary>
-    /// DTO for GetPartsTestStatus stored procedure main result
-    /// </summary>
     public class PartsTestStatusDto
     {
         public string CallNbr { get; set; } = string.Empty;
@@ -14,6 +11,7 @@ namespace Technicians.Api.Models
         public string SerialNo { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public string Description { get; set; } = string.Empty;
+        public string Priority { get; set; } = string.Empty;       
         public string QCWorkStatus { get; set; } = string.Empty;
         public string AssyWorkStatus { get; set; } = string.Empty;
         public bool IsPassed { get; set; }
@@ -27,43 +25,32 @@ namespace Technicians.Api.Models
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime? CreatedOn { get; set; }
         public string UniqueID { get; set; } = string.Empty;
-        public string Priority { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Request DTO for GetPartsTestStatus endpoint - MADE FIELDS OPTIONAL
-    /// </summary>
     public class PartsTestStatusRequest
     {
-        public string? JobType { get; set; } = null;
-        public string? Priority { get; set; } = null;
+        public string? JobType { get; set; }
+        public string? Priority { get; set; }
         public bool Archive { get; set; } = false;
-        public string? Make { get; set; } = null;
-        public string? Model { get; set; } = null;
-        public string? AssignedTo { get; set; } = null;
+        public string? Make { get; set; }
+        public string? Model { get; set; }
+        public string? AssignedTo { get; set; }  // ? ADD THIS MISSING PROPERTY
     }
 
-    /// <summary>
-    /// DTO for Make/Model dropdown options
-    /// </summary>
-    public class MakeModelDto
+    public class DropdownOptionDto
     {
-        public string Make { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
     }
 
-    /// <summary>
-    /// Complete response DTO for GetPartsTestStatus
-    /// </summary>
     public class PartsTestStatusResponse
     {
         public List<PartsTestStatusDto> PartsTestData { get; set; } = new();
-        public List<MakeModelDto> DistinctMakes { get; set; } = new();
-        public List<MakeModelDto> DistinctModels { get; set; } = new();
-        public List<string> AssignedToOptions { get; set; } = new();
-        public bool Success { get; set; } = true;
-        public string Message { get; set; } = string.Empty;
+        public List<string> DistinctMakes { get; set; } = new();
+        public List<string> DistinctModels { get; set; } = new();
     }
 
+    // ADDED: Missing DTOs for dashboard functionality
+    
     /// <summary>
     /// Dashboard data for Parts Test Status charts
     /// </summary>
@@ -139,18 +126,5 @@ namespace Technicians.Api.Models
         public List<string> AssignedToOptions { get; set; } = new();
         public bool Success { get; set; } = true;
         public string Message { get; set; } = string.Empty;
-    }
-
-    /// <summary>
-    /// Request DTO for Parts Test Status filtering with legacy matching - MADE FIELDS OPTIONAL
-    /// </summary>
-    public class PartsTestStatusRequestDto
-    {
-        public string? JobType { get; set; } = null;
-        public string? Priority { get; set; } = "All";
-        public string? Archive { get; set; } = "0";
-        public string? Make { get; set; } = null;
-        public string? Model { get; set; } = null;
-        public string? AssignedTo { get; set; } = null;
     }
 }
