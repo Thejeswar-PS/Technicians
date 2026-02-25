@@ -126,6 +126,28 @@
   margin-top: 1.25rem;
 }
 
+.btn-secondary {
+  background: #6c757d;
+  color: #ffffff;
+  border-radius: 12px;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 10px 16px rgba(108, 117, 125, 0.25);
+
+  &:hover:not(:disabled) {
+    background: #5a6268;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
 .filter-field {
   display: flex;
   flex-direction: column;
@@ -193,40 +215,56 @@
   background: linear-gradient(135deg, #1f2937, #475569);
 }
 
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 380px;
+  gap: 1.5rem;
+  align-items: start;
+
+  @media (max-width: 1500px) {
+    grid-template-columns: 1fr;
+  }
+}
+
 .chart-card {
   background: var(--tm-surface);
-  border-radius: 24px;
-  padding: 1.6rem 1.8rem 2rem;
+  border-radius: 20px;
+  padding: 1.5rem;
   border: 1px solid var(--tm-border);
-  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.08);
+  position: sticky;
+  top: 2rem;
 }
 
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 1rem;
 
   h4 {
     margin: 0;
     color: var(--tm-ink);
+    font-size: 1rem;
   }
 
   span {
     color: var(--tm-muted);
-    font-size: 0.95rem;
+    font-size: 0.85rem;
   }
 }
 
 .chart-body {
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .table-card {
-  margin-top: 1.5rem;
-  background: #f9fafb;
-  border-radius: 16px;
+  background: var(--tm-surface);
+  border-radius: 20px;
+  padding: 1.75rem;
   border: 1px solid var(--tm-border);
-  padding: 1rem 1.25rem 1.25rem;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.08);
+  min-width: 0;
 }
 
 .table-header {
@@ -250,17 +288,33 @@
 
 .table-scroll {
   margin-top: 0.75rem;
-  overflow-x: auto;
   overflow-y: auto;
   max-height: 60vh;
+  
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 }
 
 .summary-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
-  min-width: 100%;
-  table-layout: fixed;
+  font-size: 13px;
+  table-layout: auto;
 
   thead th {
     position: sticky;
@@ -269,11 +323,11 @@
     background: linear-gradient(180deg, #5f82f3, #5a7bf0);
     color: #ffffff;
     font-weight: 600;
-    padding: 10px 12px;
+    padding: 10px 8px;
     text-align: center;
     white-space: nowrap;
     border-bottom: 2px solid #dee2e6;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   th {
@@ -281,18 +335,18 @@
     font-weight: 600;
     color: #ffffff;
     white-space: nowrap;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   td {
-    padding: 10px 12px;
+    padding: 10px 8px;
     vertical-align: middle;
     text-align: center;
     color: #6c757d;
     white-space: normal;
     word-break: break-word;
     border-bottom: 1px solid #dee2e6;
-    font-size: 14px;
+    font-size: 13px;
   }
 
   tbody tr:last-child td {
@@ -365,37 +419,57 @@
 
 // Column widths - numeric columns narrower
 .col-job-number {
-  width: 80px;
+  width: 150px;
+  white-space: nowrap;
 }
 
 .col-miles,
 .col-hours,
 .col-minutes {
-  width: 60px;
-}
-
-.col-date {
-  width: 100px;
-}
-
-.col-technician {
-  width: 130px;
-}
-
-.col-customer {
-  width: 180px;
-}
-
-.col-address {
-  width: 220px;
-}
-
-.col-job-type {
-  width: 120px;
+  width: 50px;
+  white-space: nowrap;
 }
 
 .col-time-taken {
-  width: 85px;
+  width: 10px;
+  white-space: nowrap;
+}
+
+.col-date {
+  width: 105px;
+  white-space: nowrap;
+}
+
+.col-customer {
+  width: auto;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-tech-name {
+  width: auto;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-address {
+  width: auto;
+  max-width: 450px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.col-job-type {
+  width: auto;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .pagination {

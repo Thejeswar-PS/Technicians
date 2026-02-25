@@ -2,7 +2,6 @@
   <div class="dashboard-hero">
     <div class="hero-content">
       <div class="hero-title">
-        <span class="hero-kicker">Tools</span>
         <h1>Tech Mileage Dashboard</h1>
       </div>
     </div>
@@ -13,7 +12,6 @@
       <div class="filters-header">
         <div>
           <h4>Filters</h4>
-          <span>Adjust the reporting window and technician</span>
         </div>
         <button class="btn apply-btn" (click)="applyFilters()" [disabled]="isLoading">
           <span *ngIf="isLoading" class="spinner-border spinner-border-sm"></span>
@@ -40,12 +38,19 @@
         </div>
         <div class="filter-field">
           <label for="techName">Technician</label>
-          <select id="techName" class="form-select" [(ngModel)]="selectedTechName">
+          <select id="techName" class="form-select" [(ngModel)]="selectedTechName" [disabled]="techDropdownDisabled">
             <option *ngFor="let tech of technicians" [value]="tech.techName">
               {{ tech.techName }}
             </option>
           </select>
         </div>
+      </div>
+
+      <div class="d-flex align-items-center justify-content-between mt-3">
+        <button class="btn btn-secondary" (click)="exportToExcel()" [disabled]="!report?.mileageRecords?.length">
+          <i class="bi bi-download"></i>
+          Export to Excel
+        </button>
       </div>
 
       <div *ngIf="errorMessage" class="alert alert-danger mt-3">
@@ -84,30 +89,7 @@
       </div>
     </div>
 
-    <div class="chart-card">
-      <div class="chart-header">
-        <div>
-          <h4>Monthly Miles vs Hours</h4>
-          <span>Trend lines per month</span>
-        </div>
-      </div>
-
-      <div class="chart-body" *ngIf="report?.monthlySummary?.length; else emptyChart">
-        <apx-chart
-          [series]="chartOptions.series"
-          [chart]="chartOptions.chart"
-          [xaxis]="chartOptions.xaxis"
-          [yaxis]="chartOptions.yaxis"
-          [stroke]="chartOptions.stroke"
-          [plotOptions]="chartOptions.plotOptions"
-          [dataLabels]="chartOptions.dataLabels"
-          [colors]="chartOptions.colors"
-          [legend]="chartOptions.legend"
-          [grid]="chartOptions.grid"
-          [tooltip]="chartOptions.tooltip">
-        </apx-chart>
-      </div>
-
+    <div class="content-grid" *ngIf="report">
       <div class="table-card" *ngIf="report?.mileageRecords?.length">
         <div class="table-header">
           <h5>Mileage Report Details</h5>
@@ -124,146 +106,163 @@
           </div>
         </div>
         <div class="table-scroll">
-          <table class="summary-table records-table">
-            <thead>
-              <tr>
-                <th class="sortable" (click)="sortData('callNbr')">
-                  <span class="header-cell">
-                    Job #
-                    <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
-                      <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+            <table class="summary-table records-table">
+              <thead>
+                <tr>
+                  <th class="sortable" (click)="sortData('callNbr')">
+                    <span class="header-cell">
+                      Job #
+                      <span class="sort-icons" [class.active]="sortColumn === 'callNbr'">
+                        <i class="up" [class.on]="sortColumn === 'callNbr' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'callNbr' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('techName')">
-                  <span class="header-cell">
-                    Technician
-                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
-                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('custName')">
+                    <span class="header-cell">
+                      Customer
+                      <span class="sort-icons" [class.active]="sortColumn === 'custName'">
+                        <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('custName')">
-                  <span class="header-cell">
-                    Customer
-                    <span class="sort-icons" [class.active]="sortColumn === 'custName'">
-                      <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('techName')" *ngIf="selectedTechName === 'All'">
+                    <span class="header-cell">
+                      Tech Name
+                      <span class="sort-icons" [class.active]="sortColumn === 'techName'">
+                        <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('address')">
-                  <span class="header-cell">
-                    Address
-                    <span class="sort-icons" [class.active]="sortColumn === 'address'">
-                      <i class="up" [class.on]="sortColumn === 'address' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'address' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('address')">
+                    <span class="header-cell">
+                      Address
+                      <span class="sort-icons" [class.active]="sortColumn === 'address'">
+                        <i class="up" [class.on]="sortColumn === 'address' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'address' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('startDate')">
-                  <span class="header-cell">
-                    Date
-                    <span class="sort-icons" [class.active]="sortColumn === 'startDate'">
-                      <i class="up" [class.on]="sortColumn === 'startDate' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'startDate' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('startDate')">
+                    <span class="header-cell">
+                      Date
+                      <span class="sort-icons" [class.active]="sortColumn === 'startDate'">
+                        <i class="up" [class.on]="sortColumn === 'startDate' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'startDate' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('milesReported')">
-                  <span class="header-cell">
-                    Miles
-                    <span class="sort-icons" [class.active]="sortColumn === 'milesReported'">
-                      <i class="up" [class.on]="sortColumn === 'milesReported' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'milesReported' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('milesReported')">
+                    <span class="header-cell">
+                      Miles
+                      <span class="sort-icons" [class.active]="sortColumn === 'milesReported'">
+                        <i class="up" [class.on]="sortColumn === 'milesReported' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'milesReported' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('hoursDecimal')">
-                  <span class="header-cell">
-                    Hours
-                    <span class="sort-icons" [class.active]="sortColumn === 'hoursDecimal'">
-                      <i class="up" [class.on]="sortColumn === 'hoursDecimal' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'hoursDecimal' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('hoursDecimal')">
+                    <span class="header-cell">
+                      Hours
+                      <span class="sort-icons" [class.active]="sortColumn === 'hoursDecimal'">
+                        <i class="up" [class.on]="sortColumn === 'hoursDecimal' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'hoursDecimal' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('totalMinutes')">
-                  <span class="header-cell">
-                    Minutes
-                    <span class="sort-icons" [class.active]="sortColumn === 'totalMinutes'">
-                      <i class="up" [class.on]="sortColumn === 'totalMinutes' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'totalMinutes' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('totalMinutes')">
+                    <span class="header-cell">
+                      Minutes
+                      <span class="sort-icons" [class.active]="sortColumn === 'totalMinutes'">
+                        <i class="up" [class.on]="sortColumn === 'totalMinutes' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'totalMinutes' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('jobType')">
-                  <span class="header-cell">
-                    Job Type
-                    <span class="sort-icons" [class.active]="sortColumn === 'jobType'">
-                      <i class="up" [class.on]="sortColumn === 'jobType' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'jobType' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('jobType')">
+                    <span class="header-cell">
+                      Job Type
+                      <span class="sort-icons" [class.active]="sortColumn === 'jobType'">
+                        <i class="up" [class.on]="sortColumn === 'jobType' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'jobType' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-                <th class="sortable" (click)="sortData('timeTaken')">
-                  <span class="header-cell">
-                    Time Taken
-                    <span class="sort-icons" [class.active]="sortColumn === 'timeTaken'">
-                      <i class="up" [class.on]="sortColumn === 'timeTaken' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'timeTaken' && sortDirection === 'desc'"></i>
+                  </th>
+                  <th class="sortable" (click)="sortData('timeTaken')">
+                    <span class="header-cell">
+                      Time Taken
+                      <span class="sort-icons" [class.active]="sortColumn === 'timeTaken'">
+                        <i class="up" [class.on]="sortColumn === 'timeTaken' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'timeTaken' && sortDirection === 'desc'"></i>
+                      </span>
                     </span>
-                  </span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let record of paginatedRecords">
-                <td class="col-job-number">{{ record.callNbr }}</td>
-                <td class="col-technician">{{ record.techName }}</td>
-                <td class="col-customer">{{ record.custName }}</td>
-                <td class="col-address">{{ record.address }}</td>
-                <td class="col-date">{{ record.startDate | date: 'MM/dd/yyyy' }}</td>
-                <td class="col-miles">{{ record.milesReported | number: '1.1-1' }}</td>
-                <td class="col-hours">{{ record.hoursDecimal | number: '1.2-2' }}</td>
-                <td class="col-minutes">{{ record.totalMinutes | number: '1.0-0' }}</td>
-                <td class="col-job-type">{{ record.jobType }}</td>
-                <td class="col-time-taken">{{ record.timeTaken }}</td>
-              </tr>
-            </tbody>
-          </table>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let record of paginatedRecords">
+                  <td class="col-job-number">{{ record.callNbr }}</td>
+                  <td class="col-customer">{{ record.custName }}</td>
+                  <td class="col-tech-name" *ngIf="selectedTechName === 'All'">{{ record.techName }}</td>
+                  <td class="col-address">{{ record.address }}</td>
+                  <td class="col-date">{{ record.startDate | date: 'MM/dd/yyyy' }}</td>
+                  <td class="col-miles">{{ record.milesReported | number: '1.1-1' }}</td>
+                  <td class="col-hours">{{ record.hoursDecimal | number: '1.2-2' }}</td>
+                  <td class="col-minutes">{{ record.totalMinutes | number: '1.0-0' }}</td>
+                  <td class="col-job-type">{{ record.jobType }}</td>
+                  <td class="col-time-taken">{{ record.timeTaken }}</td>
+                </tr>
+              </tbody>
+            </table>
         </div>
+
         <div *ngIf="totalPages > 1"
-             class="d-flex justify-content-between align-items-center mt-3">
-          <div class="text-muted">
-            Page {{ currentPage }} of {{ totalPages }}
-          </div>
-          <ul class="pagination mb-0">
-            <li class="page-item" [class.disabled]="currentPage === 1">
-              <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
-            </li>
-            <li class="page-item"
-                *ngFor="let page of pageNumbers"
-                [class.active]="page === currentPage">
-              <button class="page-link" (click)="goToPage(page)">
-                {{ page }}
-              </button>
-            </li>
-            <li class="page-item" [class.disabled]="currentPage === totalPages">
-              <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
-            </li>
-          </ul>
+               class="d-flex justify-content-between align-items-center mt-3">
+            <div class="text-muted">
+              Page {{ currentPage }} of {{ totalPages }}
+            </div>
+            <ul class="pagination mb-0">
+              <li class="page-item" [class.disabled]="currentPage === 1">
+                <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
+              </li>
+              <li class="page-item"
+                  *ngFor="let page of pageNumbers"
+                  [class.active]="page === currentPage">
+                <button class="page-link" (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === totalPages">
+                <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
+              </li>
+            </ul>
         </div>
       </div>
 
-      <ng-template #emptyChart>
-        <div class="chart-empty">
-          <i class="bi bi-bar-chart"></i>
-          <p>No chart data for this range yet.</p>
+      <div class="chart-card" *ngIf="report?.monthlySummary?.length">
+        <div class="chart-header">
+          <div>
+            <h4>Monthly Miles vs Hours</h4>
+          </div>
         </div>
-      </ng-template>
+        <div class="chart-body">
+          <apx-chart
+            [series]="chartOptions.series"
+            [chart]="chartOptions.chart"
+            [xaxis]="chartOptions.xaxis"
+            [yaxis]="chartOptions.yaxis"
+            [stroke]="chartOptions.stroke"
+            [plotOptions]="chartOptions.plotOptions"
+            [dataLabels]="chartOptions.dataLabels"
+            [colors]="chartOptions.colors"
+            [legend]="chartOptions.legend"
+            [grid]="chartOptions.grid"
+            [tooltip]="chartOptions.tooltip">
+          </apx-chart>
+        </div>
+      </div>
     </div>
   </div>
 </div>

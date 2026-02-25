@@ -17,6 +17,7 @@ export class TechMileageDashboardComponent implements OnInit {
   selectedTechName: string = 'All';
   startDate: string = '';
   endDate: string = '';
+  techDropdownDisabled: boolean = false;
 
   report: TechMileageResponseDto | null = null;
   chartOptions: any = {};
@@ -30,7 +31,7 @@ export class TechMileageDashboardComponent implements OnInit {
 
   // Pagination
   currentPage: number = 1;
-  pageSize: number = 100;
+  pageSize: number = 200;
   pageSizeOptions: number[] = [100, 150, 200, 300];
 
   constructor(private techMileageService: TechMileageService) {}
@@ -67,11 +68,31 @@ export class TechMileageDashboardComponent implements OnInit {
         this.technicians = hasAll
           ? normalized
           : [{ techID: 'ALL', techName: 'All' }, ...normalized];
+
+        // Auto-select technician based on user role
+        this.autoSelectTechnician();
       },
       error: () => {
         this.errorMessage = 'Failed to load technicians list.';
       }
     });
+  }
+
+  private autoSelectTechnician(): void {
+    // Check if current user has a stored tech role preference
+    const storedTechName = localStorage.getItem('userTechName');
+    const storedUserRole = localStorage.getItem('userRole');
+
+    if (storedUserRole === 'Technician' || storedUserRole === 'TechManager') {
+      if (storedTechName) {
+        const tech = this.technicians.find(t => t.techName === storedTechName);
+        if (tech) {
+          this.selectedTechName = tech.techName;
+          this.techDropdownDisabled = true;
+          return;
+        }
+      }
+    }
   }
 
   private loadReport(): void {
@@ -159,7 +180,8 @@ export class TechMileageDashboardComponent implements OnInit {
             style: { color: milesColor }
           },
           labels: {
-            style: { colors: labelColor, fontSize: '12px' }
+            style: { colors: labelColor, fontSize: '12px' },
+            formatter: (value: number) => Math.round(value).toString()
           }
         },
         {
@@ -169,13 +191,13 @@ export class TechMileageDashboardComponent implements OnInit {
             style: { color: hoursColor }
           },
           labels: {
-            style: { colors: labelColor, fontSize: '12px' }
+            style: { colors: labelColor, fontSize: '12px' },
+            formatter: (value: number) => Math.round(value).toString()
           }
         }
       ],
       legend: {
-        show: true,
-        labels: { colors: labelColor }
+        show: false
       },
       colors: [milesColor, hoursColor],
       grid: {
@@ -287,5 +309,60 @@ export class TechMileageDashboardComponent implements OnInit {
     if (total > 1 && !pages.includes(total)) pages.push(total);
 
     return pages;
+  }
+
+  exportToExcel(): void {
+    if (!this.report?.mileageRecords || this.report.mileageRecords.length === 0) {
+      this.errorMessage = 'No data to export. Please run a report first.';
+      return;
+    }
+
+    const data = this.report.mileageRecords;
+    const headers = [
+      'Job #',
+      'Customer',
+      'Address',
+      'Date',
+      'Miles',
+      'Hours',
+      'Minutes',
+      'Job Type',
+      'Time Taken'
+    ];
+
+    // Create CSV content
+    let csv = headers.join(',') + '\n';
+    data.forEach((record: any) => {
+      csv += [
+        `"${record.callNbr}"`,
+        `"${record.custName}"`,
+        `"${record.address}"`,
+        `"${new Date(record.startDate).toLocaleDateString()}"`,
+        record.milesReported,
+        record.hoursDecimal,
+        record.totalMinutes,
+        `"${record.jobType}"`,
+        `"${record.timeTaken}"`
+      ].join(',') + '\n';
+    });
+
+    // Add summary
+    csv += '\n\nSummary\n';
+    csv += `Total Miles,${this.report.totalMiles}\n`;
+    csv += `Total Hours,${this.report.totalHours}\n`;
+    csv += `Total Jobs,${this.report.totalJobs}\n`;
+
+    // Create blob and download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `TechMileageReport_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }
