@@ -19,10 +19,13 @@ export class HorizontalNavigationService {
   private apiUrl = environment.apiUrl;
   private menuObservableCache: { [userId: string]: Observable<NavigationItem[]> } = {};
   private readonly CACHE_KEY_PREFIX = 'menu_items_';
+  private readonly CACHE_VERSION_KEY = 'menu_items_cache_version';
+  private readonly CACHE_VERSION = 'v2';
 
   constructor(private http: HttpClient) {}
 
   getMenuItems(userId: string): Observable<NavigationItem[]> {
+    this.ensureCacheVersion();
     const cacheKey = this.CACHE_KEY_PREFIX + userId;
 
     // Check localStorage for cached data first
@@ -57,7 +60,12 @@ export class HorizontalNavigationService {
   private getCachedMenuItems(cacheKey: string): NavigationItem[] | null {
     try {
       const cached = localStorage.getItem(cacheKey);
-      return cached ? JSON.parse(cached) : null;
+      if (!cached) {
+        return null;
+      }
+
+      const parsed = JSON.parse(cached) as NavigationItem[];
+      return this.remapCachedItems(parsed);
     } catch (error) {
       console.error('Error retrieving cached menu items:', error);
       return null;
@@ -138,9 +146,90 @@ export class HorizontalNavigationService {
       ),
       parentId: row.Menu_Parent_ID || row.menuParentId || row.menu_ParentID || row.parentId || row.menu_parent_id || null,
       name: row.Menu_Name || row.menuName || row.menu_Name || row.name || '',
-      url: row.Menu_Page_URL || row.menuPageUrl || row.menu_Page_URL || row.url || '',
+      url: this.mapLegacyUrl(
+        row.Menu_Page_URL || row.menuPageUrl || row.menu_Page_URL || row.url || '',
+        row.Menu_Name || row.menuName || row.menu_Name || row.name || ''
+      ),
       children: []
     }));
+  }
+
+  private mapLegacyUrl(url: string, name: string): string {
+    const rawUrl = (url || '').trim();
+    if (!rawUrl) {
+      return '';
+    }
+
+    let cleanedUrl = rawUrl.replace(/\\/g, '/').replace(/^~\//, '');
+    const lower = cleanedUrl.toLowerCase();
+    const legacyHostPrefix = 'http://dcgwebint/';
+
+    if (lower.startsWith(legacyHostPrefix)) {
+      cleanedUrl = cleanedUrl.substring(legacyHostPrefix.length);
+    } else if (lower.startsWith('http://') || lower.startsWith('https://')) {
+      return rawUrl;
+    }
+
+    const [base, query] = cleanedUrl.split('?');
+    const baseKey = base.replace(/^\/+/, '').toLowerCase();
+
+    const legacyMap: { [key: string]: string } = {
+      'miscellaneoustasks.aspx': '/miscellaneous-tasks',
+      'reports/partrequeststatus.aspx': '/reports/parts-request-status',
+      'reports/unscheduledreport.aspx': '/reports/unscheduled-report',
+      'capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
+      'dtechpartsearch.aspx': '/reports/parts-search',
+      'reports/accmgmtgraph.aspx': '/graphs/account-manager-graph',
+      'displayreports/accmgrperformance.aspx': '/reports/acc-mgr-performance-report',
+      'reports/dcgdisplayreportdetails.aspx': '/reports/dcg-display-report-details',
+      'dtechuserssearch.aspx': '/reports/dtech-users-data',
+      'dtechjobslist.aspx': '/jobs/job-list',
+      'reports/jobstobeuploaded.aspx': '/tools/jobs-to-be-uploaded',
+      'techcalendar.aspx': '/calendar',
+      'reports/accountingstatus.aspx': '/reports/accounting-status',
+      'reports/libertparts.aspx': '#todo-liebert-part-numbers',
+      'newunittesting.aspx': '/reports/new-unit-test',
+      'newunitsteststatus.aspx': '/reports/ups-test-status',
+      'orderrequest.aspx': '/reports/order-request',
+      'orderrequeststatus.aspx': '/reports/order-request-status',
+      'partrequeststatus.aspx': '/reports/parts-request-status',
+      'partreturnstatus.aspx': '/reports/part-return-status',
+      'testinfopartentry.aspx': '/reports/parts-test-info',
+      'partsteststatus.aspx': '/reports/parts-test-status',
+      'strippedupsunitsstatus.aspx': '/reports/stripped-units-status',
+      'http://dcgwebint/Reports/UnScheduledReport.aspx': '/reports/unscheduled-report'
+    };
+
+    const mappedBase = legacyMap[baseKey];
+    if (!mappedBase) {
+      return rawUrl;
+    }
+
+    if (!query) {
+      return mappedBase;
+    }
+
+    return `${mappedBase}?${query}`;
+  }
+
+  private remapCachedItems(items: NavigationItem[]): NavigationItem[] {
+    return (items || []).map(item => ({
+      ...item,
+      url: this.mapLegacyUrl(item.url || '', item.name || ''),
+      children: this.remapCachedItems(item.children || [])
+    }));
+  }
+
+  private ensureCacheVersion(): void {
+    try {
+      const currentVersion = localStorage.getItem(this.CACHE_VERSION_KEY);
+      if (currentVersion !== this.CACHE_VERSION) {
+        this.clearAllCache();
+        localStorage.setItem(this.CACHE_VERSION_KEY, this.CACHE_VERSION);
+      }
+    } catch (error) {
+      console.error('Error validating cache version:', error);
+    }
   }
 
   private buildTree(items: NavigationItem[]): NavigationItem[] {

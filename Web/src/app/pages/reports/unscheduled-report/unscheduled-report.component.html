@@ -129,24 +129,36 @@
       </div>
 
       <!-- Data Grid Section -->
-      <div class="grid-section" *ngIf="!isLoading && gridData.length > 0">
+      <div class="grid-section" *ngIf="!isLoading && filteredGridData.length > 0">
         <div class="grid-header d-flex justify-content-between align-items-center mb-3">
           <h5 class="mb-0 fw-bold">
             <i class="bi bi-table me-2 text-primary"></i>
             Unscheduled Jobs Data
             <span class="badge ms-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-              {{ gridData.length }} Jobs
+              {{ filteredGridData.length }} Jobs
             </span>
           </h5>
-          <button class="btn btn-sm btn-success" (click)="exportToExcel()">
-            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
-          </button>
+          <div class="d-flex align-items-center gap-2 grid-filter">
+            <div class="filter-group mb-0">
+              
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                placeholder="Filter by Manager..."
+                [(ngModel)]="managerFilter"
+                (input)="onManagerFilterChange()"
+                [disabled]="isLoading">
+            </div>
+            <button class="btn btn-sm btn-success" (click)="exportToExcel()">
+              <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+            </button>
+          </div>
         </div>
 
         <!-- Pagination -->
         <div class="d-flex justify-content-between align-items-center mb-3">
           <small class="text-muted">
-            Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, gridData.length) }} of {{ gridData.length }} entries
+            Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredGridData.length) }} of {{ filteredGridData.length }} entries
           </small>
           <div class="pagination-controls">
             <button class="btn btn-sm btn-outline-primary" (click)="prevPage()" [disabled]="currentPage === 1">

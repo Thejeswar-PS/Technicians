@@ -95,13 +95,14 @@
     overflow-x: auto;
   }
 
-  .modern-table {
-    width: 100%;
-    margin: 0;
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 0.9rem;
-
+    .modern-table {
+      width: 100%;
+      margin: 0;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.9rem;
+      table-layout: auto;
+    }
     .table-header {
       th {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -113,13 +114,13 @@
         padding: 0;
         height: 60px;
         vertical-align: middle;
-        text-align: center;
+        text-align: left;
 
         &.header-cell {
           .header-content {
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             padding: 1rem 0.75rem;
             height: 100%;
             min-height: 60px;
@@ -137,6 +138,7 @@
 
         &.notes-column {
           min-width: 600px;
+          width: auto;
         }
       }
     }
@@ -156,9 +158,12 @@
           border: none;
 
           &.notes-cell {
-            max-width: 800px;
+            max-width: none;
+            width: auto;
 
             .notes-content {
+              display: block;
+              width: 100%;
               word-wrap: break-word;
               white-space: normal;
               line-height: 1.5;
@@ -278,5 +283,4 @@
     gap: 1rem;
     align-items: flex-start !important;
   }
-}
 }
