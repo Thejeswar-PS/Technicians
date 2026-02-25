@@ -1202,7 +1202,7 @@
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <button type="button" class="btn btn-primary w-100" style="height: 38px;" (click)="onChange()">
+                  <button type="button" class="btn btn-sm btn-primary w-100" (click)="onChange()">
                     Change
                   </button>
                 </div>
@@ -1228,7 +1228,7 @@
                   </div>
                 </div>
                 <div class="col-md-2">
-                  <button type="button" class="btn btn-success w-100" style="height: 38px;" (click)="openReadingsGraph()">
+                  <button type="button" class="btn btn-sm btn-info" (click)="openReadingsGraph()">
                     View in Graph
                   </button>
                 </div>
@@ -1397,7 +1397,7 @@
             <div class="d-flex justify-content-center gap-3 flex-wrap">
               <button
                 type="button"
-                class="btn btn-primary btn-lg px-4 save-ups-btn"
+                class="btn btn-sm btn-primary"
                 [disabled]="saving"
                 (click)="saveBatteryReadings()"
               >
@@ -1412,7 +1412,7 @@
 
               <button
                 type="button"
-                class="btn btn-primary btn-lg px-4 save-draft-btn"
+                class="btn btn-sm btn-info"
                 [disabled]="saving"
                 (click)="saveAsDraft()"
               >
@@ -1422,7 +1422,7 @@
 
               <button
                 type="button"
-                class="btn btn-secondary btn-lg px-4"
+                class="btn btn-sm btn-secondary"
                 (click)="goBack()"
               >
                 <i class="bi bi-x-circle me-2"></i>

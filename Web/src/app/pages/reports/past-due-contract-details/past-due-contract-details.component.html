@@ -175,8 +175,8 @@
             <tbody>
               <tr *ngFor="let row of filteredPastDueRows; trackBy: trackByRow">
                 <td class="text-center">{{ row.siteId || 'N/A' }}</td>
-                <td>{{ row.siteName || 'N/A' }}</td>
-                <td>{{ row.accountManager || 'N/A' }}</td>
+                <td class="text-center">{{ row.siteName || 'N/A' }}</td>
+                <td class="text-center">{{ row.accountManager || 'N/A' }}</td>
                 <td class="text-center fw-bold text-primary">{{ row.contractNo || 'N/A' }}</td>
                 <td class="text-center">{{ row.contractType || 'N/A' }}</td>
                 <td class="text-center">{{ row.invoiceDate | date: 'dd-MMM-yyyy' }}</td>
