@@ -92,6 +92,7 @@
   tbody td {
     padding: 10px 12px;
     vertical-align: middle;
+    text-align: center;        // center all cells
 
     /* Prevent overlapping */
     white-space: normal;       // allow wrapping
@@ -104,29 +105,7 @@
 
   /* Row # */
   td:nth-child(1) {
-    text-align: center;
     font-weight: 600;
-    white-space: nowrap;
-  }
-
-  /* Qty */
-  td:nth-child(6) {
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  /* Dates */
-  td:nth-child(9),
-  td:nth-child(10),
-  td:nth-child(12) {
-    text-align: center;
-    white-space: nowrap;
-  }
-
-  /* Status */
-  td:nth-child(11) {
-    text-align: center;
-    white-space: nowrap;
   }
 
   /* ================================
@@ -142,6 +121,71 @@
 
 /* =========================================
    STATUS PILLS
+   ========================================= */
+
+.status-pill {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  }
+}
+
+// Status-specific colors
+.status-new {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+}
+
+.status-ord,
+.status-ordered {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: #ffffff;
+}
+
+.status-shi,
+.status-shipped {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: #ffffff;
+}
+
+.status-bor,
+.status-back-ordered {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: #ffffff;
+}
+
+.status-can,
+.status-cancelled {
+  background: linear-gradient(135deg, #ff6b6b 0%, #c92a2a 100%);
+  color: #ffffff;
+}
+
+.status-com,
+.status-completed {
+  background: linear-gradient(135deg, #51cf66 0%, #2f9e44 100%);
+  color: #ffffff;
+}
+
+.status-na {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+/* =========================================
+   SORTABLE HEADER
+   ========================================= */
+
 .header-cell {
   display: flex;
   align-items: center;

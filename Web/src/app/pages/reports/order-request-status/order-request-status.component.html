@@ -259,21 +259,21 @@
 
               <td class="text-center fw-bold">{{ orderRequest.rowIndex }}</td>
 
-              <td class="text-primary fw-bold cursor-pointer"
+              <td class="text-center text-primary fw-bold cursor-pointer"
                   (click)="viewOrderRequest(orderRequest)">
                 {{ orderRequest.orderType || 'N/A' }}
               </td>
 
-              <td>{{ orderRequest.requester || 'N/A' }}</td>
-              <td>{{ orderRequest.dcgPartNo || 'N/A' }}</td>
-              <td>{{ orderRequest.manufPartNo || 'N/A' }}</td>
+              <td class="text-center">{{ orderRequest.requester || 'N/A' }}</td>
+              <td class="text-center">{{ orderRequest.dcgPartNo || 'N/A' }}</td>
+              <td class="text-center">{{ orderRequest.manufPartNo || 'N/A' }}</td>
 
               <td class="text-center">
                 <span class="badge bg-success">{{ orderRequest.qtyNeeded || 0 }}</span>
               </td>
 
-              <td>{{ orderRequest.vendor || 'N/A' }}</td>
-              <td>{{ orderRequest.poNumber || 'N/A' }}</td>
+              <td class="text-center">{{ orderRequest.vendor || 'N/A' }}</td>
+              <td class="text-center">{{ orderRequest.poNumber || 'N/A' }}</td>
 
               <td class="text-center">{{ formatDate(orderRequest.orderDate) }}</td>
               <td class="text-center">{{ formatDate(orderRequest.arriveDate) }}</td>
@@ -285,8 +285,8 @@
                 </span>
               </td>
 
-              <td class="text-center">{{ formatDateTime(orderRequest.createdOn) }}</td>
-              <td>{{ orderRequest.createdBy || 'N/A' }}</td>
+              <td class="text-center">{{ formatDate(orderRequest.createdOn) }}</td>
+              <td class="text-center">{{ orderRequest.createdBy || 'N/A' }}</td>
 
             </tr>
           </tbody>

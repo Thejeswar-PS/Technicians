@@ -183,10 +183,11 @@
           <td class="text-center">
             <span class="status-pill"
                   [ngClass]="{
-                    'status-open': item.status === 'Open',
+                    'status-notstarted': item.status === 'Not Started',
                     'status-inprogress': item.status === 'In Progress',
                     'status-completed': item.status === 'Completed',
-                    'status-cancelled': item.status === 'Cancelled'
+                    'status-deferred': item.status === 'Deferred',
+                    'status-waiting': item.status === 'Waiting On Someone else'
                   }">
               {{ item.status }}
             </span>

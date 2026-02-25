@@ -58,6 +58,223 @@ namespace Technicians.Api.Repository
         }
 
         /// <summary>
+        /// Gets parts test status data with filtering - LEGACY FUNCTIONALITY
+        /// </summary>
+        /// <param name="jobType">Job type filter</param>
+        /// <param name="priority">Priority filter (All, Urgent, etc.)</param>
+        /// <param name="archive">Archive filter (0=Active, 1=Archived)</param>
+        /// <param name="make">Make filter</param>
+        /// <param name="model">Model filter</param>
+        /// <param name="assignedTo">Assigned To filter</param>
+        /// <returns>Complete dataset with parts data, filters, and chart data</returns>
+        public async Task<DataSet> GetPartsTestStatusAsync(string jobType = "", string priority = "All", string archive = "0", string make = "", string model = "", string assignedTo = "")
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new SqlCommand("GetPartsTestStatus", connection);
+                command.CommandType = CommandType.StoredProcedure;
+                
+                // Add parameters exactly like legacy
+                command.Parameters.AddWithValue("@JobType", string.IsNullOrEmpty(jobType) ? "" : jobType);
+                command.Parameters.AddWithValue("@Priority", priority == "All" ? "" : priority);
+                command.Parameters.AddWithValue("@Archive", archive);
+                command.Parameters.AddWithValue("@Make", string.IsNullOrEmpty(make) ? "" : make);
+                command.Parameters.AddWithValue("@Model", string.IsNullOrEmpty(model) ? "" : model);
+                command.Parameters.AddWithValue("@AssignedTo", string.IsNullOrEmpty(assignedTo) ? "" : assignedTo);
+
+                using var adapter = new SqlDataAdapter(command);
+                var dataSet = new DataSet();
+                adapter.Fill(dataSet);
+
+                return dataSet;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving parts test status: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Gets dashboard chart data for Parts Test Status - LEGACY FUNCTIONALITY
+        /// </summary>
+        /// <param name="jobType">Job type filter</param>
+        /// <param name="priority">Priority filter</param>
+        /// <param name="archive">Archive filter</param>
+        /// <param name="make">Make filter</param>
+        /// <param name="model">Model filter</param>
+        /// <param name="assignedTo">Assigned To filter</param>
+        /// <returns>Chart data for status counts and job type distribution</returns>
+        public async Task<PartsTestDashboardDto> GetPartsTestDashboardAsync(string jobType = "", string priority = "All", string archive = "0", string make = "", string model = "", string assignedTo = "")
+        {
+            try
+            {
+                var dataSet = await GetPartsTestStatusAsync(jobType, priority, archive, make, model, assignedTo);
+                var dashboard = new PartsTestDashboardDto();
+
+                if (dataSet.Tables.Count >= 5)
+                {
+                    // Chart 1: Status counts (from table index 4 like legacy)
+                    if (dataSet.Tables[4].Rows.Count > 0)
+                    {
+                        var row = dataSet.Tables[4].Rows[0];
+                        dashboard.StatusCounts = new PartsTestStatusCountsDto
+                        {
+                            EmergencyCount = Convert.ToInt32(row["EmergencyCount"] ?? 0),
+                            OverdueCount = Convert.ToInt32(row["OverdueCount"] ?? 0),
+                            SameDayCount = Convert.ToInt32(row["SameDayCount"] ?? 0),
+                            CurrentWeekCount = Convert.ToInt32(row["CurrentWeekCount"] ?? 0)
+                        };
+                    }
+
+                    // Chart 2: Job type distribution (from table index 5 like legacy)
+                    if (dataSet.Tables.Count > 5 && dataSet.Tables[5].Rows.Count > 0)
+                    {
+                        dashboard.JobTypeDistribution = new List<JobTypeCountDto>();
+                        foreach (DataRow row in dataSet.Tables[5].Rows)
+                        {
+                            dashboard.JobTypeDistribution.Add(new JobTypeCountDto
+                            {
+                                JobType = row["JobType"]?.ToString() ?? "",
+                                TotalCount = Convert.ToInt32(row["TotalCount"] ?? 0)
+                            });
+                        }
+                    }
+                }
+
+                return dashboard;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving dashboard data: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Gets parts test status with business logic applied - LEGACY FUNCTIONALITY
+        /// </summary>
+        public async Task<PartsTestStatusResponseDto> GetPartsTestStatusWithLogicAsync(PartsTestStatusRequestDto request)
+        {
+            try
+            {
+                var dataSet = await GetPartsTestStatusAsync(
+                    request.JobType, 
+                    request.Priority, 
+                    request.Archive, 
+                    request.Make, 
+                    request.Model, 
+                    request.AssignedTo);
+
+                var response = new PartsTestStatusResponseDto();
+
+                if (dataSet.Tables.Count > 0 && dataSet.Tables[0].Rows.Count > 0)
+                {
+                    // Main data with business logic applied
+                    var partsData = new List<PartsTestStatusItemDto>();
+                    
+                    foreach (DataRow row in dataSet.Tables[0].Rows)
+                    {
+                        var item = new PartsTestStatusItemDto
+                        {
+                            CallNbr = row["CallNbr"]?.ToString() ?? "",
+                            SiteID = row["SiteID"]?.ToString() ?? "",
+                            Make = row["Make"]?.ToString() ?? "",
+                            Model = row["Model"]?.ToString() ?? "",
+                            ManufPartNo = row["ManufPartNo"]?.ToString() ?? "",
+                            DCGPartNo = row["DCGPartNo"]?.ToString() ?? "",
+                            SerialNo = row["SerialNo"]?.ToString() ?? "",
+                            Quantity = Convert.ToInt32(row["Quantity"] ?? 0),
+                            Description = row["Description"]?.ToString() ?? "",
+                            Priority = row["Priority"]?.ToString() ?? "",
+                            AssignedTo = row["AssignedTo"]?.ToString() ?? "",
+                            DueDate = row["DueDate"] == DBNull.Value ? null : Convert.ToDateTime(row["DueDate"]),
+                            QCWorkStatus = row["QCWorkStatus"]?.ToString() ?? "",
+                            AssyWorkStatus = row["AssyWorkStatus"]?.ToString() ?? "",
+                            IsPassed = Convert.ToBoolean(row["IsPassed"] ?? false),
+                            ProblemNotes = row["ProblemNotes"]?.ToString() ?? "",
+                            ResolveNotes = row["ResolveNotes"]?.ToString() ?? "",
+                            RowIndex = Convert.ToInt32(row["RowIndex"] ?? 0),
+                            CreatedBy = row["CreatedBy"]?.ToString() ?? "",
+                            CreatedOn = row["CreatedOn"] == DBNull.Value ? null : Convert.ToDateTime(row["CreatedOn"]),
+                            LastModifiedBy = row["LastModifiedBy"]?.ToString() ?? "",
+                            LastModifiedOn = row["LastModifiedOn"] == DBNull.Value ? null : Convert.ToDateTime(row["LastModifiedOn"])
+                        };
+
+                        // Apply business logic like legacy
+                        ApplyBusinessLogic(item);
+                        partsData.Add(item);
+                    }
+
+                    // Apply legacy sorting: Urgent first, then by due date
+                    response.PartsData = partsData
+                        .OrderBy(p => p.Priority?.Equals("Urgent", StringComparison.OrdinalIgnoreCase) == true ? 0 : 1)
+                        .ThenBy(p => p.DueDate)
+                        .ToList();
+
+                    // Filter options (tables 1, 2, 3 like legacy)
+                    if (dataSet.Tables.Count > 1)
+                    {
+                        response.Makes = dataSet.Tables[1].AsEnumerable()
+                            .Select(row => row["Make"]?.ToString() ?? "")
+                            .Where(make => !string.IsNullOrEmpty(make))
+                            .Distinct()
+                            .ToList();
+                    }
+
+                    if (dataSet.Tables.Count > 2)
+                    {
+                        response.Models = dataSet.Tables[2].AsEnumerable()
+                            .Select(row => row["Model"]?.ToString() ?? "")
+                            .Where(model => !string.IsNullOrEmpty(model))
+                            .Distinct()
+                            .ToList();
+                    }
+
+                    if (dataSet.Tables.Count > 3)
+                    {
+                        response.AssignedToOptions = dataSet.Tables[3].AsEnumerable()
+                            .Select(row => row["AssignedTo"]?.ToString() ?? "")
+                            .Where(assignedTo => !string.IsNullOrEmpty(assignedTo))
+                            .Distinct()
+                            .ToList();
+                    }
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving parts test status with logic: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Apply business logic like legacy system
+        /// </summary>
+        private void ApplyBusinessLogic(PartsTestStatusItemDto item)
+        {
+            if (item.DueDate.HasValue)
+            {
+                var daysUntilDue = (item.DueDate.Value - DateTime.Today).TotalDays;
+                
+                // Set status flags like legacy
+                item.IsOverdue = daysUntilDue <= 0;
+                item.IsDueSoon = daysUntilDue > 0 && daysUntilDue <= 7;
+                item.IsUrgent = item.Priority?.Equals("Urgent", StringComparison.OrdinalIgnoreCase) == true;
+                
+                // Set CSS class like legacy
+                if (item.IsOverdue)
+                    item.CssClass = "overdue-row";
+                else if (item.IsDueSoon)
+                    item.CssClass = "week-row";
+                else if (item.IsUrgent)
+                    item.CssClass = "urgent-row";
+            }
+        }
+
+        /// <summary>
         /// Gets parts test list data with default row index
         /// </summary>
         /// <param name="source">Source type: "PartsTest", "OrderRequest", or other for "GetNewUniTestList"</param>
@@ -133,10 +350,20 @@ namespace Technicians.Api.Repository
                 parameters.Add("@AssyWorkDone", dto.AssyWorkDone, DbType.AnsiStringFixedLength, size: 20);
                 parameters.Add("@AssyProcFollowed", dto.AssyProcFollowed, DbType.AnsiStringFixedLength, size: 1);
                 parameters.Add("@AssyWorkStatus", dto.AssyWorkStatus, DbType.AnsiStringFixedLength, size: 1);
-                parameters.Add("@QCWorkDone", dto.QCWorkDone, DbType.String, size: 50);
-                parameters.Add("@QCProcFollowed", dto.QCProcFollowed, DbType.AnsiStringFixedLength, size: 1);
-                parameters.Add("@QCApproved", dto.QCApproved, DbType.AnsiStringFixedLength, size: 1);
-                parameters.Add("@QCWorkStatus", dto.QCWorkStatus, DbType.AnsiStringFixedLength, size: 1);
+                
+                // CHANGED: Updated QC parameter handling with null checking
+                parameters.Add("@QCWorkDone", 
+                    string.IsNullOrWhiteSpace(dto.QCWorkDone) ? null : dto.QCWorkDone);
+
+                parameters.Add("@QCProcFollowed", 
+                    string.IsNullOrWhiteSpace(dto.QCProcFollowed) ? null : dto.QCProcFollowed);
+
+                parameters.Add("@QCApproved", 
+                    string.IsNullOrWhiteSpace(dto.QCApproved) ? null : dto.QCApproved);
+
+                parameters.Add("@QCWorkStatus", 
+                    string.IsNullOrWhiteSpace(dto.QCWorkStatus) ? null : dto.QCWorkStatus);
+
                 parameters.Add("@CreatedBy", dto.CreatedBy, DbType.String, size: 50);
                 parameters.Add("@Approved", dto.Approved, DbType.Boolean);
                 parameters.Add("@LastModifiedBy", dto.LastModifiedBy, DbType.String, size: 50);

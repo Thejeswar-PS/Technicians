@@ -34,6 +34,10 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   currentPage = 1;
   itemsPerPage = 100;
   totalItems = 0;
+
+  // Sorting
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' = 'asc';
   
   private subscriptions: Subscription[] = [];
 
@@ -316,6 +320,8 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   setActiveSection(section: string): void {
     this.activeSection = section;
     this.currentPage = 1; // Reset to first page when switching sections
+    this.sortColumn = '';
+    this.sortDirection = 'asc';
   }
 
   onOfficeChange(): void {
@@ -649,9 +655,96 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     return 'bg-secondary';
   }
 
+  sortData(column: string): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.currentPage = 1;
+  }
+
+  private getSortedActiveData(): any[] {
+    const activeData = this.getActiveData();
+    if (!this.sortColumn) {
+      return activeData;
+    }
+
+    const sorted = [...activeData];
+    sorted.sort((a, b) => {
+      const aValue = this.getColumnValue(a, this.sortColumn);
+      const bValue = this.getColumnValue(b, this.sortColumn);
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return (aValue - bValue) * (this.sortDirection === 'asc' ? 1 : -1);
+      }
+
+      return aValue.toString().localeCompare(bValue.toString()) * (this.sortDirection === 'asc' ? 1 : -1);
+    });
+
+    return sorted;
+  }
+
+  private getColumnValue(item: any, column: string): string | number {
+    switch (column) {
+      case 'callNbr':
+        return (item.callNbr || item.callNumber || '').toString().toLowerCase();
+      case 'custNmbr':
+        return (item.custNmbr || item.customerId || item.customerNumber || '').toString().toLowerCase();
+      case 'custName':
+        return (item.custName || item.customerName || '').toString().toLowerCase();
+      case 'status':
+        return (this.getStatusText(item) || item.jobStatus || item.status || '').toString().toLowerCase();
+      case 'jobStatus':
+        return (item.jobStatus || item.status || '').toString().toLowerCase();
+      case 'techName':
+        return (item.techName || item.technician || '').toString().toLowerCase();
+      case 'scheduledStart':
+        return this.toTime(item.scheduledStart);
+      case 'scheduledEnd':
+        return this.toTime(item.scheduledEnd);
+      case 'returnedDate':
+        return this.toTime(item.returned || item.responseDate);
+      case 'responseDate':
+        return this.toTime(item.responseDate);
+      case 'changeAge':
+        return this.toNumber(item.changeAge1 ?? item.changeAge);
+      case 'origAge':
+        return this.toNumber(item.origAge);
+      case 'description':
+        return (item.description || '').toString().toLowerCase();
+      case 'contractNo':
+        return (this.getContractNumber(item) || '').toString().toLowerCase();
+      case 'quotedAmount':
+        return this.toNumber(this.getQuotedAmount(item));
+      case 'jobType':
+        return (item.jobType || '').toString().toLowerCase();
+      case 'siteContact':
+        return (item.siteContact || '').toString().toLowerCase();
+      case 'city':
+        return (item.city || '').toString().toLowerCase();
+      case 'confirmationStatus':
+        return 'confirmed';
+      default:
+        return (item[column] || '').toString().toLowerCase();
+    }
+  }
+
+  private toNumber(value: any): number {
+    const numberValue = Number(value);
+    return Number.isFinite(numberValue) ? numberValue : 0;
+  }
+
+  private toTime(value: any): number {
+    if (!value) return 0;
+    const time = new Date(value).getTime();
+    return Number.isFinite(time) ? time : 0;
+  }
+
   // Pagination methods
   getPaginatedData(): any[] {
-    const activeData = this.getActiveData();
+    const activeData = this.getSortedActiveData();
     this.totalItems = activeData.length;
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = startIndex + this.itemsPerPage;

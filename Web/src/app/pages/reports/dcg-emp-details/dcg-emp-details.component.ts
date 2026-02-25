@@ -90,6 +90,21 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   
   // Dropdown options for office assignment editing (matching legacy)
   stateOptions: { state: string, stateName: string }[] = [];
+  officeIdOptions: { empID: string, empName: string, fullDisplay: string }[] = [];
+  invUserIdOptions: { empID: string, empName: string, fullDisplay: string }[] = [];
+  allEmployees: DCGEmployeeDto[] = []; // Store all employees for lookup
+  
+  // Employee Status Options
+  empStatusOptions = [
+    { value: 'E', label: 'E - Engineer' },
+    { value: 'M', label: 'M - Manager' },
+    { value: 'A', label: 'A - Accounting' },
+    { value: 'C', label: 'C - Contracts' },
+    { value: 'T', label: 'T - Test Engineers' },
+    { value: 'P', label: 'P - Inventory' },
+    { value: 'B', label: 'B - Manager & Engineer' },
+    { value: 'U', label: 'U - Terminated' }
+  ];
   
   // Make Math available in template
   Math = Math;
@@ -184,7 +199,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
         }
       });
   }
-  // Load dropdown data for office assignment editing (only state options needed)
+  // Load dropdown data for office assignment editing
   private loadDropdownData(): void {
     // Load state options from office assignments  
     this.dcgEmployeeService.getOfficeStateAssignments('State')
@@ -208,7 +223,59 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
           console.error('Error loading state options:', error);
         }
       });
+    
+    // Load employee options for offID (Managers) and invUserID (All employees)
+    this.dcgEmployeeService.getDCGEmployees('EmpName')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            const employees = response.data || [];
+            
+            // Store all employees for lookup
+            this.allEmployees = employees;
+            
+            // Filter managers for Office ID dropdown - EMPSTATUS='M' only
+            const managerMap = new Map();
+            employees
+              .filter((emp: DCGEmployeeDto) => emp.empStatus === 'M')
+              .forEach((emp: DCGEmployeeDto) => {
+                if (!managerMap.has(emp.empID)) {
+                  managerMap.set(emp.empID, {
+                    empID: emp.empID,
+                    empName: emp.empName,
+                    fullDisplay: `${emp.empID} - ${emp.empName}`
+                  });
+                }
+              });
+            
+            this.officeIdOptions = Array.from(managerMap.values())
+              .sort((a: any, b: any) => a.empName.localeCompare(b.empName));
+            
+            // Filter for Inventory User ID dropdown - EMPSTATUS='P' (Parts) only
+            const inventoryMap = new Map();
+            employees
+              .filter((emp: DCGEmployeeDto) => emp.empStatus === 'P')
+              .forEach((emp: DCGEmployeeDto) => {
+                if (!inventoryMap.has(emp.empID)) {
+                  inventoryMap.set(emp.empID, {
+                    empID: emp.empID,
+                    empName: emp.empName,
+                    fullDisplay: `${emp.empID} - ${emp.empName}`
+                  });
+                }
+              });
+            
+            this.invUserIdOptions = Array.from(inventoryMap.values())
+              .sort((a: any, b: any) => a.empName.localeCompare(b.empName));
+          }
+        },
+        error: (error) => {
+          console.error('Error loading employee options:', error);
+        }
+      });
   }
+
   // Table Sorting
   sortTable(column: string): void {
     if (this.sortColumn === column) {
@@ -345,12 +412,18 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   editEmployee(employee: DCGEmployeeDto): void {
     this.editingEmployee = employee;
     
+    // Ensure current empStatus is in dropdown options if not already present
+    const currentStatus = (employee.empStatus || '').trim();
+    if (currentStatus && !this.empStatusOptions.find(opt => opt.value === currentStatus)) {
+      this.empStatusOptions.push({ value: currentStatus, label: currentStatus });
+    }
+    
     // Ensure all fields have proper values before patching and trim whitespace
     const patchData = {
       empNo: employee.empNo || 0,
       empID: (employee.empID || '').trim(),
       empName: (employee.empName || '').trim(),
-      empStatus: (employee.empStatus || '').trim(),
+      empStatus: currentStatus,
       windowsID: (employee.windowsID || '').trim(),
       email: (employee.email || '').trim()
     };
@@ -490,19 +563,35 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
 
  editOfficeAssignment(office: OfficeStateAssignmentDto): void {
   this.editingOffice = office;
+  
+  const currentOffID = (office.offID || '').trim();
+  const currentInvUserID = (office.invUserID || '').trim();
+  
+  // Ensure current values are in dropdown options if not already present
+  if (currentOffID && !this.officeIdOptions.find(opt => opt.empID.toUpperCase() === currentOffID.toUpperCase())) {
+    this.officeIdOptions.unshift({ empID: currentOffID, empName: currentOffID, fullDisplay: currentOffID });
+  }
+  
+  if (currentInvUserID && !this.invUserIdOptions.find(opt => opt.empID.toUpperCase() === currentInvUserID.toUpperCase())) {
+    this.invUserIdOptions.unshift({ empID: currentInvUserID, empName: currentInvUserID, fullDisplay: currentInvUserID });
+  }
+  
   this.showOfficeForm = true;
 
-  // Wait for next tick so dropdown options are present
+  // Wait for next tick so dropdown options are rendered
   setTimeout(() => {
     this.officeForm.patchValue({
       state: (office.state || '').trim(),
       stateName: (office.stateName || '').trim(),
-      offID: (office.offID || '').trim(),
-      invUserID: (office.invUserID || '').trim()
+      offID: currentOffID,
+      invUserID: currentInvUserID
     });
-
-    console.log('Patched after dropdown ready');
-  });
+    
+    // Force form to update validity
+    this.officeForm.updateValueAndValidity();
+    
+    this.clearMessages();
+  }, 100);
 }
 
   saveOfficeAssignment(): void {
@@ -721,6 +810,42 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   getStatusBadgeClass(status: string): string {
     if (!status) return 'status-default';
     return 'status-' + status.toLowerCase().replace(/\s+/g, '-');
+  }
+  
+  // Get full status label for display
+  getStatusLabel(statusCode: string): string {
+    if (!statusCode) return 'N/A';
+    const status = this.empStatusOptions.find(s => s.value === statusCode.trim());
+    return status ? status.label : statusCode; // Return code if not found in predefined list
+  }
+  
+  // Get employee name by ID for Office ID display
+  getOfficeIdLabel(offID: string): string {
+    if (!offID) return 'N/A';
+    const employee = this.officeIdOptions.find(emp => emp.empID === offID.trim());
+    return employee ? employee.empName : offID;
+  }
+  
+  // Get employee name by ID for Inventory User ID display
+  getInvUserIdLabel(invUserID: string): string {
+    if (!invUserID) return 'N/A';
+    const employee = this.invUserIdOptions.find(emp => emp.empID === invUserID.trim());
+    return employee ? employee.empName : invUserID;
+  }
+  
+  // Get status options including current value if not in predefined list (for editing)
+  get currentEmpStatusOptions() {
+    return this.empStatusOptions;
+  }
+  
+  // Get officeId options including current value if not in predefined list (for editing)
+  get currentOfficeIdOptions() {
+    return this.officeIdOptions;
+  }
+  
+  // Get invUserId options including current value if not in predefined list (for editing)
+  get currentInvUserIdOptions() {
+    return this.invUserIdOptions;
   }
 // Compare function for dropdown value matching
 compareByValue(o1: any, o2: any): boolean {

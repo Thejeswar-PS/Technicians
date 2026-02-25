@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
 import { 
   ExtranetUserClassesDto, 
@@ -88,12 +89,18 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.clearMessages();
     this.getCustomerClassIDs();
-    // Set up username change listener
-    this.userForm.get('login')?.valueChanges.subscribe((username) => {
-      if (username && username.trim().length > 1) {
-        this.onUsernameChange();
-      }
-    });
+    // Set up username change listener with debounce
+    const usernameSub = this.userForm.get('login')?.valueChanges
+      .pipe(debounceTime(500))
+      .subscribe((username) => {
+        if (username && username.trim().length > 1) {
+          this.onUsernameChange();
+        }
+      });
+    
+    if (usernameSub) {
+      this.subscriptions.push(usernameSub);
+    }
   }
 
   ngOnDestroy(): void {

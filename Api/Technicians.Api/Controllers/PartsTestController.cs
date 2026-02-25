@@ -495,5 +495,85 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Gets parts test status with filtering - LEGACY FUNCTIONALITY
+        /// </summary>
+        [HttpGet("GetPartsTestStatus")]
+        public async Task<ActionResult<PartsTestStatusResponseDto>> GetPartsTestStatus(
+            [FromQuery] string jobType = "",
+            [FromQuery] string priority = "All", 
+            [FromQuery] string archive = "0",
+            [FromQuery] string make = "",
+            [FromQuery] string model = "",
+            [FromQuery] string assignedTo = "")
+        {
+            try
+            {
+                var request = new PartsTestStatusRequestDto
+                {
+                    JobType = jobType,
+                    Priority = priority,
+                    Archive = archive,
+                    Make = make,
+                    Model = model,
+                    AssignedTo = assignedTo
+                };
+
+                var result = await _repository.GetPartsTestStatusWithLogicAsync(request);
+                
+                return Ok(new
+                {
+                    success = true,
+                    data = result.PartsData,
+                    makes = result.Makes,
+                    models = result.Models,
+                    assignedToOptions = result.AssignedToOptions
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting parts test status");
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to retrieve parts test status", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets dashboard chart data for Parts Test Status - LEGACY FUNCTIONALITY
+        /// </summary>
+        [HttpGet("GetPartsTestDashboard")]
+        public async Task<ActionResult<PartsTestDashboardDto>> GetPartsTestDashboard(
+            [FromQuery] string jobType = "",
+            [FromQuery] string priority = "All",
+            [FromQuery] string archive = "0", 
+            [FromQuery] string make = "",
+            [FromQuery] string model = "",
+            [FromQuery] string assignedTo = "")
+        {
+            try
+            {
+                var dashboard = await _repository.GetPartsTestDashboardAsync(jobType, priority, archive, make, model, assignedTo);
+                
+                return Ok(new
+                {
+                    success = true,
+                    statusCounts = dashboard.StatusCounts,
+                    jobTypeDistribution = dashboard.JobTypeDistribution
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting parts test dashboard");
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to retrieve dashboard data", 
+                    error = ex.Message 
+                });
+            }
+        }
     }
 }

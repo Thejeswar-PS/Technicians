@@ -34,6 +34,23 @@
     }
   }
 
+  .btn-red-orange {
+    background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+    border: none;
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #c82333 0%, #e56a00 100%);
+      color: white;
+    }
+
+    &:disabled {
+      background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+      opacity: 0.65;
+      color: white;
+    }
+  }
+
   // Section Tabs
   .section-tabs {
     background-color: #f8f9fa;
@@ -83,10 +100,54 @@
         background-color: #f8f9fa;
         border-bottom: 2px solid #dee2e6;
         padding: 12px;
-        text-align: left;
+        text-align: center;
         font-weight: 600;
         color: #495057;
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
+    }
+
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .header-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sort-icons {
+      display: inline-flex;
+      flex-direction: column;
+      margin-left: 2px;
+    }
+
+    .sort-icons i {
+      width: 0;
+      height: 0;
+      border-left: 4px solid transparent;
+      border-right: 4px solid transparent;
+    }
+
+    .sort-icons i.up {
+      border-bottom: 6px solid #ffffff;
+      margin-bottom: 1px;
+    }
+
+    .sort-icons i.down {
+      border-top: 6px solid #ffffff;
+    }
+
+    .sort-icons i:not(.on) {
+      opacity: 0.4;
+    }
+
+    .sort-icons i.on {
+      opacity: 1;
     }
 
     tbody {
@@ -96,6 +157,7 @@
         td {
           padding: 12px;
           vertical-align: middle;
+          text-align: center;
         }
       }
     }

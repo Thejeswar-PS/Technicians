@@ -15,16 +15,16 @@
 
 /* ================= HEADER ================= */
 
-.order-request-header__top {
+.stripped-parts-header__top {
   margin-bottom: 20px;
 
-  .parts-request-header__back {
+  .stripped-parts-header__back {
     border-radius: 6px;
     font-weight: 500;
   }
 }
 
-.order-request-page-title h2 {
+.stripped-parts-page-title h2 {
   font-size: 1.7rem;
   font-weight: 700;
   color: #1f2937;
@@ -250,6 +250,30 @@
   padding: 6px 18px; /* Further reduced top/bottom padding from 8px to 6px */
 }
 
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.summary-header .header-icon {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  color: #2563eb;
+}
+
+.summary-header .header-text {
+  flex-grow: 1;
+}
+
+.summary-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+}
+
 .summary-table-container {
   margin-top: 0px; /* Removed margin completely */
 }
@@ -300,14 +324,30 @@
 }
 
 .modern-location-card .location-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
   font-weight: 600;
   color: #111827;
-  margin-bottom: 6px;
+}
+
+.modern-location-card .location-icon {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  color: #2563eb;
+}
+
+.location-title {
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
 }
 
 .modern-location-card .location-content {
   font-size: 0.85rem;
   color: #374151;
+  margin-top: 12px;
 }
 
 .modern-location-card .location-arrow {

@@ -124,15 +124,12 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
         etaControl?.updateValueAndValidity();
       });
 
-    // Status change handler
+    // Status change handler - only set read-only for existing closed jobs in edit mode
     this.entryForm.get('status')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(status => {
-        if (status === 'Closed') {
-          this.setReadOnlyMode();
-        } else {
-          this.clearReadOnlyMode();
-        }
+        // Do not auto-disable when user selects Closed
+        // Only disable when loading an already closed job in edit mode
       });
   }
 
@@ -226,7 +223,8 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     // Disable job number in edit mode
     this.entryForm.get('jobNumber')?.disable();
 
-    if (job.status === 'Closed') {
+    // Only set read-only if the job was already closed (edit mode with closed status)
+    if (job.status === 'Closed' && this.isEditMode) {
       this.setReadOnlyMode();
     }
   }
@@ -376,19 +374,43 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   }
 
   private displayFormErrors(): void {
+    const errorMessages: string[] = [];
     const errors = this.entryForm.errors;
+    
+    // Check individual field validations
+    if (this.entryForm.get('workType')?.invalid) {
+      errorMessages.push('Work Type is required.');
+    }
+    
+    if (this.entryForm.get('assignedEngineer')?.invalid) {
+      errorMessages.push('Assigned Engineer is required.');
+    }
+    
+    if (this.entryForm.get('projectedDate')?.invalid) {
+      errorMessages.push('Projected Date is required.');
+    }
+    
+    // Check form-level validators
     if (errors) {
       if (errors['emergencyETARequired']) {
-        this.errorMessage = 'Emergency ETA is required when work type is Emergency.';
-      } else if (errors['qualityCheckRequired']) {
-        this.errorMessage = 'At least one quality check must be completed when status is Closed.';
-      } else if (errors['completedDateRequired']) {
-        this.errorMessage = 'Completed date is required when status is Closed.';
-      } else if (errors['completedDateFuture']) {
-        this.errorMessage = 'Completed date cannot be greater than today\'s date.';
-      } else {
-        this.errorMessage = 'Please correct the form errors and try again.';
+        errorMessages.push('Emergency ETA is required when Work Type is Emergency.');
       }
+      if (errors['completedDateRequired']) {
+        errorMessages.push('Completed Date is required when Status is Closed.');
+      }
+      if (errors['qualityCheckRequired']) {
+        errorMessages.push('At least one Quality Check (Cleaned, Torque, or Inspected) is required when Status is Closed.');
+      }
+      if (errors['completedDateFuture']) {
+        errorMessages.push('Completed Date cannot be in the future.');
+      }
+    }
+    
+    // Build error message
+    if (errorMessages.length > 0) {
+      this.errorMessage = 'Please fix the following:\n' + errorMessages.map((msg, idx) => `${idx + 1}. ${msg}`).join('\n');
+    } else {
+      this.errorMessage = 'Please correct the form errors and try again.';
     }
   }
 

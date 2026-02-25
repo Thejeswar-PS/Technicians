@@ -236,7 +236,7 @@
                   <td class="text-center">{{ employee.empNo }}</td>
                   <td>{{ employee.empID || 'N/A' }}</td>
                   <td>{{ employee.empName || 'N/A' }}</td>
-                  <td class="text-center">{{ employee.empStatus || 'N/A' }}</td>
+                  <td class="text-center">{{ getStatusLabel(employee.empStatus) }}</td>
                   <td>{{ employee.windowsID || 'N/A' }}</td>
                   <td>{{ employee.email || 'N/A' }}</td>
                   <td class="text-center">
@@ -329,8 +329,8 @@
                 <tr *ngFor="let office of paginatedOfficeAssignments">
                   <td class="text-center">{{ office.state }}</td>
                   <td>{{ office.stateName || 'N/A' }}</td>
-                  <td class="text-center">{{ office.offID }}</td>
-                  <td>{{ office.invUserID || 'N/A' }}</td>
+                  <td class="text-center">{{ getOfficeIdLabel(office.offID) }}</td>
+                  <td>{{ getInvUserIdLabel(office.invUserID) }}</td>
                   <td>{{ office.subRegion || 'N/A' }}</td>
                   <td class="text-center">
                     <div class="d-flex gap-1 justify-content-center">
@@ -406,11 +406,14 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold required">Status</label>
-              <input type="text" 
-                     class="form-control" 
-                     formControlName="empStatus"
-                     [class.is-invalid]="isFieldInvalid(employeeForm, 'empStatus')"
-                     placeholder="Enter Status">
+              <select class="form-select" 
+                      formControlName="empStatus"
+                      [class.is-invalid]="isFieldInvalid(employeeForm, 'empStatus')">
+                <option value="">Select Status</option>
+                <option *ngFor="let status of currentEmpStatusOptions" [value]="status.value">
+                  {{ status.label }}
+                </option>
+              </select>
               <div class="invalid-feedback">{{ getFieldError(employeeForm, 'empStatus') }}</div>
             </div>
             <div class="col-md-6">
@@ -492,20 +495,26 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold required">Office ID (Manager)</label>
-              <input type="text" 
-                     class="form-control" 
-                     formControlName="offID"
-                     [class.is-invalid]="isFieldInvalid(officeForm, 'offID')"
-                     placeholder="Enter Office ID">
+              <select class="form-select" 
+                      formControlName="offID"
+                      [class.is-invalid]="isFieldInvalid(officeForm, 'offID')">
+                <option value="">Select Manager</option>
+                <option *ngFor="let mgr of currentOfficeIdOptions" [value]="mgr.empID">
+                  {{ mgr.empName }}
+                </option>
+              </select>
               <div class="invalid-feedback">{{ getFieldError(officeForm, 'offID') }}</div>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold required">Inventory User ID (Parts Employee)</label>
-              <input type="text" 
-                     class="form-control" 
-                     formControlName="invUserID"
-                     [class.is-invalid]="isFieldInvalid(officeForm, 'invUserID')"
-                     placeholder="Enter Inventory User ID">
+              <select class="form-select" 
+                      formControlName="invUserID"
+                      [class.is-invalid]="isFieldInvalid(officeForm, 'invUserID')">
+                <option value="">Select Employee</option>
+                <option *ngFor="let emp of currentInvUserIdOptions" [value]="emp.empID">
+                  {{ emp.empName }}
+                </option>
+              </select>
               <div class="invalid-feedback">{{ getFieldError(officeForm, 'invUserID') }}</div>
             </div>
           </div>

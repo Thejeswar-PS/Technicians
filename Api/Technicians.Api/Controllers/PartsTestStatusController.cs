@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Technicians.Api.Repository;
 using Technicians.Api.Models;
+using System.ComponentModel.DataAnnotations;
 
 namespace Technicians.Api.Controllers
 {
@@ -20,28 +21,28 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets parts test status data using GET with query parameters
+        /// Gets parts test status data using GET with query parameters - ALL PARAMETERS OPTIONAL
         /// </summary>
-        /// <param name="jobType">Job type filter (use 'All' or empty for no filter)</param>
-        /// <param name="priority">Priority filter (use 'All' or empty for no filter)</param>
+        /// <param name="jobType">Job type filter (optional)</param>
+        /// <param name="priority">Priority filter (optional)</param>
         /// <param name="archive">Archive filter (default: false)</param>
-        /// <param name="make">Make filter (use 'All' or empty for no filter)</param>
-        /// <param name="model">Model filter (use 'All' or empty for no filter)</param>
-        /// <param name="assignedTo">AssignedTo filter (use 'All' or empty for no filter)</param>
-        /// <param name="assignedTo">AssignedTo filter (use 'All' or empty for no filter)</param>
-            /// <returns>Parts test status data with distinct makes and models</returns>
+        /// <param name="make">Make filter (optional)</param>
+        /// <param name="model">Model filter (optional)</param>
+        /// <param name="assignedTo">AssignedTo filter (optional)</param>
+        /// <returns>Parts test status data with distinct makes and models</returns>
         [HttpGet("GetPartsTestStatus")]
         public async Task<ActionResult<PartsTestStatusResponse>> GetPartsTestStatus(
-            [FromQuery] string jobType = "",
-            [FromQuery] string priority = "",
+            [FromQuery] string? jobType = null,
+            [FromQuery] string? priority = null,
             [FromQuery] bool archive = false,
-            [FromQuery] string make = "",
-            [FromQuery] string model = "")
+            [FromQuery] string? make = null,
+            [FromQuery] string? model = null,
+            [FromQuery] string? assignedTo = null)
         {
             try
             {
-                _logger.LogInformation("Getting parts test status - JobType: {JobType}, Priority: {Priority}, Archive: {Archive}, Make: {Make}, Model: {Model}", 
-                    jobType, priority, archive, make, model);
+                _logger.LogInformation("Getting parts test status - JobType: {JobType}, Priority: {Priority}, Archive: {Archive}, Make: {Make}, Model: {Model}, AssignedTo: {AssignedTo}", 
+                    jobType, priority, archive, make, model, assignedTo);
 
                 var request = new PartsTestStatusRequest
                 {
@@ -49,7 +50,8 @@ namespace Technicians.Api.Controllers
                     Priority = priority,
                     Archive = archive,
                     Make = make,
-                    Model = model
+                    Model = model,
+                    AssignedTo = assignedTo
                 };
 
                 var results = await _repository.GetPartsTestStatusAsync(request);
@@ -68,14 +70,15 @@ namespace Technicians.Api.Controllers
                         priority = priority,
                         archive = archive,
                         make = make,
-                        model = model
+                        model = model,
+                        assignedTo = assignedTo
                     }
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting parts test status with filters: JobType={JobType}, Priority={Priority}, Archive={Archive}, Make={Make}, Model={Model}", 
-                    jobType, priority, archive, make, model);
+                _logger.LogError(ex, "Error getting parts test status with filters: JobType={JobType}, Priority={Priority}, Archive={Archive}, Make={Make}, Model={Model}, AssignedTo={AssignedTo}", 
+                    jobType, priority, archive, make, model, assignedTo);
                 
                 return StatusCode(500, new { 
                     success = false, 
@@ -86,25 +89,39 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets parts test status data using POST with request body
+        /// Gets parts test status data using POST with request body - BYPASSES VALIDATION
         /// </summary>
-        /// <param name="request">Request containing filter parameters</param>
+        /// <param name="request">Request containing filter parameters (all optional)</param>
         /// <returns>Parts test status data with distinct makes and models</returns>
         [HttpPost("GetPartsTestStatus")]
-        public async Task<ActionResult<PartsTestStatusResponse>> GetPartsTestStatus([FromBody] PartsTestStatusRequest request)
+        public async Task<ActionResult<PartsTestStatusResponse>> GetPartsTestStatus([FromBody] object? requestData)
         {
             try
             {
-                if (request == null)
+                PartsTestStatusRequest request;
+                
+                // Handle cases where request is null or empty
+                if (requestData == null)
                 {
-                    return BadRequest(new { 
-                        success = false, 
-                        message = "Invalid request payload" 
-                    });
+                    request = new PartsTestStatusRequest();
+                }
+                else
+                {
+                    // Try to deserialize the request data manually to avoid validation
+                    try
+                    {
+                        var jsonString = System.Text.Json.JsonSerializer.Serialize(requestData);
+                        request = System.Text.Json.JsonSerializer.Deserialize<PartsTestStatusRequest>(jsonString) ?? new PartsTestStatusRequest();
+                    }
+                    catch
+                    {
+                        // If deserialization fails, create a default request
+                        request = new PartsTestStatusRequest();
+                    }
                 }
 
-                _logger.LogInformation("Getting parts test status - JobType: {JobType}, Priority: {Priority}, Archive: {Archive}, Make: {Make}, Model: {Model}", 
-                    request.JobType, request.Priority, request.Archive, request.Make, request.Model);
+                _logger.LogInformation("Getting parts test status - JobType: {JobType}, Priority: {Priority}, Archive: {Archive}, Make: {Make}, Model: {Model}, AssignedTo: {AssignedTo}", 
+                    request.JobType, request.Priority, request.Archive, request.Make, request.Model, request.AssignedTo);
 
                 var results = await _repository.GetPartsTestStatusAsync(request);
 
@@ -121,7 +138,7 @@ namespace Technicians.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting parts test status with request: {@Request}", request);
+                _logger.LogError(ex, "Error getting parts test status with request: {@RequestData}", requestData);
                 
                 return StatusCode(500, new { 
                     success = false, 
@@ -237,21 +254,13 @@ namespace Technicians.Api.Controllers
         /// <summary>
         /// Gets distinct models filtered by make
         /// </summary>
-        /// <param name="make">Make to filter models by</param>
+        /// <param name="make">Make to filter models by (optional)</param>
         /// <returns>List of distinct models for the specified make</returns>
         [HttpGet("GetDistinctModelsByMake")]
-        public async Task<ActionResult<IEnumerable<MakeModelDto>>> GetDistinctModelsByMake([FromQuery] string make)
+        public async Task<ActionResult<IEnumerable<MakeModelDto>>> GetDistinctModelsByMake([FromQuery] string? make = null)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(make))
-                {
-                    return BadRequest(new { 
-                        success = false, 
-                        message = "Make parameter is required" 
-                    });
-                }
-
                 _logger.LogInformation("Getting distinct models for make: {Make}", make);
 
                 var models = await _repository.GetDistinctModelsByMakeAsync(make);
@@ -273,6 +282,52 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, new { 
                     success = false, 
                     message = "Failed to retrieve distinct models for make", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Alternative POST endpoint that explicitly bypasses model validation
+        /// </summary>
+        /// <returns>Parts test status data</returns>
+        [HttpPost("GetPartsTestStatusNoValidation")]
+        public async Task<ActionResult<PartsTestStatusResponse>> GetPartsTestStatusNoValidation()
+        {
+            try
+            {
+                _logger.LogInformation("Getting parts test status with no validation");
+
+                // Create a default request with all null values
+                var request = new PartsTestStatusRequest
+                {
+                    JobType = null,
+                    Priority = null,
+                    Archive = false,
+                    Make = null,
+                    Model = null,
+                    AssignedTo = null
+                };
+
+                var results = await _repository.GetPartsTestStatusAsync(request);
+
+                _logger.LogInformation("Successfully retrieved parts test status - PartsCount: {PartsCount}", 
+                    results.PartsTestData.Count);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = results,
+                    totalRecords = results.PartsTestData.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting parts test status with no validation");
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to retrieve parts test status", 
                     error = ex.Message 
                 });
             }
