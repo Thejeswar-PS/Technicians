@@ -1,10 +1,4 @@
-// Commented out - replaced with tracking endpoint
-// export interface TechToolsMiscKitDto {
-//   toolKitPNMisc: string;
-//   description: string;
-//   techValue: string;
-//   columnOrder: number;
-// }
+/* ============ TOOLS TRACKING TECHS ============ */
 
 export interface ToolsTrackingTechsDto {
   techID: string;
@@ -18,6 +12,8 @@ export interface ToolsTrackingTechsApiResponse {
   message: string;
 }
 
+/* ============ TECH INFO ============ */
+
 export interface TechsInfoDto {
   techID: string;
   techName: string;
@@ -26,10 +22,84 @@ export interface TechsInfoDto {
   status: string;
 }
 
-// export interface TechToolsMiscKitResultDto {
-//   toolKitData: TechToolsMiscKitDto[];
-//   techInfo: TechsInfoDto;
-// }
+/* ============ TECH TOOL SERIAL NUMBERS ============ */
+
+export interface TechToolSerialNoDto {
+  serialNo: string;
+}
+
+export interface TechToolSerialNoApiResponse {
+  success: boolean;
+  data: TechToolSerialNoDto[];
+  totalRecords: number;
+  message: string;
+}
+
+/* ============ TOOLS CALENDAR TRACKING ============ */
+
+export interface ToolsCalendarTrackingDto {
+  empName: string;
+  techID: string;
+  toolName: string;
+  serialNo: string;
+  dueDt: Date | string;
+}
+
+export interface ToolsCalendarDueCountsDto {
+  counter: number;
+  overDue: number;
+  due15: number;
+  due30: number;
+  due45: number;
+  due60: number;
+}
+
+export interface ToolsCalendarTrackingResultDto {
+  trackingData: ToolsCalendarTrackingDto[];
+  dueCounts: ToolsCalendarDueCountsDto;
+}
+
+export interface ToolsCalendarTrackingApiResponse {
+  success: boolean;
+  data: ToolsCalendarTrackingResultDto;
+  totalTrackingRecords: number;
+  dueCounts: ToolsCalendarDueCountsDto;
+  dateRange: {
+    startDate: Date | string;
+    endDate: Date | string;
+    windowType: string;
+    description: string;
+  };
+  filters: {
+    toolName: string;
+    serialNo: string;
+    techFilter: string;
+  };
+  message: string;
+}
+
+/* ============ TECH TOOLS MISC KIT ============ */
+
+export interface TechToolsMiscKitDto {
+  toolKitPNMisc: string;
+  description: string;
+  techValue: string;
+  columnOrder: number;
+}
+
+export interface TechToolsMiscKitResultDto {
+  toolKitData: TechToolsMiscKitDto[];
+  techInfo: TechsInfoDto;
+}
+
+export interface TechToolsMiscKitApiResponse {
+  success: boolean;
+  data: TechToolsMiscKitResultDto;
+  totalToolKitRecords: number;
+  techInfo: TechsInfoDto;
+  techId: string;
+  message: string;
+}
 
 export interface ToolsTrackingCountDto {
   count: number;
@@ -43,21 +113,22 @@ export interface ToolTrackingCountApiResponse {
   message: string;
 }
 
-// New tracking DTOs
+/* ============ TECH TOOLS TRACKING (Main Tracking Data) ============ */
+
 export interface TechToolsTrackingDto {
   techID: string;
   toolName: string;
   serialNo: string;
-  dueDt: Date | string;           // Backend: DueDt
-  columnOrder: number;           // Backend: ColumnOrder
-  status: string;                // Backend: Status
-  createdDate: Date;            // Backend: CreatedDate
-  modifiedDate: Date;           // Backend: ModifiedDate
-  notes: string;                // Backend: Notes
-  received: string;             // Backend: Received (string, not boolean)
-  newMTracking: string;         // Backend: NewMTracking
-  oldMSerialNo: string;         // Backend: OldMSerialNo
-  oldMTracking: string;         // Backend: OldMTracking
+  dueDt: Date | string;
+  columnOrder: number;
+  status: string;
+  createdDate: Date | string;
+  modifiedDate: Date | string;
+  notes: string;
+  received: string; // "True" or "False" as strings
+  newMTracking: string;
+  oldMSerialNo: string;
+  oldMTracking: string;
   // UI-specific properties for inline editing
   isEditing?: boolean;
   originalValues?: TechToolsTrackingDto;
@@ -67,7 +138,6 @@ export interface ToolTrackingApiResponse {
   success: boolean;
   data: TechToolsTrackingDto[];
   totalRecords: number;
-  techInfo: TechsInfoDto;
   techId: string;
   message: string;
 }
@@ -89,7 +159,58 @@ export interface DeleteToolsTrackingResultDto {
   message: string;
 }
 
-// Equipment file attachment models - matching legacy BLOB storage
+/* ============ SAVE/UPDATE TECH TOOLS TRACKING ============ */
+
+export interface SaveTechToolsTrackingRequestDto {
+  techID: string;
+  modifiedBy: string;
+  toolTrackingItems: TechToolsTrackingDto[];
+}
+
+export interface SaveTechToolsTrackingResultDto {
+  success: boolean;
+  message: string;
+  recordsProcessed: number;
+  generatedQuery: string;
+}
+
+export interface SaveTechToolsTrackingApiResponse {
+  success: boolean;
+  data: SaveTechToolsTrackingResultDto;
+  message: string;
+}
+
+/* ============ FILE MANAGEMENT ============ */
+
+export interface ToolsTrackingFileDto {
+  fileName: string;
+  fileSizeKB: number;
+  uploadedOn: string;
+  filePath: string;
+}
+
+export interface ToolsTrackingFilesApiResponse {
+  success: boolean;
+  data: ToolsTrackingFileDto[];
+  totalFiles: number;
+  techId: string;
+  message: string;
+}
+
+export interface FileUploadResultDto {
+  success: boolean;
+  message: string;
+  fileName: string;
+  filePath: string;
+}
+
+export interface FileUploadApiResponse {
+  success: boolean;
+  data: FileUploadResultDto;
+  message: string;
+}
+
+/* ============ EQUIPMENT FILE ATTACHMENTS (Legacy BLOB Storage) ============ */
 export interface EquipmentFileDto {
   equipID: number;           // Equipment/Tool ID
   techID: string;           // Technician ID

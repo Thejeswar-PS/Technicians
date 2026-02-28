@@ -11,6 +11,8 @@ namespace Technicians.Api.Repository
         private readonly string _etechConnectionString;
         private readonly string _defaultConnectionString;
         private readonly ILogger<ToolsTrackingTechsRepository> _logger;
+        private const string UPLOADFILETYPE = "jpg,gif,doc,bmp,xls,png,txt,xlsx,docx,pdf,jpeg";
+        private const string BaseDirectory = @"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo";
 
         public ToolsTrackingTechsRepository(IConfiguration configuration, ILogger<ToolsTrackingTechsRepository> logger)
         {
@@ -136,40 +138,40 @@ namespace Technicians.Api.Repository
         /// Gets tech tools misc kit data by tech ID using the GetTechToolsMiscKitByTechID stored procedure
         /// </summary>
         /// <param name="techId">Tech ID to retrieve misc kit data for</param>
-        //public async Task<TechToolsMiscKitResultDto> GetTechToolsMiscKitByTechIdAsync(string techId)
-        //{
-        //    try
-        //    {
-        //        using var connection = new SqlConnection(_connectionString);
-        //        await connection.OpenAsync();
+        public async Task<TechToolsMiscKitResultDto> GetTechToolsMiscKitByTechIdAsync(string techId)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_defaultConnectionString);
+                await connection.OpenAsync();
 
-        //        using var multi = await connection.QueryMultipleAsync(
-        //            "GetTechToolsMiscKitByTechID",
-        //            new { TechID = techId },
-        //            commandType: CommandType.StoredProcedure);
+                using var multi = await connection.QueryMultipleAsync(
+                    "GetTechToolsMiscKitByTechID",
+                    new { TechID = techId },
+                    commandType: CommandType.StoredProcedure);
 
-        //        // Read first result set - tool kit data
-        //        var toolKitData = (await multi.ReadAsync<TechToolsMiscKitDto>()).ToList();
+                // Read first result set - tool kit data
+                var toolKitData = (await multi.ReadAsync<TechToolsMiscKitDto>()).ToList();
 
-        //        // Read second result set - tech info data
-        //        var techInfo = await multi.ReadFirstOrDefaultAsync<TechsInfoDto>() 
-        //            ?? new TechsInfoDto();
+                // Read second result set - tech info data
+                var techInfo = await multi.ReadFirstOrDefaultAsync<TechsInfoDto>() 
+                    ?? new TechsInfoDto();
 
-        //        return new TechToolsMiscKitResultDto
-        //        {
-        //            ToolKitData = toolKitData,
-        //            TechInfo = techInfo
-        //        };
-        //    }
-        //    catch (SqlException sqlEx)
-        //    {
-        //        throw new Exception($"Database error retrieving tech tools misc kit data for tech ID '{techId}': {sqlEx.Message}", sqlEx);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception($"Error retrieving tech tools misc kit data for tech ID '{techId}': {ex.Message}", ex);
-        //    }
-        //}
+                return new TechToolsMiscKitResultDto
+                {
+                    ToolKitData = toolKitData,
+                    TechInfo = techInfo
+                };
+            }
+            catch (SqlException sqlEx)
+            {
+                throw new Exception($"Database error retrieving tech tools misc kit data for tech ID '{techId}': {sqlEx.Message}", sqlEx);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving tech tools misc kit data for tech ID '{techId}': {ex.Message}", ex);
+            }
+        }
 
         /// <summary>
         /// Gets tools tracking count by tech ID using the GetToolsTrackingCount stored procedure
@@ -302,102 +304,257 @@ namespace Technicians.Api.Repository
         }
 
         /// <summary>
-        /// Saves/Updates tech tools tracking data using MERGE (UPSERT) logic
+        /// Saves/Updates tech tools tracking data using legacy DELETE-INSERT pattern
+        /// Replicates the exact behavior of legacy DeleteInsertTechToolsData() method
         /// </summary>
         /// <param name="request">Save request containing tech ID and tool tracking items</param>
-        //public async Task<SaveTechToolsTrackingResultDto> SaveTechToolsTrackingAsync(SaveTechToolsTrackingRequestDto request)
-        //{
-        //    try
-        //    {
-        //        if (!request.ToolTrackingItems.Any())
-        //        {
-        //            return new SaveTechToolsTrackingResultDto
-        //            {
-        //                Success = false,
-        //                Message = "No tool tracking items provided",
-        //                RecordsProcessed = 0
-        //            };
-        //        }
+        public async Task<SaveTechToolsTrackingResultDto> SaveTechToolsTrackingAsync(SaveTechToolsTrackingRequestDto request)
+        {
+            try
+            {
+                if (!request.ToolTrackingItems.Any())
+                {
+                    return new SaveTechToolsTrackingResultDto
+                    {
+                        Success = false,
+                        Message = "No tool tracking items provided",
+                        RecordsProcessed = 0
+                    };
+                }
 
-        //        using var connection = new SqlConnection(_defaultConnectionString);
-        //        await connection.OpenAsync();
+                using var connection = new SqlConnection(_defaultConnectionString);
+                await connection.OpenAsync();
+                using var transaction = await connection.BeginTransactionAsync();
                 
-        //        var totalRowsAffected = 0;
-        //        var processedItems = new List<string>();
+                try
+                {
+                    // Step 1: Check if records exist and delete them (legacy behavior)
+                    var toolCount = await GetToolsTrackingCountAsync(request.TechID);
+                    if (toolCount > 0)
+                    {
+                        await connection.ExecuteAsync(
+                            "DeleteToolsTracking",
+                            new { TechID = request.TechID },
+                            transaction,
+                            commandType: CommandType.StoredProcedure);
+                    }
 
-        //        foreach (var item in request.ToolTrackingItems)
-        //        {
-        //            // Handle empty due date like legacy (default to 1/1/1900)
-        //            var dueDt = item.DueDt == DateTime.MinValue ? new DateTime(1900, 1, 1) : item.DueDt;
-                    
-        //            // Convert boolean/string received to proper format
-        //            var receivedValue = 0; // Default to false
-        //            if (!string.IsNullOrEmpty(item.Received))
-        //            {
-        //                if (item.Received.Equals("True", StringComparison.OrdinalIgnoreCase) || 
-        //                    item.Received.Equals("1", StringComparison.OrdinalIgnoreCase) ||
-        //                    item.Received.Equals("true", StringComparison.OrdinalIgnoreCase))
-        //                {
-        //                    receivedValue = 1;
-        //                }
-        //            }
+                    // Step 2: Build and execute INSERT query (replicates legacy string building)
+                    var insertedCount = 0;
+                    var processedItems = new List<string>();
 
-        //            // Use MERGE for UPSERT behavior
-        //            var sql = @"
-        //                MERGE [ToolTracking] AS target
-        //                USING (SELECT @TechID AS TechID, @ToolName AS ToolName) AS source
-        //                ON target.TechID = source.TechID AND target.ToolName = source.ToolName
-        //                WHEN MATCHED THEN
-        //                    UPDATE SET 
-        //                        SerialNo = @SerialNo,
-        //                        DueDt = @DueDt,
-        //                        NewMTracking = @NewMTracking,
-        //                        OldMSerialNo = @OldMSerialNo,
-        //                        OldMTracking = @OldMTracking,
-        //                        Received = @Received,
-        //                        ModifiedOn = GETDATE(),
-        //                        ModifiedBy = @ModifiedBy,
-        //                        ColumnOrder = @ColumnOrder
-        //                WHEN NOT MATCHED THEN
-        //                    INSERT (TechID, ToolName, SerialNo, DueDt, NewMTracking, OldMSerialNo, OldMTracking, Received, ModifiedOn, ModifiedBy, ColumnOrder)
-        //                    VALUES (@TechID, @ToolName, @SerialNo, @DueDt, @NewMTracking, @OldMSerialNo, @OldMTracking, @Received, GETDATE(), @ModifiedBy, @ColumnOrder);";
+                    string strSQL = " INSERT INTO DBO.[ToolTracking] ";
+                    strSQL += "(TechID,ToolName,SerialNo,DueDt,NewMTracking,OldMSerialNo,OldMTracking,Received,ModifiedOn,ModifiedBy,ColumnOrder)";
 
-        //            var rowsAffected = await connection.ExecuteAsync(sql, new
-        //            {
-        //                TechID = request.TechID,
-        //                ToolName = item.ToolName,
-        //                SerialNo = item.SerialNo?.Trim() ?? "",
-        //                DueDt = dueDt,
-        //                NewMTracking = item.NewMTracking?.Trim() ?? "",
-        //                OldMSerialNo = item.OldMSerialNo?.Trim() ?? "",
-        //                OldMTracking = item.OldMTracking?.Trim() ?? "",
-        //                Received = receivedValue,
-        //                ModifiedBy = request.ModifiedBy,
-        //                ColumnOrder = item.ColumnOrder
-        //            });
+                    for (int i = 0; i < request.ToolTrackingItems.Count; i++)
+                    {
+                        var item = request.ToolTrackingItems[i];
+                        
+                        // Handle empty due date like legacy (default to 1/1/1900)
+                        var dueDtText = item.DueDt == DateTime.MinValue || item.DueDt.Year < 1900 
+                            ? "1/1/1900" 
+                            : item.DueDt.ToString("M/d/yyyy");
 
-        //            totalRowsAffected += rowsAffected;
-        //            processedItems.Add($"{item.ToolName} (TechID: {request.TechID})");
-        //        }
+                        // Convert boolean received to string like legacy
+                        var receivedValue = "False";
+                        if (!string.IsNullOrEmpty(item.Received))
+                        {
+                            if (item.Received.Equals("True", StringComparison.OrdinalIgnoreCase) || 
+                                item.Received.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+                                item.Received.Equals("true", StringComparison.OrdinalIgnoreCase))
+                            {
+                                receivedValue = "True";
+                            }
+                        }
 
-        //        return new SaveTechToolsTrackingResultDto
-        //        {
-        //            Success = totalRowsAffected > 0,
-        //            Message = totalRowsAffected > 0 ? 
-        //                $"Successfully processed {totalRowsAffected} tool tracking records: {string.Join(", ", processedItems)}" : 
-        //                "No records were processed",
-        //            RecordsProcessed = totalRowsAffected,
-        //            GeneratedQuery = $"Executed {request.ToolTrackingItems.Count} MERGE (UPSERT) statements"
-        //        };
-        //    }
-        //    catch (SqlException sqlEx)
-        //    {
-        //        throw new Exception($"Database error saving tech tools tracking data: {sqlEx.Message}", sqlEx);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw new Exception($"Error saving tech tools tracking data: {ex.Message}", ex);
-        //    }
-        //}
+                        // Build SQL exactly like legacy code
+                        strSQL += $" (SELECT '{request.TechID}','{item.ToolName?.Replace("'", "''")}','{item.SerialNo?.Trim()?.Replace("'", "''")}','{dueDtText}','{item.NewMTracking?.Trim()?.Replace("'", "''")}','{item.OldMSerialNo?.Trim()?.Replace("'", "''")}','{item.OldMTracking?.Trim()?.Replace("'", "''")}','{receivedValue}',CURRENT_TIMESTAMP,'{request.ModifiedBy}','{item.ColumnOrder}')";
+                        
+                        if (i < request.ToolTrackingItems.Count - 1)
+                        {
+                            strSQL += " UNION ";
+                        }
+
+                        processedItems.Add($"{item.ToolName} (TechID: {request.TechID})");
+                    }
+
+                    // Execute the generated query
+                    insertedCount = await connection.ExecuteAsync(strSQL, transaction: transaction);
+
+                    await transaction.CommitAsync();
+
+                    return new SaveTechToolsTrackingResultDto
+                    {
+                        Success = insertedCount > 0,
+                        Message = insertedCount > 0 ? 
+                            $"Update Successful - Processed {insertedCount} tool tracking records: {string.Join(", ", processedItems)}" : 
+                            "No records were processed",
+                        RecordsProcessed = insertedCount,
+                        GeneratedQuery = strSQL
+                    };
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    throw;
+                }
+            }
+            catch (SqlException sqlEx)
+            {
+                throw new Exception($"Database error saving tech tools tracking data: {sqlEx.Message}", sqlEx);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error saving tech tools tracking data: {ex.Message}", ex);
+            }
+        }
+
+        #region File Management Methods (Legacy DisplayFile, SaveFile equivalent)
+
+        /// <summary>
+        /// Gets file attachments for a tech ID (legacy DisplayFile equivalent)
+        /// </summary>
+        /// <param name="techId">Tech ID to get files for</param>
+        public async Task<List<ToolsTrackingFileDto>> GetFilesAsync(string techId)
+        {
+            try
+            {
+                await Task.CompletedTask; // Make method async compatible
+                
+                var dirPath = Path.Combine(BaseDirectory, techId);
+                var files = new List<ToolsTrackingFileDto>();
+
+                if (!Directory.Exists(dirPath))
+                    return files;
+
+                var fileInfos = new DirectoryInfo(dirPath).GetFiles();
+                
+                foreach (var fileInfo in fileInfos)
+                {
+                    files.Add(new ToolsTrackingFileDto
+                    {
+                        FileName = fileInfo.Name,
+                        FileSizeKB = fileInfo.Length / 1024,
+                        UploadedOn = fileInfo.CreationTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        FilePath = fileInfo.FullName
+                    });
+                }
+
+                return files.OrderBy(f => f.FileName).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving files for tech ID '{techId}': {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Uploads a file for a tech ID (legacy SaveFile equivalent)
+        /// </summary>
+        /// <param name="techId">Tech ID to upload file for</param>
+        /// <param name="fileName">Name of the file</param>
+        /// <param name="fileStream">File stream data</param>
+        public async Task<FileUploadResultDto> UploadFileAsync(string techId, string fileName, Stream fileStream)
+        {
+            try
+            {
+                // Validate file extension (legacy IsValidFile equivalent)
+                if (!IsValidFile(fileName))
+                {
+                    return new FileUploadResultDto
+                    {
+                        Success = false,
+                        Message = $"Invalid file format. File must be of format {UPLOADFILETYPE}",
+                        FileName = fileName
+                    };
+                }
+
+                var dirPath = Path.Combine(BaseDirectory, techId);
+                var filePath = Path.Combine(dirPath, fileName);
+
+                // Create directory if it doesn't exist
+                if (!Directory.Exists(dirPath))
+                {
+                    Directory.CreateDirectory(dirPath);
+                }
+
+                // Check if file already exists
+                if (File.Exists(filePath))
+                {
+                    return new FileUploadResultDto
+                    {
+                        Success = false,
+                        Message = $"File '{fileName}' already exists in destination folder",
+                        FileName = fileName
+                    };
+                }
+
+                // Save the file
+                using var fileStreamOutput = new FileStream(filePath, FileMode.Create);
+                await fileStream.CopyToAsync(fileStreamOutput);
+
+                return new FileUploadResultDto
+                {
+                    Success = true,
+                    Message = $"File '{fileName}' uploaded successfully",
+                    FileName = fileName,
+                    FilePath = filePath
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error uploading file '{fileName}' for tech ID '{techId}': {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Deletes a file for a tech ID
+        /// </summary>
+        /// <param name="techId">Tech ID</param>
+        /// <param name="fileName">File name to delete</param>
+        public async Task<bool> DeleteFileAsync(string techId, string fileName)
+        {
+            try
+            {
+                await Task.CompletedTask; // Make method async compatible
+                
+                var filePath = Path.Combine(BaseDirectory, techId, fileName);
+                
+                if (!File.Exists(filePath))
+                    return false;
+
+                File.Delete(filePath);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error deleting file '{fileName}' for tech ID '{techId}': {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Validates file extension (legacy IsValidFile equivalent)
+        /// </summary>
+        /// <param name="fileName">File name to validate</param>
+        private static bool IsValidFile(string fileName)
+        {
+            var fileExtension = GetFileExtension(fileName);
+            var validExtensions = UPLOADFILETYPE.Split(new char[] { ',' });
+
+            return validExtensions.Any(ext => 
+                string.Equals(ext, fileExtension, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Gets file extension (legacy GetFileExtension equivalent)
+        /// </summary>
+        /// <param name="fileName">File name</param>
+        private static string GetFileExtension(string fileName)
+        {
+            var lastIndex = fileName.LastIndexOf(".");
+            return lastIndex >= 0 ? fileName.Substring(lastIndex + 1) : string.Empty;
+        }
+
+        #endregion
     }
 }

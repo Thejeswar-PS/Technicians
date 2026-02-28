@@ -181,44 +181,44 @@ namespace Technicians.Api.Controllers
         /// Gets tech tools misc kit data by tech ID
         /// </summary>
         /// <param name="techId">Tech ID to retrieve misc kit data for (required)</param>
-        //[HttpGet("misc-kit/{techId}")]
-        //public async Task<ActionResult<TechToolsMiscKitResultDto>> GetTechToolsMiscKitByTechId(string techId)
-        //{
-        //    if (string.IsNullOrWhiteSpace(techId))
-        //        return BadRequest("Tech ID is required.");
+        [HttpGet("misc-kit/{techId}")]
+        public async Task<ActionResult<TechToolsMiscKitResultDto>> GetTechToolsMiscKitByTechId(string techId)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
 
-        //    try
-        //    {
-        //        _logger.LogInformation("Getting tech tools misc kit data for tech ID: {TechId}", techId);
+            try
+            {
+                _logger.LogInformation("Getting tech tools misc kit data for tech ID: {TechId}", techId);
 
-        //        var results = await _repository.GetTechToolsMiscKitByTechIdAsync(techId);
+                var results = await _repository.GetTechToolsMiscKitByTechIdAsync(techId);
 
-        //        _logger.LogInformation(
-        //            "Successfully retrieved tech tools misc kit data - TechId: {TechId}, ToolKitRecords: {ToolKitRecords}, TechInfo: {TechInfo}",
-        //            techId, results.ToolKitData.Count, results.TechInfo.TechID);
+                _logger.LogInformation(
+                    "Successfully retrieved tech tools misc kit data - TechId: {TechId}, ToolKitRecords: {ToolKitRecords}, TechInfo: {TechInfo}",
+                    techId, results.ToolKitData.Count, results.TechInfo.TechID);
 
-        //        return Ok(new
-        //        {
-        //            success = true,
-        //            data = results,
-        //            totalToolKitRecords = results.ToolKitData.Count,
-        //            techInfo = results.TechInfo,
-        //            techId = techId,
-        //            message = $"Tech tools misc kit data retrieved successfully for tech ID: {techId}"
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error getting tech tools misc kit data for tech ID: {TechId}", techId);
+                return Ok(new
+                {
+                    success = true,
+                    data = results,
+                    totalToolKitRecords = results.ToolKitData.Count,
+                    techInfo = results.TechInfo,
+                    techId = techId,
+                    message = $"Tech tools misc kit data retrieved successfully for tech ID: {techId}"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting tech tools misc kit data for tech ID: {TechId}", techId);
 
-        //        return StatusCode(500, new
-        //        {
-        //            success = false,
-        //            message = "Failed to retrieve tech tools misc kit data",
-        //            error = ex.Message
-        //        });
-        //    }
-        //}
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to retrieve tech tools misc kit data",
+                    error = ex.Message
+                });
+            }
+        }
 
         /// <summary>
         /// Gets tools tracking count by tech ID
@@ -414,68 +414,302 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Saves/Updates tech tools tracking data
+        /// Saves/Updates tech tools tracking data using legacy DELETE-INSERT pattern
+        /// Replicates exact behavior of legacy btnSave_Click() and DeleteInsertTechToolsData() methods
         /// </summary>
         /// <param name="request">Save request containing tech ID and tool tracking items</param>
-        //[HttpPost("save-tracking")]
-        //public async Task<ActionResult<SaveTechToolsTrackingResultDto>> SaveTechToolsTracking(
-        //    [FromBody] SaveTechToolsTrackingRequestDto request)
-        //{
-        //    if (request == null)
-        //        return BadRequest("Request body is required.");
+        [HttpPost("save-tracking")]
+        public async Task<ActionResult<SaveTechToolsTrackingResultDto>> SaveTechToolsTracking(
+            [FromBody] SaveTechToolsTrackingRequestDto request)
+        {
+            if (request == null)
+                return BadRequest("Request body is required.");
 
-        //    if (string.IsNullOrWhiteSpace(request.TechID))
-        //        return BadRequest("Tech ID is required.");
+            if (string.IsNullOrWhiteSpace(request.TechID))
+                return BadRequest("Tech ID is required.");
 
-        //    if (string.IsNullOrWhiteSpace(request.ModifiedBy))
-        //        return BadRequest("Modified By is required.");
+            if (string.IsNullOrWhiteSpace(request.ModifiedBy))
+                return BadRequest("Modified By is required.");
 
-        //    if (!request.ToolTrackingItems.Any())
-        //        return BadRequest("At least one tool tracking item is required.");
+            if (!request.ToolTrackingItems.Any())
+                return BadRequest("At least one tool tracking item is required.");
 
-        //    try
-        //    {
-        //        _logger.LogInformation(
-        //            "Saving tech tools tracking data - TechId: {TechId}, ItemCount: {ItemCount}, ModifiedBy: {ModifiedBy}",
-        //            request.TechID, request.ToolTrackingItems.Count, request.ModifiedBy);
+            try
+            {
+                _logger.LogInformation(
+                    "Saving tech tools tracking data - TechId: {TechId}, ItemCount: {ItemCount}, ModifiedBy: {ModifiedBy}",
+                    request.TechID, request.ToolTrackingItems.Count, request.ModifiedBy);
 
-        //        var result = await _repository.SaveTechToolsTrackingAsync(request);
+                var result = await _repository.SaveTechToolsTrackingAsync(request);
 
-        //        _logger.LogInformation(
-        //            "Tech tools tracking save completed - TechId: {TechId}, Success: {Success}, RecordsProcessed: {RecordsProcessed}",
-        //            request.TechID, result.Success, result.RecordsProcessed);
+                _logger.LogInformation(
+                    "Tech tools tracking save completed - TechId: {TechId}, Success: {Success}, RecordsProcessed: {RecordsProcessed}",
+                    request.TechID, result.Success, result.RecordsProcessed);
 
-        //        if (result.Success)
-        //        {
-        //            return Ok(new
-        //            {
-        //                success = true,
-        //                data = result,
-        //                message = result.Message
-        //            });
-        //        }
-        //        else
-        //        {
-        //            return StatusCode(422, new
-        //            {
-        //                success = false,
-        //                data = result,
-        //                message = result.Message
-        //            });
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, 
-        //            "Error saving tech tools tracking data - TechId: {TechId}", request.TechID);
+                if (result.Success)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = result,
+                        message = result.Message
+                    });
+                }
+                else
+                {
+                    return StatusCode(422, new
+                    {
+                        success = false,
+                        data = result,
+                        message = result.Message
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, 
+                    "Error saving tech tools tracking data - TechId: {TechId}", request.TechID);
 
-        //        return StatusCode(500, new
-        //        {
-        //            success = false,
-        //            message = "Failed to save tech tools tracking data",
-        //            error = ex.Message
-        //        });
-        //    }
-        //}
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to save tech tools tracking data",
+                    error = ex.Message
+                });
+            }
+        }
+
+        #region File Management Endpoints (Legacy DisplayFile, SaveFile equivalent)
+
+        /// <summary>
+        /// Gets file attachments for a tech ID (legacy DisplayFile equivalent)
+        /// </summary>
+        /// <param name="techId">Tech ID to get files for (required)</param>
+        [HttpGet("files/{techId}")]
+        public async Task<ActionResult<List<ToolsTrackingFileDto>>> GetFiles(string techId)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
+
+            try
+            {
+                _logger.LogInformation("Getting files for tech ID: {TechId}", techId);
+
+                var files = await _repository.GetFilesAsync(techId);
+
+                _logger.LogInformation(
+                    "Successfully retrieved files - TechId: {TechId}, FileCount: {FileCount}",
+                    techId, files.Count);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = files,
+                    totalFiles = files.Count,
+                    techId = techId,
+                    message = $"Files retrieved successfully for tech ID: {techId}"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting files for tech ID: {TechId}", techId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to retrieve files",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Uploads a file for a tech ID (legacy SaveFile equivalent)
+        /// </summary>
+        /// <param name="techId">Tech ID to upload file for</param>
+        /// <param name="file">File to upload</param>
+        [HttpPost("upload-file/{techId}")]
+        public async Task<ActionResult<FileUploadResultDto>> UploadFile(string techId, IFormFile file)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
+
+            if (file == null || file.Length == 0)
+                return BadRequest("File is required and cannot be empty.");
+
+            try
+            {
+                _logger.LogInformation(
+                    "Uploading file - TechId: {TechId}, FileName: {FileName}, FileSize: {FileSize}",
+                    techId, file.FileName, file.Length);
+
+                using var stream = file.OpenReadStream();
+                var result = await _repository.UploadFileAsync(techId, file.FileName, stream);
+
+                _logger.LogInformation(
+                    "File upload completed - TechId: {TechId}, FileName: {FileName}, Success: {Success}",
+                    techId, file.FileName, result.Success);
+
+                if (result.Success)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        data = result,
+                        message = result.Message
+                    });
+                }
+                else
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        data = result,
+                        message = result.Message
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading file for tech ID: {TechId}", techId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to upload file",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Downloads a file for a tech ID
+        /// </summary>
+        /// <param name="techId">Tech ID</param>
+        /// <param name="fileName">File name to download</param>
+        [HttpGet("download-file/{techId}/{fileName}")]
+        public async Task<IActionResult> DownloadFile(string techId, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
+
+            if (string.IsNullOrWhiteSpace(fileName))
+                return BadRequest("File name is required.");
+
+            try
+            {
+                await Task.CompletedTask; // Make method async compatible
+
+                var filePath = Path.Combine(@"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo", techId, fileName);
+                
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound($"File '{fileName}' not found for tech ID: {techId}");
+
+                _logger.LogInformation(
+                    "Downloading file - TechId: {TechId}, FileName: {FileName}",
+                    techId, fileName);
+
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                var contentType = GetContentType(fileName);
+
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file - TechId: {TechId}, FileName: {FileName}", techId, fileName);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to download file",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Deletes a file for a tech ID
+        /// </summary>
+        /// <param name="techId">Tech ID</param>
+        /// <param name="fileName">File name to delete</param>
+        [HttpDelete("delete-file/{techId}/{fileName}")]
+        public async Task<IActionResult> DeleteFile(string techId, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(techId))
+                return BadRequest("Tech ID is required.");
+
+            if (string.IsNullOrWhiteSpace(fileName))
+                return BadRequest("File name is required.");
+
+            try
+            {
+                _logger.LogInformation(
+                    "Deleting file - TechId: {TechId}, FileName: {FileName}",
+                    techId, fileName);
+
+                var deleted = await _repository.DeleteFileAsync(techId, fileName);
+
+                _logger.LogInformation(
+                    "File deletion completed - TechId: {TechId}, FileName: {FileName}, Success: {Success}",
+                    techId, fileName, deleted);
+
+                if (deleted)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        message = $"File '{fileName}' deleted successfully for tech ID: {techId}"
+                    });
+                }
+                else
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = $"File '{fileName}' not found for tech ID: {techId}"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting file - TechId: {TechId}, FileName: {FileName}", techId, fileName);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to delete file",
+                    error = ex.Message
+                });
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        /// <summary>
+        /// Gets content type for file download
+        /// </summary>
+        /// <param name="fileName">File name</param>
+        private static string GetContentType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
+            return extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls" => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                ".txt" => "text/plain",
+                _ => "application/octet-stream"
+            };
+        }
+
+        #endregion
     }
 }
