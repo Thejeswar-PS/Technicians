@@ -9,7 +9,6 @@ using Serilog;
 using System.Reflection;
 using System.Text.Json;
 using Technicians.Api.Models;
-using Technicians.Api.Repositories;
 using Technicians.Api.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -107,7 +106,7 @@ builder.Services.AddScoped<PartsTestRepository>();
 builder.Services.AddScoped<PartsTestStatusRepository>();
 builder.Services.AddScoped<StrippedUnitsStatusRepository>();
 builder.Services.AddScoped<NewDisplayCallsGraphRepository>();
-builder.Services.AddScoped<IDisplayCallsDetailRepository, DisplayCallsDetailRepository>();
+builder.Services.AddScoped<NewDisplayCallsDetailRepository>();
 builder.Services.AddScoped<IPartsSearchRepository, PartsSearchRepository>();
 builder.Services.AddScoped<IAccMgrPerformanceReportRepository, AccMgrPerformanceReportRepository>();
 builder.Services.AddScoped<IPastDueGraphRepository, PastDueGraphRepository>();

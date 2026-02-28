@@ -16,8 +16,8 @@ namespace Technicians.Api.Repository
 
         public AccMgrPerformanceReportRepository(IConfiguration configuration)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("DefaultConnection missing");
+            _connectionString = configuration.GetConnectionString("ETechGreatPlainsConnString")
+                ?? throw new InvalidOperationException("ETechGreatPlainsConnString missing");
         }
 
         public async Task<AccMgrPerformanceReportResponseDto> GetReportAsync(string officeId, string roJobs)
