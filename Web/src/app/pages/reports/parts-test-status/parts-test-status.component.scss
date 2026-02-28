@@ -94,6 +94,7 @@
     overflow-x: auto;
     margin: 0;
     padding: 0;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
   }
 
   table {
@@ -124,10 +125,8 @@
   tbody td {
     padding: 10px 8px;
     vertical-align: middle;
-    word-break: break-word;
-    overflow-wrap: anywhere;
-    white-space: normal;
     text-align: center;
+    white-space: nowrap;
   }
 
   /* ================= COLUMN WIDTHS ================= */
