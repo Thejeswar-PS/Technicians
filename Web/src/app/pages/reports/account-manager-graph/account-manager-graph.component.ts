@@ -1533,21 +1533,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
   /**
    * Navigate to the report details page
+   * NOTE: This method has been disabled as the dcg-display-report-details component has been removed
    */
   private navigateToReportDetails(page: string, dataSetName: string, officeId: string = ''): void {
-    const queryParams: any = {
-      Page: page,
-      dataSetName: encodeURIComponent(dataSetName),
-      backbutton: 'AccMgmtGraph.aspx'
-    };
-
-    if (officeId) {
-      queryParams.officeId = officeId;
-    }
-
-    this.router.navigate(['/reports/dcg-display-report-details'], {
-      queryParams: queryParams
-    });
+    console.log('Navigation to report details disabled - page has been removed', { page, dataSetName, officeId });
+    // TODO: Re-implement report details functionality or navigate to alternative page
   }
 
   /**
