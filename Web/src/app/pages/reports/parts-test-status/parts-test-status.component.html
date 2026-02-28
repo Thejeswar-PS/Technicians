@@ -232,7 +232,7 @@
             <tr *ngFor="let item of displayedData"
                 [ngClass]="getRowColorClass(item.dueDate)">
 
-              <td class="text-center">{{ formatDate(item.createdOn) }}</td>
+              <td class="text-center">{{ getSubmittedDate(item.callNbr) }}</td>
               <td>{{ item.callNbr }}</td>
 
               <td class="text-center">
@@ -269,7 +269,7 @@
               <td>{{ formatDate(item.createdOn) }}</td>
               <td>{{ formatDate(item.dueDate) }}</td>
               <td>{{ item.assignedTo }}</td>
-              <td>{{ item.lastModifiedBy || item.createdBy }}</td>
+              <td>{{ formatWindowsUser(item.lastModifiedBy || item.createdBy) }}</td>
             </tr>
           </tbody>
         </table>

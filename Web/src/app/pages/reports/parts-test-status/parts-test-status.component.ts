@@ -49,6 +49,9 @@ export class PartsTestStatusComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   
+  // Submitted dates map (jobNumber -> submittedDate)
+  submittedDatesMap: Map<string, string> = new Map();
+  
   // Error handling
   errorMessage: string = '';
   chartErrorMessage: string = '';
@@ -151,6 +154,13 @@ export class PartsTestStatusComponent implements OnInit {
         this.distinctModels = response.distinctModels || [];
         this.modelsForSelectedMake = [...this.distinctModels];
         this.totalRecords = this.partsTestStatusList.length;
+        
+        // Apply default sorting: Emergency (red) first, then Orange, then Yellow, then Normal
+        this.applySortByPriority();
+        
+        // Load submitted dates for all records
+        this.loadSubmittedDatesForAllRecords();
+        
         this.applyPagination();
         this.isLoading = false;
       },
@@ -188,6 +198,44 @@ export class PartsTestStatusComponent implements OnInit {
     }
   }
 
+  // Load submitted dates for all records using API
+  private loadSubmittedDatesForAllRecords(): void {
+    // Clear previous map
+    this.submittedDatesMap.clear();
+    
+    // Get unique job numbers
+    const uniqueJobNumbers = [...new Set(this.partsTestStatusList.map(item => item.callNbr).filter(nb => nb))];
+    
+    // Load submitted date for each job number
+    uniqueJobNumbers.forEach(jobNum => {
+      if (jobNum && !this.submittedDatesMap.has(jobNum)) {
+        this.reportService.getSubmittedDate(jobNum).subscribe({
+          next: (response) => {
+            if (response.success && response.submittedDate && response.submittedDate !== 'NA') {
+              this.submittedDatesMap.set(jobNum, response.submittedDate);
+            } else {
+              this.submittedDatesMap.set(jobNum, 'NA');
+            }
+          },
+          error: (error) => {
+            console.warn(`Error loading submitted date for job ${jobNum}:`, error);
+            this.submittedDatesMap.set(jobNum, 'NA');
+          }
+        });
+      }
+    });
+  }
+
+  // Get submitted date for a job number from the map and format it
+  getSubmittedDate(callNbr: string): string {
+    const submittedDate = this.submittedDatesMap.get(callNbr) || '';
+    if (!submittedDate || submittedDate === 'NA') {
+      return submittedDate;
+    }
+    // Format the date using the formatDate method
+    return this.formatDate(submittedDate);
+  }
+
   clearErrorMessage(): void {
     this.errorMessage = '';
   }
@@ -210,18 +258,32 @@ export class PartsTestStatusComponent implements OnInit {
       assignedTo: formValue.assignedTo || ''
     };
 
+    console.log('Loading dashboard with request:', request);
+
     this.reportService.getPartsTestStatusDashboard(request).subscribe({
       next: (response: PartsTestStatusDashboardResponse) => {
+        console.log('Dashboard response received:', response);
+        
         if (!response || response.success === false) {
           this.chartErrorMessage = response?.message || 'Failed to load dashboard charts';
           this.statusChartOptions = null;
           this.jobTypeChartOptions = null;
           this.isLoadingCharts = false;
+          console.warn('Dashboard response failed:', this.chartErrorMessage);
           return;
         }
 
-        this.statusChartOptions = this.buildStatusChartOptions(response.statusChart);
-        this.jobTypeChartOptions = this.buildJobTypeChartOptions(response.jobTypeChart || []);
+        console.log('Status Counts:', response.statusCounts);
+        console.log('Job Type Distribution:', response.jobTypeDistribution);
+
+        this.statusChartOptions = this.buildStatusChartOptions(response.statusCounts);
+        this.jobTypeChartOptions = this.buildJobTypeChartOptions(response.jobTypeDistribution || []);
+        
+        console.log('Chart options built:', {
+          statusChart: this.statusChartOptions ? 'Yes' : 'No',
+          jobTypeChart: this.jobTypeChartOptions ? 'Yes' : 'No'
+        });
+        
         this.isLoadingCharts = false;
       },
       error: (error) => {
@@ -338,7 +400,42 @@ export class PartsTestStatusComponent implements OnInit {
 
 
 
+
+  // Get priority rank for sorting (lower numbers = higher priority = appear first)
+  private getRowPriorityRank(dueDate: Date | string | null | undefined): number {
+    const colorClass = this.getRowColorClass(dueDate);
+    
+    switch (colorClass) {
+      case 'row-overdue':   // RED - Emergency
+        return 0;
+      case 'row-urgent':    // ORANGE - Urgent
+        return 1;
+      case 'row-upcoming':  // YELLOW - Upcoming
+        return 2;
+      default:              // NORMAL
+        return 3;
+    }
+  }
+
+  // Sort data by priority: Red first, Orange second, Yellow third, Normal last
+  private applySortByPriority(): void {
+    this.partsTestStatusList.sort((a, b) => {
+      const priorityA = this.getRowPriorityRank(a.dueDate);
+      const priorityB = this.getRowPriorityRank(b.dueDate);
+      
+      // If priorities are equal, sort by due date (earlier dates first)
+      if (priorityA === priorityB) {
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_VALUE;
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_VALUE;
+        return dateA - dateB;
+      }
+      
+      return priorityA - priorityB;
+    });
+  }
+
   onSort(column: string): void {
+    // When sorting a specific column, clear the default priority sorting
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -521,7 +618,7 @@ export class PartsTestStatusComponent implements OnInit {
       item.dcgPartNo, item.serialNo, item.quantity, item.description, 
       item.qcWorkStatus, item.assyWorkStatus, item.isPassed ? 'Yes' : 'No',
       item.assignedTo, this.formatDate(item.dueDate), item.problemNotes, 
-      item.resolveNotes, item.lastModifiedBy, this.formatDate(item.lastModifiedOn)
+      item.resolveNotes, this.formatWindowsUser(item.lastModifiedBy || item.createdBy), this.formatDate(item.lastModifiedOn)
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -565,11 +662,24 @@ export class PartsTestStatusComponent implements OnInit {
     const d = typeof date === 'string' ? new Date(date) : date;
     
     const day = d.getDate().toString().padStart(2, '0');
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
     const month = monthNames[d.getMonth()];
     const year = d.getFullYear();
     
     return `${day}-${month}-${year}`;
+  }
+
+  formatWindowsUser(value: string | null | undefined): string {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed.includes('\\')) {
+      return trimmed.split('\\').pop() || '';
+    }
+    if (trimmed.includes('@')) {
+      return trimmed.split('@')[0] || '';
+    }
+    return trimmed;
   }
 
   trackByUniqueId(index: number, item: PartsTestStatusDto): string {

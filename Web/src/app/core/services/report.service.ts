@@ -58,7 +58,6 @@ import {
   PartsTestResponse,
   SaveUpdatePartsTestDto,
   SaveUpdatePartsTestResponse,
-  EmployeeRequest,
   EmployeeResponse,
   DeletePartsTestResponse,
   JobExistsResponse,
@@ -808,12 +807,6 @@ export class ReportService {
     });
   }
 
-  getEmployeeNamesByDeptPost(request: EmployeeRequest): Observable<EmployeeResponse> {
-    return this.http.post<EmployeeResponse>(`${this.API}/PartsTest/GetEmployeeNamesByDept`, request, { 
-      headers: this.headers 
-    });
-  }
-
   // Delete parts test list entry
   deletePartsTestList(rowIndex: number, source: string = 'PartsTest'): Observable<DeletePartsTestResponse> {
     let params = new HttpParams()
@@ -846,7 +839,7 @@ export class ReportService {
 
   // Archive parts test record
   archivePartsTestRecord(rowIndex: number): Observable<ArchiveRecordResponse> {
-    return this.http.post<ArchiveRecordResponse>(`${this.API}/PartsTest/ArchiveRecord`, rowIndex, { 
+    return this.http.post<ArchiveRecordResponse>(`${this.API}/PartsTest/ArchiveRecord`, { rowIndex }, { 
       headers: this.headers 
     });
   }
@@ -914,7 +907,7 @@ export class ReportService {
       .set('model', normalizeFilter(request?.model))
       .set('assignedTo', normalizeFilter(request?.assignedTo));
 
-    return this.http.get<PartsTestStatusDashboardResponse>(`${this.API}/PartsTestStatus/dashboard`, {
+    return this.http.get<PartsTestStatusDashboardResponse>(`${this.API}/PartsTest/GetPartsTestDashboard`, {
       headers: this.headers,
       params: params
     }).pipe(

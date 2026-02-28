@@ -60,8 +60,8 @@ export interface PartsTestStatusAllApiResponse {
 
 export interface PartsTestStatusDashboardResponse {
   success: boolean;
-  statusChart: PartsTestStatusStatusChartDto;
-  jobTypeChart: PartsTestStatusJobTypeChartDto[];
+  statusCounts: PartsTestStatusStatusChartDto;
+  jobTypeDistribution: PartsTestStatusJobTypeChartDto[];
   filters?: PartsTestStatusRequest;
   message?: string;
   error?: string;

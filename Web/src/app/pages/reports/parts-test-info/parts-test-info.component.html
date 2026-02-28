@@ -272,13 +272,6 @@
                 </label>
                 <textarea class="form-control form-control-solid text-dark fw-semibold" formControlName="description" rows="3" placeholder="Enter description..." style="resize: vertical;"></textarea>
               </div>
-              <div class="col-12">
-                <label class="form-label fw-bold text-dark fs-6">
-                  <i class="ki-outline ki-message-text me-1 text-primary"></i>Deficiency Notes <span class="text-danger">*</span>
-                </label>
-                <textarea class="form-control form-control-solid text-dark fw-semibold" formControlName="problemNotes" rows="3" [class.is-invalid]="isFieldInvalid('problemNotes')" placeholder="Enter deficiency notes..." style="resize: vertical;"></textarea>
-                <div class="invalid-feedback fw-semibold">{{ getFieldError('problemNotes') }}</div>
-              </div>
             </div>
             
               <!-- Action Buttons - Match Legacy Layout -->
@@ -350,7 +343,6 @@
               <select class="form-select form-select-solid text-dark fw-semibold mb-3" formControlName="boardSetup">
                 <option value="0">Please Select</option>
                 <option value="1">Completed</option>
-                <option value="2">Boards Are Completed</option>
                 <option value="3">In Progress</option>
                 <option value="4">Need Parts</option>
               </select>
@@ -360,12 +352,9 @@
                 <i class="ki-outline ki-shield-check me-1 text-primary"></i>Quality – Work Done:
               </label>
               <div class="row g-2 mb-3">
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone1" id="bqw1" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw1">Visual Inspection</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone2" id="bqw2" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw2">Function Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone3" id="bqw3" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw3">Load Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone4" id="bqw4" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw4">High Pot Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone5" id="bqw5" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw5">Discrete Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone6" id="bqw6" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw6">Other</label></div></div>
+                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone1" id="bqw1" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw1">Cleaned</label></div></div>
+                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone2" id="bqw2" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw2">Torqued</label></div></div>
+                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="boardQualityWorkDone3" id="bqw3" /><label class="form-check-label text-dark fw-bold fs-6" for="bqw3">Inspected</label></div></div>
               </div>
 
               <!-- Quality Procedure Followed -->
@@ -414,10 +403,29 @@
 
               <!-- Passed Checkbox -->
               <div class="form-check form-check-custom form-check-solid p-3 border rounded bg-light mb-3">
-                <input type="checkbox" class="form-check-input" formControlName="boardPassed" id="boardPassed" />
+                <input type="checkbox" class="form-check-input" formControlName="boardPassed" id="boardPassed" [disabled]="!editForm.get('boardQualityStatus')?.value || editForm.get('boardQualityStatus')?.value !== '1'" />
                 <label class="form-check-label fw-bold text-success fs-6" for="boardPassed">
                   <i class="ki-outline ki-verify me-1"></i>Passed
                 </label>
+              </div>
+
+              <!-- Resolution Notes for Board Setup -->
+              <div class="card border shadow-sm mb-4">
+                <div class="card-header bg-primary">
+                  <h6 class="card-title mb-0 text-white fw-bold">
+                    <i class="ki-outline ki-notepad-edit me-2"></i>Resolution Notes
+                  </h6>
+                </div>
+                <div class="card-body bg-white">
+                  <div class="mb-0">
+                    <textarea class="form-control form-control-solid text-dark fw-semibold auto-resize-textarea" 
+                             formControlName="resolveNotes" 
+                             rows="6" 
+                             placeholder="Enter resolution notes..." 
+                             style="min-height: 120px; resize: vertical; overflow-y: auto;"
+                             (input)="onTextareaInput($event)"></textarea>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -471,12 +479,9 @@
                 <i class="ki-outline ki-shield-check me-1 text-primary"></i>Quality – Work Done:
               </label>
               <div class="row g-2 mb-3">
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone1" id="cqw1" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw1">Visual Inspection</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone2" id="cqw2" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw2">Function Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone3" id="cqw3" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw3">Load Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone4" id="cqw4" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw4">High Pot Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone5" id="cqw5" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw5">Discrete Test</label></div></div>
-                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone6" id="cqw6" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw6">Other</label></div></div>
+                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone1" id="cqw1" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw1">Cleaned</label></div></div>
+                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone2" id="cqw2" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw2">Torqued</label></div></div>
+                <div class="col-md-4"><div class="form-check form-check-custom form-check-solid p-2 border rounded"><input type="checkbox" class="form-check-input" formControlName="compQualityWorkDone3" id="cqw3" /><label class="form-check-label text-dark fw-bold fs-6" for="cqw3">Inspected</label></div></div>
               </div>
 
               <!-- Quality Procedure Followed -->
@@ -525,10 +530,29 @@
 
               <!-- Passed Checkbox -->
               <div class="form-check form-check-custom form-check-solid p-3 border rounded bg-light mb-3">
-                <input type="checkbox" class="form-check-input" formControlName="compPassed" id="compPassed" />
+                <input type="checkbox" class="form-check-input" formControlName="compPassed" id="compPassed" [disabled]="!editForm.get('compQualityStatus')?.value || editForm.get('compQualityStatus')?.value !== '1'" />
                 <label class="form-check-label fw-bold text-success fs-6" for="compPassed">
                   <i class="ki-outline ki-verify me-1"></i>Passed
                 </label>
+              </div>
+
+              <!-- Resolution Notes for Component/Testing -->
+              <div class="card border shadow-sm mb-4">
+                <div class="card-header bg-primary">
+                  <h6 class="card-title mb-0 text-white fw-bold">
+                    <i class="ki-outline ki-notepad-edit me-2"></i>Resolution Notes
+                  </h6>
+                </div>
+                <div class="card-body bg-white">
+                  <div class="mb-0">
+                    <textarea class="form-control form-control-solid text-dark fw-semibold auto-resize-textarea" 
+                             formControlName="resolveNotes" 
+                             rows="6" 
+                             placeholder="Enter resolution notes..." 
+                             style="min-height: 120px; resize: vertical; overflow-y: auto;"
+                             (input)="onTextareaInput($event)"></textarea>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -660,7 +684,6 @@
                 </select>
               </div>
 
-              <!-- COMMENTED OUT: QC Approved By and QC Passed section
               <div class="row g-3 mb-4">
                 <div class="col-md-6">
                   <label class="form-label fw-bold text-dark fs-6">
@@ -675,7 +698,7 @@
                     </option>
                   </select>
                 </div>
-                <div class="col-md-6 d-flex align-items-end">
+                <div class="col-md-6 d-flex align-items-end"> 
                   <div class="form-check form-check-custom form-check-solid p-3 border rounded bg-light">
                     <input type="checkbox" class="form-check-input" formControlName="qcPassed" id="qcPassed" />
                     <label class="form-check-label fw-bold text-success fs-6" for="qcPassed">
@@ -684,10 +707,9 @@
                   </div>
                 </div>
               </div>
-              -->
 
             <!-- Always Visible Quality Section -->
-            <div class="mb-4">
+            <!-- <div class="mb-4">
               <label class="form-label fw-bold text-dark fs-6 mb-2">
                 <i class="ki-outline ki-shield-check me-1 text-primary"></i>Quality:
               </label>
@@ -697,7 +719,7 @@
                 <option value="2">Fail</option>
                 <option value="3">N/A</option>
               </select>
-            </div>
+            </div> -->
 
             <!-- Common txtResolveNotes - Always Visible -->
             <div class="card border shadow-sm mb-4">
