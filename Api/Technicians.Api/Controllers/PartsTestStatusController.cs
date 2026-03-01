@@ -169,5 +169,51 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Alternative POST endpoint that explicitly bypasses model validation
+        /// </summary>
+        /// <returns>Parts test status data</returns>
+        [HttpPost("GetPartsTestStatusNoValidation")]
+        public async Task<ActionResult<PartsTestStatusResponse>> GetPartsTestStatusNoValidation()
+        {
+            try
+            {
+                _logger.LogInformation("Getting parts test status with no validation");
+
+                // Create a default request with all null values
+                var request = new PartsTestStatusRequest
+                {
+                    JobType = null,
+                    Priority = null,
+                    Archive = false,
+                    Make = null,
+                    Model = null,
+                    AssignedTo = null
+                };
+
+                var results = await _repository.GetPartsTestStatusAsync(request);
+
+                _logger.LogInformation("Successfully retrieved parts test status - PartsCount: {PartsCount}", 
+                    results.PartsTestData.Count);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = results,
+                    totalRecords = results.PartsTestData.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting parts test status with no validation");
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to retrieve parts test status", 
+                    error = ex.Message 
+                });
+            }
+        }
     }
 }

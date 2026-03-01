@@ -1,8 +1,10 @@
 import { Component, OnInit, ChangeDetectorRef, AfterViewInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
 import { DashboardFilterSharedService } from 'src/app/core/services/shared-service/dashboard-filter-shared.service';
 import * as _ from 'lodash';
 import { TechDashboardService, TechDashboardKPIs, AccountManager, Technician } from 'src/app/core/services/tech-dashboard.service';
+import { AuthService } from 'src/app/modules/auth';
+import { CommonService } from 'src/app/core/services/common.service';
 
 declare var Chart: any;
 
@@ -65,18 +67,24 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
   };
 
   loading: boolean = false;
+  private currentUser: any = null;
+  private employeeStatus: string = '';
+  private empID: string = '';
+  private windowsID: string = '';
+  private userRole: string = '';
 
   constructor(
     private filterSharedService: DashboardFilterSharedService,
     private techDashboardService: TechDashboardService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private authService: AuthService,
+    private commonService: CommonService
   ) {}
 
   ngOnInit(): void {
     this.subscribeSharedServiceData();
-    this.loadFilters();
-    this.loadTechDashboardData();
     this.filterSharedService.setHomePage(true);
+    this.loadFilters();
   }
 
   ngAfterViewInit(): void {
@@ -109,21 +117,118 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   loadFilters(): void {
-    this.techDashboardService.getAccountManagers().subscribe({
-      next: (managers) => {
-        this.accountManagers = managers;
-        this.cdr.detectChanges();
-      },
-      error: (err) => console.error('Error loading account managers:', err)
+    this.currentUser = this.authService.currentUserValue || JSON.parse(localStorage.getItem('userData') || '{}') || {};
+    this.empID = (this.currentUser?.empID || this.currentUser?.empId || '').toString().trim();
+    this.windowsID = (this.currentUser?.windowsID || this.currentUser?.windowsId || '').toString().trim();
+    this.userRole = (this.currentUser?.role || '').toString().trim();
+
+    console.log('Dashboard loadFilters - current user:', this.currentUser);
+    console.log('Dashboard loadFilters - resolved identity:', {
+      empID: this.empID,
+      windowsID: this.windowsID,
+      userRole: this.userRole
     });
 
-    this.techDashboardService.getTechnicians().subscribe({
-      next: (techs) => {
-        this.technicians = techs;
-        this.cdr.detectChanges();
+    forkJoin({
+      managers: this.techDashboardService.getAccountManagers(),
+      techs: this.techDashboardService.getTechnicians()
+    }).subscribe({
+      next: ({ managers, techs }) => {
+        this.accountManagers = managers || [];
+        this.technicians = techs || [];
+
+        this.resolveEmployeeStatusAndApplyDefaults();
       },
-      error: (err) => console.error('Error loading technicians:', err)
+      error: (err) => {
+        console.error('Error loading dashboard filters:', err);
+        this.accountManagers = [];
+        this.technicians = [];
+        this.resolveEmployeeStatusAndApplyDefaults();
+      }
     });
+  }
+
+  private resolveEmployeeStatusAndApplyDefaults(): void {
+    if (!this.windowsID) {
+      this.employeeStatus = this.userRole || 'Active';
+      console.log('Dashboard status fallback (no windowsID):', this.employeeStatus);
+      this.applyDefaultsByUser();
+      return;
+    }
+
+    this.commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
+      next: (statusData: any) => {
+        let status = 'Active';
+
+        if (Array.isArray(statusData) && statusData.length > 0) {
+          status = (statusData[0].Status || statusData[0].status || 'Active').toString().trim();
+        } else if (statusData && typeof statusData === 'object') {
+          status = (statusData.Status || statusData.status || 'Active').toString().trim();
+        }
+
+        this.employeeStatus = status || 'Active';
+        console.log('Dashboard employee status resolved:', this.employeeStatus, statusData);
+        this.applyDefaultsByUser();
+      },
+      error: (err) => {
+        console.error('Dashboard employee status API failed, using role fallback:', err);
+        this.employeeStatus = this.userRole || 'Active';
+        this.applyDefaultsByUser();
+      }
+    });
+  }
+
+  private applyDefaultsByUser(): void {
+    const normalizedStatus = (this.employeeStatus || this.userRole || '').toString().trim().toLowerCase();
+    const isTechUser = normalizedStatus.includes('tech');
+    const isManagerUser = normalizedStatus.includes('manager') || normalizedStatus === 'other';
+    const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
+
+    if (isTechUser) {
+      const matchedTech = (this.technicians || []).find(t => (t.techID || '').toString().trim().toUpperCase() === empIdNormalized);
+      if (matchedTech) {
+        this.selectedTech = matchedTech.techID;
+      } else if (this.empID) {
+        this.selectedTech = this.empID;
+        this.technicians = [{ techID: this.empID, techName: this.currentUser?.empName || this.currentUser?.name || this.windowsID || this.empID } as Technician, ...this.technicians];
+      } else {
+        this.selectedTech = 'ALL';
+      }
+      // Restrict technician list to only self
+      if (this.selectedTech !== 'ALL') {
+        const selectedTechObj = this.technicians.find(t => t.techID === this.selectedTech);
+        if (selectedTechObj) {
+          this.technicians = [selectedTechObj];
+        }
+      }
+      this.selectedAccMgr = 'ALL';
+    } else if (isManagerUser) {
+      const matchedMgr = (this.accountManagers || []).find(m => {
+        const mgrId = (m.empID || '').toString().trim().toUpperCase();
+        const mgrName = (m.empName || '').toString().trim().toUpperCase();
+        return mgrId === empIdNormalized || mgrName === empIdNormalized;
+      });
+
+      this.selectedAccMgr = matchedMgr ? matchedMgr.empID : 'ALL';
+      this.selectedTech = 'ALL';
+    } else {
+      this.selectedAccMgr = 'ALL';
+      this.selectedTech = 'ALL';
+    }
+
+    console.log('Dashboard defaults applied:', {
+      employeeStatus: this.employeeStatus,
+      userRole: this.userRole,
+      selectedAccMgr: this.selectedAccMgr,
+      selectedTech: this.selectedTech,
+      accountManagersCount: this.accountManagers.length,
+      techniciansCount: this.technicians.length
+    });
+  }
+
+  isTechContext(): boolean {
+    const normalizedStatus = (this.employeeStatus || this.userRole || '').toString().trim().toLowerCase();
+    return normalizedStatus.includes('tech');
   }
 
   subscribeSharedServiceData() {

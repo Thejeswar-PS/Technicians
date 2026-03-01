@@ -72,12 +72,12 @@
         <div class="table-responsive">
           <table class="table modern-table">
             <colgroup>
-              <col style="width: 120px">
-              <col style="width: 120px">
-              <col style="width: 160px">
-              <col style="width: 160px">
+              <col style="width: 100px">
+              <col style="width: 100px">
               <col style="width: 140px">
-              <col style="width: auto">
+              <col style="width: 140px">
+              <col style="width: 120px">
+              <col style="width: 1fr">
             </colgroup>
             <thead class="table-header">
               <tr>
@@ -122,7 +122,16 @@
                 <td>{{ result.technician || 'N/A' }}</td>
                 <td>{{ result.startDate | date: 'dd-MMM-yyyy' }}</td>
                 <td class="notes-cell">
-                  <div class="notes-content" [innerHTML]="result.snippet"></div>
+                  <div class="notes-content">
+                    <div *ngIf="result.parsedNotes && result.parsedNotes.length > 0 && result.parsedNotes[0].lines.length > 0; else noNotes">
+                      <div *ngFor="let line of result.parsedNotes[0].lines" class="note-line">
+                        {{ line }}
+                      </div>
+                    </div>
+                    <ng-template #noNotes>
+                      <span>N/A</span>
+                    </ng-template>
+                  </div>
                 </td>
               </tr>
             </tbody>

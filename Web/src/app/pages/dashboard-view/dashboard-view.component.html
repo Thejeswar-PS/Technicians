@@ -6,12 +6,12 @@
     </div>
 
     <div class="filter-panel" [class.show]="showFilterPanel">
-      <select class="form-select mb-3" [(ngModel)]="selectedAccMgr">
+      <select class="form-select mb-3" [(ngModel)]="selectedAccMgr" [disabled]="isTechContext()">
         <option value="ALL">All</option>
         <option *ngFor="let mgr of accountManagers" [value]="mgr.empID">{{ mgr.empName }}</option>
       </select>
       <select class="form-select mb-3" [(ngModel)]="selectedTech">
-        <option value="ALL">All</option>
+        <option *ngIf="!isTechContext()" value="ALL">All</option>
         <option *ngFor="let tech of technicians" [value]="tech.techID">{{ tech.techName }}</option>
       </select>
       <select class="form-select mb-3" [(ngModel)]="selectedDateRange">
@@ -108,7 +108,7 @@
                 <tr *ngFor="let job of dashboardData.todaysJobList; trackBy: trackByWeekJob">
                   <td>{{ job.callNbr }}</td>
                   <td>{{ job.custName }}</td>
-                  <td>{{ job.accmgr }}</td>
+                  <td>{{ job.accMgr }}</td>
                   <td>{{ job.dateStatusChanged | date: 'MMM d yyyy HH:mm' }}</td>
                 </tr>
                 <tr *ngIf="!dashboardData.todaysJobList?.length">
