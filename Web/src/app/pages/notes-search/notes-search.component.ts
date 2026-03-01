@@ -10,6 +10,11 @@ interface NotesSearchResult {
   technician: string;
   startDate: string | null;
   snippet: string;
+  parsedNotes?: ParsedNote[];
+}
+
+interface ParsedNote {
+  lines: string[];
 }
 
 @Component({
@@ -100,13 +105,15 @@ export class NotesSearchComponent implements OnInit {
   }
 
   private normalizeRow(row: any): NotesSearchResult {
+    const snippet = this.sanitizeHtml(row?.snippet ?? '');
     return {
       jobNo: row?.callNbr?.trim() ?? '',
       siteId: row?.custNmbr?.trim() ?? '',
       customer: row?.custName?.trim() ?? '',
       technician: row?.techName?.trim() ?? '',
       startDate: row?.strtDate ?? null,
-      snippet: this.sanitizeHtml(row?.snippet ?? '')
+      snippet: snippet,
+      parsedNotes: this.parseNotesFromHtml(row?.snippet ?? '')
     };
   }
 
@@ -132,6 +139,25 @@ export class NotesSearchComponent implements OnInit {
     html = html.replace(/\s{2,}/g, ' ');
     
     return html;
+  }
+
+  private parseNotesFromHtml(htmlString: string): ParsedNote[] {
+    if (!htmlString) return [];
+
+    // Create a temporary container to parse HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    const cells = doc.querySelectorAll('td');
+
+    const lines: string[] = [];
+    cells.forEach((cell) => {
+      const text = cell.textContent?.trim();
+      if (text) {
+        lines.push(text);
+      }
+    });
+
+    return lines.length > 0 ? [{ lines }] : [];
   }
 
   trackByResult(index: number, result: NotesSearchResult): string {

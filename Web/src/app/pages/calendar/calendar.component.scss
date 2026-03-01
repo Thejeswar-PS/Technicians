@@ -124,7 +124,7 @@
         height: 140px;
         border: none;
         overflow: hidden;
-        cursor: pointer;
+        cursor: default;
         transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         display: flex;
         flex-direction: column;
@@ -147,26 +147,26 @@
         }
 
         &:hover {
-            transform: translateY(-4px) scale(1.01);
-            z-index: 5;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            transform: none;
+            z-index: auto;
+            box-shadow: none;
 
             &::before {
-                opacity: 1;
+                opacity: 0;
             }
 
             .stat-icon {
-                transform: scale(1.1) rotate(5deg);
-                opacity: 1;
+                transform: none;
+                opacity: 0.6;
             }
 
             .stat-number {
-                transform: scale(1.05);
-                letter-spacing: 1px;
+                transform: none;
+                letter-spacing: -1px;
             }
 
             .stat-label {
-                transform: translateY(-2px);
+                transform: none;
             }
         }
 
@@ -297,6 +297,39 @@
     }
 
     .fc {
+        .fc-scrollgrid-section-header > th,
+        .fc-col-header-cell {
+            background: #f5f5f5 !important;
+            pointer-events: none;
+            cursor: default !important;
+            border-right: 1px solid #d9dee5 !important;
+            border-bottom: 1px solid #d9dee5 !important;
+        }
+
+        .fc-col-header-cell:last-child {
+            border-right: none !important;
+        }
+
+        .fc-col-header-cell:hover,
+        .fc-col-header-cell:focus,
+        .fc-col-header-cell:active {
+            background: #f5f5f5 !important;
+        }
+
+        .fc-col-header-cell-cushion {
+            color: #2c3e50 !important;
+            text-decoration: none !important;
+            pointer-events: none;
+            cursor: default !important;
+        }
+
+        .fc-col-header-cell-cushion:hover,
+        .fc-col-header-cell-cushion:focus,
+        .fc-col-header-cell-cushion:active {
+            color: #2c3e50 !important;
+            text-decoration: none !important;
+        }
+
         .fc-toolbar {
             background: #ffffff;
             padding: 0.75rem 1rem;

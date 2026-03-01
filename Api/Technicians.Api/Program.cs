@@ -82,6 +82,7 @@ builder.Services.AddCors(options =>
 });
 
 // --- Register your repository ---
+builder.Services.AddSingleton<ErrorLogRepository>();
 builder.Services.AddScoped<EtechExpenseRepository>();
 builder.Services.AddScoped<EquipmentDetailsRepository>();
 builder.Services.AddScoped<JobRepository>();

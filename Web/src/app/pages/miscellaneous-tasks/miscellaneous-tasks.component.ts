@@ -4,6 +4,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
+import { CommonService } from 'src/app/core/services/common.service';
 import { AuthService } from 'src/app/modules/auth/services/auth.service';
 
 interface SiteHistoryRow {
@@ -36,13 +37,15 @@ export class MiscellaneousTasksComponent implements OnInit {
   siteHistoryRows: SiteHistoryRow[] = [];
   showSiteHistory = false;
 
-  taskOptions = [
+  private readonly defaultTaskOptions = [
     { label: 'Select a Task', value: 'SAT' },
     { label: 'Add / View Parts Request', value: 'AVP' },
     { label: 'Re-Download Job', value: 'RDJ' },
     { label: 'Remove Tech From Job', value: 'RMT' },
     { label: 'Previous Site History', value: 'PSH' }
   ];
+
+  taskOptions = [...this.defaultTaskOptions];
 
   jobStatusOptions = [
     { label: 'Please Select', value: 'PS' },
@@ -56,6 +59,7 @@ export class MiscellaneousTasksComponent implements OnInit {
 
   constructor(
     private reportService: ReportService,
+    private commonService: CommonService,
     private router: Router,
     private authService: AuthService,
     private route: ActivatedRoute,
@@ -69,13 +73,67 @@ export class MiscellaneousTasksComponent implements OnInit {
     this.checkQueryStringPrePopulation();
   }
 
-  // Filter tasks based on user role (Technicians cannot see RDJ and RMT)
+  // Filter tasks based on user role
   private filterTasksByRole(): void {
-    const userStatus = this.authService.currentUserValue?.status;
-    if (userStatus === 'Technician') {
-      this.taskOptions = this.taskOptions.filter(
-        option => option.value !== 'RDJ' && option.value !== 'RMT'
-      );
+    const currentUser = this.authService.currentUserValue || JSON.parse(localStorage.getItem('userData') || '{}') || {};
+    const roleOrStatus = (
+      currentUser?.status ||
+      currentUser?.role ||
+      ''
+    ).toString().trim().toLowerCase();
+
+    // Start with default options every time before applying restrictions
+    this.taskOptions = [...this.defaultTaskOptions];
+
+    const isTechFromRole = roleOrStatus === 'technician' || roleOrStatus === 'techmanager' || roleOrStatus.includes('tech');
+
+    // Apply immediate role-based restriction
+    if (isTechFromRole) {
+      this.applyTechnicianTaskRestriction();
+    }
+
+    // Reinforce using employee-status API (same behavior as job-list)
+    const windowsID = (currentUser?.windowsID || currentUser?.windowsId || '').toString().trim();
+    if (!windowsID) {
+      return;
+    }
+
+    this.commonService.getEmployeeStatusForJobList(windowsID).pipe(
+      catchError((err) => {
+        console.error('Employee status check failed in miscellaneous-tasks:', err);
+        return of(null);
+      })
+    ).subscribe((statusData: any) => {
+      let resolvedStatus = '';
+
+      if (Array.isArray(statusData) && statusData.length > 0) {
+        resolvedStatus = (statusData[0]?.Status || statusData[0]?.status || '').toString().trim().toLowerCase();
+      } else if (statusData && typeof statusData === 'object') {
+        resolvedStatus = (statusData?.Status || statusData?.status || '').toString().trim().toLowerCase();
+      }
+
+      const isTechFromApi = resolvedStatus === 'technician' || resolvedStatus === 'techmanager' || resolvedStatus.includes('tech');
+
+      if (isTechFromApi) {
+        this.applyTechnicianTaskRestriction();
+      }
+    });
+  }
+
+  private applyTechnicianTaskRestriction(): void {
+    this.taskOptions = [
+      { label: 'Previous Site History', value: 'PSH' }
+    ];
+    this.selectedTask = 'PSH';
+
+    // Clear fields not needed for technician task mode
+    this.callNbr = '';
+    this.jobNo = '';
+    this.jobStatus = 'PS';
+
+    // If already viewing another task section, normalize state
+    if (!this.showSiteHistory) {
+      this.siteHistoryRows = [];
     }
   }
 
