@@ -79,6 +79,11 @@ import {
   AccountManagerGraphResponse
 } from '../model/account-manager-graph.model';
 import {
+  NewDisplayCallsDetailRequest,
+  NewDisplayCallsDetailResponse,
+  ValidDetailPagesResponse
+} from '../model/display-calls-detail.model';
+import {
   PartsSearchRequestDto,
   PartsSearchDataDto,
   PartsSearchDataResponse
@@ -1185,6 +1190,43 @@ export class ReportService {
   getAccountManagerUnscheduled(): Observable<AccountManagerPaperworkDto[]> {
     return this.http.get<AccountManagerPaperworkDto[]>(`${this.API}/calls-graph/account-manager-unscheduled`, {
       headers: this.headers
+    });
+  }
+
+  // New Display Calls Detail API methods
+  getDisplayCallsDetail(detailPage: string, offId?: string): Observable<NewDisplayCallsDetailResponse> {
+    let params = new HttpParams().set('detailPage', detailPage);
+    if (offId) {
+      params = params.set('offId', offId);
+    }
+    
+    return this.http.get<NewDisplayCallsDetailResponse>(`${this.API}/NewDisplayCallsDetail`, {
+      headers: this.headers,
+      params: params
+    });
+  }
+
+  getValidDetailPages(): Observable<ValidDetailPagesResponse> {
+    return this.http.get<ValidDetailPagesResponse>(`${this.API}/NewDisplayCallsDetail/valid-options`, {
+      headers: this.headers
+    });
+  }
+
+  getDisplayCallsDetailLegacy(dataSetName: string, page?: string, month?: string, offId?: string): Observable<NewDisplayCallsDetailResponse> {
+    let params = new HttpParams().set('dataSetName', dataSetName);
+    if (page) {
+      params = params.set('page', page);
+    }
+    if (month) {
+      params = params.set('month', month);
+    }
+    if (offId) {
+      params = params.set('offId', offId);
+    }
+    
+    return this.http.get<NewDisplayCallsDetailResponse>(`${this.API}/NewDisplayCallsDetail/legacy`, {
+      headers: this.headers,
+      params: params
     });
   }
 

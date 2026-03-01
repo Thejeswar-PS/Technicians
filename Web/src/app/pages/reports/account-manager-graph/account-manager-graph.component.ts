@@ -1533,11 +1533,16 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
   /**
    * Navigate to the report details page
-   * NOTE: This method has been disabled as the dcg-display-report-details component has been removed
    */
   private navigateToReportDetails(page: string, dataSetName: string, officeId: string = ''): void {
-    console.log('Navigation to report details disabled - page has been removed', { page, dataSetName, officeId });
-    // TODO: Re-implement report details functionality or navigate to alternative page
+    console.log('Navigating to report details:', { page, dataSetName, officeId });
+    
+    this.router.navigate(['/reports/display-calls-detail'], {
+      queryParams: {
+        detailPage: dataSetName,
+        offId: officeId || undefined
+      }
+    });
   }
 
   /**
@@ -1580,12 +1585,11 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
     
     console.log('Navigating with office ID:', officeId);
 
-    // Navigate to the report details page
-    this.router.navigate(['/reports/dcg-display-report-details'], {
+    // Navigate to the display calls detail page
+    this.router.navigate(['/reports/display-calls-detail'], {
       queryParams: {
-        Page: 'quote',
-        dataSetName: encodeURIComponent(dataSetName),
-        backbutton: 'AccMgmtGraph.aspx'
+        detailPage: 'Quotes to be completed',
+        offId: dataSetName
       }
     });
   }
@@ -1594,17 +1598,17 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
    * Handle unscheduled jobs chart clicks
    */
   handleUnscheduledJobsClick(config: any): void {
-    console.log('Unscheduled jobs chart clicked:', config);
+    console.log('[UNSCHEDULED CLICK] Chart clicked with config:', config);
     
     if (!config || config.dataPointIndex === undefined) {
-      console.log('Invalid config or dataPointIndex');
+      console.log('[UNSCHEDULED CLICK] Invalid config or dataPointIndex');
       return;
     }
 
     const dataPointIndex = config.dataPointIndex;
     
     if (!this.unscheduledData || dataPointIndex >= this.unscheduledData.length) {
-      console.log('Invalid data or index out of bounds');
+      console.log('[UNSCHEDULED CLICK] Invalid data or index out of bounds');
       return;
     }
 
@@ -1612,15 +1616,17 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
     const officeId = this.unscheduledData[dataPointIndex].offid;
     const dataSetName = officeId.trim();
     
-    console.log('Navigating with office ID:', officeId);
+    console.log('[UNSCHEDULED CLICK] Navigating with dataSetName:', dataSetName, 'Using LEGACY API');
 
-    // Navigate to the report details page
-    this.router.navigate(['/reports/dcg-display-report-details'], {
+    // Navigate to the display calls detail page using legacy API
+    // Query params: dataSetName=<OFFID>&page=UnschedActMngr
+    this.router.navigate(['/reports/display-calls-detail'], {
       queryParams: {
-        Page: 'job',
-        dataSetName: encodeURIComponent(dataSetName),
-        backbutton: 'AccMgmtGraph.aspx'
+        dataSetName: dataSetName,
+        page: 'UnschedActMngr'
       }
+    }).then(success => {
+      console.log('[UNSCHEDULED CLICK] Navigation success:', success);
     });
   }
 }

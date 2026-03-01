@@ -31,6 +31,7 @@ import { AccountingStatusComponent } from './accounting-status/accounting-status
 import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.component';
 import { TestEngineerJobsComponent } from './test-engineer-jobs/test-engineer-jobs.component';
 import { TestEngineerJobsEntryComponent } from './test-engineer-jobs/test-engineer-jobs-entry/test-engineer-jobs-entry.component';
+import { DisplayCallsDetailComponent } from './display-calls-detail/display-calls-detail.component';
 
 @NgModule({
   declarations: [
@@ -56,7 +57,8 @@ import { TestEngineerJobsEntryComponent } from './test-engineer-jobs/test-engine
     AccountingStatusComponent,
     DcgEmpDetailsComponent,
     TestEngineerJobsComponent,
-    TestEngineerJobsEntryComponent
+    TestEngineerJobsEntryComponent,
+    DisplayCallsDetailComponent
   ],
   imports: [
     CommonModule,
