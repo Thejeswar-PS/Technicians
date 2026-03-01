@@ -13,12 +13,12 @@ import {
   SaveUpdatePartsTestDto,
   SaveUpdatePartsTestResponse,
   EmployeeDto,
-  EmployeeRequest,
   DeletePartsTestResponse,
   PartsTestResponse,
   PartsTestRequest,
   JobExistsResponse,
-  SubmittedDateResponse
+  SubmittedDateResponse,
+  ArchiveRecordResponse
 } from '../../../core/model/parts-test-info.model';
 
 @Component({
@@ -74,7 +74,6 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   boardSetupOptions = [
     { value: '0', label: 'Please Select' },
     { value: '1', label: 'Completed' },
-    { value: '2', label: 'Boards Are Completed' },
     { value: '3', label: 'In Progress' },
     { value: '4', label: 'Need Parts' }
   ];
@@ -153,97 +152,122 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     
     this.editForm = this.fb.group({
       // Basic job information
-      jobFrom: ['1', Validators.required], // Default to Fan Rebuild
-      jobNumber: ['', [Validators.maxLength(10)]], // Match legacy maxlength="10"
-      submittedOn: [{ value: '', disabled: true }], // Readonly like legacy
-      inventorySpecialist: [{ value: '', disabled: true }], // Display only
-      siteID: ['', Validators.required], // Required like legacy
-      make: ['', Validators.required], // Required like legacy
-      model: ['', Validators.required], // Required like legacy
-      kva: ['', Validators.required], // Required like legacy
+      jobFrom: ['1', Validators.required],
+      jobNumber: ['', [Validators.maxLength(10)]],
+      submittedOn: [{ value: '', disabled: true }],
+      inventorySpecialist: [{ value: '', disabled: true }],
+      siteID: ['', Validators.required],
+      make: ['', Validators.required],
+      model: ['', Validators.required],
+      kva: ['', Validators.required],
       voltage: [''],
-      quantity: [1, [Validators.required]], // Required with default
+      quantity: [1, [Validators.required]],
       serialNo: [''],
       
       // Part information
       manufPartNo: ['', Validators.required],
       dcgPartNo: ['', Validators.required],  
       
-      // Emergency flag (missing from Angular)
-      emergency: [false], // Emergency checkbox like legacy chkEmergency
+      // Emergency flag
+      emergency: [false],
       
-      // Work type selections (matching legacy checkboxes)
-      workType1: [false], // Refurbish
-      workType2: [false], // Repair
-      workType3: [false], // WH Refurbish
-      workType4: [false], // Field Refurbish
-      workType5: [false], // Shipping Refurbish
-      workType6: [false], // Shipping Damage
-      workType7: [false], // Clean Parts/Components
-      workType8: [false], // Parts ASSY
-      workType9: [false], // Remove from Unit to Ship
-      workType10: [false], // Re-test from Inventory
-      workType11: [false], // Test
-      workType12: [false], // Board Setup
+      // Work type selections
+      workType1: [false],
+      workType2: [false],
+      workType3: [false],
+      workType4: [false],
+      workType5: [false],
+      workType6: [false],
+      workType7: [false],
+      workType8: [false],
+      workType9: [false],
+      workType10: [false],
+      workType11: [false],
+      workType12: [false],
       
       // Assignment and priority
-      assignedTo: ['', Validators.required], // Required like legacy
-      dueDate: [today.toISOString().split('T')[0], Validators.required], // Required like legacy
+      assignedTo: ['', Validators.required],
+      priority: ['M'],
+      dueDate: [today.toISOString().split('T')[0], Validators.required],
       
       // Descriptions and notes
       description: [''],
-      
-      // Board setup section (Job Type 7 only)
-      boardSetup: ['0'], // Default to Please Select
-      
-      // Component work section (default job types)
-      compWorkDone1: [false], // Cleaned
-      compWorkDone2: [false], // Refurbished
-      compWorkDone3: [false], // Parts Replaced
-      compWorkDone4: [false], // Repaired
-      compWorkDone5: [false], // Inspected for Damage
-      compWorkDone6: [false], // Not Reparable
-      partRepairStatus: ['0'], // Please Select as default
-      
-      // Testing work section  
-      testWorkDone1: [false], // Testing In Unit
-      testWorkDone2: [false], // Load Tested
-      testWorkDone3: [false], // No Unit To Test
-      testWorkStatus: ['0'], // Please Select as default
-      
-      // Assembly work section (Job Types 1,2,4 only)
-      completedBy: [''], // Dropdown for completed by
-      assyWorkDone1: [false], // Cleaned = 1
-      assyWorkDone2: [false], // Parts Replaced = 2
-      assyWorkDone3: [false], // Inspected For Damage = 4 (non-contiguous!)
-      assyWorkDone4: [false], // Refurbished = 5
-      assyWorkDone5: [false], // Repaired = 6
-      assyWorkDone6: [false], // Not Repairable = 7
-      assyProcFollowed1: [false], // Yes = 1
-      assyProcFollowed2: [false], // No = 2
-      assyProcFollowed3: [false], // NA = 3
-      assyWorkStatus: ['0'],
-      reviewedBy: [''], // Disabled by default
-      isPassed: [{ value: false, disabled: true }], // Disabled by default
-      
-      // QC work section
-      qcWorkDone1: [false], // Cleaned = 1
-      qcWorkDone2: [false], // Torqued = 2
-      qcWorkDone3: [false], // Inspected = 3
-      qcProcFollowed1: [false], // Yes = 1
-      qcProcFollowed2: [false], // No = 2
-      qcProcFollowed3: [false], // NA = 3
-      qcApproved1: [false], // Pass = 1
-      qcApproved2: [false], // Fail = 2
-      qcApproved3: [false], // NA = 3
-      qcWorkStatus: ['0'],
-      // qcApprovedBy: [''], // Disabled by default - COMMENTED OUT
-      // qcPassed: [{ value: false, disabled: true }], // Disabled by default - COMMENTED OUT
-      
-      // Resolution notes
       resolveNotes: [''],
       
-      // Status flags for Final Approve functionality
+      // Board setup section (Job Type 7 only)
+      boardSetup: ['0'],
+      
+      // Component work section
+      compWorkDone1: [false],
+      compWorkDone2: [false],
+      compWorkDone3: [false],
+      compWorkDone4: [false],
+      compWorkDone5: [false],
+      compWorkDone6: [false],
+      compQualityStatus: ['0'],
+      compApprovedBy: [''],
+      compPassed: [false],
+      compQualityWorkDone1: [false],
+      compQualityWorkDone2: [false],
+      compQualityWorkDone3: [false],
+      compQualityProcFollowed1: [false],
+      compQualityProcFollowed2: [false],
+      compQualityProcFollowed3: [false],
+      compQualityApproved1: [false],
+      compQualityApproved2: [false],
+      compQualityApproved3: [false],
+      partRepairStatus: ['0'],
+      
+      // Testing work section  
+      testWorkDone1: [false],
+      testWorkDone2: [false],
+      testWorkDone3: [false],
+      testWorkStatus: ['0'],
+      
+      // Assembly work section (Job Types 1,2,4 only)
+      completedBy: [''],
+      assyWorkDone1: [false],
+      assyWorkDone2: [false],
+      assyWorkDone3: [false],
+      assyWorkDone4: [false],
+      assyWorkDone5: [false],
+      assyWorkDone6: [false],
+      assyProcFollowed1: [false],
+      assyProcFollowed2: [false],
+      assyProcFollowed3: [false],
+      assyWorkStatus: ['0'],
+      reviewedBy: [''],
+      isPassed: [{ value: false, disabled: true }],
+      
+      // Board setup quality section
+      boardQualityWorkDone1: [false],
+      boardQualityWorkDone2: [false],
+      boardQualityWorkDone3: [false],
+      boardQualityProcFollowed1: [false],
+      boardQualityProcFollowed2: [false],
+      boardQualityProcFollowed3: [false],
+      boardQualityApproved1: [false],
+      boardQualityApproved2: [false],
+      boardQualityApproved3: [false],
+      boardQualityStatus: ['0'],
+      boardApprovedBy: [''],
+      boardPassed: [false],
+      
+      // QC work section
+      qcWorkDone1: [false],
+      qcWorkDone2: [false],
+      qcWorkDone3: [false],
+      qcProcFollowed1: [false],
+      qcProcFollowed2: [false],
+      qcProcFollowed3: [false],
+      qcApproved1: [false],
+      qcApproved2: [false],
+      qcApproved3: [false],
+      qcWorkStatus: ['0'],
+      qcApprovedBy: [''],
+      qcPassed: [{ value: false, disabled: true }],
+      
+      // Status flags
       archive: [false],
       finalApproval: [false],
     });
@@ -262,6 +286,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
 
   private setupJobTypeSubscription(): void {
+    // Listen for job type changes - update visibility only, NO form value clearing
+    // LEGACY BEHAVIOR: When user changes job type, inspection values persist from database
     this.editForm.get('jobFrom')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe((value) => this.applyJobTypeVisibility(value));
@@ -275,6 +301,14 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.applyWorkflowRules());
       
+    this.editForm.get('boardQualityStatus')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.applyWorkflowRules());
+      
+    this.editForm.get('compQualityStatus')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.applyWorkflowRules());
+      
     // Setup job number change subscription for submitted date loading
     this.editForm.get('jobNumber')?.valueChanges
       .pipe(
@@ -285,7 +319,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
         if (jobNo && jobNo.trim().length > 0) {
           this.loadSubmittedDateForJob(jobNo.trim());
         } else {
-          this.editForm.get('submittedDate')?.setValue('');
+          this.editForm.get('submittedOn')?.setValue('');
         }
       });
   }
@@ -295,12 +329,9 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     this.isLoadingCreatedByEmployees = true;
     
     // Load employees from both P and T departments for Created By dropdown
-    const ptRequest: EmployeeRequest = { department: 'P' };
-    const tRequest: EmployeeRequest = { department: 'T' };
-    
     forkJoin({
-      ptEmployees: this.reportService.getEmployeeNamesByDeptPost(ptRequest),
-      tEmployees: this.reportService.getEmployeeNamesByDeptPost(tRequest)
+      ptEmployees: this.reportService.getEmployeeNamesByDept('P'),
+      tEmployees: this.reportService.getEmployeeNamesByDept('T')
     }).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
@@ -330,18 +361,17 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
   
   displayData(): void {
+    // LEGACY BEHAVIOR: Data is loaded ONLY on page load for existing records (RowIndex > 0)
+    // When user changes job type after load, inspection values persist from database
     if (this.rowIndex <= 0) {
       this.prepareNewEntry();
       return;
     }
     
     this.isLoading = true;
-    const request: PartsTestRequest = {
-      rowIndex: this.rowIndex,
-      source: 'PartsTest'
-    };
     
-    this.reportService.getPartsTestList(request).pipe(
+    // Load existing record from database - matching DisplayData() in legacy ASP.NET
+    this.reportService.getPartsTestListByParams(this.rowIndex, 'PartsTest').pipe(
       takeUntil(this.destroy$),
       finalize(() => this.isLoading = false)
     ).subscribe({
@@ -353,7 +383,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
             // Store raw data for potential re-population after employees load
             this.rawDatabaseRow = row;
             
-            // Only populate form if employees are already loaded, otherwise wait for re-population
+            // Populate form with all database values including inspection results
+            // These values will PERSIST when user changes job type (no reset on job type change)
             if (this.ptEmployees.length > 0) {
               this.populateFormFromData(row);
             }
@@ -385,6 +416,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
           this.autoGenMonth = (today.getMonth() + 1).toString();
           this.autoGenDay = today.getDate().toString();
           this.autoGenId = response.maxRowIndex.toString();
+          this.rowIndex = response.maxRowIndex;  // Set rowIndex for save operation
           
           this.editingItem = null;
           this.applyJobTypeVisibility(this.editForm.get('jobFrom')?.value || '1');
@@ -399,6 +431,9 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
   
   private populateFormFromData(row: any): void {
+    // LEGACY BEHAVIOR: Data is loaded ONLY on page load for existing records (RowIndex > 0)
+    // All fields including Quality checkboxes auto-populate from database and PERSIST when Job Type is changed
+    
     // If employees aren't loaded yet, store data and return (will be re-called later)
     if (this.ptEmployees.length === 0) {
       this.rawDatabaseRow = row;
@@ -414,43 +449,33 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     
     const manufPartNoValue = row.ManufpartNo || row.manufPartNo || row.ManufPartNo || row.MANUFPARTNO || '';
     const createdByValue = row.CreatedBy || row.createdBy || '';
+    const jobFromValue = String(row.JobFrom || row.jobFrom || '1');
+    const priorityValue = (row.Priority || row.priority || 'M').toString().trim();
     
-    // Find matching employee by case-insensitive name or ID comparison
-    // Normalize by replacing periods with spaces for name matching
-    const normalizedCreatedBy = createdByValue.toLowerCase().replace(/\./g, ' ');
+    const resolvedCreatedBy = this.resolveEmployeeValue(createdByValue, this.ptEmployees, true);
     
-    let matchingEmployee = this.ptEmployees.find(emp => {
-      const normalizedEmpName = emp.empName.toLowerCase();
-      const normalizedEmpID = emp.empID.toLowerCase();
-      const normalizedWindowsID = (emp.windowsID || '').toLowerCase();
-      
-      return normalizedEmpName === normalizedCreatedBy
-        || normalizedEmpID === normalizedCreatedBy
-        || normalizedWindowsID === normalizedCreatedBy;
-    });
-
-    const resolvedCreatedBy = matchingEmployee?.windowsID || createdByValue;
-    
-    // Find matching assigned employee by case-insensitive name or ID comparison
+    // Find matching assigned employee by case-insensitive name, ID, or Windows ID
     const assignedToValue = row.AssignedTo || row.assignedTo || '';
-    const normalizedAssignedTo = assignedToValue.toLowerCase().replace(/\./g, ' ');
+    const resolvedAssignedTo = this.resolveEmployeeValue(assignedToValue, this.tcEmployees);
     
-    let matchingAssignedEmployee = this.tcEmployees.find(emp => {
-      const normalizedEmpName = emp.empName.toLowerCase();
-      const normalizedEmpID = emp.empID.toLowerCase();
-      
-      return normalizedEmpName === normalizedAssignedTo || normalizedEmpID === normalizedAssignedTo;
-    });
-
-    const resolvedAssignedTo = matchingAssignedEmployee?.empName || assignedToValue;
+    // Resolve employee assignments for QC/Board/Component sections
+    const resolvedCompletedBy = this.resolveEmployeeValue(row.CompletedBy || row.completedBy || '', this.tcEmployees);
+    const resolvedReviewedBy = this.resolveEmployeeValue(row.ReviewedBy || row.reviewedBy || '', this.tcEmployees);
+    const resolvedQcApprovedBy = this.resolveEmployeeValue(row.QCApprovedBy || row.qcApprovedBy || '', this.tcEmployees);
+    // For Board Setup jobs (JobFrom=7), use QCApprovedBy for Board Approved By
+    const resolvedBoardApprovedBy = jobFromValue === '7' 
+      ? this.resolveEmployeeValue(row.QCApprovedBy || row.qcApprovedBy || '', this.tcEmployees)
+      : this.resolveEmployeeValue(row.BoardApprovedBy || row.boardApprovedBy || '', this.tcEmployees);
+    const resolvedCompApprovedBy = this.resolveEmployeeValue(row.CompApprovedBy || row.compApprovedBy || '', this.tcEmployees);
     
     // Prepare job number and submitted date variables
     const jobNumber = row.CallNbr || row.callNbr || '';
     const submittedDate = row.SubmittedOn || row.submittedOn || row.SubmittedDate || row.submittedDate || '';
     
+    // POPULATE ALL FIELDS - matching legacy exactly
     // Populate basic information
     this.editForm.patchValue({
-      jobFrom: row.JobFrom || row.jobFrom || '1',
+      jobFrom: jobFromValue,
       jobNumber: jobNumber,
       submittedOn: submittedDate || this.formatDateForInput(row.CreatedOn || row.createdOn),
       inventorySpecialist: row.InvUserID || row.invUserID || '',
@@ -463,29 +488,44 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       serialNo: row.SerialNo || row.serialNo || '',
       manufPartNo: manufPartNoValue,
       dcgPartNo: row.DCGPartNo || row.dcgPartNo || '',
+      priority: priorityValue,
       
       // Emergency flag (matching legacy chkEmergency)
-      emergency: (row.Priority || row.priority || '').toString().trim() === 'Urgent',
+      emergency: this.isUrgentPriority(priorityValue),
       
       assignedTo: resolvedAssignedTo,
       dueDate: this.formatDateForInput(row.DueDate || row.dueDate),
       description: row.Description || row.description || '',
       
-      // Work stages
+      // Work stages - these auto-populate and persist when job type changes
       boardSetup: row.BoardSetupStatus || row.boardSetupStatus || '0',
       partRepairStatus: row.CompWorkStatus || row.compWorkStatus || '0', 
       testWorkStatus: row.TestWorkStatus || row.testWorkStatus || '0',
-      assyWorkStatus: row.AssyWorkStatus || row.assyWorkStatus || '0',
-      qcWorkStatus: row.QCWorkStatus || row.qcWorkStatus || '0',
+      assyWorkStatus: String(row.AssyWorkStatus || row.assyWorkStatus || '0'),
+      qcWorkStatus: String(row.QCWorkStatus || row.qcWorkStatus || '0'),
       
-      // Employee assignments
-      completedBy: row.CompletedBy || row.completedBy || '',
-      reviewedBy: row.ReviewedBy || row.reviewedBy || '',
+      // Quality Status - auto-populates and persists across job type changes
+      boardQualityStatus: jobFromValue === '7' ? String(row.QCWorkStatus || row.qcWorkStatus || '0') : (row.BoardQualityStatus || row.boardQualityStatus || '0'),
+      compQualityStatus: jobFromValue === '3' || jobFromValue === '6' ? String(row.QCWorkStatus || row.qcWorkStatus || '0') : (row.CompQualityStatus || row.compQualityStatus || '0'),
+      
+      // Employee assignments - auto-populate and persist
+      completedBy: resolvedCompletedBy,
+      reviewedBy: resolvedReviewedBy,
       isPassed: this.convertToBoolean(row.IsPassed || row.isPassed),
-      // qcApprovedBy: row.QCApprovedBy || row.qcApprovedBy || '', // COMMENTED OUT
-      // qcPassed: this.convertToBoolean(row.QCPassed || row.qcPassed), // COMMENTED OUT
+      qcApprovedBy: resolvedQcApprovedBy,
+      qcPassed: this.convertToBoolean(row.QCPassed || row.qcPassed),
       
-      // Resolution notes
+      // Board Setup Approved By and Passed - auto-populate from QC fields for Board Setup jobs
+      boardApprovedBy: resolvedBoardApprovedBy,
+      boardPassed: jobFromValue === '7' 
+        ? this.convertToBoolean(row.QCPassed || row.qcPassed)
+        : this.convertToBoolean(row.BoardPassed || row.boardPassed),
+      
+      // Component Approved By and Passed - auto-populate
+      compApprovedBy: resolvedCompApprovedBy,
+      compPassed: this.convertToBoolean(row.CompPassed || row.compPassed),
+      
+      // Resolution notes - auto-populate and persist
       resolveNotes: row.ResolveNotes || row.resolveNotes || '',
       
       // Archive and approval status
@@ -496,12 +536,21 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     // Populate work type checkboxes from comma-separated string
     this.populateWorkTypeCheckboxes(row.WorkType || row.workType || '');
     
-    // Populate work stage checkboxes
+    // AUTO-POPULATE ALL QUALITY CHECKBOXES - Work Done, Procedure Followed, Approved
+    // These populate BEFORE job type visibility is applied, so they load correctly for all job types
+    // Then persist in form values even when job type is changed
     this.populateWorkStageCheckboxes(row);
+    
+    // Apply job type visibility - shows correct sections (doesn't affect populated form values)
     this.applyJobTypeVisibility(this.editForm.get('jobFrom')?.value || '1');
     
-    // Apply workflow rules after data population
+    // Apply workflow rules after data population to enable/disable controls based on status
     this.applyWorkflowRules();
+    
+    // Load submitted date from API using jobNumber (already declared above)
+    if (jobNumber && jobNumber.trim().length > 0) {
+      this.loadSubmittedDateForJob(jobNumber.trim());
+    }
     
     // Check if record is archived and disable controls
     if (this.convertToBoolean(row.Archive || row.archive)) {
@@ -527,6 +576,9 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
   
   private populateWorkStageCheckboxes(row: any): void {
+    // AUTO-POPULATE ALL QUALITY CHECKBOXES FOR ALL JOB TYPES
+    // These fields populate from database and PERSIST across job type changes (legacy behavior)
+    
     // Component work done checkboxes (1-6, contiguous)
     const compWorkDone = (row.CompWorkDone || row.compWorkDone || row.CompWOrkDone || '')
       .split(',')
@@ -555,7 +607,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       .filter((t: string) => t);
     this.populateCheckboxGroup('assyProcFollowed', assyProcFollowed, ['1', '2', '3']);
     
-    // QC work done checkboxes (1-3, contiguous)
+    // QC work done checkboxes (1-3, contiguous) - used for Assembly jobs
     const qcWorkDone = (row.QCWorkDone || row.qcWorkDone || '')
       .split(',')
       .map((t: string) => t.trim())
@@ -569,12 +621,96 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       .filter((t: string) => t);
     this.populateCheckboxGroup('qcProcFollowed', qcProcFollowed, ['1', '2', '3']);
     
-    // QC approved (1-3, as individual checkboxes)
+    // QC approved (1-3, as individual checkboxes) - Pass/Fail/N/A
     const qcApproved = (row.QCApproved || row.qcApproved || '')
       .split(',')
       .map((t: string) => t.trim())
       .filter((t: string) => t);
     this.populateCheckboxGroup('qcApproved', qcApproved, ['1', '2', '3']);
+
+    // AUTO-POPULATE JOB-TYPE-SPECIFIC QUALITY CHECKBOXES
+    // These map to the correct UI sections based on job type and persist across job type changes
+    const jobType = String(row.JobFrom || row.jobFrom || this.editForm.get('jobFrom')?.value || '1');
+    
+    if (jobType === '7') {
+      // Board Setup jobs (JobFrom=7):
+      // - Use AssyWorkDone → boardQualityWorkDone (Cleaned, Torqued, Inspected)
+      // - Use AssyProcFollowed → boardQualityProcFollowed (Yes, No, N/A)
+      // - Use QCApproved → boardQualityApproved (Pass, Fail, N/A)
+      this.populateCheckboxGroup('boardQualityWorkDone', assyWorkDone, ['1', '2', '3']);
+      this.populateCheckboxGroup('boardQualityProcFollowed', assyProcFollowed, ['1', '2', '3']);
+      this.populateCheckboxGroup('boardQualityApproved', qcApproved, ['1', '2', '3']);
+    }
+    
+    if (jobType === '3' || jobType === '6') {
+      // Component/Testing jobs (JobFrom=3 Inventory, 6=Retest):
+      // - Use QCWorkDone → compQualityWorkDone (Cleaned, Torqued, Inspected)
+      // - Use QCProcFollowed → compQualityProcFollowed (Yes, No, N/A)
+      // - Use QCApproved → compQualityApproved (Pass, Fail, N/A)
+      this.populateCheckboxGroup('compQualityWorkDone', qcWorkDone, ['1', '2', '3']);
+      this.populateCheckboxGroup('compQualityProcFollowed', qcProcFollowed, ['1', '2', '3']);
+      this.populateCheckboxGroup('compQualityApproved', qcApproved, ['1', '2', '3']);
+    }
+    
+    // For Assembly jobs (JobFrom=1,2,4), the qcWorkDone/qcProcFollowed/qcApproved checkboxes
+    // are already populated above and will display in the Assembly QC section
+  }
+
+  private remapQualityFieldsForJobType(newJobType: string, row: any): void {
+    // When job type changes, re-populate quality checkboxes for the NEW job type section
+    // using the same database values that were originally loaded
+    
+    // Extract quality data from database (same extraction as populateWorkStageCheckboxes)
+    const assyWorkDone = (row.AssyWorkDone || row.assyWorkDone || '')
+      .split(',').map((t: string) => t.trim()).filter((t: string) => t);
+    const assyProcFollowed = (row.AssyProcFollowed || row.assyProcFollowed || '')
+      .split(',').map((t: string) => t.trim()).filter((t: string) => t);
+    const qcWorkDone = (row.QCWorkDone || row.qcWorkDone || '')
+      .split(',').map((t: string) => t.trim()).filter((t: string) => t);
+    const qcProcFollowed = (row.QCProcFollowed || row.qcProcFollowed || '')
+      .split(',').map((t: string) => t.trim()).filter((t: string) => t);
+    const qcApproved = (row.QCApproved || row.qcApproved || '')
+      .split(',').map((t: string) => t.trim()).filter((t: string) => t);
+    
+    // Resolve employee for approved by (always from QCApprovedBy in database)
+    const resolvedQcApprovedBy = this.resolveEmployeeValue(row.QCApprovedBy || row.qcApprovedBy || '', this.tcEmployees);
+    const qcWorkStatus = String(row.QCWorkStatus || row.qcWorkStatus || '0');
+    const qcPassed = this.convertToBoolean(row.QCPassed || row.qcPassed);
+    
+    // Re-populate based on NEW job type
+    if (newJobType === '7') {
+      // Changed TO Board Setup: populate board quality checkboxes
+      this.populateCheckboxGroup('boardQualityWorkDone', assyWorkDone, ['1', '2', '3']);
+      this.populateCheckboxGroup('boardQualityProcFollowed', assyProcFollowed, ['1', '2', '3']);
+      this.populateCheckboxGroup('boardQualityApproved', qcApproved, ['1', '2', '3']);
+      
+      // Update board quality status, approved by, and passed (from QC fields)
+      this.editForm.patchValue({
+        boardQualityStatus: qcWorkStatus,
+        boardApprovedBy: resolvedQcApprovedBy,
+        boardPassed: qcPassed
+      });
+    } else if (newJobType === '3' || newJobType === '6') {
+      // Changed TO Component/Testing: populate component quality checkboxes
+      this.populateCheckboxGroup('compQualityWorkDone', qcWorkDone, ['1', '2', '3']);
+      this.populateCheckboxGroup('compQualityProcFollowed', qcProcFollowed, ['1', '2', '3']);
+      this.populateCheckboxGroup('compQualityApproved', qcApproved, ['1', '2', '3']);
+      
+      // Update component quality status, approved by, and passed (from QC fields)
+      this.editForm.patchValue({
+        compQualityStatus: qcWorkStatus,
+        compApprovedBy: resolvedQcApprovedBy,
+        compPassed: qcPassed
+      });
+    } else if (newJobType === '1' || newJobType === '2' || newJobType === '4') {
+      // Changed TO Assembly: QC checkboxes already populated in populateWorkStageCheckboxes
+      // Update QC status, approved by, and passed
+      this.editForm.patchValue({
+        qcWorkStatus: qcWorkStatus,
+        qcApprovedBy: resolvedQcApprovedBy,
+        qcPassed: qcPassed
+      });
+    }
   }
   
   private populateCheckboxGroup(prefix: string, selectedValues: string[], availableValues: string[]): void {
@@ -583,6 +719,24 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       const isSelected = selectedValues.includes(value);
       this.editForm.get(controlName)?.setValue(isSelected);
     });
+  }
+
+  private resolveEmployeeValue(value: string, employees: EmployeeDto[], preferWindowsId: boolean = false): string {
+    if (!value) return '';
+    const normalizedValue = value.toLowerCase().replace(/\./g, ' ');
+    const match = employees.find(emp => {
+      const normalizedEmpName = emp.empName.toLowerCase();
+      const normalizedEmpID = emp.empID.toLowerCase();
+      const normalizedWindowsID = (emp.windowsID || '').toLowerCase();
+      return normalizedEmpName === normalizedValue || normalizedEmpID === normalizedValue || normalizedWindowsID === normalizedValue;
+    });
+    if (!match) return value;
+    return preferWindowsId ? (match.windowsID || value) : (match.empName || value);
+  }
+
+  private isUrgentPriority(priority: string): boolean {
+    const normalized = priority.trim().toLowerCase();
+    return normalized === 'urgent' || normalized === 'u' || normalized === 'emergency' || normalized === 'e';
   }
   
   private convertRowToPartsTestInfo(row: any): PartsTestInfo {
@@ -645,10 +799,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   
   private buildSaveUpdateDto(): SaveUpdatePartsTestDto {
     const formValue = this.editForm.value;
-    const username = this.authService.currentUserValue?.userName || 'System';
-    
-    // Created By uses WindowsID in legacy; Assigned To uses EmpName
-    const createdByEmployee = this.ptEmployees.find(emp => emp.windowsID === formValue.createdBy);
+    const currentWindowsId = this.authService.currentUserValue?.windowsID || this.authService.currentUserValue?.userName || 'System';
     
     // Build DTO matching EXACTLY what backend expects (39 parameters)
     const dto = {
@@ -664,12 +815,11 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       quantity: parseInt(formValue.quantity) || 1,
       workType: this.getSelectedWorkTypes(),
       description: formValue.description || '',
-      priority: formValue.priority || 'M',
+      priority: formValue.emergency ? 'Urgent' : (formValue.priority || 'M'),
       assignedTo: formValue.assignedTo || '',
       dueDate: new Date(formValue.dueDate),
       KVA: formValue.kva || '',  // ← Fixed case: kva → KVA
       Voltage: formValue.voltage || '',  // ← Fixed case: voltage → Voltage
-      problemNotes: formValue.problemNotes || '',
       resolveNotes: formValue.resolveNotes || '',
       rowIndex: this.rowIndex,
       
@@ -687,29 +837,75 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       assyWorkStatus: formValue.assyWorkStatus || '0',
       qcWorkDone: (() => {
         const jobType = this.getJobTypeValue();
+        const isBoardSetup = jobType === '7';
+        const isComponent = jobType === '3' || jobType === '6';
         const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
-        return isAssembly ? (this.getQcWorkDoneValue() || null) : null;
+        
+        if (isBoardSetup) return this.getBoardQualityWorkDoneValue() || '';
+        if (isComponent) return this.getCompQualityWorkDoneValue() || '';
+        if (isAssembly) return this.getQcWorkDoneValue() || '';
+        return '';
       })(),
       qcProcFollowed: (() => {
         const jobType = this.getJobTypeValue();
+        const isBoardSetup = jobType === '7';
+        const isComponent = jobType === '3' || jobType === '6';
         const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
-        return isAssembly ? (this.getQcProcFollowedValue() || null) : null;
+        
+        if (isBoardSetup) return this.getBoardQualityProcFollowedValue() || '';
+        if (isComponent) return this.getCompQualityProcFollowedValue() || '';
+        if (isAssembly) return this.getQcProcFollowedValue() || '';
+        return '';
       })(),
       qcApproved: (() => {
         const jobType = this.getJobTypeValue();
+        const isBoardSetup = jobType === '7';
+        const isComponent = jobType === '3' || jobType === '6';
         const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
-        return isAssembly ? (this.getQcApprovedValue() || null) : null;
+        
+        if (isBoardSetup) return this.getBoardQualityApprovedValue() || '';
+        if (isComponent) return this.getCompQualityApprovedValue() || '';
+        if (isAssembly) return this.getQcApprovedValue() || '';
+        return '';
       })(),
       qcWorkStatus: (() => {
         const jobType = this.getJobTypeValue();
+        const isBoardSetup = jobType === '7';
+        const isComponent = jobType === '3' || jobType === '6';
         const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
-        return isAssembly ? (formValue.qcWorkStatus || null) : null;
+        
+        if (isBoardSetup) return formValue.boardQualityStatus || '';
+        if (isComponent) return formValue.compQualityStatus || '';
+        if (isAssembly) return formValue.qcWorkStatus || '';
+        return '';
+      })(),
+      qcApprovedBy: (() => {
+        const jobType = this.getJobTypeValue();
+        const isBoardSetup = jobType === '7';
+        const isComponent = jobType === '3' || jobType === '6';
+        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        
+        if (isBoardSetup) return formValue.boardApprovedBy || '';
+        if (isComponent) return formValue.compApprovedBy || '';
+        if (isAssembly) return formValue.qcApprovedBy || '';
+        return '';
+      })(),
+      qcPassed: (() => {
+        const jobType = this.getJobTypeValue();
+        const isBoardSetup = jobType === '7';
+        const isComponent = jobType === '3' || jobType === '6';
+        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        
+        if (isBoardSetup) return formValue.boardPassed || false;
+        if (isComponent) return formValue.compPassed || false;
+        if (isAssembly) return formValue.qcPassed || false;
+        return false;
       })(),
       
       // Backend audit fields (matching stored procedure exactly)
-      CreatedBy: createdByEmployee?.windowsID || formValue.createdBy || username,
+      CreatedBy: currentWindowsId,
       Approved: false,  // Always false since checkbox was removed from UI
-      LastModifiedBy: username
+      LastModifiedBy: currentWindowsId
       
       // REMOVED: SubmittedDate, CreatedOn, Archive, FinalApproval (not in backend)
     };
@@ -823,7 +1019,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       createdBy: 'Created By',
       assignedTo: 'Assigned To',
       dueDate: 'Due Date',
-      problemNotes: 'Deficiency Notes'
+      resolveNotes: 'Resolution Notes'
     };
     return labels[fieldName] || fieldName;
   }
@@ -902,7 +1098,19 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
   
   onJobTypeChange(jobType: string): void {
+    // LEGACY BEHAVIOR: When user manually changes job type, update visibility AND re-map quality checkboxes
+    // Do NOT clear any inspection values, approval info, or other loaded data
+    // Database values persist and re-populate for the new job type section
+    
+    // Re-populate quality checkboxes for the new job type if we have database data
+    if (this.rawDatabaseRow) {
+      this.remapQualityFieldsForJobType(jobType, this.rawDatabaseRow);
+    }
+    
     this.applyJobTypeVisibility(jobType);
+    
+    // Re-apply workflow rules to enable/disable controls based on new job type's status
+    this.applyWorkflowRules();
   }
   
   // Utility methods for data conversion
@@ -919,6 +1127,21 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
     
     return d.toISOString().split('T')[0];
+  }
+
+  // Format date for display as DD-mon-YYYY (e.g., 03-oct-2025)
+  private formatDisplayDate(date: string | Date | null | undefined): string {
+    if (!date) return '';
+    
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '';
+    
+    const day = d.getDate().toString().padStart(2, '0');
+    const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    
+    return `${day}-${month}-${year}`;
   }
   
   // Enhanced error handling for API failures
@@ -963,19 +1186,19 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     
     if (checkboxType === 'qc') {
       const qcStatus = formValue.qcWorkStatus;
-      // const qcApprovedBy = formValue.qcApprovedBy; // COMMENTED OUT
+      const qcApprovedBy = formValue.qcApprovedBy;
       
       if (qcStatus !== '1') {
         this.toastr.error('Quality Status must be Completed before marking Passed.', 'Validation');
-        // this.editForm.get('qcPassed')?.setValue(false); // COMMENTED OUT
+        this.editForm.get('qcPassed')?.setValue(false);
         return false;
       }
       
-      // if (!qcApprovedBy || qcApprovedBy === 'PS' || qcApprovedBy === '0' || qcApprovedBy === '') {
-      //   this.toastr.error('Please select Approved By before marking Passed.', 'Validation');
-      //   this.editForm.get('qcPassed')?.setValue(false);
-      //   return false;
-      // } // COMMENTED OUT
+      if (!qcApprovedBy || qcApprovedBy === 'PS' || qcApprovedBy === '0' || qcApprovedBy === '') {
+        this.toastr.error('Please select Approved By before marking Passed.', 'Validation');
+        this.editForm.get('qcPassed')?.setValue(false);
+        return false;
+      }
     }
     
     return true;
@@ -984,6 +1207,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
 
 
   private applyJobTypeVisibility(jobType: string): void {
+    // LEGACY BEHAVIOR: When job type changes, ONLY visibility is affected - NO form values are cleared
+    // Result of Inspection values (quality checkboxes, approved by, etc) remain loaded from database
     const normalizedJobType = String(jobType || '').trim();
     
     // Hide all sections first (matching legacy $('#brdSetup,#divGrp1,#divGrp3').hide();)
@@ -992,6 +1217,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     this.showAssemblyQC = false;
     
     // Show appropriate section based on job type (matching legacy exactly)
+    // NOTE: Form values are NOT reset or cleared - they persist from database
     if (normalizedJobType === '7') {
       // Board Setup only
       this.showBoardSetup = true;
@@ -1005,11 +1231,43 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
 
   private applyWorkflowRules(): void {
-    const assyWorkStatus = this.editForm.get('assyWorkStatus')?.value;
-    const qcWorkStatus = this.editForm.get('qcWorkStatus')?.value;
+    const assyWorkStatus = String(this.editForm.get('assyWorkStatus')?.value || '0');
+    const qcWorkStatus = String(this.editForm.get('qcWorkStatus')?.value || '0');
+    const boardQualityStatus = String(this.editForm.get('boardQualityStatus')?.value || '0');
+    const compQualityStatus = String(this.editForm.get('compQualityStatus')?.value || '0');
     
     const assemblyDone = assyWorkStatus === '1'; // Completed
     const qcDone = qcWorkStatus === '1'; // Completed
+    const boardDone = boardQualityStatus === '1'; // Passed
+    const compDone = compQualityStatus === '1'; // Passed
+
+    // Board quality-driven controls (matching legacy exactly)
+    const boardApprovedByControl = this.editForm.get('boardApprovedBy');
+    const boardPassedControl = this.editForm.get('boardPassed');
+    
+    if (boardDone) {
+      boardApprovedByControl?.enable();
+      boardPassedControl?.enable();
+    } else {
+      boardApprovedByControl?.disable();
+      boardApprovedByControl?.setValue('');
+      boardPassedControl?.disable();
+      boardPassedControl?.setValue(false);
+    }
+
+    // Component quality-driven controls (matching legacy exactly)
+    const compApprovedByControl = this.editForm.get('compApprovedBy');
+    const compPassedControl = this.editForm.get('compPassed');
+    
+    if (compDone) {
+      compApprovedByControl?.enable();
+      compPassedControl?.enable();
+    } else {
+      compApprovedByControl?.disable();
+      compApprovedByControl?.setValue('');
+      compPassedControl?.disable();
+      compPassedControl?.setValue(false);
+    }
 
     // Assembly-driven controls (matching legacy exactly)
     const reviewedByControl = this.editForm.get('reviewedBy');
@@ -1025,84 +1283,160 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       isPassedControl?.setValue(false);
     }
 
-    // QC-driven controls (matching legacy exactly) - COMMENTED OUT
-    // const qcApprovedByControl = this.editForm.get('qcApprovedBy');
-    // const qcPassedControl = this.editForm.get('qcPassed');
+    // QC-driven controls (matching legacy exactly)
+    const qcApprovedByControl = this.editForm.get('qcApprovedBy');
+    const qcPassedControl = this.editForm.get('qcPassed');
     
-    // if (qcDone) {
-    //   qcApprovedByControl?.enable();
-    //   qcPassedControl?.enable();
-    // } else {
-    //   qcApprovedByControl?.disable();
-    //   qcApprovedByControl?.setValue('');
-    //   qcPassedControl?.disable();
-    //   qcPassedControl?.setValue(false);
-    // }
+    if (qcDone) {
+      qcApprovedByControl?.enable();
+      qcPassedControl?.enable();
+    } else {
+      qcApprovedByControl?.disable();
+      qcApprovedByControl?.setValue('');
+      qcPassedControl?.disable();
+      qcPassedControl?.setValue(false);
+    }
   }
 
   // Comprehensive final approval validation matching legacy exactly
   private validateFinalApproval(): boolean {
     const formValue = this.editForm.value;
+    const jobType = this.getJobTypeValue();
     
-    // Assembly validation (matching legacy validateFinalApproval)
-    if (formValue.assyWorkStatus !== '1') {
-      this.toastr.error('Assembly Status must be Completed for Final Approval.', 'Validation');
-      return false;
+    // Board Setup validation (Job Type 7)
+    if (jobType === '7') {
+      if (formValue.boardQualityStatus !== '1') {
+        this.toastr.error('Board Quality Status must be Completed for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.boardApprovedBy || formValue.boardApprovedBy === 'PS' || formValue.boardApprovedBy === '0') {
+        this.toastr.error('Board Approved By must be selected for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.boardPassed) {
+        this.toastr.error('Board Setup must be Passed before Final Approval.', 'Validation');
+        return false;
+      }
+      
+      // Check board quality work done
+      if (!this.isAnyBoardQualityWorkDoneChecked()) {
+        this.toastr.error('Select at least one Board Quality Work Done.', 'Validation');
+        return false;
+      }
+      
+      // Check board quality procedure followed
+      if (!this.isAnyBoardQualityProcFollowedChecked()) {
+        this.toastr.error('Select Board Quality Procedure Followed.', 'Validation');
+        return false;
+      }
+      
+      // Check board quality approved
+      if (!this.isAnyBoardQualityApprovedChecked()) {
+        this.toastr.error('Select Board Quality Approved status.', 'Validation');
+        return false;
+      }
     }
-    
-    if (!formValue.reviewedBy || formValue.reviewedBy === 'PS' || formValue.reviewedBy === '0') {
-      this.toastr.error('Reviewed By must be selected for Final Approval.', 'Validation');
-      return false;
+    // Component/Testing validation (Job Types 3, 6 - Inventory, Retest)
+    else if (jobType === '3' || jobType === '6') {
+      if (formValue.compQualityStatus !== '1') {
+        this.toastr.error('Component Quality Status must be Completed for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.compApprovedBy || formValue.compApprovedBy === 'PS' || formValue.compApprovedBy === '0') {
+        this.toastr.error('Component Approved By must be selected for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.compPassed) {
+        this.toastr.error('Component Testing must be Passed before Final Approval.', 'Validation');
+        return false;
+      }
+      
+      // Check component quality work done
+      if (!this.isAnyCompQualityWorkDoneChecked()) {
+        this.toastr.error('Select at least one Component Quality Work Done.', 'Validation');
+        return false;
+      }
+      
+      // Check component quality procedure followed
+      if (!this.isAnyCompQualityProcFollowedChecked()) {
+        this.toastr.error('Select Component Quality Procedure Followed.', 'Validation');
+        return false;
+      }
+      
+      // Check component quality approved
+      if (!this.isAnyCompQualityApprovedChecked()) {
+        this.toastr.error('Select Component Quality Approved status.', 'Validation');
+        return false;
+      }
     }
-    
-    if (!formValue.isPassed) {
-      this.toastr.error('Assembly must be Passed before Final Approval.', 'Validation');
-      return false;
-    }
-    
-    // Check assembly work done
-    if (!this.isAnyAssyWorkDoneChecked()) {
-      this.toastr.error('Select at least one Assembly Work Done.', 'Validation');
-      return false;
-    }
-    
-    // Check assembly procedure followed
-    if (!this.isAnyAssyProcFollowedChecked()) {
-      this.toastr.error('Select Assembly Procedure Followed.', 'Validation');
-      return false;
-    }
-    
-    // Quality validation (matching legacy)
-    if (formValue.qcWorkStatus !== '1') {
-      this.toastr.error('Quality Status must be Completed for Final Approval.', 'Validation');
-      return false;
-    }
-    
-    // if (!formValue.qcApprovedBy || formValue.qcApprovedBy === 'PS' || formValue.qcApprovedBy === '0') {
-    //   this.toastr.error('Approved By must be selected for Final Approval.', 'Validation');
-    //   return false;
-    // }
-    
-    // if (!formValue.qcPassed) {
-    //   this.toastr.error('Quality must be Passed before Final Approval.', 'Validation');
-    //   return false;
-    // }
-    
-    // Check QC work done
-    if (!this.isAnyQCWorkDoneChecked()) {
-      this.toastr.error('Select at least one Quality Work Done.', 'Validation');
-      return false;
-    }
-    
-    // Check QC procedure followed
-    if (!this.isAnyQCProcFollowedChecked()) {
-      this.toastr.error('Select Quality Procedure Followed.', 'Validation');
-      return false;
-    }
-    
-    // Check QC approved status
-    if (!this.isAnyQCApprovedChecked()) {
-      this.toastr.error('Select Quality Approved status.', 'Validation');
+    // Assembly validation (Job Types 1, 2, 4 - Fan Rebuild, Cap Assy, Batt Module)
+    else if (jobType === '1' || jobType === '2' || jobType === '4') {
+      if (formValue.assyWorkStatus !== '1') {
+        this.toastr.error('Assembly Status must be Completed for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.reviewedBy || formValue.reviewedBy === 'PS' || formValue.reviewedBy === '0') {
+        this.toastr.error('Reviewed By must be selected for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.isPassed) {
+        this.toastr.error('Assembly must be Passed before Final Approval.', 'Validation');
+        return false;
+      }
+      
+      // Check assembly work done
+      if (!this.isAnyAssyWorkDoneChecked()) {
+        this.toastr.error('Select at least one Assembly Work Done.', 'Validation');
+        return false;
+      }
+      
+      // Check assembly procedure followed
+      if (!this.isAnyAssyProcFollowedChecked()) {
+        this.toastr.error('Select Assembly Procedure Followed.', 'Validation');
+        return false;
+      }
+      
+      // Quality validation (matching legacy)
+      if (formValue.qcWorkStatus !== '1') {
+        this.toastr.error('Quality Status must be Completed for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.qcApprovedBy || formValue.qcApprovedBy === 'PS' || formValue.qcApprovedBy === '0') {
+        this.toastr.error('Approved By must be selected for Final Approval.', 'Validation');
+        return false;
+      }
+      
+      if (!formValue.qcPassed) {
+        this.toastr.error('Quality must be Passed before Final Approval.', 'Validation');
+        return false;
+      }
+      
+      // Check QC work done
+      if (!this.isAnyQCWorkDoneChecked()) {
+        this.toastr.error('Select at least one Quality Work Done.', 'Validation');
+        return false;
+      }
+      
+      // Check QC procedure followed
+      if (!this.isAnyQCProcFollowedChecked()) {
+        this.toastr.error('Select Quality Procedure Followed.', 'Validation');
+        return false;
+      }
+      
+      // Check QC approved status
+      if (!this.isAnyQCApprovedChecked()) {
+        this.toastr.error('Select Quality Approved status.', 'Validation');
+        return false;
+      }
+    } else {
+      this.toastr.error('Invalid job type for final approval.', 'Validation');
       return false;
     }
     
@@ -1136,6 +1470,38 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     return formValue.qcApproved1 || formValue.qcApproved2 || formValue.qcApproved3;
   }
 
+  // Board Quality validation helpers
+  private isAnyBoardQualityWorkDoneChecked(): boolean {
+    const formValue = this.editForm.value;
+    return formValue.boardQualityWorkDone1 || formValue.boardQualityWorkDone2 || formValue.boardQualityWorkDone3;
+  }
+
+  private isAnyBoardQualityProcFollowedChecked(): boolean {
+    const formValue = this.editForm.value;
+    return formValue.boardQualityProcFollowed1 || formValue.boardQualityProcFollowed2 || formValue.boardQualityProcFollowed3;
+  }
+
+  private isAnyBoardQualityApprovedChecked(): boolean {
+    const formValue = this.editForm.value;
+    return formValue.boardQualityApproved1 || formValue.boardQualityApproved2 || formValue.boardQualityApproved3;
+  }
+
+  // Component Quality validation helpers
+  private isAnyCompQualityWorkDoneChecked(): boolean {
+    const formValue = this.editForm.value;
+    return formValue.compQualityWorkDone1 || formValue.compQualityWorkDone2 || formValue.compQualityWorkDone3;
+  }
+
+  private isAnyCompQualityProcFollowedChecked(): boolean {
+    const formValue = this.editForm.value;
+    return formValue.compQualityProcFollowed1 || formValue.compQualityProcFollowed2 || formValue.compQualityProcFollowed3;
+  }
+
+  private isAnyCompQualityApprovedChecked(): boolean {
+    const formValue = this.editForm.value;
+    return formValue.compQualityApproved1 || formValue.compQualityApproved2 || formValue.compQualityApproved3;
+  }
+
   // Board setup approval validation (matching legacy CheckApproved)
   private validateBoardSetupApproval(): boolean {
     const formValue = this.editForm.value;
@@ -1151,7 +1517,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   // Emergency flag styling (matching legacy bindEmergencyToggle)
   toggleEmergencyFlag(): void {
     const isEmergency = this.editForm.get('emergency')?.value;
-    // This would trigger CSS class changes in the template
+    this.editForm.get('priority')?.setValue(isEmergency ? 'Urgent' : 'M');
     // Emergency styling should be handled in the HTML template
   }
   
@@ -1162,6 +1528,12 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     // Work type validation (matching legacy validateWorkType)
     if (this.getSelectedWorkTypes().length === 0) {
       this.toastr.error('Select at least one Work Type.', 'Validation');
+      return false;
+    }
+    
+    // Assigned To validation (matching legacy - cannot be "PS" or empty)
+    if (!formValue.assignedTo || formValue.assignedTo === 'PS' || formValue.assignedTo === '0' || formValue.assignedTo.trim() === '') {
+      this.toastr.error('Please select a valid employee in Assigned To field.', 'Validation');
       return false;
     }
     
@@ -1217,6 +1589,46 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
 
     // QC validation for specific job types (matching legacy)
     const jobType = this.getJobTypeValue();
+    
+    // Board Setup validation (Job Type 7)
+    if (jobType === '7') {
+      // Check board quality work done
+      if (!this.isAnyBoardQualityWorkDoneChecked()) {
+        this.toastr.error('You cannot update without checking Board Quality - Work Done', 'Validation');  
+        return false;
+      }
+      // Check board quality procedures followed
+      if (!this.isAnyBoardQualityProcFollowedChecked()) {
+        this.toastr.error('You cannot update without checking Board Quality - Procedure Followed', 'Validation');
+        return false;
+      }
+      // Check board quality approved
+      if (!this.isAnyBoardQualityApprovedChecked()) {
+        this.toastr.error('You cannot update without checking Board Quality - Approved (Pass, Fail, or N/A)', 'Validation');
+        return false;
+      }
+    }
+    
+    // Component/Testing validation (Job Types 3, 6)
+    if (jobType === '3' || jobType === '6') {
+      // Check component quality work done
+      if (!this.isAnyCompQualityWorkDoneChecked()) {
+        this.toastr.error('You cannot update without checking Component Quality - Work Done', 'Validation');  
+        return false;
+      }
+      // Check component quality procedures followed
+      if (!this.isAnyCompQualityProcFollowedChecked()) {
+        this.toastr.error('You cannot update without checking Component Quality - Procedure Followed', 'Validation');
+        return false;
+      }
+      // Check component quality approved
+      if (!this.isAnyCompQualityApprovedChecked()) {
+        this.toastr.error('You cannot update without checking Component Quality - Approved (Pass, Fail, or N/A)', 'Validation');
+        return false;
+      }
+    }
+    
+    // Assembly validation (Job Types 1, 2, 4)
     if (jobType === '1' || jobType === '2' || jobType === '4') {
       if (formValue.qcWorkStatus === '1') {
         // Check QC work done
@@ -1278,14 +1690,16 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
 
     this.isSaving = true;
     this.archiveRecord(this.rowIndex).subscribe({
-      next: (success) => {
-        if (success) {
-          this.toastr.success('Final Approval Successful', 'Success');
+      next: (response) => {
+        if (response.success) {
+          this.toastr.success(response.message || 'Final Approval Successful', 'Success');
           this.editForm.get('finalApproval')?.setValue(true);
           this.editForm.get('archive')?.setValue(true);
           this.disableAllControls();
+        } else if (response.validationErrors && response.validationErrors.length > 0) {
+          this.toastr.error(response.validationErrors.join(' | '), 'Validation');
         } else {
-          this.toastr.error('Failed to archive record', 'Error');
+          this.toastr.error(response.message || 'Failed to archive record', 'Error');
         }
         this.isSaving = false;
       },
@@ -1317,14 +1731,14 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
         this.isValidatingJob = false;
       },
       error: (error) => {
-        this.jobValidationMessage = '❌ Error validating job number';
+        this.jobValidationMessage = 'Error validating job number';
         this.isValidatingJob = false;
       }
     });
   }
   loadSubmittedDateForJob(jobNo: string): void {
     if (!jobNo || jobNo.trim().length === 0) {
-      this.editForm.get('submittedDate')?.setValue('');
+      this.editForm.get('submittedOn')?.setValue('');
       return;
     }
 
@@ -1332,15 +1746,17 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response: SubmittedDateResponse) => {
-        if (response.success) {
-          this.editForm.get('submittedDate')?.setValue(response.submittedDate);
+        if (response.success && response.submittedDate) {
+          // Format date as DD-mon-YYYY (e.g., 03-oct-2025)
+          const formattedDate = this.formatDisplayDate(response.submittedDate);
+          this.editForm.get('submittedOn')?.setValue(formattedDate);
         } else {
-          this.editForm.get('submittedDate')?.setValue('NA');
+          this.editForm.get('submittedOn')?.setValue('NA');
         }
       },
       error: (error) => {
         console.error('Error loading submitted date:', error);
-        this.editForm.get('submittedDate')?.setValue('NA');
+        this.editForm.get('submittedOn')?.setValue('NA');
       }
     });
   }
@@ -1360,12 +1776,17 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     );
   }
 
-  private archiveRecord(rowIndex: number): Observable<boolean> {
+  private archiveRecord(rowIndex: number): Observable<ArchiveRecordResponse> {
     return this.reportService.archivePartsTestRecord(rowIndex).pipe(
-      map(response => response.success),
       catchError(error => {
         console.error('Archive error:', error);
-        return of(false);
+        const response = error?.error || {};
+        return of({
+          success: false,
+          message: response.message || 'Failed to archive record',
+          validationErrors: response.validationErrors || [],
+          rowIndex
+        });
       })
     );
   }
@@ -1404,6 +1825,36 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       }
     });
     return selected.join(',');
+  }
+
+  // Board Setup Quality Work Done values
+  private getBoardQualityWorkDoneValue(): string {
+    return this.getSelectedCheckboxValues('boardQualityWorkDone', ['1', '2', '3']);
+  }
+
+  // Board Setup Quality Procedure Followed values
+  private getBoardQualityProcFollowedValue(): string {
+    return this.getSelectedCheckboxValues('boardQualityProcFollowed', ['1', '2', '3']);
+  }
+
+  // Board Setup Quality Approved values
+  private getBoardQualityApprovedValue(): string {
+    return this.getSelectedCheckboxValues('boardQualityApproved', ['1', '2', '3']);
+  }
+
+  // Component Quality Work Done values
+  private getCompQualityWorkDoneValue(): string {
+    return this.getSelectedCheckboxValues('compQualityWorkDone', ['1', '2', '3']);
+  }
+
+  // Component Quality Procedure Followed values
+  private getCompQualityProcFollowedValue(): string {
+    return this.getSelectedCheckboxValues('compQualityProcFollowed', ['1', '2', '3']);
+  }
+
+  // Component Quality Approved values
+  private getCompQualityApprovedValue(): string {
+    return this.getSelectedCheckboxValues('compQualityApproved', ['1', '2', '3']);
   }
   
   private getCompWorkDoneValue(): string {

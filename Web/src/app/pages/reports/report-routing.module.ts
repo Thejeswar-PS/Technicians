@@ -9,7 +9,6 @@ import { PartsTestStatusComponent } from './parts-test-status/parts-test-status.
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
 import { StrippedPartsInunitComponent } from './stripped-parts-inunit/stripped-parts-inunit.component';
-import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
 import { PartsSearchComponent } from './parts-search/parts-search.component';
 import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
 import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
@@ -24,6 +23,7 @@ import { AccountingStatusComponent } from './accounting-status/accounting-status
 import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.component';
 import { TestEngineerJobsComponent } from './test-engineer-jobs/test-engineer-jobs.component';
 import { TestEngineerJobsEntryComponent } from './test-engineer-jobs/test-engineer-jobs-entry/test-engineer-jobs-entry.component';
+import { DisplayCallsDetailComponent } from './display-calls-detail/display-calls-detail.component';
 
 const routes: Routes = [
   {
@@ -70,10 +70,6 @@ const routes: Routes = [
   {
     path: 'stripped-parts-inunit/:masterRowIndex', 
     component: StrippedPartsInunitComponent
-  },
-  {
-    path: 'dcg-display-report-details',
-    component: DcgDisplayReportDetailsComponent
   },
   {
     path: 'parts-search',
@@ -138,6 +134,10 @@ const routes: Routes = [
   {
     path: 'test-engineer-jobs/entry',
     component: TestEngineerJobsEntryComponent
+  },
+  {
+    path: 'display-calls-detail',
+    component: DisplayCallsDetailComponent
   }
 ];
 

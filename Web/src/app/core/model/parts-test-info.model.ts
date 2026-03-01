@@ -109,7 +109,7 @@ export interface SaveUpdatePartsTestDto {
   dueDate?: Date;
   KVA: string;                 // Case-sensitive: KVA not kva
   Voltage: string;             // Case-sensitive: Voltage not voltage
-  problemNotes: string;
+  problemNotes?: string;       // Optional - deficiency notes removed from form
   resolveNotes: string;
   rowIndex: number;
   boardStatus: string;
@@ -127,6 +127,8 @@ export interface SaveUpdatePartsTestDto {
   qcProcFollowed: string | null;
   qcApproved: string | null;
   qcWorkStatus: string | null;
+  qcApprovedBy?: string;
+  qcPassed?: boolean;
   CreatedBy: string;           // PascalCase for backend
   Approved: boolean;           // PascalCase for backend
   LastModifiedBy: string;      // PascalCase for backend
@@ -196,5 +198,8 @@ export interface ArchiveRecordResponse {
   success: boolean;
   message: string;
   rowIndex?: number;
+  validationErrors?: string[];
+  archivedBy?: string;
+  archivedOn?: string;
   error?: string;
 }

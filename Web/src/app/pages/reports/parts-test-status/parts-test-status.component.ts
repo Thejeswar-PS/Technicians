@@ -7,7 +7,9 @@ import {
   PartsTestStatusDto, 
   PartsTestStatusRequest, 
   PartsTestStatusResponse,
-  MakeModelDto
+  PartsTestStatusDashboardResponse,
+  PartsTestStatusJobTypeChartDto,
+  PartsTestStatusStatusChartDto
 } from '../../../core/model/parts-test-status.model';
 import { EmployeeDto } from '../../../core/model/parts-test-info.model';
 
@@ -20,9 +22,9 @@ export class PartsTestStatusComponent implements OnInit {
 
   partsTestStatusList: PartsTestStatusDto[] = [];
   filteredData: PartsTestStatusDto[] = [];
-  distinctMakes: MakeModelDto[] = [];
-  distinctModels: MakeModelDto[] = [];
-  modelsForSelectedMake: MakeModelDto[] = [];
+  distinctMakes: string[] = [];
+  distinctModels: string[] = [];
+  modelsForSelectedMake: string[] = [];
   technicians: EmployeeDto[] = [];
   
   // Form and filters
@@ -34,6 +36,7 @@ export class PartsTestStatusComponent implements OnInit {
   isLoadingModels: boolean = false;
   isProcessingData: boolean = false;
   isLoadingTechnicians: boolean = false;
+  isLoadingCharts: boolean = false;
   
   // Pagination
   currentPage: number = 1;
@@ -46,11 +49,18 @@ export class PartsTestStatusComponent implements OnInit {
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
   
+  // Submitted dates map (jobNumber -> submittedDate)
+  submittedDatesMap: Map<string, string> = new Map();
+  
   // Error handling
   errorMessage: string = '';
+  chartErrorMessage: string = '';
   
   // Make Math available in template
   Math = Math;
+
+  statusChartOptions: any;
+  jobTypeChartOptions: any;
   
   // Job type options matching legacy system
   jobTypeOptions = [
@@ -79,24 +89,17 @@ export class PartsTestStatusComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadDistinctMakes();
-    this.loadDistinctModels();
     this.loadTechnicians();
     this.loadPartsTestStatus();
+    this.loadDashboardData();
     this.setupFormSubscriptions();
   }
 
   setupFormSubscriptions(): void {
     // Watch for make changes to update models dropdown
     this.filterForm.get('make')?.valueChanges.subscribe(make => {
-      if (make && make !== '' && make !== 'All') {
-        this.loadModelsByMake(make);
-        // Clear model selection when make changes
-        this.filterForm.patchValue({ model: 'All' }, { emitEvent: false });
-      } else {
-        this.modelsForSelectedMake = [...this.distinctModels];
-        this.filterForm.patchValue({ model: 'All' }, { emitEvent: false });
-      }
+      this.modelsForSelectedMake = [...this.distinctModels];
+      this.filterForm.patchValue({ model: 'All' }, { emitEvent: false });
     });
 
     // Watch for any form changes to trigger filtering with debounce
@@ -105,71 +108,6 @@ export class PartsTestStatusComponent implements OnInit {
       setTimeout(() => {
         this.onFilterChange();
       }, 300);
-    });
-  }
-
-  loadDistinctMakes(): void {
-    this.isLoadingMakes = true;
-    this.reportService.getDistinctMakes().subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.distinctMakes = response.makes || [];
-        } else {
-          this.errorMessage = response?.message || 'Failed to load makes';
-        }
-        this.isLoadingMakes = false;
-      },
-      error: (error) => {
-        console.error('Error loading makes:', error);
-        this.errorMessage = 'Error loading makes. Please try again.';
-        this.isLoadingMakes = false;
-        this.distinctMakes = [];
-      }
-    });
-  }
-
-  loadDistinctModels(): void {
-    this.isLoadingModels = true;
-    this.reportService.getDistinctModels().subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.distinctModels = response.models || [];
-          this.modelsForSelectedMake = [...this.distinctModels];
-        } else {
-          this.errorMessage = response?.message || 'Failed to load models';
-        }
-        this.isLoadingModels = false;
-      },
-      error: (error) => {
-        console.error('Error loading models:', error);
-        this.errorMessage = 'Error loading models. Please try again.';
-        this.isLoadingModels = false;
-        this.distinctModels = [];
-        this.modelsForSelectedMake = [];
-      }
-    });
-  }
-
-  loadModelsByMake(make: string): void {
-    if (!make || make.trim() === '' || make === 'All') {
-      this.modelsForSelectedMake = [...this.distinctModels];
-      return;
-    }
-
-    this.reportService.getDistinctModelsByMake(make).subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.modelsForSelectedMake = response.models || [];
-        } else {
-          console.warn(`Failed to load models for make "${make}": ${response?.message}`);
-          this.modelsForSelectedMake = [...this.distinctModels];
-        }
-      },
-      error: (error) => {
-        console.error('Error loading models by make:', error);
-        // Fallback to all models if there's an error
-        this.modelsForSelectedMake = [...this.distinctModels];
-      }
     });
   }
 
@@ -210,23 +148,29 @@ export class PartsTestStatusComponent implements OnInit {
     };
 
     this.reportService.getPartsTestStatus(request).subscribe({
-      next: (response) => {
-        if (response && response.success) {
-          this.partsTestStatusList = response.data?.partsTestData || [];
-          this.totalRecords = response.totalRecords || 0;
-          this.applyPagination();
-        } else {
-          this.errorMessage = response?.message || 'Failed to load parts test status';
-          this.partsTestStatusList = [];
-          this.totalRecords = 0;
-          this.displayedData = [];
-        }
+      next: (response: PartsTestStatusResponse) => {
+        this.partsTestStatusList = response.partsTestData || [];
+        this.distinctMakes = response.distinctMakes || [];
+        this.distinctModels = response.distinctModels || [];
+        this.modelsForSelectedMake = [...this.distinctModels];
+        this.totalRecords = this.partsTestStatusList.length;
+        
+        // Apply default sorting: Emergency (red) first, then Orange, then Yellow, then Normal
+        this.applySortByPriority();
+        
+        // Load submitted dates for all records
+        this.loadSubmittedDatesForAllRecords();
+        
+        this.applyPagination();
         this.isLoading = false;
       },
       error: (error) => {
         console.error('Error loading parts test status:', error);
         this.errorMessage = 'Error loading parts test status data. Please try again.';
         this.partsTestStatusList = [];
+        this.distinctMakes = [];
+        this.distinctModels = [];
+        this.modelsForSelectedMake = [];
         this.totalRecords = 0;
         this.displayedData = [];
         this.isLoading = false;
@@ -239,6 +183,7 @@ export class PartsTestStatusComponent implements OnInit {
     this.currentPage = 1;
     this.clearErrorMessage();
     this.loadPartsTestStatus();
+    this.loadDashboardData();
   }
 
   navigateToPartTestEntry(rowIndex: number): void {
@@ -253,13 +198,244 @@ export class PartsTestStatusComponent implements OnInit {
     }
   }
 
+  // Load submitted dates for all records using API
+  private loadSubmittedDatesForAllRecords(): void {
+    // Clear previous map
+    this.submittedDatesMap.clear();
+    
+    // Get unique job numbers
+    const uniqueJobNumbers = [...new Set(this.partsTestStatusList.map(item => item.callNbr).filter(nb => nb))];
+    
+    // Load submitted date for each job number
+    uniqueJobNumbers.forEach(jobNum => {
+      if (jobNum && !this.submittedDatesMap.has(jobNum)) {
+        this.reportService.getSubmittedDate(jobNum).subscribe({
+          next: (response) => {
+            if (response.success && response.submittedDate && response.submittedDate !== 'NA') {
+              this.submittedDatesMap.set(jobNum, response.submittedDate);
+            } else {
+              this.submittedDatesMap.set(jobNum, 'NA');
+            }
+          },
+          error: (error) => {
+            console.warn(`Error loading submitted date for job ${jobNum}:`, error);
+            this.submittedDatesMap.set(jobNum, 'NA');
+          }
+        });
+      }
+    });
+  }
+
+  // Get submitted date for a job number from the map and format it
+  getSubmittedDate(callNbr: string): string {
+    const submittedDate = this.submittedDatesMap.get(callNbr) || '';
+    if (!submittedDate || submittedDate === 'NA') {
+      return submittedDate;
+    }
+    // Format the date using the formatDate method
+    return this.formatDate(submittedDate);
+  }
+
   clearErrorMessage(): void {
     this.errorMessage = '';
   }
 
+  clearChartErrorMessage(): void {
+    this.chartErrorMessage = '';
+  }
 
+  loadDashboardData(): void {
+    this.isLoadingCharts = true;
+    this.clearChartErrorMessage();
+
+    const formValue = this.filterForm.value;
+    const request: PartsTestStatusRequest = {
+      jobType: formValue.jobType || '',
+      priority: '',
+      archive: formValue.archive || false,
+      make: formValue.make || '',
+      model: formValue.model || '',
+      assignedTo: formValue.assignedTo || ''
+    };
+
+    console.log('Loading dashboard with request:', request);
+
+    this.reportService.getPartsTestStatusDashboard(request).subscribe({
+      next: (response: PartsTestStatusDashboardResponse) => {
+        console.log('Dashboard response received:', response);
+        
+        if (!response || response.success === false) {
+          this.chartErrorMessage = response?.message || 'Failed to load dashboard charts';
+          this.statusChartOptions = null;
+          this.jobTypeChartOptions = null;
+          this.isLoadingCharts = false;
+          console.warn('Dashboard response failed:', this.chartErrorMessage);
+          return;
+        }
+
+        console.log('Status Counts:', response.statusCounts);
+        console.log('Job Type Distribution:', response.jobTypeDistribution);
+
+        this.statusChartOptions = this.buildStatusChartOptions(response.statusCounts);
+        this.jobTypeChartOptions = this.buildJobTypeChartOptions(response.jobTypeDistribution || []);
+        
+        console.log('Chart options built:', {
+          statusChart: this.statusChartOptions ? 'Yes' : 'No',
+          jobTypeChart: this.jobTypeChartOptions ? 'Yes' : 'No'
+        });
+        
+        this.isLoadingCharts = false;
+      },
+      error: (error) => {
+        console.error('Error loading dashboard charts:', error);
+        this.chartErrorMessage = 'Error loading dashboard charts. Please try again.';
+        this.statusChartOptions = null;
+        this.jobTypeChartOptions = null;
+        this.isLoadingCharts = false;
+      }
+    });
+  }
+
+  private buildStatusChartOptions(statusChart?: PartsTestStatusStatusChartDto): any {
+    const counts = [
+      statusChart?.emergencyCount ?? 0,
+      statusChart?.overdueCount ?? 0,
+      statusChart?.sameDayCount ?? 0,
+      statusChart?.currentWeekCount ?? 0
+    ];
+
+    return {
+      series: [{
+        name: 'Count',
+        data: counts
+      }],
+      chart: {
+        type: 'bar',
+        height: 280,
+        toolbar: { show: false }
+      },
+      plotOptions: {
+        bar: {
+          distributed: true,
+          borderRadius: 6,
+          columnWidth: '55%'
+        }
+      },
+      dataLabels: {
+        enabled: true
+      },
+      colors: ['#ff6b57', '#f59e0b', '#facc15', '#22c55e'],
+      xaxis: {
+        categories: ['Emergency', 'Overdue', 'Same Day', 'Current Week'],
+        labels: {
+          style: { fontSize: '12px' }
+        }
+      },
+      yaxis: {
+        title: { text: 'Count' },
+        labels: { style: { fontSize: '12px' } }
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 3
+      },
+      tooltip: {
+        y: { formatter: (val: number) => `${val}` }
+      }
+    };
+  }
+
+  private buildJobTypeChartOptions(jobTypes: PartsTestStatusJobTypeChartDto[]): any {
+    if (!jobTypes || jobTypes.length === 0) {
+      return null;
+    }
+
+    const labels = jobTypes.map(item => this.getJobTypeLabel(item.jobType));
+    const values = jobTypes.map(item => item.totalCount ?? 0);
+
+    return {
+      series: [{
+        name: 'Jobs',
+        data: values
+      }],
+      chart: {
+        type: 'bar',
+        height: 280,
+        toolbar: { show: false }
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          borderRadius: 6,
+          barHeight: '60%'
+        }
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: (val: number) => `${val}`
+      },
+      colors: ['#3b82f6'],
+      xaxis: {
+        categories: labels,
+        labels: { style: { fontSize: '12px' } }
+      },
+      yaxis: {
+        labels: { style: { fontSize: '12px' } }
+      },
+      grid: {
+        borderColor: '#e2e8f0',
+        strokeDashArray: 3
+      },
+      tooltip: {
+        y: { formatter: (val: number) => `${val}` }
+      }
+    };
+  }
+
+  private getJobTypeLabel(jobType: string): string {
+    const match = this.jobTypeOptions.find(option => option.value === jobType);
+    if (match) return match.label;
+    return jobType || 'Unknown';
+  }
+
+
+
+
+  // Get priority rank for sorting (lower numbers = higher priority = appear first)
+  private getRowPriorityRank(dueDate: Date | string | null | undefined): number {
+    const colorClass = this.getRowColorClass(dueDate);
+    
+    switch (colorClass) {
+      case 'row-overdue':   // RED - Emergency
+        return 0;
+      case 'row-urgent':    // ORANGE - Urgent
+        return 1;
+      case 'row-upcoming':  // YELLOW - Upcoming
+        return 2;
+      default:              // NORMAL
+        return 3;
+    }
+  }
+
+  // Sort data by priority: Red first, Orange second, Yellow third, Normal last
+  private applySortByPriority(): void {
+    this.partsTestStatusList.sort((a, b) => {
+      const priorityA = this.getRowPriorityRank(a.dueDate);
+      const priorityB = this.getRowPriorityRank(b.dueDate);
+      
+      // If priorities are equal, sort by due date (earlier dates first)
+      if (priorityA === priorityB) {
+        const dateA = a.dueDate ? new Date(a.dueDate).getTime() : Number.MAX_VALUE;
+        const dateB = b.dueDate ? new Date(b.dueDate).getTime() : Number.MAX_VALUE;
+        return dateA - dateB;
+      }
+      
+      return priorityA - priorityB;
+    });
+  }
 
   onSort(column: string): void {
+    // When sorting a specific column, clear the default priority sorting
     if (this.sortColumn === column) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
     } else {
@@ -442,7 +618,7 @@ export class PartsTestStatusComponent implements OnInit {
       item.dcgPartNo, item.serialNo, item.quantity, item.description, 
       item.qcWorkStatus, item.assyWorkStatus, item.isPassed ? 'Yes' : 'No',
       item.assignedTo, this.formatDate(item.dueDate), item.problemNotes, 
-      item.resolveNotes, item.lastModifiedBy, this.formatDate(item.lastModifiedOn)
+      item.resolveNotes, this.formatWindowsUser(item.lastModifiedBy || item.createdBy), this.formatDate(item.lastModifiedOn)
     ]);
 
     const csvContent = [headers, ...csvData]
@@ -463,8 +639,6 @@ export class PartsTestStatusComponent implements OnInit {
   onRefresh(): void {
     this.clearErrorMessage();
     this.loadPartsTestStatus();
-    this.loadDistinctMakes();
-    this.loadDistinctModels();
   }
 
   getStatusBadgeClass(status: string): string {
@@ -486,7 +660,26 @@ export class PartsTestStatusComponent implements OnInit {
   formatDate(date: Date | string | null | undefined): string {
     if (!date) return '';
     const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString();
+    
+    const day = d.getDate().toString().padStart(2, '0');
+    const monthNames = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    
+    return `${day}-${month}-${year}`;
+  }
+
+  formatWindowsUser(value: string | null | undefined): string {
+    if (!value) return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed.includes('\\')) {
+      return trimmed.split('\\').pop() || '';
+    }
+    if (trimmed.includes('@')) {
+      return trimmed.split('@')[0] || '';
+    }
+    return trimmed;
   }
 
   trackByUniqueId(index: number, item: PartsTestStatusDto): string {
@@ -494,9 +687,7 @@ export class PartsTestStatusComponent implements OnInit {
   }
 
   getRowColorClass(dueDate: Date | string | null | undefined): string {
-    // Only apply colors to ACTIVE items (not archived) - matches legacy behavior
-    const isShowingArchived = this.filterForm.get('archive')?.value === true;
-    if (isShowingArchived || !dueDate) return '';
+    if (!dueDate) return '';
     
     const due = typeof dueDate === 'string' ? new Date(dueDate) : dueDate;
     const today = new Date();
@@ -510,7 +701,7 @@ export class PartsTestStatusComponent implements OnInit {
     
     // Legacy logic: (DueDt - today).TotalDays
     if (diffDays <= 0) {
-      return 'row-overdue'; // Red (#ff6347, white text) - Due same day or overdue
+      return 'row-overdue'; // Red - Due same day or overdue
     } else if (diffDays <= 3) {
       return 'row-urgent'; // Orange - Due within 3 days
     } else if (diffDays <= 7) {

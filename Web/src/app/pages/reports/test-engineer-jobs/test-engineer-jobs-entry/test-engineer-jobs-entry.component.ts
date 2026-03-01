@@ -124,12 +124,44 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
         etaControl?.updateValueAndValidity();
       });
 
-    // Status change handler - only set read-only for existing closed jobs in edit mode
+    // Status change handler - trigger validation when status changes
     this.entryForm.get('status')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(status => {
-        // Do not auto-disable when user selects Closed
-        // Only disable when loading an already closed job in edit mode
+        // Revalidate completed date when status changes
+        this.entryForm.updateValueAndValidity();
+        const completedDateControl = this.entryForm.get('completedDate');
+        completedDateControl?.updateValueAndValidity();
+      });
+
+    // Completed date change handler - validate and enforce max date when status is Closed
+    this.entryForm.get('completedDate')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(dateValue => {
+        const status = this.entryForm.get('status')?.value;
+        
+        // If status is Closed and a future date is selected, clear it
+        if (status === 'Closed' && dateValue) {
+          const selectedDate = new Date(dateValue);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          selectedDate.setHours(0, 0, 0, 0);
+          
+          if (selectedDate > today) {
+            // Clear the invalid future date
+            this.entryForm.get('completedDate')?.setValue('', { emitEvent: false });
+            this.errorMessage = 'Future dates are not allowed for completed date when status is Closed. Please select today or an earlier date.';
+            
+            // Clear error message after 3 seconds
+            setTimeout(() => {
+              if (this.errorMessage === 'Future dates are not allowed for completed date when status is Closed. Please select today or an earlier date.') {
+                this.errorMessage = '';
+              }
+            }, 3000);
+          }
+        }
+        
+        this.entryForm.updateValueAndValidity();
       });
   }
 
@@ -292,20 +324,35 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     const status = control.get('status')?.value;
     const completedDate = control.get('completedDate')?.value;
     
+    // Required validation when status is Closed
     if (status === 'Closed' && (!completedDate || completedDate.trim() === '')) {
       return { completedDateRequired: true };
     }
 
-    if (completedDate && new Date(completedDate) > new Date()) {
-      return { completedDateFuture: true };
+    // Future date validation - only apply when status is Closed
+    if (status === 'Closed' && completedDate) {
+      const selectedDate = new Date(completedDate);
+      const today = new Date();
+      // Set time to 00:00:00 for accurate date comparison
+      today.setHours(0, 0, 0, 0);
+      selectedDate.setHours(0, 0, 0, 0);
+      
+      if (selectedDate > today) {
+        return { completedDateFuture: true };
+      }
     }
     
     return null;
   }
 
   onSave(): void {
+    // Force form validation
+    this.entryForm.updateValueAndValidity();
+    
+    // Mark all fields as touched to show validation errors
+    this.markFormGroupTouched();
+    
     if (this.entryForm.invalid) {
-      this.markFormGroupTouched();
       this.displayFormErrors();
       return;
     }
@@ -352,7 +399,7 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
             
             // Redirect to list after a short delay
             setTimeout(() => {
-              this.router.navigate(['../../'], { relativeTo: this.route });
+              this.router.navigate(['/reports/test-engineer-jobs']);
             }, 2000);
           } else {
             this.errorMessage = response.message || 'Failed to save job';
@@ -412,11 +459,44 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     } else {
       this.errorMessage = 'Please correct the form errors and try again.';
     }
+    
+    // Build error message
+    if (errorMessages.length > 0) {
+      this.errorMessage = 'Please fix the following:\n' + errorMessages.map((msg, idx) => `${idx + 1}. ${msg}`).join('\n');
+    } else {
+      this.errorMessage = 'Please correct the form errors and try again.';
+    }
   }
 
   // Navigation method
   goBack(): void {
     this.router.navigate(['/reports/test-engineer-jobs']);
+  }
+
+  // Date validation handler
+  onCompletedDateChange(event: any): void {
+    const status = this.entryForm.get('status')?.value;
+    const selectedDate = event.target.value;
+    
+    if (status === 'Closed' && selectedDate) {
+      const selected = new Date(selectedDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      selected.setHours(0, 0, 0, 0);
+      
+      if (selected > today) {
+        // Prevent future date
+        event.target.value = '';
+        this.entryForm.get('completedDate')?.setValue('', { emitEvent: false });
+        this.errorMessage = 'Future dates are not allowed when status is Closed. Please select today or an earlier date.';
+        
+        setTimeout(() => {
+          if (this.errorMessage?.includes('Future dates are not allowed')) {
+            this.errorMessage = '';
+          }
+        }, 3000);
+      }
+    }
   }
 
   // Utility methods
@@ -438,4 +518,16 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   get isClosedStatus(): boolean {
     return this.entryForm.get('status')?.value === 'Closed';
   }
+
+  get maxCompletedDate(): string {
+  if (!this.isClosedStatus) return '';
+
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
 }

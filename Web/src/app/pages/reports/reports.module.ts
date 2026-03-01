@@ -9,7 +9,6 @@ import { OrderRequestStatusComponent } from './order-request-status/order-reques
 import { PartsTestInfoComponent } from './parts-test-info/parts-test-info.component';
 import { StrippedUnitsStatusComponent } from './stripped-units-status/stripped-units-status.component';
 import { StrippedUnitInfoComponent } from './stripped-unit-info/stripped-unit-info.component';
-import { DcgDisplayReportDetailsComponent } from './dcg-display-report-details/dcg-display-report-details.component';
 import { AccMgrPerformanceReportComponent } from './acc-mgr-performance-report/acc-mgr-performance-report.component';
 import { EmergencyJobsComponent } from './emergency-jobs/emergency-jobs.component';
 
@@ -32,6 +31,7 @@ import { AccountingStatusComponent } from './accounting-status/accounting-status
 import { DcgEmpDetailsComponent } from './dcg-emp-details/dcg-emp-details.component';
 import { TestEngineerJobsComponent } from './test-engineer-jobs/test-engineer-jobs.component';
 import { TestEngineerJobsEntryComponent } from './test-engineer-jobs/test-engineer-jobs-entry/test-engineer-jobs-entry.component';
+import { DisplayCallsDetailComponent } from './display-calls-detail/display-calls-detail.component';
 
 @NgModule({
   declarations: [
@@ -44,7 +44,6 @@ import { TestEngineerJobsEntryComponent } from './test-engineer-jobs/test-engine
     StrippedUnitsStatusComponent,
     StrippedUnitInfoComponent,
     StrippedPartsInunitComponent,
-    DcgDisplayReportDetailsComponent,
     PartsSearchComponent,
     AccMgrPerformanceReportComponent,
     EmergencyJobsComponent,
@@ -58,7 +57,8 @@ import { TestEngineerJobsEntryComponent } from './test-engineer-jobs/test-engine
     AccountingStatusComponent,
     DcgEmpDetailsComponent,
     TestEngineerJobsComponent,
-    TestEngineerJobsEntryComponent
+    TestEngineerJobsEntryComponent,
+    DisplayCallsDetailComponent
   ],
   imports: [
     CommonModule,

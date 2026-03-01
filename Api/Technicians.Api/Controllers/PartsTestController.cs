@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using Technicians.Api.Repository;
 using Technicians.Api.Models;
+using Microsoft.Data.SqlClient; 
+
 
 namespace Technicians.Api.Controllers
 {
@@ -20,130 +22,7 @@ namespace Technicians.Api.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Gets parts test list data using GET with query parameters
-        /// </summary>
-        /// <param name="rowIndex">Row index parameter (defaults to 0)</param>
-        /// <param name="source">Source type: PartsTest, OrderRequest, or other (defaults to PartsTest)</param>
-        /// <returns>DataSet containing the results</returns>
-        [HttpGet("GetPartsTestList")]
-        public async Task<ActionResult<DataSet>> GetPartsTestList(
-            [FromQuery] int rowIndex = 0,
-            [FromQuery] string source = "PartsTest")
-        {
-            try
-            {
-                _logger.LogInformation("Getting parts test list for RowIndex: {RowIndex}, Source: {Source}", 
-                    rowIndex, source);
-
-                var results = await _repository.GetPartsTestListAsync(rowIndex, source);
-
-                if (results == null || results.Tables.Count == 0)
-                {
-                    _logger.LogWarning("No data found for RowIndex: {RowIndex}, Source: {Source}", 
-                        rowIndex, source);
-                    return Ok(new { 
-                        success = false, 
-                        message = "No data found for the specified parameters" 
-                    });
-                }
-
-                _logger.LogInformation("Successfully retrieved parts test list with {TableCount} table(s) for RowIndex: {RowIndex}, Source: {Source}", 
-                    results.Tables.Count, rowIndex, source);
-
-                // Convert DataSet to JSON-serializable format
-                var jsonResult = new
-                {
-                    success = true,
-                    tables = results.Tables.Cast<DataTable>().Select(table => new
-                    {
-                        tableName = table.TableName,
-                        rows = table.Rows.Cast<DataRow>().Select(row => 
-                            table.Columns.Cast<DataColumn>()
-                                .ToDictionary(column => column.ColumnName, column => row[column] ?? DBNull.Value))
-                    })
-                };
-
-                return Ok(jsonResult);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting parts test list for RowIndex: {RowIndex}, Source: {Source}", 
-                    rowIndex, source);
-                
-                return NotFound(new { 
-                    success = false, 
-                    message = "API failed to process the request", 
-                    error = ex.Message 
-                });
-            }
-        }
-
-        /// <summary>
-        /// Gets parts test list data using POST with request body
-        /// </summary>
-        /// <param name="request">Request containing rowIndex and source parameters</param>
-        /// <returns>DataSet containing the results</returns>
-        [HttpPost("GetPartsTestList")]
-        public async Task<ActionResult<DataSet>> GetPartsTestList([FromBody] PartsTestRequest request)
-        {
-            try
-            {
-                if (request == null)
-                {
-                    return BadRequest("Invalid request payload.");
-                }
-
-                _logger.LogInformation("Getting parts test list for RowIndex: {RowIndex}, Source: {Source}", 
-                    request.RowIndex, request.Source);
-
-                var results = await _repository.GetPartsTestListAsync(request.RowIndex, request.Source ?? "PartsTest");
-
-                if (results == null || results.Tables.Count == 0)
-                {
-                    _logger.LogWarning("No data found for RowIndex: {RowIndex}, Source: {Source}", 
-                        request.RowIndex, request.Source);
-                    return Ok(new { 
-                        success = false, 
-                        message = "No data found for the specified parameters" 
-                    });
-                }
-
-                _logger.LogInformation("Successfully retrieved parts test list with {TableCount} table(s) for RowIndex: {RowIndex}, Source: {Source}", 
-                    results.Tables.Count, request.RowIndex, request.Source);
-
-                // Convert DataSet to JSON-serializable format
-                var jsonResult = new
-                {
-                    success = true,
-                    tables = results.Tables.Cast<DataTable>().Select(table => new
-                    {
-                        tableName = table.TableName,
-                        rows = table.Rows.Cast<DataRow>().Select(row => 
-                            table.Columns.Cast<DataColumn>()
-                                .ToDictionary(column => column.ColumnName, column => row[column] ?? DBNull.Value))
-                    })
-                };
-
-                return Ok(jsonResult);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting parts test list for RowIndex: {RowIndex}, Source: {Source}", 
-                    request.RowIndex, request.Source);
-                
-                return NotFound(new { 
-                    success = false, 
-                    message = "API failed to process the request", 
-                    error = ex.Message 
-                });
-            }
-        }
-
-        /// <summary>
         /// Gets the maximum test row index from PartsTestList table
-        /// </summary>
-        /// <returns>The next available row index</returns>
         [HttpGet("GetMaxTestRowIndex")]
         public async Task<ActionResult<int>> GetMaxTestRowIndex()
         {
@@ -173,54 +52,68 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
         /// Saves or updates a parts test list entry
-        /// </summary>
         /// <param name="request">The parts test data to save or update</param>
-        /// <returns>Success response</returns>
         [HttpPost("SaveUpdatePartsTestList")]
-        public async Task<IActionResult> SaveUpdatePartsTestList([FromBody] SaveUpdatePartsTestDto request)
+        public async Task<IActionResult> SaveUpdatePartsTestList([FromBody] PartsTestDto request)
         {
+            if (request == null)
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Request body cannot be null"
+                });
+
+            if (request.RowIndex <= 0)
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Invalid RowIndex"
+                });
+
             try
             {
-                if (request == null)
-                {
-                    return BadRequest(new { 
-                        success = false, 
-                        message = "Invalid request payload" 
-                    });
-                }
+                _logger.LogInformation("Saving parts test RowIndex: {RowIndex}", request.RowIndex);
 
-                _logger.LogInformation("Saving/updating parts test list for RowIndex: {RowIndex}", request.RowIndex);
+                await _repository.SaveUpdatePartsTestAsync(request);
 
-                await _repository.SaveUpdatePartsTestListAsync(request);
-
-                _logger.LogInformation("Successfully saved/updated parts test list for RowIndex: {RowIndex}", request.RowIndex);
+                var currentUser = System.Security.Principal.WindowsIdentity.GetCurrent()?.Name?.Split('\\')?.LastOrDefault() ?? Environment.UserName;
 
                 return Ok(new
                 {
                     success = true,
-                    message = "Parts test list saved/updated successfully",
-                    rowIndex = request.RowIndex
+                    message = "Parts test saved successfully",
+                    rowIndex = request.RowIndex,
+                    modifiedBy = currentUser,
+                    inventorySpecialist = !string.IsNullOrEmpty(request.InvUserID) ? request.InvUserID : currentUser
+                });
+            }
+            catch (SqlException sqlEx)
+            {
+                _logger.LogError(sqlEx, "SQL Error for RowIndex {RowIndex}", request.RowIndex);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Database error occurred",
+                    detail = sqlEx.Message
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error saving/updating parts test list for RowIndex: {RowIndex}", request?.RowIndex ?? 0);
-                
-                return StatusCode(500, new { 
-                    success = false, 
-                    message = "Failed to save/update parts test list", 
-                    error = ex.Message 
+                _logger.LogError(ex, "Unexpected error for RowIndex {RowIndex}", request.RowIndex);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Unexpected error occurred",
+                    detail = ex.Message
                 });
             }
         }
 
-        /// <summary>
         /// Gets employee names by department using GET with query parameter
-        /// </summary>
         /// <param name="department">Department code (T=Technicians, A=Admin, AM=Asset Management, etc.)</param>
-        /// <returns>List of employees in the specified department</returns>
         [HttpGet("GetEmployeeNamesByDept")]
         public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployeeNamesByDept([FromQuery] string department)
         {
@@ -260,60 +153,28 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Gets employee names by department using POST with request body
-        /// </summary>
-        /// <param name="request">Request containing department parameter</param>
-        /// <returns>List of employees in the specified department</returns>
-        [HttpPost("GetEmployeeNamesByDept")]
-        public async Task<ActionResult<IEnumerable<EmployeeDto>>> GetEmployeeNamesByDept([FromBody] EmployeeRequest request)
-        {
-            try
-            {
-                if (request == null || string.IsNullOrWhiteSpace(request.Department))
-                {
-                    return BadRequest(new { 
-                        success = false, 
-                        message = "Invalid request payload or missing department parameter" 
-                    });
-                }
+        /// DEBUGGING:
+        //[HttpGet("GetStoredProcDefinition")]
+        //public async Task<IActionResult> GetStoredProcDefinition()
+        //{
+        //    try
+        //    {
+        //        var definition = await _repository.GetStoredProcedureDefinitionAsync();
+        //        return Ok(new { definition = definition });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Ok(new { error = ex.Message });
+        //    }
+        //}
 
-                _logger.LogInformation("Getting employees for department: {Department}", request.Department);
-
-                var employees = await _repository.GetEmployeeNamesByDeptAsync(request.Department);
-
-                _logger.LogInformation("Successfully retrieved {Count} employees for department: {Department}", 
-                    employees.Count(), request.Department);
-
-                return Ok(new
-                {
-                    success = true,
-                    department = request.Department,
-                    employees = employees
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting employees for department: {Department}", request?.Department ?? "null");
-                
-                return StatusCode(500, new { 
-                    success = false, 
-                    message = "Failed to retrieve employees", 
-                    error = ex.Message 
-                });
-            }
-        }
-
-        /// <summary>
         /// Deletes parts test list entry using DELETE with query parameters
-        /// </summary>
         /// <param name="rowIndex">Row index of the entry to delete</param>
-        /// <param name="source">Source type: PartsTest, UnitTest, OrderRequest, or other (defaults to PartsTest)</param>
-        /// <returns>Result message from the delete operation</returns>
+        /// <param name="source">Source type - defaults to "PartsTest" (primary focus)</param>
         [HttpDelete("DeletePartsTestList")]
         public async Task<IActionResult> DeletePartsTestList(
             [FromQuery] int rowIndex,
-            [FromQuery] string source = "PartsTest")
+            [FromQuery] string source = "PartsTest")  // ? Clear default focus
         {
             try
             {
@@ -370,9 +231,7 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
         /// Check if job exists in system
-        /// </summary>
         [HttpGet("CheckJobExists")]
         public async Task<IActionResult> CheckJobExists([FromQuery] string jobNo)
         {
@@ -409,9 +268,8 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
+       
         /// Get submitted date for job
-        /// </summary>
         [HttpGet("GetSubmittedDate")]
         public async Task<IActionResult> GetSubmittedDate([FromQuery] string jobNo)
         {
@@ -449,14 +307,14 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Archive parts test record (Final Approval)
+        /// Archive parts test record (Final Approval) - Enhanced with validation
         /// </summary>
         [HttpPost("ArchiveRecord")]
-        public async Task<IActionResult> ArchiveRecord([FromBody] int rowIndex)
+        public async Task<IActionResult> ArchiveRecord([FromBody] ArchiveRecordRequest request)
         {
             try
             {
-                if (rowIndex <= 0)
+                if (request == null || request.RowIndex <= 0)
                 {
                     return BadRequest(new { 
                         success = false, 
@@ -464,7 +322,72 @@ namespace Technicians.Api.Controllers
                     });
                 }
 
-                var success = await _repository.ArchivePartsTestRecordAsync(rowIndex);
+                var currentUser = System.Security.Principal.WindowsIdentity.GetCurrent()?.Name?.Split('\\')?.LastOrDefault() ?? Environment.UserName;
+                
+                _logger.LogInformation("User {UserId} attempting final approval/archive for RowIndex: {RowIndex}", currentUser, request.RowIndex);
+
+                // Use enhanced archive method with validation
+                var (success, message, validationErrors) = await _repository.ArchivePartsTestRecordAsync(request.RowIndex, validateFinalApproval: true);
+
+                if (success)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        message = message, // "Final Approval Successful"
+                        rowIndex = request.RowIndex,
+                        archivedBy = currentUser,
+                        archivedOn = DateTime.Now
+                    });
+                }
+                else
+                {
+                    // Check if it's a validation error or system error
+                    var statusCode = validationErrors.Any(e => e.Contains("validation") || e.Contains("must be") || e.Contains("Please select")) 
+                        ? 400 // Bad Request for validation errors
+                        : 500; // Internal Server Error for system errors
+
+                    return StatusCode(statusCode, new
+                    {
+                        success = false,
+                        message = message,
+                        validationErrors = validationErrors,
+                        rowIndex = request.RowIndex
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during final approval for RowIndex: {RowIndex}", request?.RowIndex ?? 0);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to process final approval", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Simple Archive (without validation) - for cases where you just want to archive
+        /// </summary>
+        [HttpPost("SimpleArchive")]
+        public async Task<IActionResult> SimpleArchive([FromBody] ArchiveRecordRequest request)
+        {
+            try
+            {
+                if (request == null || request.RowIndex <= 0)
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        message = "Valid RowIndex is required" 
+                    });
+                }
+
+                var currentUser = System.Security.Principal.WindowsIdentity.GetCurrent()?.Name?.Split('\\')?.LastOrDefault() ?? Environment.UserName;
+                
+                // Use archive method without validation
+                var (success, message, _) = await _repository.ArchivePartsTestRecordAsync(request.RowIndex, validateFinalApproval: false);
 
                 if (success)
                 {
@@ -472,7 +395,8 @@ namespace Technicians.Api.Controllers
                     {
                         success = true,
                         message = "Record archived successfully",
-                        rowIndex = rowIndex
+                        rowIndex = request.RowIndex,
+                        archivedBy = currentUser
                     });
                 }
                 else
@@ -480,13 +404,13 @@ namespace Technicians.Api.Controllers
                     return BadRequest(new
                     {
                         success = false,
-                        message = "Failed to archive record"
+                        message = message
                     });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error archiving record for RowIndex: {RowIndex}", rowIndex);
+                _logger.LogError(ex, "Error archiving record for RowIndex: {RowIndex}", request?.RowIndex ?? 0);
                 
                 return StatusCode(500, new { 
                     success = false, 
@@ -496,73 +420,39 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Gets parts test status with filtering - LEGACY FUNCTIONALITY
-        /// </summary>
-        [HttpGet("GetPartsTestStatus")]
-        public async Task<ActionResult<PartsTestStatusResponseDto>> GetPartsTestStatus(
-            [FromQuery] string jobType = "",
-            [FromQuery] string priority = "All", 
-            [FromQuery] string archive = "0",
-            [FromQuery] string make = "",
-            [FromQuery] string model = "",
-            [FromQuery] string assignedTo = "")
-        {
-            try
-            {
-                var request = new PartsTestStatusRequestDto
-                {
-                    JobType = jobType,
-                    Priority = priority,
-                    Archive = archive,
-                    Make = make,
-                    Model = model,
-                    AssignedTo = assignedTo
-                };
-
-                var result = await _repository.GetPartsTestStatusWithLogicAsync(request);
-                
-                return Ok(new
-                {
-                    success = true,
-                    data = result.PartsData,
-                    makes = result.Makes,
-                    models = result.Models,
-                    assignedToOptions = result.AssignedToOptions
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting parts test status");
-                return StatusCode(500, new { 
-                    success = false, 
-                    message = "Failed to retrieve parts test status", 
-                    error = ex.Message 
-                });
-            }
-        }
-
-        /// <summary>
         /// Gets dashboard chart data for Parts Test Status - LEGACY FUNCTIONALITY
-        /// </summary>
         [HttpGet("GetPartsTestDashboard")]
-        public async Task<ActionResult<PartsTestDashboardDto>> GetPartsTestDashboard(
-            [FromQuery] string jobType = "",
-            [FromQuery] string priority = "All",
-            [FromQuery] string archive = "0", 
-            [FromQuery] string make = "",
-            [FromQuery] string model = "",
-            [FromQuery] string assignedTo = "")
+        public async Task<IActionResult> GetPartsTestDashboard()
         {
             try
             {
-                var dashboard = await _repository.GetPartsTestDashboardAsync(jobType, priority, archive, make, model, assignedTo);
+                // Get parameters directly from query string to avoid any model binding issues
+                var request = HttpContext.Request;
+                var jobType = request.Query["jobType"].FirstOrDefault() ?? "";
+                var priority = request.Query["priority"].FirstOrDefault() ?? "All";
+                var archive = request.Query["archive"].FirstOrDefault() ?? "0";
+                var make = request.Query["make"].FirstOrDefault() ?? "";
+                var model = request.Query["model"].FirstOrDefault() ?? "";
+                var assignedTo = request.Query["assignedTo"].FirstOrDefault() ?? "";
+
+                _logger.LogInformation("Dashboard request - JobType: {JobType}, Priority: {Priority}, Archive: {Archive}, Make: {Make}, Model: {Model}, AssignedTo: {AssignedTo}", 
+                    jobType, priority, archive, make, model, assignedTo);
+
+                var dashboard = await _repository.GetPartsTestDashboardAsync(
+                    jobType, 
+                    priority == "All" ? "All" : priority, 
+                    archive, 
+                    make, 
+                    model, 
+                    assignedTo
+                );
                 
                 return Ok(new
                 {
                     success = true,
                     statusCounts = dashboard.StatusCounts,
-                    jobTypeDistribution = dashboard.JobTypeDistribution
+                    jobTypeDistribution = dashboard.JobTypeDistribution,
+                    message = "Dashboard data retrieved successfully"
                 });
             }
             catch (Exception ex)
@@ -571,6 +461,217 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, new { 
                     success = false, 
                     message = "Failed to retrieve dashboard data", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        
+        /// <param name="rowIndex">Row index for the parts test list</param>
+        /// <param name="source">Source system - defaults to "PartsTest" (primary focus)</param>
+        [HttpGet("GetPartsTestList")]
+        public async Task<ActionResult<DataSet>> GetPartsTestList(
+            [FromQuery] int rowIndex = 0,
+            [FromQuery] string source = "PartsTest")  // ? Clear default focus
+        {
+            try
+            {
+                _logger.LogInformation("Getting parts test list for RowIndex: {RowIndex}, Source: {Source}", 
+                    rowIndex, source);
+
+                var results = await _repository.GetPartsTestListAsync(rowIndex, source);
+
+                // Match legacy behavior - check for data existence
+                if (results?.Tables?.Count == 0 || results?.Tables[0]?.Rows?.Count == 0)
+                {
+                    _logger.LogWarning("No data found for RowIndex: {RowIndex}, Source: {Source}", 
+                        rowIndex, source);
+                    
+                    // Return success with empty data (matches legacy)
+                    return Ok(new { 
+                        success = true, 
+                        message = "No data found for the specified parameters",
+                        tables = new object[0]  // Empty array instead of null
+                    });
+                }
+
+                _logger.LogInformation("Successfully retrieved parts test list with {TableCount} table(s) for RowIndex: {RowIndex}, Source: {Source}", 
+                    results.Tables.Count, rowIndex, source);
+
+                // Convert DataSet to JSON-serializable format - EXACTLY like legacy expects
+                var jsonResult = new
+                {
+                    success = true,
+                    tables = results.Tables.Cast<DataTable>().Select(table => new
+                    {
+                        tableName = table.TableName,
+                        rows = table.Rows.Cast<DataRow>().Select(row => 
+                            table.Columns.Cast<DataColumn>()
+                                .ToDictionary(column => column.ColumnName, column => row[column] ?? DBNull.Value))
+                    })
+                };
+
+                return Ok(jsonResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting parts test list for RowIndex: {RowIndex}, Source: {Source}", 
+                    rowIndex, source);
+                
+                // Match legacy error handling - return error info but don't fail completely
+                return Ok(new { 
+                    success = false, 
+                    message = "API failed to process the request", 
+                    error = ex.Message,
+                    tables = new object[0]  // Empty array for consistency
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets complete job information including submitted date and inventory specialist
+        /// Combines functionality similar to legacy DisplayData() method
+        /// </summary>
+        [HttpGet("GetJobInfo")]
+        public async Task<IActionResult> GetJobInfo([FromQuery] string jobNo, [FromQuery] int rowIndex = 0)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(jobNo))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Job number is required"
+                    });
+                }
+
+                // Get submitted date (like legacy LoadSubmittedDate)
+                var submittedDate = await _repository.LoadSubmittedDateAsync(jobNo);
+
+                string inventorySpecialist = "";
+
+                // If we have a rowIndex, get the inventory specialist from existing record
+                if (rowIndex > 0)
+                {
+                    var results = await _repository.GetPartsTestListAsync(rowIndex, "PartsTest");
+                    if (results?.Tables?.Count > 0 && results.Tables[0].Rows.Count > 0)
+                    {
+                        var row = results.Tables[0].Rows[0];
+                        inventorySpecialist = row["InvUserID"]?.ToString() ?? "";
+                    }
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    jobNo = jobNo,
+                    submittedDate = submittedDate,
+                    inventorySpecialist = inventorySpecialist,
+                    isNewEntry = rowIndex == 0
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting job info for JobNo: {JobNo}, RowIndex: {RowIndex}", jobNo, rowIndex);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    submittedDate = "NA",
+                    inventorySpecialist = "",
+                    message = "Failed to get job information",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Debug endpoint to check if a specific record exists and get available records
+        /// </summary>
+        [HttpGet("DebugRecord/{rowIndex}")]
+        public async Task<IActionResult> DebugRecord(int rowIndex)
+        {
+            try
+            {
+                var (recordExists, recordDetails, availableRowIndexes) = await _repository.DebugCheckRecordAsync(rowIndex);
+                var (totalRecords, maxRowIndex, minRowIndex) = await _repository.GetTableStatsAsync();
+
+                return Ok(new
+                {
+                    searchedRowIndex = rowIndex,
+                    recordExists = recordExists,
+                    recordDetails = recordDetails,
+                    availableRowIndexes = availableRowIndexes,
+                    tableStats = new
+                    {
+                        totalRecords = totalRecords,
+                        maxRowIndex = maxRowIndex,
+                        minRowIndex = minRowIndex
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error debugging record {RowIndex}", rowIndex);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to debug record", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Get recent records for testing
+        /// </summary>
+        [HttpGet("GetRecentRecords")]
+        public async Task<IActionResult> GetRecentRecords()
+        {
+            try
+            {
+                var results = await _repository.GetPartsTestListAsync(0, "PartsTest"); // Get all records
+                
+                if (results?.Tables?.Count > 0 && results.Tables[0].Rows.Count > 0)
+                {
+                    var recentRecords = results.Tables[0].AsEnumerable()
+                        .Take(10)
+                        .Select(row => new
+                        {
+                            RowIndex = row["RowIndex"],
+                            CallNbr = row["CallNbr"]?.ToString(),
+                            SiteID = row["SiteID"]?.ToString(),
+                            Make = row["Make"]?.ToString(),
+                            Model = row["Model"]?.ToString(),
+                            Archive = row["Archive"]
+                        })
+                        .ToList();
+
+                    return Ok(new
+                    {
+                        success = true,
+                        recordCount = results.Tables[0].Rows.Count,
+                        recentRecords = recentRecords
+                    });
+                }
+                else
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        recordCount = 0,
+                        recentRecords = new List<object>()
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting recent records");
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Failed to get recent records", 
                     error = ex.Message 
                 });
             }

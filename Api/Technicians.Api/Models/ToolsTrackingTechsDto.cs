@@ -55,11 +55,11 @@ namespace Technicians.Api.Models
         public string Status { get; set; } = string.Empty;
     }
 
-    //public class TechToolsMiscKitResultDto
-    //{
-    //    public List<TechToolsMiscKitDto> ToolKitData { get; set; } = new List<TechToolsMiscKitDto>();
-    //    public TechsInfoDto TechInfo { get; set; } = new TechsInfoDto();
-    //}
+    public class TechToolsMiscKitResultDto
+    {
+        public List<TechToolsMiscKitDto> ToolKitData { get; set; } = new List<TechToolsMiscKitDto>();
+        public TechsInfoDto TechInfo { get; set; } = new TechsInfoDto();
+    }
 
     public class ToolsTrackingCountDto
     {
@@ -103,19 +103,37 @@ namespace Technicians.Api.Models
         public string OldMTracking { get; set; } = string.Empty;
     }
 
-    //public class SaveTechToolsTrackingRequestDto
-    //{
-    //    public string TechID { get; set; } = string.Empty;
-    //    public string ModifiedBy { get; set; } = string.Empty;
-    //    public List<TechToolsTrackingDto> ToolTrackingItems { get; set; } = new List<TechToolsTrackingDto>();
-    //}
+    // Save/Update request DTO - matches legacy DeleteInsertTechToolsData functionality
+    public class SaveTechToolsTrackingRequestDto
+    {
+        public string TechID { get; set; } = string.Empty;
+        public string ModifiedBy { get; set; } = string.Empty;
+        public List<TechToolsTrackingDto> ToolTrackingItems { get; set; } = new List<TechToolsTrackingDto>();
+    }
 
-    //// DTO for the save result
-    //public class SaveTechToolsTrackingResultDto
-    //{
-    //    public bool Success { get; set; }
-    //    public string Message { get; set; } = string.Empty;
-    //    public int RecordsProcessed { get; set; }
-    //    public string GeneratedQuery { get; set; } = string.Empty;
-    //}
+    // DTO for the save result
+    public class SaveTechToolsTrackingResultDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int RecordsProcessed { get; set; }
+        public string GeneratedQuery { get; set; } = string.Empty;
+    }
+
+    // File management DTOs for ToolsTracking
+    public class ToolsTrackingFileDto
+    {
+        public string FileName { get; set; } = string.Empty;
+        public long FileSizeKB { get; set; }
+        public string UploadedOn { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+    }
+
+    public class FileUploadResultDto
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+    }
 }

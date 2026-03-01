@@ -280,8 +280,7 @@
       height: 140px;
       border: none;
       overflow: hidden;
-      cursor: pointer;
-      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      cursor: default;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -300,32 +299,6 @@
         bottom: 0;
         background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
         opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-      
-      // Elegant hover effect
-      &:hover {
-        transform: translateY(-4px) scale(1.01);
-        z-index: 5;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-        
-        &::before {
-          opacity: 1;
-        }
-        
-        .stat-icon {
-          transform: scale(1.1) rotate(5deg);
-          opacity: 1;
-        }
-        
-        .stat-number {
-          transform: scale(1.05);
-          letter-spacing: 1px;
-        }
-        
-        .stat-label {
-          transform: translateY(-2px);
-        }
       }
       
       .stat-icon {
@@ -334,7 +307,6 @@
         right: 20px;
         font-size: 1.4rem;
         opacity: 0.6;
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
       }
       
       .stat-content {
@@ -348,7 +320,6 @@
         font-weight: 700;
         line-height: 1.0;
         margin-bottom: 0.5rem;
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         letter-spacing: -1px;
       }
       
@@ -358,7 +329,6 @@
         text-transform: uppercase;
         letter-spacing: 0.8px;
         opacity: 0.85;
-        transition: all 0.3s ease;
         line-height: 1.2;
       }
       
@@ -370,10 +340,6 @@
         .stat-icon {
           color: rgba(255, 255, 255, 0.8);
         }
-        
-        &:hover {
-          background: linear-gradient(135deg, #ff5252 0%, #e53935 25%, #d32f2f 100%);
-        }
       }
       
       &.due15 {
@@ -382,10 +348,6 @@
         
         .stat-icon {
           color: rgba(255, 255, 255, 0.8);
-        }
-        
-        &:hover {
-          background: linear-gradient(135deg, #ff9800 0%, #f57c00 25%, #ef6c00 100%);
         }
       }
       
@@ -400,10 +362,6 @@
         .stat-number, .stat-label {
           text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
         }
-        
-        &:hover {
-          background: linear-gradient(135deg, #5a6fd8 0%, #4c5dc6 25%, #3f51b5 100%);
-        }
       }
       
       &.due45 {
@@ -413,10 +371,6 @@
         .stat-icon {
           color: rgba(255, 255, 255, 0.8);
         }
-        
-        &:hover {
-          background: linear-gradient(135deg, #4caf50 0%, #43a047 25%, #388e3c 100%);
-        }
       }
       
       &.due60 {
@@ -425,10 +379,6 @@
         
         .stat-icon {
           color: rgba(255, 255, 255, 0.8);
-        }
-        
-        &:hover {
-          background: linear-gradient(135deg, #00897b 0%, #00695c 25%, #004d40 100%);
         }
       }
       

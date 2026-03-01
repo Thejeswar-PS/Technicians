@@ -2,7 +2,6 @@ using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using System.Transactions;
 using Technicians.Api.Models;
-using Technicians.Api.Repositories;
 using Technicians.Api.Repository;
 
 namespace Technicians.Api.Controllers

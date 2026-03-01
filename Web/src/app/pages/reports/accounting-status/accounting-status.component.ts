@@ -85,16 +85,8 @@ export class AccountingStatusComponent implements OnInit {
             const categoryName = categories[categoryIndex];
             const value = yvalues[categoryIndex];
             
-            // Only navigate if value is not 0 (matching legacy logic)
-            if (value && value !== 0) {
-              this.router.navigate(['/reports/dcg-display-report-details'], {
-                queryParams: {
-                  Page: 'AccountingStatus',
-                  dataSetName: categoryName,
-                  backbutton: 'AccountingStatus'
-                }
-              });
-            }
+            // Only navigate if value is not 0 (matching legacy logic
+           
           }
         }
       },
@@ -175,13 +167,8 @@ export class AccountingStatusComponent implements OnInit {
             
             // Only navigate if value is not 0 (matching legacy logic)
             if (value && value !== 0) {
-              this.router.navigate(['/reports/dcg-display-report-details'], {
-                queryParams: {
-                  Page: 'AccountingStatus',
-                  dataSetName: categoryName,
-                  backbutton: 'AccountingStatus'
-                }
-              });
+              console.log('Navigation to dcg-display-report-details disabled - component has been removed', { categoryName });
+              // TODO: Re-implement report details functionality or navigate to alternative page
             }
           }
         }

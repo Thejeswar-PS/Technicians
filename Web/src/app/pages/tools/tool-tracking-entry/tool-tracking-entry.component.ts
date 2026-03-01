@@ -91,9 +91,9 @@ export class ToolTrackingEntryComponent implements OnInit {
         this.loading = false;
         if (response.success) {
           this.trackingData = response.data;
-          this.techInfo = response.techInfo;
-          // Automatically load count as well
+          // Automatically load count and files as well
           this.loadToolsCount();
+          this.loadToolsTrackingFiles();
         } else {
           this.error = response.message || 'Failed to retrieve data';
         }
@@ -125,9 +125,9 @@ export class ToolTrackingEntryComponent implements OnInit {
         this.loading = false;
         if (response.success) {
           this.trackingData = response.data;
-          this.techInfo = response.techInfo;
-          // Load count after successful tracking data retrieval
+          // Load count and files after successful tracking data retrieval
           this.loadToolsCount();
+          this.loadToolsTrackingFiles();
         } else {
           this.error = response.message || 'Failed to retrieve data';
         }
@@ -196,24 +196,50 @@ export class ToolTrackingEntryComponent implements OnInit {
       return;
     }
 
+    if (!this.techId || this.techId === 'All') {
+      this.error = 'Please select a technician';
+      return;
+    }
+
     this.isSaving = true;
     this.error = '';
 
     // Get only the modified rows
     const modifiedData = Array.from(this.modifiedRows).map(index => this.trackingData[index]);
 
-    console.log('Saving modified tool tracking data:', modifiedData);
+    // Get the current user (you may need to adjust this based on your auth service)
+    const modifiedBy = localStorage.getItem('currentUser') || 'System';
 
-    // Simulate API call for now
-    setTimeout(() => {
-      this.isSaving = false;
-      this.modifiedRows.clear();
-      this.successMessage = `Successfully saved ${modifiedData.length} tool records`;
-      
-      setTimeout(() => {
-        this.successMessage = '';
-      }, 3000);
-    }, 1000);
+    const saveRequest = {
+      techID: this.techId,
+      modifiedBy: modifiedBy,
+      toolTrackingItems: modifiedData
+    };
+
+    console.log('Saving modified tool tracking data:', saveRequest);
+
+    this.toolTrackingService.saveTechToolsTracking(saveRequest).subscribe({
+      next: (response) => {
+        this.isSaving = false;
+        if (response.success) {
+          this.modifiedRows.clear();
+          this.successMessage = `Successfully saved ${response.data.recordsProcessed} tool records`;
+          
+          // Reload the data to verify it was saved
+          setTimeout(() => {
+            this.successMessage = '';
+            this.autoLoadTools();
+          }, 1500);
+        } else {
+          this.error = response.data.message || 'Failed to save tool tracking data';
+        }
+      },
+      error: (err) => {
+        this.isSaving = false;
+        this.error = err.error?.message || 'An error occurred while saving data';
+        console.error('Error saving tool tracking data:', err);
+      }
+    });
   }
 
   // Simple methods for editable grid functionality
@@ -227,10 +253,12 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   saveRow(index: number): void {
     this.trackingData[index].isEditing = false;
-    // Remove original values since changes are saved
+    // Mark this row as modified for bulk save
+    this.modifiedRows.add(index);
+    // Remove original values since we're tracking this for save
     this.trackingData[index].originalValues = undefined;
-    console.log('Saving row data:', this.trackingData[index]);
-    // TODO: Implement API call to save changes
+    console.log('Row marked for saving:', this.trackingData[index]);
+    console.log('Total modified rows:', this.modifiedRows.size);
   }
 
   cancelEdit(index: number): void {
@@ -256,117 +284,41 @@ export class ToolTrackingEntryComponent implements OnInit {
     }
   }
 
-  async uploadFiles(): Promise<void> {
-    if (this.selectedFiles.length === 0) {
-      alert('Please select files to upload');
+  loadToolsTrackingFiles(): void {
+    if (!this.techId || this.techId === 'All') {
       return;
     }
-
-    this.uploadingFiles = true;
-    const uploadPromises: Promise<void>[] = [];
-
-    for (const file of this.selectedFiles) {
-      const promise = this.uploadSingleFile(file);
-      uploadPromises.push(promise);
-    }
-
-    try {
-      await Promise.all(uploadPromises);
-      this.successMessage = `${this.selectedFiles.length} file(s) uploaded successfully to database`;
-      this.selectedFiles = [];
-      
-      // Clear file input
-      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
-      }
-      
-      // Auto-hide success message
-      setTimeout(() => {
-        this.successMessage = '';
-      }, 3000);
-      
-    } catch (error) {
-      console.error('File upload error:', error);
-      this.error = 'Failed to upload files to database';
-    } finally {
-      this.uploadingFiles = false;
-    }
-  }
-
-  private async uploadSingleFile(file: File): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = () => {
-        try {
-          // Convert to base64 for BLOB storage (matching legacy Img_Stream)
-          const base64Data = (reader.result as string).split(',')[1];
-          
-          const fileData: SaveEquipmentFileRequestDto = {
-            equipID: 0, // Will be set based on selected tool
-            techID: this.techId,
-            img_Title: file.name,           // Original filename
-            img_Type: file.type || this.getFileExtension(file.name), // MIME type or extension
-            img_Stream: base64Data,         // Base64 encoded binary data (BLOB)
-            createdBy: this.techId || 'system'
-          };
-          
-          // Save to database via API (matches legacy SaveEquipmentFiles)
-          this.toolTrackingService.saveEquipmentFile(fileData).subscribe({
-            next: (response) => {
-              if (response.success) {
-                console.log('File saved to database:', file.name);
-                resolve();
-              } else {
-                reject(new Error(response.message));
-              }
-            },
-            error: (err) => {
-              console.error('Database save error:', err);
-              reject(err);
-            }
-          });
-          
-        } catch (error) {
-          reject(error);
-        }
-      };
-      
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
-  }
-
-  private getFileExtension(filename: string): string {
-    return filename.substring(filename.lastIndexOf('.') + 1);
-  }
-
-  loadEquipmentFiles(equipID: number): void {
-    // Load files from database BLOB storage (matches legacy GetEquipmentFiles)
-    this.toolTrackingService.getEquipmentFiles(equipID).subscribe({
+    
+    // Load files from file system storage
+    this.toolTrackingService.getToolsTrackingFiles(this.techId).subscribe({
       next: (response) => {
         if (response.success) {
-          this.equipmentFiles = response.data;
-          console.log('Equipment files loaded from database:', this.equipmentFiles.length);
+          this.equipmentFiles = response.data.map(file => ({
+            tecID: this.techId,
+            fileName: file.fileName,
+            fileSizeKB: file.fileSizeKB,
+            uploadedOn: file.uploadedOn,
+            filePath: file.filePath
+          } as any));
+          console.log('Tools tracking files loaded:', this.equipmentFiles.length);
         } else {
-          console.error('Failed to load equipment files:', response.message);
+          console.error('Failed to load files:', response.message);
         }
       },
       error: (err) => {
-        console.error('Error loading equipment files:', err);
+        console.error('Error loading files:', err);
       }
     });
   }
 
-  downloadFile(file: EquipmentFileDto): void {
-    // Download file from database BLOB storage
-    this.toolTrackingService.downloadEquipmentFile(file.equipID, file.img_Title).subscribe({
+  downloadFile(file: any): void {
+    // Download file from file system storage
+    this.toolTrackingService.downloadToolsTrackingFile(this.techId, file.fileName).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = file.img_Title;
+        link.download = file.fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -374,14 +326,14 @@ export class ToolTrackingEntryComponent implements OnInit {
       },
       error: (err) => {
         console.error('File download error:', err);
-        this.error = 'Failed to download file from database';
+        this.error = 'Failed to download file';
       }
     });
   }
 
-  viewFile(file: EquipmentFileDto): void {
-    // View file from database BLOB storage
-    this.toolTrackingService.downloadEquipmentFile(file.equipID, file.img_Title).subscribe({
+  viewFile(file: any): void {
+    // View file from file system storage
+    this.toolTrackingService.downloadToolsTrackingFile(this.techId, file.fileName).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -390,15 +342,112 @@ export class ToolTrackingEntryComponent implements OnInit {
       },
       error: (err) => {
         console.error('File view error:', err);
-        this.error = 'Failed to view file from database';
+        this.error = 'Failed to view file';
       }
     });
   }
 
+  deleteFileAttachment(fileName: string): void {
+    if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+      this.toolTrackingService.deleteToolsTrackingFile(this.techId, fileName).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.successMessage = `File "${fileName}" deleted successfully`;
+            // Reload files list
+            this.loadToolsTrackingFiles();
+            setTimeout(() => {
+              this.successMessage = '';
+            }, 2000);
+          } else {
+            this.error = response.message || 'Failed to delete file';
+          }
+        },
+        error: (err) => {
+          console.error('File delete error:', err);
+          this.error = 'Failed to delete file';
+        }
+      });
+    }
+  }
+
+  async uploadFiles(): Promise<void> {
+    if (!this.techId || this.techId === 'All') {
+      this.error = 'Please select a technician first';
+      return;
+    }
+
+    if (this.selectedFiles.length === 0) {
+      this.error = 'Please select files to upload';
+      return;
+    }
+
+    this.uploadingFiles = true;
+    this.error = '';
+    let successCount = 0;
+    let failedCount = 0;
+
+    for (const file of this.selectedFiles) {
+      try {
+        await this.uploadSingleFile(file);
+        successCount++;
+      } catch (error) {
+        failedCount++;
+        console.error(`Failed to upload ${file.name}:`, error);
+      }
+    }
+
+    this.uploadingFiles = false;
+
+    if (successCount > 0) {
+      this.successMessage = `Successfully uploaded ${successCount} file(s)`;
+      this.selectedFiles = [];
+      
+      // Clear file input
+      const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+
+      // Reload files list
+      this.loadToolsTrackingFiles();
+      
+      setTimeout(() => {
+        this.successMessage = '';
+      }, 3000);
+    }
+
+    if (failedCount > 0) {
+      this.error = `Failed to upload ${failedCount} file(s)`;
+    }
+  }
+
+  private async uploadSingleFile(file: File): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.toolTrackingService.uploadToolsTrackingFile(this.techId, file).subscribe({
+        next: (response) => {
+          if (response.success) {
+            console.log('File uploaded successfully:', file.name);
+            resolve();
+          } else {
+            reject(new Error(response.data.message || 'Upload failed'));
+          }
+        },
+        error: (err) => {
+          console.error('File upload error:', err);
+          reject(err);
+        }
+      });
+    });
+  }
+
   removeFile(index: number): void {
-    if (confirm('Are you sure you want to remove this file?')) {
+    if (confirm('Are you sure you want to remove this file from upload?')) {
       this.selectedFiles.splice(index, 1);
     }
+  }
+
+  getFileExtension(filename: string): string {
+    return filename.substring(filename.lastIndexOf('.') + 1);
   }
 
   updateReceived(item: TechToolsTrackingDto, event: any, index: number): void {

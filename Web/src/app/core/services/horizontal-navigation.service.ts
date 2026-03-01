@@ -181,7 +181,7 @@ export class HorizontalNavigationService {
       'dtechpartsearch.aspx': '/reports/parts-search',
       'reports/accmgmtgraph.aspx': '/graphs/account-manager-graph',
       'displayreports/accmgrperformance.aspx': '/reports/acc-mgr-performance-report',
-      'reports/dcgdisplayreportdetails.aspx': '/reports/dcg-display-report-details',
+
       'dtechuserssearch.aspx': '/reports/dtech-users-data',
       'dtechjobslist.aspx': '/jobs/job-list',
       'reports/jobstobeuploaded.aspx': '/tools/jobs-to-be-uploaded',

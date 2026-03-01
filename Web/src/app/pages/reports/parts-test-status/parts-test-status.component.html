@@ -1,5 +1,10 @@
 <div class="container-fluid parts-test-status-container">
 
+  <!-- Page Title -->
+  <div class="text-center mb-4">
+    <h2 class="fw-bold text-primary mb-02 display-4.9">Parts Test Status</h2>
+  </div>
+
   <!-- Loading Overlay -->
   <div *ngIf="isLoading"
        class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center loading-overlay">
@@ -7,28 +12,6 @@
   </div>
 
   <div class="card shadow-sm main-card">
-
-    <!-- Header -->
-    <div class="card-header border-0 py-4">
-      <div class="d-flex align-items-center">
-        <!-- LEFT: Back button -->
-        <div class="flex-shrink-0">
-          <button class="btn btn-sm btn-primary" (click)="goBack()">
-            <i class="bi bi-arrow-left me-1"></i> Back
-          </button>
-        </div>
-
-        <!-- CENTER: Title -->
-        <div class="flex-grow-1 text-center">
-          <h3 class="fw-bold text-primary mb-0">
-            Parts Test Status
-          </h3>
-        </div>
-
-        <!-- RIGHT: spacer to balance layout -->
-        <div class="flex-shrink-0" style="width: 72px;"></div>
-      </div>
-    </div>
 
     <div class="card-body">
       <!-- Error -->
@@ -56,6 +39,68 @@
         </div>
       </div>
 
+      <!-- Charts -->
+      <div class="charts-panel mb-4">
+        <div *ngIf="isLoadingCharts" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+
+        <div *ngIf="chartErrorMessage" class="alert alert-warning d-inline-flex align-items-center">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          {{ chartErrorMessage }}
+        </div>
+
+        <div class="row" *ngIf="!isLoadingCharts && !chartErrorMessage">
+          <div class="col-lg-6 mb-3">
+            <div class="card chart-card">
+              <div class="card-body">
+                <div class="chart-title">Status Chart</div>
+                <div *ngIf="statusChartOptions; else noStatusChart">
+                  <apx-chart
+                    [series]="statusChartOptions.series"
+                    [chart]="statusChartOptions.chart"
+                    [plotOptions]="statusChartOptions.plotOptions"
+                    [dataLabels]="statusChartOptions.dataLabels"
+                    [xaxis]="statusChartOptions.xaxis"
+                    [yaxis]="statusChartOptions.yaxis"
+                    [colors]="statusChartOptions.colors"
+                    [grid]="statusChartOptions.grid"
+                    [tooltip]="statusChartOptions.tooltip">
+                  </apx-chart>
+                </div>
+                <ng-template #noStatusChart>
+                  <div class="no-chart">No status chart data</div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 mb-3">
+            <div class="card chart-card">
+              <div class="card-body">
+                <div class="chart-title">Job Type Chart</div>
+                <div *ngIf="jobTypeChartOptions; else noJobTypeChart">
+                  <apx-chart
+                    [series]="jobTypeChartOptions.series"
+                    [chart]="jobTypeChartOptions.chart"
+                    [plotOptions]="jobTypeChartOptions.plotOptions"
+                    [dataLabels]="jobTypeChartOptions.dataLabels"
+                    [xaxis]="jobTypeChartOptions.xaxis"
+                    [yaxis]="jobTypeChartOptions.yaxis"
+                    [colors]="jobTypeChartOptions.colors"
+                    [grid]="jobTypeChartOptions.grid"
+                    [tooltip]="jobTypeChartOptions.tooltip">
+                  </apx-chart>
+                </div>
+                <ng-template #noJobTypeChart>
+                  <div class="no-chart">No job type chart data</div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Filters -->
       <div class="row mb-3 filter-panel" [formGroup]="filterForm">
         <div class="col-md-2">
@@ -73,8 +118,8 @@
           <select class="form-select" formControlName="make">
             <option value="All">All</option>
             <option *ngFor="let make of distinctMakes"
-                    [value]="make.make">
-              {{ make.make }}
+                    [value]="make">
+              {{ make }}
             </option>
           </select>
         </div>
@@ -84,8 +129,8 @@
           <select class="form-select" formControlName="model">
             <option value="All">All</option>
             <option *ngFor="let model of modelsForSelectedMake"
-                    [value]="model.make">
-              {{ model.make }}
+                    [value]="model">
+              {{ model }}
             </option>
           </select>
         </div>
@@ -166,7 +211,7 @@
         <table class="table table-bordered mb-0">
           <thead>
             <tr>
-              <th class="sortable"><div class="header-cell">Row No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
+              <th class="sortable" (click)="onSort('createdOn')"><div class="header-cell">Submitted On <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
               <th class="sortable" (click)="onSort('callNbr')"><div class="header-cell">Job No <span class="sort-icons"><i class="up"></i><i class="down"></i></span></div></th>
               <th><div class="header-cell">Assembled</div></th>
               <th><div class="header-cell">Reviewed</div></th>
@@ -187,7 +232,7 @@
             <tr *ngFor="let item of displayedData"
                 [ngClass]="getRowColorClass(item.dueDate)">
 
-              <td class="text-center">{{ item.rowIndex }}</td>
+              <td class="text-center">{{ getSubmittedDate(item.callNbr) }}</td>
               <td>{{ item.callNbr }}</td>
 
               <td class="text-center">
@@ -224,7 +269,7 @@
               <td>{{ formatDate(item.createdOn) }}</td>
               <td>{{ formatDate(item.dueDate) }}</td>
               <td>{{ item.assignedTo }}</td>
-              <td>{{ item.lastModifiedBy || item.createdBy }}</td>
+              <td>{{ formatWindowsUser(item.lastModifiedBy || item.createdBy) }}</td>
             </tr>
           </tbody>
         </table>

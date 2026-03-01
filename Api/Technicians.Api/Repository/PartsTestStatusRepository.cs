@@ -7,85 +7,76 @@ namespace Technicians.Api.Repository
 {
     public class PartsTestStatusRepository
     {
-        private readonly IConfiguration _configuration;
         private readonly string _connectionString;
 
         public PartsTestStatusRepository(IConfiguration configuration)
         {
-            _configuration = configuration;
-            _connectionString = _configuration.GetConnectionString("DefaultConnection") ??
-                throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            _connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string not found");
         }
 
-        /// <summary>
-        /// Gets parts test status data using the GetPartsTestStatus stored procedure
-        /// </summary>
-        /// <param name="request">Filter parameters for the stored procedure</param>
-        /// <returns>Complete response with parts data, makes, and models</returns>
         public async Task<PartsTestStatusResponse> GetPartsTestStatusAsync(PartsTestStatusRequest request)
         {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
 
-                var parameters = new DynamicParameters();
-                // Handle nullable strings properly - pass empty string if null or "All"
-                parameters.Add("@JobType", 
-                    string.IsNullOrWhiteSpace(request.JobType) || request.JobType == "All" ? string.Empty : request.JobType, 
-                    DbType.AnsiStringFixedLength, size: 5);
-                    
-                parameters.Add("@Priority", 
-                    string.IsNullOrWhiteSpace(request.Priority) || request.Priority == "All" ? string.Empty : request.Priority, 
-                    DbType.AnsiStringFixedLength, size: 15);
-                    
-                parameters.Add("@Archive", request.Archive, DbType.Boolean);
-                
-                parameters.Add("@Make", 
-                    string.IsNullOrWhiteSpace(request.Make) || request.Make == "All" ? string.Empty : request.Make, 
-                    DbType.String, size: 50);
-                    
-                parameters.Add("@Model", 
-                    string.IsNullOrWhiteSpace(request.Model) || request.Model == "All" ? string.Empty : request.Model, 
-                    DbType.String, size: 50);
-                    
-                parameters.Add("@AssignedTo", 
-                    string.IsNullOrWhiteSpace(request.AssignedTo) || request.AssignedTo == "All" ? string.Empty : request.AssignedTo, 
-                    DbType.String, size: 50);
+            var parameters = new DynamicParameters();
 
-                // Execute stored procedure and get multiple result sets
-                using var multi = await connection.QueryMultipleAsync("GetPartsTestStatus", parameters, commandType: CommandType.StoredProcedure);
+            parameters.Add("@JobType",
+                string.IsNullOrWhiteSpace(request.JobType) || request.JobType == "All"
+                    ? string.Empty : request.JobType,
+                DbType.AnsiStringFixedLength, size: 5);
 
-                var response = new PartsTestStatusResponse();
+            parameters.Add("@Priority",
+                string.IsNullOrWhiteSpace(request.Priority) || request.Priority == "All"
+                    ? string.Empty : request.Priority,
+                DbType.AnsiStringFixedLength, size: 15);
 
-                // First result set: Parts test data
-                response.PartsTestData = (await multi.ReadAsync<PartsTestStatusDto>()).ToList();
+            parameters.Add("@Archive", request.Archive, DbType.Boolean);
 
-                // Second result set: Distinct Makes
-                response.DistinctMakes = (await multi.ReadAsync<MakeModelDto>()).ToList();
+            parameters.Add("@Make",
+                string.IsNullOrWhiteSpace(request.Make) || request.Make == "All"
+                    ? string.Empty : request.Make,
+                DbType.String, size: 50);
 
-                // Third result set: Distinct Models  
-                response.DistinctModels = (await multi.ReadAsync<MakeModelDto>()).ToList();
+            parameters.Add("@Model",
+                string.IsNullOrWhiteSpace(request.Model) || request.Model == "All"
+                    ? string.Empty : request.Model,
+                DbType.String, size: 50);
 
-                return response;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error retrieving parts test status: {ex.Message}", ex);
-            }
+            parameters.Add("@AssignedTo",
+                string.IsNullOrWhiteSpace(request.AssignedTo) || request.AssignedTo == "All"
+                    ? string.Empty : request.AssignedTo,
+                DbType.String, size: 50);
+
+            // Execute stored procedure and get multiple result sets
+            using var multi = await connection.QueryMultipleAsync("GetPartsTestStatus", parameters, commandType: CommandType.StoredProcedure);
+
+            var response = new PartsTestStatusResponse();
+
+            // First result set: Parts test data
+            response.PartsTestData = (await multi.ReadAsync<PartsTestStatusDto>()).ToList();
+
+            // Second result set: Distinct Makes
+            response.DistinctMakes = (await multi.ReadAsync<string>()).ToList();
+
+            // Third result set: Distinct Models
+            response.DistinctModels = (await multi.ReadAsync<string>()).ToList();
+
+            return response;
         }
 
         /// <summary>
-        /// Gets parts test status data with default parameters
+        /// Gets ALL parts test status data with no filters (unarchived only)
         /// </summary>
-        /// <returns>Complete response with all unarchived parts data</returns>
-        public async Task<PartsTestStatusResponse> GetPartsTestStatusAsync()
+        /// <returns>All unarchived parts test status records</returns>
+        public async Task<PartsTestStatusResponse> GetAllPartsTestStatusAsync()
         {
             var defaultRequest = new PartsTestStatusRequest
             {
                 JobType = null,
                 Priority = null,
-                Archive = false,
+                Archive = false,  // Only unarchived
                 Make = null,
                 Model = null,
                 AssignedTo = null
@@ -95,86 +86,67 @@ namespace Technicians.Api.Repository
         }
 
         /// <summary>
-        /// Gets only distinct makes from PartsTestList
+        /// Gets dashboard data for Parts Test Status charts - MATCHES LEGACY FUNCTIONALITY
+        /// Returns data from Tables 4 and 5 of GetPartsTestStatus stored procedure
         /// </summary>
-        /// <returns>List of distinct makes</returns>
-        public async Task<IEnumerable<MakeModelDto>> GetDistinctMakesAsync()
+        public async Task<PartsTestDashboardDto> GetPartsTestStatusDashboardAsync(PartsTestStatusRequest request)
         {
             try
             {
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                const string query = @"
-                    SELECT DISTINCT Make 
-                    FROM dbo.PartsTestList 
-                    WHERE Make IS NOT NULL AND Make <> '' AND Archive = 0
-                    ORDER BY Make";
+                using var command = new SqlCommand("GetPartsTestStatus", connection);
+                command.CommandType = CommandType.StoredProcedure;
+                
+                // Convert request to legacy parameters exactly like legacy DAL
+                command.Parameters.AddWithValue("@JobType", string.IsNullOrEmpty(request.JobType) ? "" : request.JobType);
+                command.Parameters.AddWithValue("@Priority", string.IsNullOrEmpty(request.Priority) || request.Priority == "All" ? "" : request.Priority);
+                command.Parameters.AddWithValue("@Archive", request.Archive ? "1" : "0");
+                command.Parameters.AddWithValue("@Make", string.IsNullOrEmpty(request.Make) ? "" : request.Make);
+                command.Parameters.AddWithValue("@Model", string.IsNullOrEmpty(request.Model) ? "" : request.Model);
+                command.Parameters.AddWithValue("@AssignedTo", string.IsNullOrEmpty(request.AssignedTo) ? "" : request.AssignedTo);
 
-                var makes = await connection.QueryAsync<MakeModelDto>(query);
-                return makes;
+                using var adapter = new SqlDataAdapter(command);
+                var dataSet = new DataSet();
+                adapter.Fill(dataSet);
+
+                var dashboard = new PartsTestDashboardDto();
+
+                // Chart 1: Status counts (from table index 4 like legacy)
+                if (dataSet.Tables.Count >= 5 && dataSet.Tables[4].Rows.Count > 0)
+                {
+                    var row = dataSet.Tables[4].Rows[0];
+                    dashboard.StatusCounts = new PartsTestStatusCountsDto
+                    {
+                        EmergencyCount = Convert.ToInt32(row["EmergencyCount"] ?? 0),
+                        OverdueCount = Convert.ToInt32(row["OverdueCount"] ?? 0),
+                        SameDayCount = Convert.ToInt32(row["SameDayCount"] ?? 0),
+                        CurrentWeekCount = Convert.ToInt32(row["CurrentWeekCount"] ?? 0)
+                    };
+                }
+
+                // Chart 2: Job type distribution (from table index 5 like legacy)
+                if (dataSet.Tables.Count > 5 && dataSet.Tables[5].Rows.Count > 0)
+                {
+                    dashboard.JobTypeDistribution = new List<JobTypeCountDto>();
+                    foreach (DataRow row in dataSet.Tables[5].Rows)
+                    {
+                        dashboard.JobTypeDistribution.Add(new JobTypeCountDto
+                        {
+                            JobType = row["JobType"]?.ToString() ?? "",
+                            TotalCount = Convert.ToInt32(row["TotalCount"] ?? 0)
+                        });
+                    }
+                }
+
+                return dashboard;
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error retrieving distinct makes: {ex.Message}", ex);
+                throw new Exception($"Error retrieving dashboard data: {ex.Message}", ex);
             }
         }
 
-        /// <summary>
-        /// Gets only distinct models from PartsTestList
-        /// </summary>
-        /// <returns>List of distinct models</returns>
-        public async Task<IEnumerable<MakeModelDto>> GetDistinctModelsAsync()
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                const string query = @"
-                    SELECT DISTINCT Model as Make
-                    FROM dbo.PartsTestList 
-                    WHERE Model IS NOT NULL AND Model <> '' AND Archive = 0
-                    ORDER BY Model";
-
-                var models = await connection.QueryAsync<MakeModelDto>(query);
-                return models;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error retrieving distinct models: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Gets distinct models filtered by make
-        /// </summary>
-        /// <param name="make">Make to filter models by</param>
-        /// <returns>List of distinct models for the specified make</returns>
-        public async Task<IEnumerable<MakeModelDto>> GetDistinctModelsByMakeAsync(string? make)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                const string query = @"
-                    SELECT DISTINCT Model as Make
-                    FROM dbo.PartsTestList 
-                    WHERE Model IS NOT NULL AND Model <> '' AND Archive = 0
-                    AND (@Make = '' OR @Make IS NULL OR Make = @Make)
-                    ORDER BY Model";
-
-                var parameters = new DynamicParameters();
-                parameters.Add("@Make", string.IsNullOrWhiteSpace(make) ? string.Empty : make, DbType.String);
-
-                var models = await connection.QueryAsync<MakeModelDto>(query, parameters);
-                return models;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Error retrieving distinct models for make '{make}': {ex.Message}", ex);
-            }
-        }
     }
 }
