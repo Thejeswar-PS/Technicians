@@ -20,7 +20,6 @@
         <span class="status-dot success"></span>
         <h3>Account Management Pipeline</h3>
       </div>
-      <span class="card-subtitle">Scheduling & Workflow Metrics</span>
     </div>
 
     <div class="chart-section">
@@ -32,8 +31,13 @@
         {{ accMgmtError }}
       </div>
 
+      <div *ngIf="!isLoadingAccMgmt && !accMgmtError && !accMgmtData" class="no-data-state">
+        <i class="bi bi-inbox"></i>
+        <p>NO DATA AVAILABLE</p>
+      </div>
+
       <apx-chart
-        *ngIf="!isLoadingAccMgmt && !accMgmtError"
+        *ngIf="!isLoadingAccMgmt && !accMgmtError && accMgmtData"
         [series]="accMgmtChartOptions.series"
         [chart]="accMgmtChartOptions.chart"
         [xaxis]="accMgmtChartOptions.xaxis"
@@ -57,7 +61,6 @@
         <span class="status-dot info"></span>
         <h3>Paperwork Processing Status</h3>
       </div>
-      <span class="card-subtitle">Pending documentation by office</span>
     </div>
 
     <div class="chart-section">
@@ -69,8 +72,13 @@
         {{ paperworkError }}
       </div>
 
+      <div *ngIf="!isLoadingPaperwork && !paperworkError && (!paperworkData || !paperworkData.length)" class="no-data-state">
+        <i class="bi bi-inbox"></i>
+        <p>NO DATA AVAILABLE</p>
+      </div>
+
       <apx-chart
-        *ngIf="!isLoadingPaperwork && !paperworkError"
+        *ngIf="!isLoadingPaperwork && !paperworkError && paperworkData && paperworkData.length"
         [series]="paperworkChartOptions.series"
         [chart]="paperworkChartOptions.chart"
         [xaxis]="paperworkChartOptions.xaxis"
@@ -94,7 +102,6 @@
         <span class="status-dot warning"></span>
         <h3>Quotes Processing Pipeline</h3>
       </div>
-      <span class="card-subtitle">Revenue tracking & approval status</span>
     </div>
 
     <div class="chart-section">
@@ -106,8 +113,13 @@
         {{ quoteGraphError }}
       </div>
 
+      <div *ngIf="!isLoadingQuoteGraph && !quoteGraphError && (!quoteGraphData || !quoteGraphData.length)" class="no-data-state">
+        <i class="bi bi-inbox"></i>
+        <p>NO DATA AVAILABLE</p>
+      </div>
+
       <apx-chart
-        *ngIf="!isLoadingQuoteGraph && !quoteGraphError"
+        *ngIf="!isLoadingQuoteGraph && !quoteGraphError && quoteGraphData && quoteGraphData.length"
         [series]="quoteGraphChartOptions.series"
         [chart]="quoteGraphChartOptions.chart"
         [xaxis]="quoteGraphChartOptions.xaxis"
@@ -131,7 +143,6 @@
         <span class="status-dot danger"></span>
         <h3>Unscheduled Jobs Analysis</h3>
       </div>
-      <span class="card-subtitle">Critical job distribution</span>
     </div>
 
     <div class="chart-section">
@@ -143,8 +154,13 @@
         {{ unscheduledError }}
       </div>
 
+      <div *ngIf="!isLoadingUnscheduled && !unscheduledError && (!unscheduledData || !unscheduledData.length)" class="no-data-state">
+        <i class="bi bi-inbox"></i>
+        <p>NO DATA AVAILABLE</p>
+      </div>
+
       <apx-chart
-        *ngIf="!isLoadingUnscheduled && !unscheduledError"
+        *ngIf="!isLoadingUnscheduled && !unscheduledError && unscheduledData && unscheduledData.length"
         [series]="unscheduledChartOptions.series"
         [chart]="unscheduledChartOptions.chart"
         [xaxis]="unscheduledChartOptions.xaxis"

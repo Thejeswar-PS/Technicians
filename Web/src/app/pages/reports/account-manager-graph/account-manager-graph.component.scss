@@ -139,6 +139,28 @@
   font-weight: 600;
 }
 
+.no-data-state {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 350px;
+  color: #94a3b8;
+  
+  i {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+  }
+  
+  p {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+  }
+}
+
 /* ===============================
    APEX CHART REFINEMENTS
 ================================ */
