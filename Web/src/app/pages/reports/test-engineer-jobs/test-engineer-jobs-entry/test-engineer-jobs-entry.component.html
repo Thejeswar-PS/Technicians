@@ -10,11 +10,12 @@
 
   <!-- Header Section -->
   <div class="test-engineer-jobs-header__top mb-4 d-flex justify-content-between align-items-center">
-    <button type="button" class="btn btn-sm btn-primary test-engineer-jobs-header__back" (click)="goBack()" [disabled]="isLoading">
+    <button type="button" class="btn btn-sm btn-primary test-engineer-jobs-header__back" (click)="goBack()"
+      [disabled]="isLoading">
       <i class="bi bi-arrow-left me-2"></i>
       Back
     </button>
-    
+
     <!-- Page Title - Centered -->
     <div class="test-engineer-jobs-page-title">
       <h2 class="fw-bold text-primary mb-0">
@@ -22,7 +23,7 @@
         {{ isEditMode ? 'Edit Engineer Testing Entry' : 'Engineer Testing Entry' }}
       </h2>
     </div>
-    
+
     <!-- Job Number Badge -->
     <div class="id-badge-compact" *ngIf="!isLoading && entryForm.get('jobNumber')?.value">
       <i class="bi bi-hash"></i>
@@ -61,7 +62,7 @@
 
       <!-- Form Content -->
       <div class="form-content">
-        
+
         <!-- Loading indicator -->
         <div *ngIf="isLoading" class="loading-overlay">
           <div class="loading-content">
@@ -76,8 +77,8 @@
 
             <!-- Form Grid -->
             <div class="form-grid">
-          
-<!-- Job Number -->
+
+              <!-- Job Number -->
               <div class="form-field">
                 <div class="field-header">
                   <label class="field-label">
@@ -86,7 +87,8 @@
                   </label>
                 </div>
                 <div class="field-input">
-                  <input type="text" class="modern-input" formControlName="jobNumber" readonly placeholder="Auto-generated">
+                  <input type="text" class="modern-input" formControlName="jobNumber" readonly
+                    placeholder="Auto-generated">
                 </div>
               </div>
               <!-- Serial Number -->
@@ -118,7 +120,8 @@
                       {{ engineer.empName }}
                     </option>
                   </select>
-                  <div *ngIf="entryForm.get('assignedEngineer')?.invalid && entryForm.get('assignedEngineer')?.touched" class="field-error">
+                  <div *ngIf="entryForm.get('assignedEngineer')?.invalid && entryForm.get('assignedEngineer')?.touched"
+                    class="field-error">
                     Assigned engineer is required
                   </div>
                 </div>
@@ -156,7 +159,8 @@
                       {{ option.label }}
                     </option>
                   </select>
-                  <div *ngIf="entryForm.get('workType')?.invalid && entryForm.get('workType')?.touched" class="field-error">
+                  <div *ngIf="entryForm.get('workType')?.invalid && entryForm.get('workType')?.touched"
+                    class="field-error">
                     Work type is required
                   </div>
                 </div>
@@ -172,8 +176,10 @@
                   </label>
                 </div>
                 <div class="field-input">
-                  <input type="datetime-local" class="modern-input" formControlName="emergencyETA" [disabled]="!isEmergencyType">
-                  <div *ngIf="entryForm.get('emergencyETA')?.invalid && entryForm.get('emergencyETA')?.touched" class="field-error">
+                  <input type="datetime-local" class="modern-input" formControlName="emergencyETA"
+                    [disabled]="!isEmergencyType">
+                  <div *ngIf="entryForm.get('emergencyETA')?.invalid && entryForm.get('emergencyETA')?.touched"
+                    class="field-error">
                     Emergency ETA is required for Emergency work type
                   </div>
                 </div>
@@ -211,7 +217,8 @@
                 </div>
                 <div class="field-input">
                   <input type="date" class="modern-input" formControlName="projectedDate">
-                  <div *ngIf="entryForm.get('projectedDate')?.invalid && entryForm.get('projectedDate')?.touched" class="field-error">
+                  <div *ngIf="entryForm.get('projectedDate')?.invalid && entryForm.get('projectedDate')?.touched"
+                    class="field-error">
                     Projected date is required
                   </div>
                 </div>
@@ -227,9 +234,14 @@
                   </label>
                 </div>
                 <div class="field-input">
-                  <input type="date" class="modern-input" formControlName="completedDate">
-                  <div *ngIf="entryForm.get('completedDate')?.invalid && entryForm.get('completedDate')?.touched" class="field-error">
+                  <input type="date" class="modern-input" formControlName="completedDate" [max]="maxCompletedDate"
+                    [attr.max]="maxCompletedDate" (change)="onCompletedDateChange($event)">
+                  <div *ngIf="entryForm.errors?.['completedDateRequired'] && entryForm.get('completedDate')?.touched"
+                    class="field-error">
                     Completed date is required when status is Closed
+                  </div>
+                  <div *ngIf="entryForm.errors?.['completedDateFuture']" class="field-error">
+                    Completed date cannot be a future date when status is Closed
                   </div>
                 </div>
               </div>
@@ -279,7 +291,8 @@
                   </label>
                 </div>
                 <div class="field-input">
-                  <textarea class="modern-textarea" formControlName="descriptionNotes" placeholder="Enter additional notes, descriptions, or comments..."></textarea>
+                  <textarea class="modern-textarea" formControlName="descriptionNotes"
+                    placeholder="Enter additional notes, descriptions, or comments..."></textarea>
                 </div>
               </div>
 
@@ -291,7 +304,8 @@
                 <i class="bi bi-lock-fill"></i>
               </div>
               <div class="alert-content">
-                <span class="alert-message">This job is marked as "Closed" and is in read-only mode. The job was already completed and cannot be modified.</span>
+                <span class="alert-message">This job is marked as "Closed" and is in read-only mode. The job was already
+                  completed and cannot be modified.</span>
               </div>
             </div>
 
@@ -305,7 +319,7 @@
                   <i class="spinner-border spinner-border-sm me-2"></i>Saving...
                 </span>
               </button>
-              
+
               <button type="button" class="btn btn-secondary" (click)="goBack()">
                 <i class="bi bi-arrow-left me-2"></i>Back
               </button>
