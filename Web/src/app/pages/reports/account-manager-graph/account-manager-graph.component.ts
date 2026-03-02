@@ -12,6 +12,25 @@ import { Subscription } from 'rxjs';
 })
 export class AccountManagerGraphComponent implements OnInit, OnDestroy {
   
+  // ===== API DETAIL PAGE MAPPING =====
+  // Maps chart categories to NewDisplayCallsDetail API endpoint detail page names
+  // These values MUST match the exact @pDetailPage parameter values in SQL stored procedure
+  private readonly ACCOUNT_MGMT_API_MAPPING: { [key: number]: string } = {
+    0: 'Past Due Unscheduled Jobs',
+    1: 'Jobs to to Scheduled for Next 90 Days',  // Note: SQL has typo "to to" - must match exactly
+    2: 'Scheduled next 60 days',  // Display shows "Customer Confirmed" but SQL uses "Scheduled"
+    3: 'Scheduled next 30 days',
+    4: 'Scheduled next 7 days',
+    5: 'Scheduled next 72 hours',
+    6: 'Scheduled Today',  // Display shows "Jobs Today" but SQL uses "Scheduled Today"
+    7: 'Completed Not Returned from engineer',  // Display shows "from tech." but SQL uses "engineer"
+    8: 'Returned for processing Acct. Mngr.',
+    9: 'Completed and Returned with Missing Data',
+    10: 'Quotes to be Completed',
+    11: 'Down Sites',
+    12: 'Sites with Equipment Problem'
+  };
+  
   // Data properties
   acctStatusData: AcctStatusGraphDto | null = null;
   accMgmtData: AccMgmtGraphDto | null = null;
@@ -484,40 +503,25 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
     const successColor = getCSSVariableValue('--kt-success');
     const lightSuccessColor = getCSSVariableValue('--kt-success-light');
 
-    // Prepare chart data
-    const categories = [
-      'Past Unscheduled',
-      'Unscheduled Next 90',
-      'Pending 30',
-      'Scheduled 30',
-      'Scheduled 60',
-      'Scheduled 7 Days',
-      'Scheduled 72 Hours',
-      'Scheduled Today',
-      'Completed Not Returned',
-      'Completed Returned',
-      'Missing Data',
-      'Quotes to Complete',
-      'Down Sites',
-      'Problem Down Sites'
+    // Prepare chart data - Labels MUST match exact UI requirements
+    const chartData = [
+      { label: 'Past Due Unscheduled jobs', value: this.accMgmtData.pastUnscheduled ?? 0 },
+      { label: 'Jobs to be Scheduled for Next 90 Days', value: this.accMgmtData.unscheduledNext90 ?? 0 },
+      { label: 'Customer Confirmed next 60 days', value: this.accMgmtData.scheduled60 ?? 0 },
+      { label: 'Customer Confirmed next 30 days', value: this.accMgmtData.scheduled30 ?? 0 },
+      { label: 'Customer Confirmed next 7 days', value: this.accMgmtData.scheduled7days ?? 0 },
+      { label: 'Customer Confirmed next 72 hours', value: this.accMgmtData.scheduled72hours ?? 0 },
+      { label: 'Jobs Today', value: this.accMgmtData.scheduledtoday ?? 0 },
+      { label: 'Completed Not Returned from tech.', value: this.accMgmtData.completednotreturned ?? 0 },
+      { label: 'Returned from tech. for processing by Acct. Mngr.', value: this.accMgmtData.completedreturned ?? 0 },
+      { label: 'Completed and Returned with Missing Data', value: this.accMgmtData.missingData ?? 0 },
+      { label: 'Quotes to be completed', value: this.accMgmtData.quotesToComplete ?? 0 },
+      { label: 'Down Sites', value: this.accMgmtData.downSites ?? 0 },
+      { label: 'Sites with Equipment Problem', value: this.accMgmtData.problemDownSites ?? 0 }
     ];
 
-    const values = [
-      this.accMgmtData.pastUnscheduled,
-      this.accMgmtData.unscheduledNext90,
-      this.accMgmtData.pending30,
-      this.accMgmtData.scheduled30,
-      this.accMgmtData.scheduled60,
-      this.accMgmtData.scheduled7days,
-      this.accMgmtData.scheduled72hours,
-      this.accMgmtData.scheduledtoday,
-      this.accMgmtData.completednotreturned,
-      this.accMgmtData.completedreturned,
-      this.accMgmtData.missingData,
-      this.accMgmtData.quotesToComplete,
-      this.accMgmtData.downSites,
-      this.accMgmtData.problemDownSites
-    ];
+    const categories = chartData.map(item => item.label);
+    const values = chartData.map(item => item.value);
 
     this.accMgmtChartOptions = {
       series: [{
@@ -527,7 +531,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       chart: {
         fontFamily: 'Inter, sans-serif',
         type: 'bar',
-        height: 520,
+        height: Math.max(560, categories.length * 42),
         foreColor: '#000000',
         toolbar: {
           show: true,
@@ -589,13 +593,13 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       plotOptions: {
         bar: {
-          horizontal: false,
-          columnWidth: '65%',
+          horizontal: true,
+          barHeight: '58%',
           borderRadius: 8,
           borderRadiusApplication: 'end',
           borderRadiusWhenStacked: 'last',
           dataLabels: {
-            position: 'top'
+            position: 'right'
           },
           distributed: false
         }
@@ -606,7 +610,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       dataLabels: {
         enabled: true,
         formatter: function (val: any, opts: any) {
-          return val > 0 ? val : '';
+          return Number(val ?? 0).toLocaleString();
         },
         style: {
           fontSize: '12px',
@@ -631,7 +635,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
             opacity: 0.1
           }
         },
-        offsetY: -8
+        offsetX: 10
       },
       stroke: {
         show: true,
@@ -647,33 +651,26 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           show: false
         },
         labels: {
+          formatter: function (val: any) {
+            return Number(val || 0).toLocaleString();
+          },
           style: {
             colors: ['#000000'],
-            fontSize: '16px',
-            fontWeight: '900'
+            fontSize: '12px',
+            fontWeight: '700'
           },
-          rotate: -65,
-          rotateAlways: true,
-          hideOverlappingLabels: true,
-          maxHeight: 180,
-          trim: false,
-          offsetY: 20
+          trim: false
         }
       },
       yaxis: {
-        title: {
-          text: 'Count',
-          style: {
-            color: '#000000',
-            fontSize: '18px',
-            fontWeight: 600
-          }
-        },
         labels: {
+          maxWidth: 440,
           style: {
             colors: labelColor,
-            fontSize: '12px'
-          }
+            fontSize: '14px',
+            fontWeight: 700
+          },
+          trim: false
         }
       },
       fill: {
@@ -1416,8 +1413,18 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         dataSetName = this.getAcctStatusDataSetName(dataPointIndex);
         break;
       case 'account-management':
-        page = this.getAccMgmtPageType(dataPointIndex);
+        page = 'account-management';
+        // Use API mapping directly to get correct SQL stored procedure parameter
         dataSetName = this.getAccMgmtDataSetName(dataPointIndex);
+        console.log('[ACCOUNT-MANAGER-GRAPH] Chart clicked:', {
+          chartType,
+          dataPointIndex,
+          page,
+          chartLabel: config?.w?.globals?.labels?.[dataPointIndex],
+          dataSetName,
+          mappingConstant: this.ACCOUNT_MGMT_API_MAPPING[dataPointIndex],
+          allMappings: this.ACCOUNT_MGMT_API_MAPPING
+        });
         break;
       case 'paperwork':
         page = 'jobs-processed';
@@ -1509,33 +1516,36 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
   /**
    * Get data set name for account management chart clicks
+   * Maps to NewDisplayCallsDetail API endpoint detail page parameter names
    */
   private getAccMgmtDataSetName(dataPointIndex: number): string {
-    const dataSetMapping = [
-      'Past Unscheduled',
-      'Unscheduled Next 90',
-      'Pending 30',
-      'Scheduled 30',
-      'Scheduled 60',
-      'Scheduled 7 Days',
-      'Scheduled 72 Hours',
-      'Scheduled Today',
-      'Completed Not Returned',
-      'Completed Returned',
-      'Missing Data',
-      'Quotes to Complete',
-      'Down Sites',
-      'Problem Down Sites'
-    ];
-
-    return dataSetMapping[dataPointIndex] || 'Unknown';
+    return this.ACCOUNT_MGMT_API_MAPPING[dataPointIndex] || 'Unknown';
   }
 
   /**
-   * Navigate to the report details page
+   * Navigate to the report details page via NewDisplayCallsDetail API
+   * @param page - Page type identifier (for legacy compatibility)
+   * @param dataSetName - Detail page name matching API endpoint parameter
+   * @param officeId - Optional office ID filter
+   * 
+   * API Endpoint Format:
+   * GET /api/NewDisplayCallsDetail?detailPage={dataSetName}&offId={officeId}
+   * 
+   * Examples:
+   * /api/NewDisplayCallsDetail?detailPage=Past Due Unscheduled Jobs
+   * /api/NewDisplayCallsDetail?detailPage=Scheduled next 30 days
+   * /api/NewDisplayCallsDetail?detailPage=Down Sites&offId=NYC
    */
   private navigateToReportDetails(page: string, dataSetName: string, officeId: string = ''): void {
-    console.log('Navigating to report details:', { page, dataSetName, officeId });
+    const apiUrl = this.getApiDetailsUrl(dataSetName, officeId);
+    
+    console.log('[ACCOUNT-MANAGER-GRAPH] Navigating to NewDisplayCallsDetail:', { 
+      page,
+      detailPage: dataSetName, 
+      offId: officeId,
+      apiEndpoint: apiUrl,
+      fullUrl: `https://localhost:7217${apiUrl}`
+    });
     
     this.router.navigate(['/reports/display-calls-detail'], {
       queryParams: {
@@ -1628,5 +1638,76 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
     }).then(success => {
       console.log('[UNSCHEDULED CLICK] Navigation success:', success);
     });
+  }
+
+  /**
+   * ===== NewDisplayCallsDetail API MAPPING DOCUMENTATION =====
+   * 
+   * Available Detail Page Names for /api/NewDisplayCallsDetail endpoint:
+   * 
+   * ACCOUNT MANAGEMENT PIPELINE:
+   * 0. "Past Due Unscheduled Jobs" - Jobs not yet scheduled that are overdue
+   * 1. "Jobs to be Scheduled for Next 90 Days" - Upcoming jobs within 90 days
+   * 2. "Customer Confirmed next 60 days" - Customer-confirmed jobs in next 60 days
+   * 3. "Customer Confirmed next 30 days" - Customer-confirmed jobs in next 30 days
+   * 4. "Customer Confirmed next 7 days" - Customer-confirmed jobs in next 7 days
+   * 5. "Customer Confirmed next 72 hours" - Customer-confirmed jobs in next 72 hours
+   * 6. "Jobs Today" - Jobs scheduled for today
+   * 7. "Completed Not Returned from tech" - Completed jobs awaiting tech return
+   * 8. "Acct. Mgmt" - Account management status jobs
+   * 9. "Returned from Missing Data" - Jobs returned with missing data
+   * 10. "Completed and Returned with Equipment Problem" - Jobs with equipment issues
+   * 11. "Down Sites" - Currently down job sites
+   * 12. "Sites with Equipment Problem" - Sites with equipment problems
+   * 13. "Problem" - Various problem categorization
+   * 
+   * USAGE EXAMPLES:
+   * GET /api/NewDisplayCallsDetail?detailPage=Past Due Unscheduled Jobs
+   * GET /api/NewDisplayCallsDetail?detailPage=Scheduled next 30 days
+   * GET /api/NewDisplayCallsDetail?detailPage=Down Sites&offId=NYC
+   * 
+   * PARAMETERS:
+   * - detailPage (required): Name of the detail page from the mapping above
+   * - offId (optional): Office/Location ID filter for results
+   */
+
+  /**
+   * Generate API endpoint URL for a given detail page
+   * @param detailPage - Detail page name from ACCOUNT_MGMT_API_MAPPING
+   * @param officeId - Optional office ID filter
+   * @returns Full API endpoint URL
+   * 
+   * Examples:
+   * getApiDetailsUrl('Past Due Unscheduled Jobs')
+   * → /api/NewDisplayCallsDetail?detailPage=Past Due Unscheduled Jobs
+   * 
+   * getApiDetailsUrl('Down Sites', 'NYC')
+   * → /api/NewDisplayCallsDetail?detailPage=Down Sites&offId=NYC
+   */
+  private getApiDetailsUrl(detailPage: string, officeId: string = ''): string {
+    const baseUrl = '/api/NewDisplayCallsDetail';
+    const params = new URLSearchParams();
+    params.set('detailPage', detailPage);
+    if (officeId) {
+      params.set('offId', officeId);
+    }
+    return `${baseUrl}?${params.toString()}`;
+  }
+
+  /**
+   * Get all available detail pages for the API
+   * @returns Array of detail page names that can be used in API calls
+   */
+  getAvailableDetailPages(): string[] {
+    return Object.values(this.ACCOUNT_MGMT_API_MAPPING);
+  }
+
+  /**
+   * Get detail page name by chart index
+   * @param chartIndex - Index of the chart category
+   * @returns Detail page name for API endpoint
+   */
+  getDetailPageByIndex(chartIndex: number): string {
+    return this.ACCOUNT_MGMT_API_MAPPING[chartIndex] || 'Unknown';
   }
 }

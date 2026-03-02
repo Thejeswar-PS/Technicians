@@ -37,7 +37,7 @@ namespace Technicians.Api.Controllers
                     });
                 }
 
-                // ?? KEY ENHANCEMENT: Automatically map legacy parameter names to modern ones
+                // Automatically map legacy parameter names to modern ones
                 var originalDetailPage = detailPage;
                 var mappedDetailPage = _repository.MapLegacyParameterName(detailPage);
                 

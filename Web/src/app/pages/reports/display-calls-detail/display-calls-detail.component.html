@@ -11,30 +11,10 @@
             <span class="card-label fw-bolder fs-2 mb-1 text-dark">
               {{ originalParameter || detailPage || dataSetName }}
             </span>
-            <span class="text-muted fw-bold fs-7" *ngIf="useLegacyApi && page">
-              <i class="bi bi-diagram-3 me-1"></i>
-              Legacy API - Page Type: {{ page }}
-            </span>
-            <span class="text-muted fw-bold fs-7" *ngIf="parameterMapped && !useLegacyApi">
-              <i class="bi bi-info-circle me-1"></i>
-              Mapped from legacy parameter to: {{ mappedParameter }}
-            </span>
-            <span class="text-muted fw-bold fs-7" *ngIf="offId">
-              <i class="bi bi-building me-1"></i>
-              Office ID: {{ offId }}
-            </span>
           </h3>
         </div>
         
         <div class="card-toolbar">
-          <button class="btn btn-sm btn-light-primary me-2" (click)="refresh()" [disabled]="isLoading">
-            <i class="bi bi-arrow-clockwise"></i>
-            Refresh
-          </button>
-          <button class="btn btn-sm btn-light-success" (click)="exportToCSV()" [disabled]="displayData.length === 0">
-            <i class="bi bi-download"></i>
-            Export CSV
-          </button>
         </div>
       </div>
     </div>
@@ -60,138 +40,71 @@
     <button type="button" class="btn-close" (click)="error = null"></button>
   </div>
 
-  <!-- Stats Card -->
-  <div *ngIf="!isLoading && displayData.length > 0" class="row g-5 mb-5">
-    <div class="col-xl-3 col-md-6">
-      <div class="card card-custom bg-light-primary">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-list-ul fs-2x text-primary me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Total Records</span>
-              <span class="fw-bolder text-primary fs-2">{{ totalRecords }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-      <div class="card card-custom bg-light-success">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-columns fs-2x text-success me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Data Columns</span>
-              <span class="fw-bolder text-success fs-2">{{ columns.length }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-      <div class="card card-custom bg-light-info">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-clock fs-2x text-info me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Query Time</span>
-              <span class="fw-bolder text-info fs-2">{{ executionTimeMs }}ms</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6" *ngIf="totalsData && totalsData.length > 0">
-      <div class="card card-custom bg-light-warning">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-calculator fs-2x text-warning me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Has Totals</span>
-              <span class="fw-bolder text-warning fs-2">Yes</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Data Table Card -->
   <div *ngIf="!isLoading && displayData.length > 0" class="card card-custom">
     <div class="card-header border-0 pt-5">
-      <h3 class="card-title align-items-start flex-column">
-        <span class="card-label fw-bolder fs-3 mb-1">Detail Data</span>
-        <span class="text-muted mt-1 fw-bold fs-7">
-          Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalRecords) }} of {{ totalRecords }} records
-        </span>
-      </h3>
-      
-      <div class="card-toolbar">
-        <select class="form-select form-select-sm" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)">
-          <option [value]="25">25 per page</option>
-          <option [value]="50">50 per page</option>
-          <option [value]="100">100 per page</option>
-          <option [value]="500">500 per page</option>
-        </select>
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="d-flex align-items-center">
+          <label class="me-2 fw-semibold">Records per page:</label>
+          <select class="form-select form-select-sm w-auto" [(ngModel)]="pageSize" (change)="currentPage = 1">
+            <option [value]="25">25</option>
+            <option [value]="50">50</option>
+            <option [value]="100">100</option>
+            <option [value]="500">500</option>
+          </select>
+        </div>
+        
+        <div class="flex-fill text-center fw-semibold">
+          Showing
+          {{ totalRecords ? ((currentPage - 1) * pageSize + 1) : 0 }}
+          -
+          {{ totalRecords ? Math.min(currentPage * pageSize, totalRecords) : 0 }}
+          of {{ totalRecords }} records
+        </div>
+        
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" 
+                  class="btn btn-sm btn-outline-secondary" 
+                  (click)="previousPage()" 
+                  [disabled]="currentPage <= 1">
+            Prev
+          </button>
+          <span class="fw-semibold">Page {{ currentPage }} of {{ totalPages }}</span>
+          <button type="button" 
+                  class="btn btn-sm btn-outline-secondary" 
+                  (click)="nextPage()" 
+                  [disabled]="currentPage >= totalPages">
+            Next
+          </button>
+        </div>
       </div>
     </div>
     
     <div class="card-body py-3">
       <!-- Table -->
       <div class="table-responsive">
-        <table class="table table-row-bordered table-row-gray-300 align-middle gs-0 gy-3">
+        <table class="table table-bordered mb-0">
           <thead>
-            <tr class="fw-bolder text-muted bg-light">
-              <th class="ps-4 min-w-50px">#</th>
-              <th *ngFor="let column of columns" class="min-w-150px">
-                {{ formatColumnName(column) }}
+            <tr>
+              <th *ngFor="let column of columns" class="fw-bold sortable" (click)="sortBy(column)">
+                <span class="header-cell">
+                  {{ formatColumnName(column) }}
+                  <span class="sort-icons" [class.active]="sortColumn === column">
+                    <i class="up" [class.on]="sortColumn === column && sortDirection === 'asc'"></i>
+                    <i class="down" [class.on]="sortColumn === column && sortDirection === 'desc'"></i>
+                  </span>
+                </span>
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of paginatedData; let i = index">
-              <td class="ps-4 text-muted">
-                {{ (currentPage - 1) * pageSize + i + 1 }}
-              </td>
-              <td *ngFor="let column of columns">
-                {{ formatCellValue(row[column]) }}
+            <tr *ngFor="let row of paginatedData; let i = index" [ngClass]="getRowStyleClass(row)">
+              <td *ngFor="let column of columns" [ngClass]="getCellStyleClass(row, column)">
+                {{ getCellDisplayValue(row, column) }}
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-      
-      <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center mt-5" *ngIf="totalPages > 1">
-        <div class="text-muted">
-          Page {{ currentPage }} of {{ totalPages }}
-        </div>
-        
-        <nav>
-          <ul class="pagination pagination-circle">
-            <li class="page-item" [class.disabled]="currentPage === 1">
-              <a class="page-link" (click)="previousPage()">
-                <i class="bi bi-chevron-left"></i>
-              </a>
-            </li>
-            
-            <li class="page-item" 
-                *ngFor="let page of [].constructor(totalPages); let i = index"
-                [class.active]="i + 1 === currentPage"
-                [class.d-none]="totalPages > 10 && (i + 1 < currentPage - 2 || i + 1 > currentPage + 2) && i + 1 !== 1 && i + 1 !== totalPages">
-              <a class="page-link" (click)="goToPage(i + 1)">{{ i + 1 }}</a>
-            </li>
-            
-            <li class="page-item" [class.disabled]="currentPage === totalPages">
-              <a class="page-link" (click)="nextPage()">
-                <i class="bi bi-chevron-right"></i>
-              </a>
-            </li>
-          </ul>
-        </nav>
       </div>
     </div>
   </div>
@@ -210,10 +123,10 @@
     
     <div class="card-body py-3">
       <div class="table-responsive">
-        <table class="table table-row-bordered table-row-gray-300 align-middle gs-0 gy-3">
+        <table class="table table-bordered mb-0">
           <thead>
-            <tr class="fw-bolder text-muted bg-light-warning">
-              <th *ngFor="let column of Object.keys(totalsData[0])" class="min-w-150px">
+            <tr>
+              <th *ngFor="let column of Object.keys(totalsData[0])" class="fw-bold">
                 {{ formatColumnName(column) }}
               </th>
             </tr>
