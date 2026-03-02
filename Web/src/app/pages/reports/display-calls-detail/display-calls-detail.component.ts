@@ -67,7 +67,8 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
       });
       
       // Determine if we should use legacy API
-      this.useLegacyApi = !!(this.page || this.month);
+      // Use legacy API if: page/month params present OR dataSetName param present (accounting-status comes with dataSetName)
+      this.useLegacyApi = !!(this.page || this.month || this.dataSetName);
       
       console.log('[DETAIL INIT] useLegacyApi flag:', this.useLegacyApi);
       
@@ -126,6 +127,28 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
       sub = this.reportService.getDisplayCallsDetailLegacy(
         this.offId, 
         'UnschedActMngr', 
+        undefined, 
+        undefined
+      ).subscribe({
+        next: (response: NewDisplayCallsDetailResponse) => {
+          console.log('[DISPLAY DETAIL] Legacy API response received:', response);
+          this.handleSuccessResponse(response);
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('[DISPLAY DETAIL] Legacy API error:', error);
+          this.error = error.error?.message || 'Failed to load calls detail data';
+          this.isLoading = false;
+        }
+      });
+    } else if (this.useLegacyApi && this.dataSetName && !this.page && !this.month) {
+      // Coming from accounting-status with dataSetName only (no page/month)
+      console.log('[DISPLAY DETAIL] Using LEGACY API with dataSetName from Accounting Status');
+      console.log('[DISPLAY DETAIL] Calling: getDisplayCallsDetailLegacy(', this.dataSetName, ', undefined, undefined, undefined)');
+      
+      sub = this.reportService.getDisplayCallsDetailLegacy(
+        this.dataSetName, 
+        undefined, 
         undefined, 
         undefined
       ).subscribe({

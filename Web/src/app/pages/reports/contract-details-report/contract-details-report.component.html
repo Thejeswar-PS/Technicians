@@ -216,7 +216,7 @@
                 <td>{{ row.poNumber || 'N/A' }}</td>
                 <td>{{ row.type || 'N/A' }}</td>
                 <td>{{ row.invoicedOn | date: 'dd-MMM-yyyy' }}</td>
-                <td class="text-end fw-bold text-success">{{ row.amount | currency }}</td>
+                <td class="text-center fw-bold text-success">{{ row.amount | currency }}</td>
               </tr>
               <tr *ngIf="displayedContractRows.length === 0">
                 <td colspan="9" class="text-center text-muted py-4">No records found</td>
