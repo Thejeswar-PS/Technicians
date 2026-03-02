@@ -25,7 +25,6 @@ namespace Technicians.Api.Models
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime? CreatedOn { get; set; }
         public string UniqueID { get; set; } = string.Empty;
-        public string Priority { get; set; } = string.Empty;
     }
 
     public class PartsTestStatusRequest
