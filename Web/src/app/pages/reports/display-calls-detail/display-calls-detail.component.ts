@@ -200,21 +200,20 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
       this.page = params['page'];
       this.month = params['month'];
       
-      // Normalize legacy parameters to new API format
-      // First check if detailPage contains a legacy value and normalize it
-      if (this.detailPage) {
-        const normalizedDetailPage = this.normalizeLegacyDataSetName(this.detailPage);
-        if (normalizedDetailPage !== this.detailPage) {
-          this.detailPage = normalizedDetailPage;
-        }
-      }
+      console.log('[DETAIL INIT] Raw params received from route:', params);
+      console.log('[DETAIL INIT] Parsed values:', {
+        detailPage: this.detailPage,
+        offId: this.offId,
+        dataSetName: this.dataSetName,
+        page: this.page,
+        month: this.month
+      });
       
-      // Then check if dataSetName should be used (for backward compatibility)
-      if (this.dataSetName && !this.detailPage) {
-        this.detailPage = this.normalizeLegacyDataSetName(this.dataSetName);
-      }
+      // Determine if we should use legacy API
+      // Use legacy API if: page/month params present OR dataSetName param present (accounting-status comes with dataSetName)
+      this.useLegacyApi = !!(this.page || this.month || this.dataSetName);
       
-      this.useLegacyApi = !!(this.page || this.month);
+      console.log('[DETAIL INIT] useLegacyApi flag:', this.useLegacyApi);
       
       if (this.detailPage || this.dataSetName) {
         this.loadCallsDetail();
@@ -251,8 +250,22 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
       this.detailPage === name
     );
     
+    console.log('[DISPLAY DETAIL] Loading with params:', {
+      detailPage: this.detailPage,
+      detailPageLower: this.detailPage?.toLowerCase(),
+      offId: this.offId,
+      dataSetName: this.dataSetName,
+      page: this.page,
+      month: this.month,
+      useLegacyApi: this.useLegacyApi,
+      isUnscheduledJob: isUnscheduledJob
+    });
+    
     // Check if this is for unscheduled jobs with offId - automatically convert to legacy API
     if ((isUnscheduledJob && this.offId) || (this.detailPage === 'Jobs to to Scheduled for Next 90 Days' && this.offId)) {
+      console.log('[DISPLAY DETAIL] 🔄 CONVERTING TO LEGACY API - Unscheduled Job Detected!');
+      console.log('[DISPLAY DETAIL] Calling: getDisplayCallsDetailLegacy(', this.offId, ', UnschedActMngr, undefined, undefined)');
+      
       // Auto-convert old format to legacy API format for unscheduled jobs
       sub = this.reportService.getDisplayCallsDetailLegacy(
         this.offId, 
@@ -261,15 +274,42 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
         undefined
       ).subscribe({
         next: (response: NewDisplayCallsDetailResponse) => {
+          console.log('[DISPLAY DETAIL] Legacy API response received:', response);
           this.handleSuccessResponse(response);
           this.isLoading = false;
         },
         error: (error) => {
+          console.error('[DISPLAY DETAIL] Legacy API error:', error);
+          this.error = error.error?.message || 'Failed to load calls detail data';
+          this.isLoading = false;
+        }
+      });
+    } else if (this.useLegacyApi && this.dataSetName && !this.page && !this.month) {
+      // Coming from accounting-status with dataSetName only (no page/month)
+      console.log('[DISPLAY DETAIL] Using LEGACY API with dataSetName from Accounting Status');
+      console.log('[DISPLAY DETAIL] Calling: getDisplayCallsDetailLegacy(', this.dataSetName, ', undefined, undefined, undefined)');
+      
+      sub = this.reportService.getDisplayCallsDetailLegacy(
+        this.dataSetName, 
+        undefined, 
+        undefined, 
+        undefined
+      ).subscribe({
+        next: (response: NewDisplayCallsDetailResponse) => {
+          console.log('[DISPLAY DETAIL] Legacy API response received:', response);
+          this.handleSuccessResponse(response);
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('[DISPLAY DETAIL] Legacy API error:', error);
           this.error = error.error?.message || 'Failed to load calls detail data';
           this.isLoading = false;
         }
       });
     } else if (this.useLegacyApi && this.dataSetName) {
+      console.log('[DISPLAY DETAIL] Using LEGACY API (page/month params present)');
+      console.log('[DISPLAY DETAIL] Calling: getDisplayCallsDetailLegacy(', this.dataSetName, ',', this.page, ',', this.month, ',', this.offId, ')');
+      
       // Use legacy API
       sub = this.reportService.getDisplayCallsDetailLegacy(
         this.dataSetName, 
@@ -278,22 +318,29 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
         this.offId
       ).subscribe({
         next: (response: NewDisplayCallsDetailResponse) => {
+          console.log('[DISPLAY DETAIL] Legacy API response received:', response);
           this.handleSuccessResponse(response);
           this.isLoading = false;
         },
         error: (error) => {
+          console.error('[DISPLAY DETAIL] Legacy API error:', error);
           this.error = error.error?.message || 'Failed to load calls detail data';
           this.isLoading = false;
         }
       });
     } else {
+      console.log('[DISPLAY DETAIL] Using REGULAR API (no legacy indicators)');
+      console.log('[DISPLAY DETAIL] Calling: getDisplayCallsDetail(', this.detailPage, ',', this.offId, ')');
+      
       // Use regular API
       sub = this.reportService.getDisplayCallsDetail(this.detailPage, this.offId).subscribe({
         next: (response: NewDisplayCallsDetailResponse) => {
+          console.log('[DISPLAY DETAIL] Regular API response received:', response);
           this.handleSuccessResponse(response);
           this.isLoading = false;
         },
         error: (error) => {
+          console.error('[DISPLAY DETAIL] Regular API error:', error);
           this.error = error.error?.message || 'Failed to load calls detail data';
           this.isLoading = false;
         }

@@ -195,11 +195,12 @@
         }
 
         .stat-label {
-            font-size: 0.72rem;
-            font-weight: 500;
+            font-size: 1.1rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.8px;
-            opacity: 0.85;
+            color: #000;
+            opacity: 1;
             transition: all 0.3s ease;
             line-height: 1.2;
         }
