@@ -21,7 +21,7 @@
 // Table wrapper with scrolling
 .table-responsive {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: auto;
   max-height: 70vh;
 }
@@ -29,9 +29,8 @@
 // Table base styling
 table {
   width: 100%;
-  min-width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
   font-size: 14px;
 }
 
@@ -43,9 +42,11 @@ thead th {
   background: linear-gradient(180deg, #5f82f3, #5a7bf0);
   color: #ffffff;
   font-weight: 600;
-  padding: 10px 12px;
+  padding: 10px 8px;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
+  word-wrap: break-word;
+  line-height: 1.3;
   border-bottom: 2px solid #dee2e6;
 }
 
@@ -62,15 +63,153 @@ tbody td {
   word-break: break-word;
 }
 
+// Job No column (first column) - wider width
+thead th:first-child,
+tbody td:first-child {
+  width: 8%;
+  min-width: 100px;
+}
+
+// Customer Name column (2nd column) - wider width
+thead th:nth-child(2),
+tbody td:nth-child(2) {
+  width: 10%;
+  min-width: 120px;
+}
+
+// Customer No column (3rd column)
+thead th:nth-child(3),
+tbody td:nth-child(3) {
+  width: 8%;
+  min-width: 100px;
+}
+
+// Acct Mgr column (4th column)
+thead th:nth-child(4),
+tbody td:nth-child(4) {
+  width: 7%;
+  min-width: 90px;
+}
+
+// Status column (5th column)
+thead th:nth-child(5),
+tbody td:nth-child(5) {
+  width: 6%;
+  min-width: 80px;
+}
+
+// Start Dt column (6th column)
+thead th:nth-child(6),
+tbody td:nth-child(6) {
+  width: 7%;
+  min-width: 90px;
+}
+
+// End Dt column (7th column)
+thead th:nth-child(7),
+tbody td:nth-child(7) {
+  width: 7%;
+  min-width: 90px;
+}
+
+// Tech Name column (8th column)
+thead th:nth-child(8),
+tbody td:nth-child(8) {
+  width: 8%;
+  min-width: 100px;
+}
+
+// Type column (9th column)
+thead th:nth-child(9),
+tbody td:nth-child(9) {
+  width: 5%;
+  min-width: 70px;
+}
+
+// Contract No column (10th column)
+thead th:nth-child(10),
+tbody td:nth-child(10) {
+  width: 9%;
+  min-width: 110px;
+}
+
+// Quoted Amount column (11th column)
+thead th:nth-child(11),
+tbody td:nth-child(11) {
+  width: 7%;
+  min-width: 90px;
+}
+
+// Change Age column (12th column)
+thead th:nth-child(12),
+tbody td:nth-child(12) {
+  width: 6%;
+  min-width: 80px;
+}
+
+// Description column (last column) - wider width
+thead th:last-child,
+tbody td:last-child {
+  width: 12%;
+  min-width: 120px;
+}
+
+/* ================================
+   DYNAMICALLY ASSIGNED COLUMN WIDTHS
+   ================================= */
+
+// 8% width columns
+.col-width-8 {
+  width: 8%;
+  min-width: 100px;
+}
+
+// 10% width columns (Customer Name)
+.col-width-10 {
+  width: 10%;
+  min-width: 120px;
+}
+
+// 7% width columns
+.col-width-7 {
+  width: 7%;
+  min-width: 90px;
+}
+
+// 6% width columns
+.col-width-6 {
+  width: 6%;
+  min-width: 80px;
+}
+
+// 9% width columns (Contract No)
+.col-width-9 {
+  width: 9%;
+  min-width: 110px;
+}
+
+// 12% width columns (Description)
+.col-width-12 {
+  width: 12%;
+  min-width: 120px;
+}
+
+// 5% width columns (Type)
+.col-width-5 {
+  width: 5%;
+  min-width: 70px;
+}
+
+// Default width for unknown columns
+.col-width-default {
+  width: 8%;
+  min-width: 80px;
+}
+
 // Sortable header styling
 .sortable {
   cursor: pointer;
   user-select: none;
-  
-  &:hover {
-    background: linear-gradient(180deg, #5f82f3, #5a7bf0) !important;
-    filter: brightness(1.1);
-  }
 }
 
 // Header cell layout

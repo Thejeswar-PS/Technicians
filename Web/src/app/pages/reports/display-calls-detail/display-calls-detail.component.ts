@@ -323,6 +323,17 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
       this.columns = Object.keys(this.displayData[0]).filter(col => 
         col.toLowerCase() !== 'classid' && col.toLowerCase() !== 'class id'
       );
+      
+      // Reorder columns: Customer Name should come before Customer No
+      const customerNameIndex = this.columns.findIndex(col => col.toLowerCase().includes('customername') || col.toLowerCase() === 'customer name');
+      const customerNoIndex = this.columns.findIndex(col => (col.toLowerCase().includes('customerno') || col.toLowerCase() === 'customer no') && !col.toLowerCase().includes('name'));
+      
+      if (customerNameIndex > -1 && customerNoIndex > -1 && customerNameIndex > customerNoIndex) {
+        // Swap the positions so Customer Name comes before Customer No
+        const customerName = this.columns[customerNameIndex];
+        this.columns.splice(customerNameIndex, 1);
+        this.columns.splice(customerNoIndex, 0, customerName);
+      }
     }
     
     // Show warning if no data
@@ -430,11 +441,61 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
    * Format column name for display
    */
   formatColumnName(column: string): string {
+    // Special case for job type columns
+    if (column.toLowerCase() === 'jobtype' || column.toLowerCase() === 'job type') {
+      return 'Type';
+    }
+    
     // Convert camelCase or PascalCase to Title Case with spaces
     return column
       .replace(/([A-Z])/g, ' $1') // Add space before capital letters
       .replace(/^./, str => str.toUpperCase()) // Capitalize first letter
       .trim();
+  }
+
+  /**
+   * Get column width style class based on column name
+   * Allows for specific column width configuration across different report types
+   */
+  getColumnWidthClass(column: string): string {
+    const colLower = column.toLowerCase();
+    
+    // Define widths for specific columns
+    const columnWidths: { [key: string]: string } = {
+      'jobno': 'col-width-8',
+      'customername': 'col-width-10',
+      'customerno': 'col-width-8',
+      'acctmgr': 'col-width-7',
+      'accountmanager': 'col-width-7',
+      'status': 'col-width-6',
+      'startdt': 'col-width-7',
+      'enddt': 'col-width-7',
+      'techname': 'col-width-15',
+      'type': 'col-width-5',
+      'jobtype': 'col-width-5',
+      'contractno': 'col-width-9',
+      'quotedamount': 'col-width-7',
+      'quoted': 'col-width-7',
+      'changeage': 'col-width-6',
+      'description': 'col-width-12',
+      'techreturnedOn': 'col-width-7', // For Returned for processing report
+      'techreturnedon': 'col-width-7'
+    };
+    
+    // Check for exact match
+    if (columnWidths[colLower]) {
+      return columnWidths[colLower];
+    }
+    
+    // Check for partial matches
+    for (const [key, value] of Object.entries(columnWidths)) {
+      if (colLower.includes(key) || key.includes(colLower)) {
+        return value;
+      }
+    }
+    
+    // Default width for unknown columns
+    return 'col-width-default';
   }
 
   /**

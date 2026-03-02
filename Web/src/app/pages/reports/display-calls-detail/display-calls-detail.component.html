@@ -84,9 +84,9 @@
       <!-- Table -->
       <div class="table-responsive">
         <table class="table table-bordered mb-0">
-          <thead>
+          <thead class="table-light">
             <tr>
-              <th *ngFor="let column of columns" class="fw-bold sortable" (click)="sortBy(column)">
+              <th class="fw-bold sortable" *ngFor="let column of columns" (click)="sortBy(column)" [ngClass]="getColumnWidthClass(column)">
                 <span class="header-cell">
                   {{ formatColumnName(column) }}
                   <span class="sort-icons" [class.active]="sortColumn === column">
@@ -99,7 +99,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of paginatedData; let i = index" [ngClass]="getRowStyleClass(row)">
-              <td *ngFor="let column of columns" [ngClass]="getCellStyleClass(row, column)">
+              <td *ngFor="let column of columns" [ngClass]="[getCellStyleClass(row, column), getColumnWidthClass(column)]">
                 {{ getCellDisplayValue(row, column) }}
               </td>
             </tr>
