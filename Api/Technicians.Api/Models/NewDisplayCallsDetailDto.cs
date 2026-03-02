@@ -10,7 +10,6 @@
         {
             public IEnumerable<dynamic> Data { get; set; } = new List<dynamic>();
 
-            // Some SP cases return total as second result set
             public IEnumerable<dynamic>? Totals { get; set; }
         }
     

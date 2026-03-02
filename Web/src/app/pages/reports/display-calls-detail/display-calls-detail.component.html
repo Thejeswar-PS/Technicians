@@ -142,56 +142,28 @@
     <div class="card-body py-3">
       <!-- Table -->
       <div class="table-responsive">
-        <table class="table table-row-bordered table-row-gray-300 align-middle gs-0 gy-3">
-          <thead>
-            <tr class="fw-bolder text-muted bg-light">
-              <th class="ps-4 min-w-50px">#</th>
-              <th *ngFor="let column of columns" class="min-w-150px">
-                {{ formatColumnName(column) }}
+        <table class="table table-bordered mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="fw-bold sortable" *ngFor="let column of columns" (click)="sortBy(column)" [ngClass]="getColumnWidthClass(column)">
+                <span class="header-cell">
+                  {{ formatColumnName(column) }}
+                  <span class="sort-icons" [class.active]="sortColumn === column">
+                    <i class="up" [class.on]="sortColumn === column && sortDirection === 'asc'"></i>
+                    <i class="down" [class.on]="sortColumn === column && sortDirection === 'desc'"></i>
+                  </span>
+                </span>
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of paginatedData; let i = index">
-              <td class="ps-4 text-muted">
-                {{ (currentPage - 1) * pageSize + i + 1 }}
-              </td>
-              <td *ngFor="let column of columns">
-                {{ formatCellValue(row[column]) }}
+            <tr *ngFor="let row of paginatedData; let i = index" [ngClass]="getRowStyleClass(row)">
+              <td *ngFor="let column of columns" [ngClass]="[getCellStyleClass(row, column), getColumnWidthClass(column)]">
+                {{ getCellDisplayValue(row, column) }}
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-      
-      <!-- Pagination -->
-      <div class="d-flex justify-content-between align-items-center mt-5" *ngIf="totalPages > 1">
-        <div class="text-muted">
-          Page {{ currentPage }} of {{ totalPages }}
-        </div>
-        
-        <nav>
-          <ul class="pagination pagination-circle">
-            <li class="page-item" [class.disabled]="currentPage === 1">
-              <a class="page-link" (click)="previousPage()">
-                <i class="bi bi-chevron-left"></i>
-              </a>
-            </li>
-            
-            <li class="page-item" 
-                *ngFor="let page of [].constructor(totalPages); let i = index"
-                [class.active]="i + 1 === currentPage"
-                [class.d-none]="totalPages > 10 && (i + 1 < currentPage - 2 || i + 1 > currentPage + 2) && i + 1 !== 1 && i + 1 !== totalPages">
-              <a class="page-link" (click)="goToPage(i + 1)">{{ i + 1 }}</a>
-            </li>
-            
-            <li class="page-item" [class.disabled]="currentPage === totalPages">
-              <a class="page-link" (click)="nextPage()">
-                <i class="bi bi-chevron-right"></i>
-              </a>
-            </li>
-          </ul>
-        </nav>
       </div>
     </div>
   </div>
@@ -210,10 +182,10 @@
     
     <div class="card-body py-3">
       <div class="table-responsive">
-        <table class="table table-row-bordered table-row-gray-300 align-middle gs-0 gy-3">
+        <table class="table table-bordered mb-0">
           <thead>
-            <tr class="fw-bolder text-muted bg-light-warning">
-              <th *ngFor="let column of Object.keys(totalsData[0])" class="min-w-150px">
+            <tr>
+              <th *ngFor="let column of Object.keys(totalsData[0])" class="fw-bold">
                 {{ formatColumnName(column) }}
               </th>
             </tr>
