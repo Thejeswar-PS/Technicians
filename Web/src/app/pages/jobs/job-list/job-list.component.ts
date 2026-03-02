@@ -136,6 +136,21 @@ export class JobListComponent implements OnInit {
       });
     }
 
+  private getNormalizedRoleStatus(): string {
+    const raw = (this.employeeStatus || this.userRole || '').toString().trim().toLowerCase();
+    return raw;
+  }
+
+  public isTechContext(): boolean {
+    const s = this.getNormalizedRoleStatus();
+    return s === 'technician' || s === 'techmanager' || s === 'tech manager' || s.includes('tech');
+  }
+
+  private isManagerContext(): boolean {
+    const s = this.getNormalizedRoleStatus();
+    return s === 'manager' || s === 'other' || s.includes('manager');
+  }
+
   ngOnInit(): void {
     console.log('🚀 JobList ngOnInit started');
     let loadDefault = true;
@@ -201,13 +216,22 @@ export class JobListComponent implements OnInit {
     let mgrId = 'All';
     let currentMonth = new Date().getMonth() + 1; // JavaScript months are 0-based, API expects 1-based
     
-    if (this.userRole === 'Technician' || this.userRole === 'TechManager') {
+    const normalizedInitRole = (this.userRole || '').toString().trim().toLowerCase();
+    if (normalizedInitRole.includes('tech')) {
       techId = this.empID;
       currentMonth = 0; // Set to 'All' when tech is selected
-    } else if (this.userRole === 'Manager' || this.userRole === 'Other') {
+    } else if (normalizedInitRole.includes('manager') || normalizedInitRole === 'other') {
       mgrId = this.empID;
       currentMonth = 0; // Set to 'All' when manager is selected
     }
+
+    console.log('🔎 initializeFilterForm role resolution:', {
+      userRole: this.userRole,
+      normalizedInitRole,
+      empID: this.empID,
+      initialTechId: techId,
+      initialMgrId: mgrId
+    });
     
     // Initialize previous values for change detection
     this.previousTechId = techId;
@@ -290,7 +314,7 @@ public Load(initialLoad: boolean = false)
   const month = this.jobFilterForm.get('month')?.value ?? 0;
 
   const status = this.employeeStatus || this.userRole;
-  if (status === 'Technician' || status === 'TechManager') {
+  if (this.isTechContext()) {
     // Force techId to empId and mgrId to 'All'
     techId = empId;
     mgrId = 'All';
@@ -322,6 +346,8 @@ public Load(initialLoad: boolean = false)
     month: month,
     userRole: this.userRole,
     employeeStatus: this.employeeStatus,
+    normalizedRoleStatus: this.getNormalizedRoleStatus(),
+    isTechContext: this.isTechContext(),
     techniciansLength: Array.isArray(this.technicians) ? this.technicians.length : 0,
     techniciansSample: Array.isArray(this.technicians) ? this.technicians.slice(0,3) : []
   });
@@ -586,14 +612,26 @@ public Load(initialLoad: boolean = false)
     ).subscribe((statusData: any) => {
       console.log('Employee status received:', statusData);
       
-      // Extract status from response array: [{"EmpID":"KARMA","Status":"Manager"}]
+      // Extract status from multiple possible response shapes:
+      // 1) Array: [{ EmpID:'X', Status:'Manager' }]
+      // 2) Object: { empID:'X', status:'Technician' }
       let employeeStatus = 'Active'; // Default fallback
-      if (statusData && Array.isArray(statusData) && statusData.length > 0) {
-        employeeStatus = statusData[0].Status || 'Active';
-        console.log('Extracted employee status:', employeeStatus);
+
+      if (Array.isArray(statusData) && statusData.length > 0) {
+        const first = statusData[0] || {};
+        employeeStatus = (first.Status || first.status || 'Active').toString().trim();
+        console.log('Extracted employee status from array:', employeeStatus);
+      } else if (statusData && typeof statusData === 'object') {
+        employeeStatus = (statusData.Status || statusData.status || 'Active').toString().trim();
+        console.log('Extracted employee status from object:', employeeStatus);
       } else {
         console.log('No status data found, using default:', employeeStatus);
       }
+
+      if (!employeeStatus) {
+        employeeStatus = 'Active';
+      }
+
       // Store employeeStatus for later use
       this.employeeStatus = employeeStatus;
       // Step 3: Load Technicians with EmpID and Status
@@ -623,6 +661,14 @@ public Load(initialLoad: boolean = false)
       
       // Set user role based selection logic after technicians are loaded
       this.setUserRoleBasedDefaults(userData);
+      console.log('🔎 Post-defaults form state:', this.jobFilterForm.getRawValue());
+      console.log('🔎 Post-defaults dropdown state:', {
+        techDisabled: this.jobFilterForm.get('techId')?.disabled,
+        mgrDisabled: this.jobFilterForm.get('mgrId')?.disabled,
+        techOptionsCount: Array.isArray(this.technicians) ? this.technicians.length : 0,
+        firstTech: Array.isArray(this.technicians) && this.technicians.length ? this.technicians[0] : null,
+        currentRoleStatus: this.getNormalizedRoleStatus()
+      });
       
       // Handle query parameters for specific job search
   this.handleQueryParameters();
@@ -648,11 +694,11 @@ public Load(initialLoad: boolean = false)
     }
 
     // Decide sensible defaults for techId/mgrId similar to handleQueryParameters
-    const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
+    const isTech = this.isTechContext();
     const defaultTech = isTech ? (this.empID || 'All') : 'All';
     // Default to 'All' for manager unless the current user is actually present in accountManagers
     let defaultMgr = 'All';
-    if (this.employeeStatus === 'Manager' || this.userRole === 'Manager') {
+    if (this.isManagerContext()) {
       const userManager = this.accountManagers.find((mgr: any) => mgr.offid === this.empID || (mgr.offname && mgr.offname.trim() === this.empID));
       if (userManager) {
         defaultMgr = (userManager.offname || '').toUpperCase();
@@ -674,27 +720,72 @@ public Load(initialLoad: boolean = false)
     // Set user role based selection logic using employeeStatus
     // Fallback to this.userRole if employeeStatus is not set
     const status = this.employeeStatus || this.userRole;
-    if (status === 'Technician' || status === 'TechManager') {
-      // Set techId to empID and restrict tech dropdown to only this tech
-      this.jobFilterForm.patchValue({ techId: this.empID }, { emitEvent: false });
-      // Remove 'All' and keep only the logged-in tech in technicians array
+    const normalizedStatus = this.getNormalizedRoleStatus();
+    const isTechUser = this.isTechContext();
+    const isManagerLikeUser = this.isManagerContext();
+
+    console.log('🔎 setUserRoleBasedDefaults input:', {
+      status,
+      normalizedStatus,
+      isTechUser,
+      isManagerLikeUser,
+      empID: this.empID,
+      userRole: this.userRole,
+      employeeStatus: this.employeeStatus,
+      accountManagersCount: Array.isArray(this.accountManagers) ? this.accountManagers.length : 0,
+      techniciansCount: Array.isArray(this.technicians) ? this.technicians.length : 0
+    });
+
+    if (isTechUser) {
+      const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
+
+      // Keep only the logged-in tech in the dropdown
       if (Array.isArray(this.technicians)) {
-        this.technicians = this.technicians.filter((t: any) => t.TechID === this.empID);
+        const matchedTech = this.technicians.find((t: any) =>
+          ((t?.TechID || '').toString().trim().toUpperCase() === empIdNormalized)
+        );
+
+        if (matchedTech) {
+          this.technicians = [matchedTech];
+        } else {
+          const fallbackTechName = userData?.empName || userData?.name || userData?.windowsID || this.empID;
+          this.technicians = [{ TechID: this.empID, TechName: fallbackTechName }];
+        }
       }
-      // Set mgrId to 'All' and disable AM dropdown
-      this.jobFilterForm.patchValue({ mgrId: 'All' }, { emitEvent: false });
-      if (this.jobFilterForm.get('mgrId')) {
-        this.jobFilterForm.get('mgrId')?.disable({ emitEvent: false });
-      }
-      // Ensure month is 'All' (0) for technicians/managers
+
+      // Select logged-in tech by default and force AM to All
+      this.jobFilterForm.patchValue({ techId: this.empID, mgrId: 'All' }, { emitEvent: false });
+
+      // Disable both Tech and AM dropdowns for technician login
+      this.jobFilterForm.get('techId')?.disable({ emitEvent: false });
+      this.jobFilterForm.get('mgrId')?.disable({ emitEvent: false });
+
+      console.log('✅ Technician defaults applied:', {
+        techId: this.jobFilterForm.get('techId')?.value,
+        mgrId: this.jobFilterForm.get('mgrId')?.value,
+        techDisabled: this.jobFilterForm.get('techId')?.disabled,
+        mgrDisabled: this.jobFilterForm.get('mgrId')?.disabled,
+        techniciansCount: this.technicians.length,
+        technicians: this.technicians
+      });
+
+      // Ensure month is 'All' (0) for technicians
       if (this.jobFilterForm.get('month')?.value !== 0) {
         this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
       }
-    } else if (status === 'Manager' || status === 'Other') {
-      // Check if current user exists in account managers list
-      const userManager = this.accountManagers.find((mgr: any) => 
-        mgr.offid === this.empID || (mgr.offname && mgr.offname.trim() === this.empID)
-      );
+    } else if (isManagerLikeUser) {
+      // Re-enable dropdowns for non-tech users
+      this.jobFilterForm.get('techId')?.enable({ emitEvent: false });
+      this.jobFilterForm.get('mgrId')?.enable({ emitEvent: false });
+
+      // Check if current user exists in account managers list (case-insensitive)
+      const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
+      const userManager = this.accountManagers.find((mgr: any) => {
+        const offId = (mgr?.offid || '').toString().trim().toUpperCase();
+        const offName = (mgr?.offname || '').toString().trim().toUpperCase();
+        return offId === empIdNormalized || offName === empIdNormalized;
+      });
+
       if (userManager) {
         // The template sets option [value] to mgr.offname?.toUpperCase(), so set the form value to match
         const mgrValue = (userManager.offname || '').toUpperCase();
@@ -702,13 +793,19 @@ public Load(initialLoad: boolean = false)
       } else {
         this.jobFilterForm.patchValue({ mgrId: 'All' }, { emitEvent: false });
       }
-      // Enable AM dropdown for managers/others
-      if (this.jobFilterForm.get('mgrId')) {
-        this.jobFilterForm.get('mgrId')?.enable({ emitEvent: false });
-      }
+
       if (this.jobFilterForm.get('month')?.value !== 0) {
         this.jobFilterForm.patchValue({ month: 0 }, { emitEvent: false });
       }
+
+      console.log('✅ Manager defaults applied:', {
+        mgrId: this.jobFilterForm.get('mgrId')?.value,
+        mgrDisabled: this.jobFilterForm.get('mgrId')?.disabled
+      });
+    } else {
+      // For any other role, keep dropdowns enabled
+      this.jobFilterForm.get('techId')?.enable({ emitEvent: false });
+      this.jobFilterForm.get('mgrId')?.enable({ emitEvent: false });
     }
   }
 
@@ -726,7 +823,7 @@ public Load(initialLoad: boolean = false)
         // Save pending incoming call and attempt to run the search when filters are ready
         this.pendingIncomingCall = normalized;
         // Patch jobId and techId now (mgrId will be set when filters are ready)
-        const isTech = (this.employeeStatus === 'Technician' || this.employeeStatus === 'TechManager' || this.userRole === 'Technician' || this.userRole === 'TechManager');
+        const isTech = this.isTechContext();
         const defaultTech = isTech ? (this.empID || 'All') : 'All';
         this.jobFilterForm.patchValue({ jobId: normalized, techId: defaultTech }, { emitEvent: false });
         // Attempt to run pending query immediately if filters are already loaded

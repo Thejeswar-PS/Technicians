@@ -25,16 +25,21 @@
 .dashboard-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 20px;
   margin-bottom: 40px;
   position: relative;
+
+  .btn {
+    position: absolute;
+    right: 0;
+  }
 }
 
 .dashboard-title {
   text-align: center;
-  font-size: 30px;
-  font-weight: 600;
+  font-size: 42px;
+  font-weight: 700;
   color: #1f2937;
 }
 

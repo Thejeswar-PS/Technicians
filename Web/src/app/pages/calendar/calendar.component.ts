@@ -49,6 +49,7 @@ export class CalendarComponent implements OnInit, OnDestroy, AfterViewInit{
 payload : any;
 calendarEvent: Array<IEvent> =[];
 currentUser: any;
+employeeStatus: string = '';
   constructor(@Inject(DOCUMENT) private document: Document,
   private fb: FormBuilder,
   private commonServices: CommonService,
@@ -292,24 +293,50 @@ currentUser: any;
 
   InitFilters(){
     console.log('[Calendar] InitFilters called');
-    this.currentUser = this.authService.currentUserValue;
+    this.currentUser = this.authService.currentUserValue || JSON.parse(localStorage.getItem('userData') || '{}') || {};
     console.log('[Calendar] Current user:', this.currentUser);
-    
-    if(this.accountManagers.length <= 0) {
-      this.accountManagers = JSON.parse(localStorage.getItem("AccountManagers")!);
-    }
-    console.log('[Calendar] Account Managers loaded:', this.accountManagers);
-    console.log('[Calendar] First Account Manager:', this.accountManagers?.[0]);
-    console.log('[Calendar] Account Managers length:', this.accountManagers?.length);
 
-    // Load technicians and states
+    let managersLoaded = false;
+    let techLoaded = false;
+    const tryApplyDefaults = () => {
+      if (managersLoaded && techLoaded) {
+        this.resolveEmployeeStatusAndApplyDefaults();
+      }
+    };
+
+    // Load Account Managers from API (fallback to localStorage)
+    this.commonServices.getAccountManagers().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (data: any) => {
+        console.log('[Calendar] Account Managers API response:', data);
+        this.accountManagers = Array.isArray(data) ? data : [];
+        if (this.accountManagers.length > 0) {
+          localStorage.setItem('AccountManagers', JSON.stringify(this.accountManagers));
+        }
+        managersLoaded = true;
+        console.log('[Calendar] Account Managers assigned:', this.accountManagers?.length);
+        tryApplyDefaults();
+      },
+      error: (err) => {
+        console.error('[Calendar] Account Managers API failed:', err);
+        try {
+          this.accountManagers = JSON.parse(localStorage.getItem('AccountManagers') || '[]') || [];
+        } catch {
+          this.accountManagers = [];
+        }
+        managersLoaded = true;
+        console.log('[Calendar] Account Managers fallback assigned:', this.accountManagers?.length);
+        tryApplyDefaults();
+      }
+    });
+
+    // Load technicians
     this.commonServices.getTechnicians().pipe(takeUntil(this.destroy$)).subscribe(data=> {
       console.log('[Calendar] Technicians API response:', data);
       this.technicians = data;
       console.log('[Calendar] Technicians assigned:', this.technicians);
-      
-      // After loading techs, check employee status (matching legacy GetValue)
-      this.setDefaultFiltersBasedOnRole();
+
+      techLoaded = true;
+      tryApplyDefaults();
     });
     
     this.commonServices.getStates().subscribe(state => {
@@ -319,52 +346,101 @@ currentUser: any;
     });
   }
 
+  private normalizeText(value: any): string {
+    return (value || '').toString().trim().toUpperCase();
+  }
+
+  private resolveEmployeeStatusAndApplyDefaults(): void {
+    const windowsID = (this.currentUser?.windowsID || this.currentUser?.windowsId || '').toString().trim();
+
+    if (!windowsID) {
+      this.employeeStatus = (this.currentUser?.status || this.currentUser?.role || '').toString().trim();
+      console.log('[Calendar] No windowsID. Using local status/role:', this.employeeStatus);
+      this.setDefaultFiltersBasedOnRole();
+      return;
+    }
+
+    this.commonServices.getEmployeeStatusForJobList(windowsID).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (statusData: any) => {
+        let resolved = '';
+        if (Array.isArray(statusData) && statusData.length > 0) {
+          resolved = (statusData[0]?.Status || statusData[0]?.status || '').toString().trim();
+        } else if (statusData && typeof statusData === 'object') {
+          resolved = (statusData?.Status || statusData?.status || '').toString().trim();
+        }
+
+        this.employeeStatus = resolved || (this.currentUser?.status || this.currentUser?.role || '').toString().trim();
+        console.log('[Calendar] Employee status resolved:', this.employeeStatus, statusData);
+        this.setDefaultFiltersBasedOnRole();
+      },
+      error: (err) => {
+        console.error('[Calendar] Employee status API failed. Falling back to local role/status', err);
+        this.employeeStatus = (this.currentUser?.status || this.currentUser?.role || '').toString().trim();
+        this.setDefaultFiltersBasedOnRole();
+      }
+    });
+  }
+
   // Legacy GetValue implementation: set defaults based on employee status
   setDefaultFiltersBasedOnRole() {
     console.log('[Calendar] setDefaultFiltersBasedOnRole called');
-    const empStatus = this.currentUser?.status || '';
-    const empID = (this.currentUser?.empID || '').trim();
-    console.log('[Calendar] Employee Status:', empStatus, 'Employee ID:', empID);
+    const empStatusRaw = this.employeeStatus || this.currentUser?.status || this.currentUser?.role || '';
+    const empStatus = empStatusRaw.toString().trim().toLowerCase();
+    const empID = (this.currentUser?.empID || this.currentUser?.empId || '').toString().trim();
+    const empIDNormalized = this.normalizeText(empID);
+    console.log('[Calendar] Employee Status:', empStatusRaw, 'Normalized:', empStatus, 'Employee ID:', empID);
     
-    if (empStatus === 'Technician') {
+    if (empStatus === 'technician' || empStatus === 'techmanager' || empStatus.includes('tech')) {
       console.log('[Calendar] User is Technician, looking for match in:', this.technicians);
-      // Find tech in dropdown and select them (API returns techID)
-      const techExists = this.technicians?.find((t: any) => t.techID?.toString().trim() === empID.toString().trim());
-      console.log('[Calendar] Tech found:', techExists);
-      
-      if (techExists) {
-        console.log('[Calendar] Setting tech dropdown to:', empID.toString().trim());
+      // Find tech in dropdown and select only logged-in technician
+      const matchedTech = (this.technicians || []).find((t: any) =>
+        this.normalizeText(t?.techID || t?.TechID) === empIDNormalized
+      );
+
+      if (matchedTech) {
+        this.technicians = [matchedTech];
         this.jobFilterForm.patchValue({
-          tech: empID.toString().trim(),
+          tech: (matchedTech.techID || matchedTech.TechID || empID).toString().trim(),
           ownerId: 'All',
           state: 'All',
           type: 'All'
         });
-        
-        // Disable dropdowns for technicians (legacy behavior)
-        this.jobFilterForm.controls.tech.disable();
-        this.jobFilterForm.controls.ownerId.disable();
       } else {
-        console.log('[Calendar] Tech not found, setting to All');
+        const fallbackTechName = this.currentUser?.empName || this.currentUser?.name || this.currentUser?.windowsID || empID;
+        this.technicians = [{ techID: empID, techname: fallbackTechName }];
         this.jobFilterForm.patchValue({
-          tech: 'All',
-          ownerId: 'All'
+          tech: empID,
+          ownerId: 'All',
+          state: 'All',
+          type: 'All'
         });
       }
-    } else if (empStatus === 'Manager' || empStatus === 'Other') {
+
+      // Disable dropdowns for technicians
+      this.jobFilterForm.controls.tech.disable({ emitEvent: false });
+      this.jobFilterForm.controls.ownerId.disable({ emitEvent: false });
+
+      console.log('[Calendar] Technician defaults applied:', {
+        techValue: this.jobFilterForm.get('tech')?.value,
+        ownerValue: this.jobFilterForm.get('ownerId')?.value,
+        techOptions: this.technicians
+      });
+    } else if (empStatus === 'manager' || empStatus === 'other' || empStatus.includes('manager')) {
       console.log('[Calendar] User is Manager/Other, looking in account managers:', this.accountManagers);
       // Check if user is in account managers list
       const mgrExists = this.accountManagers?.find((m: any) => {
-        const offid = m.offid?.toString().trim();
-        const managerEmpId = m.empID?.toString().trim();
-        return offid === empID || managerEmpId === empID;
+        const offid = this.normalizeText(m?.offid);
+        const managerEmpId = this.normalizeText(m?.empID);
+        const offName = this.normalizeText(m?.offname || m?.empName);
+        return offid === empIDNormalized || managerEmpId === empIDNormalized || offName === empIDNormalized;
       });
       console.log('[Calendar] Manager found:', mgrExists);
       
       if (mgrExists) {
-        console.log('[Calendar] Setting owner dropdown to:', empID.toString().trim());
+        const ownerValue = (mgrExists.offid || mgrExists.empID || 'All').toString().trim();
+        console.log('[Calendar] Setting owner dropdown to:', ownerValue);
         this.jobFilterForm.patchValue({
-          ownerId: empID.toString().trim(),
+          ownerId: ownerValue,
           tech: 'All',
           state: 'All',
           type: 'All'
@@ -380,8 +456,18 @@ currentUser: any;
       }
       
       // Enable both dropdowns for managers
-      this.jobFilterForm.controls.tech.enable();
-      this.jobFilterForm.controls.ownerId.enable();
+      this.jobFilterForm.controls.tech.enable({ emitEvent: false });
+      this.jobFilterForm.controls.ownerId.enable({ emitEvent: false });
+    } else {
+      // Default fallback for other roles
+      this.jobFilterForm.patchValue({
+        ownerId: 'All',
+        tech: 'All',
+        state: 'All',
+        type: 'All'
+      });
+      this.jobFilterForm.controls.tech.enable({ emitEvent: false });
+      this.jobFilterForm.controls.ownerId.enable({ emitEvent: false });
     }
     console.log('[Calendar] Final form values:', this.jobFilterForm.getRawValue());
   }

@@ -180,7 +180,7 @@
                 <td class="text-center fw-bold text-primary">{{ row.contractNo || 'N/A' }}</td>
                 <td class="text-center">{{ row.contractType || 'N/A' }}</td>
                 <td class="text-center">{{ row.invoiceDate | date: 'dd-MMM-yyyy' }}</td>
-                <td class="text-end fw-bold text-success">{{ row.amount | currency }}</td>
+                <td class="text-center fw-bold text-success">{{ row.amount | currency }}</td>
               </tr>
               <tr *ngIf="filteredPastDueRows.length === 0">
                 <td colspan="7" class="text-center text-muted py-4">No records found</td>

@@ -459,6 +459,13 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     } else {
       this.errorMessage = 'Please correct the form errors and try again.';
     }
+    
+    // Build error message
+    if (errorMessages.length > 0) {
+      this.errorMessage = 'Please fix the following:\n' + errorMessages.map((msg, idx) => `${idx + 1}. ${msg}`).join('\n');
+    } else {
+      this.errorMessage = 'Please correct the form errors and try again.';
+    }
   }
 
   // Navigation method

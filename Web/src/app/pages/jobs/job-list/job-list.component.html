@@ -33,8 +33,9 @@
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="techId"
                 style="width:150px;padding:4px;"
+                [disabled]="isTechContext()"
               >
-                <option class="fw-bold text-dark me-5" value="All" *ngIf="!(employeeStatus === 'Technician' || employeeStatus === 'TechManager' || userRole === 'Technician' || userRole === 'TechManager')">All</option>
+                <option class="fw-bold text-dark me-5" value="All" *ngIf="!isTechContext()">All</option>
                 <option class="fw-bold text-dark me-5" *ngFor="let tech of technicians" [value]="tech.TechID">
                   {{tech.TechName}}
                 </option>
@@ -45,7 +46,7 @@
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="mgrId"
                 style="width:150px;padding:4px;"
-                [disabled]="(employeeStatus === 'Technician' || employeeStatus === 'TechManager' || userRole === 'Technician' || userRole === 'TechManager')"
+                [disabled]="isTechContext()"
               >
                 <option class="fw-bold text-dark me-5" value="All" selected>All</option>
                 <option class="fw-bold text-dark me-5" *ngFor="let mgr of accountManagers" [value]="mgr.offname?.toUpperCase()">
