@@ -14,6 +14,11 @@
   <div class="card shadow-sm main-card">
 
     <div class="card-body">
+      <!-- Header with New Unit Button -->
+      <div class="d-flex justify-content-end align-items-center mb-3">
+        <button type="button" class="btn btn-new" (click)="addNewUnit()">+ New Unit</button>
+      </div>
+      
       <!-- Error -->
       <div class="mb-3" *ngIf="errorMessage">
         <div class="alert alert-danger d-inline-flex align-items-center">

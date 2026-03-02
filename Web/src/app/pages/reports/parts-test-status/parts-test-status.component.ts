@@ -198,6 +198,19 @@ export class PartsTestStatusComponent implements OnInit {
     }
   }
 
+  /**
+   * Navigate to Parts Test Info page to add a new unit
+   */
+  addNewUnit(): void {
+    // Navigate to Part Test Info page without rowIndex to create new entry
+    this.router.navigate(['/reports/parts-test-info'], {
+      queryParams: { 
+        source: 'PartsTest',
+        action: 'new'
+      }
+    });
+  }
+
   // Load submitted dates for all records using API
   private loadSubmittedDatesForAllRecords(): void {
     // Clear previous map
