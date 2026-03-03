@@ -5012,4 +5012,119 @@
     bottom: auto !important;
     z-index: 999999 !important;
   }
+
+  // EMGSERV Battery Reconciliation Section
+  .emgserv-battery-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: #fff3cd;
+    border-left: 4px solid #ff6b6b;
+    border-radius: 0.5rem;
+
+    .battery-reconciliation-info {
+      background: #ffe0e0 !important;
+      border: 1px solid #ff6b6b !important;
+      color: #721c24 !important;
+      margin-bottom: 1.5rem;
+
+      strong {
+        color: #721c24;
+        display: block;
+        margin-bottom: 0.5rem;
+        font-size: 1.05rem;
+      }
+
+      p {
+        color: #721c24;
+      }
+    }
+
+    .battery-conditions-grid {
+      margin-bottom: 1.5rem;
+
+      .condition-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+        }
+
+        .form-check {
+          display: flex;
+          align-items: center;
+          padding: 0.75rem;
+          background: white;
+          border-radius: 0.375rem;
+          border: 1px solid #dee2e6;
+
+          .form-check-input {
+            margin-right: 0.75rem;
+            margin-top: 0;
+            cursor: pointer;
+            width: 1.25rem;
+            height: 1.25rem;
+          }
+
+          .form-check-label {
+            margin-bottom: 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #212529;
+          }
+        }
+      }
+    }
+
+    .battery-string-selector {
+      background: white;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #dee2e6;
+
+      .form-floating {
+        margin-bottom: 0;
+
+        select.form-select {
+          border: 1px solid #ced4da;
+
+          &:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+          }
+        }
+
+        label {
+          color: #6c757d;
+          font-weight: 500;
+        }
+      }
+
+      .btn {
+        width: 100%;
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        background: #5486ff;
+        border: none;
+        color: white;
+
+        &:hover:not(:disabled) {
+          background: #3d6bd8;
+        }
+
+        &:disabled {
+          background: #ccc;
+          cursor: not-allowed;
+          opacity: 0.65;
+        }
+
+        i {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
 }

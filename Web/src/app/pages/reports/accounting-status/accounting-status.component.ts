@@ -85,8 +85,10 @@ export class AccountingStatusComponent implements OnInit {
             const categoryName = categories[categoryIndex];
             const value = yvalues[categoryIndex];
             
-            // Only navigate if value is not 0 (matching legacy logic
-           
+            // Only navigate if value is not 0 (matching legacy logic)
+            if (value && value !== 0) {
+              this.navigateToDisplayCallsDetail(categoryName);
+            }
           }
         }
       },
@@ -167,8 +169,7 @@ export class AccountingStatusComponent implements OnInit {
             
             // Only navigate if value is not 0 (matching legacy logic)
             if (value && value !== 0) {
-              console.log('Navigation to dcg-display-report-details disabled - component has been removed', { categoryName });
-              // TODO: Re-implement report details functionality or navigate to alternative page
+              this.navigateToDisplayCallsDetail(categoryName);
             }
           }
         }
@@ -225,6 +226,14 @@ export class AccountingStatusComponent implements OnInit {
     };
 
     this.cdr.markForCheck();
+  }
+
+  private navigateToDisplayCallsDetail(dataSetName: string): void {
+    this.router.navigate(['/reports/display-calls-detail'], {
+      queryParams: {
+        dataSetName: dataSetName
+      }
+    });
   }
 
   refresh(): void {

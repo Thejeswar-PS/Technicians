@@ -21,4 +21,5 @@ import { SharedModule } from '../../components/shared/shared.module';
     UpsReadingsComponent
   ]
 })
-export class UpsReadingsModule { }
+export class UpsReadingsModule {
+}

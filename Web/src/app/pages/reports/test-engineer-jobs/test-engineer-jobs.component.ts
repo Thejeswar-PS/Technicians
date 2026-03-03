@@ -14,10 +14,7 @@ import {
   EngineerChartDto,
   StatusChartDto
 } from 'src/app/core/model/test-engineer-jobs.model';
-import { Chart, ChartConfiguration, registerables } from 'chart.js';
-
-// Register Chart.js components
-Chart.register(...registerables);
+declare var Chart: any;
 
 @Component({
   selector: 'app-test-engineer-jobs',
