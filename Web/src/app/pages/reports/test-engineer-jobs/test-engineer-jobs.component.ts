@@ -31,8 +31,8 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   Math = Math;
   
   // Chart instances
-  private engineerChart?: any;
-  private statusChart?: any;
+  private engineerChart?: Chart;
+  private statusChart?: Chart;
   
   // Data properties
   jobsList: TestEngineerJobDto[] = [];
@@ -392,7 +392,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
     const inProgressData = engineers.map(engineer => groupedData[engineer]['In-Progress'] || 0);
     const closedData = engineers.map(engineer => groupedData[engineer]['Closed'] || 0);
 
-    const config: any = {
+    const config: ChartConfiguration<'bar'> = {
       type: 'bar',
       data: {
         labels: engineers,
@@ -547,7 +547,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
       }
     });
 
-    const config: any = {
+    const config: ChartConfiguration<'doughnut'> = {
       type: 'doughnut',
       data: {
         labels: labels,
