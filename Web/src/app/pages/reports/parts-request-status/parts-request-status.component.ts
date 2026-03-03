@@ -22,6 +22,9 @@ import { EmployeeStatusDto } from 'src/app/core/model/employee-status.model';
 })
 export class PartsRequestStatusComponent implements OnInit {
 
+  // Math object for template access
+  Math = Math;
+
   partsRequestList: PartsRequestStatusItem[] = [];
   partReqStatusList: PartReqStatusDto[] = [];
   accountManagers: AccountManager[] = [];
@@ -821,6 +824,17 @@ export class PartsRequestStatusComponent implements OnInit {
   onPageChange(page: number): void {
     this.currentPage = page;
     this.updateDisplayedData();
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+      this.updateDisplayedData();
+    }
+  }
+
+  getTotalPages(): number {
+    return this.totalPages;
   }
 
   onPageSizeChange(size: number): void {
