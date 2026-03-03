@@ -228,6 +228,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   voltageConfigurations = VOLTAGE_CONFIGURATIONS;
   passfailOptions = PASS_FAIL_OPTIONS;
   powerVerificationOptions = POWER_VERIFICATION_OPTIONS;
+
+  // Form groups
+  emgservForm!: FormGroup; // Separate form for EMGSERV battery section
   measurementOptions = [
     { value: 'P', text: 'Pass' },
     { value: 'F', text: 'Fail' },
@@ -292,6 +295,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // UI state
   showReconciliation = true;
   showReconciliationDetails = false;
+  
+  // EMGSERV Battery Reconciliation Section
+  showBatteryReconciliation = false;
+  batteryStringOptions: { value: string; text: string }[] = [];
+  emgservProblemCode: boolean = false;
   
   // Event handlers for cleanup
   private resizeHandler = () => this.adjustYearPickerPosition();
@@ -864,6 +872,9 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     // Setup checkbox subscriptions after view initialization to ensure forms are ready
     this.setupFilterCurrentCheckboxHandlers();
 
+    // Setup EMGSERV battery reconciliation section
+    this.setupEmgservSection();
+
     // Add click outside handler for calendars
     document.addEventListener('click', (event) => this.onDocumentClick(event));
   }
@@ -1149,6 +1160,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     this.actionRequiredForm = this.fb.group({
       dcgAction1: ['N'], // Default to "No"
       custAction1: ['N'] // Default to "No"
+    });
+
+    // EMGSERV Battery Reconciliation Form - populated from GetUPSReadings API
+    this.emgservForm = this.fb.group({
+      dcBreakerTripped: [false], // Maps from chkDCBreak
+      dcOverloadAlarm: [false], // Maps from chkOverLoad
+      upsNoTransfer: [false], // Maps from chkTransfer
+      chargerFault: [false], // Maps from chkFault
+      batteryStringId: ['0'] // "0" means "Please Select"
     });
 
     // Subscribe to voltage configuration changes
@@ -1728,6 +1748,10 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.populateFormsWithData(data as AAETechUPS);
 
           // Initialize any forms/fields that weren't populated with backend data with defaults
+          // Load battery strings for EMGSERV dropdown after UPS data is populated
+          this.loadBatteryStrings();
+
+          // Initialize any forms/fields that weren't populated with backend data with defaults
           // Use setTimeout to ensure form population is complete before setting defaults
           setTimeout(() => {
             this.initializeFormsWithDefaults();
@@ -2201,6 +2225,24 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       upsType: data.modularUPS || 'NO' // Use the actual modularUPS value from backend or default to 'NO' (Normal UPS)
     }, { emitEvent: false });
 
+    const batteryStringIdFromApi = (data.batteryStringID && data.batteryStringID !== 0)
+      ? data.batteryStringID.toString()
+      : '0';
+
+    console.log('[EMGSERV] GetUPSReadings batteryStringID mapping', {
+      batteryStringID: data.batteryStringID,
+      mappedBatteryStringId: batteryStringIdFromApi
+    });
+
+    // Populate EMGSERV battery form from API response
+    this.emgservForm.patchValue({
+      dcBreakerTripped: data.chkDCBreak || false,
+      dcOverloadAlarm: data.chkOverLoad || false,
+      upsNoTransfer: data.chkTransfer || false,
+      chargerFault: data.chkFault || false,
+      batteryStringId: batteryStringIdFromApi
+    }, { emitEvent: false });
+
     // Check if the loaded status is Off-Line and treat it as a manual override
     if (data.status === 'Offline') {
       this.manualStatusOverride = true;
@@ -2568,9 +2610,132 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Set up watchers for reconciliation dropdown changes to enable/disable actual value fields
-   * Matches legacy EnabletoEdit functionality where "NO" makes fields editable, others make readonly
+   * Check if equipment has EMGSERV problem code
+   * If it does, show battery reconciliation section
+   * EMGSERV section is always shown on UPS readings page since GetUPSReadings API includes chk* fields
    */
+  private checkAndLoadBatteryReconciliation(): void {
+    // Always show EMGSERV section on UPS readings page
+    // The GetUPSReadings API response includes chkDCBreak, chkOverLoad, chkTransfer, chkFault fields
+    this.emgservProblemCode = true;
+    
+    // Load battery strings for the dropdown
+    this.loadBatteryStrings();
+  }
+
+  /**
+   * Load battery strings for EMGSERV dropdown
+   */
+  private loadBatteryStrings(): void {
+    const selectedFromUpsApi = (this.upsData?.batteryStringID && this.upsData.batteryStringID !== 0)
+      ? this.upsData.batteryStringID.toString()
+      : '0';
+    const selectedFromForm = this.emgservForm?.get('batteryStringId')?.value?.toString?.() || '0';
+
+    console.log('[EMGSERV] Loading battery strings from EquipmentDetails', {
+      callNbr: this.callNbr,
+      selectedFromUpsApi,
+      selectedFromForm
+    });
+
+    this.equipmentService.getEquipmentInfo(this.callNbr)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (equipmentList: any[]) => {
+          const rawList = Array.isArray(equipmentList) ? equipmentList : [];
+
+          console.log('[EMGSERV] EquipmentDetails response', {
+            total: rawList.length,
+            sample: rawList.slice(0, 5)
+          });
+
+          // Get all equipment with type "BATTERY" (callNbr already scoped by API)
+          const batteryEquipment = rawList.filter(e => {
+            const equipType = (e?.equipType ?? e?.EquipType ?? '').toString().trim().toUpperCase();
+            return equipType === 'BATTERY';
+          });
+
+          console.log('[EMGSERV] Battery equipment filtered', {
+            batteryCount: batteryEquipment.length,
+            batteryIds: batteryEquipment.map(b => (b?.equipId ?? b?.equipID ?? b?.EquipId ?? b?.EquipID)).slice(0, 10)
+          });
+
+          // Map to dropdown options
+          this.batteryStringOptions = [
+            { value: '0', text: 'Please Select' },
+            ...batteryEquipment.map(b => ({
+              value: (b?.equipId ?? b?.equipID ?? b?.EquipId ?? b?.EquipID ?? '').toString(),
+              text: (b?.equipNo ?? b?.EquipNo ?? '').toString()
+            }))
+          ].filter(opt => opt.value === '0' || (opt.value && opt.text));
+
+          // Re-apply selected battery ID after options are loaded so dropdown stays selected
+          const targetBatteryId = selectedFromForm !== '0' ? selectedFromForm : selectedFromUpsApi;
+          const optionExists = this.batteryStringOptions.some(opt => opt.value === targetBatteryId);
+          const finalBatteryId = optionExists ? targetBatteryId : '0';
+
+          this.emgservForm.patchValue({
+            batteryStringId: finalBatteryId
+          }, { emitEvent: false });
+
+          console.log('[EMGSERV] Battery dropdown mapping complete', {
+            targetBatteryId,
+            optionExists,
+            finalBatteryId,
+            optionsCount: this.batteryStringOptions.length
+          });
+        },
+        error: (error) => {
+          console.error('[EMGSERV] Could not load battery strings', error);
+          this.batteryStringOptions = [{ value: '0', text: 'Please Select' }];
+        }
+      });
+  }
+
+  /**
+   * Navigate to battery readings page when selected
+   */
+  navigateToBatteryReadings(): void {
+    const selectedBatteryId = this.emgservForm.get('batteryStringId')?.value;
+    if (selectedBatteryId && selectedBatteryId !== '0') {
+      // Find the battery equipment details
+      const selectedOption = this.batteryStringOptions.find(opt => opt.value === selectedBatteryId);
+      if (selectedOption) {
+        const urlTree = this.router.createUrlTree(['/equipment/battery-readings'], {
+          queryParams: {
+            CallNbr: this.callNbr,
+            EquipNo: selectedOption.text,
+            EquipId: selectedBatteryId,
+            Tech: this.techId,
+            TechName: this.techName
+          }
+        });
+
+        const batteryReadingsUrl = this.router.serializeUrl(urlTree);
+        const openedWindow = window.open(batteryReadingsUrl, '_blank', 'noopener,noreferrer');
+
+        // Fallback if popup is blocked
+        if (!openedWindow) {
+          this.router.navigateByUrl(urlTree);
+        }
+      }
+    }
+  }
+
+  /**
+   * Get method for template to check EMGSERV status
+   */
+  hasEmgservCode(): boolean {
+    return this.emgservProblemCode;
+  }
+
+  /**
+   * Setup method called in ngAfterViewInit
+   */
+  setupEmgservSection(): void {
+    this.checkAndLoadBatteryReconciliation();
+  }
+
   private setupReconciliationEditableWatchers(): void {
     // Model correctness -> actual model field
     this.reconciliationForm.get('modelCorrect')?.valueChanges.pipe(takeUntil(this.destroy$)).subscribe(value => {
@@ -6672,6 +6837,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     const capacitor = this.capacitorForm.value;
     const transfer = this.transferForm.value;
     const actionRequired = this.actionRequiredForm.value;
+    const emgserv = this.emgservForm.value;
 
     const dateCode = new Date(equipment.dateCode);
     const validMonthName = equipment.monthName || dateCode.toLocaleString('default', { month: 'long' });
@@ -6897,13 +7063,13 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       saveAsDraft: isDraft,
 
       // Battery string info
-      batteryStringID: 0,
+      batteryStringID: this.convertToInt(emgserv.batteryStringId) || 0,
 
-      // Check flags
-      chkDCBreak: false,
-      chkFault: false,
-      chkOverLoad: false,
-      chkTransfer: false
+      // Check flags - EMGSERV battery reconciliation checkboxes
+      chkDCBreak: emgserv.dcBreakerTripped || false,
+      chkFault: emgserv.chargerFault || false,
+      chkOverLoad: emgserv.dcOverloadAlarm || false,
+      chkTransfer: emgserv.upsNoTransfer || false
     };
     
 
