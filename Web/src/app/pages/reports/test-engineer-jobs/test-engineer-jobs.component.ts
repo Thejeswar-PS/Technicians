@@ -6,6 +6,19 @@ import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
 import { AuthService } from 'src/app/modules/auth';
 import { 
+  Chart, 
+  ChartConfiguration,
+  BarController,
+  BarElement,
+  DoughnutController,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { 
   TestEngineerJobDto, 
   TestEngineerJobsRequestDto,
   TestEngineerJobsResponse,
@@ -14,7 +27,19 @@ import {
   EngineerChartDto,
   StatusChartDto
 } from 'src/app/core/model/test-engineer-jobs.model';
-declare var Chart: any;
+
+// Register Chart.js components
+Chart.register(
+  BarController,
+  BarElement,
+  DoughnutController,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend
+);
 
 @Component({
   selector: 'app-test-engineer-jobs',
