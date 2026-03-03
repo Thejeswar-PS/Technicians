@@ -916,6 +916,93 @@
                 </div>
               </div>
             </form>
+
+            <!-- EMGSERV Battery Reconciliation Section -->
+            <div *ngIf="hasEmgservCode()" class="emgserv-battery-section" [formGroup]="emgservForm">
+              <div class="battery-reconciliation-info alert alert-danger">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <strong>Emergency Service Call - Individual Battery Readings Required</strong>
+                <p class="mb-0 mt-2 small">
+                  In the event that the UPS is found in any of the following conditions, individual battery readings must be performed:
+                </p>
+              </div>
+
+              <div class="battery-conditions-grid">
+                <div class="condition-row">
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      formControlName="dcBreakerTripped"
+                      id="chkDCBreak"
+                    />
+                    <label class="form-check-label" for="chkDCBreak">
+                      DC Breaker Tripped
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      formControlName="dcOverloadAlarm"
+                      id="chkOverload"
+                    />
+                    <label class="form-check-label" for="chkOverload">
+                      DC Overload Alarm
+                    </label>
+                  </div>
+                </div>
+
+                <div class="condition-row">
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      formControlName="upsNoTransfer"
+                      id="chkTransfer"
+                    />
+                    <label class="form-check-label" for="chkTransfer">
+                      UPS Did Not Transfer to Battery Under Any Circumstances
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      formControlName="chargerFault"
+                      id="chkFault"
+                    />
+                    <label class="form-check-label" for="chkFault">
+                      Charger Fault/Replaced
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="battery-string-selector">
+                <div class="form-floating">
+                  <select
+                    class="form-select"
+                    formControlName="batteryStringId"
+                    id="ddlBattStringID"
+                  >
+                    <option *ngFor="let option of batteryStringOptions" [value]="option.value">
+                      {{ option.text }}
+                    </option>
+                  </select>
+                  <label for="ddlBattStringID">Please Select the Battery String</label>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-primary mt-3"
+                  (click)="navigateToBatteryReadings()"
+                  [disabled]="emgservForm.get('batteryStringId')?.value === '0'"
+                >
+                  <i class="bi bi-arrow-right me-2"></i>
+                  Click Here to Go to Battery Readings Page
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -473,9 +473,7 @@ export class EquipmentDetailsComponent implements OnInit {
           break;
         
       case 'UPS':
-        if (equipment.probcde?.includes('EMGSERV')) {
-          route = '/equipment/emg-ups-readings';
-        } else if (equipment.probcde?.includes('STARTUPGAM')) {
+        if (equipment.probcde?.includes('STARTUPGAM')) {
           route = '/equipment/gamatronics';
           params = { ...params, UnitNo: equipment.equipNo };
         } else {
