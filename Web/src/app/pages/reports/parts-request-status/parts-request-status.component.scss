@@ -1621,6 +1621,7 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
   border-collapse: collapse;
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
   font-size: 14px;
+  table-layout: auto;
 }
 
 /* =====================================================
@@ -1636,9 +1637,9 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
   color: #ffffff;
 
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 
-  padding: 12px 16px;
+  padding: 10px 12px;
   text-align: center;
   white-space: nowrap;
 
@@ -1702,15 +1703,28 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
 }
 
 .modern-table tbody tr:hover {
-  background-color: #e9edf5;
+  background-color: #f8f9fa;
 }
 
 .modern-table tbody td {
-  padding: 14px 16px;
+  padding: 10px 12px;
   text-align: center;
   vertical-align: middle;
   border-bottom: 1px solid #e5e7eb;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 14px;
   font-weight: 400;
+}
+
+.modern-table tbody td:not(.status-cell),
+.modern-table tbody td:not(.status-cell) .cell-content,
+.modern-table tbody td:not(.status-cell) .date-content,
+.modern-table tbody td:not(.status-cell) .urgent-text,
+.modern-table tbody td:not(.status-cell) .state-badge,
+.modern-table tbody td:not(.status-cell) .call-link {
+  font-size: 14px !important;
+  font-weight: 400 !important;
 }
 
 /* =====================================================
@@ -1858,4 +1872,11 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
   .modern-table th {
     padding: 10px;
   }
+}
+
+/* Final typography lock: match Order Request for all non-status columns */
+.modern-table tbody td:not(.status-cell),
+.modern-table tbody td:not(.status-cell) * {
+  font-size: 14px !important;
+  font-weight: 400 !important;
 }
