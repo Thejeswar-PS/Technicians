@@ -38,6 +38,9 @@ export interface PartReqStatusRequestDto {
   key: number;
   invUserID: string;
   offName: string;
+  // New properties for role-based filtering
+  userEmpID?: string;
+  windowsID?: string;
 }
 
 export interface PartReqStatusResponseDto {
