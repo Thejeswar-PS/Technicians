@@ -247,12 +247,15 @@ export class ReportService {
     return this.http.post<PartReqStatusResponseDto>(`${this.API}/PartReqStatus/GetPartReqStatus`, request, { headers: this.headers });
   }
 
-  getPartReqStatusByKey(key: number, invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusResponseDto>
+  getPartReqStatusByKey(key: number, invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusResponseDto>
   {
     let params = new HttpParams()
       .set('key', key.toString())
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusResponseDto>(`${this.API}/PartReqStatus/GetPartReqStatusByKey`, { 
       headers: this.headers,
@@ -260,12 +263,15 @@ export class ReportService {
     });
   }
 
-  getPartReqList(key: number, invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getPartReqList(key: number, invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('key', key.toString())
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetPartReqList`, { 
       headers: this.headers,
@@ -273,9 +279,12 @@ export class ReportService {
     });
   }
 
-  getPartCounts(invUserID: string = 'All'): Observable<{ [key: string]: number }>
+  getPartCounts(invUserID: string = 'All', userEmpID?: string, windowsID?: string): Observable<{ [key: string]: number }>
   {
     let params = new HttpParams().set('invUserID', invUserID);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<{ [key: string]: number }>(`${this.API}/PartReqStatus/GetPartCounts`, { 
       headers: this.headers,
@@ -284,11 +293,14 @@ export class ReportService {
   }
 
   // Specific part status methods
-  getAllParts(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getAllParts(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetAllParts`, { 
       headers: this.headers,
@@ -296,11 +308,14 @@ export class ReportService {
     });
   }
 
-  getStagingParts(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getStagingParts(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetStagingParts`, { 
       headers: this.headers,
@@ -308,11 +323,14 @@ export class ReportService {
     });
   }
 
-  getSubmittedParts(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getSubmittedParts(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetSubmittedParts`, { 
       headers: this.headers,
@@ -320,11 +338,14 @@ export class ReportService {
     });
   }
 
-  getUrgentParts(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getUrgentParts(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetUrgentParts`, { 
       headers: this.headers,
@@ -332,11 +353,14 @@ export class ReportService {
     });
   }
 
-  getPartsNeedingAttention(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getPartsNeedingAttention(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetPartsNeedingAttention`, { 
       headers: this.headers,
@@ -344,11 +368,14 @@ export class ReportService {
     });
   }
 
-  getPartsOrderedTrackingRequired(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getPartsOrderedTrackingRequired(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetPartsOrderedTrackingRequired`, { 
       headers: this.headers,
@@ -356,11 +383,14 @@ export class ReportService {
     });
   }
 
-  getShippedParts(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getShippedParts(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetShippedParts`, { 
       headers: this.headers,
@@ -368,11 +398,14 @@ export class ReportService {
     });
   }
 
-  getDeliveredParts(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getDeliveredParts(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetDeliveredParts`, { 
       headers: this.headers,
@@ -380,11 +413,14 @@ export class ReportService {
     });
   }
 
-  getInitiatedParts(invUserID: string = 'All', offName: string = 'All'): Observable<PartReqStatusDto[]>
+  getInitiatedParts(invUserID: string = 'All', offName: string = 'All', userEmpID?: string, windowsID?: string): Observable<PartReqStatusDto[]>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID)
       .set('offName', offName);
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     return this.http.get<PartReqStatusDto[]>(`${this.API}/PartReqStatus/GetInitiatedParts`, { 
       headers: this.headers,
@@ -415,9 +451,17 @@ export class ReportService {
   }
 
   // Inventory User methods
-  getInventoryUserNames(): Observable<InventoryUser[]>
+  getInventoryUserNames(userEmpID?: string, windowsID?: string): Observable<InventoryUser[]>
   {
-    return this.http.get<InventoryUser[]>(`${this.API}/PartReqStatus/GetInventoryUserNames`, { headers: this.headers });
+    let params = new HttpParams();
+    
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
+    
+    return this.http.get<InventoryUser[]>(`${this.API}/PartReqStatus/GetInventoryUserNames`, { 
+      headers: this.headers,
+      params: params 
+    });
   }
 
   // Part Return Status API methods
@@ -428,13 +472,21 @@ export class ReportService {
     return this.http.post<PartReturnStatusResponseDto>(url, request, { headers: this.headers });
   }
 
-  getPartReturnStatusForGraph(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartReturnStatusForGraph(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartReturnStatusForGraph`, { 
@@ -443,13 +495,21 @@ export class ReportService {
     });
   }
 
-  getPartsNotReceived(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsNotReceived(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsNotReceived`, { 
@@ -458,13 +518,21 @@ export class ReportService {
     });
   }
 
-  getPartsInProgress(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsInProgress(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsInProgress`, { 
@@ -473,13 +541,21 @@ export class ReportService {
     });
   }
 
-  getPartsPending(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsPending(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsPending`, { 
@@ -488,7 +564,7 @@ export class ReportService {
     });
   }
 
-  getPartsReturned(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsReturned(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
@@ -497,13 +573,21 @@ export class ReportService {
       params = params.set('year', year.toString());
     }
 
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
+    }
+
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsReturned`, { 
       headers: this.headers,
       params: params 
     });
   }
 
-  getPartReturnStatusByKey(key: number, invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartReturnStatusByKey(key: number, invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('key', key.toString())
@@ -511,6 +595,14 @@ export class ReportService {
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartReturnStatusByKey`, { 
@@ -548,9 +640,20 @@ export class ReportService {
   }
 
   // Weekly Parts Returned Count API
-  getWeeklyPartsReturnedCount(): Observable<WeeklyPartsReturnedCountApiResponseDto> {
+  getWeeklyPartsReturnedCount(userEmpID?: string, windowsID?: string): Observable<WeeklyPartsReturnedCountApiResponseDto> {
+    let params = new HttpParams();
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
+    }
+
     return this.http.get<WeeklyPartsReturnedCountApiResponseDto>(`${this.API}/PartReturnStatus/GetWeeklyPartsReturnedCount`, { 
-      headers: this.headers
+      headers: this.headers,
+      params: params
     });
   }
 
@@ -1266,11 +1369,18 @@ export class ReportService {
   // Account Manager Performance Report API methods
   /**
    * Get comprehensive Account Manager Performance Report data for a specific office
+   * with role-based filtering support
    */
-  getAccMgrPerformanceReport(officeId: string, roJobs: string = ''): Observable<AccMgrPerformanceReportResponseDto> {
+  getAccMgrPerformanceReport(officeId: string, roJobs: string = '', userEmpID?: string, windowsID?: string): Observable<AccMgrPerformanceReportResponseDto> {
     const params: any = { officeId };
     if (roJobs) {
       params.roJobs = roJobs;
+    }
+    if (userEmpID) {
+      params.userEmpID = userEmpID;
+    }
+    if (windowsID) {
+      params.windowsID = windowsID;
     }
     
     return this.http.get<AccMgrPerformanceReportResponseDto>(`${this.API}/AccMgrPerformanceReport/report`, {
@@ -1281,9 +1391,10 @@ export class ReportService {
 
   /**
    * Get Account Manager Performance Report summary statistics (calculated client-side)
+   * with role-based filtering support
    */
-  getAccMgrPerformanceReportSummary(officeId: string, roJobs: string = ''): Observable<AccMgrPerformanceReportSummaryDto> {
-    return this.getAccMgrPerformanceReport(officeId, roJobs).pipe(
+  getAccMgrPerformanceReportSummary(officeId: string, roJobs: string = '', userEmpID?: string, windowsID?: string): Observable<AccMgrPerformanceReportSummaryDto> {
+    return this.getAccMgrPerformanceReport(officeId, roJobs, userEmpID, windowsID).pipe(
       map(data => ({
         completedNotReturnedCount: data.completedNotReturned.length,
         returnedForProcessingCount: data.returnedForProcessing.length,

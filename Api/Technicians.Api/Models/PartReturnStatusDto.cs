@@ -20,5 +20,7 @@ namespace Technicians.Api.Models
         public string Source { get; set; } = "Web";
         public string InvUserID { get; set; } = "All";
         public int Year { get; set; } = DateTime.Now.Year;
+        public string? UserEmpID { get; set; }
+        public string? WindowsID { get; set; }
     }
 }

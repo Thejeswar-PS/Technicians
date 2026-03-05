@@ -22,6 +22,9 @@ import { EmployeeStatusDto } from 'src/app/core/model/employee-status.model';
 })
 export class PartsRequestStatusComponent implements OnInit {
 
+  // Math object for template access
+  Math = Math;
+
   partsRequestList: PartsRequestStatusItem[] = [];
   partReqStatusList: PartReqStatusDto[] = [];
   accountManagers: AccountManager[] = [];
@@ -33,6 +36,18 @@ export class PartsRequestStatusComponent implements OnInit {
   isLoadingInventoryUsers: boolean = false;
   currentUserStatus: EmployeeStatusDto | null = null;
   errorMessage: string = '';
+  
+  // Role-based filtering properties
+  empID: string = '';
+  userRole: string = '';
+  employeeStatus: string = '';
+  windowsID: string = '';
+  
+  // Loading state flags for coordinating role-based defaults
+  private employeeStatusLoaded: boolean = false;
+  private inventoryUsersLoaded: boolean = false;
+  private accountManagersLoaded: boolean = false;
+  private hasPageAccess: boolean = false;
   
   // New properties for enhanced functionality
   crashKitCount: number = 0;
@@ -78,12 +93,129 @@ export class PartsRequestStatusComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.determineEmployeeStatus();
+  }
+
+  private initializeAuthorizedView(): void {
     this.loadAccountManagers();
     this.loadInventoryUsers();
-    this.determineEmployeeStatus();
     this.handleQueryParams();
     this.onFilterChanges();
     this.loadFilters();
+  }
+
+  // Role-based filtering helper methods (matching job-list pattern)
+  private getNormalizedRoleStatus(): string {
+    const raw = (this.employeeStatus || this.userRole || '').toString().trim().toLowerCase();
+    return raw;
+  }
+
+  public isTechContext(): boolean {
+    const s = this.getNormalizedRoleStatus();
+    return s === 'technician' || s === 'techmanager' || s === 'tech manager' || s.includes('tech');
+  }
+
+  private isManagerContext(): boolean {
+    const s = this.getNormalizedRoleStatus();
+    return s === 'manager' || s === 'other' || s.includes('manager');
+  }
+
+  private checkAndApplyRoleBasedDefaults(): void {
+    // Only apply defaults when all required data is loaded
+    if (this.employeeStatusLoaded && this.inventoryUsersLoaded && this.accountManagersLoaded) {
+      console.log('🎯 All data loaded, applying role-based defaults');
+      this.applyRoleBasedDefaults();
+    } else {
+      console.log('⏳ Waiting for data to load:', {
+        employeeStatusLoaded: this.employeeStatusLoaded,
+        inventoryUsersLoaded: this.inventoryUsersLoaded,
+        accountManagersLoaded: this.accountManagersLoaded
+      });
+    }
+  }
+
+  private applyRoleBasedDefaults(): void {
+    const isTechUser = this.isTechContext();
+    const isManagerLikeUser = this.isManagerContext();
+
+    console.log('🔎 Parts Request Status - Applying role-based defaults:', {
+      isTechUser,
+      isManagerLikeUser,
+      empID: this.empID,
+      userRole: this.userRole,
+      employeeStatus: this.employeeStatus,
+      inventoryUsersCount: this.inventoryUsers.length,
+      accountManagersCount: this.accountManagers.length
+    });
+
+    if (isTechUser) {
+      // For technicians: restrict to their own inventory user
+      const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
+      
+      if (Array.isArray(this.inventoryUsers)) {
+        const matchedUser = this.inventoryUsers.find((user: InventoryUser) =>
+          ((user?.invUserID || '').toString().trim().toUpperCase() === empIdNormalized) ||
+          ((user?.username || '').toString().trim().toUpperCase() === empIdNormalized)
+        );
+
+        if (matchedUser) {
+          this.inventoryUsers = [matchedUser];
+          const userValue = matchedUser.username?.toUpperCase() || matchedUser.invUserID?.toUpperCase() || this.empID;
+          this.partsFilterForm.patchValue({ inventoryUser: userValue }, { emitEvent: false });
+        } else {
+          // Create a fallback entry for the technician
+          const fallbackUser: InventoryUser = { 
+            invUserID: this.empID, 
+            username: this.empID 
+          };
+          this.inventoryUsers = [fallbackUser];
+          this.partsFilterForm.patchValue({ inventoryUser: this.empID.toUpperCase() }, { emitEvent: false });
+        }
+      }
+
+      // Set account manager to 'All' for technicians
+      this.partsFilterForm.patchValue({ accountManager: 'All' }, { emitEvent: false });
+
+      // Disable both dropdowns for technicians
+      this.partsFilterForm.get('inventoryUser')?.disable({ emitEvent: false });
+      this.partsFilterForm.get('accountManager')?.disable({ emitEvent: false });
+
+      console.log('✅ Technician defaults applied:', {
+        inventoryUser: this.partsFilterForm.get('inventoryUser')?.value,
+        accountManager: this.partsFilterForm.get('accountManager')?.value,
+        inventoryUserDisabled: this.partsFilterForm.get('inventoryUser')?.disabled,
+        accountManagerDisabled: this.partsFilterForm.get('accountManager')?.disabled,
+        inventoryUsersCount: this.inventoryUsers.length
+      });
+    } else if (isManagerLikeUser) {
+      // For managers: enable dropdowns and pre-select if in account managers list
+      this.partsFilterForm.get('inventoryUser')?.enable({ emitEvent: false });
+      this.partsFilterForm.get('accountManager')?.enable({ emitEvent: false });
+
+      // Check if current user exists in account managers list
+      const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
+      const userManager = this.accountManagers.find((mgr: AccountManager) => {
+        const offId = (mgr?.OFFID || mgr?.empId || '').toString().trim().toUpperCase();
+        const offName = (mgr?.OFFNAME || mgr?.empName || '').toString().trim().toUpperCase();
+        return offId === empIdNormalized || offName === empIdNormalized;
+      });
+
+      if (userManager) {
+        const mgrValue = (userManager.OFFNAME || userManager.empName || '').toUpperCase();
+        this.partsFilterForm.patchValue({ accountManager: mgrValue }, { emitEvent: false });
+      } else {
+        this.partsFilterForm.patchValue({ accountManager: 'All' }, { emitEvent: false });
+      }
+
+      console.log('✅ Manager defaults applied:', {
+        accountManager: this.partsFilterForm.get('accountManager')?.value,
+        accountManagerDisabled: this.partsFilterForm.get('accountManager')?.disabled
+      });
+    } else {
+      // For other roles: keep dropdowns enabled
+      this.partsFilterForm.get('inventoryUser')?.enable({ emitEvent: false });
+      this.partsFilterForm.get('accountManager')?.enable({ emitEvent: false });
+    }
   }
 
   loadAccountManagers(): void {
@@ -104,6 +236,8 @@ export class PartsRequestStatusComponent implements OnInit {
           this.accountManagers = data;
           // Update localStorage with fresh data
           localStorage.setItem("AccountManagers", JSON.stringify(data));
+          this.accountManagersLoaded = true;
+          this.checkAndApplyRoleBasedDefaults();
         } else {
           this.tryReportServiceFallback();
         }
@@ -131,12 +265,16 @@ export class PartsRequestStatusComponent implements OnInit {
           }));
           // Update localStorage with fresh data
           localStorage.setItem("AccountManagers", JSON.stringify(this.accountManagers));
+          this.accountManagersLoaded = true;
+          this.checkAndApplyRoleBasedDefaults();
         } else {
           if (this.accountManagers.length === 0) {
             this.errorMessage = 'Failed to load account managers from both APIs';
             // Provide minimal fallback
             this.accountManagers = [{ empName: 'All', empId: 'All', OFFNAME: 'All', OFFID: 'All' }];
           }
+          this.accountManagersLoaded = true;
+          this.checkAndApplyRoleBasedDefaults();
         }
       },
       error: (error) => {
@@ -145,6 +283,8 @@ export class PartsRequestStatusComponent implements OnInit {
           // Provide minimal fallback
           this.accountManagers = [{ empName: 'All', empId: 'All', OFFNAME: 'All', OFFID: 'All' }];
         }
+        this.accountManagersLoaded = true;
+        this.checkAndApplyRoleBasedDefaults();
       }
     });
   }
@@ -178,9 +318,21 @@ export class PartsRequestStatusComponent implements OnInit {
       }
     }
 
-    // Always fetch fresh data from API
+    // Always fetch fresh data from API with user context for role-based filtering
     this.isLoadingInventoryUsers = true;
-    this._reportService.getInventoryUserNames().subscribe({
+    
+    // Pass user context to API for role-based filtering
+    const userDataStr = localStorage.getItem("userData");
+    let userEmpID: string | undefined;
+    let windowsID: string | undefined;
+    
+    if (userDataStr) {
+      const userData = JSON.parse(userDataStr);
+      userEmpID = userData.empID?.trim();
+      windowsID = userData.windowsId?.trim() || userData.empName?.trim();
+    }
+    
+    this._reportService.getInventoryUserNames(userEmpID, windowsID).subscribe({
       next: (data: any) => {
         this.isLoadingInventoryUsers = false;
         
@@ -195,35 +347,59 @@ export class PartsRequestStatusComponent implements OnInit {
         }
         
         if (inventoryUsers && inventoryUsers.length > 0) {
-          // Always ensure 'All' option is first, avoid duplicates
-          const allOption = { invUserID: 'All', username: 'All' };
-          const filteredUsers = inventoryUsers.filter((user: InventoryUser) => 
-            user.invUserID !== 'All' && user.username !== 'All'
-          );
-          this.inventoryUsers = [allOption, ...filteredUsers];
+          // Check if user is a technician - if so, don't add 'All' option
+          const isTech = this.isTechContext();
+          
+          if (isTech) {
+            // For technicians, use the filtered list from API (should be single user)
+            this.inventoryUsers = inventoryUsers;
+          } else {
+            // For managers and others, ensure 'All' option is first
+            const allOption = { invUserID: 'All', username: 'All' };
+            const filteredUsers = inventoryUsers.filter((user: InventoryUser) => 
+              user.invUserID !== 'All' && user.username !== 'All'
+            );
+            this.inventoryUsers = [allOption, ...filteredUsers];
+          }
           
           // Update localStorage with fresh data
           localStorage.setItem("InventoryUsers", JSON.stringify(this.inventoryUsers));
         } else {
           if (this.inventoryUsers.length === 0) {
-            this.inventoryUsers = [{ invUserID: 'All', username: 'All' }];
+            const isTech = this.isTechContext();
+            if (!isTech) {
+              this.inventoryUsers = [{ invUserID: 'All', username: 'All' }];
+            }
           }
         }
 
         // Ensure the form has the correct default value after loading users
         const currentValue = this.partsFilterForm.get('inventoryUser')?.value;
         if (!currentValue || currentValue === '' || !this.inventoryUsers.some(user => this.getInventoryUserValue(user) === currentValue)) {
-          this.partsFilterForm.patchValue({ inventoryUser: 'ALL' });
+          const defaultValue = (this.inventoryUsers.length > 0 && this.inventoryUsers[0].username) 
+            ? this.inventoryUsers[0].username.toUpperCase() 
+            : 'ALL';
+          this.partsFilterForm.patchValue({ inventoryUser: defaultValue });
         }
+        
+        // Mark inventory users as loaded and check if we can apply role defaults
+        this.inventoryUsersLoaded = true;
+        this.checkAndApplyRoleBasedDefaults();
       },
       error: (error) => {
         this.isLoadingInventoryUsers = false;
         
         // If API fails and no localStorage data, provide fallback
         if (this.inventoryUsers.length === 0) {
-          this.inventoryUsers = [{ invUserID: 'All', username: 'All' }];
+          const isTech = this.isTechContext();
+          if (!isTech) {
+            this.inventoryUsers = [{ invUserID: 'All', username: 'All' }];
+          }
           this.errorMessage = 'Unable to load inventory users. Please check network connection.';
         }
+        // Even on error, mark as loaded so we don't block forever
+        this.inventoryUsersLoaded = true;
+        this.checkAndApplyRoleBasedDefaults();
       }
     });
   }
@@ -310,22 +486,64 @@ export class PartsRequestStatusComponent implements OnInit {
     const userDataStr = localStorage.getItem("userData");
     if (userDataStr) {
       const userData = JSON.parse(userDataStr);
-      const windowsID = userData.windowsId || userData.empName || '';
       
-      if (windowsID) {
-        this._reportService.getEmployeeStatusForJobListByParam(windowsID).subscribe({
+      // Store user data for role-based filtering
+      this.empID = (userData.empID || '').trim();
+      this.userRole = userData.role || '';
+      this.windowsID = userData.windowsId || userData.empName || '';
+      
+      console.log('Parts Request Status - User data loaded:', {
+        empID: this.empID,
+        userRole: this.userRole,
+        windowsID: this.windowsID
+      });
+      
+      if (this.windowsID) {
+        this._reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
           next: (response: EmployeeStatusDto) => {
             this.currentUserStatus = response;
+            this.employeeStatus = response.status || '';
+            
+            console.log('Parts Request Status - Employee status:', {
+              status: this.employeeStatus,
+              isTechContext: this.isTechContext(),
+              isManagerContext: this.isManagerContext()
+            });
+
+            // Legacy behavior: only Manager/Other can access this page.
+            // Technician and any other non-manager role should be redirected to login.
+            if (this.isTechContext() || !this.isManagerContext()) {
+              this.hasPageAccess = false;
+              this.auth.logout();
+              return;
+            }
+
+            this.hasPageAccess = true;
+            this.initializeAuthorizedView();
+            
+            // Mark employee status as loaded and check if we can apply role defaults
+            this.employeeStatusLoaded = true;
+            this.checkAndApplyRoleBasedDefaults();
           },
           error: (error) => {
             this.errorMessage = 'Error retrieving employee status';
+            console.error('Error loading employee status:', error);
+            this.hasPageAccess = false;
+            this.auth.logout();
           }
         });
       }
+    } else {
+      this.hasPageAccess = false;
+      this.auth.logout();
     }
   }
 
   getPartsRequestReport(): void {
+    if (!this.hasPageAccess) {
+      return;
+    }
+
     this.isLoading = true;
     this.errorMessage = '';
     const formValue = this.partsFilterForm.value;
@@ -334,11 +552,34 @@ export class PartsRequestStatusComponent implements OnInit {
     const invUserID = formValue.inventoryUser || 'All';
     const offName = formValue.accountManager || 'All';
 
-    // Use new API structure
+    // Get user context from localStorage for role-based filtering
+    const userDataStr = localStorage.getItem("userData");
+    let userEmpID: string | undefined;
+    let windowsID: string | undefined;
+    
+    if (userDataStr) {
+      const userData = JSON.parse(userDataStr);
+      userEmpID = userData.empID?.trim();
+      windowsID = userData.windowsId?.trim() || userData.empName?.trim();
+    }
+
+    console.log('🔎 Parts Request Report - Request params:', {
+      key,
+      invUserID,
+      offName,
+      userEmpID,
+      windowsID,
+      isTechContext: this.isTechContext(),
+      isManagerContext: this.isManagerContext()
+    });
+
+    // Use new API structure with role-based filtering
     const request: PartReqStatusRequestDto = {
       key: key,
       invUserID: invUserID,
-      offName: offName
+      offName: offName,
+      userEmpID: userEmpID,
+      windowsID: windowsID
     };
 
     this._reportService.getPartReqStatus(request).subscribe({
@@ -355,12 +596,20 @@ export class PartsRequestStatusComponent implements OnInit {
         this.updateDisplayedData();
         
         this.isLoading = false;
+        
+        console.log('✅ Parts Request Report loaded:', {
+          totalRecords: this.partsRequestList.length,
+          crashKitCount: this.crashKitCount,
+          loadBankCount: this.loadBankCount
+        });
       },
       error: (error) => {
         this.errorMessage = 'Error loading parts request data';
         this.partsRequestList = [];
         this.partReqStatusList = [];
         this.isLoading = false;
+        
+        console.error('Error loading parts request report:', error);
         
         // Fallback to mock data for development/testing
         this.loadMockData();
@@ -821,6 +1070,17 @@ export class PartsRequestStatusComponent implements OnInit {
   onPageChange(page: number): void {
     this.currentPage = page;
     this.updateDisplayedData();
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.getTotalPages()) {
+      this.currentPage = page;
+      this.updateDisplayedData();
+    }
+  }
+
+  getTotalPages(): number {
+    return this.totalPages;
   }
 
   onPageSizeChange(size: number): void {

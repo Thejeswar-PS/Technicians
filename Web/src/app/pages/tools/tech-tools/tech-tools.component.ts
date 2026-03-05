@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { TechToolsService } from '../../../core/services/tech-tools.service';
 import { CommonService } from '../../../core/services/common.service';
 import { AuthService } from '../../../modules/auth/services/auth.service';
+import { AuthHelper } from '../../../core/utils/auth-helper';
 import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto } from '../../../core/model/tech-tools.model';
 
 @Component({
@@ -147,15 +148,22 @@ export class TechToolsComponent implements OnInit {
     { value: 'NA', label: 'N/A' }
   ];
 
+  // Role-based filtering
+  private userContext: { userEmpID?: string; windowsID?: string } = {};
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private techToolsService: TechToolsService,
     private commonService: CommonService,
-    private authService: AuthService
+    private authService: AuthService,
+    private authHelper: AuthHelper
   ) {}
 
   ngOnInit(): void {
+    // Get user context for role-based filtering
+    this.userContext = this.authHelper.getUserContext();
+    
     this.setCurrentUserInfo();
     
     // Choose which method to load technicians based on configuration
@@ -256,11 +264,12 @@ export class TechToolsComponent implements OnInit {
     }
   }
 
-  // Alternative method to load technicians using the new ToolsTrackingTechs endpoint
+  // Alternative method to load technicians using the new ToolsTrackingTechs endpoint - Enhanced with role-based filtering
   loadToolsTrackingTechnicians(): void {
     this.errorMessage = '';
     
-    this.techToolsService.getToolsTrackingTechs().subscribe({
+    // Pass user context for role-based filtering
+    this.techToolsService.getToolsTrackingTechs(this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (technicians: ToolsTrackingTechsDto[]) => {
         // Map to the expected Technician interface
         this.technicians = technicians.map(tech => ({
@@ -268,12 +277,26 @@ export class TechToolsComponent implements OnInit {
           techname: tech.techname
         }));
         
-        // Add "All" option for admin users (optional)
-        this.technicians.unshift({ techID: 'All', techname: 'All' });
-        this.selectedTech = 'All';
+        // Only add "All" option if we have multiple technicians (manager/admin view)
+        // If role-filtered to single technician, don't add "All" option
+        if (this.technicians.length > 1) {
+          this.technicians.unshift({ techID: 'All', techname: 'All' });
+          this.selectedTech = 'All';
+        } else if (this.technicians.length === 1) {
+          // Auto-select the single technician (technician role viewing their own data)
+          this.selectedTech = this.technicians[0].techID;
+          // Auto-load their data
+          setTimeout(() => {
+            this.onTechnicianChange();
+          }, 300);
+        }
       },
       error: (error) => {
-        this.errorMessage = 'Error loading tools tracking technicians: ' + error.message;
+        if (error.status === 403) {
+          this.errorMessage = 'Access denied: You do not have permission to view this data.';
+        } else {
+          this.errorMessage = 'Error loading tools tracking technicians: ' + error.message;
+        }
         console.error('Error fetching tools tracking technicians:', error);
       }
     });

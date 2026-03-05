@@ -117,76 +117,145 @@
           <span class="text-muted">Processing data...</span>
         </div>
 
+        <!-- Records Per Page -->
+        <div class="d-flex align-items-center justify-content-between mb-3" *ngIf="!isProcessingData">
+          <div class="d-flex align-items-center">
+            <label class="me-2 fw-semibold">Records per page:</label>
+            <select class="form-select form-select-sm w-auto"
+                    [(ngModel)]="pageSize"
+                    (change)="currentPage = 1; updateDisplayedData()">
+              <option value="100">100</option>
+              <option value="150">150</option>
+              <option value="200">200</option>
+            </select>
+          </div>
+
+          <div class="flex-fill text-center fw-semibold">
+            Showing
+            {{ totalRecords ? ((currentPage - 1) * pageSize + 1) : 0 }}
+            -
+            {{ totalRecords ? Math.min(currentPage * pageSize, totalRecords) : 0 }}
+            of {{ totalRecords }} records
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="goToPage(currentPage - 1)"
+                    [disabled]="currentPage <= 1">
+              Prev
+            </button>
+            <span class="fw-semibold">Page {{ currentPage }} of {{ getTotalPages() }}</span>
+            <button type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="goToPage(currentPage + 1)"
+                    [disabled]="currentPage >= getTotalPages()">
+              Next
+            </button>
+          </div>
+
+        </div>
+
         <!-- Data Table Section -->
         <div class="table-section" *ngIf="!isProcessingData">
           <div class="table-responsive">
-            <table class="table modern-table">
-              <thead class="table-header">
+            <table class="table table-hover table-bordered mb-0 modern-table">
+              <thead class="table-light table-header">
                 <tr>
-                  <th class="sortable header-cell" (click)="sortTable('callNumber')" [ngClass]="getSortClass('callNumber')">
-                    <div class="header-content">
-                      <span class="header-text">Call No</span>
-                      <i [class]="'sort-icon ' + sortIcon('callNumber')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('callNumber')">
+                    <span class="header-cell">
+                      Call No
+                      <span class="sort-icons" [class.active]="sortedColumn === 'callNumber'">
+                        <i class="up" [class.on]="sortedColumn === 'callNumber' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'callNumber' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('customerNumber')" [ngClass]="getSortClass('customerNumber')">
-                    <div class="header-content">
-                      <span class="header-text">Customer No.</span>
-                      <i [class]="'sort-icon ' + sortIcon('customerNumber')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('customerNumber')">
+                    <span class="header-cell">
+                      Customer No.
+                      <span class="sort-icons" [class.active]="sortedColumn === 'customerNumber'">
+                        <i class="up" [class.on]="sortedColumn === 'customerNumber' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'customerNumber' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('technician')" [ngClass]="getSortClass('technician')">
-                    <div class="header-content">
-                      <span class="header-text">Technician</span>
-                      <i [class]="'sort-icon ' + sortIcon('technician')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('technician')">
+                    <span class="header-cell">
+                      Technician
+                      <span class="sort-icons" [class.active]="sortedColumn === 'technician'">
+                        <i class="up" [class.on]="sortedColumn === 'technician' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'technician' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('city')" [ngClass]="getSortClass('city')">
-                    <div class="header-content">
-                      <span class="header-text">City</span>
-                      <i [class]="'sort-icon ' + sortIcon('city')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('city')">
+                    <span class="header-cell">
+                      City
+                      <span class="sort-icons" [class.active]="sortedColumn === 'city'">
+                        <i class="up" [class.on]="sortedColumn === 'city' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'city' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('state')" [ngClass]="getSortClass('state')">
-                    <div class="header-content">
-                      <span class="header-text">State</span>
-                      <i [class]="'sort-icon ' + sortIcon('state')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('state')">
+                    <span class="header-cell">
+                      State
+                      <span class="sort-icons" [class.active]="sortedColumn === 'state'">
+                        <i class="up" [class.on]="sortedColumn === 'state' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'state' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('status')" [ngClass]="getSortClass('status')">
-                    <div class="header-content">
-                      <span class="header-text">Status</span>
-                      <i [class]="'sort-icon ' + sortIcon('status')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('status')">
+                    <span class="header-cell">
+                      Status
+                      <span class="sort-icons" [class.active]="sortedColumn === 'status'">
+                        <i class="up" [class.on]="sortedColumn === 'status' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'status' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('age')" [ngClass]="getSortClass('age')">
-                    <div class="header-content">
-                      <span class="header-text">Age</span>
-                      <i [class]="'sort-icon ' + sortIcon('age')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('age')">
+                    <span class="header-cell">
+                      Age
+                      <span class="sort-icons" [class.active]="sortedColumn === 'age'">
+                        <i class="up" [class.on]="sortedColumn === 'age' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'age' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('shipDate')" [ngClass]="getSortClass('shipDate')">
-                    <div class="header-content">
-                      <span class="header-text">Ship Date</span>
-                      <i [class]="'sort-icon ' + sortIcon('shipDate')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('shipDate')">
+                    <span class="header-cell">
+                      Ship Date
+                      <span class="sort-icons" [class.active]="sortedColumn === 'shipDate'">
+                        <i class="up" [class.on]="sortedColumn === 'shipDate' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'shipDate' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('reqDate')" [ngClass]="getSortClass('reqDate')">
-                    <div class="header-content">
-                      <span class="header-text">Required Date</span>
-                      <i [class]="'sort-icon ' + sortIcon('reqDate')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('reqDate')">
+                    <span class="header-cell">
+                      Required Date
+                      <span class="sort-icons" [class.active]="sortedColumn === 'reqDate'">
+                        <i class="up" [class.on]="sortedColumn === 'reqDate' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'reqDate' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th class="sortable header-cell" (click)="sortTable('urgent')" [ngClass]="getSortClass('urgent')">
-                    <div class="header-content">
-                      <span class="header-text">Urgent?</span>
-                      <i [class]="'sort-icon ' + sortIcon('urgent')"></i>
-                    </div>
+                  <th class="fw-bold sortable" (click)="sortTable('urgent')">
+                    <span class="header-cell">
+                      Urgent?
+                      <span class="sort-icons" [class.active]="sortedColumn === 'urgent'">
+                        <i class="up" [class.on]="sortedColumn === 'urgent' && sortDirection === 1"></i>
+                        <i class="down" [class.on]="sortedColumn === 'urgent' && sortDirection === -1"></i>
+                      </span>
+                    </span>
                   </th>
-                  <th *ngIf="canApproveRejects()" class="actions-column header-cell">
-                    <div class="header-content">
-                      <span class="header-text">Actions</span>
-                    </div>
+                  <th *ngIf="canApproveRejects()" class="fw-bold">
+                    <span class="header-cell">
+                      Actions
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -270,85 +339,6 @@
                 </tr>
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <!-- Enhanced Pagination Controls - Below Table -->
-        <div class="enhanced-pagination-wrapper" *ngIf="totalRecords > 0">
-          <div class="enhanced-pagination-controls">
-            <div class="row align-items-center g-3">
-              <!-- Left side - Page size and record info -->
-              <div class="col-md-6">
-                <div class="pagination-info">
-                  <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <div class="page-size-selector">
-                      <label class="form-label mb-0 fw-semibold">Records per page:</label>
-                      <select class="form-select form-select-lg" 
-                              [value]="pageSize" #pageSizeSelect (change)="onPageSizeChange(+pageSizeSelect.value)">
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                        <option value="200">200</option>
-                      </select>
-                    </div>
-                    <div class="record-info">
-                      <span class="badge badge-info-custom">
-                        <i class="bi bi-list-ol me-1"></i>
-                        Showing {{startRecord}}-{{endRecord}} of {{totalRecords}} records
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Right side - Navigation controls -->
-              <div class="col-md-6">
-                <div class="pagination-navigation">
-                  <div class="d-flex justify-content-end align-items-center gap-2">
-                    <!-- First page -->
-                    <button class="btn btn-pagination btn-first" 
-                            [disabled]="currentPage === 1" 
-                            (click)="onPageChange(1)"
-                            title="First page">
-                      <i class="bi bi-chevron-double-left"></i>
-                    </button>
-                    
-                    <!-- Previous page -->
-                    <button class="btn btn-pagination btn-prev" 
-                            [disabled]="currentPage === 1" 
-                            (click)="onPageChange(currentPage - 1)"
-                            title="Previous page">
-                      <i class="bi bi-chevron-left"></i>
-                      <span class="d-none d-sm-inline">Previous</span>
-                    </button>
-                    
-                    <!-- Current page indicator -->
-                    <div class="current-page-indicator">
-                      <span class="page-display">
-                        Page <strong>{{currentPage}}</strong> of <strong>{{totalPages}}</strong>
-                      </span>
-                    </div>
-                    
-                    <!-- Next page -->
-                    <button class="btn btn-pagination btn-next" 
-                            [disabled]="currentPage === totalPages" 
-                            (click)="onPageChange(currentPage + 1)"
-                            title="Next page">
-                      <span class="d-none d-sm-inline">Next</span>
-                      <i class="bi bi-chevron-right"></i>
-                    </button>
-                    
-                    <!-- Last page -->
-                    <button class="btn btn-pagination btn-last" 
-                            [disabled]="currentPage === totalPages" 
-                            (click)="onPageChange(totalPages)"
-                            title="Last page">
-                      <i class="bi bi-chevron-double-right"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

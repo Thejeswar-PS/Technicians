@@ -220,12 +220,12 @@
       <div class="section-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
           <h4 class="mb-0 fw-bold">Search Results</h4>
-          <span class="badge" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">{{ totalRecords }} Results</span>
+          <span class="badge bg-primary text-white">{{ totalRecords }} Results</span>
         </div>
         
         <div class="table-responsive">
-          <table class="table app-table mb-0">
-            <thead class="app-table-header">
+          <table class="table table-hover table-bordered mb-0 app-table">
+            <thead class="table-light app-table-header">
               <tr>
                 <th class="fw-bold sortable" (click)="sortData('login')">
                   <span class="header-cell">
@@ -286,12 +286,12 @@
                 </td>
                 <td class="site-cell">
                   <div class="cell-content">
-                    <span class="badge bg-light text-primary">{{ user.siteID }}</span>
+                    <span>{{ user.siteID }}</span>
                   </div>
                 </td>
                 <td class="customer-cell">
                   <div class="cell-content truncate">
-                    <span class="fw-semibold">{{ user.custName }}</span>
+                    <span>{{ user.custName }}</span>
                   </div>
                 </td>
                 <td class="address-cell">
@@ -306,12 +306,12 @@
                 </td>
                 <td class="phone-cell">
                   <div class="cell-content">
-                    <span class="text-info">{{ user.phone }}</span>
+                    <span>{{ user.phone }}</span>
                   </div>
                 </td>
                 <td class="email-cell">
                   <div class="cell-content truncate">
-                    <span style="color: #1bc505;">{{ user.email }}</span>
+                    <span class="text-primary">{{ user.email }}</span>
                   </div>
                 </td>
                 <td class="login-date-cell">

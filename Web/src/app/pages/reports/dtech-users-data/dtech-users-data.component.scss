@@ -172,8 +172,6 @@
 
   /* ================= TABLE ================= */
 
-  /* ================= TABLE ================= */
-
   .table-responsive {
     width: 100%;
     overflow-x: auto;
@@ -182,11 +180,12 @@
   }
 
   .table {
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
     font-size: 14px;
     margin-bottom: 0;
-    width: 100%;
-    table-layout: fixed;  /* 🚀 Required for wrapping */
-    border-collapse: collapse;
 
     thead {
       th {
@@ -249,11 +248,10 @@
 
     tbody {
       tr {
-        border-bottom: 1px solid #f1f5f9;
         transition: background-color 0.2s ease;
 
         &:hover {
-          background-color: #f8fafc;
+          background-color: #f8f9fa;
         }
 
         &.row-selected {
@@ -261,10 +259,9 @@
         }
 
         td {
-          padding: 14px;
-          vertical-align: top;
-
-          /* 🚀 TEXT WRAPPING FIX */
+          padding: 10px 12px;
+          vertical-align: middle;
+          text-align: center;
           white-space: normal;
           word-break: break-word;
           overflow-wrap: anywhere;
@@ -273,72 +270,6 @@
       }
     }
   }
-
-  /* ================= COLUMN WIDTH CONTROL ================= */
-
-.app-table {
-  table-layout: fixed;   /* IMPORTANT – enables fixed width columns */
-  width: 100%;
-
-  th,
-  td {
-    white-space: normal;       /* Allow wrapping */
-    word-break: break-word;    /* Break long strings */
-    vertical-align: top;
-  }
-
-  /* Column Widths */
-
-  th:nth-child(1),
-  td:nth-child(1) {
-    width: 7%;   /* Login */
-  }
-
-  th:nth-child(2),
-  td:nth-child(2) {
-    width: 7%;   /* Password */
-  }
-
-  th:nth-child(3),
-  td:nth-child(3) {
-    width: 8%;   /* Site ID */
-  }
-
-  th:nth-child(4),
-  td:nth-child(4) {
-    width: 10%;  /* Customer */
-  }
-
-  th:nth-child(5),
-  td:nth-child(5) {
-    width: 12%;  /* Address (WIDER) */
-  }
-
-  th:nth-child(6),
-  td:nth-child(6) {
-    width: 8%;  /* Contact */
-  }
-
-  th:nth-child(7),
-  td:nth-child(7) {
-    width: 8%;   /* Phone */
-  }
-
-  th:nth-child(8),
-  td:nth-child(8) {
-    width: 10%;  /* Email */
-  }
-
-  th:nth-child(9),
-  td:nth-child(9) {
-    width: 7%;   /* Last Login */
-  }
-
-  th:nth-child(10),
-  td:nth-child(10) {
-    width: 7%;   /* Password Changed */
-  }
-}
 
   /* ================= TEXT WRAPPING ================= */
 

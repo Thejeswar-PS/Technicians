@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto, TechToolSerialNoDto, ToolsCalendarTrackingResultDto } from '../model/tech-tools.model';
@@ -58,38 +58,49 @@ export class TechToolsService {
     return this.http.post(`${this.apiUrl}/TechTools/SaveUpdateTechTools`, data);
   }
 
-  // Get tools tracking technicians
-  getToolsTrackingTechs(): Observable<ToolsTrackingTechsDto[]> {
-    return this.http.get<any>(`${this.apiUrl}/ToolsTrackingTechs`).pipe(
+  // Get tools tracking technicians - Enhanced with role-based filtering
+  getToolsTrackingTechs(userEmpID?: string, windowsID?: string): Observable<ToolsTrackingTechsDto[]> {
+    let params = new HttpParams();
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
+    
+    return this.http.get<any>(`${this.apiUrl}/ToolsTrackingTechs`, { params }).pipe(
       map(response => response.data || response || [])
     );
   }
 
-  // Get tech tool serial numbers
-  getTechToolSerialNos(toolName: string = 'All'): Observable<TechToolSerialNoDto[]> {
-    return this.http.get<any>(`${this.apiUrl}/ToolsTrackingTechs/serial-numbers?toolName=${encodeURIComponent(toolName)}`).pipe(
+  // Get tech tool serial numbers - Enhanced with role-based filtering
+  getTechToolSerialNos(toolName: string = 'All', userEmpID?: string, windowsID?: string): Observable<TechToolSerialNoDto[]> {
+    let params = new HttpParams().set('toolName', toolName);
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
+    
+    return this.http.get<any>(`${this.apiUrl}/ToolsTrackingTechs/serial-numbers`, { params }).pipe(
       map(response => response.data || response || [])
     );
   }
 
-  // Get tools calendar tracking data
+  // Get tools calendar tracking data - Enhanced with role-based filtering
   getToolsCalendarTracking(
     startDate?: string,
     endDate?: string,
     toolName: string = 'All',
     serialNo: string = 'All',
-    techFilter: string = 'All'
+    techFilter: string = 'All',
+    userEmpID?: string,
+    windowsID?: string
   ): Observable<ToolsCalendarTrackingResultDto> {
     // Build params object, only include dates if provided
-    const params: any = {
-      toolName,
-      serialNo,
-      techFilter
-    };
+    let params = new HttpParams()
+      .set('toolName', toolName)
+      .set('serialNo', serialNo)
+      .set('techFilter', techFilter);
     
     // Only add dates if they're provided (backend has defaults)
-    if (startDate) params.startDate = startDate;
-    if (endDate) params.endDate = endDate;
+    if (startDate) params = params.set('startDate', startDate);
+    if (endDate) params = params.set('endDate', endDate);
+    if (userEmpID) params = params.set('userEmpID', userEmpID);
+    if (windowsID) params = params.set('windowsID', windowsID);
     
     const url = `${this.apiUrl}/ToolsTrackingTechs/calendar-tracking`;
     

@@ -26,16 +26,6 @@
           </h3>
         </div>
         
-        <div class="card-toolbar">
-          <button class="btn btn-sm btn-light-primary me-2" (click)="refresh()" [disabled]="isLoading">
-            <i class="bi bi-arrow-clockwise"></i>
-            Refresh
-          </button>
-          <button class="btn btn-sm btn-light-success" (click)="exportToCSV()" [disabled]="displayData.length === 0">
-            <i class="bi bi-download"></i>
-            Export CSV
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -62,48 +52,6 @@
 
   <!-- Stats Card -->
   <div *ngIf="!isLoading && displayData.length > 0" class="row g-5 mb-5">
-    <div class="col-xl-3 col-md-6">
-      <div class="card card-custom bg-light-primary">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-list-ul fs-2x text-primary me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Total Records</span>
-              <span class="fw-bolder text-primary fs-2">{{ totalRecords }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-      <div class="card card-custom bg-light-success">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-columns fs-2x text-success me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Data Columns</span>
-              <span class="fw-bolder text-success fs-2">{{ columns.length }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-xl-3 col-md-6">
-      <div class="card card-custom bg-light-info">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-clock fs-2x text-info me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Query Time</span>
-              <span class="fw-bolder text-info fs-2">{{ executionTimeMs }}ms</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
     <div class="col-xl-3 col-md-6" *ngIf="totalsData && totalsData.length > 0">
       <div class="card card-custom bg-light-warning">
         <div class="card-body p-6">

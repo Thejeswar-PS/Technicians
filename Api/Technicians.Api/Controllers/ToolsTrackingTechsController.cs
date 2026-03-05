@@ -20,27 +20,36 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets tools tracking technicians data from the database
+        /// Gets tools tracking technicians data from the database - Enhanced with role-based filtering
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<ToolsTrackingTechsDto>>> GetToolsTrackingTechs()
+        public async Task<ActionResult<List<ToolsTrackingTechsDto>>> GetToolsTrackingTechs(
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                _logger.LogInformation("Getting tools tracking techs data");
+                _logger.LogInformation("Getting tools tracking techs data with role filtering");
 
-                var results = await _repository.GetToolsTrackingTechsAsync();
+                // Repository handles role-based filtering
+                var filteredResults = await _repository.GetToolsTrackingTechsAsync(userEmpID, windowsID);
 
                 _logger.LogInformation("Successfully retrieved tools tracking techs data - RecordCount: {RecordCount}",
-                    results.Count);
+                    filteredResults.Count);
 
                 return Ok(new
                 {
                     success = true,
-                    data = results,
-                    totalRecords = results.Count,
+                    data = filteredResults,
+                    totalRecords = filteredResults.Count,
+                    isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
+                    filterCriteria = BuildFilterCriteria(userEmpID, windowsID),
                     message = "Tools tracking techs data retrieved successfully"
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -56,17 +65,21 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets tool serial numbers by tool name
+        /// Gets tool serial numbers by tool name - Enhanced with role-based filtering
         /// </summary>
         /// <param name="toolName">Tool name to filter by (optional, defaults to "All")</param>
         [HttpGet("serial-numbers")]
-        public async Task<ActionResult<List<TechToolSerialNoDto>>> GetTechToolSerialNos([FromQuery] string toolName = "All")
+        public async Task<ActionResult<List<TechToolSerialNoDto>>> GetTechToolSerialNos(
+            [FromQuery] string toolName = "All",
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                _logger.LogInformation("Getting tool serial numbers for tool: {ToolName}", toolName);
+                _logger.LogInformation("Getting tool serial numbers for tool: {ToolName} with role filtering", toolName);
 
-                var results = await _repository.GetTechToolSerialNosAsync(toolName);
+                // Repository handles role-based filtering
+                var results = await _repository.GetTechToolSerialNosAsync(toolName, userEmpID, windowsID);
 
                 _logger.LogInformation("Successfully retrieved tool serial numbers - RecordCount: {RecordCount}",
                     results.Count);
@@ -76,8 +89,13 @@ namespace Technicians.Api.Controllers
                     success = true,
                     data = results,
                     totalRecords = results.Count,
+                    isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                     message = $"Tool serial numbers retrieved successfully for tool: {toolName}"
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -93,8 +111,10 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets tools calendar tracking data with due counts
+        /// Gets tools calendar tracking data with due counts - Enhanced with role-based filtering
         /// Uses legacy date logic: 15th of previous month to 15th of next month
+        /// Implements legacy logic: Technicians see only their own calendar data, disabled dropdowns
+        /// Managers/Other: Can view all calendars and modify filters
         /// </summary>
         /// <param name="startDate">Start date for filtering (optional, defaults to 15th of previous month)</param>
         /// <param name="endDate">End date for filtering (optional, defaults to 15th of next month)</param>
@@ -107,7 +127,9 @@ namespace Technicians.Api.Controllers
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string toolName = "All",
             [FromQuery] string serialNo = "All",
-            [FromQuery] string techFilter = "All")
+            [FromQuery] string techFilter = "All",
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
@@ -125,11 +147,12 @@ namespace Technicians.Api.Controllers
                     15).AddMonths(1); // 15th of next month
 
                 _logger.LogInformation(
-                    "Getting tools calendar tracking data - StartDate: {StartDate}, EndDate: {EndDate}, ToolName: {ToolName}, SerialNo: {SerialNo}, TechFilter: {TechFilter}",
+                    "Getting tools calendar tracking data with role filtering - StartDate: {StartDate}, EndDate: {EndDate}, ToolName: {ToolName}, SerialNo: {SerialNo}, TechFilter: {TechFilter}",
                     effectiveStartDate, effectiveEndDate, toolName, serialNo, techFilter);
 
+                // Repository handles role-based filtering
                 var results = await _repository.GetToolsCalendarTrackingAsync(
-                    effectiveStartDate, effectiveEndDate, toolName, serialNo, techFilter);
+                    effectiveStartDate, effectiveEndDate, toolName, serialNo, techFilter, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "Successfully retrieved tools calendar tracking data - TrackingRecords: {TrackingRecords}, OverDue: {OverDue}, Due15: {Due15}, Due30: {Due30}, Due45: {Due45}, Due60: {Due60}",
@@ -159,8 +182,17 @@ namespace Technicians.Api.Controllers
                         serialNo,
                         techFilter
                     },
+                    roleBasedFiltering = new
+                    {
+                        isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
+                        requestedBy = userEmpID ?? string.Empty
+                    },
                     message = "Tools calendar tracking data retrieved successfully"
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -178,11 +210,14 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets tech tools misc kit data by tech ID
+        /// Gets tech tools misc kit data by tech ID - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to retrieve misc kit data for (required)</param>
         [HttpGet("misc-kit/{techId}")]
-        public async Task<ActionResult<TechToolsMiscKitResultDto>> GetTechToolsMiscKitByTechId(string techId)
+        public async Task<ActionResult<TechToolsMiscKitResultDto>> GetTechToolsMiscKitByTechId(
+            string techId,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -191,11 +226,12 @@ namespace Technicians.Api.Controllers
             {
                 _logger.LogInformation("Getting tech tools misc kit data for tech ID: {TechId}", techId);
 
-                var results = await _repository.GetTechToolsMiscKitByTechIdAsync(techId);
+                // Repository handles role-based filtering
+                var results = await _repository.GetTechToolsMiscKitByTechIdAsync(techId, userEmpID, windowsID);
 
                 _logger.LogInformation(
-                    "Successfully retrieved tech tools misc kit data - TechId: {TechId}, ToolKitRecords: {ToolKitRecords}, TechInfo: {TechInfo}",
-                    techId, results.ToolKitData.Count, results.TechInfo.TechID);
+                    "Successfully retrieved tech tools misc kit data - TechId: {TechId}, ToolKitRecords: {ToolKitRecords}",
+                    techId, results.ToolKitData.Count);
 
                 return Ok(new
                 {
@@ -204,8 +240,13 @@ namespace Technicians.Api.Controllers
                     totalToolKitRecords = results.ToolKitData.Count,
                     techInfo = results.TechInfo,
                     techId = techId,
+                    isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                     message = $"Tech tools misc kit data retrieved successfully for tech ID: {techId}"
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -221,11 +262,14 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets tools tracking count by tech ID
+        /// Gets tools tracking count by tech ID - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to get count for (required)</param>
         [HttpGet("count/{techId}")]
-        public async Task<ActionResult<ToolsTrackingCountDto>> GetToolsTrackingCount(string techId)
+        public async Task<ActionResult<ToolsTrackingCountDto>> GetToolsTrackingCount(
+            string techId,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -234,7 +278,8 @@ namespace Technicians.Api.Controllers
             {
                 _logger.LogInformation("Getting tools tracking count for tech ID: {TechId}", techId);
 
-                var count = await _repository.GetToolsTrackingCountAsync(techId);
+                // Repository handles role-based filtering
+                var count = await _repository.GetToolsTrackingCountAsync(techId, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "Successfully retrieved tools tracking count - TechId: {TechId}, Count: {Count}",
@@ -246,8 +291,13 @@ namespace Technicians.Api.Controllers
                     data = new ToolsTrackingCountDto { Count = count },
                     techId = techId,
                     count = count,
+                    isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                     message = $"Tools tracking count retrieved successfully for tech ID: {techId}"
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -263,12 +313,14 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Executes insert tech tools query
+        /// Executes insert tech tools query - Enhanced with role-based validation
         /// </summary>
         /// <param name="request">Query execution request</param>
         [HttpPost("execute-query")]
         public async Task<ActionResult<ExecuteInsertTechToolsQueryResultDto>> ExecuteInsertTechToolsQuery(
-            [FromBody] ExecuteInsertTechToolsQueryDto request)
+            [FromBody] ExecuteInsertTechToolsQueryDto request,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.Query))
                 return BadRequest("Query is required.");
@@ -278,7 +330,8 @@ namespace Technicians.Api.Controllers
                 _logger.LogInformation("Executing insert tech tools query - Query length: {QueryLength}", 
                     request.Query.Length);
 
-                var result = await _repository.ExecuteInsertTechToolsQueryAsync(request.Query);
+                // Repository handles role-based validation
+                var result = await _repository.ExecuteInsertTechToolsQueryAsync(request.Query, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "Query execution completed - Success: {Success}, ReturnValue: {ReturnValue}",
@@ -290,6 +343,7 @@ namespace Technicians.Api.Controllers
                     {
                         success = true,
                         data = result,
+                        isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                         message = "Query executed successfully"
                     });
                 }
@@ -302,6 +356,10 @@ namespace Technicians.Api.Controllers
                         message = "Query execution failed"
                     });
                 }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -317,11 +375,14 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Deletes tools tracking data by tech ID
+        /// Deletes tools tracking data by tech ID - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to delete tracking data for (required)</param>
         [HttpDelete("delete/{techId}")]
-        public async Task<ActionResult<DeleteToolsTrackingResultDto>> DeleteToolsTracking(string techId)
+        public async Task<ActionResult<DeleteToolsTrackingResultDto>> DeleteToolsTracking(
+            string techId,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -330,7 +391,8 @@ namespace Technicians.Api.Controllers
             {
                 _logger.LogInformation("Deleting tools tracking data for tech ID: {TechId}", techId);
 
-                var result = await _repository.DeleteToolsTrackingAsync(techId);
+                // Repository handles role-based filtering
+                var result = await _repository.DeleteToolsTrackingAsync(techId, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "Tools tracking deletion completed - TechId: {TechId}, RowsAffected: {RowsAffected}, Success: {Success}",
@@ -344,6 +406,7 @@ namespace Technicians.Api.Controllers
                         data = result,
                         techId = techId,
                         rowsAffected = result.RowsAffected,
+                        isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                         message = result.Message
                     });
                 }
@@ -357,6 +420,10 @@ namespace Technicians.Api.Controllers
                         message = result.Message
                     });
                 }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -372,11 +439,14 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets tech tools tracking data by tech ID
+        /// Gets tech tools tracking data by tech ID - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to retrieve tracking data for (required)</param>
         [HttpGet("tracking/{techId}")]
-        public async Task<ActionResult<List<TechToolsTrackingDto>>> GetTechToolsTrackingByTechId(string techId)
+        public async Task<ActionResult<List<TechToolsTrackingDto>>> GetTechToolsTrackingByTechId(
+            string techId,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -385,7 +455,8 @@ namespace Technicians.Api.Controllers
             {
                 _logger.LogInformation("Getting tech tools tracking data for tech ID: {TechId}", techId);
 
-                var results = await _repository.GetTechToolsTrackingByTechIdAsync(techId);
+                // Repository handles role-based filtering
+                var results = await _repository.GetTechToolsTrackingByTechIdAsync(techId, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "Successfully retrieved tech tools tracking data - TechId: {TechId}, RecordCount: {RecordCount}",
@@ -397,8 +468,13 @@ namespace Technicians.Api.Controllers
                     data = results,
                     totalRecords = results.Count,
                     techId = techId,
+                    isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                     message = $"Tech tools tracking data retrieved successfully for tech ID: {techId}"
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -414,13 +490,15 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Saves/Updates tech tools tracking data using legacy DELETE-INSERT pattern
+        /// Saves/Updates tech tools tracking data using legacy DELETE-INSERT pattern - Enhanced with role-based filtering
         /// Replicates exact behavior of legacy btnSave_Click() and DeleteInsertTechToolsData() methods
         /// </summary>
         /// <param name="request">Save request containing tech ID and tool tracking items</param>
         [HttpPost("save-tracking")]
         public async Task<ActionResult<SaveTechToolsTrackingResultDto>> SaveTechToolsTracking(
-            [FromBody] SaveTechToolsTrackingRequestDto request)
+            [FromBody] SaveTechToolsTrackingRequestDto request,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (request == null)
                 return BadRequest("Request body is required.");
@@ -437,10 +515,11 @@ namespace Technicians.Api.Controllers
             try
             {
                 _logger.LogInformation(
-                    "Saving tech tools tracking data - TechId: {TechId}, ItemCount: {ItemCount}, ModifiedBy: {ModifiedBy}",
+                    "Saving tech tools tracking data with role filtering - TechId: {TechId}, ItemCount: {ItemCount}, ModifiedBy: {ModifiedBy}",
                     request.TechID, request.ToolTrackingItems.Count, request.ModifiedBy);
 
-                var result = await _repository.SaveTechToolsTrackingAsync(request);
+                // Repository handles role-based filtering
+                var result = await _repository.SaveTechToolsTrackingAsync(request, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "Tech tools tracking save completed - TechId: {TechId}, Success: {Success}, RecordsProcessed: {RecordsProcessed}",
@@ -452,6 +531,7 @@ namespace Technicians.Api.Controllers
                     {
                         success = true,
                         data = result,
+                        isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                         message = result.Message
                     });
                 }
@@ -464,6 +544,10 @@ namespace Technicians.Api.Controllers
                         message = result.Message
                     });
                 }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -479,14 +563,17 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        #region File Management Endpoints (Legacy DisplayFile, SaveFile equivalent)
+        #region File Management Endpoints (Legacy DisplayFile, SaveFile equivalent) - Enhanced with role-based filtering
 
         /// <summary>
-        /// Gets file attachments for a tech ID (legacy DisplayFile equivalent)
+        /// Gets file attachments for a tech ID (legacy DisplayFile equivalent) - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to get files for (required)</param>
         [HttpGet("files/{techId}")]
-        public async Task<ActionResult<List<ToolsTrackingFileDto>>> GetFiles(string techId)
+        public async Task<ActionResult<List<ToolsTrackingFileDto>>> GetFiles(
+            string techId,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -495,7 +582,8 @@ namespace Technicians.Api.Controllers
             {
                 _logger.LogInformation("Getting files for tech ID: {TechId}", techId);
 
-                var files = await _repository.GetFilesAsync(techId);
+                // Repository handles role-based filtering
+                var files = await _repository.GetFilesAsync(techId, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "Successfully retrieved files - TechId: {TechId}, FileCount: {FileCount}",
@@ -507,8 +595,13 @@ namespace Technicians.Api.Controllers
                     data = files,
                     totalFiles = files.Count,
                     techId = techId,
+                    isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                     message = $"Files retrieved successfully for tech ID: {techId}"
                 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -524,12 +617,16 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Uploads a file for a tech ID (legacy SaveFile equivalent)
+        /// Uploads a file for a tech ID (legacy SaveFile equivalent) - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to upload file for</param>
         /// <param name="file">File to upload</param>
         [HttpPost("upload-file/{techId}")]
-        public async Task<ActionResult<FileUploadResultDto>> UploadFile(string techId, IFormFile file)
+        public async Task<ActionResult<FileUploadResultDto>> UploadFile(
+            string techId, 
+            IFormFile file,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -544,7 +641,8 @@ namespace Technicians.Api.Controllers
                     techId, file.FileName, file.Length);
 
                 using var stream = file.OpenReadStream();
-                var result = await _repository.UploadFileAsync(techId, file.FileName, stream);
+                // Repository handles role-based filtering
+                var result = await _repository.UploadFileAsync(techId, file.FileName, stream, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "File upload completed - TechId: {TechId}, FileName: {FileName}, Success: {Success}",
@@ -556,6 +654,7 @@ namespace Technicians.Api.Controllers
                     {
                         success = true,
                         data = result,
+                        isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                         message = result.Message
                     });
                 }
@@ -568,6 +667,10 @@ namespace Technicians.Api.Controllers
                         message = result.Message
                     });
                 }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -583,12 +686,16 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Downloads a file for a tech ID
+        /// Downloads a file for a tech ID - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID</param>
         /// <param name="fileName">File name to download</param>
         [HttpGet("download-file/{techId}/{fileName}")]
-        public async Task<IActionResult> DownloadFile(string techId, string fileName)
+        public async Task<IActionResult> DownloadFile(
+            string techId, 
+            string fileName,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -598,7 +705,26 @@ namespace Technicians.Api.Controllers
 
             try
             {
-                await Task.CompletedTask; // Make method async compatible
+                // For file download, we need to handle role-based filtering at controller level
+                // since we need to return the file directly
+                if (!string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID))
+                {
+                    // Check if user has access to this tech ID via repository validation
+                    var canAccess = true;
+                    try
+                    {
+                        await _repository.GetFilesAsync(techId, userEmpID, windowsID);
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        canAccess = false;
+                    }
+
+                    if (!canAccess)
+                    {
+                        return Forbid("Access denied: You can only access your own tech tools files.");
+                    }
+                }
 
                 var filePath = Path.Combine(@"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo", techId, fileName);
                 
@@ -614,6 +740,10 @@ namespace Technicians.Api.Controllers
 
                 return File(fileBytes, contentType, fileName);
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error downloading file - TechId: {TechId}, FileName: {FileName}", techId, fileName);
@@ -628,12 +758,16 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Deletes a file for a tech ID
+        /// Deletes a file for a tech ID - Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID</param>
         /// <param name="fileName">File name to delete</param>
         [HttpDelete("delete-file/{techId}/{fileName}")]
-        public async Task<IActionResult> DeleteFile(string techId, string fileName)
+        public async Task<IActionResult> DeleteFile(
+            string techId, 
+            string fileName,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             if (string.IsNullOrWhiteSpace(techId))
                 return BadRequest("Tech ID is required.");
@@ -647,7 +781,8 @@ namespace Technicians.Api.Controllers
                     "Deleting file - TechId: {TechId}, FileName: {FileName}",
                     techId, fileName);
 
-                var deleted = await _repository.DeleteFileAsync(techId, fileName);
+                // Repository handles role-based filtering
+                var deleted = await _repository.DeleteFileAsync(techId, fileName, userEmpID, windowsID);
 
                 _logger.LogInformation(
                     "File deletion completed - TechId: {TechId}, FileName: {FileName}, Success: {Success}",
@@ -658,6 +793,8 @@ namespace Technicians.Api.Controllers
                     return Ok(new
                     {
                         success = true,
+                        techId = techId,
+                        isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                         message = $"File '{fileName}' deleted successfully for tech ID: {techId}"
                     });
                 }
@@ -669,6 +806,10 @@ namespace Technicians.Api.Controllers
                         message = $"File '{fileName}' not found for tech ID: {techId}"
                     });
                 }
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
             }
             catch (Exception ex)
             {
@@ -686,6 +827,19 @@ namespace Technicians.Api.Controllers
         #endregion
 
         #region Private Helper Methods
+
+        private string BuildFilterCriteria(string? userEmpID, string? windowsID)
+        {
+            var criteria = new List<string>();
+            
+            if (!string.IsNullOrEmpty(userEmpID))
+                criteria.Add($"UserEmpID: {userEmpID}");
+                
+            if (!string.IsNullOrEmpty(windowsID))
+                criteria.Add($"WindowsID: {windowsID}");
+
+            return string.Join(", ", criteria);
+        }
 
         /// <summary>
         /// Gets content type for file download

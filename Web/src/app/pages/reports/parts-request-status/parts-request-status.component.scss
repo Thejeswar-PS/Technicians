@@ -417,11 +417,6 @@ table tr[style*="color: #FF0000"] {
   padding: 0.75rem 1.25rem;
 }
 
-.table thead th {
-  background-color: var(--bs-gray-100);
-  border-bottom: 2px solid var(--bs-gray-200);
-}
-
 // Urgent row highlighting
 .table-warning {
   --bs-table-accent-bg: #fff3cd;
@@ -598,79 +593,6 @@ table tr[style*="color: #FF0000"] {
     // General table cell improvements
     td, th {
       font-weight: 500;
-    }
-    
-    .table-header {
-      th {
-        background: linear-gradient(135deg, #5486ff 0%, #667eea 100%);
-        color: white;
-        border: none;
-        position: relative;
-        padding: 0;
-        height: 60px;
-        vertical-align: middle;
-        text-align: center;
-        
-        &.header-cell {
-          .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 1rem 1.25rem;
-            height: 100%;
-            min-height: 60px;
-            
-            .header-text {
-              font-weight: 400;
-              font-size: 1.05rem;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              white-space: nowrap;
-              line-height: 1;
-            }
-            
-            .sort-icon {
-              opacity: 0.6;
-              transition: opacity 0.3s ease;
-              font-size: 0.75rem;
-              flex-shrink: 0;
-            }
-          }
-        }
-        
-        &.sortable {
-          cursor: pointer;
-          transition: all 0.3s ease;
-          
-          &:hover {
-            background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%);
-            transform: translateY(-1px);
-            
-            .sort-icon {
-              opacity: 1;
-            }
-          }
-
-          &.sorted-asc,
-          &.sorted-desc {
-            background: linear-gradient(135deg, #4c7bff 0%, #5a67d8 100%);
-            
-            .sort-icon {
-              opacity: 1;
-              color: #fff;
-            }
-          }
-        }
-        
-        &:first-child {
-          border-radius: 16px 0 0 0;
-        }
-        
-        &:last-child {
-          border-radius: 0 16px 0 0;
-        }
-      }
     }
     
     .table-body {
@@ -1671,78 +1593,290 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
 }
 
 /* =====================================================
-   OVERRIDE: Match Order Request Status Header Styling
+   PARTS REQUEST STATUS
+   CLEAN ENTERPRISE VERSION
    ===================================================== */
 
-.modern-table .table-header th {
-  background: linear-gradient(180deg, #5f82f3, #5a7bf0) !important;
-  color: #ffffff !important;
-  font-family: "Inter", "Segoe UI", Arial, sans-serif !important;
-  font-size: 14px !important;
-  font-weight: 400 !important;
-  letter-spacing: 0.3px !important;
-  text-transform: none !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+.parts-request-container {
+  padding: 2rem 1rem;
+  min-height: 100vh;
 }
 
-/* Remove uppercase styling */
-.modern-table .table-header th .header-text {
-  font-size: 14px !important;
-  font-weight: 400 !important;
-  text-transform: none !important;
-  letter-spacing: normal !important;
-}
-
-/* Remove heavy hover effect */
-.modern-table .table-header th.sortable:hover {
-  transform: none !important;
-}
-
-/* Keep sort icon subtle like Order page */
-.modern-table .table-header th .sort-icon {
-  opacity: 0.7 !important;
-  font-size: 12px !important;
-}
 /* =====================================================
-   MATCH ORDER PAGE TABLE FONT
+   TABLE WRAPPER
+   ===================================================== */
+
+.table-section .table-responsive {
+  max-height: 70vh;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+/* =====================================================
+   TABLE BASE
    ===================================================== */
 
 .modern-table {
-  font-family: "Inter", "Segoe UI", Arial, sans-serif !important;
+  width: 100%;
+  border-collapse: collapse;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  font-size: 14px;
+  table-layout: auto;
+}
+
+/* =====================================================
+   HEADER (ORDER REQUEST STYLE)
+   ===================================================== */
+
+.modern-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  background: linear-gradient(180deg, #5f82f3, #5a7bf0);
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  padding: 10px 12px;
+  text-align: center;
+  white-space: nowrap;
+
+  border-bottom: 2px solid #dee2e6;
+}
+
+.header-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+/* Disable hover animation */
+.modern-table thead th.sortable:hover {
+  background: linear-gradient(180deg, #5f82f3, #5a7bf0);
+}
+
+/* =====================================================
+   SORT ICONS
+   ===================================================== */
+
+.sort-icons {
+  display: inline-flex;
+  flex-direction: column;
+  margin-left: 4px;
+}
+
+.sort-icons i {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+.sort-icons i.up {
+  border-bottom: 6px solid #ffffff;
+  margin-bottom: 1px;
+}
+
+.sort-icons i.down {
+  border-top: 6px solid #ffffff;
+}
+
+.sort-icons i:not(.on) {
+  opacity: 0.5;
+}
+
+.sort-icons i.on {
+  opacity: 1;
+}
+
+/* =====================================================
+   BODY ROWS
+   ===================================================== */
+
+.modern-table tbody tr {
+  background-color: #f4f6f9;
+  transition: background-color 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.modern-table tbody td {
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: middle;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: normal;
+  word-break: break-word;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.modern-table tbody td:not(.status-cell),
+.modern-table tbody td:not(.status-cell) .cell-content,
+.modern-table tbody td:not(.status-cell) .date-content,
+.modern-table tbody td:not(.status-cell) .urgent-text,
+.modern-table tbody td:not(.status-cell) .state-badge,
+.modern-table tbody td:not(.status-cell) .call-link {
   font-size: 14px !important;
+  font-weight: 400 !important;
 }
 
-.modern-table td {
+/* =====================================================
+  STATUS BADGES
+   ===================================================== */
+
+.status-badge {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Unique status colors */
+.status-initiated {
+  background: #fff7d6 !important;
+  color: #8a6300 !important;
+}
+
+.status-pending {
+  background: #ffeacc !important;
+  color: #9a4d00 !important;
+}
+
+.status-submitted {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+.status-staging {
+  background: #e0f2ff !important;
+  color: #075985 !important;
+}
+
+.status-needs-attention {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+.status-rejected {
+  background: #ffd6dc !important;
+  color: #9f1239 !important;
+}
+
+.status-orderedtrackingreq,
+.status-ordered-tracking-req {
+  background: #f5d0fe !important;
+  color: #86198f !important;
+}
+
+.status-ordered {
+  background: #e9d5ff !important;
+  color: #6b21a8 !important;
+}
+
+.status-shipped {
+  background: #cffafe !important;
+  color: #155e75 !important;
+}
+
+.status-received {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.status-delivered {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.status-approved {
+  background: #bbf7d0 !important;
+  color: #14532d !important;
+}
+
+.status-inassembly {
+  background: #fde68a !important;
+  color: #78350f !important;
+}
+
+.status-urgent {
+  background: #ffe4e6 !important;
+  color: #be123c !important;
+}
+
+.status-default {
+  background: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+.status-na {
+  background: #d1d5db !important;
+  color: #1f2937 !important;
+}
+
+/* =====================================================
+   AGE COLORING
+   ===================================================== */
+
+.age-warning {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.age-critical {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+/* =====================================================
+   CALL LINK
+   ===================================================== */
+
+.call-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.call-link:hover {
+  text-decoration: underline;
+}
+
+/* =====================================================
+   URGENT ROW (OPTIONAL)
+   ===================================================== */
+
+.modern-table tbody tr.urgent-row {
+  border-left: 4px solid #ef4444;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .modern-table {
+    font-size: 13px;
+  }
+
+  .modern-table td,
+  .modern-table th {
+    padding: 10px;
+  }
+}
+
+/* Final typography lock: match Order Request for all non-status columns */
+.modern-table tbody td:not(.status-cell),
+.modern-table tbody td:not(.status-cell) * {
   font-size: 14px !important;
-  font-weight: 500 !important;
-}
-// Print styles
-@media print {
-  .card-toolbar,
-  .hover-actions-trigger td:last-child,
-  .pagination-controls {
-    display: none !important;
-  }
-  
-  .card {
-    border: none !important;
-    box-shadow: none !important;
-  }
-
-  /* =========================================
-   REMOVE BOLD FROM TABLE HEADER & BODY
-   ========================================= */
-
-.modern-table .table-header th,
-.modern-table .table-header th .header-text {
-  font-weight: 500 !important;   // normal medium weight
-}
-
-.modern-table td,
-.modern-table td .cell-content,
-.modern-table td span,
-.modern-table td div {
-  font-weight: 400 !important;   // normal font
-}
+  font-weight: 400 !important;
 }

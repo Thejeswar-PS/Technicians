@@ -9,6 +9,7 @@ export interface ToolsTrackingTechsApiResponse {
   success: boolean;
   data: ToolsTrackingTechsDto[];
   totalRecords: number;
+  isFiltered?: boolean;
   message: string;
 }
 
@@ -32,6 +33,7 @@ export interface TechToolSerialNoApiResponse {
   success: boolean;
   data: TechToolSerialNoDto[];
   totalRecords: number;
+  isFiltered?: boolean;
   message: string;
 }
 
@@ -76,6 +78,7 @@ export interface ToolsCalendarTrackingApiResponse {
     techFilter: string;
   };
   message: string;
+  isFiltered?: boolean;
 }
 
 /* ============ TECH TOOLS MISC KIT ============ */
@@ -98,6 +101,7 @@ export interface TechToolsMiscKitApiResponse {
   totalToolKitRecords: number;
   techInfo: TechsInfoDto;
   techId: string;
+  isFiltered?: boolean;
   message: string;
 }
 
@@ -110,6 +114,7 @@ export interface ToolTrackingCountApiResponse {
   data: ToolsTrackingCountDto;
   techId: string;
   count: number;
+  isFiltered?: boolean;
   message: string;
 }
 
@@ -139,6 +144,7 @@ export interface ToolTrackingApiResponse {
   data: TechToolsTrackingDto[];
   totalRecords: number;
   techId: string;
+  isFiltered?: boolean;
   message: string;
 }
 
@@ -177,6 +183,7 @@ export interface SaveTechToolsTrackingResultDto {
 export interface SaveTechToolsTrackingApiResponse {
   success: boolean;
   data: SaveTechToolsTrackingResultDto;
+  isFiltered?: boolean;
   message: string;
 }
 

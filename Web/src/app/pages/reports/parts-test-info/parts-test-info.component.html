@@ -276,16 +276,12 @@
             
               <!-- Action Buttons - Match Legacy Layout -->
             <div class="d-flex justify-content-between mt-4 pt-3 border-top">
-              <!-- Left: Update/Add/Clear buttons -->
+              <!-- Left: Update/Add button -->
               <div class="flex-fill">
                 <button type="button" class="btn btn-primary btn-lg fw-bold me-2" (click)="saveItem()" [disabled]="isSaving || !isAddEntryEnabled">
                   <i class="ki-outline ki-check fs-3 me-2" *ngIf="!isSaving"></i>
                   <span class="spinner-border spinner-border-sm me-2" *ngIf="isSaving"></span>
                   {{ editingItem ? 'Update' : 'Add' }}
-                </button>
-                <button type="button" class="btn btn-secondary btn-lg fw-bold" (click)="clearForm()">
-                  <i class="ki-outline ki-eraser fs-3 me-2"></i>
-                  Clear
                 </button>
               </div>
               <!-- Center: Final Approve button -->

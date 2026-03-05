@@ -1,12 +1,17 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 import { ReportService } from '../../../core/services/report.service';
+import { CommonService } from '../../../core/services/common.service';
+import { AuthService } from '../../../modules/auth/services/auth.service';
 import { AccountManager } from '../../../core/model/account-manager.model';
 import {
   AccMgrPerformanceReportResponseDto,
   AccMgrPerformanceReportSummaryDto
 } from '../../../core/model/account-manager-performance-report.model';
+import { EmployeeStatusDto } from '../../../core/model/employee-status.model';
 
 @Component({
   selector: 'app-acc-mgr-performance-report',
@@ -30,6 +35,16 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
 
   monthLabels: string[] = [];
   
+  // Role-based filtering properties
+  hasPageAccess: boolean = true;
+  empID: string = '';
+  windowsID: string = '';
+  userRole: string = '';
+  employeeStatus: string = '';
+  currentUserStatus: EmployeeStatusDto | null = null;
+  employeeStatusLoaded: boolean = false;
+  accountManagersLoaded: boolean = false;
+  
   // Pagination
   currentPage = 1;
   itemsPerPage = 100;
@@ -43,23 +58,20 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private commonService: CommonService,
+    private auth: AuthService
   ) {
     this.reportForm = this.fb.group({
-      officeId: ['', [Validators.required, Validators.maxLength(11)]]
+      officeId: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(11)]]
     });
   }
 
   ngOnInit(): void {
-    // Load account managers first
-    this.loadAccountManagers();
-
     this.monthLabels = this.getMonthLabels();
     
-    // Set default values
-    this.reportForm.patchValue({
-      officeId: '' // Will be set after account managers load
-    });
+    // Initialize role-based filtering first
+    this.determineEmployeeStatus();
   }
 
   private getMonthLabels(baseDate: Date = new Date()): string[] {
@@ -96,8 +108,8 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       roJobs = 'RedOrange';
     }
 
-    // Get comprehensive report data
-    const reportSub = this.reportService.getAccMgrPerformanceReport(officeId, roJobs).subscribe({
+    // Get comprehensive report data with role-based filtering
+    const reportSub = this.reportService.getAccMgrPerformanceReport(officeId, roJobs, this.empID, this.windowsID).subscribe({
       next: (data) => {
         this.reportData = data;
         this.isLoading = false;
@@ -127,8 +139,8 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Get summary data
-    const summarySub = this.reportService.getAccMgrPerformanceReportSummary(officeId, roJobs).subscribe({
+    // Get summary data with role-based filtering
+    const summarySub = this.reportService.getAccMgrPerformanceReportSummary(officeId, roJobs, this.empID, this.windowsID).subscribe({
       next: (data) => {
         this.summaryData = data;
       },
@@ -144,8 +156,9 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    */
   loadAccountManagers(): void {
     this.isLoadingAccountManagers = true;
+    this.reportForm.get('officeId')?.disable();
     
-    const accountManagerSub = this.reportService.getAccountManagerNames().subscribe({
+    const accountManagerSub = this.commonService.getAccountManagers().subscribe({
       next: (data: any[]) => {
         if (data && data.length > 0) {
           // Convert to AccountManager format, preserving original properties
@@ -159,31 +172,16 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             OFFID: item.OFFID || item.officeId || item.offid || item.empId || item.id
           }));
           
-          // Set DCG account manager as default if available, otherwise use first
-          let defaultManager = this.accountManagers.find(manager => 
-            (manager.OFFNAME && manager.OFFNAME.toUpperCase().includes('DCG')) ||
-            (manager.empName && manager.empName.toUpperCase().includes('DCG')) ||
-            (manager.offname && manager.offname.toUpperCase().includes('DCG'))
-          );
-
-          if (!defaultManager && this.accountManagers.length > 0) {
-            defaultManager = this.accountManagers[0];
-          }
-          
-          if (defaultManager) {
-            const defaultOfficeId = defaultManager.OFFID || defaultManager.empId || '';
-            this.reportForm.patchValue({ officeId: defaultOfficeId });
-            
-            // Auto-generate report with DCG account manager
-            setTimeout(() => {
-              this.generateReport();
-            }, 500);
-          }
+          this.accountManagersLoaded = true;
+          this.applyRoleBasedDefaults();
         }
         this.isLoadingAccountManagers = false;
+        this.reportForm.get('officeId')?.enable();
       },
       error: (error) => {
         this.isLoadingAccountManagers = false;
+        this.reportForm.get('officeId')?.enable();
+        console.error('Error loading account managers:', error);
       }
     });
 
@@ -778,5 +776,160 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     }
     
     return pages;
+  }
+
+  // ============================================
+  // ROLE-BASED FILTERING METHODS
+  // ============================================
+
+  /**
+   * Determine employee status for role-based filtering
+   * Access restricted to managers only (empStatus = 'M' or status = 'Manager')
+   * All other users are redirected to login
+   */
+  private determineEmployeeStatus(): void {
+    const userDataStr = localStorage.getItem("userData");
+    if (userDataStr) {
+      const userData = JSON.parse(userDataStr);
+      
+      // Store user data for role-based filtering
+      this.empID = (userData.empID || '').trim();
+      this.userRole = userData.role || '';
+      this.windowsID = userData.windowsId || userData.empName || '';
+      const userDataEmpStatus = (userData.empStatus || '').trim();
+      
+      console.log('Account Manager Performance Report - User data loaded:', {
+        empID: this.empID,
+        userRole: this.userRole,
+        windowsID: this.windowsID,
+        userDataEmpStatus: userDataEmpStatus
+      });
+      
+      if (this.windowsID) {
+        this.reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
+          next: (response: EmployeeStatusDto) => {
+            this.currentUserStatus = response;
+            this.employeeStatus = response.status || '';
+            
+            // Fallback: If API returns unexpected status, use userData empStatus
+            if (!this.employeeStatus || this.employeeStatus.toLowerCase() === 'redirect') {
+              this.employeeStatus = userDataEmpStatus === 'M' ? 'Manager' : 
+                                    userDataEmpStatus === 'T' ? 'Technician' : 
+                                    userDataEmpStatus || 'Other';
+              console.log('Using fallback employee status from userData:', this.employeeStatus);
+            }
+            
+            console.log('Account Manager Performance Report - Employee status:', {
+              status: this.employeeStatus,
+              apiStatus: response.status,
+              userDataEmpStatus: userDataEmpStatus,
+              isManagerContext: this.isManagerContext()
+            });
+
+            // Only managers can access this page
+            if (!this.isManagerContext()) {
+              console.log('Access denied: Only managers can access Account Manager Performance Reports');
+              this.hasPageAccess = false;
+              this.auth.logout();
+              return;
+            }
+
+            this.hasPageAccess = true;
+            this.employeeStatusLoaded = true;
+            
+            // Load account managers after determining role
+            this.loadAccountManagers();
+          },
+          error: (error) => {
+            console.error('Error loading employee status, trying fallback:', error);
+            
+            // Fallback: Use userData empStatus if API call fails
+            if (userDataEmpStatus) {
+              this.employeeStatus = userDataEmpStatus === 'M' ? 'Manager' : 
+                                    userDataEmpStatus === 'T' ? 'Technician' : 
+                                    'Other';
+              
+              console.log('Using fallback from userData after API error:', this.employeeStatus);
+              
+              // Only managers can access
+              if (!this.isManagerContext()) {
+                console.log('Access denied: Only managers can access this report');
+                this.hasPageAccess = false;
+                this.auth.logout();
+                return;
+              }
+              
+              this.hasPageAccess = true;
+              this.employeeStatusLoaded = true;
+              this.loadAccountManagers();
+            } else {
+              this.errorMessage = 'Error retrieving employee status';
+              this.hasPageAccess = false;
+              this.auth.logout();
+            }
+          }
+        });
+      }
+    } else {
+      this.hasPageAccess = false;
+      this.auth.logout();
+    }
+  }
+
+  /**
+   * Apply role-based defaults after both employee status and account managers are loaded
+   * Since only managers can access, pre-select their own office
+   */
+  private applyRoleBasedDefaults(): void {
+    if (!this.employeeStatusLoaded || !this.accountManagersLoaded) {
+      return;
+    }
+
+    console.log('🔎 Account Manager Performance Report - Applying role-based defaults:', {
+      empID: this.empID,
+      userRole: this.userRole,
+      employeeStatus: this.employeeStatus,
+      accountManagersCount: this.accountManagers.length
+    });
+
+    // All users are managers at this point - restrict to their own office
+    const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
+    
+    if (Array.isArray(this.accountManagers)) {
+      const userManager = this.accountManagers.find(mgr => {
+        const offid = (mgr.OFFID || mgr.empId || '').toString().trim().toUpperCase();
+        const offname = (mgr.OFFNAME || mgr.empName || '').toString().trim().toUpperCase();
+        return offid === empIdNormalized || offname === empIdNormalized;
+      });
+
+      if (userManager) {
+        const userOfficeId = userManager.OFFID || userManager.empId || '';
+        this.reportForm.patchValue({ officeId: userOfficeId });
+        
+        console.log('Manager detected - Pre-selected their office:', {
+          officeId: userOfficeId,
+          managerName: userManager.OFFNAME || userManager.empName
+        });
+        
+        // Auto-generate report for the manager's office
+        setTimeout(() => {
+          this.generateReport();
+        }, 500);
+      } else {
+        console.warn('Manager not found in account managers list - showing error');
+        this.errorMessage = 'Your manager account was not found in the system. Please contact support.';
+      }
+    }
+  }
+
+  /**
+   * Check if user is in a manager context
+   * Only explicit managers (empStatus = 'M' or status = 'Manager') are allowed
+   */
+  private isManagerContext(): boolean {
+    const status = (this.employeeStatus || this.userRole || '').trim().toLowerCase();
+    
+    // Only allow explicit manager status
+    return status === 'manager' || status === 'm';
   }
 }

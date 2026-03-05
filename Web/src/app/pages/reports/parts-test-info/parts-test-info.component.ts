@@ -753,7 +753,11 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   saveItem(): void {
     if (!this.editForm.valid) {
       this.markFormGroupTouched(this.editForm);
-      this.toastr.error('Please correct the validation errors', 'Form Invalid');
+      const validationErrors = this.getFormValidationErrors();
+      const message = validationErrors.length > 0
+        ? validationErrors.join(' | ')
+        : 'Please correct the highlighted fields.';
+      this.toastr.error(message, 'Form Invalid');
       return;
     }
     
@@ -761,6 +765,42 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     if (!this.validateBeforeSave()) {
       return;
     }
+
+    if (this.isValidatingJob) {
+      this.toastr.warning('Please wait for job number validation to complete.', 'Validation In Progress');
+      return;
+    }
+
+    const jobNo = (this.editForm.get('jobNumber')?.value || '').trim();
+    if (jobNo.length > 0) {
+      this.isValidatingJob = true;
+      this.validateJobNumber(jobNo).pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isValidatingJob = false)
+      ).subscribe({
+        next: (isValid) => {
+          if (!isValid) {
+            this.jobValidationMessage = '⚠ Job number not found';
+            this.toastr.error('Job number does not exist in existing units. Save is not allowed.', 'Validation');
+            return;
+          }
+
+          this.jobValidationMessage = '✓ Job number exists';
+          this.executeSave();
+        },
+        error: () => {
+          this.jobValidationMessage = '❌ Error validating job number';
+          this.toastr.error('Unable to validate Job Number. Please try again.', 'Validation');
+        }
+      });
+
+      return;
+    }
+
+    this.executeSave();
+  }
+
+  private executeSave(): void {
     
     this.isSaving = true;
     this.errorMessage = '';
@@ -1013,15 +1053,65 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   private getFieldLabel(fieldName: string): string {
     const labels: { [key: string]: string } = {
       jobFrom: 'Job Type',
+      jobNumber: 'Job Number',
+      siteID: 'Site ID',
+      make: 'Make',
+      model: 'Model',
+      kva: 'KVA',
+      voltage: 'Voltage',
       manufPartNo: 'Manufacturer Part Number',
       dcgPartNo: 'DCG Part Number',
+      serialNo: 'Serial Number',
       quantity: 'Quantity',
       createdBy: 'Created By',
       assignedTo: 'Assigned To',
       dueDate: 'Due Date',
+      description: 'Description',
       resolveNotes: 'Resolution Notes'
     };
-    return labels[fieldName] || fieldName;
+    if (labels[fieldName]) {
+      return labels[fieldName];
+    }
+
+    return fieldName
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (firstChar) => firstChar.toUpperCase())
+      .trim();
+  }
+
+  private getFormValidationErrors(): string[] {
+    const errors: string[] = [];
+
+    Object.keys(this.editForm.controls).forEach(controlName => {
+      const control = this.editForm.get(controlName);
+      if (!control || !control.errors) {
+        return;
+      }
+
+      const label = this.getFieldLabel(controlName);
+      const controlErrors = control.errors;
+
+      if (controlErrors['required']) {
+        errors.push(`${label} is required`);
+      }
+      if (controlErrors['maxlength']) {
+        errors.push(`${label} is too long (max ${controlErrors['maxlength'].requiredLength})`);
+      }
+      if (controlErrors['minlength']) {
+        errors.push(`${label} is too short (min ${controlErrors['minlength'].requiredLength})`);
+      }
+      if (controlErrors['min']) {
+        errors.push(`${label} must be at least ${controlErrors['min'].min}`);
+      }
+      if (controlErrors['max']) {
+        errors.push(`${label} cannot exceed ${controlErrors['max'].max}`);
+      }
+      if (controlErrors['pattern']) {
+        errors.push(`${label} has an invalid format`);
+      }
+    });
+
+    return [...new Set(errors)];
   }
   
   private markFormGroupTouched(formGroup: FormGroup): void {

@@ -11,10 +11,14 @@ namespace Technicians.Api.Repository
         private readonly string _etechConnectionString;
         private readonly string _defaultConnectionString;
         private readonly ILogger<ToolsTrackingTechsRepository> _logger;
+        private readonly CommonRepository _commonRepository;
         private const string UPLOADFILETYPE = "jpg,gif,doc,bmp,xls,png,txt,xlsx,docx,pdf,jpeg";
         private const string BaseDirectory = @"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo";
 
-        public ToolsTrackingTechsRepository(IConfiguration configuration, ILogger<ToolsTrackingTechsRepository> logger)
+        public ToolsTrackingTechsRepository(
+            IConfiguration configuration, 
+            ILogger<ToolsTrackingTechsRepository> logger,
+            CommonRepository commonRepository)
         {
             _configuration = configuration;
             _etechConnectionString = configuration.GetConnectionString("ETechConnString")
@@ -22,13 +26,18 @@ namespace Technicians.Api.Repository
             _defaultConnectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("DefaultConnection not found");
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _commonRepository = commonRepository ?? throw new ArgumentNullException(nameof(commonRepository));
         }
 
-        // Methods that use ETechConnString (DCG database)
+        #region Public Methods - Enhanced with Role-Based Filtering
+
         /// <summary>
         /// Gets tools tracking technicians data using the ToolsTrackingTechs stored procedure
+        /// Enhanced with role-based filtering
         /// </summary>
-        public async Task<List<ToolsTrackingTechsDto>> GetToolsTrackingTechsAsync()
+        public async Task<List<ToolsTrackingTechsDto>> GetToolsTrackingTechsAsync(
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
@@ -39,7 +48,10 @@ namespace Technicians.Api.Repository
                     "ToolsTrackingTechs",
                     commandType: CommandType.StoredProcedure);
 
-                return techsData.ToList();
+                var allData = techsData.ToList();
+
+                // Apply role-based filtering
+                return await ApplyRoleBasedDataFiltering(allData, userEmpID, windowsID);
             }
             catch (SqlException sqlEx)
             {
@@ -53,18 +65,25 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Gets tool serial numbers using the GetTechToolSerialNos stored procedure
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="toolName">Tool name to filter by (use "All" for all tools)</param>
-        public async Task<List<TechToolSerialNoDto>> GetTechToolSerialNosAsync(string toolName)
+        public async Task<List<TechToolSerialNoDto>> GetTechToolSerialNosAsync(
+            string toolName, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering to tool name
+                var filteredToolName = await ApplyToolFilterByRole(toolName, userEmpID, windowsID);
+
                 using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var serialNosData = await connection.QueryAsync<TechToolSerialNoDto>(
                     "GetTechToolSerialNos",
-                    new { pToolName = toolName },
+                    new { pToolName = filteredToolName },
                     commandType: CommandType.StoredProcedure);
 
                 return serialNosData.ToList();
@@ -81,6 +100,7 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Gets tools calendar tracking data using the aaToolsCalendar_Tracking stored procedure
+        /// Enhanced with role-based filtering - implements legacy aaTechCalendar_Module logic
         /// </summary>
         /// <param name="startDate">Start date for filtering</param>
         /// <param name="endDate">End date for filtering</param>
@@ -92,10 +112,15 @@ namespace Technicians.Api.Repository
             DateTime endDate,
             string toolName = "All",
             string serialNo = "All",
-            string techFilter = "All")
+            string techFilter = "All",
+            string? userEmpID = null,
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering for calendar tracking parameters
+                var filteredParams = await ApplyCalendarRoleBasedFiltering(techFilter, toolName, serialNo, userEmpID, windowsID);
+
                 using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
@@ -105,9 +130,9 @@ namespace Technicians.Api.Repository
                     {
                         pStartDate = startDate,
                         pEndDate = endDate,
-                        pToolName = toolName,
-                        pSerialNo = serialNo,
-                        pTechFilter = techFilter
+                        pToolName = filteredParams.ToolName,
+                        pSerialNo = filteredParams.SerialNo,
+                        pTechFilter = filteredParams.TechFilter
                     },
                     commandType: CommandType.StoredProcedure);
 
@@ -136,18 +161,25 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Gets tech tools misc kit data by tech ID using the GetTechToolsMiscKitByTechID stored procedure
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to retrieve misc kit data for</param>
-        public async Task<TechToolsMiscKitResultDto> GetTechToolsMiscKitByTechIdAsync(string techId)
+        public async Task<TechToolsMiscKitResultDto> GetTechToolsMiscKitByTechIdAsync(
+            string techId, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(techId, userEmpID, windowsID);
+
                 using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 using var multi = await connection.QueryMultipleAsync(
                     "GetTechToolsMiscKitByTechID",
-                    new { TechID = techId },
+                    new { TechID = filteredTechId },
                     commandType: CommandType.StoredProcedure);
 
                 // Read first result set - tool kit data
@@ -175,18 +207,25 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Gets tools tracking count by tech ID using the GetToolsTrackingCount stored procedure
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to get count for</param>
-        public async Task<int> GetToolsTrackingCountAsync(string techId)
+        public async Task<int> GetToolsTrackingCountAsync(
+            string techId, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(techId, userEmpID, windowsID);
+
                 using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var count = await connection.QuerySingleAsync<int>(
                     "GetToolsTrackingCount",
-                    new { TechID = techId },
+                    new { TechID = filteredTechId },
                     commandType: CommandType.StoredProcedure);
 
                 return count;
@@ -203,12 +242,19 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Executes insert tech tools query using the ExecuteInsertTechToolsQuery stored procedure
+        /// Enhanced with role-based access validation
         /// </summary>
         /// <param name="query">SQL query to execute</param>
-        public async Task<ExecuteInsertTechToolsQueryResultDto> ExecuteInsertTechToolsQueryAsync(string query)
+        public async Task<ExecuteInsertTechToolsQueryResultDto> ExecuteInsertTechToolsQueryAsync(
+            string query, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based validation for query execution
+                await ValidateQueryExecutionAccess(userEmpID, windowsID);
+
                 using var connection = new SqlConnection(_etechConnectionString);
                 await connection.OpenAsync();
 
@@ -242,18 +288,25 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Deletes tools tracking data by tech ID using the DeleteToolsTracking stored procedure
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to delete tracking data for</param>
-        public async Task<DeleteToolsTrackingResultDto> DeleteToolsTrackingAsync(string techId)
+        public async Task<DeleteToolsTrackingResultDto> DeleteToolsTrackingAsync(
+            string techId, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(techId, userEmpID, windowsID);
+
                 using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var rowsAffected = await connection.ExecuteAsync(
                     "DeleteToolsTracking",
-                    new { TechID = techId },
+                    new { TechID = filteredTechId },
                     commandType: CommandType.StoredProcedure);
 
                 return new DeleteToolsTrackingResultDto
@@ -261,8 +314,8 @@ namespace Technicians.Api.Repository
                     RowsAffected = rowsAffected,
                     Success = rowsAffected > 0,
                     Message = rowsAffected > 0 
-                        ? $"Successfully deleted {rowsAffected} tools tracking record(s) for tech ID '{techId}'"
-                        : $"No tools tracking records found for tech ID '{techId}'"
+                        ? $"Successfully deleted {rowsAffected} tools tracking record(s) for tech ID '{filteredTechId}'"
+                        : $"No tools tracking records found for tech ID '{filteredTechId}'"
                 };
             }
             catch (SqlException sqlEx)
@@ -277,18 +330,25 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Gets tech tools tracking data by tech ID using the GetTechToolsTrackingByTechID stored procedure
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to retrieve tracking data for</param>
-        public async Task<List<TechToolsTrackingDto>> GetTechToolsTrackingByTechIdAsync(string techId)
+        public async Task<List<TechToolsTrackingDto>> GetTechToolsTrackingByTechIdAsync(
+            string techId, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(techId, userEmpID, windowsID);
+
                 using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
 
                 var toolsTrackingData = await connection.QueryAsync<TechToolsTrackingDto>(
                     "GetTechToolsTrackingByTechID",
-                    new { TechID = techId },
+                    new { TechID = filteredTechId },
                     commandType: CommandType.StoredProcedure);
 
                 return toolsTrackingData.ToList();
@@ -305,10 +365,13 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Saves/Updates tech tools tracking data using legacy DELETE-INSERT pattern
-        /// Replicates the exact behavior of legacy DeleteInsertTechToolsData() method
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="request">Save request containing tech ID and tool tracking items</param>
-        public async Task<SaveTechToolsTrackingResultDto> SaveTechToolsTrackingAsync(SaveTechToolsTrackingRequestDto request)
+        public async Task<SaveTechToolsTrackingResultDto> SaveTechToolsTrackingAsync(
+            SaveTechToolsTrackingRequestDto request, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
@@ -322,6 +385,10 @@ namespace Technicians.Api.Repository
                     };
                 }
 
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(request.TechID, userEmpID, windowsID);
+                request.TechID = filteredTechId; // Update request with filtered tech ID
+
                 using var connection = new SqlConnection(_defaultConnectionString);
                 await connection.OpenAsync();
                 using var transaction = await connection.BeginTransactionAsync();
@@ -329,12 +396,12 @@ namespace Technicians.Api.Repository
                 try
                 {
                     // Step 1: Check if records exist and delete them (legacy behavior)
-                    var toolCount = await GetToolsTrackingCountAsync(request.TechID);
+                    var toolCount = await GetToolsTrackingCountAsync(filteredTechId);
                     if (toolCount > 0)
                     {
                         await connection.ExecuteAsync(
                             "DeleteToolsTracking",
-                            new { TechID = request.TechID },
+                            new { TechID = filteredTechId },
                             transaction,
                             commandType: CommandType.StoredProcedure);
                     }
@@ -368,14 +435,14 @@ namespace Technicians.Api.Repository
                         }
 
                         // Build SQL exactly like legacy code
-                        strSQL += $" (SELECT '{request.TechID}','{item.ToolName?.Replace("'", "''")}','{item.SerialNo?.Trim()?.Replace("'", "''")}','{dueDtText}','{item.NewMTracking?.Trim()?.Replace("'", "''")}','{item.OldMSerialNo?.Trim()?.Replace("'", "''")}','{item.OldMTracking?.Trim()?.Replace("'", "''")}','{receivedValue}',CURRENT_TIMESTAMP,'{request.ModifiedBy}','{item.ColumnOrder}')";
+                        strSQL += $" (SELECT '{filteredTechId}','{item.ToolName?.Replace("'", "''")}','{item.SerialNo?.Trim()?.Replace("'", "''")}','{dueDtText}','{item.NewMTracking?.Trim()?.Replace("'", "''")}','{item.OldMSerialNo?.Trim()?.Replace("'", "''")}','{item.OldMTracking?.Trim()?.Replace("'", "''")}','{receivedValue}',CURRENT_TIMESTAMP,'{request.ModifiedBy}','{item.ColumnOrder}')";
                         
                         if (i < request.ToolTrackingItems.Count - 1)
                         {
                             strSQL += " UNION ";
                         }
 
-                        processedItems.Add($"{item.ToolName} (TechID: {request.TechID})");
+                        processedItems.Add($"{item.ToolName} (TechID: {filteredTechId})");
                     }
 
                     // Execute the generated query
@@ -409,19 +476,26 @@ namespace Technicians.Api.Repository
             }
         }
 
-        #region File Management Methods (Legacy DisplayFile, SaveFile equivalent)
+        #endregion
+
+        #region File Management Methods - Enhanced with Role-Based Filtering
 
         /// <summary>
         /// Gets file attachments for a tech ID (legacy DisplayFile equivalent)
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to get files for</param>
-        public async Task<List<ToolsTrackingFileDto>> GetFilesAsync(string techId)
+        public async Task<List<ToolsTrackingFileDto>> GetFilesAsync(
+            string techId, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
-                await Task.CompletedTask; // Make method async compatible
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(techId, userEmpID, windowsID);
                 
-                var dirPath = Path.Combine(BaseDirectory, techId);
+                var dirPath = Path.Combine(BaseDirectory, filteredTechId);
                 var files = new List<ToolsTrackingFileDto>();
 
                 if (!Directory.Exists(dirPath))
@@ -450,14 +524,23 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Uploads a file for a tech ID (legacy SaveFile equivalent)
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID to upload file for</param>
         /// <param name="fileName">Name of the file</param>
         /// <param name="fileStream">File stream data</param>
-        public async Task<FileUploadResultDto> UploadFileAsync(string techId, string fileName, Stream fileStream)
+        public async Task<FileUploadResultDto> UploadFileAsync(
+            string techId, 
+            string fileName, 
+            Stream fileStream, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(techId, userEmpID, windowsID);
+
                 // Validate file extension (legacy IsValidFile equivalent)
                 if (!IsValidFile(fileName))
                 {
@@ -469,7 +552,7 @@ namespace Technicians.Api.Repository
                     };
                 }
 
-                var dirPath = Path.Combine(BaseDirectory, techId);
+                var dirPath = Path.Combine(BaseDirectory, filteredTechId);
                 var filePath = Path.Combine(dirPath, fileName);
 
                 // Create directory if it doesn't exist
@@ -509,16 +592,22 @@ namespace Technicians.Api.Repository
 
         /// <summary>
         /// Deletes a file for a tech ID
+        /// Enhanced with role-based filtering
         /// </summary>
         /// <param name="techId">Tech ID</param>
         /// <param name="fileName">File name to delete</param>
-        public async Task<bool> DeleteFileAsync(string techId, string fileName)
+        public async Task<bool> DeleteFileAsync(
+            string techId, 
+            string fileName, 
+            string? userEmpID = null, 
+            string? windowsID = null)
         {
             try
             {
-                await Task.CompletedTask; // Make method async compatible
+                // Apply role-based filtering to tech ID
+                var filteredTechId = await ApplyTechIdFiltering(techId, userEmpID, windowsID);
                 
-                var filePath = Path.Combine(BaseDirectory, techId, fileName);
+                var filePath = Path.Combine(BaseDirectory, filteredTechId, fileName);
                 
                 if (!File.Exists(filePath))
                     return false;
@@ -531,6 +620,374 @@ namespace Technicians.Api.Repository
                 throw new Exception($"Error deleting file '{fileName}' for tech ID '{techId}': {ex.Message}", ex);
             }
         }
+
+        #endregion
+
+        #region Role-Based Filtering Methods
+
+        /// <summary>
+        /// Applies role-based filtering to tools tracking data
+        /// Technicians: Limited to their own data, disabled dropdowns
+        /// Managers/Other: Can view all data and modify filters
+        /// </summary>
+        private async Task<List<ToolsTrackingTechsDto>> ApplyRoleBasedDataFiltering(
+            List<ToolsTrackingTechsDto> allData, 
+            string? userEmpID, 
+            string? windowsID)
+        {
+            if (string.IsNullOrEmpty(userEmpID) && string.IsNullOrEmpty(windowsID))
+            {
+                return allData; // No user context, return all data
+            }
+
+            try
+            {
+                var windowsId = windowsID ?? userEmpID ?? "";
+                var employeeStatusData = await GetEmployeeStatusAsync(windowsId);
+                
+                if (employeeStatusData == null)
+                {
+                    return allData;
+                }
+
+                var normalizedStatus = (employeeStatusData.Status ?? "").Trim().ToLower();
+                var userEmp = (userEmpID ?? "").Trim();
+
+                if (IsTechnicianRole(normalizedStatus))
+                {
+                    // Technicians: filter to only their own data
+                    return allData.Where(item => 
+                        string.Equals(item.TechID?.Trim(), userEmp, StringComparison.OrdinalIgnoreCase)
+                    ).ToList();
+                }
+
+                // Managers and other roles: full access
+                return allData;
+            }
+            catch (Exception)
+            {
+                // If error occurs, return all data
+                return allData;
+            }
+        }
+
+        /// <summary>
+        /// Applies role-based filtering for calendar tracking parameters
+        /// </summary>
+        private async Task<(string TechFilter, string ToolName, string SerialNo)> ApplyCalendarRoleBasedFiltering(
+            string techFilter, string toolName, string serialNo, string? userEmpID, string? windowsID)
+        {
+            if (string.IsNullOrEmpty(userEmpID) && string.IsNullOrEmpty(windowsID))
+            {
+                return (techFilter, toolName, serialNo);
+            }
+
+            try
+            {
+                var windowsId = windowsID ?? userEmpID ?? "";
+                var employeeStatusData = await GetEmployeeStatusAsync(windowsId);
+                
+                if (employeeStatusData == null)
+                {
+                    return (techFilter, toolName, serialNo);
+                }
+
+                var normalizedStatus = (employeeStatusData.Status ?? "").Trim().ToLower();
+                var userEmp = (userEmpID ?? "").Trim();
+
+                if (IsTechnicianRole(normalizedStatus))
+                {
+                    // Technicians: restrict techFilter to their own ID, but allow tool/serial filters
+                    return (userEmp, toolName, serialNo);
+                }
+
+                // Managers and other roles: use original filters
+                return (techFilter, toolName, serialNo);
+            }
+            catch (Exception)
+            {
+                return (techFilter, toolName, serialNo);
+            }
+        }
+
+        /// <summary>
+        /// Applies role-based filtering to tech ID access
+        /// </summary>
+        private async Task<string> ApplyTechIdFiltering(string requestedTechId, string? userEmpID, string? windowsID)
+        {
+            if (string.IsNullOrEmpty(userEmpID) && string.IsNullOrEmpty(windowsID))
+            {
+                return requestedTechId; // No user context, return as-is
+            }
+
+            try
+            {
+                var windowsId = windowsID ?? userEmpID ?? "";
+                var employeeStatusData = await GetEmployeeStatusAsync(windowsId);
+                
+                if (employeeStatusData == null)
+                {
+                    return requestedTechId;
+                }
+
+                var normalizedStatus = (employeeStatusData.Status ?? "").Trim().ToLower();
+                var userEmp = (userEmpID ?? "").Trim();
+
+                if (IsTechnicianRole(normalizedStatus))
+                {
+                    // Technicians: only allow access to their own tech ID
+                    if (!string.Equals(requestedTechId.Trim(), userEmp, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new UnauthorizedAccessException("Access denied: You can only access your own tech tools data.");
+                    }
+                    return userEmp;
+                }
+
+                // Managers and other roles: full access
+                return requestedTechId;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw; // Re-throw authorization exceptions
+            }
+            catch (Exception)
+            {
+                return requestedTechId; // If error occurs, return original tech ID
+            }
+        }
+
+        /// <summary>
+        /// Applies role-based filtering to tool names
+        /// </summary>
+        private async Task<string> ApplyToolFilterByRole(string requestedToolName, string? userEmpID, string? windowsID)
+        {
+            if (string.IsNullOrEmpty(userEmpID) && string.IsNullOrEmpty(windowsID))
+            {
+                return requestedToolName;
+            }
+
+            try
+            {
+                var windowsId = windowsID ?? userEmpID ?? "";
+                var employeeStatusData = await GetEmployeeStatusAsync(windowsId);
+                
+                if (employeeStatusData == null)
+                {
+                    return requestedToolName;
+                }
+
+                var normalizedStatus = (employeeStatusData.Status ?? "").Trim().ToLower();
+
+                // For now, allow all tool filters regardless of role
+                // Could be enhanced to restrict certain tools based on role if needed
+                return requestedToolName;
+            }
+            catch (Exception)
+            {
+                return requestedToolName;
+            }
+        }
+
+        /// <summary>
+        /// Validates if user has access to execute queries
+        /// </summary>
+        private async Task ValidateQueryExecutionAccess(string? userEmpID, string? windowsID)
+        {
+            if (string.IsNullOrEmpty(userEmpID) && string.IsNullOrEmpty(windowsID))
+            {
+                return; // No user context, allow access
+            }
+
+            try
+            {
+                var windowsId = windowsID ?? userEmpID ?? "";
+                var employeeStatusData = await GetEmployeeStatusAsync(windowsId);
+                
+                if (employeeStatusData == null)
+                {
+                    return;
+                }
+
+                var normalizedStatus = (employeeStatusData.Status ?? "").Trim().ToLower();
+
+                if (IsTechnicianRole(normalizedStatus))
+                {
+                    // Technicians: block query execution for security
+                    throw new UnauthorizedAccessException("Access denied: Technicians do not have permission to execute queries.");
+                }
+
+                // Managers and other roles: allow query execution
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw; // Re-throw authorization exceptions
+            }
+            catch (Exception)
+            {
+                // If error occurs, allow access (fail open for non-critical operations)
+                return;
+            }
+        }
+
+        private async Task<EmployeeStatusDto?> GetEmployeeStatusAsync(string windowsID)
+        {
+            try
+            {
+                var employeeStatusList = await _commonRepository.GetEmployeeStatusForJobListAsync(windowsID);
+                var firstResult = employeeStatusList?.FirstOrDefault();
+                
+                if (firstResult != null)
+                {
+                    return new EmployeeStatusDto
+                    {
+                        EmpID = ((dynamic)firstResult).EmpID?.ToString() ?? string.Empty,
+                        Status = ((dynamic)firstResult).Status?.ToString() ?? string.Empty
+                    };
+                }
+                
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static bool IsTechnicianRole(string normalizedStatus)
+        {
+            return normalizedStatus == "technician" || 
+                   normalizedStatus == "techmanager" || 
+                   normalizedStatus == "tech manager" || 
+                   normalizedStatus.Contains("tech");
+        }
+
+        private static bool IsManagerRole(string normalizedStatus)
+        {
+            return normalizedStatus == "manager" || 
+                   normalizedStatus == "other" || 
+                   normalizedStatus.Contains("manager");
+        }
+
+        #endregion
+
+        #region Legacy Compatibility Methods (Without Role Filtering)
+
+        /// <summary>
+        /// Gets tools tracking technicians data using the ToolsTrackingTechs stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<List<ToolsTrackingTechsDto>> GetToolsTrackingTechsAsync()
+        {
+            return await GetToolsTrackingTechsAsync(null, null);
+        }
+
+        /// <summary>
+        /// Gets tool serial numbers using the GetTechToolSerialNos stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<List<TechToolSerialNoDto>> GetTechToolSerialNosAsync(string toolName)
+        {
+            return await GetTechToolSerialNosAsync(toolName, null, null);
+        }
+
+        /// <summary>
+        /// Gets tools calendar tracking data using the aaToolsCalendar_Tracking stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<ToolsCalendarTrackingResultDto> GetToolsCalendarTrackingAsync(
+            DateTime startDate,
+            DateTime endDate,
+            string toolName = "All",
+            string serialNo = "All",
+            string techFilter = "All")
+        {
+            return await GetToolsCalendarTrackingAsync(startDate, endDate, toolName, serialNo, techFilter, null, null);
+        }
+
+        /// <summary>
+        /// Gets tech tools misc kit data by tech ID using the GetTechToolsMiscKitByTechID stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<TechToolsMiscKitResultDto> GetTechToolsMiscKitByTechIdAsync(string techId)
+        {
+            return await GetTechToolsMiscKitByTechIdAsync(techId, null, null);
+        }
+
+        /// <summary>
+        /// Gets tools tracking count by tech ID using the GetToolsTrackingCount stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<int> GetToolsTrackingCountAsync(string techId)
+        {
+            return await GetToolsTrackingCountAsync(techId, null, null);
+        }
+
+        /// <summary>
+        /// Executes insert tech tools query using the ExecuteInsertTechToolsQuery stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<ExecuteInsertTechToolsQueryResultDto> ExecuteInsertTechToolsQueryAsync(string query)
+        {
+            return await ExecuteInsertTechToolsQueryAsync(query, null, null);
+        }
+
+        /// <summary>
+        /// Deletes tools tracking data by tech ID using the DeleteToolsTracking stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<DeleteToolsTrackingResultDto> DeleteToolsTrackingAsync(string techId)
+        {
+            return await DeleteToolsTrackingAsync(techId, null, null);
+        }
+
+        /// <summary>
+        /// Gets tech tools tracking data by tech ID using the GetTechToolsTrackingByTechID stored procedure
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<List<TechToolsTrackingDto>> GetTechToolsTrackingByTechIdAsync(string techId)
+        {
+            return await GetTechToolsTrackingByTechIdAsync(techId, null, null);
+        }
+
+        /// <summary>
+        /// Saves/Updates tech tools tracking data using legacy DELETE-INSERT pattern
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<SaveTechToolsTrackingResultDto> SaveTechToolsTrackingAsync(SaveTechToolsTrackingRequestDto request)
+        {
+            return await SaveTechToolsTrackingAsync(request, null, null);
+        }
+
+        /// <summary>
+        /// Gets file attachments for a tech ID (legacy DisplayFile equivalent)
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<List<ToolsTrackingFileDto>> GetFilesAsync(string techId)
+        {
+            return await GetFilesAsync(techId, null, null);
+        }
+
+        /// <summary>
+        /// Uploads a file for a tech ID (legacy SaveFile equivalent)
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<FileUploadResultDto> UploadFileAsync(string techId, string fileName, Stream fileStream)
+        {
+            return await UploadFileAsync(techId, fileName, fileStream, null, null);
+        }
+
+        /// <summary>
+        /// Deletes a file for a tech ID
+        /// Legacy method without role-based filtering for backward compatibility
+        /// </summary>
+        public async Task<bool> DeleteFileAsync(string techId, string fileName)
+        {
+            return await DeleteFileAsync(techId, fileName, null, null);
+        }
+
+        #endregion
+
+        #region Private Helper Methods
 
         /// <summary>
         /// Validates file extension (legacy IsValidFile equivalent)
