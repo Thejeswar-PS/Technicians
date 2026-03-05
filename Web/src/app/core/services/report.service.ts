@@ -472,13 +472,21 @@ export class ReportService {
     return this.http.post<PartReturnStatusResponseDto>(url, request, { headers: this.headers });
   }
 
-  getPartReturnStatusForGraph(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartReturnStatusForGraph(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartReturnStatusForGraph`, { 
@@ -487,13 +495,21 @@ export class ReportService {
     });
   }
 
-  getPartsNotReceived(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsNotReceived(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsNotReceived`, { 
@@ -502,13 +518,21 @@ export class ReportService {
     });
   }
 
-  getPartsInProgress(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsInProgress(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsInProgress`, { 
@@ -517,13 +541,21 @@ export class ReportService {
     });
   }
 
-  getPartsPending(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsPending(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsPending`, { 
@@ -532,7 +564,7 @@ export class ReportService {
     });
   }
 
-  getPartsReturned(invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartsReturned(invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('invUserID', invUserID);
@@ -541,13 +573,21 @@ export class ReportService {
       params = params.set('year', year.toString());
     }
 
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
+    }
+
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartsReturned`, { 
       headers: this.headers,
       params: params 
     });
   }
 
-  getPartReturnStatusByKey(key: number, invUserID: string = 'All', year?: number): Observable<PartReturnStatusResponseDto>
+  getPartReturnStatusByKey(key: number, invUserID: string = 'All', year?: number, userEmpID?: string, windowsID?: string): Observable<PartReturnStatusResponseDto>
   {
     let params = new HttpParams()
       .set('key', key.toString())
@@ -555,6 +595,14 @@ export class ReportService {
     
     if (year) {
       params = params.set('year', year.toString());
+    }
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
     }
 
     return this.http.get<PartReturnStatusResponseDto>(`${this.API}/PartReturnStatus/GetPartReturnStatusByKey`, { 
@@ -592,9 +640,20 @@ export class ReportService {
   }
 
   // Weekly Parts Returned Count API
-  getWeeklyPartsReturnedCount(): Observable<WeeklyPartsReturnedCountApiResponseDto> {
+  getWeeklyPartsReturnedCount(userEmpID?: string, windowsID?: string): Observable<WeeklyPartsReturnedCountApiResponseDto> {
+    let params = new HttpParams();
+
+    if (userEmpID) {
+      params = params.set('userEmpID', userEmpID);
+    }
+
+    if (windowsID) {
+      params = params.set('windowsID', windowsID);
+    }
+
     return this.http.get<WeeklyPartsReturnedCountApiResponseDto>(`${this.API}/PartReturnStatus/GetWeeklyPartsReturnedCount`, { 
-      headers: this.headers
+      headers: this.headers,
+      params: params
     });
   }
 

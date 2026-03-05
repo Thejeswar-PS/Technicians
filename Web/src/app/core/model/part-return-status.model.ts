@@ -19,6 +19,8 @@ export interface PartReturnStatusRequestDto {
   source: string;
   invUserID: string;
   year: number;
+  userEmpID?: string;
+  windowsID?: string;
 }
 
 export interface PartReturnStatusResponseDto {

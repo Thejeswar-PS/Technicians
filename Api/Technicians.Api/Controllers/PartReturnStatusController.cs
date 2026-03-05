@@ -9,32 +9,28 @@ namespace Technicians.Api.Controllers
     public class PartReturnStatusController : ControllerBase
     {
         private readonly PartReturnStatusRepository _repository;
+        private readonly CommonRepository _commonRepository;
 
-        public PartReturnStatusController(PartReturnStatusRepository repository)
+        public PartReturnStatusController(PartReturnStatusRepository repository, CommonRepository commonRepository)
         {
             _repository = repository;
+            _commonRepository = commonRepository;
         }
 
         /// <summary>
-        /// Get part return status data based on request parameters
+        /// Get part return status data based on request parameters - Enhanced with role-based filtering
         /// </summary>
-        /// <param name="request">Request containing filter parameters</param>
-        /// <returns>List of part return status records</returns>
         [HttpPost("GetPartReturnStatus")]
         public async Task<IActionResult> GetPartReturnStatus([FromBody] PartReturnStatusRequestDto request)
         {
             if (request == null)
                 return BadRequest(new { success = false, message = "Invalid request payload." });
 
-            // Trim the InvUserID to handle trailing spaces
-            if (!string.IsNullOrEmpty(request.InvUserID))
-            {
-                request.InvUserID = request.InvUserID.Trim();
-            }
-
             try
             {
-                var result = await _repository.GetPartReturnStatusAsync(request);
+                // Apply role-based filtering
+                var filteredRequest = await ApplyRoleBasedFiltering(request);
+                var result = await _repository.GetPartReturnStatusAsync(filteredRequest);
                 return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
@@ -44,14 +40,17 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Get weekly parts returned count for chart display
+        /// Get weekly parts returned count for chart display - Enhanced with role-based filtering
         /// </summary>
-        /// <returns>Weekly parts returned count data</returns>
         [HttpGet("GetWeeklyPartsReturnedCount")]
-        public async Task<IActionResult> GetWeeklyPartsReturnedCount()
+        public async Task<IActionResult> GetWeeklyPartsReturnedCount(
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
+                // Apply role-based filtering for inventory user if needed
+                var invUserID = await DetermineInventoryUserByRole("All", userEmpID, windowsID);
                 var result = await _repository.GetWeeklyPartsReturnedCountAsync();
                 
                 if (result == null || !result.Any())
@@ -66,22 +65,20 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Get part return status for graph display
+        /// Get part return status for graph display - Enhanced with role-based filtering
         /// </summary>
-        /// <param name="invUserID">Inventory user ID filter</param>
-        /// <param name="year">Year filter</param>
-        /// <returns>Part return status data for graphs</returns>
         [HttpGet("GetPartReturnStatusForGraph")]
         public async Task<IActionResult> GetPartReturnStatusForGraph(
             [FromQuery] string invUserID = "All",
-            [FromQuery] int? year = null)
+            [FromQuery] int? year = null,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                // Trim invUserID to handle trailing spaces
-                invUserID = invUserID?.Trim() ?? "All";
-                
-                var result = await _repository.GetPartReturnStatusForGraphAsync(invUserID, year);
+                // Apply role-based filtering
+                var actualInvUserID = await DetermineInventoryUserByRole(invUserID, userEmpID, windowsID);
+                var result = await _repository.GetPartReturnStatusForGraphAsync(actualInvUserID, year);
                 return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
@@ -91,22 +88,19 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Get parts not yet received by warehouse
+        /// Get parts not yet received by warehouse - Enhanced with role-based filtering
         /// </summary>
-        /// <param name="invUserID">Inventory user ID filter</param>
-        /// <param name="year">Year filter</param>
-        /// <returns>List of parts not received</returns>
         [HttpGet("GetPartsNotReceived")]
         public async Task<IActionResult> GetPartsNotReceived(
             [FromQuery] string invUserID = "All",
-            [FromQuery] int? year = null)
+            [FromQuery] int? year = null,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                // Trim invUserID to handle trailing spaces
-                invUserID = invUserID?.Trim() ?? "All";
-                
-                var result = await _repository.GetPartsNotReceivedAsync(invUserID, year);
+                var actualInvUserID = await DetermineInventoryUserByRole(invUserID, userEmpID, windowsID);
+                var result = await _repository.GetPartsNotReceivedAsync(actualInvUserID, year);
 
                 if (result == null || !result.Any())
                     return Ok(new { success = true, data = new List<PartReturnStatusDto>(), message = "No parts found matching the criteria." });
@@ -120,22 +114,19 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Get parts with 'In Progress' return status
+        /// Get parts with 'In Progress' return status - Enhanced with role-based filtering
         /// </summary>
-        /// <param name="invUserID">Inventory user ID filter</param>
-        /// <param name="year">Year filter</param>
-        /// <returns>List of parts in progress</returns>
         [HttpGet("GetPartsInProgress")]
         public async Task<IActionResult> GetPartsInProgress(
             [FromQuery] string invUserID = "All",
-            [FromQuery] int? year = null)
+            [FromQuery] int? year = null,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                // Trim invUserID to handle trailing spaces
-                invUserID = invUserID?.Trim() ?? "All";
-                
-                var result = await _repository.GetPartsInProgressAsync(invUserID, year);
+                var actualInvUserID = await DetermineInventoryUserByRole(invUserID, userEmpID, windowsID);
+                var result = await _repository.GetPartsInProgressAsync(actualInvUserID, year);
 
                 if (result == null || !result.Any())
                     return Ok(new { success = true, data = new List<PartReturnStatusDto>(), message = "No parts found with 'In Progress' status." });
@@ -149,22 +140,19 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Get parts with 'Pending' return status
+        /// Get parts with 'Pending' return status - Enhanced with role-based filtering
         /// </summary>
-        /// <param name="invUserID">Inventory user ID filter</param>
-        /// <param name="year">Year filter</param>
-        /// <returns>List of pending parts</returns>
         [HttpGet("GetPartsPending")]
         public async Task<IActionResult> GetPartsPending(
             [FromQuery] string invUserID = "All",
-            [FromQuery] int? year = null)
+            [FromQuery] int? year = null,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                // Trim invUserID to handle trailing spaces
-                invUserID = invUserID?.Trim() ?? "All";
-                
-                var result = await _repository.GetPartsPendingAsync(invUserID, year);
+                var actualInvUserID = await DetermineInventoryUserByRole(invUserID, userEmpID, windowsID);
+                var result = await _repository.GetPartsPendingAsync(actualInvUserID, year);
 
                 if (result == null || !result.Any())
                     return Ok(new { success = true, data = new List<PartReturnStatusDto>(), message = "No parts found with 'Pending' status." });
@@ -178,22 +166,19 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Get parts that have been returned
+        /// Get parts that have been returned - Enhanced with role-based filtering
         /// </summary>
-        /// <param name="invUserID">Inventory user ID filter</param>
-        /// <param name="year">Year filter</param>
-        /// <returns>List of returned parts</returns>
         [HttpGet("GetPartsReturned")]
         public async Task<IActionResult> GetPartsReturned(
             [FromQuery] string invUserID = "All",
-            [FromQuery] int? year = null)
+            [FromQuery] int? year = null,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                // Trim invUserID to handle trailing spaces
-                invUserID = invUserID?.Trim() ?? "All";
-                
-                var result = await _repository.GetPartsReturnedAsync(invUserID, year);
+                var actualInvUserID = await DetermineInventoryUserByRole(invUserID, userEmpID, windowsID);
+                var result = await _repository.GetPartsReturnedAsync(actualInvUserID, year);
 
                 if (result == null || !result.Any())
                     return Ok(new { success = true, data = new List<PartReturnStatusDto>(), message = "No returned parts found." });
@@ -207,29 +192,28 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Get part return status by specific filters
+        /// Get part return status by specific filters - Enhanced with role-based filtering
         /// </summary>
-        /// <param name="key">Key parameter (0-3)</param>
-        /// <param name="invUserID">Inventory user ID filter</param>
-        /// <param name="year">Year filter</param>
-        /// <returns>List of part return status records</returns>
         [HttpGet("GetPartReturnStatusByKey")]
         public async Task<IActionResult> GetPartReturnStatusByKey(
             [FromQuery] int key,
             [FromQuery] string invUserID = "All",
-            [FromQuery] int? year = null)
+            [FromQuery] int? year = null,
+            [FromQuery] string? userEmpID = null,
+            [FromQuery] string? windowsID = null)
         {
             try
             {
-                // Trim invUserID to handle trailing spaces
-                invUserID = invUserID?.Trim() ?? "All";
+                var actualInvUserID = await DetermineInventoryUserByRole(invUserID, userEmpID, windowsID);
                 
                 var request = new PartReturnStatusRequestDto
                 {
                     Key = key,
                     Source = "Web",
-                    InvUserID = invUserID,
-                    Year = year ?? DateTime.Now.Year
+                    InvUserID = actualInvUserID,
+                    Year = year ?? DateTime.Now.Year,
+                    UserEmpID = userEmpID,
+                    WindowsID = windowsID
                 };
 
                 var result = await _repository.GetPartReturnStatusAsync(request);
@@ -241,11 +225,7 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get parts to be received by warehouse for chart display
-        /// </summary>
-        /// <param name="year">Year filter</param>
-        /// <returns>Chart data and totals for parts to be received by warehouse</returns>
+        // Chart endpoints remain unchanged as they typically don't require user-specific filtering
         [HttpGet("GetPartsToBeReceivedChart")]
         public async Task<IActionResult> GetPartsToBeReceivedChart([FromQuery] int? year = null)
         {
@@ -262,11 +242,6 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get parts received by warehouse for chart display
-        /// </summary>
-        /// <param name="year">Year filter</param>
-        /// <returns>Chart data and totals for parts received by warehouse</returns>
         [HttpGet("GetPartsReceivedByWHChart")]
         public async Task<IActionResult> GetPartsReceivedByWHChart([FromQuery] int? year = null)
         {
@@ -283,11 +258,6 @@ namespace Technicians.Api.Controllers
             }
         }
 
-        /// <summary>
-        /// Get parts return data by week number
-        /// </summary>
-        /// <param name="weekNo">Week number of the year (1-52)</param>
-        /// <returns>List of parts return data for the specified week</returns>
         [HttpGet("GetPartsReturnDataByWeekNo")]
         public async Task<IActionResult> GetPartsReturnDataByWeekNo([FromQuery] int weekNo)
         {
@@ -297,8 +267,6 @@ namespace Technicians.Api.Controllers
             try
             {
                 var result = await _repository.GetPartsReturnDataByWeekNoAsync(weekNo);
-
-                // Ensure non-null result
                 result = result ?? new List<PartsReturnDataByWeekNoDto>();
 
                 if (!result.Any())
@@ -320,5 +288,129 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        // Private helper methods for role-based filtering
+        private async Task<PartReturnStatusRequestDto> ApplyRoleBasedFiltering(PartReturnStatusRequestDto request)
+        {
+            if (string.IsNullOrEmpty(request.WindowsID) && string.IsNullOrEmpty(request.UserEmpID))
+            {
+                return request; // No user context provided, return as-is
+            }
+
+            try
+            {
+                var windowsID = request.WindowsID ?? request.UserEmpID ?? "";
+                if (string.IsNullOrEmpty(windowsID))
+                {
+                    return request;
+                }
+
+                var employeeStatus = await GetEmployeeStatusAsync(windowsID);
+                if (employeeStatus == null)
+                {
+                    return request; // No status found, return as-is
+                }
+
+                var normalizedStatus = (employeeStatus.Status ?? "").Trim().ToLower();
+                var empID = (request.UserEmpID ?? "").Trim();
+
+                // Apply filtering based on role
+                if (IsTechnicianRole(normalizedStatus))
+                {
+                    // For technicians: restrict to their own inventory user ID
+                    request.InvUserID = await GetUserInventoryID(empID, windowsID) ?? empID ?? "All";
+                }
+
+                return request;
+            }
+            catch (Exception)
+            {
+                // If role determination fails, return original request
+                return request;
+            }
+        }
+
+        private async Task<string> DetermineInventoryUserByRole(string? requestedInvUserID, string? userEmpID, string? windowsID)
+        {
+            if (string.IsNullOrEmpty(windowsID) && string.IsNullOrEmpty(userEmpID))
+            {
+                return requestedInvUserID ?? "All";
+            }
+
+            try
+            {
+                var windowsId = windowsID ?? userEmpID ?? "";
+                var employeeStatus = await GetEmployeeStatusAsync(windowsId);
+                
+                if (employeeStatus == null)
+                {
+                    return requestedInvUserID ?? "All";
+                }
+
+                var normalizedStatus = (employeeStatus.Status ?? "").Trim().ToLower();
+
+                if (IsTechnicianRole(normalizedStatus))
+                {
+                    // For technicians: force to their own inventory user ID
+                    return await GetUserInventoryID(userEmpID?.Trim() ?? "", windowsId) ?? userEmpID ?? "All";
+                }
+
+                // For managers and other roles: use requested value
+                return requestedInvUserID ?? "All";
+            }
+            catch (Exception)
+            {
+                return requestedInvUserID ?? "All";
+            }
+        }
+
+        private async Task<EmployeeStatusDto?> GetEmployeeStatusAsync(string windowsID)
+        {
+            try
+            {
+                var employeeStatusList = await _commonRepository.GetEmployeeStatusForJobListAsync(windowsID);
+                return employeeStatusList?.FirstOrDefault();
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private async Task<string?> GetUserInventoryID(string empID, string windowsID)
+        {
+            try
+            {
+                // Get inventory users from Part Request Status repository
+                var partReqRepo = HttpContext.RequestServices.GetRequiredService<PartReqStatusRepository>();
+                var inventoryUsers = await partReqRepo.GetInventoryUserNamesAsync();
+                
+                var userEntry = inventoryUsers?.FirstOrDefault(u => 
+                    string.Equals(u.InvUserID?.Trim(), empID, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(u.Username?.Trim(), empID, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(u.InvUserID?.Trim(), windowsID, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(u.Username?.Trim(), windowsID, StringComparison.OrdinalIgnoreCase));
+
+                return userEntry?.InvUserID ?? empID;
+            }
+            catch (Exception)
+            {
+                return empID; // Fallback to empID if lookup fails
+            }
+        }
+
+        private static bool IsTechnicianRole(string normalizedStatus)
+        {
+            return normalizedStatus == "technician" || 
+                   normalizedStatus == "techmanager" || 
+                   normalizedStatus == "tech manager" || 
+                   normalizedStatus.Contains("tech");
+        }
+
+        private static bool IsManagerRole(string normalizedStatus)
+        {
+            return normalizedStatus == "manager" || 
+                   normalizedStatus == "other" || 
+                   normalizedStatus.Contains("manager");
+        }
     }
 }

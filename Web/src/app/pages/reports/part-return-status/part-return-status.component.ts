@@ -43,6 +43,11 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   isLoadingInventoryUsers: boolean = false;
   currentUserStatus: EmployeeStatusDto | null = null;
   errorMessage: string = '';
+  empID: string = '';
+  userRole: string = '';
+  employeeStatus: string = '';
+  windowsID: string = '';
+  private hasPageAccess: boolean = false;
   
   // Chart-related properties
   chartData: PartsToBeReceivedChartDto[] = [];
@@ -174,20 +179,22 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     this.initializeYears();
     this.initializeWeeks();
     this.initializeWeekNumber();
-    this.loadInventoryUsers();
     this.determineEmployeeStatus();
-    
+  }
+
+  private initializeAuthorizedView(): void {
+    this.loadInventoryUsers();
+
     // Process query parameters first, then other initialization
     this.handleQueryParams();
     this.onFilterChanges();
     this.loadFilters();
-    
 
     this.loadPartsToBeReceivedChart();
     this.loadWeeklyPartsReturnedCount();
     this.loadPartsReceivedByWarehouseChart();
     this.loadPartsReturnDataByWeekNo();
-    
+
     // Load initial main data (only if not in weekly mode)
     // Weekly mode data is loaded by processLegacyNavigation
     setTimeout(() => {
@@ -195,11 +202,25 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         this.getPartReturnStatusReport();
       }
     }, 100);
-    
+
     // Set initialization flag after all setup is complete
     setTimeout(() => {
       this.isComponentInitialized = true;
     }, 1000);
+  }
+
+  private getNormalizedRoleStatus(): string {
+    return (this.employeeStatus || this.userRole || '').toString().trim().toLowerCase();
+  }
+
+  private isTechContext(): boolean {
+    const s = this.getNormalizedRoleStatus();
+    return s === 'technician' || s === 'techmanager' || s === 'tech manager' || s.includes('tech');
+  }
+
+  private isManagerContext(): boolean {
+    const s = this.getNormalizedRoleStatus();
+    return s === 'manager' || s === 'other' || s.includes('manager');
   }
 
   initializeYears(): void {
@@ -274,7 +295,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
     // Always fetch fresh data from API
     this.isLoadingInventoryUsers = true;
-    this._reportService.getInventoryUserNames().subscribe({
+    this._reportService.getInventoryUserNames(this.empID || undefined, this.windowsID || undefined).subscribe({
       next: (data: any) => {
         this.isLoadingInventoryUsers = false;
         
@@ -286,11 +307,32 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         }
         
         if (inventoryUsers && inventoryUsers.length > 0) {
-          const allOption = { invUserID: 'All', username: 'All' };
           const filteredUsers = inventoryUsers.filter((user: InventoryUser) => 
             user.invUserID !== 'All' && user.username !== 'All'
           );
-          this.inventoryUsers = [allOption, ...filteredUsers];
+
+          // Legacy role behavior:
+          // - managers/other: full inventory list with 'All'
+          // - technicians: restricted list (defensive; technicians are redirected before this)
+          if (this.isTechContext()) {
+            const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
+            const matchedUser = filteredUsers.find((user: InventoryUser) =>
+              ((user?.invUserID || '').toString().trim().toUpperCase() === empIdNormalized) ||
+              ((user?.username || '').toString().trim().toUpperCase() === empIdNormalized)
+            );
+
+            if (matchedUser) {
+              this.inventoryUsers = [matchedUser];
+            } else if (this.empID) {
+              this.inventoryUsers = [{ invUserID: this.empID, username: this.empID }];
+            } else {
+              this.inventoryUsers = filteredUsers;
+            }
+          } else {
+            const allOption = { invUserID: 'All', username: 'All' };
+            this.inventoryUsers = [allOption, ...filteredUsers];
+          }
+
           localStorage.setItem("InventoryUsers", JSON.stringify(this.inventoryUsers));
         } else {
           if (this.inventoryUsers.length === 0) {
@@ -502,22 +544,46 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     const userDataStr = localStorage.getItem("userData");
     if (userDataStr) {
       const userData = JSON.parse(userDataStr);
-      const windowsID = userData.windowsId || userData.empName || '';
+      this.empID = (userData.empID || '').trim();
+      this.userRole = userData.role || '';
+      this.windowsID = userData.windowsId || userData.empName || '';
       
-      if (windowsID) {
-        this._reportService.getEmployeeStatusForJobListByParam(windowsID).subscribe({
+      if (this.windowsID) {
+        this._reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
           next: (response: EmployeeStatusDto) => {
             this.currentUserStatus = response;
+
+            this.employeeStatus = response.status || '';
+
+            // Legacy behavior: only Manager/Other can access this functionality.
+            // Technician users are redirected to login.
+            if (this.isTechContext() || !this.isManagerContext()) {
+              this.hasPageAccess = false;
+              this.auth.logout();
+              return;
+            }
+
+            this.hasPageAccess = true;
+            this.initializeAuthorizedView();
           },
           error: (error) => {
             this.errorMessage = 'Error retrieving employee status';
+            this.hasPageAccess = false;
+            this.auth.logout();
           }
         });
       }
+    } else {
+      this.hasPageAccess = false;
+      this.auth.logout();
     }
   }
 
   getPartReturnStatusReport(): void {
+    if (!this.hasPageAccess) {
+      return;
+    }
+
     this.isLoading = true;
     this.errorMessage = '';
     const formValue = this.partReturnFilterForm.value;
@@ -539,23 +605,23 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     let selectedApiMethod = '';
     switch (key) {
       case 0: // Not Returned
-        apiCall = this._reportService.getPartsNotReceived(invUserID, year);
+        apiCall = this._reportService.getPartsNotReceived(invUserID, year, this.empID || undefined, this.windowsID || undefined);
         selectedApiMethod = 'getPartsNotReceived';
         break;
       case 1: // In Progress
-        apiCall = this._reportService.getPartsInProgress(invUserID, year);
+        apiCall = this._reportService.getPartsInProgress(invUserID, year, this.empID || undefined, this.windowsID || undefined);
         selectedApiMethod = 'getPartsInProgress';
         break;
       case 2: // Pending
-        apiCall = this._reportService.getPartsPending(invUserID, year);
+        apiCall = this._reportService.getPartsPending(invUserID, year, this.empID || undefined, this.windowsID || undefined);
         selectedApiMethod = 'getPartsPending';
         break;
       case 3: // Returned
-        apiCall = this._reportService.getPartsReturned(invUserID, year);
+        apiCall = this._reportService.getPartsReturned(invUserID, year, this.empID || undefined, this.windowsID || undefined);
         selectedApiMethod = 'getPartsReturned';
         break;
       default:
-        apiCall = this._reportService.getPartsNotReceived(invUserID, year);
+        apiCall = this._reportService.getPartsNotReceived(invUserID, year, this.empID || undefined, this.windowsID || undefined);
         selectedApiMethod = 'getPartsNotReceived (default)';
         break;
     }
@@ -2042,10 +2108,14 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   // Weekly Parts Returned Count methods
   loadWeeklyPartsReturnedCount(): void {
+    if (!this.hasPageAccess) {
+      return;
+    }
+
     this.isLoadingWeeklyChart = true;
     this.weeklyChartErrorMessage = '';
 
-    this._reportService.getWeeklyPartsReturnedCount().subscribe({
+    this._reportService.getWeeklyPartsReturnedCount(this.empID || undefined, this.windowsID || undefined).subscribe({
       next: (response: WeeklyPartsReturnedCountApiResponseDto) => {
         this.isLoadingWeeklyChart = false;
         
