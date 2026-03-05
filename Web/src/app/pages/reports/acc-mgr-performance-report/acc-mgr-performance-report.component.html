@@ -1,4 +1,4 @@
-<div class="container-fluid acc-mgr-performance-container">
+<div class="container-fluid acc-mgr-performance-container" *ngIf="hasPageAccess">
   <!-- Loading Overlay -->
   <div *ngIf="isLoading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.3); z-index: 9999;">
     <div class="spinner-border text-primary" role="status">
@@ -29,7 +29,6 @@
             class="form-select"
             formControlName="officeId"
             [class.is-invalid]="hasError('officeId')"
-            [disabled]="isLoadingAccountManagers"
             (change)="onOfficeChange()">
             <option value="" disabled>
               {{ isLoadingAccountManagers ? 'Loading account managers...' : 'Select Office/Account Manager' }}
@@ -1452,5 +1451,15 @@
         No records to display for the selected section
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Unauthorized Access Message -->
+<div class="container-fluid" *ngIf="!hasPageAccess">
+  <div class="alert alert-danger text-center mt-5" role="alert">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+    <strong>Access Denied:</strong> You do not have permission to access Account Manager Performance Reports.
+    <br/>
+    <small>Only Account Managers can access this report. Redirecting to login...</small>
   </div>
 </div>

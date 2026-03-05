@@ -1369,11 +1369,18 @@ export class ReportService {
   // Account Manager Performance Report API methods
   /**
    * Get comprehensive Account Manager Performance Report data for a specific office
+   * with role-based filtering support
    */
-  getAccMgrPerformanceReport(officeId: string, roJobs: string = ''): Observable<AccMgrPerformanceReportResponseDto> {
+  getAccMgrPerformanceReport(officeId: string, roJobs: string = '', userEmpID?: string, windowsID?: string): Observable<AccMgrPerformanceReportResponseDto> {
     const params: any = { officeId };
     if (roJobs) {
       params.roJobs = roJobs;
+    }
+    if (userEmpID) {
+      params.userEmpID = userEmpID;
+    }
+    if (windowsID) {
+      params.windowsID = windowsID;
     }
     
     return this.http.get<AccMgrPerformanceReportResponseDto>(`${this.API}/AccMgrPerformanceReport/report`, {
@@ -1384,9 +1391,10 @@ export class ReportService {
 
   /**
    * Get Account Manager Performance Report summary statistics (calculated client-side)
+   * with role-based filtering support
    */
-  getAccMgrPerformanceReportSummary(officeId: string, roJobs: string = ''): Observable<AccMgrPerformanceReportSummaryDto> {
-    return this.getAccMgrPerformanceReport(officeId, roJobs).pipe(
+  getAccMgrPerformanceReportSummary(officeId: string, roJobs: string = '', userEmpID?: string, windowsID?: string): Observable<AccMgrPerformanceReportSummaryDto> {
+    return this.getAccMgrPerformanceReport(officeId, roJobs, userEmpID, windowsID).pipe(
       map(data => ({
         completedNotReturnedCount: data.completedNotReturned.length,
         returnedForProcessingCount: data.returnedForProcessing.length,

@@ -64,6 +64,13 @@ export interface AccMgrPerformanceReportResponseDto {
   officeId: string;
   roJobs: string;
   generatedAt: string;
+  
+  // Role-based filtering metadata
+  requestedBy?: string;
+  userRole?: string;
+  isFiltered?: boolean;
+  filterCriteria?: string;
+  
   completedNotReturned: AccMgrCallStatusDto[];
   returnedForProcessing: AccMgrReturnedForProcessingDto[];
   jobsScheduledToday: AccMgrJobsScheduledTodayDto[];
@@ -97,6 +104,10 @@ export interface AccMgrPerformanceReportResponseDto {
   FifthMonth?: AccMgrUnscheduledJobDto[];
   OfficeId?: string;
   GeneratedAt?: string;
+  RequestedBy?: string;
+  UserRole?: string;
+  IsFiltered?: boolean;
+  FilterCriteria?: string;
 }
 
 // Additional interfaces for new sections
@@ -132,7 +143,13 @@ export interface AccMgrPerformanceReportSummaryDto {
   pastDueUnscheduledCount: number;
   monthlyScheduledCounts: { [key: string]: number };
   totalJobs: number;
+  criticalJobsCount?: number;
+  unscheduledJobsCount?: number;
   officeId: string;
   roJobsFilter: string;
   generatedAt: string;
+  // Role-based filtering metadata
+  requestedBy?: string;
+  userRole?: string;
+  isFiltered?: boolean;
 }
