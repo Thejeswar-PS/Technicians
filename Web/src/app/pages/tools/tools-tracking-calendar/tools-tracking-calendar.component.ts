@@ -3,6 +3,7 @@ import { Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TechToolsService } from '../../../core/services/tech-tools.service';
+import { AuthHelper } from '../../../core/utils/auth-helper';
 import { ToolsTrackingTechsDto, TechToolSerialNoDto, ToolsCalendarTrackingDto, ToolsCalendarDueCountsDto, ToolsCalendarTrackingResultDto } from '../../../core/model/tech-tools.model';
 
 export interface CalendarDay {
@@ -74,15 +75,22 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
   errorMessage: string = '';
   serialNumbersErrorMessage: string = '';
   
+  // Role-based filtering
+  private userContext: { userEmpID?: string; windowsID?: string } = {};
+  
   private subscription: Subscription = new Subscription();
 
   constructor(
     private techToolsService: TechToolsService,
     private location: Location,
-    private router: Router
+    private router: Router,
+    private authHelper: AuthHelper
   ) {}
 
   ngOnInit(): void {
+    // Get user context for role-based filtering
+    this.userContext = this.authHelper.getUserContext();
+    
     this.loadTechnicians();
     this.loadToolSerialNumbers();
     this.generateCalendar();
@@ -93,22 +101,36 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load all technicians for tools tracking
+   * Load all technicians for tools tracking - Enhanced with role-based filtering
    */
   loadTechnicians(): void {
     this.isLoading = true;
     this.errorMessage = '';
     
-    // Use the working tools tracking technicians endpoint
-    const sub = this.techToolsService.getToolsTrackingTechs().subscribe({
+    // Use the working tools tracking technicians endpoint - Pass user context for role-based filtering
+    const sub = this.techToolsService.getToolsTrackingTechs(this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response: any) => {
         // Extract the data array from the wrapped response
         const technicians = response.data || response || [];
         this.technicians = technicians;
+        
+        // If role-filtered to single technician, auto-select them
+        if (response.isFiltered && technicians.length === 1) {
+          this.selectedTech = technicians[0].techID;
+          // Auto-load calendar for single technician
+          setTimeout(() => {
+            this.generateCalendar();
+          }, 300);
+        }
+        
         this.isLoading = false;
       },
       error: (error: any) => {
-        this.errorMessage = 'Error loading technicians: ' + (error.message || error);
+        if (error.status === 403) {
+          this.errorMessage = 'Access denied: You do not have permission to view this data.';
+        } else {
+          this.errorMessage = 'Error loading technicians: ' + (error.message || error);
+        }
         this.isLoading = false;
         console.error('Error fetching technicians:', error);
       }
@@ -118,13 +140,14 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Load tool serial numbers based on selected tool type
+   * Load tool serial numbers based on selected tool type - Enhanced with role-based filtering
    */
   loadToolSerialNumbers(): void {
     this.isLoadingSerialNumbers = true;
     this.serialNumbersErrorMessage = '';
     
-    const sub = this.techToolsService.getTechToolSerialNos(this.selectedToolType).subscribe({
+    // Pass user context for role-based filtering
+    const sub = this.techToolsService.getTechToolSerialNos(this.selectedToolType, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (serialNumbers: TechToolSerialNoDto[]) => {
         this.toolSerialNumbers = serialNumbers;
         this.isLoadingSerialNumbers = false;
@@ -356,12 +379,15 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     // Legacy parameter mapping: Tech parameter: selectedTech (techID) or "0" for All
     const techFilter = this.selectedTech === 'All' ? '0' : this.selectedTech;
     
+    // Pass user context for role-based filtering
     const sub = this.techToolsService.getToolsCalendarTracking(
       startDateStr,               // Optional - backend has defaults
       endDateStr,                 // Optional - backend has defaults
       this.selectedToolType,      // ddlTools.SelectedValue
       this.selectedSerialNo,      // ddlSerialNo.SelectedValue  
-      techFilter                  // Tech parameter ("0" for All)
+      techFilter,                 // Tech parameter ("0" for All)
+      this.userContext.userEmpID, // Role-based filtering
+      this.userContext.windowsID  // Role-based filtering
     ).subscribe({
       next: (result: ToolsCalendarTrackingResultDto) => {
         // Legacy expects Tables[0] (individual records) and Tables[1] (statistics)
@@ -384,7 +410,11 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
         this.isLoadingCalendar = false;
       },
       error: (error: any) => {
-        this.errorMessage = 'Error loading tools data: ' + (error.message || 'Unknown error');
+        if (error.status === 403) {
+          this.errorMessage = 'Access denied: You can only view your own calendar data.';
+        } else {
+          this.errorMessage = 'Error loading tools data: ' + (error.message || 'Unknown error');
+        }
         this.isLoadingCalendar = false;
         this.toolsData = [];
         this.dueCounts = {

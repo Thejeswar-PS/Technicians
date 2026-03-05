@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToolTrackingService } from 'src/app/core/services/tool-tracking.service';
 import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto, EquipmentFileDto, SaveEquipmentFileRequestDto } from 'src/app/core/model/tool-tracking.model';
+import { AuthHelper } from 'src/app/core/utils/auth-helper';
 
 @Component({
   selector: 'app-tool-tracking-entry',
@@ -29,9 +30,20 @@ export class ToolTrackingEntryComponent implements OnInit {
   selectedFiles: File[] = [];
   uploadingFiles: boolean = false;
   
-  constructor(private toolTrackingService: ToolTrackingService, private router: Router, private route: ActivatedRoute) {}
+  // Role-based filtering
+  private userContext: { userEmpID?: string; windowsID?: string } = {};
+  
+  constructor(
+    private toolTrackingService: ToolTrackingService, 
+    private router: Router, 
+    private route: ActivatedRoute,
+    private authHelper: AuthHelper
+  ) {}
 
   ngOnInit(): void {
+    // Get user context for role-based filtering
+    this.userContext = this.authHelper.getUserContext();
+    
     this.loadTechnicians();
     
     // Check for TechID query parameter from calendar navigation
@@ -51,18 +63,33 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   loadTechnicians(): void {
     this.loadingTechnicians = true;
-    this.toolTrackingService.getToolsTrackingTechs().subscribe({
+    // Pass user context for role-based filtering
+    this.toolTrackingService.getToolsTrackingTechs(this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response) => {
         this.loadingTechnicians = false;
         if (response.success) {
           this.technicians = response.data;
+          
+          // Auto-select if technicians list is filtered to single user (technician role)
+          if (response.isFiltered && this.technicians.length === 1) {
+            this.selectedTech = this.technicians[0].techID;
+            this.techId = this.technicians[0].techID;
+            // Auto-load tools for single technician
+            setTimeout(() => {
+              this.autoLoadTools();
+            }, 300);
+          }
         } else {
           console.error('Failed to load technicians:', response.message);
         }
       },
       error: (err) => {
         this.loadingTechnicians = false;
-        console.error('Error loading technicians:', err);
+        if (err.status === 403) {
+          this.error = 'Access denied: You do not have permission to view this data.';
+        } else {
+          console.error('Error loading technicians:', err);
+        }
       }
     });
   }
@@ -86,7 +113,8 @@ export class ToolTrackingEntryComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    this.toolTrackingService.getTechToolsTracking(this.selectedTech).subscribe({
+    // Pass user context for role-based filtering
+    this.toolTrackingService.getTechToolsTracking(this.selectedTech, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response: ToolTrackingApiResponse) => {
         this.loading = false;
         if (response.success) {
@@ -100,7 +128,11 @@ export class ToolTrackingEntryComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.message || 'An error occurred while fetching data';
+        if (err.status === 403) {
+          this.error = 'Access denied: You can only access your own tech tools data.';
+        } else {
+          this.error = err.error?.message || 'An error occurred while fetching data';
+        }
         console.error('Error fetching tool tracking data:', err);
       }
     });
@@ -120,7 +152,8 @@ export class ToolTrackingEntryComponent implements OnInit {
     this.toolsCount = 0;
     this.showCount = false;
 
-    this.toolTrackingService.getTechToolsTracking(this.selectedTech).subscribe({
+    // Pass user context for role-based filtering
+    this.toolTrackingService.getTechToolsTracking(this.selectedTech, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response: ToolTrackingApiResponse) => {
         this.loading = false;
         if (response.success) {
@@ -134,7 +167,11 @@ export class ToolTrackingEntryComponent implements OnInit {
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.message || 'An error occurred while fetching data';
+        if (err.status === 403) {
+          this.error = 'Access denied: You can only access your own tech tools data.';
+        } else {
+          this.error = err.error?.message || 'An error occurred while fetching data';
+        }
         console.error('Error fetching tool tracking data:', err);
       }
     });
@@ -145,7 +182,8 @@ export class ToolTrackingEntryComponent implements OnInit {
 
     this.loadingCount = true;
     
-    this.toolTrackingService.getToolsTrackingCount(this.techId.trim()).subscribe({
+    // Pass user context for role-based filtering
+    this.toolTrackingService.getToolsTrackingCount(this.techId.trim(), this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response: ToolTrackingCountApiResponse) => {
         this.loadingCount = false;
         if (response.success) {
@@ -208,7 +246,7 @@ export class ToolTrackingEntryComponent implements OnInit {
     const modifiedData = Array.from(this.modifiedRows).map(index => this.trackingData[index]);
 
     // Get the current user (you may need to adjust this based on your auth service)
-    const modifiedBy = localStorage.getItem('currentUser') || 'System';
+    const modifiedBy = this.authHelper.getCurrentUserDisplayName() || localStorage.getItem('currentUser') || 'System';
 
     const saveRequest = {
       techID: this.techId,
@@ -218,7 +256,8 @@ export class ToolTrackingEntryComponent implements OnInit {
 
     console.log('Saving modified tool tracking data:', saveRequest);
 
-    this.toolTrackingService.saveTechToolsTracking(saveRequest).subscribe({
+    // Pass user context for role-based filtering
+    this.toolTrackingService.saveTechToolsTracking(saveRequest, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response) => {
         this.isSaving = false;
         if (response.success) {
@@ -236,7 +275,11 @@ export class ToolTrackingEntryComponent implements OnInit {
       },
       error: (err) => {
         this.isSaving = false;
-        this.error = err.error?.message || 'An error occurred while saving data';
+        if (err.status === 403) {
+          this.error = 'Access denied: You can only modify your own tech tools data.';
+        } else {
+          this.error = err.error?.message || 'An error occurred while saving data';
+        }
         console.error('Error saving tool tracking data:', err);
       }
     });
@@ -289,8 +332,8 @@ export class ToolTrackingEntryComponent implements OnInit {
       return;
     }
     
-    // Load files from file system storage
-    this.toolTrackingService.getToolsTrackingFiles(this.techId).subscribe({
+    // Load files from file system storage - Pass user context for role-based filtering
+    this.toolTrackingService.getToolsTrackingFiles(this.techId, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response) => {
         if (response.success) {
           this.equipmentFiles = response.data.map(file => ({
@@ -306,14 +349,18 @@ export class ToolTrackingEntryComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Error loading files:', err);
+        if (err.status === 403) {
+          console.warn('Access denied: Cannot view files for this technician.');
+        } else {
+          console.error('Error loading files:', err);
+        }
       }
     });
   }
 
   downloadFile(file: any): void {
-    // Download file from file system storage
-    this.toolTrackingService.downloadToolsTrackingFile(this.techId, file.fileName).subscribe({
+    // Download file from file system storage - Pass user context for role-based filtering
+    this.toolTrackingService.downloadToolsTrackingFile(this.techId, file.fileName, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -325,15 +372,19 @@ export class ToolTrackingEntryComponent implements OnInit {
         URL.revokeObjectURL(url);
       },
       error: (err) => {
-        console.error('File download error:', err);
-        this.error = 'Failed to download file';
+        if (err.status === 403) {
+          this.error = 'Access denied: You do not have permission to download this file.';
+        } else {
+          console.error('File download error:', err);
+          this.error = 'Failed to download file';
+        }
       }
     });
   }
 
   viewFile(file: any): void {
-    // View file from file system storage
-    this.toolTrackingService.downloadToolsTrackingFile(this.techId, file.fileName).subscribe({
+    // View file from file system storage - Pass user context for role-based filtering
+    this.toolTrackingService.downloadToolsTrackingFile(this.techId, file.fileName, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -341,15 +392,20 @@ export class ToolTrackingEntryComponent implements OnInit {
         setTimeout(() => URL.revokeObjectURL(url), 1000);
       },
       error: (err) => {
-        console.error('File view error:', err);
-        this.error = 'Failed to view file';
+        if (err.status === 403) {
+          this.error = 'Access denied: You do not have permission to view this file.';
+        } else {
+          console.error('File view error:', err);
+          this.error = 'Failed to view file';
+        }
       }
     });
   }
 
   deleteFileAttachment(fileName: string): void {
     if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
-      this.toolTrackingService.deleteToolsTrackingFile(this.techId, fileName).subscribe({
+      // Pass user context for role-based filtering
+      this.toolTrackingService.deleteToolsTrackingFile(this.techId, fileName, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
         next: (response) => {
           if (response.success) {
             this.successMessage = `File "${fileName}" deleted successfully`;
@@ -363,8 +419,12 @@ export class ToolTrackingEntryComponent implements OnInit {
           }
         },
         error: (err) => {
-          console.error('File delete error:', err);
-          this.error = 'Failed to delete file';
+          if (err.status === 403) {
+            this.error = 'Access denied: You do not have permission to delete this file.';
+          } else {
+            console.error('File delete error:', err);
+            this.error = 'Failed to delete file';
+          }
         }
       });
     }
@@ -423,7 +483,8 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   private async uploadSingleFile(file: File): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.toolTrackingService.uploadToolsTrackingFile(this.techId, file).subscribe({
+      // Pass user context for role-based filtering
+      this.toolTrackingService.uploadToolsTrackingFile(this.techId, file, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
         next: (response) => {
           if (response.success) {
             console.log('File uploaded successfully:', file.name);
@@ -434,7 +495,11 @@ export class ToolTrackingEntryComponent implements OnInit {
         },
         error: (err) => {
           console.error('File upload error:', err);
-          reject(err);
+          if (err.status === 403) {
+            reject(new Error('Access denied: You do not have permission to upload files for this technician.'));
+          } else {
+            reject(err);
+          }
         }
       });
     });
