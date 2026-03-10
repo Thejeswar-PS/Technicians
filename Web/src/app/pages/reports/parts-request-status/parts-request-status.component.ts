@@ -269,7 +269,6 @@ export class PartsRequestStatusComponent implements OnInit {
           this.checkAndApplyRoleBasedDefaults();
         } else {
           if (this.accountManagers.length === 0) {
-            this.errorMessage = 'Failed to load account managers from both APIs';
             // Provide minimal fallback
             this.accountManagers = [{ empName: 'All', empId: 'All', OFFNAME: 'All', OFFID: 'All' }];
           }
@@ -279,7 +278,6 @@ export class PartsRequestStatusComponent implements OnInit {
       },
       error: (error) => {
         if (this.accountManagers.length === 0) {
-          this.errorMessage = 'Failed to load account managers from all available APIs';
           // Provide minimal fallback
           this.accountManagers = [{ empName: 'All', empId: 'All', OFFNAME: 'All', OFFID: 'All' }];
         }
