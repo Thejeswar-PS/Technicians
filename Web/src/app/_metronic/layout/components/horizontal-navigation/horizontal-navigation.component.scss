@@ -185,6 +185,26 @@
   }
 }
 
-.menu-sub[data-popper-placement] {
-  animation: slideDown 0.2s ease-out;
+@media (min-width: 992px) {
+  .menu-sub.menu-sub-lg-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    display: none !important;
+  }
+
+  .menu-sub.menu-sub-lg-dropdown[data-popper-placement] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    display: block !important;
+    animation: none !important;
+  }
+
+  .menu-sub.menu-sub-lg-dropdown:not([data-popper-placement]) {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    display: none !important;
+  }
 }

@@ -106,12 +106,62 @@ export class HorizontalNavigationComponent implements OnInit {
     return trimmed;
   }
 
+  getRouterPath(url?: string | null): string {
+    const safeUrl = this.getSafeUrl(url);
+    const [path] = safeUrl.split('?');
+    return path || '/';
+  }
+
+  getRouterQueryParams(url?: string | null): { [key: string]: string } | null {
+    const safeUrl = this.getSafeUrl(url);
+    const queryIndex = safeUrl.indexOf('?');
+    if (queryIndex === -1) {
+      return null;
+    }
+
+    const queryString = safeUrl.substring(queryIndex + 1).trim();
+    if (!queryString) {
+      return null;
+    }
+
+    const params: { [key: string]: string } = {};
+    const pairs = queryString.split('&');
+
+    for (const pair of pairs) {
+      if (!pair) continue;
+
+      const equalIndex = pair.indexOf('=');
+      const rawKey = equalIndex >= 0 ? pair.substring(0, equalIndex) : pair;
+      const rawValue = equalIndex >= 0 ? pair.substring(equalIndex + 1) : '';
+
+      const key = decodeURIComponent(rawKey || '').trim();
+      const value = decodeURIComponent((rawValue || '').replace(/\+/g, ' '));
+
+      if (key) {
+        params[key] = value;
+      }
+    }
+
+    return Object.keys(params).length ? params : null;
+  }
+
+  onExternalLinkClick(event: MouseEvent, url?: string | null): void {
+    const safeUrl = this.getSafeUrl(url);
+    if (!this.isExternalLink(safeUrl)) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    window.open(safeUrl, '_blank', 'noopener,noreferrer');
+  }
+
   isActiveRoute(url?: string | null): boolean {
     if (!url) return false;
-    
-    // Get the actual route (mapped if it's an ASPX)
-    const actualRoute = this.getSafeUrl(url);
-    
+
+    // Compare by route path to avoid query-string encoding differences
+    const actualRoute = this.getRouterPath(url);
+
     if (!this.isRouterLink(url)) return false;
     return this.router.isActive(actualRoute, false);
   }

@@ -2733,12 +2733,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         });
 
-        const batteryReadingsUrl = this.router.serializeUrl(urlTree);
+        const serializedRoute = this.router.serializeUrl(urlTree);
+        const normalizedRoute = serializedRoute.startsWith('/') ? serializedRoute : `/${serializedRoute}`;
+
+        const base = new URL(document.baseURI);
+        const basePath = base.pathname.endsWith('/') ? base.pathname.slice(0, -1) : base.pathname;
+        const batteryReadingsUrl = `${base.origin}${basePath}#${normalizedRoute}`;
+
         const openedWindow = window.open(batteryReadingsUrl, '_blank', 'noopener,noreferrer');
 
-        // Fallback if popup is blocked
+        // Keep current page unchanged if popup is blocked
         if (!openedWindow) {
-          this.router.navigateByUrl(urlTree);
+          this.errorMessage = 'Pop-up was blocked. Please allow pop-ups for this site to open Battery Readings in a new tab.';
         }
       }
     }
