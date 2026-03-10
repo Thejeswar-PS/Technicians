@@ -299,7 +299,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // EMGSERV Battery Reconciliation Section
   showBatteryReconciliation = false;
   batteryStringOptions: { value: string; text: string }[] = [];
-  emgservProblemCode: boolean = false;
+  emgservProblemCode: string = '';
   
   // Event handlers for cleanup
   private resizeHandler = () => this.adjustYearPickerPosition();
@@ -2612,15 +2612,37 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Check if equipment has EMGSERV problem code
    * If it does, show battery reconciliation section
-   * EMGSERV section is always shown on UPS readings page since GetUPSReadings API includes chk* fields
+   * Load problem code from equipment API to determine if EMGSERV section should be shown
    */
   private checkAndLoadBatteryReconciliation(): void {
-    // Always show EMGSERV section on UPS readings page
-    // The GetUPSReadings API response includes chkDCBreak, chkOverLoad, chkTransfer, chkFault fields
-    this.emgservProblemCode = true;
-    
-    // Load battery strings for the dropdown
-    this.loadBatteryStrings();
+    // Load equipment details to get problem code
+    this.equipmentService.getEquipmentInfo(this.callNbr)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (equipmentList: any[]) => {
+          // Find the current UPS equipment
+          const currentEquipment = equipmentList.find(e => 
+            e.equipId === this.equipId || e.equipID === this.equipId
+          );
+          
+          // Set the problem code from equipment
+          this.emgservProblemCode = currentEquipment?.probcde || currentEquipment?.Probcde || '';
+          
+          console.log('[EMGSERV] Equipment problem code loaded', {
+            equipId: this.equipId,
+            probcde: this.emgservProblemCode,
+            hasEmgserv: this.emgservProblemCode.includes('EMGSERV')
+          });
+          
+          // Load battery strings for the dropdown
+          this.loadBatteryStrings();
+        },
+        error: (error) => {
+          console.error('[EMGSERV] Could not load equipment problem code', error);
+          this.emgservProblemCode = '';
+          this.loadBatteryStrings();
+        }
+      });
   }
 
   /**
@@ -2726,7 +2748,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * Get method for template to check EMGSERV status
    */
   hasEmgservCode(): boolean {
-    return this.emgservProblemCode;
+    return this.emgservProblemCode.includes('EMGSERV');
   }
 
   /**

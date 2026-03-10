@@ -487,10 +487,10 @@ export class PartsRequestStatusComponent implements OnInit {
     if (userDataStr) {
       const userData = JSON.parse(userDataStr);
       
-      // Store user data for role-based filtering
-      this.empID = (userData.empID || '').trim();
-      this.userRole = userData.role || '';
-      this.windowsID = userData.windowsId || userData.empName || '';
+      // Store user data for role-based filtering (match dashboard extraction logic)
+      this.empID = (userData.empID || userData.empId || '').toString().trim();
+      this.userRole = (userData.role || '').toString().trim();
+      this.windowsID = (userData.windowsID || userData.windowsId || '').toString().trim();
       
       console.log('Parts Request Status - User data loaded:', {
         empID: this.empID,
@@ -499,13 +499,24 @@ export class PartsRequestStatusComponent implements OnInit {
       });
       
       if (this.windowsID) {
-        this._reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
-          next: (response: EmployeeStatusDto) => {
-            this.currentUserStatus = response;
-            this.employeeStatus = response.status || '';
+        // Use the same API as dashboard for consistent employee status resolution
+        this._commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
+          next: (statusData: any) => {
+            // Parse status the same way as dashboard
+            let status = 'Active';
+            
+            if (Array.isArray(statusData) && statusData.length > 0) {
+              status = (statusData[0].Status || statusData[0].status || 'Active').toString().trim();
+            } else if (statusData && typeof statusData === 'object') {
+              status = (statusData.Status || statusData.status || 'Active').toString().trim();
+            }
+            
+            this.employeeStatus = status || 'Active';
+            this.currentUserStatus = statusData;
             
             console.log('Parts Request Status - Employee status:', {
               status: this.employeeStatus,
+              rawData: statusData,
               isTechContext: this.isTechContext(),
               isManagerContext: this.isManagerContext()
             });
@@ -514,7 +525,9 @@ export class PartsRequestStatusComponent implements OnInit {
             // Technician and any other non-manager role should be redirected to login.
             if (this.isTechContext() || !this.isManagerContext()) {
               this.hasPageAccess = false;
-              this.auth.logout();
+              this.errorMessage = 'Access Denied: This page is restricted to Managers only.';
+              // Redirect to dashboard instead of logging out
+              this.router.navigate(['/dashboard-view']);
               return;
             }
 
@@ -526,16 +539,20 @@ export class PartsRequestStatusComponent implements OnInit {
             this.checkAndApplyRoleBasedDefaults();
           },
           error: (error) => {
-            this.errorMessage = 'Error retrieving employee status';
-            console.error('Error loading employee status:', error);
-            this.hasPageAccess = false;
-            this.auth.logout();
+            console.error('Parts Request Status - Employee status API failed, using role fallback:', error);
+            // Use role fallback like the dashboard does
+            this.employeeStatus = this.userRole || 'Active';
+            this.hasPageAccess = true;
+            this.initializeAuthorizedView();
+            this.employeeStatusLoaded = true;
+            this.checkAndApplyRoleBasedDefaults();
           }
         });
       }
     } else {
       this.hasPageAccess = false;
-      this.auth.logout();
+      this.errorMessage = 'User not authenticated';
+      this.router.navigate(['/auth/login']);
     }
   }
 

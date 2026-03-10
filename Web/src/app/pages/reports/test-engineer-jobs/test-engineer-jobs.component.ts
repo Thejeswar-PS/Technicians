@@ -6,19 +6,6 @@ import { takeUntil, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
 import { AuthService } from 'src/app/modules/auth';
 import { 
-  Chart, 
-  ChartConfiguration,
-  BarController,
-  BarElement,
-  DoughnutController,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { 
   TestEngineerJobDto, 
   TestEngineerJobsRequestDto,
   TestEngineerJobsResponse,
@@ -28,18 +15,7 @@ import {
   StatusChartDto
 } from 'src/app/core/model/test-engineer-jobs.model';
 
-// Register Chart.js components
-Chart.register(
-  BarController,
-  BarElement,
-  DoughnutController,
-  ArcElement,
-  CategoryScale,
-  LinearScale,
-  Title,
-  Tooltip,
-  Legend
-);
+declare var Chart: any;
 
 @Component({
   selector: 'app-test-engineer-jobs',
@@ -56,8 +32,8 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   Math = Math;
   
   // Chart instances
-  private engineerChart?: Chart;
-  private statusChart?: Chart;
+  private engineerChart?: any;
+  private statusChart?: any;
   
   // Data properties
   jobsList: TestEngineerJobDto[] = [];
@@ -417,7 +393,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
     const inProgressData = engineers.map(engineer => groupedData[engineer]['In-Progress'] || 0);
     const closedData = engineers.map(engineer => groupedData[engineer]['Closed'] || 0);
 
-    const config: ChartConfiguration<'bar'> = {
+    const config: any = {
       type: 'bar',
       data: {
         labels: engineers,
@@ -572,7 +548,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
       }
     });
 
-    const config: ChartConfiguration<'doughnut'> = {
+    const config: any = {
       type: 'doughnut',
       data: {
         labels: labels,

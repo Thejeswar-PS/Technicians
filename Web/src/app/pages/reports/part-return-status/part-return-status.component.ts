@@ -544,22 +544,32 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     const userDataStr = localStorage.getItem("userData");
     if (userDataStr) {
       const userData = JSON.parse(userDataStr);
-      this.empID = (userData.empID || '').trim();
-      this.userRole = userData.role || '';
-      this.windowsID = userData.windowsId || userData.empName || '';
+      // Store user data for role-based filtering (match dashboard extraction logic)
+      this.empID = (userData.empID || userData.empId || '').toString().trim();
+      this.userRole = (userData.role || '').toString().trim();
+      this.windowsID = (userData.windowsID || userData.windowsId || '').toString().trim();
       
       if (this.windowsID) {
-        this._reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
-          next: (response: EmployeeStatusDto) => {
-            this.currentUserStatus = response;
-
-            this.employeeStatus = response.status || '';
+        // Use the same API as dashboard for consistent employee status resolution
+        this._commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
+          next: (statusData: any) => {
+            // Parse status the same way as dashboard
+            let status = 'Active';
+            
+            if (Array.isArray(statusData) && statusData.length > 0) {
+              status = (statusData[0].Status || statusData[0].status || 'Active').toString().trim();
+            } else if (statusData && typeof statusData === 'object') {
+              status = (statusData.Status || statusData.status || 'Active').toString().trim();
+            }
+            
+            this.employeeStatus = status || 'Active';
+            this.currentUserStatus = statusData;
 
             // Legacy behavior: only Manager/Other can access this functionality.
-            // Technician users are redirected to login.
+            // Technician users are redirected to dashboard.
             if (this.isTechContext() || !this.isManagerContext()) {
               this.hasPageAccess = false;
-              this.auth.logout();
+              this.router.navigate(['/dashboard-view']);
               return;
             }
 
@@ -567,15 +577,16 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
             this.initializeAuthorizedView();
           },
           error: (error) => {
+            console.error('Part Return Status - Employee status API failed:', error);
             this.errorMessage = 'Error retrieving employee status';
             this.hasPageAccess = false;
-            this.auth.logout();
+            this.router.navigate(['/dashboard-view']);
           }
         });
       }
     } else {
       this.hasPageAccess = false;
-      this.auth.logout();
+      this.router.navigate(['/auth/login']);
     }
   }
 

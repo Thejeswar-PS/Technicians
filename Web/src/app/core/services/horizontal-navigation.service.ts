@@ -174,29 +174,62 @@ export class HorizontalNavigationService {
     const baseKey = base.replace(/^\/+/, '').toLowerCase();
 
     const legacyMap: { [key: string]: string } = {
+      // Miscellaneous & General Pages
       'miscellaneoustasks.aspx': '/miscellaneous-tasks',
+      'createdtechusers.aspx': '/create-dtech-users',
+      
+      // Reports
       'reports/partrequeststatus.aspx': '/reports/parts-request-status',
+      'reports/partrequestStatus.aspx': '/reports/parts-request-status',
+      'partrequeststatus.aspx': '/reports/parts-request-status',
       'reports/unscheduledreport.aspx': '/reports/unscheduled-report',
-      'capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
-      'dtechpartsearch.aspx': '/reports/parts-search',
-      'reports/accmgmtgraph.aspx': '/graphs/account-manager-graph',
-      'displayreports/accmgrperformance.aspx': '/reports/acc-mgr-performance-report',
-
-      'dtechuserssearch.aspx': '/reports/dtech-users-data',
-      'dtechjobslist.aspx': '/jobs/job-list',
-      'reports/jobstobeuploaded.aspx': '/tools/jobs-to-be-uploaded',
-      'techcalendar.aspx': '/calendar',
       'reports/accountingstatus.aspx': '/reports/accounting-status',
       'reports/libertparts.aspx': '#todo-liebert-part-numbers',
-      'newunittesting.aspx': '/reports/new-unit-test',
-      'newunitsteststatus.aspx': '/reports/ups-test-status',
-      'orderrequest.aspx': '/reports/order-request',
-      'orderrequeststatus.aspx': '/reports/order-request-status',
-      'partrequeststatus.aspx': '/reports/parts-request-status',
+      'reports/jobstobeuploaded.aspx': '/tools/jobs-to-be-uploaded',
+      'reports/contractdetailsreport.aspx': '/reports/contract-details-report',
+      'reports/pastduecontractdetails.aspx': '/reports/past-due-contract-details',
+      'reports/emergencyjobs.aspx': '/reports/emergency-jobs',
+      'reports/dcgdisplayreportdetails.aspx': '/reports/display-calls-detail',
+      
+      // Parts & Testing
       'partreturnstatus.aspx': '/reports/part-return-status',
       'testinfopartentry.aspx': '/reports/parts-test-info',
       'partsteststatus.aspx': '/reports/parts-test-status',
       'strippedupsunitsstatus.aspx': '/reports/stripped-units-status',
+      
+      // User Management
+      'dtechuserssearch.aspx': '/reports/dtech-users-data',
+      'dtechusersreport.aspx': '/reports/dtech-users-data',
+      
+      // Jobs & Calendar
+      'dtechjobslist.aspx': '/jobs/job-list',
+      'techcalendar.aspx': '/calendar',
+      
+      // Tools
+      'toolstrackingcalendar.aspx': '/tools/tools-tracking-calendar',
+      'billafterpmjobs.aspx': '/tools/bill-after-pm-jobs',
+      
+      // Search
+      'dtechpartsearch.aspx': '/reports/parts-search',
+      
+      // Graphs & Charts
+      'reports/accmgmtgraph.aspx': '/graphs/account-manager-graph',
+      'capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
+      'http://dcgwebint/capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
+      
+      // Performance Reports
+      'displayreports/accmgrperformance.aspx': '/reports/acc-mgr-performance-report',
+      
+      // Testing
+      'newunittesting.aspx': '/reports/new-unit-test',
+      'newunitsteststatus.aspx': '/reports/ups-test-status',
+      'newunitsTestStatus.aspx': '/reports/ups-test-status',
+      
+      // Orders
+      'orderrequest.aspx': '/reports/order-request',
+      'orderrequeststatus.aspx': '/reports/order-request-status',
+      
+      // Legacy Full URLs
       'http://dcgwebint/Reports/UnScheduledReport.aspx': '/reports/unscheduled-report'
     };
 

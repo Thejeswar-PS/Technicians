@@ -93,11 +93,18 @@ namespace Technicians.Api
             app.UseSwagger();
             app.UseSwaggerUI();
 
+            // Only redirect to HTTPS in development.
+            // In deployed environments (IIS on http://10.0.1.129:3001),
+            // the redirect causes CORS preflight (OPTIONS) to fail with 500.
+            if (env.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
+
             app.UseRouting();
 
             app.UseCors();
 
-            app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
 

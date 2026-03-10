@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -60,7 +61,8 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private reportService: ReportService,
     private commonService: CommonService,
-    private auth: AuthService
+    private auth: AuthService,
+    private router: Router
   ) {
     this.reportForm = this.fb.group({
       officeId: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(11)]]
@@ -792,10 +794,10 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     if (userDataStr) {
       const userData = JSON.parse(userDataStr);
       
-      // Store user data for role-based filtering
-      this.empID = (userData.empID || '').trim();
-      this.userRole = userData.role || '';
-      this.windowsID = userData.windowsId || userData.empName || '';
+      // Store user data for role-based filtering (match dashboard extraction logic)
+      this.empID = (userData.empID || userData.empId || '').toString().trim();
+      this.userRole = (userData.role || '').toString().trim();
+      this.windowsID = (userData.windowsID || userData.windowsId || '').toString().trim();
       const userDataEmpStatus = (userData.empStatus || '').trim();
       
       console.log('Account Manager Performance Report - User data loaded:', {
@@ -806,10 +808,20 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       });
       
       if (this.windowsID) {
-        this.reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
-          next: (response: EmployeeStatusDto) => {
-            this.currentUserStatus = response;
-            this.employeeStatus = response.status || '';
+        // Use the same API as dashboard for consistent employee status resolution
+        this.commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
+          next: (statusData: any) => {
+            // Parse status the same way as dashboard
+            let status = 'Active';
+            
+            if (Array.isArray(statusData) && statusData.length > 0) {
+              status = (statusData[0].Status || statusData[0].status || 'Active').toString().trim();
+            } else if (statusData && typeof statusData === 'object') {
+              status = (statusData.Status || statusData.status || 'Active').toString().trim();
+            }
+            
+            this.employeeStatus = status || 'Active';
+            this.currentUserStatus = statusData;
             
             // Fallback: If API returns unexpected status, use userData empStatus
             if (!this.employeeStatus || this.employeeStatus.toLowerCase() === 'redirect') {
@@ -821,7 +833,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             
             console.log('Account Manager Performance Report - Employee status:', {
               status: this.employeeStatus,
-              apiStatus: response.status,
+              statusData: statusData,
               userDataEmpStatus: userDataEmpStatus,
               isManagerContext: this.isManagerContext()
             });
@@ -830,7 +842,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             if (!this.isManagerContext()) {
               console.log('Access denied: Only managers can access Account Manager Performance Reports');
               this.hasPageAccess = false;
-              this.auth.logout();
+              this.router.navigate(['/dashboard-view']);
               return;
             }
 
@@ -841,7 +853,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             this.loadAccountManagers();
           },
           error: (error) => {
-            console.error('Error loading employee status, trying fallback:', error);
+            console.error('Account Manager Performance Report - Employee status API failed, using fallback:', error);
             
             // Fallback: Use userData empStatus if API call fails
             if (userDataEmpStatus) {
@@ -855,7 +867,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
               if (!this.isManagerContext()) {
                 console.log('Access denied: Only managers can access this report');
                 this.hasPageAccess = false;
-                this.auth.logout();
+                this.router.navigate(['/dashboard-view']);
                 return;
               }
               
@@ -865,14 +877,14 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             } else {
               this.errorMessage = 'Error retrieving employee status';
               this.hasPageAccess = false;
-              this.auth.logout();
+              this.router.navigate(['/dashboard-view']);
             }
           }
         });
       }
     } else {
       this.hasPageAccess = false;
-      this.auth.logout();
+      this.router.navigate(['/auth/login']);
     }
   }
 
