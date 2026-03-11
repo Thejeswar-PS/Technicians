@@ -1880,3 +1880,21 @@ table tbody tr.urgent-row.status-orderedtrackingreq td *,
   font-size: 14px !important;
   font-weight: 400 !important;
 }
+
+/* Final layout lock: keep table in single row and allow horizontal scroll */
+.table-section .table-responsive {
+  overflow-x: auto !important;
+  overflow-y: auto;
+}
+
+.table-section .table-responsive .modern-table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.modern-table thead th,
+.modern-table tbody td {
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}
