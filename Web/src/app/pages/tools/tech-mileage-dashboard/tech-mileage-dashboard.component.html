@@ -127,7 +127,7 @@
                       </span>
                     </span>
                   </th>
-                  <th class="sortable" (click)="sortData('techName')" *ngIf="selectedTechName === 'All'">
+                  <th class="sortable" (click)="sortData('techName')" *ngIf="showTechColumn">
                     <span class="header-cell">
                       Tech Name
                       <span class="sort-icons" [class.active]="sortColumn === 'techName'">
@@ -205,7 +205,7 @@
                 <tr *ngFor="let record of paginatedRecords">
                   <td class="col-job-number">{{ record.callNbr }}</td>
                   <td class="col-customer">{{ record.custName }}</td>
-                  <td class="col-tech-name" *ngIf="selectedTechName === 'All'">{{ record.techName }}</td>
+                  <td class="col-tech-name" *ngIf="showTechColumn">{{ record.techName }}</td>
                   <td class="col-address">{{ record.address }}</td>
                   <td class="col-date">{{ record.startDate | date: 'MM/dd/yyyy' }}</td>
                   <td class="col-miles">{{ record.milesReported | number: '1.1-1' }}</td>
