@@ -225,7 +225,14 @@
   }
 
   .today-with-amount {
-    color: #dc3545 !important;
+    background-color: #dc3545 !important;
+    color: white !important;
+
+    td,
+    a,
+    .text-primary {
+      color: white !important;
+    }
   }
 
   .unscheduled-with-amount {

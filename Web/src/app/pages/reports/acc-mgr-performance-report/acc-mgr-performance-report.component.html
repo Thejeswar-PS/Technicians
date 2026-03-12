@@ -459,27 +459,45 @@
                     </span>
                   </span>
                 </th>
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
+                  <span class="header-cell">
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer
+                    Customer Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
-                <th class="fw-bold sortable" (click)="sortData('jobStatus')">
+                <th class="fw-bold sortable" (click)="sortData('status')">
                   <span class="header-cell">
-                    Job Status
-                    <span class="sort-icons" [class.active]="sortColumn === 'jobStatus'">
-                      <i class="up" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'jobStatus' && sortDirection === 'desc'"></i>
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'status'">
+                      <i class="up" [class.on]="sortColumn === 'status' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'status' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('techName')">
+                  <span class="header-cell">
+                    Technician
+                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
+                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
                   <span class="header-cell">
-                    Scheduled Start
+                    Job Scheduled On
                     <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
                       <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
@@ -488,19 +506,19 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('scheduledEnd')">
                   <span class="header-cell">
-                    Scheduled End
+                    Job Finishing On
                     <span class="sort-icons" [class.active]="sortColumn === 'scheduledEnd'">
                       <i class="up" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
-                <th class="fw-bold sortable" (click)="sortData('techName')">
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
                   <span class="header-cell">
-                    Tech Name
-                    <span class="sort-icons" [class.active]="sortColumn === 'techName'">
-                      <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
+                    No Of Days Scheduled In Advance
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
@@ -513,17 +531,40 @@
                     </span>
                   </span>
                 </th>
+                <th class="fw-bold sortable" (click)="sortData('contractNo')">
+                  <span class="header-cell">
+                    Contract No
+                    <span class="sort-icons" [class.active]="sortColumn === 'contractNo'">
+                      <i class="up" [class.on]="sortColumn === 'contractNo' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'contractNo' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('quotedAmount')">
+                  <span class="header-cell">
+                    Quoted Amount
+                    <span class="sort-icons" [class.active]="sortColumn === 'quotedAmount'">
+                      <i class="up" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()">
+              <tr *ngFor="let item of getPaginatedData()"
+                  [ngClass]="getRowColorClass(item, 'jobsScheduledToday')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
+                <td>{{ item.custNmbr }}</td>
                 <td>{{ item.custName }}</td>
-                <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'jobsScheduledToday')">{{ item.jobStatus }}</span></td>
+                <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'jobsScheduledToday')">{{ getStatusText(item) }}</span></td>
+                <td>{{ item.techName }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ formatDate(item.scheduledEnd) }}</td>
-                <td>{{ item.techName }}</td>
+                <td>{{ item.changeAge1 ?? item.changeAge }}</td>
                 <td>{{ item.description }}</td>
+                <td>{{ getContractNumber(item) }}</td>
+                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
             </tbody>
           </table>
@@ -666,12 +707,12 @@
                     </span>
                   </span>
                 </th>
-                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
+                <th class="fw-bold sortable" (click)="sortData('custNmbr')">
                   <span class="header-cell">
-                    Scheduled Date
-                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
-                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
+                    Customer ID
+                    <span class="sort-icons" [class.active]="sortColumn === 'custNmbr'">
+                      <i class="up" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'custNmbr' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
@@ -684,43 +725,84 @@
                     </span>
                   </span>
                 </th>
+                <th class="fw-bold sortable" (click)="sortData('status')">
+                  <span class="header-cell">
+                    Status
+                    <span class="sort-icons" [class.active]="sortColumn === 'status'">
+                      <i class="up" [class.on]="sortColumn === 'status' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'status' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
                 <th class="fw-bold sortable" (click)="sortData('techName')">
                   <span class="header-cell">
-                    Technician Assigned
+                    Technician
                     <span class="sort-icons" [class.active]="sortColumn === 'techName'">
                       <i class="up" [class.on]="sortColumn === 'techName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'techName' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
-                <th class="fw-bold sortable" (click)="sortData('jobType')">
+                <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
                   <span class="header-cell">
-                    Call Type
-                    <span class="sort-icons" [class.active]="sortColumn === 'jobType'">
-                      <i class="up" [class.on]="sortColumn === 'jobType' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'jobType' && sortDirection === 'desc'"></i>
+                    Job Scheduled On
+                    <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
+                      <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
-                <th class="fw-bold sortable" (click)="sortData('confirmationStatus')">
+                <th class="fw-bold sortable" (click)="sortData('changeAge')">
                   <span class="header-cell">
-                    Confirmation Status
-                    <span class="sort-icons" [class.active]="sortColumn === 'confirmationStatus'">
-                      <i class="up" [class.on]="sortColumn === 'confirmationStatus' && sortDirection === 'asc'"></i>
-                      <i class="down" [class.on]="sortColumn === 'confirmationStatus' && sortDirection === 'desc'"></i>
+                    No Of Days Scheduled In Advance
+                    <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
+                      <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('description')">
+                  <span class="header-cell">
+                    Description
+                    <span class="sort-icons" [class.active]="sortColumn === 'description'">
+                      <i class="up" [class.on]="sortColumn === 'description' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'description' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('contractNo')">
+                  <span class="header-cell">
+                    Contract No
+                    <span class="sort-icons" [class.active]="sortColumn === 'contractNo'">
+                      <i class="up" [class.on]="sortColumn === 'contractNo' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'contractNo' && sortDirection === 'desc'"></i>
+                    </span>
+                  </span>
+                </th>
+                <th class="fw-bold sortable" (click)="sortData('quotedAmount')">
+                  <span class="header-cell">
+                    Quoted Amount
+                    <span class="sort-icons" [class.active]="sortColumn === 'quotedAmount'">
+                      <i class="up" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'asc'"></i>
+                      <i class="down" [class.on]="sortColumn === 'quotedAmount' && sortDirection === 'desc'"></i>
                     </span>
                   </span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()">
+              <tr *ngFor="let item of getPaginatedData()"
+                  [ngClass]="getRowColorClass(item, 'jobsConfirmedNext120Hours')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
-                <td>{{ formatDate(item.scheduledStart) }}</td>
+                <td>{{ item.custNmbr }}</td>
                 <td>{{ item.custName }}</td>
+                <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'jobsConfirmedNext120Hours')">{{ getStatusText(item) }}</span></td>
                 <td>{{ item.techName }}</td>
-                <td>{{ item.jobType }}</td>
-                <td><span class="badge bg-success">Confirmed</span></td>
+                <td>{{ formatDate(item.scheduledStart) }}</td>
+                <td>{{ item.changeAge1 ?? item.changeAge }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ getContractNumber(item) }}</td>
+                <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
             </tbody>
           </table>

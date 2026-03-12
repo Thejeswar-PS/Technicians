@@ -648,6 +648,11 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       // Returned/Incomplete statuses - Red
       return 'bg-danger';
     }
+
+    if (statusLower.includes('mis')) {
+      // MIS - Teal
+      return 'bg-info text-dark';
+    }
     
     // Default status color
     return 'bg-secondary';
