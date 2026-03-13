@@ -822,6 +822,9 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             
             this.employeeStatus = status || 'Active';
             this.currentUserStatus = statusData;
+//Modified this one to allow anyone
+            const roleHint = (this.userRole || '').toString().trim().toLowerCase();
+            const isRoleManagerLike = roleHint.includes('manager') || roleHint.includes('admin');
             
             // Fallback: If API returns unexpected status, use userData empStatus
             if (!this.employeeStatus || this.employeeStatus.toLowerCase() === 'redirect') {
@@ -829,6 +832,14 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
                                     userDataEmpStatus === 'T' ? 'Technician' : 
                                     userDataEmpStatus || 'Other';
               console.log('Using fallback employee status from userData:', this.employeeStatus);
+            }
+
+            // If userData indicates manager context, honor it even when status API returns generic values
+            if (userDataEmpStatus === 'M' || isRoleManagerLike) {
+              const normalizedStatus = (this.employeeStatus || '').toString().trim().toLowerCase();
+              if (normalizedStatus === 'active' || normalizedStatus === 'other' || normalizedStatus === '') {
+                this.employeeStatus = 'Manager';
+              }
             }
             
             console.log('Account Manager Performance Report - Employee status:', {
@@ -940,8 +951,12 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    */
   private isManagerContext(): boolean {
     const status = (this.employeeStatus || this.userRole || '').trim().toLowerCase();
-    
-    // Only allow explicit manager status
-    return status === 'manager' || status === 'm';
+
+    // Match dashboard-style manager context checks and support common manager aliases
+    return status === 'manager' ||
+      status === 'm' ||
+      status === 'other' ||
+      status.includes('manager') ||
+      status.includes('admin');
   }
 }

@@ -369,12 +369,72 @@
             transform: none;
         }
 
-        .fc-event-title-container {
-            background-color: #2f58d6 !important;
+        .fc-daygrid-event,
+        .fc-h-event {
+            border-radius: 6px !important;
+            border-width: 1px !important;
+            border-style: solid !important;
+            padding: 1px 2px;
         }
 
-        .fc-event-title-container:hover {
-            background-color: #2348b5 !important;
+        .fc-daygrid-event.cellText,
+        .fc-h-event.cellText {
+            background-color: #eaf6fc !important;
+            border-color: #9fd1ea !important;
+            color: #1e3a5f !important;
+        }
+
+        .fc-daygrid-event.appttxt,
+        .fc-h-event.appttxt {
+            background-color: #fff4d6 !important;
+            border-color: #f2ce74 !important;
+            color: #6d4b00 !important;
+        }
+
+        .fc-daygrid-event.vacationtxt,
+        .fc-h-event.vacationtxt {
+            background-color: #ffe6f3 !important;
+            border-color: #f3b0d3 !important;
+            color: #7d1f53 !important;
+        }
+
+        .fc-daygrid-event.fedtxt,
+        .fc-h-event.fedtxt {
+            background-color: #e8f9ec !important;
+            border-color: #99ddb0 !important;
+            color: #17693b !important;
+        }
+
+        .fc-daygrid-event.drugtext,
+        .fc-h-event.drugtext {
+            background-color: #ffe5e7 !important;
+            border-color: #f2a3aa !important;
+            color: #8c101c !important;
+        }
+
+        .fc-daygrid-event.cellText:hover,
+        .fc-h-event.cellText:hover {
+            background-color: #d8effa !important;
+        }
+
+        .fc-daygrid-event.appttxt:hover,
+        .fc-h-event.appttxt:hover {
+            background-color: #ffeab8 !important;
+        }
+
+        .fc-daygrid-event.vacationtxt:hover,
+        .fc-h-event.vacationtxt:hover {
+            background-color: #ffd7eb !important;
+        }
+
+        .fc-daygrid-event.fedtxt:hover,
+        .fc-h-event.fedtxt:hover {
+            background-color: #d9f4e1 !important;
+        }
+
+        .fc-daygrid-event.drugtext:hover,
+        .fc-h-event.drugtext:hover {
+            background-color: #ffd6da !important;
         }
     }
 }
@@ -412,14 +472,15 @@
     display: block;
     text-decoration: none;
     overflow: auto;
-    background-color: #6bc6e1;
-    border: solid 1px #9CA2DF;
+    background-color: #eaf6fc;
+    border: solid 1px #9fd1ea;
+    color: #1e3a5f;
     font-family: verdana;
     cursor: pointer;
 }
 
 .cellText:hover {
-    background: #15b765;
+    background: #d8effa;
 }
 
 .cellTextNB {
@@ -441,18 +502,19 @@
     display: block;
     text-decoration: none;
     overflow: auto;
-    background-color: #fddbf9;
-    border: solid 1px #aeb5f8;
+    background-color: #ffe6f3;
+    border: solid 1px #f3b0d3;
+    color: #7d1f53;
     font-family: verdana;
 }
 
 .appttxt {
     display: block;
     text-decoration: none;
-    color: #232b33;
+    color: #6d4b00;
     overflow: auto;
-    background-color: #fddbf9;
-    border: solid 1px #aeb5f8;
+    background-color: #fff4d6;
+    border: solid 1px #f2ce74;
     font-family: verdana;
 }
 
@@ -470,7 +532,8 @@
     display: block;
     text-decoration: none;
     overflow: auto;
-    background-color: #76b007;
-    border: solid 1px #aeb5f8;
+    background-color: #e8f9ec;
+    border: solid 1px #99ddb0;
+    color: #17693b;
     font-family: verdana;
 }

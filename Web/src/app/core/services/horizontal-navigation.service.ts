@@ -177,7 +177,7 @@ export class HorizontalNavigationService {
       // Miscellaneous & General Pages
       'miscellaneoustasks.aspx': '/miscellaneous-tasks',
       'createdtechusers.aspx': '/reports/dtech-users-data',
-      'techmileagedashboard.aspx': '/mileage-dashboard',
+      'techmileagedashboard.aspx': '/tools/tech-mileage-dashboard',
       
       // Reports
       'reports/partrequeststatus.aspx': '/reports/parts-request-status',

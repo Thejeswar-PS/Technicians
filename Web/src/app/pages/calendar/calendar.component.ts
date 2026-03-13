@@ -243,7 +243,7 @@ employeeStatus: string = '';
 
       const descUpper = description.toUpperCase();
       if (!isNumericCall) {
-        if (call.toUpperCase() === 'FEDERAL HOLIDAY' || descUpper.includes('FED HOLIDAY') || descUpper.includes('FEDERAL HOLIDAY')) {
+        if (call.toUpperCase() === 'FEDERAL HOLIDAY' || descUpper.includes('FED HOLIDAY') || descUpper.includes('FEDERAL HOLIDAY') || descUpper.includes('HOLIDAY')) {
           color = '#76b007';
           classNames = ['fedtxt'];
         } else if (descUpper.includes('VACATION')) {

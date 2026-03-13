@@ -268,15 +268,15 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
       error: (err) => console.error('Error loading KPIs:', err)
     });
 
-    this.techDashboardService.getScheduledVsUploaded(this.selectedAccMgr, this.selectedTech).subscribe({
-      next: (counts) => {
-        this.updateScheduledUploadedChart(counts.scheduled, counts.uploaded);
-      },
-      error: (err) => {
-        console.warn('Error loading scheduled vs uploaded data:', err);
-        this.updateScheduledUploadedChart();
-      }
-    });
+    // this.techDashboardService.getScheduledVsUploaded(this.selectedAccMgr, this.selectedTech).subscribe({
+    //   next: (counts) => {
+    //     this.updateScheduledUploadedChart(counts.scheduled, counts.uploaded);
+    //   },
+    //   error: (err) => {
+    //     console.warn('Error loading scheduled vs uploaded data:', err);
+    //     this.updateScheduledUploadedChart();
+    //   }
+    // });
 
     // Load Activity Log
     this.techDashboardService.getActivityLog(this.selectedAccMgr, this.selectedTech).subscribe({

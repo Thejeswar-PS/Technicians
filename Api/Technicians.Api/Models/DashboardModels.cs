@@ -39,4 +39,12 @@
         public List<int> Data { get; set; } = new();
     }
 
+    public class TopTechChartDto
+    {
+        /// <summary>Labels array mirroring the legacy TopTechLabels string.</summary>
+        public List<string> Labels { get; set; } = new();
+
+        /// <summary>Data array mirroring the legacy TopTechData string.</summary>
+        public List<decimal> Data { get; set; } = new();
+    }
 }
