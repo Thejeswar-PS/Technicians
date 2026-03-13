@@ -7,66 +7,87 @@ using System.Data;
 using System.Xml.Linq;
 using Technicians.Api.Models;
 
-
 namespace Technicians.Api.Repository
 {
     public class etechJobInfoRepository
     {
-
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<etechJobInfoRepository> _logger;
 
-        public etechJobInfoRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.etechJobInfoRepository";
+
+        public etechJobInfoRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<etechJobInfoRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
-
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         public async Task<etechJobInfoDto?> GetEtechJobInfoAsync(string callId, string techName)
         {
-            using (var connection = new SqlConnection(_connectionString))
-            using (var command = new SqlCommand("dbo.etechJobInfo", connection))
+            try
             {
-                command.CommandType = CommandType.StoredProcedure;
-                command.Parameters.AddWithValue("@CallId", callId);
-                command.Parameters.AddWithValue("@TechName", techName);
-
-                await connection.OpenAsync();
-                using (var reader = await command.ExecuteReaderAsync())
+                using (var connection = new SqlConnection(_connectionString))
+                using (var command = new SqlCommand("dbo.etechJobInfo", connection))
                 {
-                    if (await reader.ReadAsync())
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Parameters.AddWithValue("@CallId", callId);
+                    command.Parameters.AddWithValue("@TechName", techName);
+
+                    await connection.OpenAsync();
+                    using (var reader = await command.ExecuteReaderAsync())
                     {
-                        return new etechJobInfoDto
+                        if (await reader.ReadAsync())
                         {
-                            CallNbr = reader["CallNbr"]?.ToString(),
-                            Status = reader["Status"]?.ToString(),
-                            CustNmbr = reader["CustNmbr"]?.ToString(),
-                            Ponumber = reader["Ponumber"]?.ToString(),
-                            TechName = reader["TechName"]?.ToString(),
-                            CustName = reader["CustName"]?.ToString(),
-                            Addr1 = reader["Addr1"]?.ToString(),
-                            TechCell = reader["TechCell"]?.ToString(),
-                            TechPhone = reader["TechPhone"]?.ToString(),
-                            Contact = reader["Contact"]?.ToString(),
-                            TechEmail = reader["TechEmail"]?.ToString(),
-                            ContactPhone = reader["ContactPhone"]?.ToString(),
-                            AccMgr = reader["AccMgr"]?.ToString(),
-                            StrtDate = reader["StrtDate"] as DateTime?,
-                            StrtTime = reader["StrtTime"] as DateTime?,
-                            SvcDescr = reader["SvcDescr"]?.ToString(),
-                            RecordNotes = reader["Record_Notes"]?.ToString(),
-                            PmVisualNotes = reader["pmVisualNotes"]?.ToString(),
-                            QtePriority = reader["QtePriority"]?.ToString(),
-                            ContType = reader["ContType"]?.ToString(),
-                            Country = reader["Country"]?.ToString(),
-                            DefCheck = reader["DefCheck"] != DBNull.Value && Convert.ToBoolean(reader["DefCheck"])
-                        };
+                            var result = new etechJobInfoDto
+                            {
+                                CallNbr = reader["CallNbr"]?.ToString(),
+                                Status = reader["Status"]?.ToString(),
+                                CustNmbr = reader["CustNmbr"]?.ToString(),
+                                Ponumber = reader["Ponumber"]?.ToString(),
+                                TechName = reader["TechName"]?.ToString(),
+                                CustName = reader["CustName"]?.ToString(),
+                                Addr1 = reader["Addr1"]?.ToString(),
+                                TechCell = reader["TechCell"]?.ToString(),
+                                TechPhone = reader["TechPhone"]?.ToString(),
+                                Contact = reader["Contact"]?.ToString(),
+                                TechEmail = reader["TechEmail"]?.ToString(),
+                                ContactPhone = reader["ContactPhone"]?.ToString(),
+                                AccMgr = reader["AccMgr"]?.ToString(),
+                                StrtDate = reader["StrtDate"] as DateTime?,
+                                StrtTime = reader["StrtTime"] as DateTime?,
+                                SvcDescr = reader["SvcDescr"]?.ToString(),
+                                RecordNotes = reader["Record_Notes"]?.ToString(),
+                                PmVisualNotes = reader["pmVisualNotes"]?.ToString(),
+                                QtePriority = reader["QtePriority"]?.ToString(),
+                                ContType = reader["ContType"]?.ToString(),
+                                Country = reader["Country"]?.ToString(),
+                                DefCheck = reader["DefCheck"] != DBNull.Value && Convert.ToBoolean(reader["DefCheck"])
+                            };
+
+                            _logger.LogInformation("Successfully retrieved etech job info for CallId: {CallId}, TechName: {TechName}",
+                                callId, techName);
+                            return result;
+                        }
                     }
                 }
-            }
 
-            return null; // Not found
+                _logger.LogInformation("No etech job info found for CallId: {CallId}, TechName: {TechName}", callId, techName);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetEtechJobInfoAsync", $"{callId}|{techName}");
+                _logger.LogError(ex, "Error retrieving etech job info for CallId: {CallId}, TechName: {TechName}",
+                    callId, techName);
+                throw;
+            }
         }
 
         //Get Auto Tech Notes by Equip Type

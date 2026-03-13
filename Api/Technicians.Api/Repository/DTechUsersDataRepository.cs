@@ -9,12 +9,21 @@ namespace Technicians.Api.Repository
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<DTechUsersDataRepository> _logger;
 
-        public DTechUsersDataRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.DTechUsersDataRepository";
+
+        public DTechUsersDataRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<DTechUsersDataRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection") ??
                 throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         /// <summary>
@@ -48,19 +57,25 @@ namespace Technicians.Api.Repository
                     FilterCriteria = request
                 };
 
+                _logger.LogInformation("Retrieved {Count} DTech users data records - IsFiltered: {IsFiltered}", 
+                    response.UsersData.Count, response.IsFiltered);
                 return response;
             }
             catch (SqlException sqlEx)
             {
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetDTechUsersDataAsync", $"{request.Login}|{request.SiteID}");
+                _logger.LogError(sqlEx, "SQL error retrieving DTech users data for Login: {Login}, SiteID: {SiteID}", 
+                    request.Login, request.SiteID);
                 throw new Exception($"Database error retrieving DTech users data: {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetDTechUsersDataAsync", $"{request.Login}|{request.SiteID}");
+                _logger.LogError(ex, "Error retrieving DTech users data for Login: {Login}, SiteID: {SiteID}", 
+                    request.Login, request.SiteID);
                 throw new Exception($"Error retrieving DTech users data: {ex.Message}", ex);
             }
         }
-
-        
 
         /// <summary>
         /// Checks if the request contains any search filters
@@ -77,7 +92,7 @@ namespace Technicians.Api.Repository
                    !string.IsNullOrEmpty(request.Contact) && request.Contact != "%" ||
                    !string.IsNullOrEmpty(request.SVC_Serial_ID) && request.SVC_Serial_ID != "%";
         }
-        // Add this method to DTechUsersDataRepository
+
         public IEnumerable<string> ValidateRequest(DTechUsersDataRequest request)
         {
             var errors = new List<string>();
@@ -99,8 +114,6 @@ namespace Technicians.Api.Repository
             {
                 errors.Add("At least one filter must be specified.");
             }
-
-            // Add more validation rules as needed
 
             return errors;
         }

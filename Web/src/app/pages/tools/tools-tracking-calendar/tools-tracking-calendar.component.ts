@@ -77,6 +77,13 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
   
   // Role-based filtering
   private userContext: { userEmpID?: string; windowsID?: string } = {};
+
+  // Current user identity (read from localStorage like parts-request-status)
+  private empID: string = '';
+  private empName: string = '';
+  private empStatus: string = '';
+  private userRole: string = '';
+  private windowsID: string = '';
   
   private subscription: Subscription = new Subscription();
 
@@ -90,6 +97,7 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     // Get user context for role-based filtering
     this.userContext = this.authHelper.getUserContext();
+    this.readUserDataFromStorage();
     
     this.loadTechnicians();
     this.loadToolSerialNumbers();
@@ -121,6 +129,9 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
           setTimeout(() => {
             this.generateCalendar();
           }, 300);
+        } else {
+          // Client-side: auto-select current technician by matching user identity
+          this.applyTechnicianDefault();
         }
         
         this.isLoading = false;
@@ -139,6 +150,73 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     this.subscription.add(sub);
   }
   
+  /**
+   * Read current user identity fields from localStorage (mirrors parts-request-status pattern)
+   */
+  private readUserDataFromStorage(): void {
+    try {
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        // LoginResponse fields: empName, empLabel, windowsID
+        this.empName   = (userData.empName   || userData.empLabel || '').toString().trim();
+        this.windowsID = (userData.windowsID || userData.windowsId || this.empName).toString().trim();
+        // empID / empStatus / role may also be present depending on API version
+        this.empID     = (userData.empID     || '').toString().trim();
+        this.empStatus = (userData.empStatus || '').toString().trim().toUpperCase();
+        this.userRole  = (userData.role      || '').toString().trim().toLowerCase();
+      }
+    } catch (e) {
+      console.error('[ToolsCalendar] Error reading userData from localStorage:', e);
+    }
+  }
+
+  /**
+   * After loading the technicians list, auto-select the logged-in user if they
+   * appear in the list (i.e. they are a technician). Managers/admins won't be
+   * found in the list so the dropdown stays at 'All' — no role check needed.
+   */
+  private applyTechnicianDefault(): void {
+    if (!this.technicians || this.technicians.length === 0) return;
+
+    const normalize = (v: string) =>
+      (v || '').toString().trim().toUpperCase().replace(/[^A-Z0-9.]/g, '');
+
+    const windowsIdTail = (this.windowsID || '').split('\\').pop() || this.windowsID;
+
+    const userTokens = [
+      normalize(this.empID),
+      normalize(this.empName),
+      normalize(this.windowsID),
+      normalize(windowsIdTail)
+    ].filter(Boolean);
+
+    if (userTokens.length === 0) return;
+
+    const matched = this.technicians.find(tech => {
+      const techTokens = [
+        normalize(tech.techID),
+        normalize(tech.techname)
+      ].filter(Boolean);
+
+      return userTokens.some(ut =>
+        techTokens.some(tt =>
+          ut === tt ||
+          tt.startsWith(ut) ||
+          ut.startsWith(tt)
+        )
+      );
+    });
+
+    if (matched) {
+      this.selectedTech = matched.techID;
+      console.log('[ToolsCalendar] Auto-selected technician by login:', matched.techID);
+      this.generateCalendar();
+    } else {
+      console.warn('[ToolsCalendar] No technician match found for login user. UserTokens:', userTokens);
+    }
+  }
+
   /**
    * Load tool serial numbers based on selected tool type - Enhanced with role-based filtering
    */

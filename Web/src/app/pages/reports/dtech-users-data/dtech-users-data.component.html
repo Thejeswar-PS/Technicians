@@ -276,7 +276,7 @@
                   class="app-table-row">
                 <td class="login-cell">
                   <div class="cell-content">
-                    <span class="text-primary fw-bold">{{ user.login }}</span>
+                    <span>{{ user.login }}</span>
                   </div>
                 </td>
                 <td class="password-cell">
@@ -311,7 +311,7 @@
                 </td>
                 <td class="email-cell">
                   <div class="cell-content truncate">
-                    <span class="text-primary">{{ user.email }}</span>
+                    <span>{{ user.email }}</span>
                   </div>
                 </td>
                 <td class="login-date-cell">
@@ -325,12 +325,6 @@
                   <div class="cell-content">
                     <div class="date-info">
                       <span class="date-main">{{ formatDate(user.lastChangedPwd) }}</span>
-                      <div class="mt-1" *ngIf="isPasswordOld(user.lastChangedPwd)">
-                        <span class="badge bg-warning text-dark">Old</span>
-                      </div>
-                      <div class="mt-1" *ngIf="isPasswordRecent(user.lastChangedPwd)">
-                        <span class="badge bg-success">Recent</span>
-                      </div>
                     </div>
                   </div>
                 </td>

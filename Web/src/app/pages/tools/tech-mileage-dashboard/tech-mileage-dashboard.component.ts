@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { getCSSVariableValue } from 'src/app/_metronic/kt/_utils';
 import {
   TechMileageMonthlySummaryDto,
@@ -6,6 +7,7 @@ import {
   TechMileageTechnicianDto
 } from 'src/app/core/model/tech-mileage.model';
 import { TechMileageService } from 'src/app/core/services/tech-mileage.service';
+import { AuthService } from 'src/app/modules/auth';
 
 @Component({
   selector: 'app-tech-mileage-dashboard',
@@ -18,6 +20,10 @@ export class TechMileageDashboardComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
   techDropdownDisabled: boolean = false;
+
+  // Role-based visibility
+  isTechnician: boolean = false;
+  showTechColumn: boolean = true;
 
   report: TechMileageResponseDto | null = null;
   chartOptions: any = {};
@@ -34,12 +40,30 @@ export class TechMileageDashboardComponent implements OnInit {
   pageSize: number = 200;
   pageSizeOptions: number[] = [100, 150, 200, 300];
 
-  constructor(private techMileageService: TechMileageService) {}
+  constructor(
+    private techMileageService: TechMileageService,
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
+    if (!this.validateAccess()) return;
     this.setDefaultRange();
     this.loadTechnicians();
-    this.loadReport();
+    // loadReport() is called inside loadTechnicians() after auto-select completes
+  }
+
+  /**
+   * Validates that userData exists in localStorage.
+   * Unauthorized users (no session) are redirected to the login page.
+   */
+  private validateAccess(): boolean {
+    const userDataStr = localStorage.getItem('userData');
+    if (!userDataStr) {
+      this.authService.logout();
+      return false;
+    }
+    return true;
   }
 
   applyFilters(): void {
@@ -71,26 +95,80 @@ export class TechMileageDashboardComponent implements OnInit {
 
         // Auto-select technician based on user role
         this.autoSelectTechnician();
+        this.loadReport();
       },
       error: () => {
         this.errorMessage = 'Failed to load technicians list.';
+        // Still load the report with 'All' if technicians fail
+        this.loadReport();
       }
     });
   }
 
   private autoSelectTechnician(): void {
-    // Check if current user has a stored tech role preference
-    const storedTechName = localStorage.getItem('userTechName');
-    const storedUserRole = localStorage.getItem('userRole');
+    let empName = '';
+    let windowsID = '';
+    let empID = '';
+    let empStatus = '';
+    let userRole = '';
 
-    if (storedUserRole === 'Technician' || storedUserRole === 'TechManager') {
-      if (storedTechName) {
-        const tech = this.technicians.find(t => t.techName === storedTechName);
-        if (tech) {
-          this.selectedTechName = tech.techName;
-          this.techDropdownDisabled = true;
-          return;
-        }
+    try {
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        empName   = (userData.empName   || userData.empLabel || '').toString().trim();
+        windowsID = (userData.windowsID || userData.windowsId || empName).toString().trim();
+        empID     = (userData.empID     || '').toString().trim();
+        empStatus = (userData.empStatus || '').toString().trim().toUpperCase();
+        userRole  = (userData.role      || '').toString().trim().toLowerCase();
+      }
+    } catch (e) {
+      console.error('[TechMileage] Error reading userData:', e);
+    }
+
+    const normalize = (v: string) =>
+      (v || '').toString().trim().toUpperCase().replace(/[^A-Z0-9. ]/g, '');
+
+    const windowsIdTail = (windowsID || '').split('\\').pop() || windowsID;
+
+    const userTokens = [
+      normalize(empID),
+      normalize(empName),
+      normalize(windowsID),
+      normalize(windowsIdTail)
+    ].filter(Boolean);
+
+    // Try to find this user in the technicians list
+    const matched = this.technicians.find(tech => {
+      const techTokens = [
+        normalize(tech.techID),
+        normalize(tech.techName)
+      ].filter(Boolean);
+      return userTokens.some(ut =>
+        techTokens.some(tt =>
+          ut === tt || tt.startsWith(ut) || ut.startsWith(tt)
+        )
+      );
+    });
+
+    if (matched) {
+      // User is in the technicians list → treat as Technician role
+      this.isTechnician = true;
+      this.showTechColumn = false;
+      this.selectedTechName = matched.techName;
+      this.techDropdownDisabled = true;
+      console.log('[TechMileage] Auto-selected technician:', matched.techName);
+    } else {
+      // User is a manager / admin — check explicit role fields too
+      const isTechByRole = empStatus === 'T' ||
+                           userRole.includes('technician') ||
+                           userRole === 'tech' ||
+                           userRole === 'techmanager';
+      if (isTechByRole) {
+        // Technician whose name wasn't matched — still restrict the column
+        this.isTechnician = true;
+        this.showTechColumn = false;
+        this.techDropdownDisabled = true;
       }
     }
   }
@@ -321,6 +399,7 @@ export class TechMileageDashboardComponent implements OnInit {
     const headers = [
       'Job #',
       'Customer',
+      ...(this.showTechColumn ? ['Tech Name'] : []),
       'Address',
       'Date',
       'Miles',
@@ -336,6 +415,7 @@ export class TechMileageDashboardComponent implements OnInit {
       csv += [
         `"${record.callNbr}"`,
         `"${record.custName}"`,
+        ...(this.showTechColumn ? [`"${record.techName}"`] : []),
         `"${record.address}"`,
         `"${new Date(record.startDate).toLocaleDateString()}"`,
         record.milesReported,

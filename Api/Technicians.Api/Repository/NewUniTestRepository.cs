@@ -5,16 +5,25 @@ using Technicians.Api.Models;
 
 namespace Technicians.Api.Repository
 {
-    public class NewUniTestRepository
+    public class NewUniTestRepository   
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<NewUniTestRepository> _logger;
 
-        public NewUniTestRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.NewUniTestRepository";
+
+        public NewUniTestRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<NewUniTestRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection") ??
                 throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         /// <summary>
@@ -46,14 +55,20 @@ namespace Technicians.Api.Repository
                     FilteredRowIndex = rowIndex
                 };
 
+                _logger.LogInformation("Retrieved {Count} unit test records for RowIndex: {RowIndex}", 
+                    response.UnitsData.Count, rowIndex);
                 return response;
             }
             catch (SqlException sqlEx)
             {
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetNewUniTestListAsync", rowIndex.ToString());
+                _logger.LogError(sqlEx, "SQL error retrieving new unit test list for RowIndex: {RowIndex}", rowIndex);
                 throw new Exception($"Database error retrieving new unit test list: {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetNewUniTestListAsync", rowIndex.ToString());
+                _logger.LogError(ex, "Error retrieving new unit test list for RowIndex: {RowIndex}", rowIndex);
                 throw new Exception($"Error retrieving new unit test list: {ex.Message}", ex);
             }
         }
@@ -69,10 +84,14 @@ namespace Technicians.Api.Repository
             try
             {
                 var response = await GetNewUniTestListAsync(rowIndex);
+                _logger.LogInformation("Retrieved unit test by RowIndex: {RowIndex}, Found: {Found}", 
+                    rowIndex, response.UnitsData.Any());
                 return response.UnitsData.FirstOrDefault();
             }
             catch (Exception ex)
             {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetNewUniTestByRowIndexAsync", rowIndex.ToString());
+                _logger.LogError(ex, "Error retrieving unit test for RowIndex: {RowIndex}", rowIndex);
                 throw new Exception($"Error retrieving unit test for RowIndex {rowIndex}: {ex.Message}", ex);
             }
         }

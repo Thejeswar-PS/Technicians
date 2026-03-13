@@ -61,8 +61,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private reportService: ReportService,
     private commonService: CommonService,
-    private auth: AuthService,
-    private router: Router
+    private auth: AuthService
   ) {
     this.reportForm = this.fb.group({
       officeId: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(11)]]
@@ -650,6 +649,11 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       // Returned/Incomplete statuses - Red
       return 'bg-danger';
     }
+
+    if (statusLower.includes('mis')) {
+      // MIS - Teal
+      return 'bg-info text-dark';
+    }
     
     // Default status color
     return 'bg-secondary';
@@ -794,10 +798,10 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     if (userDataStr) {
       const userData = JSON.parse(userDataStr);
       
-      // Store user data for role-based filtering (match dashboard extraction logic)
-      this.empID = (userData.empID || userData.empId || '').toString().trim();
-      this.userRole = (userData.role || '').toString().trim();
-      this.windowsID = (userData.windowsID || userData.windowsId || '').toString().trim();
+      // Store user data for role-based filtering
+      this.empID = (userData.empID || '').trim();
+      this.userRole = userData.role || '';
+      this.windowsID = userData.windowsId || userData.empName || '';
       const userDataEmpStatus = (userData.empStatus || '').trim();
       
       console.log('Account Manager Performance Report - User data loaded:', {
@@ -808,23 +812,10 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       });
       
       if (this.windowsID) {
-        // Use the same API as dashboard for consistent employee status resolution
-        this.commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
-          next: (statusData: any) => {
-            // Parse status the same way as dashboard
-            let status = 'Active';
-            
-            if (Array.isArray(statusData) && statusData.length > 0) {
-              status = (statusData[0].Status || statusData[0].status || 'Active').toString().trim();
-            } else if (statusData && typeof statusData === 'object') {
-              status = (statusData.Status || statusData.status || 'Active').toString().trim();
-            }
-            
-            this.employeeStatus = status || 'Active';
-            this.currentUserStatus = statusData;
-//Modified this one to allow anyone
-            const roleHint = (this.userRole || '').toString().trim().toLowerCase();
-            const isRoleManagerLike = roleHint.includes('manager') || roleHint.includes('admin');
+        this.reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
+          next: (response: EmployeeStatusDto) => {
+            this.currentUserStatus = response;
+            this.employeeStatus = response.status || '';
             
             // Fallback: If API returns unexpected status, use userData empStatus
             if (!this.employeeStatus || this.employeeStatus.toLowerCase() === 'redirect') {
@@ -833,18 +824,10 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
                                     userDataEmpStatus || 'Other';
               console.log('Using fallback employee status from userData:', this.employeeStatus);
             }
-
-            // If userData indicates manager context, honor it even when status API returns generic values
-            if (userDataEmpStatus === 'M' || isRoleManagerLike) {
-              const normalizedStatus = (this.employeeStatus || '').toString().trim().toLowerCase();
-              if (normalizedStatus === 'active' || normalizedStatus === 'other' || normalizedStatus === '') {
-                this.employeeStatus = 'Manager';
-              }
-            }
             
             console.log('Account Manager Performance Report - Employee status:', {
               status: this.employeeStatus,
-              statusData: statusData,
+              apiStatus: response.status,
               userDataEmpStatus: userDataEmpStatus,
               isManagerContext: this.isManagerContext()
             });
@@ -853,7 +836,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             if (!this.isManagerContext()) {
               console.log('Access denied: Only managers can access Account Manager Performance Reports');
               this.hasPageAccess = false;
-              this.router.navigate(['/dashboard-view']);
+              this.auth.logout();
               return;
             }
 
@@ -864,7 +847,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             this.loadAccountManagers();
           },
           error: (error) => {
-            console.error('Account Manager Performance Report - Employee status API failed, using fallback:', error);
+            console.error('Error loading employee status, trying fallback:', error);
             
             // Fallback: Use userData empStatus if API call fails
             if (userDataEmpStatus) {
@@ -878,7 +861,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
               if (!this.isManagerContext()) {
                 console.log('Access denied: Only managers can access this report');
                 this.hasPageAccess = false;
-                this.router.navigate(['/dashboard-view']);
+                this.auth.logout();
                 return;
               }
               
@@ -888,14 +871,14 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             } else {
               this.errorMessage = 'Error retrieving employee status';
               this.hasPageAccess = false;
-              this.router.navigate(['/dashboard-view']);
+              this.auth.logout();
             }
           }
         });
       }
     } else {
       this.hasPageAccess = false;
-      this.router.navigate(['/auth/login']);
+      this.auth.logout();
     }
   }
 
@@ -951,12 +934,8 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    */
   private isManagerContext(): boolean {
     const status = (this.employeeStatus || this.userRole || '').trim().toLowerCase();
-
-    // Match dashboard-style manager context checks and support common manager aliases
-    return status === 'manager' ||
-      status === 'm' ||
-      status === 'other' ||
-      status.includes('manager') ||
-      status.includes('admin');
+    
+    // Only allow explicit manager status
+    return status === 'manager' || status === 'm';
   }
 }
