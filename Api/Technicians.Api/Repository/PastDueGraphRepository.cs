@@ -19,16 +19,25 @@ namespace Technicians.Api.Repository
 
     /// <summary>
     /// Repository implementation for Past Due Graph operations using PDueUnscheduledJobsInfo stored procedure
-    /// </summary>
+    /// </summary>  
     public class PastDueGraphRepository : IPastDueGraphRepository
     {
+        private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
         private readonly ILogger<PastDueGraphRepository> _logger;
 
-        public PastDueGraphRepository(IConfiguration configuration, ILogger<PastDueGraphRepository> logger)
+        private const string LoggerName = "Technicians.PastDueGraphRepository";
+
+        public PastDueGraphRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<PastDueGraphRepository> logger)
         {
+            _configuration = configuration;
             _connectionString = configuration.GetConnectionString("ETechGreatPlainsConnString")
                 ?? throw new InvalidOperationException("ETechGreatPlainsConnString not found");
+            _errorLog = errorLog;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -68,19 +77,31 @@ namespace Technicians.Api.Repository
                 // 5. Total Scheduled Jobs (from: select offid, count as TotalJobs from @TotalScheduledJobs)
                 response.TotalScheduledJobs = (await multi.ReadAsync<TotalJobsDto>()).ToList();
 
-                _logger.LogInformation("Successfully retrieved past due jobs information. Total records: {TotalRecords}", 
-                    response.TotalRecords);
+                _logger.LogInformation("Successfully retrieved past due jobs data - CallStatus: {CallStatusCount}, PastDueJobs: {PastDueCount}, ScheduledPercentages: {ScheduledCount}", 
+                    response.CallStatus.Count, response.PastDueJobsSummary.Count, response.ScheduledPercentages.Count);
 
                 return response;
             }
-            catch (Exception ex)
+            catch (SqlException sqlEx)
             {
-                _logger.LogError(ex, "Error getting past due jobs information");
-
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetPastDueJobsInfoAsync");
+                _logger.LogError(sqlEx, "SQL error getting past due jobs information: {SqlState} {ErrorNumber}", sqlEx.State, sqlEx.Number);
                 return new PastDueGraphResponseDto
                 {
                     Success = false,
-                    Message = $"Error retrieving past due jobs information: {ex.Message}"
+                    Message = $"Database error retrieving past due jobs information: {sqlEx.Message}",
+                    GeneratedAt = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetPastDueJobsInfoAsync");
+                _logger.LogError(ex, "Error getting past due jobs information");
+                return new PastDueGraphResponseDto
+                {
+                    Success = false,
+                    Message = $"Error retrieving past due jobs information: {ex.Message}",
+                    GeneratedAt = DateTime.UtcNow
                 };
             }
         }

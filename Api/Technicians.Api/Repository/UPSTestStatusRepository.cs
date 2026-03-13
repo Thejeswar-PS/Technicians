@@ -9,12 +9,21 @@ namespace Technicians.Api.Repository
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<UPSTestStatusRepository> _logger;
 
-        public UPSTestStatusRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.UPSTestStatusRepository";
+
+        public UPSTestStatusRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<UPSTestStatusRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection") ??
                 throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         /// <summary>
@@ -50,17 +59,25 @@ namespace Technicians.Api.Repository
                 }
                 catch (Exception ex)
                 {
+                    await _errorLog.LogErrorAsync(LoggerName, ex, "GetNewUPSTestStatusAsync", "Result mapping error");
+                    _logger.LogError(ex, "Error mapping result set for UPS test status");
                     throw new Exception($"Error mapping result set: {ex.Message}. This may be due to column type mismatches.", ex);
                 }
 
+                _logger.LogInformation("Successfully retrieved UPS test status data - Units: {UnitsCount}, Makes: {MakesCount}", 
+                    response.UnitsData.Count, response.MakeCounts.Count);
                 return response;
             }
             catch (SqlException sqlEx)
             {
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetNewUPSTestStatusAsync", $"{request.AssignedTo}|{request.Status}|{request.Priority}");
+                _logger.LogError(sqlEx, "SQL error retrieving UPS test status");
                 throw new Exception($"Database error retrieving UPS test status: {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetNewUPSTestStatusAsync", $"{request.AssignedTo}|{request.Status}|{request.Priority}");
+                _logger.LogError(ex, "Error retrieving UPS test status");
                 throw new Exception($"Error retrieving UPS test status: {ex.Message}", ex);
             }
         }
@@ -82,10 +99,14 @@ namespace Technicians.Api.Repository
                     WHERE AssignedTo IS NOT NULL AND AssignedTo <> '' AND AssignedTo <> 'NULL'
                     ORDER BY AssignedTo";
 
-                return await connection.QueryAsync<string>(query);
+                var result = await connection.QueryAsync<string>(query);
+                _logger.LogInformation("Retrieved {Count} assigned technicians", result.Count());
+                return result;
             }
             catch (Exception ex)
             {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetAssignedTechniciansAsync");
+                _logger.LogError(ex, "Error retrieving assigned technicians");
                 throw new Exception($"Error retrieving assigned technicians: {ex.Message}", ex);
             }
         }

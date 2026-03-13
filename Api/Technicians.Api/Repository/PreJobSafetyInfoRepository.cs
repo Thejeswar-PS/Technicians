@@ -11,11 +11,22 @@ namespace Technicians.Api.Repository
 {
     public class PreJobSafetyInfoRepository
     {
+        private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<PreJobSafetyInfoRepository> _logger;
 
-        public PreJobSafetyInfoRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.PreJobSafetyInfoRepository";
+
+        public PreJobSafetyInfoRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<PreJobSafetyInfoRepository> logger)
         {
+            _configuration = configuration;
             _connectionString = configuration.GetConnectionString("DefaultConnection");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         public async Task<bool> SaveOrUpdatePreJobSafetyInfoAsync(PreJobSafetyInfoDto pjs, String empId)
@@ -62,22 +73,24 @@ namespace Technicians.Api.Repository
                 cmd.Parameters.AddWithValue("@OtherContractors", pjs.OtherContractors ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@AnyOtherHazards", pjs.AnyOtherHazards ?? (object)DBNull.Value);
                 cmd.Parameters.AddWithValue("@Comments", pjs.Comments ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@LastModifiedBy", empId); // or replace with current user if available
+                cmd.Parameters.AddWithValue("@LastModifiedBy", empId);
 
                 await conn.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();
+
+                _logger.LogInformation("Successfully saved pre-job safety info for CallNbr: {CallNbr}, EmpId: {EmpId}", 
+                    pjs.CallNbr, empId);
                 return true;
             }
             catch (Exception ex)
             {
-                // optional: log exception
+                await _errorLog.LogErrorAsync(LoggerName, ex, "SaveOrUpdatePreJobSafetyInfoAsync", $"{pjs.CallNbr}|{empId}");
+                _logger.LogError(ex, "Error saving pre-job safety info for CallNbr: {CallNbr}, EmpId: {EmpId}", 
+                    pjs.CallNbr, empId);
                 return false;
             }
         }
-
     }
 }
-            
-       
 
 

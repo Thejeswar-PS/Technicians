@@ -2,96 +2,143 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
 using Technicians.Api.Models;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace Technicians.Api.Repository
 {
     public class EtechExpenseRepository
     {
         private readonly IConfiguration _configuration;
-        private readonly String _connectionString;
+        private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<EtechExpenseRepository> _logger;
 
-        public EtechExpenseRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.EtechExpenseRepository";
+
+        public EtechExpenseRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<EtechExpenseRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         public List<EtechExpenseDto> GetEtechExpenses(DateTime dt1, DateTime dt2, string techName, int tableIndex)
         {
-            using (var con = new SqlConnection(_connectionString))
+            try
             {
-                var parameters = new DynamicParameters();
-                parameters.Add("@dt1", dt1);
-                parameters.Add("@dt2", dt2);
-                parameters.Add("@techName", techName);
-                parameters.Add("@TableIdx", tableIndex);
+                using (var con = new SqlConnection(_connectionString))
+                {
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@dt1", dt1);
+                    parameters.Add("@dt2", dt2);
+                    parameters.Add("@techName", techName);
+                    parameters.Add("@TableIdx", tableIndex);
 
-                return con.Query<EtechExpenseDto>(
-                    "GetEtechExpenses",
-                    parameters,
-                    commandType: CommandType.StoredProcedure).ToList();
+                    var result = con.Query<EtechExpenseDto>(
+                        "GetEtechExpenses",
+                        parameters,
+                        commandType: CommandType.StoredProcedure).ToList();
+
+                    _logger.LogInformation("Retrieved {Count} etech expenses for TechName: {TechName}, TableIndex: {TableIndex}", 
+                        result.Count, techName, tableIndex);
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorLog.LogErrorAsync(LoggerName, ex, "GetEtechExpenses", $"{techName}|{tableIndex}").Wait();
+                _logger.LogError(ex, "Error retrieving etech expenses for TechName: {TechName}, TableIndex: {TableIndex}", 
+                    techName, tableIndex);
+                throw;
             }
         }
 
-
         public async Task<IEnumerable<MobileReceiptDto>> GetMobileReceiptsAsync(string callNbr, string techId)
         {
-            var receipts = new List<MobileReceiptDto>();
-
-            await using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            using var cmd = new SqlCommand("GetMobileReceipts", connection)
+            try
             {
-                CommandType = CommandType.StoredProcedure
-            };
+                var receipts = new List<MobileReceiptDto>();
 
-            cmd.Parameters.AddWithValue("@CallNbr", callNbr);
-            cmd.Parameters.AddWithValue("@TechID", techId);
+                await using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-            using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                var receiptBytes = reader["Receipt"] == DBNull.Value
-                    ? null
-                    : (byte[])reader["Receipt"];
-
-                receipts.Add(new MobileReceiptDto
+                using var cmd = new SqlCommand("GetMobileReceipts", connection)
                 {
-                    CallNbr = reader["CallNbr"]?.ToString(),
-                    CodeDesc = reader["CodeDesc"]?.ToString(),
-                    TechPaid = reader["TechPaid"] == DBNull.Value ? null : Convert.ToDecimal(reader["TechPaid"]),
-                    CompanyPaid = reader["CompanyPaid"] == DBNull.Value ? null : Convert.ToDecimal(reader["CompanyPaid"]),
-                    ExpenseTableIndex = reader["ExpenseTableIndex"] == DBNull.Value ? 0 : Convert.ToInt32(reader["ExpenseTableIndex"]),
-                    ReceiptBase64 = receiptBytes == null ? null : Convert.ToBase64String(receiptBytes)
-                });
-            }
+                    CommandType = CommandType.StoredProcedure
+                };
 
-            return receipts;
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr);
+                cmd.Parameters.AddWithValue("@TechID", techId);
+
+                using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var receiptBytes = reader["Receipt"] == DBNull.Value
+                        ? null
+                        : (byte[])reader["Receipt"];
+
+                    receipts.Add(new MobileReceiptDto
+                    {
+                        CallNbr = reader["CallNbr"]?.ToString(),
+                        CodeDesc = reader["CodeDesc"]?.ToString(),
+                        TechPaid = reader["TechPaid"] == DBNull.Value ? null : Convert.ToDecimal(reader["TechPaid"]),
+                        CompanyPaid = reader["CompanyPaid"] == DBNull.Value ? null : Convert.ToDecimal(reader["CompanyPaid"]),
+                        ExpenseTableIndex = reader["ExpenseTableIndex"] == DBNull.Value ? 0 : Convert.ToInt32(reader["ExpenseTableIndex"]),
+                        ReceiptBase64 = receiptBytes == null ? null : Convert.ToBase64String(receiptBytes)
+                    });
+                }
+
+                _logger.LogInformation("Retrieved {Count} mobile receipts for CallNbr: {CallNbr}, TechId: {TechId}", 
+                    receipts.Count, callNbr, techId);
+                return receipts;
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetMobileReceiptsAsync", $"{callNbr}|{techId}");
+                _logger.LogError(ex, "Error retrieving mobile receipts for CallNbr: {CallNbr}, TechId: {TechId}", 
+                    callNbr, techId);
+                throw;
+            }
         }
 
         public List<EtechExpenseDto> GetExpenseDetail(string callNbr, int tableIndex)
         {
-            using (var con = new SqlConnection(_connectionString))
+            try
             {
-                var parameters = new DynamicParameters();
-                parameters.Add("@CallId", callNbr);
-                parameters.Add("@intIndex", tableIndex);
+                using (var con = new SqlConnection(_connectionString))
+                {
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@CallId", callNbr);
+                    parameters.Add("@intIndex", tableIndex);
 
-                return con.Query<EtechExpenseDto>(
-                    "etechExpenseDetail",
-                    parameters,
-                    commandType: CommandType.StoredProcedure).ToList();
+                    var result = con.Query<EtechExpenseDto>(
+                        "etechExpenseDetail",
+                        parameters,
+                        commandType: CommandType.StoredProcedure).ToList();
+
+                    _logger.LogInformation("Retrieved {Count} expense details for CallNbr: {CallNbr}, TableIndex: {TableIndex}", 
+                        result.Count, callNbr, tableIndex);
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                _errorLog.LogErrorAsync(LoggerName, ex, "GetExpenseDetail", $"{callNbr}|{tableIndex}").Wait();
+                _logger.LogError(ex, "Error retrieving expense details for CallNbr: {CallNbr}, TableIndex: {TableIndex}", 
+                    callNbr, tableIndex);
+                throw;
             }
         }
 
         public async Task<string> EnableExpenses(string callNbr)
         {
-            const string query = @"Update EtechJobUpload set Uploaded='N',Type='Expense1' where CallNbr='"" + CallNbr + ""' and Type='Expense'";
-
             try
             {
+                const string query = @"Update EtechJobUpload set Uploaded='N',Type='Expense1' where CallNbr=@CallNbr and Type='Expense'";
+
                 await using var conn = new SqlConnection(_connectionString);
                 await conn.OpenAsync();
 
@@ -100,12 +147,14 @@ namespace Technicians.Api.Repository
 
                 int rowsAffected = await cmd.ExecuteNonQueryAsync();
 
-                //return rowsAffected > 0 ? "Enabled Expenses Successfully": "No matching record found.";
+                _logger.LogInformation("Enabled expenses for CallNbr: {CallNbr}, Rows affected: {RowsAffected}", 
+                    callNbr, rowsAffected);
                 return "Enabled Expenses Successfully";
             }
             catch (Exception ex)
             {
-                // Log exception here if needed
+                await _errorLog.LogErrorAsync(LoggerName, ex, "EnableExpenses", callNbr);
+                _logger.LogError(ex, "Error enabling expenses for CallNbr: {CallNbr}", callNbr);
                 return $"Error: {ex.Message}";
             }
         }
@@ -118,22 +167,35 @@ namespace Technicians.Api.Repository
             string type,
             DateTime date)
         {
-            using var conn = new SqlConnection(_connectionString);
-            await conn.OpenAsync();
+            try
+            {
+                using var conn = new SqlConnection(_connectionString);
+                await conn.OpenAsync();
 
-            // Build query exactly like legacy (you can also parameterize if you want extra safety)
-            var query = "SELECT dbo.CheckValidFoodExpenses(@CallNbr, @TechName, @ExpAmount, @CurrentAmount, @Type, @Date)";
-            using var cmd = new SqlCommand(query, conn);
+                var query = "SELECT dbo.CheckValidFoodExpenses(@CallNbr, @TechName, @ExpAmount, @CurrentAmount, @Type, @Date)";
+                using var cmd = new SqlCommand(query, conn);
 
-            cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@TechName", techName ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@ExpAmount", expAmount);
-            cmd.Parameters.AddWithValue("@CurrentAmount", currentAmount);
-            cmd.Parameters.AddWithValue("@Type", type ?? (object)DBNull.Value);
-            cmd.Parameters.AddWithValue("@Date", date);
+                cmd.Parameters.AddWithValue("@CallNbr", callNbr ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@TechName", techName ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@ExpAmount", expAmount);
+                cmd.Parameters.AddWithValue("@CurrentAmount", currentAmount);
+                cmd.Parameters.AddWithValue("@Type", type ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@Date", date);
 
-            var result = await cmd.ExecuteScalarAsync();
-            return result?.ToString() ?? string.Empty;
+                var result = await cmd.ExecuteScalarAsync();
+                var returnValue = result?.ToString() ?? string.Empty;
+
+                _logger.LogInformation("Checked food expense validity for CallNbr: {CallNbr}, TechName: {TechName}, Result: {Result}", 
+                    callNbr, techName, returnValue);
+                return returnValue;
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "CanTechAddFoodExpensesAsync", $"{callNbr}|{techName}");
+                _logger.LogError(ex, "Error checking food expense validity for CallNbr: {CallNbr}, TechName: {TechName}", 
+                    callNbr, techName);
+                throw;
+            }
         }
 
         public string AllowedAmountForFoodExpenses(string callNbr, string techName)
@@ -152,20 +214,19 @@ namespace Technicians.Api.Repository
                         result = dbResult != null ? dbResult.ToString() : string.Empty;
                     }
                 }
+
+                _logger.LogInformation("Retrieved allowed food expense amount for CallNbr: {CallNbr}, TechName: {TechName}, Amount: {Amount}", 
+                    callNbr, techName, result);
             }
             catch (Exception ex)
             {
-                // Optional: Log exception
+                _errorLog.LogErrorAsync(LoggerName, ex, "AllowedAmountForFoodExpenses", $"{callNbr}|{techName}").Wait();
+                _logger.LogError(ex, "Error retrieving allowed food expense amount for CallNbr: {CallNbr}, TechName: {TechName}", 
+                    callNbr, techName);
                 result = string.Empty;
             }
 
             return result;
         }
-
-
-
-
-
-
     }
 }

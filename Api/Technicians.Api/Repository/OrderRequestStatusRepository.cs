@@ -9,12 +9,21 @@ namespace Technicians.Api.Repository
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<OrderRequestStatusRepository> _logger;
 
-        public OrderRequestStatusRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.OrderRequestStatusRepository";
+
+        public OrderRequestStatusRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<OrderRequestStatusRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection") ??
                 throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         /// <summary>
@@ -40,10 +49,23 @@ namespace Technicians.Api.Repository
                     commandType: CommandType.StoredProcedure
                 );
 
-                return results.ToList();
+                var resultList = results.ToList();
+                _logger.LogInformation("Retrieved {Count} order request status records for Status: {Status}, OrderType: {OrderType}", 
+                    resultList.Count, request.Status, request.OrderType);
+                return resultList;
+            }
+            catch (SqlException sqlEx)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetOrderRequestStatusAsync", $"{request.Status}|{request.OrderType}");
+                _logger.LogError(sqlEx, "SQL error retrieving order request status for Status: {Status}, OrderType: {OrderType}", 
+                    request.Status, request.OrderType);
+                throw new Exception($"Database error retrieving order request status: {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetOrderRequestStatusAsync", $"{request.Status}|{request.OrderType}");
+                _logger.LogError(ex, "Error retrieving order request status for Status: {Status}, OrderType: {OrderType}", 
+                    request.Status, request.OrderType);
                 throw new Exception($"Error retrieving order request status: {ex.Message}", ex);
             }
         }

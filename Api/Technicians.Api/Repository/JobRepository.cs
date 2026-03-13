@@ -7,8 +7,6 @@ using System.Data;
 using System.Xml.Linq;
 using Technicians.Api.Models;
 
-
-
 namespace Technicians.Api.Repository
 {
     public class JobRepository
@@ -16,51 +14,81 @@ namespace Technicians.Api.Repository
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
         private readonly string _eTechConnectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<JobRepository> _logger;
 
-        public JobRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.JobRepository";
+
+        public JobRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<JobRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
             _eTechConnectionString = _configuration.GetConnectionString("ETechGreatPlainsConnString");
-
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         public List<JobDto> GetJobs(string empId, string mgrId, string techId, int rbButton, int currentYear, int month, out string errorMessage)
         {
             var jobs = new List<JobDto>();
+            errorMessage = null;
 
-            using (SqlConnection con = new SqlConnection(_connectionString))
+            try
             {
-                var parameters = new DynamicParameters();
-                parameters.Add("@EmpID", empId);
-                parameters.Add("@MgrID", mgrId);
-                parameters.Add("@TechID", techId);
-                parameters.Add("@rbButton", rbButton);
-                parameters.Add("@CurrentYear", currentYear);
-                parameters.Add("@Month", month);
+                using (SqlConnection con = new SqlConnection(_connectionString))
+                {
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@EmpID", empId);
+                    parameters.Add("@MgrID", mgrId);
+                    parameters.Add("@TechID", techId);
+                    parameters.Add("@rbButton", rbButton);
+                    parameters.Add("@CurrentYear", currentYear);
+                    parameters.Add("@Month", month);
 
-                jobs = con.Query<JobDto>("etechGetJobs", parameters, commandType: CommandType.StoredProcedure).ToList();
+                    jobs = con.Query<JobDto>("etechGetJobs", parameters, commandType: CommandType.StoredProcedure).ToList();
+                }
+
+                _logger.LogInformation("Retrieved {Count} jobs for EmpID: {EmpId}, TechID: {TechId}", jobs.Count, empId, techId);
+            }
+            catch (Exception ex)
+            {
+                _errorLog.LogErrorAsync(LoggerName, ex, "GetJobs", $"{empId}|{techId}").Wait();
+                _logger.LogError(ex, "Error retrieving jobs for EmpID: {EmpId}, TechID: {TechId}", empId, techId);
+                errorMessage = ex.Message;
             }
 
-            errorMessage = null;
             return jobs;
         }
 
         public List<JobDto> GetSearchedJob(string jobId, string techId, string empId, out string errorMessage)
         {
             var jobs = new List<JobDto>();
+            errorMessage = null;
 
-            using (SqlConnection con = new SqlConnection(_connectionString))
+            try
             {
-                var parameters = new DynamicParameters();
-                parameters.Add("@JobID", jobId);
-                parameters.Add("@TechID", techId);
-                parameters.Add("@EmpID", empId);
+                using (SqlConnection con = new SqlConnection(_connectionString))
+                {
+                    var parameters = new DynamicParameters();
+                    parameters.Add("@JobID", jobId);
+                    parameters.Add("@TechID", techId);
+                    parameters.Add("@EmpID", empId);
 
-                jobs = con.Query<JobDto>("ETechShowSearchedJob", parameters, commandType: CommandType.StoredProcedure).ToList();
+                    jobs = con.Query<JobDto>("ETechShowSearchedJob", parameters, commandType: CommandType.StoredProcedure).ToList();
+                }
+
+                _logger.LogInformation("Retrieved {Count} searched jobs for JobID: {JobId}, TechID: {TechId}", jobs.Count, jobId, techId);
+            }
+            catch (Exception ex)
+            {
+                _errorLog.LogErrorAsync(LoggerName, ex, "GetSearchedJob", $"{jobId}|{techId}").Wait();
+                _logger.LogError(ex, "Error retrieving searched job for JobID: {JobId}, TechID: {TechId}", jobId, techId);
+                errorMessage = ex.Message;
             }
 
-            errorMessage = null;
             return jobs;
         }
 
@@ -70,8 +98,6 @@ namespace Technicians.Api.Repository
             {
                 var parameter = new DynamicParameters();
 
-                //var daysInMonth = DateTime.DaysInMonth(startDate.Year, endDate.Month);
-                //endDate = startDate.AddDays(daysInMonth - 1);
                 if (tech == "All")
                 {
                     tech = "0";
@@ -97,18 +123,24 @@ namespace Technicians.Api.Repository
                         var summary = await multi.ReadFirstOrDefaultAsync<CalendarSummaryDto>();
                         
                         connection.Close();
-                        
-                        return new CalendarDataResponseDto
+
+                        var result = new CalendarDataResponseDto
                         {
                             CalendarJobs = calendarJobs,
                             Summary = summary ?? new CalendarSummaryDto()
                         };
+
+                        _logger.LogInformation("Retrieved calendar job data - Jobs: {JobCount}, Tech: {Tech}, State: {State}", 
+                            calendarJobs.Count, tech, state);
+                        return result;
                     }
                 }
             }
             catch (Exception ex)
             {
-                throw ex;
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetCalenderJobData", $"{ownerId}|{tech}|{state}");
+                _logger.LogError(ex, "Error retrieving calendar job data for OwnerId: {OwnerId}, Tech: {Tech}", ownerId, tech);
+                throw;
             }
         }
     }

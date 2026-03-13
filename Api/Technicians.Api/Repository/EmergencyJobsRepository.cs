@@ -7,13 +7,22 @@ namespace Technicians.Api.Repository
 {
     public class EmergencyJobsRepository
     {
+        private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
         private readonly ILogger<EmergencyJobsRepository> _logger;
 
-        public EmergencyJobsRepository(IConfiguration configuration, ILogger<EmergencyJobsRepository> logger)
+        private const string LoggerName = "Technicians.EmergencyJobsRepository";
+
+        public EmergencyJobsRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<EmergencyJobsRepository> logger)
         {
+            _configuration = configuration;
             _connectionString = configuration.GetConnectionString("ETechGreatPlainsConnString")
                 ?? throw new InvalidOperationException("ETechGreatPlainsConnString not found");
+            _errorLog = errorLog;
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -25,7 +34,6 @@ namespace Technicians.Api.Repository
 
                 using var connection = new SqlConnection(_connectionString);
                 
-                // More explicit approach with column mapping if needed
                 var emergencyJobs = await connection.QueryAsync<EmergencyJobDto>(
                     "aaEmergencyJobsForDisplay",
                     commandType: CommandType.StoredProcedure,
@@ -44,6 +52,7 @@ namespace Technicians.Api.Repository
             }
             catch (SqlException sqlEx)
             {
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetEmergencyJobsAsync");
                 _logger.LogError(sqlEx, "SQL error getting emergency jobs: {SqlState} {ErrorNumber}", sqlEx.State, sqlEx.Number);
                 return new EmergencyJobsResponseDto
                 {
@@ -54,6 +63,7 @@ namespace Technicians.Api.Repository
             }
             catch (Exception ex)
             {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetEmergencyJobsAsync");
                 _logger.LogError(ex, "Error getting emergency jobs for display");
                 return new EmergencyJobsResponseDto
                 {

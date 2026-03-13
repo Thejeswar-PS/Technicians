@@ -13,40 +13,63 @@ namespace Technicians.Api.Repository
         private readonly string _connectionString;
         private readonly string _connectionStringProd;
         private readonly string _gpconnectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<TechToolsRepository> _logger;
 
-        public TechToolsRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.TechToolsRepository";
+
+        public TechToolsRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<TechToolsRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection");
             _connectionStringProd = _configuration.GetConnectionString("DefaultConnectionProd");
             _gpconnectionString = _configuration.GetConnectionString("ETechGreatPlainsConnString");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         public async Task<TechToolsResponseDto?> GetTechToolsMiscKitAsync(string techId)
         {
-            await using var connection = new SqlConnection(_connectionString);
-
-            var parameters = new DynamicParameters();
-            parameters.Add("@TechID", techId, DbType.String, size: 21);
-
-            await connection.OpenAsync();
-
-            using var multi = await connection.QueryMultipleAsync(
-                "GetTechToolsMiscKitByTechID",
-                parameters,
-                commandType: CommandType.StoredProcedure);
-
-            var tools = (await multi.ReadAsync<TechToolDto>()).AsList();
-            var techInfo = await multi.ReadFirstOrDefaultAsync<TechInfoDto>();
-
-            if (!tools.Any() && techInfo == null)
-                return null;
-
-            return new TechToolsResponseDto
+            try
             {
-                Tools = tools,
-                TechInfo = techInfo
-            };
+                await using var connection = new SqlConnection(_connectionString);
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@TechID", techId, DbType.String, size: 21);
+
+                await connection.OpenAsync();
+
+                using var multi = await connection.QueryMultipleAsync(
+                    "GetTechToolsMiscKitByTechID",
+                    parameters,
+                    commandType: CommandType.StoredProcedure);
+
+                var tools = (await multi.ReadAsync<TechToolDto>()).AsList();
+                var techInfo = await multi.ReadFirstOrDefaultAsync<TechInfoDto>();
+
+                if (!tools.Any() && techInfo == null)
+                {
+                    _logger.LogInformation("No tech tools misc kit found for TechID: {TechId}", techId);
+                    return null;
+                }
+
+                _logger.LogInformation("Retrieved tech tools misc kit for TechID: {TechId} - Tools: {ToolCount}", 
+                    techId, tools.Count);
+                return new TechToolsResponseDto
+                {
+                    Tools = tools,
+                    TechInfo = techInfo
+                };
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetTechToolsMiscKitAsync", techId);
+                _logger.LogError(ex, "Error retrieving tech tools misc kit for TechID: {TechId}", techId);
+                throw;
+            }
         }
 
         public async Task<TechToolsPpeMetersDto?> GetByTechIdAsync(string techId)

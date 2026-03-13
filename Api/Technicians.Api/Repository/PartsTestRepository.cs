@@ -9,12 +9,21 @@ namespace Technicians.Api.Repository
     {
         private readonly IConfiguration _configuration;
         private readonly string _connectionString;
+        private readonly ErrorLogRepository _errorLog;
+        private readonly ILogger<PartsTestRepository> _logger;
 
-        public PartsTestRepository(IConfiguration configuration)
+        private const string LoggerName = "Technicians.PartsTestRepository";
+
+        public PartsTestRepository(
+            IConfiguration configuration,
+            ErrorLogRepository errorLog,
+            ILogger<PartsTestRepository> logger)
         {
             _configuration = configuration;
             _connectionString = _configuration.GetConnectionString("DefaultConnection") ??
                 throw new InvalidOperationException("DefaultConnection string not found in configuration");
+            _errorLog = errorLog;
+            _logger = logger;
         }
 
         /// <summary>
@@ -50,18 +59,26 @@ namespace Technicians.Api.Repository
                 // Log for debugging - matches legacy error handling pattern
                 if (dataSet.Tables.Count == 0 || dataSet.Tables[0].Rows.Count == 0)
                 {
-                    // Return empty dataset but don't throw error (matches legacy behavior)
+                    _logger.LogInformation("No data found for source: {Source}, RowIndex: {RowIndex}", source, rowIndex);
                     return dataSet;
                 }
 
+                _logger.LogInformation("Retrieved {TableCount} tables with {RowCount} rows for source: {Source}, RowIndex: {RowIndex}", 
+                    dataSet.Tables.Count, dataSet.Tables[0].Rows.Count, source, rowIndex);
                 return dataSet;
+            }
+            catch (SqlException sqlEx)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetPartsTestListAsync", $"{source}|{rowIndex}");
+                _logger.LogError(sqlEx, "SQL error retrieving parts test list for source: {Source}, RowIndex: {RowIndex}", 
+                    source, rowIndex);
+                throw new Exception($"Database error retrieving parts test list for source '{source}': {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
-                // Match legacy error handling - return empty dataset
-                var emptyDataSet = new DataSet();
-                // You might want to log the error instead of throwing
-                // Legacy code sets ErrMsg but continues processing
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetPartsTestListAsync", $"{source}|{rowIndex}");
+                _logger.LogError(ex, "Error retrieving parts test list for source: {Source}, RowIndex: {RowIndex}", 
+                    source, rowIndex);
                 throw new Exception($"Error retrieving parts test list for source '{source}': {ex.Message}", ex);
             }
         }
