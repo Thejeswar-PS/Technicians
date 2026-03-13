@@ -176,7 +176,8 @@ export class HorizontalNavigationService {
     const legacyMap: { [key: string]: string } = {
       // Miscellaneous & General Pages
       'miscellaneoustasks.aspx': '/miscellaneous-tasks',
-      'createdtechusers.aspx': '/create-dtech-users',
+      'createdtechusers.aspx': '/reports/dtech-users-data',
+      'techmileagedashboard.aspx': '/mileage-dashboard',
       
       // Reports
       'reports/partrequeststatus.aspx': '/reports/parts-request-status',
@@ -216,6 +217,7 @@ export class HorizontalNavigationService {
       'reports/accmgmtgraph.aspx': '/graphs/account-manager-graph',
       'capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
       'http://dcgwebint/capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
+      'reports/pastduegraph.aspx': '/graphs/past-due-graph',
       
       // Performance Reports
       'displayreports/accmgrperformance.aspx': '/reports/acc-mgr-performance-report',

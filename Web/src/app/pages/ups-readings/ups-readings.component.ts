@@ -3421,6 +3421,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Comprehensive validation function - validates all critical form fields before saving
   validateComprehensiveInputs(): boolean {
+    // Capture the status BEFORE any validation step (age check, fans, etc.) can mutate the form value.
+    // applyAgeValidationResults() may change the form status mid-validation, so we must snapshot it here.
+    const statusBeforeValidation: string =
+      this.lastUserSelectedStatus ||
+      (() => {
+        try {
+          const el = document.querySelector('select[formControlName="status"]') as HTMLSelectElement | null;
+          return el?.value || '';
+        } catch { return ''; }
+      })() ||
+      this.equipmentForm.get('status')?.value ||
+      'Online';
+
     // Validate manufacturer
     const manufacturer = this.equipmentForm.get('manufacturer')?.value;
     if (!manufacturer || manufacturer.substring(0, 3) === 'Ple' || manufacturer === '') {
@@ -3692,35 +3705,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       return false;
     }
 
-    // Final equipment status confirmation
-    const status = this.equipmentForm.get('status')?.value;
-
-    // Decide which status to use for the final confirmation popup.
-    // Prefer the last user-chosen dropdown value (this.lastUserSelectedStatus) to avoid showing a status
-    // that was programmatically changed after the user made their selection.
-    let selectedForPopup: string | null = null;
-
-    // 1) Use last selection captured during onStatusDropdownChange
-    if (this.lastUserSelectedStatus) {
-      selectedForPopup = this.lastUserSelectedStatus;
-    } else {
-      // 2) Fallback to reading the actual select element value (DOM) if available
-      try {
-        const dropdownEl = document.querySelector('select[formControlName="status"]') as HTMLSelectElement | null;
-        selectedForPopup = dropdownEl?.value || null;
-      } catch (err) {
-        // ignore - we'll fallback to form status next
-        selectedForPopup = null;
-      }
-    }
-
-    // 3) Ultimate fallback to the form value
-    if (!selectedForPopup) {
-      selectedForPopup = status || 'Online';
-    }
+    // Final equipment status confirmation — use the value captured at the very start (before age/fans
+    // validation could mutate the form status via applyAgeValidationResults).
+    const selectedForPopup = statusBeforeValidation;
 
     if (selectedForPopup !== 'Online') {
-      if (!confirm(`Are you sure that the Equipment Status : ${selectedForPopup}`)) {
+      // Resolve the human-readable display label for the raw status value
+      const allOptions = [...STATUS_OPTIONS, ...(this.equipmentStatusOptions || [])];
+      const statusLabel = allOptions.find(o => o.value === selectedForPopup)?.text || selectedForPopup;
+      if (!confirm(`Are you sure that the Equipment Status : ${statusLabel}`)) {
         return false;
       }
     }

@@ -25,29 +25,16 @@
 .dashboard-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 20px;
-  margin-bottom: 40px;
+  justify-content: flex-end;
+  margin-bottom: 12px;
   position: relative;
-
-  .btn {
-    position: absolute;
-    right: 0;
-  }
-}
-
-.dashboard-title {
-  text-align: center;
-  font-size: 42px;
-  font-weight: 700;
-  color: #1f2937;
 }
 
 /* ================= FILTER ================= */
 
 .filter-panel {
   position: absolute;
-  top: 60px;
+  top: 52px;
   right: 20px;
   width: 320px;
   background: #ffffff;

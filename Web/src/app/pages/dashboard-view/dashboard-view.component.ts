@@ -224,6 +224,9 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
       accountManagersCount: this.accountManagers.length,
       techniciansCount: this.technicians.length
     });
+
+    // Load dashboard data automatically on page load
+    this.loadTechDashboardData();
   }
 
   isTechContext(): boolean {
