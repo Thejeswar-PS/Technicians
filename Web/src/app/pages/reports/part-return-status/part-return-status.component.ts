@@ -567,6 +567,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
             this.initializeAuthorizedView();
           },
           error: (error) => {
+            console.error('Part Return Status - Employee status API failed:', error);
             this.errorMessage = 'Error retrieving employee status';
             this.hasPageAccess = false;
             this.auth.logout();

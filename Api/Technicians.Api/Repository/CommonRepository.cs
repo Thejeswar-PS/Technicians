@@ -370,5 +370,42 @@ namespace Technicians.Api.Repository
             return menuLinks;
         }
 
+        public async Task<TopTechChartDto> GetTopTechsUploadedIn12MonthsAsync(string pOffid, string techId)
+        {
+            var chart = new TopTechChartDto();
+
+            try
+            {
+                using var con = new SqlConnection(_connectionString);
+                using var cmd = new SqlCommand("dbo.Top10TechsUploadedIn12Months", con);
+
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.AddWithValue("@pOffid", pOffid);
+                cmd.Parameters.AddWithValue("@TechID", techId);
+
+                await con.OpenAsync();
+
+                using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    // Mirror legacy: reader["TechName"].ToString().Replace("'", "")
+                    chart.Labels.Add(reader["TechName"]?.ToString()?.Replace("'", "") ?? string.Empty);
+
+                    // Mirror legacy: reader["MedianDays"].ToString()
+                    chart.Data.Add(reader["MedianDays"] != DBNull.Value
+                        ? Convert.ToDecimal(reader["MedianDays"])
+                        : 0);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetTopTechsUploadedIn12MonthsAsync", techId);
+                throw;
+            }
+
+            return chart;
+        }
+
     }
 }

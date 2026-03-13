@@ -672,12 +672,20 @@ export class PartsRequestStatusComponent implements OnInit {
         this.updateDisplayedData();
         
         this.isLoading = false;
+        
+        console.log('✅ Parts Request Report loaded:', {
+          totalRecords: this.partsRequestList.length,
+          crashKitCount: this.crashKitCount,
+          loadBankCount: this.loadBankCount
+        });
       },
       error: (error) => {
         this.errorMessage = 'Error loading parts request data';
         this.partsRequestList = [];
         this.partReqStatusList = [];
         this.isLoading = false;
+        
+        console.error('Error loading parts request report:', error);
         
         // Fallback to mock data for development/testing
         this.loadMockData();

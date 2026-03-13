@@ -176,5 +176,24 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        [HttpGet("GetTopTechsUploadedIn12Months")]
+        public async Task<IActionResult> GetTopTechsUploadedIn12Months(
+            [FromQuery] string pOffid,
+            [FromQuery] string TechID)
+        {
+            if (string.IsNullOrWhiteSpace(pOffid) || string.IsNullOrWhiteSpace(TechID))
+                return BadRequest("pOffid and TechID are required.");
+
+            try
+            {
+                var result = await _repository.GetTopTechsUploadedIn12MonthsAsync(pOffid, TechID);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to retrieve top techs chart data.", error = ex.Message });
+            }
+        }
+
     }
 }

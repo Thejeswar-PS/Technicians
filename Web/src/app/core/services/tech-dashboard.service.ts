@@ -262,15 +262,22 @@ export class TechDashboardService {
 
     return this.http.get<any>(`${this.apiUrl}/Common/GetTopTechsUploadedIn12Months`, { params }).pipe(
       map(response => {
+        if (response?.labels && response?.data && Array.isArray(response.labels) && Array.isArray(response.data)) {
+          return response.labels.map((label: any, index: number) => ({
+            techName: (label || '').toString().trim(),
+            medianDays: Number(response.data[index] || 0)
+          }));
+        }
+
         if (Array.isArray(response)) {
           return response.map((item: any) => ({
-            techName: item.TechName || item.techName || '',
+            techName: (item.TechName || item.techName || '').toString().trim(),
             medianDays: Number(item.MedianDays || item.medianDays || 0)
           }));
         }
         if (response.columns && Array.isArray(response.columns)) {
           return response.columns.map((item: any) => ({
-            techName: item.TechName || item.techName || '',
+            techName: (item.TechName || item.techName || '').toString().trim(),
             medianDays: Number(item.MedianDays || item.medianDays || 0)
           }));
         }

@@ -1,47 +1,151 @@
 <ng-container *ngIf="menuItems.length">
   <ng-container *ngFor="let item of menuItems">
-    <div class="menu-item menu-lg-down-accordion me-lg-1" [class.menu-dropdown]="item.children?.length"
-      data-kt-menu-trigger="{default: 'click', lg: 'hover'}" data-kt-menu-placement="bottom-start">
+    <div class="menu-item menu-lg-down-accordion me-lg-1" 
+         [class.menu-dropdown]="item.children?.length"
+         [class.active]="isActiveRoute(item.url)"
+         data-kt-menu-trigger="{default: 'click', lg: 'hover'}" 
+         data-kt-menu-placement="bottom-start">
+      
       <ng-container *ngIf="item.children?.length; else simpleItem">
-        <span class="menu-link menu-link-hover py-3">
-          <span class="menu-title fs-2 fw-bold text-dark">{{ item.name }}</span>
-          <span class="menu-arrow d-lg-none"></span>
-        </span>
-        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown menu-rounded-0 py-lg-4 w-lg-225px"
-          data-kt-menu-dismiss="true" data-popper-placement="bottom-start">
-          <div class="menu-item menu-lg-down-accordion me-lg-1" *ngFor="let child of item.children" data-kt-menu-placement="right-start">
-            <ng-container *ngIf="child.children?.length; else childLeaf">
-              <span class="menu-link py-3">
-                <span class="menu-icon"><i class="bi fs-3 bi-folder"></i></span>
-                <span class="menu-title fs-4 text-dark">{{ child.name }}</span>
-                <span class="menu-arrow"></span>
+        <ng-container *ngIf="item.url; else itemGroupLabel">
+          <ng-container *ngIf="isRouterLink(item.url); else itemGroupHref">
+            <a class="menu-link menu-link-hover py-3"
+              [routerLink]="getRouterPath(item.url)"
+              [queryParams]="getRouterQueryParams(item.url)"
+               routerLinkActive="active">
+              <span class="menu-title fs-2 fw-bold text-dark">
+                <i class="bi bi-diagram-3 me-2" *ngIf="item.children?.length"></i>
+                {{ item.name }}
               </span>
+              <span class="menu-arrow d-lg-none"></span>
+            </a>
+          </ng-container>
+          <ng-template #itemGroupHref>
+            <a class="menu-link menu-link-hover py-3"
+               [href]="getSafeUrl(item.url)"
+              (click)="onExternalLinkClick($event, item.url)"
+               [target]="isExternalLink(item.url) ? '_blank' : '_self'"
+               [rel]="isExternalLink(item.url) ? 'noopener noreferrer' : null">
+              <span class="menu-title fs-2 fw-bold text-dark">
+                <i class="bi bi-diagram-3 me-2" *ngIf="item.children?.length"></i>
+                {{ item.name }}
+              </span>
+              <span class="menu-arrow d-lg-none"></span>
+            </a>
+          </ng-template>
+        </ng-container>
+        <ng-template #itemGroupLabel>
+          <span class="menu-link menu-link-hover py-3">
+            <span class="menu-title fs-2 fw-bold text-dark">
+              <i class="bi bi-diagram-3 me-2" *ngIf="item.children?.length"></i>
+              {{ item.name }}
+            </span>
+            <span class="menu-arrow d-lg-none"></span>
+          </span>
+        </ng-template>
+        
+        <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown menu-rounded-0 py-lg-4 w-lg-225px"
+             data-kt-menu-dismiss="true">
+          
+          <div class="menu-item menu-lg-down-accordion me-lg-1" 
+               *ngFor="let child of item.children" 
+               [class.active]="isActiveRoute(child.url)"
+               data-kt-menu-placement="right-start">
+            
+            <ng-container *ngIf="child.children?.length; else childLeaf">
+              <ng-container *ngIf="child.url; else childGroupLabel">
+                <ng-container *ngIf="isRouterLink(child.url); else childGroupHref">
+                  <a class="menu-link py-3"
+                    [routerLink]="getRouterPath(child.url)"
+                    [queryParams]="getRouterQueryParams(child.url)"
+                     routerLinkActive="active">
+                    <span class="menu-icon">
+                      <i class="bi fs-3" [ngClass]="getIconClass(child.name)"></i>
+                    </span>
+                    <span class="menu-title fs-4 text-dark">{{ child.name }}</span>
+                    <span class="menu-arrow"></span>
+                  </a>
+                </ng-container>
+                <ng-template #childGroupHref>
+                  <a class="menu-link py-3"
+                     [href]="getSafeUrl(child.url)"
+                    (click)="onExternalLinkClick($event, child.url)"
+                     [target]="isExternalLink(child.url) ? '_blank' : '_self'"
+                     [rel]="isExternalLink(child.url) ? 'noopener noreferrer' : null">
+                    <span class="menu-icon">
+                      <i class="bi fs-3" [ngClass]="getIconClass(child.name)"></i>
+                    </span>
+                    <span class="menu-title fs-4 text-dark">{{ child.name }}</span>
+                    <span class="menu-arrow"></span>
+                  </a>
+                </ng-template>
+              </ng-container>
+              <ng-template #childGroupLabel>
+                <span class="menu-link py-3">
+                  <span class="menu-icon">
+                    <i class="bi fs-3" [ngClass]="getIconClass(child.name)"></i>
+                  </span>
+                  <span class="menu-title fs-4 text-dark">{{ child.name }}</span>
+                  <span class="menu-arrow"></span>
+                </span>
+              </ng-template>
+              
               <div class="menu-sub menu-sub-lg-down-accordion menu-sub-lg-dropdown menu-rounded-0 py-lg-4 w-lg-225px"
-                data-kt-menu-dismiss="true">
-                <div class="menu-item me-lg-1" *ngFor="let sub of child.children">
+                   data-kt-menu-dismiss="true">
+                <div class="menu-item me-lg-1" 
+                     *ngFor="let sub of child.children"
+                     [class.active]="isActiveRoute(sub.url)">
+                  
                   <ng-container *ngIf="isRouterLink(sub.url); else subHref">
-                    <a class="menu-link py-3" [routerLink]="sub.url">
+                    <a class="menu-link py-3" 
+                        [routerLink]="getRouterPath(sub.url)"
+                        [queryParams]="getRouterQueryParams(sub.url)"
+                       routerLinkActive="active">
+                      <span class="menu-bullet">
+                        <span class="bullet bullet-dot"></span>
+                      </span>
                       <span class="menu-title">{{ sub.name }}</span>
                     </a>
                   </ng-container>
+                  
                   <ng-template #subHref>
-                    <a class="menu-link py-3" [href]="getSafeUrl(sub.url)" [target]="isExternalLink(sub.url) ? '_blank' : '_self'" [rel]="isExternalLink(sub.url) ? 'noopener' : null">
+                    <a class="menu-link py-3" 
+                       [href]="getSafeUrl(sub.url)" 
+                        (click)="onExternalLinkClick($event, sub.url)"
+                       [target]="isExternalLink(sub.url) ? '_blank' : '_self'" 
+                       [rel]="isExternalLink(sub.url) ? 'noopener noreferrer' : null">
+                      <span class="menu-bullet">
+                        <span class="bullet bullet-dot"></span>
+                      </span>
                       <span class="menu-title">{{ sub.name }}</span>
                     </a>
                   </ng-template>
                 </div>
               </div>
             </ng-container>
+            
             <ng-template #childLeaf>
               <ng-container *ngIf="isRouterLink(child.url); else childHref">
-                <a class="menu-link py-3" [routerLink]="child.url">
-                  <span class="menu-icon"><i class="bi fs-3 bi-layers"></i></span>
+                <a class="menu-link py-3" 
+                   [routerLink]="getRouterPath(child.url)"
+                   [queryParams]="getRouterQueryParams(child.url)"
+                   routerLinkActive="active">
+                  <span class="menu-icon">
+                    <i class="bi fs-3" [ngClass]="getIconClass(child.name)"></i>
+                  </span>
                   <span class="menu-title fs-4 text-dark">{{ child.name }}</span>
                 </a>
               </ng-container>
+              
               <ng-template #childHref>
-                <a class="menu-link py-3" [href]="getSafeUrl(child.url)" [target]="isExternalLink(child.url) ? '_blank' : '_self'" [rel]="isExternalLink(child.url) ? 'noopener' : null">
-                  <span class="menu-icon"><i class="bi fs-3 bi-layers"></i></span>
+                <a class="menu-link py-3" 
+                   [href]="getSafeUrl(child.url)" 
+                   (click)="onExternalLinkClick($event, child.url)"
+                   [target]="isExternalLink(child.url) ? '_blank' : '_self'" 
+                   [rel]="isExternalLink(child.url) ? 'noopener noreferrer' : null">
+                  <span class="menu-icon">
+                    <i class="bi fs-3" [ngClass]="getIconClass(child.name)"></i>
+                  </span>
                   <span class="menu-title fs-4 text-dark">{{ child.name }}</span>
                 </a>
               </ng-template>
@@ -49,14 +153,23 @@
           </div>
         </div>
       </ng-container>
+      
       <ng-template #simpleItem>
         <ng-container *ngIf="isRouterLink(item.url); else itemHref">
-          <a class="menu-link menu-link-hover py-3" [routerLink]="item.url">
+          <a class="menu-link menu-link-hover py-3" 
+             [routerLink]="getRouterPath(item.url)"
+             [queryParams]="getRouterQueryParams(item.url)"
+             routerLinkActive="active">
             <span class="menu-title fs-2 fw-bold text-dark">{{ item.name }}</span>
           </a>
         </ng-container>
+        
         <ng-template #itemHref>
-          <a class="menu-link menu-link-hover py-3" [href]="getSafeUrl(item.url)" [target]="isExternalLink(item.url) ? '_blank' : '_self'" [rel]="isExternalLink(item.url) ? 'noopener' : null">
+          <a class="menu-link menu-link-hover py-3" 
+             [href]="getSafeUrl(item.url)" 
+             (click)="onExternalLinkClick($event, item.url)"
+             [target]="isExternalLink(item.url) ? '_blank' : '_self'" 
+             [rel]="isExternalLink(item.url) ? 'noopener noreferrer' : null">
             <span class="menu-title fs-2 fw-bold text-dark">{{ item.name }}</span>
           </a>
         </ng-template>
@@ -66,5 +179,6 @@
 </ng-container>
 
 <div class="legacy-nav-empty" *ngIf="!menuItems.length && errorMessage">
+  <i class="bi bi-exclamation-triangle me-2"></i>
   {{ errorMessage }}
 </div>

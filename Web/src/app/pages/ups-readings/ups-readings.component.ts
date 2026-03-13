@@ -299,7 +299,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   // EMGSERV Battery Reconciliation Section
   showBatteryReconciliation = false;
   batteryStringOptions: { value: string; text: string }[] = [];
-  emgservProblemCode: boolean = false;
+  emgservProblemCode: string = '';
   
   // Event handlers for cleanup
   private resizeHandler = () => this.adjustYearPickerPosition();
@@ -2612,15 +2612,37 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Check if equipment has EMGSERV problem code
    * If it does, show battery reconciliation section
-   * EMGSERV section is always shown on UPS readings page since GetUPSReadings API includes chk* fields
+   * Load problem code from equipment API to determine if EMGSERV section should be shown
    */
   private checkAndLoadBatteryReconciliation(): void {
-    // Always show EMGSERV section on UPS readings page
-    // The GetUPSReadings API response includes chkDCBreak, chkOverLoad, chkTransfer, chkFault fields
-    this.emgservProblemCode = true;
-    
-    // Load battery strings for the dropdown
-    this.loadBatteryStrings();
+    // Load equipment details to get problem code
+    this.equipmentService.getEquipmentInfo(this.callNbr)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (equipmentList: any[]) => {
+          // Find the current UPS equipment
+          const currentEquipment = equipmentList.find(e => 
+            e.equipId === this.equipId || e.equipID === this.equipId
+          );
+          
+          // Set the problem code from equipment
+          this.emgservProblemCode = currentEquipment?.probcde || currentEquipment?.Probcde || '';
+          
+          console.log('[EMGSERV] Equipment problem code loaded', {
+            equipId: this.equipId,
+            probcde: this.emgservProblemCode,
+            hasEmgserv: this.emgservProblemCode.includes('EMGSERV')
+          });
+          
+          // Load battery strings for the dropdown
+          this.loadBatteryStrings();
+        },
+        error: (error) => {
+          console.error('[EMGSERV] Could not load equipment problem code', error);
+          this.emgservProblemCode = '';
+          this.loadBatteryStrings();
+        }
+      });
   }
 
   /**
@@ -2711,12 +2733,18 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         });
 
-        const batteryReadingsUrl = this.router.serializeUrl(urlTree);
+        const serializedRoute = this.router.serializeUrl(urlTree);
+        const normalizedRoute = serializedRoute.startsWith('/') ? serializedRoute : `/${serializedRoute}`;
+
+        const base = new URL(document.baseURI);
+        const basePath = base.pathname.endsWith('/') ? base.pathname.slice(0, -1) : base.pathname;
+        const batteryReadingsUrl = `${base.origin}${basePath}#${normalizedRoute}`;
+
         const openedWindow = window.open(batteryReadingsUrl, '_blank', 'noopener,noreferrer');
 
-        // Fallback if popup is blocked
+        // Keep current page unchanged if popup is blocked
         if (!openedWindow) {
-          this.router.navigateByUrl(urlTree);
+          this.errorMessage = 'Pop-up was blocked. Please allow pop-ups for this site to open Battery Readings in a new tab.';
         }
       }
     }
@@ -2726,7 +2754,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
    * Get method for template to check EMGSERV status
    */
   hasEmgservCode(): boolean {
-    return this.emgservProblemCode;
+    return this.emgservProblemCode.includes('EMGSERV');
   }
 
   /**
@@ -3393,6 +3421,19 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // Comprehensive validation function - validates all critical form fields before saving
   validateComprehensiveInputs(): boolean {
+    // Capture the status BEFORE any validation step (age check, fans, etc.) can mutate the form value.
+    // applyAgeValidationResults() may change the form status mid-validation, so we must snapshot it here.
+    const statusBeforeValidation: string =
+      this.lastUserSelectedStatus ||
+      (() => {
+        try {
+          const el = document.querySelector('select[formControlName="status"]') as HTMLSelectElement | null;
+          return el?.value || '';
+        } catch { return ''; }
+      })() ||
+      this.equipmentForm.get('status')?.value ||
+      'Online';
+
     // Validate manufacturer
     const manufacturer = this.equipmentForm.get('manufacturer')?.value;
     if (!manufacturer || manufacturer.substring(0, 3) === 'Ple' || manufacturer === '') {
@@ -3664,35 +3705,15 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
       return false;
     }
 
-    // Final equipment status confirmation
-    const status = this.equipmentForm.get('status')?.value;
-
-    // Decide which status to use for the final confirmation popup.
-    // Prefer the last user-chosen dropdown value (this.lastUserSelectedStatus) to avoid showing a status
-    // that was programmatically changed after the user made their selection.
-    let selectedForPopup: string | null = null;
-
-    // 1) Use last selection captured during onStatusDropdownChange
-    if (this.lastUserSelectedStatus) {
-      selectedForPopup = this.lastUserSelectedStatus;
-    } else {
-      // 2) Fallback to reading the actual select element value (DOM) if available
-      try {
-        const dropdownEl = document.querySelector('select[formControlName="status"]') as HTMLSelectElement | null;
-        selectedForPopup = dropdownEl?.value || null;
-      } catch (err) {
-        // ignore - we'll fallback to form status next
-        selectedForPopup = null;
-      }
-    }
-
-    // 3) Ultimate fallback to the form value
-    if (!selectedForPopup) {
-      selectedForPopup = status || 'Online';
-    }
+    // Final equipment status confirmation — use the value captured at the very start (before age/fans
+    // validation could mutate the form status via applyAgeValidationResults).
+    const selectedForPopup = statusBeforeValidation;
 
     if (selectedForPopup !== 'Online') {
-      if (!confirm(`Are you sure that the Equipment Status : ${selectedForPopup}`)) {
+      // Resolve the human-readable display label for the raw status value
+      const allOptions = [...STATUS_OPTIONS, ...(this.equipmentStatusOptions || [])];
+      const statusLabel = allOptions.find(o => o.value === selectedForPopup)?.text || selectedForPopup;
+      if (!confirm(`Are you sure that the Equipment Status : ${statusLabel}`)) {
         return false;
       }
     }

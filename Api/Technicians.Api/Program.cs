@@ -131,11 +131,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// HTTPS redirect must come before routing so it does not
+// interfere with CORS preflight (OPTIONS) requests.
+// Only redirect when not behind a reverse proxy / IIS that
+// already terminates TLS – otherwise the 307 redirect drops
+// CORS headers and the browser sees a 500.
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseRouting();
 
 // Apply CORS policy (must be between UseRouting and UseAuthorization)
 app.UseCors("AllowAngularDevClient");
-app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

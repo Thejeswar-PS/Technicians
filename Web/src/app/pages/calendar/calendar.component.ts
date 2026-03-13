@@ -243,7 +243,7 @@ employeeStatus: string = '';
 
       const descUpper = description.toUpperCase();
       if (!isNumericCall) {
-        if (call.toUpperCase() === 'FEDERAL HOLIDAY' || descUpper.includes('FED HOLIDAY') || descUpper.includes('FEDERAL HOLIDAY')) {
+        if (call.toUpperCase() === 'FEDERAL HOLIDAY' || descUpper.includes('FED HOLIDAY') || descUpper.includes('FEDERAL HOLIDAY') || descUpper.includes('HOLIDAY')) {
           color = '#76b007';
           classNames = ['fedtxt'];
         } else if (descUpper.includes('VACATION')) {
@@ -469,7 +469,14 @@ employeeStatus: string = '';
       this.jobFilterForm.controls.tech.enable({ emitEvent: false });
       this.jobFilterForm.controls.ownerId.enable({ emitEvent: false });
     }
-    console.log('[Calendar] Final form values:', this.jobFilterForm.getRawValue());
+    const finalValues = this.jobFilterForm.getRawValue();
+    console.log('[Calendar] Final form values:', finalValues);
+
+    // Auto-load calendar data when a specific filter has been pre-selected for the user
+    const shouldAutoLoad = finalValues.ownerId !== 'All' || finalValues.tech !== 'All';
+    if (shouldAutoLoad && this.calendarApi) {
+      this.SearchJobs();
+    }
   }
 
   handleDateClick(arg: any) {
