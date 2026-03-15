@@ -326,8 +326,8 @@ export class TechMileageDashboardComponent implements OnInit {
     if (!this.report?.mileageRecords) return;
 
     this.report.mileageRecords.sort((a: any, b: any) => {
-      let aVal = a[column];
-      let bVal = b[column];
+      let aVal = column === 'origin' ? this.getOriginValue(a) : a[column];
+      let bVal = column === 'origin' ? this.getOriginValue(b) : b[column];
 
       // Handle null/undefined
       if (aVal == null) aVal = '';
@@ -401,10 +401,8 @@ export class TechMileageDashboardComponent implements OnInit {
       'Customer',
       ...(this.showTechColumn ? ['Tech Name'] : []),
       'Address',
+      'Origin',
       'Date',
-      'Miles',
-      'Hours',
-      'Minutes',
       'Job Type',
       'Time Taken'
     ];
@@ -417,10 +415,8 @@ export class TechMileageDashboardComponent implements OnInit {
         `"${record.custName}"`,
         ...(this.showTechColumn ? [`"${record.techName}"`] : []),
         `"${record.address}"`,
+        `"${this.getOriginValue(record)}"`,
         `"${new Date(record.startDate).toLocaleDateString()}"`,
-        record.milesReported,
-        record.hoursDecimal,
-        record.totalMinutes,
         `"${record.jobType}"`,
         `"${record.timeTaken}"`
       ].join(',') + '\n';
@@ -444,5 +440,15 @@ export class TechMileageDashboardComponent implements OnInit {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  }
+
+  getOriginValue(record: any): string {
+    return (
+      record?.origin ||
+      record?.orgin ||
+      record?.Origin ||
+      record?.Orgin ||
+      ''
+    ).toString().trim();
   }
 }

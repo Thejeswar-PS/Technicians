@@ -9,6 +9,8 @@ export interface TechMileageRecordDto {
   techName: string;
   custName: string;
   address: string;
+  origin?: string;
+  orgin?: string;
   startDate: string | Date | null;
   milesReported: number;
   hoursDecimal: number;

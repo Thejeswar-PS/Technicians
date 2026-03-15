@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonService } from 'src/app/core/services/common.service';
 import { ReportService } from 'src/app/core/services/report.service';
-import { AuthService } from 'src/app/modules/auth';
 import { environment } from 'src/environments/environment';
 import { 
   PartReturnStatusDto,
@@ -47,7 +46,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
   userRole: string = '';
   employeeStatus: string = '';
   windowsID: string = '';
-  private hasPageAccess: boolean = false;
+  hasPageAccess: boolean = false;
   
   // Chart-related properties
   chartData: PartsToBeReceivedChartDto[] = [];
@@ -167,8 +166,7 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     private _reportService: ReportService,
     private _commonService: CommonService,
     private fb: FormBuilder,
-    private router: Router,
-    private auth: AuthService
+    private router: Router
   ) {
     this.route.params.subscribe(val => {
       // Handle any route parameters if needed
@@ -215,12 +213,56 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
   private isTechContext(): boolean {
     const s = this.getNormalizedRoleStatus();
-    return s === 'technician' || s === 'techmanager' || s === 'tech manager' || s.includes('tech');
+    return s === 'technician' || s === 'techmanager' || s === 'tech manager' || s === 'tech' || s === 't' || s.includes('technician');
   }
 
-  private isManagerContext(): boolean {
-    const s = this.getNormalizedRoleStatus();
-    return s === 'manager' || s === 'other' || s.includes('manager');
+  private isTechnicianStatus(statusValue: string): boolean {
+    const normalizedStatus = (statusValue || '').toString().trim().toLowerCase();
+    return normalizedStatus === 'technician' ||
+           normalizedStatus === 'tech' ||
+           normalizedStatus === 'techmanager' ||
+           normalizedStatus === 'tech manager' ||
+           normalizedStatus === 't' ||
+           normalizedStatus.includes('technician');
+  }
+
+  private extractEmployeeStatus(response: any): string {
+    if (typeof response === 'string') {
+      return response.toString().trim();
+    }
+
+    if (Array.isArray(response) && response.length > 0) {
+      const firstItem = response[0] || {};
+      return (firstItem.status || firstItem.Status || firstItem.empStatus || firstItem.EmpStatus || '').toString().trim();
+    }
+
+    if (response && typeof response === 'object') {
+      return (response.status || response.Status || response.empStatus || response.EmpStatus || '').toString().trim();
+    }
+
+    return '';
+  }
+
+  private isTechnicianUser(userDataEmpStatus: string, resolvedApiStatus?: string): boolean {
+    const apiStatus = (resolvedApiStatus || this.employeeStatus || '').toString().trim().toLowerCase();
+    const role = (this.userRole || '').toString().trim().toLowerCase();
+    const empStatus = (userDataEmpStatus || '').toString().trim().toUpperCase();
+
+    const techByApiStatus = this.isTechnicianStatus(apiStatus);
+    const techByRole = this.isTechnicianStatus(role);
+    const techByEmpStatus = empStatus === 'T' || empStatus === 'E' || empStatus === 'TECHNICIAN';
+
+    return techByApiStatus || techByRole || techByEmpStatus;
+  }
+
+  private denyPageAccess(message: string): void {
+    this.hasPageAccess = false;
+    this.isLoading = false;
+    this.errorMessage = message;
+    this.partReturnStatusList = [];
+    this.displayedData = [];
+    this.totalRecords = 0;
+    this.partReturnFilterForm.disable({ emitEvent: false });
   }
 
   initializeYears(): void {
@@ -280,9 +322,10 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
             user.invUserID !== 'All' && user.username !== 'All'
           );
           this.inventoryUsers = [allOption, ...filteredUsers];
-          
+
+          const appliedDefault = this.applyLoggedInUserDefaultSelection();
           const currentValue = this.partReturnFilterForm.get('inventoryUser')?.value;
-          if (!currentValue || currentValue === '') {
+          if (!appliedDefault && (!currentValue || currentValue === '')) {
             this.partReturnFilterForm.patchValue({ inventoryUser: 'All' });
           }
         } else {
@@ -340,8 +383,9 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
           }
         }
 
+        const appliedDefault = this.applyLoggedInUserDefaultSelection();
         const currentValue = this.partReturnFilterForm.get('inventoryUser')?.value;
-        if (!currentValue || currentValue === '' || !this.inventoryUsers.some(user => this.getInventoryUserValue(user) === currentValue)) {
+        if (!appliedDefault && (!currentValue || currentValue === '' || !this.inventoryUsers.some(user => this.getInventoryUserValue(user) === currentValue))) {
           this.partReturnFilterForm.patchValue({ inventoryUser: 'All' });
         }
       },
@@ -518,65 +562,112 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     }
   }
 
-  private setDefaultUserFilter(userData: any): void {
-    const userEmpID = userData.empID?.trim();
-    const userEmpName = userData.empName?.trim();
-    const windowsId = userData.windowsId?.trim() || userData.empName?.trim();
-    
+  private setDefaultUserFilter(userData: any): boolean {
+    const normalize = (value: string) => (value || '').toString().trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    const userEmpID = userData.empID?.trim() || '';
+    const userEmpName = userData.empName?.trim() || '';
+    const windowsId = userData.windowsId?.trim() || userData.empName?.trim() || '';
+    const windowsIdTail = windowsId.split('\\').pop() || windowsId;
+
+    const userTokens = [userEmpID, userEmpName, windowsId, windowsIdTail]
+      .map(token => normalize(token))
+      .filter(token => !!token);
+
     const matchingUser = this.inventoryUsers.find((item: InventoryUser) => {
-      const invUserIdMatch = item.invUserID?.trim().toLowerCase() === userEmpID?.toLowerCase() ||
-                             item.invUserID?.trim().toLowerCase() === windowsId?.toLowerCase();
-      
-      const usernameMatch = item.username?.trim().toLowerCase() === userEmpName?.toLowerCase() ||
-                            item.username?.trim().toLowerCase() === windowsId?.toLowerCase();
-      
-      return invUserIdMatch || usernameMatch;
+      const optionTokens = [item.invUserID || '', item.username || '']
+        .map(token => normalize(token))
+        .filter(token => !!token);
+
+      return userTokens.some(userToken =>
+        optionTokens.some(optionToken =>
+          userToken === optionToken || optionToken.includes(userToken) || userToken.includes(optionToken)
+        )
+      );
     });
-    
-    if (matchingUser) {
-      this.partReturnFilterForm.patchValue({
-        inventoryUser: matchingUser.invUserID || 'All'
-      });
+
+    if (!matchingUser) {
+      return false;
+    }
+
+    this.partReturnFilterForm.patchValue({
+      inventoryUser: this.getInventoryUserValue(matchingUser)
+    }, { emitEvent: false });
+
+    return true;
+  }
+
+  private applyLoggedInUserDefaultSelection(): boolean {
+    const userDataStr = localStorage.getItem("userData");
+    if (!userDataStr) {
+      return false;
+    }
+
+    try {
+      const userData = JSON.parse(userDataStr);
+      return this.setDefaultUserFilter(userData);
+    } catch {
+      return false;
     }
   }
 
   private determineEmployeeStatus(): void {
     const userDataStr = localStorage.getItem("userData");
-    if (userDataStr) {
-      const userData = JSON.parse(userDataStr);
-      this.empID = (userData.empID || '').trim();
-      this.userRole = userData.role || '';
-      this.windowsID = userData.windowsId || userData.empName || '';
-      
-      if (this.windowsID) {
-        this._reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
-          next: (response: EmployeeStatusDto) => {
-            this.currentUserStatus = response;
+    if (!userDataStr) {
+      this.denyPageAccess('Access denied. Unable to verify your user session.');
+      return;
+    }
 
-            this.employeeStatus = response.status || '';
+    const userData = JSON.parse(userDataStr);
+    this.empID = (userData.empID || '').trim();
+    this.userRole = userData.role || userData.userRole || '';
+    this.windowsID = userData.windowsID || userData.windowsId || userData.empName || '';
+    const userDataEmpStatus = (
+      userData.empStatus ||
+      userData.EmpStatus ||
+      userData.employeeStatus ||
+      userData.EmployeeStatus ||
+      userData.empType ||
+      userData.role ||
+      userData.userRole ||
+      ''
+    ).toString().trim();
 
-            // Legacy behavior: only Manager/Other can access this functionality.
-            // Technician users are redirected to login.
-            if (this.isTechContext() || !this.isManagerContext()) {
-              this.hasPageAccess = false;
-              this.auth.logout();
-              return;
-            }
+    if (this.isTechnicianUser(userDataEmpStatus)) {
+      this.denyPageAccess('Access denied. Technicians are not authorized to view Part Return Status.');
+      return;
+    }
 
-            this.hasPageAccess = true;
-            this.initializeAuthorizedView();
-          },
-          error: (error) => {
-            console.error('Part Return Status - Employee status API failed:', error);
-            this.errorMessage = 'Error retrieving employee status';
-            this.hasPageAccess = false;
-            this.auth.logout();
+    if (this.windowsID) {
+      this._commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
+        next: (response: any) => {
+          this.currentUserStatus = response;
+          const resolvedApiStatus = this.extractEmployeeStatus(response);
+          this.employeeStatus = resolvedApiStatus || 'Other';
+
+          if (this.isTechnicianUser(userDataEmpStatus, resolvedApiStatus)) {
+            this.denyPageAccess('Access denied. Technicians are not authorized to view Part Return Status.');
+            return;
           }
-        });
-      }
+
+          this.hasPageAccess = true;
+          this.initializeAuthorizedView();
+        },
+        error: (error) => {
+          console.error('Part Return Status - Employee status API failed:', error);
+          if (this.isTechnicianUser(userDataEmpStatus)) {
+            this.denyPageAccess('Access denied. Technicians are not authorized to view Part Return Status.');
+            return;
+          }
+          this.employeeStatus = 'Other';
+          this.hasPageAccess = true;
+          this.initializeAuthorizedView();
+        }
+      });
     } else {
-      this.hasPageAccess = false;
-      this.auth.logout();
+      this.employeeStatus = 'Other';
+      this.hasPageAccess = true;
+      this.initializeAuthorizedView();
     }
   }
 
@@ -3672,7 +3763,6 @@ setActiveGraphTab(tab: 'graph1' | 'graph2' | 'graph3', updateUrl: boolean = true
     // Set default filters and current week
     const currentWeek = this.getCurrentWeekNumber();
     this.partReturnFilterForm.patchValue({
-      inventoryUser: 'All',
       status: 0, // Not Returned (key 0)
       year: new Date().getFullYear(),
       week: currentWeek.toString(),

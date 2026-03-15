@@ -45,6 +45,14 @@
         </div>
         <div class="col-md-6 d-flex align-items-end gap-2">
           <button 
+            type="button"
+            class="btn btn-outline-primary" 
+            (click)="generateReport()" 
+            [disabled]="isLoading || isLoadingAccountManagers">
+            <i class="bi bi-list me-2"></i>All Jobs
+          </button>
+          <button 
+            type="button"
             class="btn btn-red-orange" 
             (click)="generateReport('RedOrange')" 
             [disabled]="isLoading || isLoadingAccountManagers">
