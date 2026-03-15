@@ -216,6 +216,16 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     return s === 'technician' || s === 'techmanager' || s === 'tech manager' || s === 'tech' || s === 't' || s.includes('technician');
   }
 
+  private isTechnicianStatus(statusValue: string): boolean {
+    const normalizedStatus = (statusValue || '').toString().trim().toLowerCase();
+    return normalizedStatus === 'technician' ||
+           normalizedStatus === 'tech' ||
+           normalizedStatus === 'techmanager' ||
+           normalizedStatus === 'tech manager' ||
+           normalizedStatus === 't' ||
+           normalizedStatus.includes('technician');
+  }
+
   private extractEmployeeStatus(response: any): string {
     if (typeof response === 'string') {
       return response.toString().trim();
@@ -238,8 +248,8 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
     const role = (this.userRole || '').toString().trim().toLowerCase();
     const empStatus = (userDataEmpStatus || '').toString().trim().toUpperCase();
 
-    const techByApiStatus = this.isTechContext() || apiStatus === 'tech' || apiStatus === 't';
-    const techByRole = role === 'technician' || role === 'tech' || role === 'techmanager' || role === 'tech manager' || role === 't' || role.includes('technician');
+    const techByApiStatus = this.isTechnicianStatus(apiStatus);
+    const techByRole = this.isTechnicianStatus(role);
     const techByEmpStatus = empStatus === 'T' || empStatus === 'E' || empStatus === 'TECHNICIAN';
 
     return techByApiStatus || techByRole || techByEmpStatus;
@@ -610,9 +620,18 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
 
     const userData = JSON.parse(userDataStr);
     this.empID = (userData.empID || '').trim();
-    this.userRole = userData.role || '';
-    this.windowsID = userData.windowsId || userData.empName || '';
-    const userDataEmpStatus = (userData.empStatus || '').toString().trim();
+    this.userRole = userData.role || userData.userRole || '';
+    this.windowsID = userData.windowsID || userData.windowsId || userData.empName || '';
+    const userDataEmpStatus = (
+      userData.empStatus ||
+      userData.EmpStatus ||
+      userData.employeeStatus ||
+      userData.EmployeeStatus ||
+      userData.empType ||
+      userData.role ||
+      userData.userRole ||
+      ''
+    ).toString().trim();
 
     if (this.isTechnicianUser(userDataEmpStatus)) {
       this.denyPageAccess('Access denied. Technicians are not authorized to view Part Return Status.');
@@ -636,6 +655,10 @@ export class PartReturnStatusComponent implements OnInit, AfterViewInit, OnDestr
         },
         error: (error) => {
           console.error('Part Return Status - Employee status API failed:', error);
+          if (this.isTechnicianUser(userDataEmpStatus)) {
+            this.denyPageAccess('Access denied. Technicians are not authorized to view Part Return Status.');
+            return;
+          }
           this.employeeStatus = 'Other';
           this.hasPageAccess = true;
           this.initializeAuthorizedView();
