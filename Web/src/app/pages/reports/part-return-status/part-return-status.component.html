@@ -33,6 +33,7 @@
 
   <!-- Main content -->
   <div *ngIf="!isLoading">
+    <div *ngIf="hasPageAccess">
 
     <!--begin::Charts Section with Tabs-->
     <div class="card shadow-sm parts-main-card mb-4">
@@ -1458,6 +1459,19 @@
         </div>
 
 
+      </div>
+    </div>
+
+    </div>
+
+    <div *ngIf="!hasPageAccess">
+      <div class="card shadow-sm parts-main-card">
+        <div class="card-body py-5 text-center">
+          <div class="alert alert-danger d-inline-flex align-items-center mb-0" role="alert">
+            <i class="bi bi-shield-lock-fill me-2"></i>
+            <span>Access Denied: Technicians are not authorized to view this page.</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
