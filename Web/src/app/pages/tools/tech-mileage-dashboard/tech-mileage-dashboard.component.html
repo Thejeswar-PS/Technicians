@@ -145,39 +145,21 @@
                       </span>
                     </span>
                   </th>
+                  <th class="sortable" (click)="sortData('origin')">
+                    <span class="header-cell">
+                      Origin
+                      <span class="sort-icons" [class.active]="sortColumn === 'origin'">
+                        <i class="up" [class.on]="sortColumn === 'origin' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'origin' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
+                  </th>
                   <th class="sortable" (click)="sortData('startDate')">
                     <span class="header-cell">
                       Date
                       <span class="sort-icons" [class.active]="sortColumn === 'startDate'">
                         <i class="up" [class.on]="sortColumn === 'startDate' && sortDirection === 'asc'"></i>
                         <i class="down" [class.on]="sortColumn === 'startDate' && sortDirection === 'desc'"></i>
-                      </span>
-                    </span>
-                  </th>
-                  <th class="sortable" (click)="sortData('milesReported')">
-                    <span class="header-cell">
-                      Miles
-                      <span class="sort-icons" [class.active]="sortColumn === 'milesReported'">
-                        <i class="up" [class.on]="sortColumn === 'milesReported' && sortDirection === 'asc'"></i>
-                        <i class="down" [class.on]="sortColumn === 'milesReported' && sortDirection === 'desc'"></i>
-                      </span>
-                    </span>
-                  </th>
-                  <th class="sortable" (click)="sortData('hoursDecimal')">
-                    <span class="header-cell">
-                      Hours
-                      <span class="sort-icons" [class.active]="sortColumn === 'hoursDecimal'">
-                        <i class="up" [class.on]="sortColumn === 'hoursDecimal' && sortDirection === 'asc'"></i>
-                        <i class="down" [class.on]="sortColumn === 'hoursDecimal' && sortDirection === 'desc'"></i>
-                      </span>
-                    </span>
-                  </th>
-                  <th class="sortable" (click)="sortData('totalMinutes')">
-                    <span class="header-cell">
-                      Minutes
-                      <span class="sort-icons" [class.active]="sortColumn === 'totalMinutes'">
-                        <i class="up" [class.on]="sortColumn === 'totalMinutes' && sortDirection === 'asc'"></i>
-                        <i class="down" [class.on]="sortColumn === 'totalMinutes' && sortDirection === 'desc'"></i>
                       </span>
                     </span>
                   </th>
@@ -207,10 +189,8 @@
                   <td class="col-customer">{{ record.custName }}</td>
                   <td class="col-tech-name" *ngIf="showTechColumn">{{ record.techName }}</td>
                   <td class="col-address">{{ record.address }}</td>
+                  <td class="col-origin">{{ getOriginValue(record) || '-' }}</td>
                   <td class="col-date">{{ record.startDate | date: 'MM/dd/yyyy' }}</td>
-                  <td class="col-miles">{{ record.milesReported | number: '1.1-1' }}</td>
-                  <td class="col-hours">{{ record.hoursDecimal | number: '1.2-2' }}</td>
-                  <td class="col-minutes">{{ record.totalMinutes | number: '1.0-0' }}</td>
                   <td class="col-job-type">{{ record.jobType }}</td>
                   <td class="col-time-taken">{{ record.timeTaken }}</td>
                 </tr>
