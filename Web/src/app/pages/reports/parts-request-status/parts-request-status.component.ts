@@ -587,14 +587,14 @@ export class PartsRequestStatusComponent implements OnInit {
       this.windowsID = userData.windowsId || userData.empName || '';
       const userDataEmpStatus = (userData.empStatus || '').toString().trim();
 
-      // Access rule: only empStatus === 'P' is allowed on this page
-      if (userDataEmpStatus !== 'P') {
+      // Access rule: everyone can access except technicians
+      if (this.isTechnicianUser(userDataEmpStatus)) {
         this.hasPageAccess = false;
         this.auth.logout();
         return;
       }
 
-      // User has empStatus 'P' — set status context and initialize the view
+      // Non-technician user — set status context and initialize the view
       this.employeeStatus = 'Other';
 
       this.hasPageAccess = true;
@@ -606,6 +606,13 @@ export class PartsRequestStatusComponent implements OnInit {
           next: (response: EmployeeStatusDto) => {
             this.currentUserStatus = response;
             this.employeeStatus = response.status || 'Other';
+
+            if (this.isTechnicianUser(userDataEmpStatus)) {
+              this.hasPageAccess = false;
+              this.auth.logout();
+              return;
+            }
+
             this.employeeStatusLoaded = true;
             this.checkAndApplyRoleBasedDefaults();
           },
