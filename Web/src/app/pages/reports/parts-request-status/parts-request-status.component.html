@@ -17,6 +17,7 @@
 
   <!-- Main content -->
   <div *ngIf="!isLoading">
+    <ng-container *ngIf="hasPageAccess; else deniedAccessTemplate">
 
 
     <!-- Filter & Data Section -->
@@ -355,5 +356,18 @@
         </div>
       </div>
     </div>
+
+    </ng-container>
+
+    <ng-template #deniedAccessTemplate>
+      <div class="card shadow-sm parts-main-card">
+        <div class="card-body py-5 text-center">
+          <div class="alert alert-danger d-inline-flex align-items-center mb-0" role="alert">
+            <i class="bi bi-shield-lock-fill me-2"></i>
+            <span>Access Denied: Technicians are not authorized to view this page.</span>
+          </div>
+        </div>
+      </div>
+    </ng-template>
   </div>
 </div>

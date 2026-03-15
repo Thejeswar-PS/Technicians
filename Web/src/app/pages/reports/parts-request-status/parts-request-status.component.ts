@@ -3,7 +3,6 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonService } from 'src/app/core/services/common.service';
 import { ReportService } from 'src/app/core/services/report.service';
-import { AuthService } from 'src/app/modules/auth';
 import { 
   PartsRequestStatusItem, 
   PartsRequestStatusFilter, 
@@ -48,7 +47,7 @@ export class PartsRequestStatusComponent implements OnInit {
   private employeeStatusLoaded: boolean = false;
   private inventoryUsersLoaded: boolean = false;
   private accountManagersLoaded: boolean = false;
-  private hasPageAccess: boolean = false;
+  hasPageAccess: boolean = false;
   
   // New properties for enhanced functionality
   crashKitCount: number = 0;
@@ -85,8 +84,7 @@ export class PartsRequestStatusComponent implements OnInit {
     private _reportService: ReportService,
     private _commonService: CommonService,
     private fb: FormBuilder,
-    private router: Router,
-    private auth: AuthService
+    private router: Router
   ) {
     this.route.params.subscribe(val => {
       // Handle any route parameters if needed
@@ -126,25 +124,45 @@ export class PartsRequestStatusComponent implements OnInit {
     return s === 'manager' || s === 'other' || s === 'm' || s === 'o' || s.includes('manager');
   }
 
-  private isTechnicianUser(userDataEmpStatus: string): boolean {
-    const apiStatus = (this.employeeStatus || '').toString().trim().toLowerCase();
+  private isTechnicianStatus(statusValue: string): boolean {
+    const normalizedStatus = (statusValue || '').toString().trim().toLowerCase();
+    return normalizedStatus === 'technician' ||
+           normalizedStatus === 'tech' ||
+           normalizedStatus === 'techmanager' ||
+           normalizedStatus === 'tech manager' ||
+           normalizedStatus === 't' ||
+           normalizedStatus.includes('technician');
+  }
+
+  private extractEmployeeStatus(response: any): string {
+    if (typeof response === 'string') {
+      return response.toString().trim();
+    }
+
+    if (Array.isArray(response) && response.length > 0) {
+      const firstItem = response[0] || {};
+      return (firstItem.status || firstItem.Status || firstItem.empStatus || firstItem.EmpStatus || '').toString().trim();
+    }
+
+    if (response && typeof response === 'object') {
+      return (response.status || response.Status || response.empStatus || response.EmpStatus || '').toString().trim();
+    }
+
+    return '';
+  }
+
+  private isTechnicianUser(userDataEmpStatus: string, resolvedApiStatus?: string): boolean {
+    const apiStatus = (resolvedApiStatus || this.employeeStatus || '').toString().trim().toLowerCase();
     const role = (this.userRole || '').toString().trim().toLowerCase();
     const empStatus = (userDataEmpStatus || '').toString().trim().toUpperCase();
 
-    const techByApiStatus = apiStatus === 'technician' ||
-                            apiStatus === 'tech' ||
-                            apiStatus === 'techmanager' ||
-                            apiStatus === 'tech manager' ||
-                            apiStatus.includes('technician');
+    const techByApiStatus = this.isTechnicianStatus(apiStatus);
 
-    const techByRole = role === 'technician' ||
-                       role === 'tech' ||
-                       role === 'techmanager' ||
-                       role === 'tech manager' ||
-                       role === 't' ||
-                       role.includes('technician');
+    const techByRole = this.isTechnicianStatus(role);
 
-    const techByEmpStatus = empStatus === 'T';
+    const techByEmpStatus = empStatus === 'T' ||
+                empStatus === 'E' ||
+                empStatus === 'TECHNICIAN';
 
     console.log('PartReqStatus technician check:', {
       apiStatus,
@@ -577,59 +595,68 @@ export class PartsRequestStatusComponent implements OnInit {
 
   private determineEmployeeStatus(): void {
     const userDataStr = localStorage.getItem("userData");
-    if (userDataStr) {
-      const userData = JSON.parse(userDataStr);
-      
-      // Store user data for role-based filtering
-      this.empID = (userData.empID || '').trim();
-      this.empName = (userData.empName || '').trim();
-      this.userRole = userData.role || '';
-      this.windowsID = userData.windowsId || userData.empName || '';
-      const userDataEmpStatus = (userData.empStatus || '').toString().trim();
-
-      // Access rule: everyone can access except technicians
-      if (this.isTechnicianUser(userDataEmpStatus)) {
-        this.hasPageAccess = false;
-        this.auth.logout();
-        return;
-      }
-
-      // Non-technician user — set status context and initialize the view
-      this.employeeStatus = 'Other';
-
-      this.hasPageAccess = true;
-      this.initializeAuthorizedView();
-
-      // Optionally fetch API status to enrich employeeStatus for dropdown defaults
-      if (this.windowsID) {
-        this._reportService.getEmployeeStatusForJobListByParam(this.windowsID).subscribe({
-          next: (response: EmployeeStatusDto) => {
-            this.currentUserStatus = response;
-            this.employeeStatus = response.status || 'Other';
-
-            if (this.isTechnicianUser(userDataEmpStatus)) {
-              this.hasPageAccess = false;
-              this.auth.logout();
-              return;
-            }
-
-            this.employeeStatusLoaded = true;
-            this.checkAndApplyRoleBasedDefaults();
-          },
-          error: () => {
-            this.employeeStatus = 'Other';
-            this.employeeStatusLoaded = true;
-            this.checkAndApplyRoleBasedDefaults();
-          }
-        });
-      } else {
-        this.employeeStatusLoaded = true;
-        this.checkAndApplyRoleBasedDefaults();
-      }
-    } else {
-      this.hasPageAccess = false;
-      this.auth.logout();
+    if (!userDataStr) {
+      this.denyPageAccess('Access denied. Unable to verify your user session.');
+      return;
     }
+
+    const userData = JSON.parse(userDataStr);
+    
+    // Store user data for role-based filtering
+    this.empID = (userData.empID || '').trim();
+    this.empName = (userData.empName || '').trim();
+    this.userRole = userData.role || '';
+    this.windowsID = userData.windowsId || userData.empName || '';
+    const userDataEmpStatus = (userData.empStatus || '').toString().trim();
+
+    // Access rule: everyone can access except technicians
+    if (this.isTechnicianUser(userDataEmpStatus)) {
+      this.denyPageAccess('Access denied. Technicians are not authorized to view Parts Request Status.');
+      return;
+    }
+
+    // Fetch employee status using the same endpoint/pattern as dashboard for consistent role resolution
+    if (this.windowsID) {
+      this._commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
+        next: (response: any) => {
+          this.currentUserStatus = response;
+          const resolvedApiStatus = this.extractEmployeeStatus(response);
+          this.employeeStatus = resolvedApiStatus || 'Other';
+
+          if (this.isTechnicianUser(userDataEmpStatus, resolvedApiStatus)) {
+            this.denyPageAccess('Access denied. Technicians are not authorized to view Parts Request Status.');
+            return;
+          }
+
+          this.hasPageAccess = true;
+          this.employeeStatusLoaded = true;
+          this.initializeAuthorizedView();
+        },
+        error: () => {
+          // Fallback to local role context. Local check already blocked technicians above.
+          this.employeeStatus = 'Other';
+          this.hasPageAccess = true;
+          this.employeeStatusLoaded = true;
+          this.initializeAuthorizedView();
+        }
+      });
+    } else {
+      this.employeeStatus = 'Other';
+      this.hasPageAccess = true;
+      this.employeeStatusLoaded = true;
+      this.initializeAuthorizedView();
+    }
+  }
+
+  private denyPageAccess(message: string): void {
+    this.hasPageAccess = false;
+    this.isLoading = false;
+    this.errorMessage = message;
+    this.partsRequestList = [];
+    this.partReqStatusList = [];
+    this.displayedData = [];
+    this.totalRecords = 0;
+    this.partsFilterForm.disable({ emitEvent: false });
   }
 
   getPartsRequestReport(): void {
