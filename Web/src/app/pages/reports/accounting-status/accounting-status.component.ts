@@ -76,7 +76,7 @@ export class AccountingStatusComponent implements OnInit {
       }],
       chart: {
         type: 'bar',
-        height: 550,
+        height: 640,
         animations: { enabled: false },
         toolbar: { show: true },
         events: {
@@ -117,9 +117,9 @@ export class AccountingStatusComponent implements OnInit {
           rotateAlways: true,
           hideOverlappingLabels: false,
           trim: false,
-          style: { fontSize: '16px', fontWeight: 'bold' },
+          style: { fontSize: '14px', fontWeight: 'bold' },
           offsetY: 10,
-          maxHeight: 200
+          maxHeight: 260
         }
       },
       yaxis: {
@@ -138,7 +138,7 @@ export class AccountingStatusComponent implements OnInit {
       grid: { 
         borderColor: '#e7e7e7',
         padding: {
-          bottom: 80
+          bottom: 130
         }
       }
     };
@@ -158,7 +158,7 @@ export class AccountingStatusComponent implements OnInit {
       }],
       chart: {
         type: 'bar',
-        height: 550,
+        height: 680,
         animations: { enabled: false },
         toolbar: { show: true },
         events: {
@@ -199,9 +199,9 @@ export class AccountingStatusComponent implements OnInit {
           rotateAlways: true,
           hideOverlappingLabels: false,
           trim: false,
-          style: { fontSize: '16px', fontWeight: 'bold' },
+          style: { fontSize: '14px', fontWeight: 'bold' },
           offsetY: 10,
-          maxHeight: 200
+          maxHeight: 300
         }
       },
       yaxis: {
@@ -220,7 +220,7 @@ export class AccountingStatusComponent implements OnInit {
       grid: { 
         borderColor: '#e7e7e7',
         padding: {
-          bottom: 80
+          bottom: 150
         }
       }
     };

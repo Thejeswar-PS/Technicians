@@ -75,10 +75,19 @@
           <div class="activity-scroll">
             <ng-container *ngIf="dashboardData.recentActivityLog?.length; else noActivity">
               <ng-container *ngFor="let item of dashboardData.recentActivityLog; trackBy: trackByActivity">
-                <div *ngIf="item.isNewDate === 1" class="activity-date-header">{{ item.activityDate }}</div>
+                <div *ngIf="item.isNewDate === 1" class="activity-date-header">
+                  <i class="bi bi-calendar3 me-1"></i>
+                  {{ item.activityDate }}
+                </div>
+
                 <div class="activity-item">
-                  <b>{{ item.jobID }}</b><br />
-                  {{ item.message }}
+                  <div class="activity-meta-row">
+                    <span class="activity-job-chip">#{{ item.jobID }}</span>
+                    <span class="activity-subject-chip">{{ item.subject || 'Activity' }}</span>
+                    <span class="activity-time" *ngIf="item.changedOn">{{ formatActivityTime(item.changedOn) }}</span>
+                  </div>
+
+                  <div class="activity-message">{{ item.message }}</div>
                 </div>
               </ng-container>
             </ng-container>

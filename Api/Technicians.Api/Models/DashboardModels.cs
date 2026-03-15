@@ -16,12 +16,12 @@
 
     public class TechActivityLogDto
     {
-        public string CallNbr { get; set; }
-        public string TechID { get; set; }
-        public string AccMgr { get; set; }
-        public string Activity { get; set; }
-        public string Status { get; set; }
-        public DateTime ActivityDate { get; set; }
+        public string? ActivityDate { get; set; }
+        public int IsNewDate { get; set; }
+        public string? JobID { get; set; }
+        public string? Subject { get; set; }
+        public string? Message { get; set; }
+        public DateTime ChangedOn { get; set; }
     }
 
     public class WeekJobDto

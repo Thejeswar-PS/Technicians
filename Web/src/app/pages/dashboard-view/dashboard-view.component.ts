@@ -532,4 +532,20 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
   trackByWeekJob(index: number, item: any): string {
     return `${item.callNbr}-${index}`;
   }
+
+  formatActivityTime(changedOn: string): string {
+    if (!changedOn) {
+      return '';
+    }
+
+    const date = new Date(changedOn);
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    return date.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
 }

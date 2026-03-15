@@ -238,14 +238,14 @@ namespace Technicians.Api.Repository
                 {
                     results.Add(new TechActivityLogDto
                     {
-                        CallNbr = reader["CallNbr"]?.ToString(),
-                        TechID = reader["TechID"]?.ToString(),
-                        AccMgr = reader["AccMgr"]?.ToString(),
-                        Activity = reader["Activity"]?.ToString(),
-                        Status = reader["Status"]?.ToString(),
-                        ActivityDate = reader["ActivityDate"] != DBNull.Value
-                            ? Convert.ToDateTime(reader["ActivityDate"])
-                            : DateTime.MinValue
+                        ActivityDate = reader["ActivityDate"]?.ToString(),
+                        IsNewDate    = reader["IsNewDate"] != DBNull.Value ? Convert.ToInt32(reader["IsNewDate"]) : 0,
+                        JobID        = reader["JobID"]?.ToString(),
+                        Subject      = reader["Subject"]?.ToString(),
+                        Message      = reader["Message"]?.ToString(),
+                        ChangedOn    = reader["ChangedOn"] != DBNull.Value
+                                          ? Convert.ToDateTime(reader["ChangedOn"])
+                                          : DateTime.MinValue
                     });
                 }
             }

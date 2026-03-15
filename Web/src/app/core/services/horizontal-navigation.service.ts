@@ -20,7 +20,7 @@ export class HorizontalNavigationService {
   private menuObservableCache: { [userId: string]: Observable<NavigationItem[]> } = {};
   private readonly CACHE_KEY_PREFIX = 'menu_items_';
   private readonly CACHE_VERSION_KEY = 'menu_items_cache_version';
-  private readonly CACHE_VERSION = 'v2';
+  private readonly CACHE_VERSION = 'v3';
 
   constructor(private http: HttpClient) {}
 
@@ -212,6 +212,9 @@ export class HorizontalNavigationService {
       
       // Search
       'dtechpartsearch.aspx': '/reports/parts-search',
+      'dtechnotessearch.aspx': '/tools/notes-search',
+      'reports/dtechnotessearch.aspx': '/tools/notes-search',
+      'tools/dtechnotessearch.aspx': '/tools/notes-search',
       
       // Graphs & Charts
       'reports/accmgmtgraph.aspx': '/graphs/account-manager-graph',
@@ -235,7 +238,8 @@ export class HorizontalNavigationService {
       'http://dcgwebint/Reports/UnScheduledReport.aspx': '/reports/unscheduled-report'
     };
 
-    const mappedBase = legacyMap[baseKey];
+    const baseFileKey = (baseKey.split('/').pop() || baseKey).toLowerCase();
+    const mappedBase = legacyMap[baseKey] || legacyMap[baseFileKey];
     if (!mappedBase) {
       return rawUrl;
     }
