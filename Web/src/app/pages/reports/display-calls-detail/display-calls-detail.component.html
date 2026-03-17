@@ -50,23 +50,6 @@
     <button type="button" class="btn-close" (click)="error = null"></button>
   </div>
 
-  <!-- Stats Card -->
-  <div *ngIf="!isLoading && displayData.length > 0" class="row g-5 mb-5">
-    <div class="col-xl-3 col-md-6" *ngIf="totalsData && totalsData.length > 0">
-      <div class="card card-custom bg-light-warning">
-        <div class="card-body p-6">
-          <div class="d-flex align-items-center">
-            <i class="bi bi-calculator fs-2x text-warning me-3"></i>
-            <div>
-              <span class="text-muted fw-bold d-block fs-7">Has Totals</span>
-              <span class="fw-bolder text-warning fs-2">Yes</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Data Table Card -->
   <div *ngIf="!isLoading && displayData.length > 0" class="card card-custom">
     <div class="card-header border-0 pt-5">
