@@ -12,6 +12,7 @@
         public int MissingJobs { get; set; }
         public int JobsWithParts { get; set; }
         public int JobsThisWeek { get; set; }
+        public int JobsUploaded { get; set; }
     }
 
     public class TechActivityLogDto

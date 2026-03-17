@@ -40,7 +40,7 @@
     </div>
 
     <!-- QUICK LINKS + WEEKLY JOBS -->
-    <div class="row g-4 mb-4 align-items-stretch">
+    <div class="row gx-4 gy-0 mb-4 align-items-stretch">
       <!-- Quick Links -->
       <div class="col-md-3 d-flex">
         <div class="section-card w-100">
@@ -82,7 +82,7 @@
 
                 <div class="activity-item">
                   <div class="activity-meta-row">
-                    <span class="activity-job-chip">#{{ item.jobID }}</span>
+                    <span class="activity-job-chip">{{ item.jobID }}</span>
                     <span class="activity-subject-chip">{{ item.subject || 'Activity' }}</span>
                     <span class="activity-time" *ngIf="item.changedOn">{{ formatActivityTime(item.changedOn) }}</span>
                   </div>

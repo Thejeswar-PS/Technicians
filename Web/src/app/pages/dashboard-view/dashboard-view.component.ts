@@ -28,7 +28,8 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
     emergencyJobs: 0,
     missingJobs: 0,
     jobsWithParts: 0,
-    jobsThisWeek: 0
+    jobsThisWeek: 0,
+    jobsUploaded: 0
   };
 
   // Filters
@@ -486,7 +487,7 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
     } else if (this.scheduledUploadedValues.scheduled === 0 && this.scheduledUploadedValues.uploaded === 0) {
       this.scheduledUploadedValues = {
         scheduled: Number(this.kpis.jobsScheduled || 0),
-        uploaded: Number(this.kpis.jobsToBeUploaded || 0)
+        uploaded: Number(this.kpis.jobsUploaded || 0)
       };
     }
 
