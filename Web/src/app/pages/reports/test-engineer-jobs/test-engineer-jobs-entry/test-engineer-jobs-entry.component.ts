@@ -37,6 +37,7 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     { value: 'Emergency', label: 'Emergency' },
     { value: 'UPS Testing', label: 'UPS Testing' },
     { value: 'PCB Testing', label: 'PCB Testing' },
+    { value: 'Breaker testing', label: 'Breaker testing' },
     { value: 'Asst Others', label: 'Asst Others' },
     { value: 'Retest', label: 'Retest' }
   ];
