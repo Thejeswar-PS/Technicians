@@ -9,7 +9,7 @@ export interface TechMileageRecordDto {
   techName: string;
   custName: string;
   address: string;
-  origin?: string;
+  origin: string;
   orgin?: string;
   startDate: string | Date | null;
   milesReported: number;
@@ -38,4 +38,66 @@ export interface TechMileageResponseDto {
 export interface TechMileageTechnicianDto {
   techID: string;
   techName: string;
+}
+
+export interface TechMileageApiRecord {
+  CallNbr?: string;
+  callNbr?: string;
+  TechName?: string;
+  techName?: string;
+  CustName?: string;
+  custName?: string;
+  Address?: string;
+  address?: string;
+  Origin?: string;
+  origin?: string;
+  Orgin?: string;
+  orgin?: string;
+  StartDate?: string | Date | null;
+  startDate?: string | Date | null;
+  MilesReported?: number;
+  milesReported?: number;
+  HoursDecimal?: number;
+  hoursDecimal?: number;
+  JobType?: string;
+  jobType?: string;
+  TotalMinutes?: number;
+  totalMinutes?: number;
+  TimeTaken?: string;
+  timeTaken?: string;
+}
+
+export interface TechMileageApiSummary {
+  Month?: string;
+  month?: string;
+  TotalMiles?: number;
+  totalMiles?: number;
+  TotalHours?: number;
+  totalHours?: number;
+}
+
+export interface TechMileageApiResponse {
+  MileageRecords?: TechMileageApiRecord[];
+  mileageRecords?: TechMileageApiRecord[];
+  MonthlySummary?: TechMileageApiSummary[];
+  monthlySummary?: TechMileageApiSummary[];
+  TotalMiles?: number;
+  totalMiles?: number;
+  TotalHours?: number;
+  totalHours?: number;
+  TotalJobs?: number;
+  totalJobs?: number;
+  Success?: boolean;
+  success?: boolean;
+  Message?: string;
+  message?: string;
+}
+
+export interface TechMileageApiTechnician {
+  TechID?: string;
+  techID?: string;
+  techId?: string;
+  TechName?: string;
+  techName?: string;
+  techname?: string;
 }
