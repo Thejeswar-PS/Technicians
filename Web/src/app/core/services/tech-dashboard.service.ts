@@ -11,6 +11,7 @@ export interface TechDashboardKPIs {
   missingJobs: number;
   jobsWithParts: number;
   jobsThisWeek: number;
+  jobsUploaded: number;
 }
 
 export interface ActivityLogItem {

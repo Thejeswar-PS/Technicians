@@ -62,6 +62,7 @@ export class EditExpenseComponent implements OnInit {
   
   // Route Parameters
   empId: string = '';
+  empName: string = '';
   digest: string = '';
   
   // Form and UI state
@@ -307,8 +308,12 @@ export class EditExpenseComponent implements OnInit {
 
       const parsed = JSON.parse(stored);
       const possibleEmpId = (parsed?.empID ?? parsed?.empId ?? parsed?.EmpId ?? '').toString().trim();
+      const possibleEmpName = (parsed?.empName ?? parsed?.name ?? parsed?.userName ?? parsed?.windowsID ?? '').toString().trim();
       if (possibleEmpId) {
         this.empId = possibleEmpId;
+      }
+      if (possibleEmpName) {
+        this.empName = possibleEmpName;
       }
     } catch (error) {
       console.warn('Unable to load user context for empId:', error);
@@ -974,7 +979,7 @@ export class EditExpenseComponent implements OnInit {
       techPaid: 0.00,
       imageExists: 0,
       img_Stream: new Uint8Array(0),
-      changeby: this.empId?.trim() || ''
+      changeby: this.empName?.trim() || this.empId?.trim() || ''
     };
     
     this.jobService.saveExpense(deletePayload).subscribe({
@@ -1106,7 +1111,7 @@ export class EditExpenseComponent implements OnInit {
     const effectiveEndDate = expType !== '22' && formValue.endDateTime ? new Date(formValue.endDateTime) : new Date(formValue.startDateTime);
     const otherReason = (formValue.otherReason || '').trim();
 
-  const changeByValue = this.empId?.trim();
+  const changeByValue = this.empName?.trim() || this.empId?.trim();
     const imageStreamValue = this.selectedFileBase64 ?? [];
 
     const expenseData: any = {

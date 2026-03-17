@@ -69,6 +69,10 @@ export class AccountingStatusComponent implements OnInit {
     const categories = this.accountingStatusData.map((d: any) => d.label || d.Label || '');
     const yvalues = this.accountingStatusData.map((d: any) => parseInt(d.value || d.Value || 0));
 
+    const maxVal1 = Math.max(...yvalues, 1);
+    const barHeight = Math.max(32, Math.min(52, Math.floor(400 / Math.max(categories.length, 1))));
+    const chartHeight1 = Math.max(420, categories.length * (barHeight + 14) + 100);
+
     this.accountingStatusChartOptions = {
       series: [{
         name: 'Jobs',
@@ -76,7 +80,7 @@ export class AccountingStatusComponent implements OnInit {
       }],
       chart: {
         type: 'bar',
-        height: 550,
+        height: chartHeight1,
         animations: { enabled: false },
         toolbar: { show: true },
         events: {
@@ -84,8 +88,6 @@ export class AccountingStatusComponent implements OnInit {
             const categoryIndex = config.dataPointIndex;
             const categoryName = categories[categoryIndex];
             const value = yvalues[categoryIndex];
-            
-            // Only navigate if value is not 0 (matching legacy logic)
             if (value && value !== 0) {
               this.navigateToDisplayCallsDetail(categoryName);
             }
@@ -95,51 +97,46 @@ export class AccountingStatusComponent implements OnInit {
       colors: ['#7BB752'],
       plotOptions: {
         bar: {
-          horizontal: false,
-          columnWidth: '45px',
+          horizontal: true,
+          barHeight: barHeight + 'px',
           borderRadius: 4,
           dataLabels: {
-            position: 'top'
+            position: 'center'
           }
         }
       },
       dataLabels: {
         enabled: true,
-        formatter: (val: number) => val.toString(),
-        style: { fontSize: '16px', fontWeight: 'bold' },
-        offsetY: -5
+        formatter: (val: number) => val > 0 ? val.toString() : '',
+        style: { fontSize: '13px', fontWeight: '700', colors: ['#ffffff'] },
+        offsetX: 0
       },
       xaxis: {
         categories: categories,
-        title: { text: '', style: { fontSize: '18px', fontWeight: 'bold' } },
+        title: { text: 'No of Jobs', style: { fontSize: '13px', fontWeight: '600' } },
         labels: {
-          rotate: -45,
-          rotateAlways: true,
-          hideOverlappingLabels: false,
-          trim: false,
-          style: { fontSize: '16px', fontWeight: 'bold' },
-          offsetY: 10,
-          maxHeight: 200
-        }
+          style: { fontSize: '12px' },
+          formatter: (val: number) => Math.round(val).toString()
+        },
+        max: Math.ceil(maxVal1 * 1.15)
       },
       yaxis: {
-        title: { text: 'No of Jobs', style: { fontSize: '18px', fontWeight: 'bold' } },
-        labels: { 
-          formatter: (val: number) => Math.round(val).toString(),
-          style: { fontSize: '16px', fontWeight: 'bold' }
+        labels: {
+          style: { fontSize: '13px', fontWeight: '600' },
+          maxWidth: 240
         }
       },
       title: {
         text: 'DC Group - Accounting Status',
         align: 'center',
-        style: { fontSize: '22px', fontWeight: 'bold', color: '#1f2937' }
+        style: { fontSize: '18px', fontWeight: 'bold', color: '#1f2937' }
       },
       tooltip: { enabled: true, y: { formatter: (val: number) => val.toString() + ' Jobs' } },
-      grid: { 
+      grid: {
         borderColor: '#e7e7e7',
-        padding: {
-          bottom: 80
-        }
+        xaxis: { lines: { show: true } },
+        yaxis: { lines: { show: false } },
+        padding: { left: 10, right: 20, top: 10, bottom: 10 }
       }
     };
 
@@ -151,6 +148,10 @@ export class AccountingStatusComponent implements OnInit {
     const categories = this.contractBillingData.map((d: any) => d.label || d.Label || '');
     const yvalues = this.contractBillingData.map((d: any) => parseInt(d.value || d.Value || 0));
 
+    const maxVal2 = Math.max(...yvalues, 1);
+    const barHeight2 = Math.max(32, Math.min(52, Math.floor(400 / Math.max(categories.length, 1))));
+    const chartHeight2 = Math.max(420, categories.length * (barHeight2 + 14) + 100);
+
     this.contractBillingChartOptions = {
       series: [{
         name: 'Contract Count',
@@ -158,7 +159,7 @@ export class AccountingStatusComponent implements OnInit {
       }],
       chart: {
         type: 'bar',
-        height: 550,
+        height: chartHeight2,
         animations: { enabled: false },
         toolbar: { show: true },
         events: {
@@ -166,8 +167,6 @@ export class AccountingStatusComponent implements OnInit {
             const categoryIndex = config.dataPointIndex;
             const categoryName = categories[categoryIndex];
             const value = yvalues[categoryIndex];
-            
-            // Only navigate if value is not 0 (matching legacy logic)
             if (value && value !== 0) {
               this.navigateToDisplayCallsDetail(categoryName);
             }
@@ -177,51 +176,46 @@ export class AccountingStatusComponent implements OnInit {
       colors: ['#FF9900'],
       plotOptions: {
         bar: {
-          horizontal: false,
-          columnWidth: '45px',
+          horizontal: true,
+          barHeight: barHeight2 + 'px',
           borderRadius: 4,
           dataLabels: {
-            position: 'top'
+            position: 'center'
           }
         }
       },
       dataLabels: {
         enabled: true,
-        formatter: (val: number) => val.toString(),
-        style: { fontSize: '16px', fontWeight: 'bold' },
-        offsetY: -5
+        formatter: (val: number) => val > 0 ? val.toString() : '',
+        style: { fontSize: '13px', fontWeight: '700', colors: ['#ffffff'] },
+        offsetX: 0
       },
       xaxis: {
         categories: categories,
-        title: { text: '', style: { fontSize: '18px', fontWeight: 'bold' } },
+        title: { text: 'No of Contracts', style: { fontSize: '13px', fontWeight: '600' } },
         labels: {
-          rotate: -45,
-          rotateAlways: true,
-          hideOverlappingLabels: false,
-          trim: false,
-          style: { fontSize: '16px', fontWeight: 'bold' },
-          offsetY: 10,
-          maxHeight: 200
-        }
+          style: { fontSize: '12px' },
+          formatter: (val: number) => Math.round(val).toString()
+        },
+        max: Math.ceil(maxVal2 * 1.15)
       },
       yaxis: {
-        title: { text: 'No of Contracts', style: { fontSize: '18px', fontWeight: 'bold' } },
-        labels: { 
-          formatter: (val: number) => Math.round(val).toString(),
-          style: { fontSize: '16px', fontWeight: 'bold' }
+        labels: {
+          style: { fontSize: '13px', fontWeight: '600' },
+          maxWidth: 240
         }
       },
       title: {
-        text: 'DC Group - Contract Billing Status Graph',
+        text: 'DC Group - Contract Billing Status',
         align: 'center',
-        style: { fontSize: '22px', fontWeight: 'bold', color: '#1f2937' }
+        style: { fontSize: '18px', fontWeight: 'bold', color: '#1f2937' }
       },
       tooltip: { enabled: true, y: { formatter: (val: number) => val.toString() + ' Contracts' } },
-      grid: { 
+      grid: {
         borderColor: '#e7e7e7',
-        padding: {
-          bottom: 80
-        }
+        xaxis: { lines: { show: true } },
+        yaxis: { lines: { show: false } },
+        padding: { left: 10, right: 20, top: 10, bottom: 10 }
       }
     };
 
