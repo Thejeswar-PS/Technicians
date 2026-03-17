@@ -29,8 +29,8 @@ namespace Technicians.Api.Repository
                 await connection.OpenAsync();
 
                 var parameters = new DynamicParameters();
-                parameters.Add("@StartDate", request.StartDate, DbType.String);
-                parameters.Add("@EndDate", request.EndDate, DbType.String);
+                parameters.Add("@StartDate", DateTime.Parse(request.StartDate), DbType.Date);
+                parameters.Add("@EndDate", DateTime.Parse(request.EndDate), DbType.Date);
                 parameters.Add("@TechName", string.IsNullOrEmpty(request.TechName) ? (object)DBNull.Value : request.TechName, DbType.String);
 
                 var mileageRecords = await connection.QueryAsync(
@@ -50,6 +50,7 @@ namespace Technicians.Api.Repository
                         TechName = GetStringValue(dict, "TechName"),
                         CustName = GetStringValue(dict, "Customer Name"),
                         Address = GetStringValue(dict, "Site Address"),
+                        Origin = GetFirstStringValue(dict, "Origin", "Orgin", "Origin Address", "origion"),
                         StartDate = GetDateTimeValue(dict, "Date"),
                         MilesReported = GetDecimalValue(dict, "Miles Reported"),
                         HoursDecimal = GetDecimalValue(dict, "Hours (Decimal)"),
@@ -95,8 +96,8 @@ namespace Technicians.Api.Repository
                 await connection.OpenAsync();
 
                 var parameters = new DynamicParameters();
-                parameters.Add("@StartDate", request.StartDate, DbType.String);
-                parameters.Add("@EndDate", request.EndDate, DbType.String);
+                parameters.Add("@StartDate", DateTime.Parse(request.StartDate), DbType.Date);
+                parameters.Add("@EndDate", DateTime.Parse(request.EndDate), DbType.Date);
                 parameters.Add("@TechName", string.IsNullOrEmpty(request.TechName) ? (object)DBNull.Value : request.TechName, DbType.String);
 
                 var monthlySummary = await connection.QueryAsync(
@@ -164,8 +165,8 @@ namespace Technicians.Api.Repository
             await connection.OpenAsync();
 
             var parameters = new DynamicParameters();
-            parameters.Add("@StartDate", request.StartDate, DbType.String);
-            parameters.Add("@EndDate", request.EndDate, DbType.String);
+            parameters.Add("@StartDate", DateTime.Parse(request.StartDate), DbType.Date);
+            parameters.Add("@EndDate", DateTime.Parse(request.EndDate), DbType.Date);
             parameters.Add("@TechName", string.IsNullOrEmpty(request.TechName) ? (object)DBNull.Value : request.TechName, DbType.String);
 
             var rawData = await connection.QueryAsync(
@@ -199,11 +200,29 @@ namespace Technicians.Api.Repository
         /// </summary>
         private static string GetStringValue(IDictionary<string, object> dict, string columnName)
         {
-            if (dict.ContainsKey(columnName) && dict[columnName] != null)
+            var matchingKey = dict.Keys.FirstOrDefault(k => string.Equals(k, columnName, StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrEmpty(matchingKey) && dict[matchingKey] != null)
             {
-                var value = dict[columnName].ToString()?.Trim();
+                var value = dict[matchingKey].ToString()?.Trim();
                 return string.IsNullOrEmpty(value) ? "" : value;
             }
+            return "";
+        }
+
+        /// <summary>
+        /// Returns the first non-empty string value found among candidate column names
+        /// </summary>
+        private static string GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
+        {
+            foreach (var columnName in columnNames)
+            {
+                var value = GetStringValue(dict, columnName);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+
             return "";
         }
 

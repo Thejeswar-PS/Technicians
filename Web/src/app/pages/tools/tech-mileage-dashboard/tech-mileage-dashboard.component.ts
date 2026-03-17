@@ -187,6 +187,14 @@ export class TechMileageDashboardComponent implements OnInit {
       })
       .subscribe({
         next: (response) => {
+          if (response && response.success === false) {
+            this.report = null;
+            this.chartOptions = this.buildChartOptions([]);
+            this.errorMessage = response.message || 'Unable to load tech mileage data.';
+            this.isLoading = false;
+            return;
+          }
+
           this.report = response;
           this.chartOptions = this.buildChartOptions(response?.monthlySummary || []);
           this.isLoading = false;
