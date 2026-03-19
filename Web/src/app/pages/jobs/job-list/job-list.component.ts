@@ -469,7 +469,7 @@ public Load(initialLoad: boolean = false)
     this.jobFilterForm.patchValue({ jobId: jobId }, { emitEvent: false });
     
     // Get current form values for techId and empId
-    const techId = this.jobFilterForm.value.techId || 'All';
+    const techId = this.jobFilterForm.value.techId || this.empID || 'All';
     const empId = this.empID;
     
     console.log('SearchJobs - Calling GetSearchedJob API with:', { jobId, techId, empId });

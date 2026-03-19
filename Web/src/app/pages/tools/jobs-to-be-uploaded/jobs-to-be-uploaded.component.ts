@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonService } from '../../../core/services/common.service';
 import { JobsToBeUploadedService } from '../../../core/services/jobs-to-be-uploaded.service';
-import { EmployeeStatusDto } from '../../../core/model/employee-status.model';
 
 interface JobRecord {
   callNbr: string;
@@ -32,7 +31,7 @@ interface AccountManager {
 export class JobsToBeUploadedComponent implements OnInit {
   // Filters
   selectedTechnician: string = 'All';
-  selectedAccountManager: string = '';
+  selectedAccountManager: string = 'All';
 
   // Data
   technicians: Technician[] = [];
@@ -50,6 +49,9 @@ export class JobsToBeUploadedComponent implements OnInit {
   // Flags
   technicianDisabled: boolean = false;
   accountManagerDisabled: boolean = false;
+  private techniciansLoaded: boolean = false;
+  private accountManagersLoaded: boolean = false;
+  private initialJobsLoaded: boolean = false;
 
   constructor(
     private router: Router,
@@ -59,6 +61,15 @@ export class JobsToBeUploadedComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeFilters();
+  }
+
+  private normalizeText(value: any): string {
+    return (value || '').toString().trim().toUpperCase();
+  }
+
+  private isTechUser(): boolean {
+    const role = (this.userRole || '').toString().trim().toLowerCase();
+    return role === 'technician' || role === 'techmanager' || role.includes('tech');
   }
 
   private initializeFilters(): void {
@@ -119,20 +130,38 @@ export class JobsToBeUploadedComponent implements OnInit {
       (data: any) => {
         const techArray = Array.isArray(data) ? data : [];
         this.technicians = techArray.map(t => ({
-          techID: t.techID,
-          techName: t.techname
+          techID: (t.techID || t.TechID || t.techId || '').toString().trim(),
+          techName: (t.techname || t.techName || t.TechName || '').toString().trim()
         }));
 
-        // Set selected technician based on role
-        if (this.userRole === 'Technician' || this.userRole === 'TechManager') {
-          this.selectedTechnician = this.currentEmpID;
+        // Set selected technician based on role (match Jobs list / Dashboard behavior)
+        if (this.isTechUser()) {
+          const currentEmpIdNormalized = this.normalizeText(this.currentEmpID);
+          const matchedTech = this.technicians.find(t => this.normalizeText(t.techID) === currentEmpIdNormalized);
+
+          if (matchedTech) {
+            this.technicians = [matchedTech];
+            this.selectedTechnician = matchedTech.techID;
+          } else {
+            // If technician is not found in dropdown list, default to All
+            this.technicians = [];
+            this.selectedTechnician = 'All';
+          }
+
+          this.technicianDisabled = true;
         } else {
           this.selectedTechnician = 'All';
+          this.technicianDisabled = false;
         }
+
+        this.techniciansLoaded = true;
+        this.tryInitialLoad();
       },
       (error: any) => {
         console.error('Error loading technicians:', error);
         this.showError('Error loading technicians');
+        this.techniciansLoaded = true;
+        this.tryInitialLoad();
       }
     );
   }
@@ -147,7 +176,7 @@ export class JobsToBeUploadedComponent implements OnInit {
         }));
 
         // Set Account Manager based on role
-        if (this.userRole === 'Technician' || this.userRole === 'TechManager') {
+        if (this.isTechUser()) {
           this.accountManagerDisabled = true;
           this.selectedAccountManager = 'All';
         } else if (this.userRole === 'Manager' || this.userRole === 'Other') {
@@ -165,13 +194,26 @@ export class JobsToBeUploadedComponent implements OnInit {
         }
         
         this.isLoading = false;
+        this.accountManagersLoaded = true;
+        this.tryInitialLoad();
       },
       (error: any) => {
         console.error('Error loading account managers:', error);
         this.showError('Error loading account managers');
         this.isLoading = false;
+        this.accountManagersLoaded = true;
+        this.tryInitialLoad();
       }
     );
+  }
+
+  private tryInitialLoad(): void {
+    if (this.initialJobsLoaded || !this.techniciansLoaded || !this.accountManagersLoaded) {
+      return;
+    }
+
+    this.initialJobsLoaded = true;
+    this.getJobs();
   }
 
   getJobs(): void {

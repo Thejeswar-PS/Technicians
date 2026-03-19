@@ -30,7 +30,7 @@
           <select 
             class="form-select" 
             [(ngModel)]="selectedTechnician"
-            [disabled]="isLoading">
+            [disabled]="isLoading || technicianDisabled">
             <option value="All">All</option>
             <option *ngFor="let tech of technicians" [value]="tech.techID">
               {{ tech.techName }}
