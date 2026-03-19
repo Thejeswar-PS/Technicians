@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import {
   TechMileageApiRecord,
@@ -27,6 +28,7 @@ export class TechMileageService {
     return this.http
       .get<any>(`${this.apiUrl}/TechMileage/GetTechnicians`)
       .pipe(
+        catchError(() => this.http.get<any>(`${this.apiUrl}/Common/GetTechnicians`)),
         map((response) => {
           const rawList = response?.data || response || [];
           return (rawList as TechMileageApiTechnician[]).map((tech) => ({
@@ -38,34 +40,41 @@ export class TechMileageService {
   }
 
   getTechMileageReport(request: TechMileageRequestDto): Observable<TechMileageResponseDto> {
-    const payload = {
-      StartDate: request.startDate,
-      EndDate: request.endDate,
-      TechName: request.techName ?? null
-    };
+    let params = new HttpParams()
+      .set('startDate', request.startDate)
+      .set('endDate', request.endDate)
+      .set('techName', request.techName || 'ALL')
+      .set('pageNumber', String(request.pageNumber ?? 1))
+      .set('pageSize', String(request.pageSize ?? 100));
 
     return this.http
-      .post<any>(`${this.apiUrl}/TechMileage/GetTechMileageReport`, payload)
-      .pipe(map((response) => this.mapReportResponse(response?.data || response || {})));
+      .get<any>(`${this.apiUrl}/TechMileage/report`, { params })
+      .pipe(map((response) => this.mapReportResponse(response || {})));
   }
 
   private mapReportResponse(response: TechMileageApiResponse): TechMileageResponseDto {
-    const rawRecords = (response?.mileageRecords || response?.MileageRecords || []) as TechMileageApiRecord[];
+    const rawRecords = (
+      response?.data ||
+      response?.Data ||
+      response?.mileageRecords ||
+      response?.MileageRecords ||
+      []
+    ) as TechMileageApiRecord[];
     const rawSummary = (response?.monthlySummary || response?.MonthlySummary || []) as TechMileageApiSummary[];
 
     const mileageRecords: TechMileageRecordDto[] = rawRecords.map((record) => ({
-      callNbr: record?.callNbr || record?.CallNbr || '',
+      callNbr: record?.callNbr || record?.CallNbr || record?.jobNumber || record?.JobNumber || '',
       techName: record?.techName || record?.TechName || '',
-      custName: record?.custName || record?.CustName || '',
-      address: record?.address || record?.Address || '',
+      custName: record?.custName || record?.CustName || record?.customerName || record?.CustomerName || '',
+      address: record?.address || record?.Address || record?.siteAddress || record?.SiteAddress || '',
       origin: record?.origin || record?.Origin || record?.orgin || record?.Orgin || '',
       orgin: record?.orgin || record?.Orgin,
-      startDate: record?.startDate ?? record?.StartDate ?? null,
+      startDate: record?.startDate ?? record?.StartDate ?? record?.date ?? record?.Date ?? null,
       milesReported: Number(record?.milesReported ?? record?.MilesReported ?? 0),
       hoursDecimal: Number(record?.hoursDecimal ?? record?.HoursDecimal ?? 0),
       jobType: record?.jobType || record?.JobType || '',
       totalMinutes: Number(record?.totalMinutes ?? record?.TotalMinutes ?? 0),
-      timeTaken: record?.timeTaken || record?.TimeTaken || ''
+      timeTaken: record?.timeTaken || record?.TimeTaken || record?.timeTakenHHMM || record?.TimeTakenHHMM || ''
     }));
 
     const monthlySummary: TechMileageMonthlySummaryDto[] = rawSummary.map((item) => ({
@@ -77,9 +86,11 @@ export class TechMileageService {
     return {
       mileageRecords,
       monthlySummary,
-      totalMiles: Number(response?.totalMiles ?? response?.TotalMiles ?? 0),
-      totalHours: Number(response?.totalHours ?? response?.TotalHours ?? 0),
-      totalJobs: Number(response?.totalJobs ?? response?.TotalJobs ?? mileageRecords.length),
+      totalMiles: Number(response?.totalMiles ?? response?.TotalMiles ?? mileageRecords.reduce((sum, row) => sum + (row.milesReported || 0), 0)),
+      totalHours: Number(response?.totalHours ?? response?.TotalHours ?? mileageRecords.reduce((sum, row) => sum + (row.hoursDecimal || 0), 0)),
+      totalJobs: Number(response?.totalRecords ?? response?.TotalRecords ?? response?.totalJobs ?? response?.TotalJobs ?? mileageRecords.length),
+      pageNumber: Number(response?.pageNumber ?? response?.PageNumber ?? 1),
+      pageSize: Number(response?.pageSize ?? response?.PageSize ?? (mileageRecords.length || 100)),
       success: Boolean(response?.success ?? response?.Success ?? true),
       message: response?.message || response?.Message || ''
     };

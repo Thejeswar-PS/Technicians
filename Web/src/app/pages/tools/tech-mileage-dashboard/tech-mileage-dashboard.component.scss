@@ -64,10 +64,10 @@
     margin-bottom: 0.25rem;
   }
 
-  h1 {
-    font-size: clamp(1.5rem, 2vw, 2rem);
+  h2 {
     margin: 0;
-    color: var(--tm-ink);
+    font-size: 2rem;
+    color: #0d6efd;
     font-weight: 700;
   }
 }
@@ -155,7 +155,8 @@
 
   label {
     font-weight: 600;
-    color: var(--tm-ink);
+    font-size: 14px;
+    color: #212529;
   }
 
   .form-control,
@@ -313,7 +314,7 @@
 .summary-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
   table-layout: auto;
 
   thead th {
@@ -327,7 +328,7 @@
     text-align: center;
     white-space: nowrap;
     border-bottom: 2px solid #dee2e6;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   th {
@@ -335,18 +336,18 @@
     font-weight: 600;
     color: #ffffff;
     white-space: nowrap;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   td {
     padding: 10px 8px;
     vertical-align: middle;
     text-align: center;
-    color: #6c757d;
+    color: #212529;
     white-space: normal;
     word-break: break-word;
     border-bottom: 1px solid #dee2e6;
-    font-size: 13px;
+    font-size: 14px;
   }
 
   tbody tr:last-child td {

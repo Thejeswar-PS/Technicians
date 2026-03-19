@@ -2,6 +2,8 @@ export interface TechMileageRequestDto {
   startDate: string;
   endDate: string;
   techName?: string | null;
+  pageNumber?: number;
+  pageSize?: number;
 }
 
 export interface TechMileageRecordDto {
@@ -31,6 +33,8 @@ export interface TechMileageResponseDto {
   totalMiles: number;
   totalHours: number;
   totalJobs: number;
+  pageNumber: number;
+  pageSize: number;
   success: boolean;
   message: string;
 }
@@ -41,12 +45,20 @@ export interface TechMileageTechnicianDto {
 }
 
 export interface TechMileageApiRecord {
+  Date?: string | Date | null;
+  date?: string | Date | null;
+  JobNumber?: string;
+  jobNumber?: string;
   CallNbr?: string;
   callNbr?: string;
   TechName?: string;
   techName?: string;
+  CustomerName?: string;
+  customerName?: string;
   CustName?: string;
   custName?: string;
+  SiteAddress?: string;
+  siteAddress?: string;
   Address?: string;
   address?: string;
   Origin?: string;
@@ -65,6 +77,8 @@ export interface TechMileageApiRecord {
   totalMinutes?: number;
   TimeTaken?: string;
   timeTaken?: string;
+  TimeTakenHHMM?: string;
+  timeTakenHHMM?: string;
 }
 
 export interface TechMileageApiSummary {
@@ -77,6 +91,14 @@ export interface TechMileageApiSummary {
 }
 
 export interface TechMileageApiResponse {
+  Data?: TechMileageApiRecord[];
+  data?: TechMileageApiRecord[];
+  TotalRecords?: number;
+  totalRecords?: number;
+  PageNumber?: number;
+  pageNumber?: number;
+  PageSize?: number;
+  pageSize?: number;
   MileageRecords?: TechMileageApiRecord[];
   mileageRecords?: TechMileageApiRecord[];
   MonthlySummary?: TechMileageApiSummary[];
