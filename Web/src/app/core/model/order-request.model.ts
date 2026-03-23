@@ -85,12 +85,12 @@ export interface OrderRequestAttachment {
 
 // Constants for dropdowns (matching legacy options)
 export const ORDER_REQUEST_STATUS_OPTIONS: OrderRequestStatusOption[] = [
-  { value: 'NEW', label: 'New' },
-  { value: 'ORD', label: 'Ordered' },
-  { value: 'SHI', label: 'Shipped' },
-  { value: 'BOR', label: 'Back Ordered' },
-  { value: 'CAN', label: 'Cancelled' },
-  { value: 'COM', label: 'Completed' }
+  { value: 'New', label: 'New' },
+  { value: 'Ordered', label: 'Ordered' },
+  { value: 'Shipped', label: 'Shipped' },
+  { value: 'Back Ordered', label: 'Back Ordered' },
+  { value: 'Cancelled', label: 'Cancelled' },
+  { value: 'Completed', label: 'Completed' }
 ];
 
 export const ORDER_REQUEST_TYPE_OPTIONS: OrderRequestTypeOption[] = [

@@ -20,43 +20,6 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets order request status data using POST with request body
-        /// </summary>
-        /// <param name="request">Request parameters for filtering</param>
-        /// <returns>List of order request status records</returns>
-        [HttpPost("GetOrderRequestStatus")]
-        public async Task<ActionResult<List<OrderRequestResponseDto>>> GetOrderRequestStatus([FromBody] OrderRequestStatusRequestDto request)
-        {
-            try
-            {
-                if (request == null)
-                {
-                    return BadRequest("Invalid request payload.");
-                }
-
-                _logger.LogInformation("Getting order request status for Status: {Status}, OrderType: {OrderType}, Archive: {Archive}, Notes: {Notes}", 
-                    request.Status, request.OrderType, request.Archive, request.Notes);
-
-                var results = await _repository.GetOrderRequestStatusAsync(request);
-
-                _logger.LogInformation("Successfully retrieved {Count} order request status records", results.Count);
-
-                return Ok(results);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting order request status for Status: {Status}, OrderType: {OrderType}, Archive: {Archive}, Notes: {Notes}", 
-                    request.Status, request.OrderType, request.Archive, request.Notes);
-                
-                return StatusCode(500, new { 
-                    success = false, 
-                    message = "An error occurred while retrieving order request status", 
-                    error = ex.Message 
-                });
-            }
-        }
-
-        /// <summary>
         /// Gets order request status data using GET with query parameters
         /// </summary>
         /// <param name="status">Status filter (optional, defaults to "All")</param>
@@ -88,6 +51,46 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, new { 
                     success = false, 
                     message = "An error occurred while retrieving order request status", 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets a specific order request by its RowIndex
+        /// </summary>
+        /// <param name="rowIndex">The RowIndex of the order request to retrieve</param>
+        /// <returns>Single order request record or 404 if not found</returns>
+        [HttpGet("GetOrderRequestByRowIndex/{rowIndex}")]
+        public async Task<ActionResult<OrderRequestResponseDto>> GetOrderRequestByRowIndex(int rowIndex)
+        {
+            try
+            {
+                if (rowIndex <= 0)
+                {
+                    return BadRequest(new { message = "Invalid RowIndex. RowIndex must be greater than 0." });
+                }
+
+                _logger.LogInformation("Getting order request for RowIndex: {RowIndex}", rowIndex);
+
+                var result = await _repository.GetOrderRequestByRowIndexAsync(rowIndex);
+
+                if (result == null)
+                {
+                    _logger.LogWarning("Order request not found for RowIndex: {RowIndex}", rowIndex);
+                    return NotFound(new { message = $"Order request with RowIndex {rowIndex} not found." });
+                }
+
+                _logger.LogInformation("Successfully retrieved order request for RowIndex: {RowIndex}", rowIndex);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting order request for RowIndex: {RowIndex}", rowIndex);
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "An error occurred while retrieving the order request", 
                     error = ex.Message 
                 });
             }

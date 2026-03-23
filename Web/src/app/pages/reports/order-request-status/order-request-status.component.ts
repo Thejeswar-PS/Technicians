@@ -332,24 +332,12 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
 
   // Navigation
   viewOrderRequest(orderRequest: OrderRequestStatusDto): void {
-    if (!orderRequest) return;
+    if (!orderRequest || orderRequest.rowIndex <= 0) return;
     
-    // Navigate to order request form with the order request data
+    // Navigate to order request with only rowIndex - the component will fetch full data via API
     this.router.navigate(['/reports/order-request'], {
       queryParams: { 
-        rowIndex: orderRequest.rowIndex,
-        orderType: orderRequest.orderType || '',
-        requester: orderRequest.requester || '',
-        dcgPartNo: orderRequest.dcgPartNo || '',
-        manufPartNo: orderRequest.manufPartNo || '',
-        qtyNeeded: orderRequest.qtyNeeded || 0,
-        vendor: orderRequest.vendor || '',
-        poNumber: orderRequest.poNumber || '',
-        orderDate: orderRequest.orderDate ? new Date(orderRequest.orderDate).toISOString().split('T')[0] : '',
-        arriveDate: orderRequest.arriveDate ? new Date(orderRequest.arriveDate).toISOString().split('T')[0] : '',
-        status: orderRequest.status || 'NEW',
-        notes: orderRequest.notes || '',
-        createdOn: orderRequest.createdOn ? new Date(orderRequest.createdOn).toISOString() : ''
+        rowIndex: orderRequest.rowIndex
       }
     });
   }
