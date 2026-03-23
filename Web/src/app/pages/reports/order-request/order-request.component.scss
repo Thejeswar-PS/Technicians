@@ -277,6 +277,92 @@ label svg {
   }
 }
 
+/* =====================================================
+   EXISTING FILES FROM API
+===================================================== */
+
+.existing-files-loading {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 0;
+  font-size: 0.9rem;
+}
+
+.existing-files {
+  margin-bottom: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+
+  .existing-files-header {
+    background: #edf2f7;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #f0f4f8;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+
+      .file-icon i {
+        font-size: 1.4rem;
+      }
+
+      .file-details {
+        display: flex;
+        flex-direction: column;
+
+        .file-name {
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: #2d3748;
+          word-break: break-all;
+        }
+
+        .file-size {
+          font-size: 0.78rem;
+          color: #718096;
+        }
+      }
+    }
+
+    .remove-file-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      transition: background 0.2s ease;
+
+      i {
+        color: #dc3545;
+        font-size: 1rem;
+      }
+
+      &:hover {
+        background: #fff5f5;
+        i { color: #c53030; }
+      }
+    }
+  }
+}
+
 .selected-files {
   margin-top: 1rem;
 

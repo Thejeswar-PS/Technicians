@@ -83,11 +83,13 @@ export interface OrderRequestAttachment {
   size?: number;
 }
 
-// Constants for dropdowns (matching legacy options)
+// Constants for dropdowns — values must match exactly what the backend returns.
+// The backend SQL CASE converts: ORD→'Ordered', BOR→'Back Ordered', CAN→'Cancelled', COM→'Completed'
+// NEW and SHI pass through the CASE ELSE unchanged, so they stay as 'NEW' / 'SHI'.
 export const ORDER_REQUEST_STATUS_OPTIONS: OrderRequestStatusOption[] = [
-  { value: 'New', label: 'New' },
+  { value: 'NEW', label: 'New' },
   { value: 'Ordered', label: 'Ordered' },
-  { value: 'Shipped', label: 'Shipped' },
+  { value: 'SHI', label: 'Shipped' },
   { value: 'Back Ordered', label: 'Back Ordered' },
   { value: 'Cancelled', label: 'Cancelled' },
   { value: 'Completed', label: 'Completed' }

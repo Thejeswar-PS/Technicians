@@ -287,6 +287,7 @@
                   </label>
                 </div>
                 <div class="field-input">
+
                   <div class="file-upload-area">
                     <input type="file"
                            id="fileInput"
@@ -325,6 +326,43 @@
                       </button>
                     </div>
                   </div>
+
+                  <!-- Existing Files from API -->
+                  <div *ngIf="isLoadingFiles" class="existing-files-loading mt-2">
+                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                    <span class="text-muted">Loading files...</span>
+                  </div>
+
+                  <div *ngIf="fileDeleteError" class="alert alert-danger py-2 mb-2 mt-2">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ fileDeleteError }}
+                  </div>
+
+                  <div *ngIf="!isLoadingFiles && existingFiles.length > 0" class="existing-files mt-2">
+                    <div class="existing-files-header">
+                      <i class="bi bi-folder2-open me-1"></i>
+                      <span>Uploaded Files ({{ existingFiles.length }})</span>
+                    </div>
+                    <div *ngFor="let file of existingFiles" class="file-item">
+                      <div class="file-info">
+                        <div class="file-icon">
+                          <i class="bi {{ getFileIcon(file.name || file.Name || file.fileName || file.FileName) }}"></i>
+                        </div>
+                        <div class="file-details">
+                          <span class="file-name">{{ file.name || file.Name || file.fileName || file.FileName }}</span>
+                          <span class="file-size" *ngIf="file.size || file.Size">
+                            {{ getFileSizeFormatted(file.size || file.Size) }}
+                          </span>
+                        </div>
+                      </div>
+                      <button type="button"
+                              class="remove-file-btn"
+                              (click)="deleteExistingFile(file.name || file.Name || file.fileName || file.FileName)"
+                              title="Delete file">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
