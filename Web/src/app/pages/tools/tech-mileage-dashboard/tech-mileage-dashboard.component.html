@@ -2,7 +2,7 @@
   <div class="dashboard-hero">
     <div class="hero-content">
       <div class="hero-title">
-        <h1>Tech Mileage Dashboard</h1>
+        <h2 class="fw-bold text-primary mb-02 display-4.9">Tech Mileage Dashboard</h2>
       </div>
     </div>
   </div>
@@ -93,7 +93,7 @@
       <div class="table-card" *ngIf="report?.mileageRecords?.length">
         <div class="table-header">
           <h5>Mileage Report Details</h5>
-          <span class="record-count">{{ report?.mileageRecords?.length || 0 }} records found</span>
+          <span class="record-count">{{ report?.totalJobs || 0 }} records found</span>
         </div>
         <div class="d-flex align-items-center justify-content-between mb-3">
           <div class="d-flex align-items-center">
@@ -172,15 +172,6 @@
                       </span>
                     </span>
                   </th>
-                  <th class="sortable" (click)="sortData('timeTaken')">
-                    <span class="header-cell">
-                      Time Taken
-                      <span class="sort-icons" [class.active]="sortColumn === 'timeTaken'">
-                        <i class="up" [class.on]="sortColumn === 'timeTaken' && sortDirection === 'asc'"></i>
-                        <i class="down" [class.on]="sortColumn === 'timeTaken' && sortDirection === 'desc'"></i>
-                      </span>
-                    </span>
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -192,7 +183,6 @@
                   <td class="col-origin">{{ getOriginValue(record) || '-' }}</td>
                   <td class="col-date">{{ record.startDate | date: 'MM/dd/yyyy' }}</td>
                   <td class="col-job-type">{{ record.jobType }}</td>
-                  <td class="col-time-taken">{{ record.timeTaken }}</td>
                 </tr>
               </tbody>
             </table>

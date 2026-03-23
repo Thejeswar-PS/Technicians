@@ -72,11 +72,13 @@ export class TechMileageDashboardComponent implements OnInit {
       return;
     }
 
+    this.currentPage = 1;
     this.loadReport();
   }
 
   resetToCurrentQuarter(): void {
     this.setDefaultRange();
+    this.currentPage = 1;
     this.loadReport();
   }
 
@@ -183,7 +185,9 @@ export class TechMileageDashboardComponent implements OnInit {
       .getTechMileageReport({
         startDate: this.startDate,
         endDate: this.endDate,
-        techName: techName
+        techName: techName,
+        pageNumber: this.currentPage,
+        pageSize: this.pageSize
       })
       .subscribe({
         next: (response) => {
@@ -196,7 +200,9 @@ export class TechMileageDashboardComponent implements OnInit {
           }
 
           this.report = response;
-          this.chartOptions = this.buildChartOptions(response?.monthlySummary || []);
+          const monthlySummary = this.buildMonthlySummaryFromRecords(response?.mileageRecords || []);
+          this.report.monthlySummary = monthlySummary;
+          this.chartOptions = this.buildChartOptions(monthlySummary);
           this.isLoading = false;
         },
         error: () => {
@@ -213,7 +219,7 @@ export class TechMileageDashboardComponent implements OnInit {
     const miles = summary.map((item) => item.totalMiles || 0);
     const hours = summary.map((item) => Number(item.totalHours || 0));
 
-    const labelColor = getCSSVariableValue('--kt-gray-700');
+    const labelColor = '#212529';
     const borderColor = getCSSVariableValue('--kt-gray-200');
     const milesColor = getCSSVariableValue('--kt-info');
     const hoursColor = getCSSVariableValue('--kt-warning');
@@ -255,7 +261,7 @@ export class TechMileageDashboardComponent implements OnInit {
         labels: {
           style: {
             colors: labelColor,
-            fontSize: '12px'
+            fontSize: '14px'
           }
         }
       },
@@ -266,7 +272,7 @@ export class TechMileageDashboardComponent implements OnInit {
             style: { color: milesColor }
           },
           labels: {
-            style: { colors: labelColor, fontSize: '12px' },
+            style: { colors: labelColor, fontSize: '14px' },
             formatter: (value: number) => Math.round(value).toString()
           }
         },
@@ -277,7 +283,7 @@ export class TechMileageDashboardComponent implements OnInit {
             style: { color: hoursColor }
           },
           labels: {
-            style: { colors: labelColor, fontSize: '12px' },
+            style: { colors: labelColor, fontSize: '14px' },
             formatter: (value: number) => Math.round(value).toString()
           }
         }
@@ -356,26 +362,25 @@ export class TechMileageDashboardComponent implements OnInit {
   }
 
   get paginatedRecords(): any[] {
-    if (!this.report?.mileageRecords) return [];
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    return this.report.mileageRecords.slice(startIndex, endIndex);
+    return this.report?.mileageRecords || [];
   }
 
   get totalPages(): number {
-    if (!this.report?.mileageRecords) return 0;
-    return Math.ceil(this.report.mileageRecords.length / this.pageSize);
+    if (!this.report?.totalJobs) return 0;
+    return Math.ceil(this.report.totalJobs / this.pageSize);
   }
 
   goToPage(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
       this.currentPage = page;
+      this.loadReport();
     }
   }
 
   changePageSize(size: number): void {
     this.pageSize = size;
     this.currentPage = 1;
+    this.loadReport();
   }
 
   get pageNumbers(): number[] {
@@ -458,5 +463,37 @@ export class TechMileageDashboardComponent implements OnInit {
       record?.Orgin ||
       ''
     ).toString().trim();
+  }
+
+  private buildMonthlySummaryFromRecords(records: any[]): TechMileageMonthlySummaryDto[] {
+    const mapByMonth = new Map<string, { totalMiles: number; totalHours: number }>();
+
+    records.forEach((record) => {
+      const rawDate = record?.startDate;
+      const date = rawDate ? new Date(rawDate) : null;
+      if (!date || Number.isNaN(date.getTime())) {
+        return;
+      }
+
+      const monthKey = this.formatMonthKey(date);
+      const existing = mapByMonth.get(monthKey) || { totalMiles: 0, totalHours: 0 };
+
+      existing.totalMiles += Number(record?.milesReported || 0);
+      existing.totalHours += Number(record?.hoursDecimal || 0);
+      mapByMonth.set(monthKey, existing);
+    });
+
+    return Array.from(mapByMonth.entries())
+      .sort(([a], [b]) => new Date(`${a} 01`).getTime() - new Date(`${b} 01`).getTime())
+      .map(([month, totals]) => ({
+        month,
+        totalMiles: Math.round(totals.totalMiles),
+        totalHours: Number(totals.totalHours.toFixed(2))
+      }));
+  }
+
+  private formatMonthKey(date: Date): string {
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    return `${month} ${date.getFullYear()}`;
   }
 }

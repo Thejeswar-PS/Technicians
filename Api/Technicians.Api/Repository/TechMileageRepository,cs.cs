@@ -5,192 +5,83 @@ using Technicians.Api.Models;
 
 namespace Technicians.Api.Repository
 {
-    public class TechMileageRepository
+    public interface ITechMileageRepository
     {
-        private readonly IConfiguration _configuration;
+        Task<PagedResult<TechMileageDto>> GetMileageReport(
+            DateTime startDate,
+            DateTime endDate,
+            string techName,
+            int pageNumber,
+            int pageSize);
+    }
+
+    public class TechMileageRepository : ITechMileageRepository
+    {
         private readonly string _connectionString;
 
         public TechMileageRepository(IConfiguration configuration)
         {
-            _configuration = configuration;
-            _connectionString = _configuration.GetConnectionString("DefaultConnection");
+            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? 
+                               throw new ArgumentNullException(nameof(configuration), "DefaultConnection string is required");
         }
 
-        /// <summary>
-        /// Gets tech mileage report data using the GetTechMileageReport stored procedure
-        /// </summary>
-        public async Task<TechMileageResponseDto> GetTechMileageReportAsync(TechMileageRequestDto request)
-        {
-            var response = new TechMileageResponseDto();
-
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var parameters = new DynamicParameters();
-                parameters.Add("@StartDate", DateTime.Parse(request.StartDate), DbType.Date);
-                parameters.Add("@EndDate", DateTime.Parse(request.EndDate), DbType.Date);
-                parameters.Add("@TechName", string.IsNullOrEmpty(request.TechName) ? (object)DBNull.Value : request.TechName, DbType.String);
-
-                var mileageRecords = await connection.QueryAsync(
-                    "GetTechMileageReport",
-                    parameters,
-                    commandType: CommandType.StoredProcedure
-                );
-
-                // Map records using exact stored procedure column names
-                response.MileageRecords = mileageRecords.Select(row =>
-                {
-                    var dict = (IDictionary<string, object>)row;
-
-                    return new TechMileageRecordDto
-                    {
-                        CallNbr = GetStringValue(dict, "Job Number"),
-                        TechName = GetStringValue(dict, "TechName"),
-                        CustName = GetStringValue(dict, "Customer Name"),
-                        Address = GetStringValue(dict, "Site Address"),
-                        Origin = GetFirstStringValue(dict, "Origin", "Orgin", "Origin Address", "origion"),
-                        StartDate = GetDateTimeValue(dict, "Date"),
-                        MilesReported = GetDecimalValue(dict, "Miles Reported"),
-                        HoursDecimal = GetDecimalValue(dict, "Hours (Decimal)"),
-                        JobType = GetStringValue(dict, "Job Type"),
-                        TotalMinutes = GetIntValue(dict, "Total Minutes"),
-                        TimeTaken = GetStringValue(dict, "Time Taken (HH:MM)")
-                    };
-                }).ToList();
-
-                // Calculate summary statistics
-                if (response.MileageRecords.Any())
-                {
-                    response.TotalMiles = response.MileageRecords.Sum(r => r.MilesReported);
-                    response.TotalHours = response.MileageRecords.Sum(r => r.HoursDecimal);
-                    response.TotalJobs = response.MileageRecords.Count;
-                }
-
-                // Get monthly summary for charts
-                response.MonthlySummary = await GetTechMileageMonthlySummaryAsync(request);
-
-                response.Success = true;
-                response.Message = "Tech mileage report retrieved successfully";
-            }
-            catch (Exception ex)
-            {
-                response.Success = false;
-                response.Message = $"Error retrieving tech mileage report: {ex.Message}";
-                response.MileageRecords = new List<TechMileageRecordDto>();
-                response.MonthlySummary = new List<TechMileageMonthlySummaryDto>();
-            }
-
-            return response;
-        }
-
-        /// <summary>
-        /// Gets monthly summary data for chart using GetTechMileageMonthlySummary stored procedure
-        /// </summary>
-        public async Task<List<TechMileageMonthlySummaryDto>> GetTechMileageMonthlySummaryAsync(TechMileageRequestDto request)
-        {
-            try
-            {
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                var parameters = new DynamicParameters();
-                parameters.Add("@StartDate", DateTime.Parse(request.StartDate), DbType.Date);
-                parameters.Add("@EndDate", DateTime.Parse(request.EndDate), DbType.Date);
-                parameters.Add("@TechName", string.IsNullOrEmpty(request.TechName) ? (object)DBNull.Value : request.TechName, DbType.String);
-
-                var monthlySummary = await connection.QueryAsync(
-                    "GetTechMileageMonthlySummary",
-                    parameters,
-                    commandType: CommandType.StoredProcedure
-                );
-
-                return monthlySummary.Select(row =>
-                {
-                    var dict = (IDictionary<string, object>)row;
-                    return new TechMileageMonthlySummaryDto
-                    {
-                        Month = GetStringValue(dict, "Month") ??
-                               GetStringValue(dict, "MonthName") ??
-                               GetStringValue(dict, "Month_Name") ?? "",
-                        TotalMiles = GetIntValueOrNull(dict, "TotalMiles") ??
-                                    GetIntValueOrNull(dict, "Total_Miles") ??
-                                    GetIntValueOrNull(dict, "Miles") ?? 0,
-                        TotalHours = GetDecimalValueOrNull(dict, "TotalHours") ??
-                                    GetDecimalValueOrNull(dict, "Total_Hours") ??
-                                    GetDecimalValueOrNull(dict, "Hours") ?? 0
-                    };
-                }).ToList();
-            }
-            catch (Exception ex)
-            {
-                // Log error and return empty list
-                Console.WriteLine($"ERROR in GetTechMileageMonthlySummaryAsync: {ex.Message}");
-                return new List<TechMileageMonthlySummaryDto>();
-            }
-        }
-
-        /// <summary>
-        /// Gets list of technicians using existing etechTechNames stored procedure
-        /// </summary>
-        public async Task<List<TechMileageTechnicianDto>> GetTechniciansAsync()
+        public async Task<PagedResult<TechMileageDto>> GetMileageReport(
+            DateTime startDate,
+            DateTime endDate,
+            string techName,
+            int pageNumber,
+            int pageSize)
         {
             using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
 
-            var technicians = await connection.QueryAsync<TechMileageTechnicianDto>(
-                "etechTechNames",
-                commandType: CommandType.StoredProcedure
-            );
+            var parameters = new DynamicParameters();   
+            parameters.Add("@StartDate", startDate);
+            parameters.Add("@EndDate", endDate);
+            parameters.Add("@TechName", string.IsNullOrEmpty(techName) ? null : techName);
 
-            var techList = technicians.ToList();
-
-            // Add "All" option at the beginning for filtering
-            techList.Insert(0, new TechMileageTechnicianDto
-            {
-                TechID = "ALL",
-                TechName = "All"
-            });
-
-            return techList;
-        }
-
-        /// <summary>
-        /// DEBUG: Gets raw stored procedure data to see exact column names and values
-        /// </summary>
-        public async Task<List<Dictionary<string, object>>> GetRawStoredProcedureDataAsync(TechMileageRequestDto request)
-        {
-            using var connection = new SqlConnection(_connectionString);
-            await connection.OpenAsync();
-
-            var parameters = new DynamicParameters();
-            parameters.Add("@StartDate", DateTime.Parse(request.StartDate), DbType.Date);
-            parameters.Add("@EndDate", DateTime.Parse(request.EndDate), DbType.Date);
-            parameters.Add("@TechName", string.IsNullOrEmpty(request.TechName) ? (object)DBNull.Value : request.TechName, DbType.String);
-
+            // ?? STEP 1: Get full data using dynamic mapping
             var rawData = await connection.QueryAsync(
                 "GetTechMileageReport",
                 parameters,
                 commandType: CommandType.StoredProcedure
             );
 
-            var result = new List<Dictionary<string, object>>();
-
-            foreach (var row in rawData)
+            // Map the dynamic results to TechMileageDto with proper column name handling
+            var data = rawData.Select(row =>
             {
                 var dict = (IDictionary<string, object>)row;
-                var rowDict = new Dictionary<string, object>();
-
-                foreach (var kvp in dict)
+                return new TechMileageDto
                 {
-                    rowDict[kvp.Key] = kvp.Value;
-                }
+                    Date = GetDateTimeValue(dict, "Date") ?? DateTime.MinValue,
+                    JobNumber = GetStringValue(dict, "Job Number") ?? string.Empty,
+                    TechName = GetStringValue(dict, "TechName") ?? string.Empty,
+                    JobType = GetStringValue(dict, "Job Type") ?? string.Empty,
+                    CustomerName = GetStringValue(dict, "Customer Name") ?? string.Empty,
+                    Origin = GetFirstStringValue(dict, "Origin", "Orgin", "Origin Address", "origion") ?? string.Empty,
+                    SiteAddress = GetStringValue(dict, "Site Address") ?? string.Empty,
+                    MilesReported = GetDecimalValue(dict, "Miles Reported"),
+                    TotalMinutes = GetIntValue(dict, "Total Minutes"),
+                    HoursDecimal = GetDecimalValue(dict, "Hours (Decimal)"),
+                    TimeTakenHHMM = GetStringValue(dict, "Time Taken (HH:MM)") ?? string.Empty
+                };
+            }).ToList();
 
-                result.Add(rowDict);
-            }
+            // ?? STEP 2: Total count
+            var totalRecords = data.Count;
 
-            return result;
+            // ?? STEP 3: Pagination
+            var pagedData = data
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new PagedResult<TechMileageDto>
+            {
+                Data = pagedData,
+                TotalRecords = totalRecords,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         #region Helper Methods
@@ -198,15 +89,31 @@ namespace Technicians.Api.Repository
         /// <summary>
         /// Safely extracts string value from dictionary with null checking and trimming
         /// </summary>
-        private static string GetStringValue(IDictionary<string, object> dict, string columnName)
+        private static string? GetStringValue(IDictionary<string, object> dict, string columnName)
         {
             var matchingKey = dict.Keys.FirstOrDefault(k => string.Equals(k, columnName, StringComparison.OrdinalIgnoreCase));
             if (!string.IsNullOrEmpty(matchingKey) && dict[matchingKey] != null)
             {
                 var value = dict[matchingKey].ToString()?.Trim();
-                return string.IsNullOrEmpty(value) ? "" : value;
+                return string.IsNullOrEmpty(value) ? null : value;
             }
-            return "";
+            return null;
+        }
+
+        /// <summary>
+        /// Returns the first non-empty string value found among candidate column names
+        /// </summary>
+        private static string? GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
+        {
+            foreach (var columnName in columnNames)
+            {
+                var value = GetStringValue(dict, columnName);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -267,38 +174,6 @@ namespace Technicians.Api.Repository
             if (dict.ContainsKey(columnName) && dict[columnName] != null)
             {
                 if (DateTime.TryParse(dict[columnName].ToString(), out DateTime result))
-                {
-                    return result;
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Nullable version of GetIntValue for optional fields
-        /// Returns null if not found or invalid
-        /// </summary>
-        private static int? GetIntValueOrNull(IDictionary<string, object> dict, string columnName)
-        {
-            if (dict.ContainsKey(columnName) && dict[columnName] != null)
-            {
-                if (int.TryParse(dict[columnName].ToString(), out int result))
-                {
-                    return result;
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// Nullable version of GetDecimalValue for optional fields
-        /// Returns null if not found or invalid
-        /// </summary>
-        private static decimal? GetDecimalValueOrNull(IDictionary<string, object> dict, string columnName)
-        {
-            if (dict.ContainsKey(columnName) && dict[columnName] != null)
-            {
-                if (decimal.TryParse(dict[columnName].ToString(), out decimal result))
                 {
                     return result;
                 }
