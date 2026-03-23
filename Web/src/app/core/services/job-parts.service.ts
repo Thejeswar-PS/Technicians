@@ -304,7 +304,21 @@ export class JobPartsService {
    * Legacy: Page_PreRender() (directory read)
    */
   getFileAttachments(callNbr: string): Observable<FileAttachment[]> {
-    return this.http.get<FileAttachment[]>(`${this.API}/PartsData/GetFileAttachments?callNbr=${encodeURIComponent(callNbr)}`);
+    return this.http
+      .get<any[]>(`${this.API}/PartsData/GetFileAttachments?callNbr=${encodeURIComponent(callNbr)}`)
+      .pipe(
+        map((items: any[] = []) =>
+          items.map((item: any) => {
+            const fileName = (item?.fileName || item?.fullName || item?.name || '').toString();
+            return {
+              name: (item?.name || fileName).toString(),
+              fullName: fileName,
+              creationTime: (item?.uploadedOn || item?.creationTime || '').toString(),
+              url: fileName ? this.getFileUrl(callNbr, fileName) : (item?.url || '').toString()
+            } as FileAttachment;
+          })
+        )
+      );
   }
 
   /**

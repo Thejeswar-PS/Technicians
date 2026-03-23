@@ -103,18 +103,18 @@ namespace Technicians.Api.Repository
         /// <summary>
         /// Returns the first non-empty string value found among candidate column names
         /// </summary>
-        private static string? GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
-        {
-            foreach (var columnName in columnNames)
-            {
-                var value = GetStringValue(dict, columnName);
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    return value;
-                }
-            }
-            return null;
-        }
+        //private static string? GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
+        //{
+        //    foreach (var columnName in columnNames)
+        //    {
+        //        var value = GetStringValue(dict, columnName);
+        //        if (!string.IsNullOrWhiteSpace(value))
+        //        {
+        //            return value;
+        //        }
+        //    }
+        //    return null;
+        //}
 
         /// <summary>
         /// Returns the first non-empty string value found among candidate column names
