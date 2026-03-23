@@ -355,10 +355,10 @@
                         </div>
                       </div>
                       <button type="button"
-                              class="remove-file-btn"
-                              (click)="deleteExistingFile(file.name || file.Name || file.fileName || file.FileName)"
-                              title="Delete file">
-                        <i class="bi bi-trash"></i>
+                              class="download-file-btn"
+                              (click)="downloadExistingFile(file)"
+                              title="Download file">
+                        <i class="bi bi-download"></i>
                       </button>
                     </div>
                   </div>

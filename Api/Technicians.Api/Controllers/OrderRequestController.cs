@@ -215,7 +215,8 @@ namespace Technicians.Api.Controllers
                         fileName = f.FileName,
                         fileSizeKB = f.FileSizeKB,
                         uploadedOn = f.UploadedOn.ToString("yyyy-MM-dd HH:mm:ss"),
-                        viewUrl = _orderRequestRepository.GetFileAccessUrl(rowIndex, f.FileName)
+                        viewUrl = _orderRequestRepository.GetFileAccessUrl(rowIndex, f.FileName),
+                        downloadUrl = $"/api/OrderRequest/DownloadFile/{rowIndex}/{f.FileName}"
                     })
                 });
             }
@@ -363,7 +364,7 @@ namespace Technicians.Api.Controllers
                     _logger.LogInformation("Successfully deleted order request with RowIndex: {RowIndex}", rowIndex);
                     return Ok(new { message = result, rowIndex = rowIndex });
                 }
-                else if (result.Contains("not found", StringComparison.OrdinalIgnoreCase) || 
+                else if (result.Contains("not found", StringComparison.OrdinalIgnoreCase) ||
                          result.Contains("does not exist", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogWarning("Order request not found for RowIndex: {RowIndex}", rowIndex);
@@ -378,13 +379,130 @@ namespace Technicians.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception occurred while deleting order request with RowIndex: {RowIndex}", rowIndex);
-                return StatusCode(500, new 
-                { 
-                    message = "An error occurred while deleting the order request", 
+                return StatusCode(500, new
+                {
+                    message = "An error occurred while deleting the order request",
                     error = ex.Message,
                     rowIndex = rowIndex
                 });
             }
         }
+
+            /// <summary>
+            /// Alternative GET endpoint using query parameter
+            /// Gets a specific order request by its row index via query parameter
+            /// </summary>
+            /// <param name="rowIndex">The row index of the order request to retrieve</param>
+            /// <returns>OrderRequestDto if found, 404 if not found</returns>
+            [HttpGet("GetOrderRequest")]
+            public async Task<ActionResult<OrderRequestDto>> GetOrderRequest([FromQuery] int rowIndex)
+            {
+                try
+                {
+                    if (rowIndex <= 0)
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "RowIndex parameter is required and must be greater than 0"
+                        });
+                    }
+
+                    _logger.LogInformation("Getting OrderRequest for RowIndex: {RowIndex}", rowIndex);
+
+                    var orderRequest = await _orderRequestRepository.GetOrderRequestByRowIndexAsync(rowIndex);
+
+                    if (orderRequest == null)
+                    {
+                        _logger.LogWarning("OrderRequest not found for RowIndex: {RowIndex}", rowIndex);
+                        return NotFound(new
+                        {
+                            success = false,
+                            message = $"Order request with RowIndex {rowIndex} not found"
+                        });
+                    }
+
+                    _logger.LogInformation("Successfully retrieved OrderRequest for RowIndex: {RowIndex}", rowIndex);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        data = orderRequest
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error getting OrderRequest for RowIndex: {RowIndex}", rowIndex);
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        message = "An error occurred while retrieving the order request",
+                        error = ex.Message
+                    });
+                }
+            }
+
+        /// <summary>
+        /// Downloads a specific file from an order request
+        /// </summary>
+        /// <param name="rowIndex">The OrderRequest RowIndex</param>
+        /// <param name="fileName">The file name to download</param>
+        /// <returns>File content for download</returns>
+        [HttpGet("DownloadFile/{rowIndex}/{fileName}")]
+        public ActionResult DownloadFile(int rowIndex, string fileName)
+        {
+            try
+            {
+                if (rowIndex <= 0)
+                {
+                    return BadRequest("Invalid RowIndex provided");
+                }
+
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    return BadRequest("File name is required");
+                }
+
+                _logger.LogInformation("Downloading file '{FileName}' for OrderRequest RowIndex: {RowIndex}", fileName, rowIndex);
+
+                var (fileExists, filePath, contentType, fileSize) = _orderRequestRepository.GetOrderRequestFileForDownload(rowIndex, fileName);
+
+                if (!fileExists)
+                {
+                    _logger.LogWarning("File '{FileName}' not found for RowIndex: {RowIndex}", fileName, rowIndex);
+                    return NotFound(new { 
+                        message = "File not found", 
+                        fileName = fileName,
+                        rowIndex = rowIndex 
+                    });
+                }
+
+                _logger.LogInformation("Successfully serving file '{FileName}' for RowIndex: {RowIndex}, Size: {FileSize} bytes", 
+                    fileName, rowIndex, fileSize);
+
+                // Return the file with proper headers
+                return PhysicalFile(filePath, contentType, fileName);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                _logger.LogError("Access denied when downloading file '{FileName}' for RowIndex: {RowIndex}", fileName, rowIndex);
+                return StatusCode(403, new { 
+                    message = "Access denied", 
+                    fileName = fileName,
+                    rowIndex = rowIndex 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file '{FileName}' for OrderRequest RowIndex: {RowIndex}", fileName, rowIndex);
+                return StatusCode(500, new { 
+                    message = "An error occurred while downloading the file", 
+                    error = ex.Message,
+                    fileName = fileName,
+                    rowIndex = rowIndex 
+                });
+            }
+        }
     }
 }
+

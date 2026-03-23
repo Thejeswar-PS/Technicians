@@ -85,11 +85,12 @@ export class OrderRequestComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUserValue;
+    const currentUserId = this.getCurrentUserId();
     
     // Set the current user as the lastModifiedBy after user is loaded
-    if (this.currentUser?.userName) {
+    if (currentUserId) {
       this.orderRequestForm.patchValue({
-        lastModifiedBy: this.currentUser.userName
+        lastModifiedBy: currentUserId
       });
     }
     
@@ -197,6 +198,31 @@ export class OrderRequestComponent implements OnInit {
     });
   }
 
+  downloadExistingFile(file: any): void {
+    const rowIndex = this.orderRequestForm.get('rowIndex')?.value;
+    const fileName = (file?.name || file?.Name || file?.fileName || file?.FileName || '').toString();
+    if (!rowIndex || !fileName) {
+      return;
+    }
+
+    this.orderRequestService.downloadOrderRequestFile(rowIndex, fileName).subscribe({
+      next: (fileBlob: Blob) => {
+        const blobUrl = window.URL.createObjectURL(fileBlob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      },
+      error: (error) => {
+        console.error('Error downloading file:', error);
+        this.fileDeleteError = this.extractErrorMessage(error, 'Failed to download file. Please try again.');
+      }
+    });
+  }
+
   /**
    * Get file icon class based on extension
    */
@@ -270,11 +296,24 @@ export class OrderRequestComponent implements OnInit {
     });
 
     // Set the current user as the lastModifiedBy default value
-    if (this.currentUser?.userName) {
+    const currentUserId = this.getCurrentUserId();
+    if (currentUserId) {
       this.orderRequestForm.patchValue({
-        lastModifiedBy: this.currentUser.userName
+        lastModifiedBy: currentUserId
       });
     }
+  }
+
+  private getCurrentUserId(): string {
+    const user = this.currentUser || this.authService.currentUserValue || {};
+    return (
+      user?.windowsID ||
+      user?.windowsId ||
+      user?.username ||
+      user?.userName ||
+      user?.name ||
+      ''
+    ).toString().trim();
   }
 
   /**
@@ -503,7 +542,7 @@ export class OrderRequestComponent implements OnInit {
     this.orderRequestForm.reset({
       rowIndex: 0,
       status: 'NEW',
-      lastModifiedBy: this.currentUser?.userName || ''
+      lastModifiedBy: this.getCurrentUserId() || ''
     });
   }
 
@@ -630,7 +669,7 @@ export class OrderRequestComponent implements OnInit {
       arriveDate: formValue.arriveDate || null,
       notes: formValue.notes || null,
       status: formValue.status || null,
-      lastModifiedBy: formValue.lastModifiedBy || this.currentUser?.userName || 'System'
+      lastModifiedBy: formValue.lastModifiedBy || this.getCurrentUserId() || 'System'
     };
 
     // Check if we have files to upload
@@ -685,7 +724,7 @@ export class OrderRequestComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error saving order request with files:', error);
-          this.formError = error.error?.message || 'Failed to save order request with files. Please try again.';
+          this.formError = this.extractErrorMessage(error, 'Failed to save order request with files. Please try again.');
           this.isFormSubmitting = false;
           this.isLoading = false;
         }
@@ -721,12 +760,84 @@ export class OrderRequestComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error saving order request:', error);
-          this.formError = error.error?.message || 'Failed to save order request. Please try again.';
+          this.formError = this.extractErrorMessage(error, 'Failed to save order request. Please try again.');
           this.isFormSubmitting = false;
           this.isLoading = false;
         }
       });
     }
+  }
+
+  private extractErrorMessage(error: any, fallbackMessage: string): string {
+    if (!error) {
+      return fallbackMessage;
+    }
+
+    const errorPayload = error.error;
+
+    if (typeof errorPayload === 'string' && errorPayload.trim()) {
+      try {
+        const parsed = JSON.parse(errorPayload);
+        const parsedMessage = parsed?.message ? String(parsed.message).trim() : '';
+        const parsedError = parsed?.error ? String(parsed.error).trim() : '';
+
+        if (parsedError && this.isGenericErrorMessage(parsedMessage)) {
+          return parsedError;
+        }
+        if (parsedMessage) {
+          return parsedMessage;
+        }
+        if (parsedError) {
+          return parsed.error;
+        }
+      } catch {
+        return errorPayload;
+      }
+    }
+
+    const messageText = errorPayload?.message ? String(errorPayload.message).trim() : '';
+    const errorText = errorPayload?.error ? String(errorPayload.error).trim() : '';
+
+    if (errorText && this.isGenericErrorMessage(messageText)) {
+      return errorText;
+    }
+
+    if (messageText) {
+      return messageText;
+    }
+
+    if (errorText) {
+      return errorText;
+    }
+
+    if (errorPayload?.errors && typeof errorPayload.errors === 'object') {
+      const validationMessages = Object.values(errorPayload.errors)
+        .flatMap((entry: any) => Array.isArray(entry) ? entry : [entry])
+        .filter((entry: any) => entry !== null && entry !== undefined && String(entry).trim() !== '')
+        .map((entry: any) => String(entry).trim());
+
+      if (validationMessages.length > 0) {
+        return validationMessages.join(' | ');
+      }
+    }
+
+    if (error?.message) {
+      return error.message;
+    }
+
+    return fallbackMessage;
+  }
+
+  private isGenericErrorMessage(message: string): boolean {
+    if (!message) {
+      return true;
+    }
+
+    const normalized = message.toLowerCase();
+    return normalized.includes('an error occurred while saving')
+      || normalized.includes('an error occured while saving')
+      || normalized === 'an error occurred'
+      || normalized === 'an error occured';
   }
 
   /**

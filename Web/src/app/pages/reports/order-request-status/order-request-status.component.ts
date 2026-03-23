@@ -346,6 +346,10 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
     this.loadOrderRequestStatus();
   }
 
+  createNewOrder(): void {
+    this.router.navigate(['/reports/order-request']);
+  }
+
   exportToCSV(): void {
     if (!this.filteredList || this.filteredList.length === 0) {
       return;

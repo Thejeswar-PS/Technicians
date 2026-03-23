@@ -335,5 +335,109 @@ namespace Technicians.Api.Repository
                 return $"Error occurred while deleting order request: {ex.Message}";
             }
         }
+
+        /// <summary>
+        /// Gets a specific order request by its row index
+        /// </summary>
+        /// <param name="rowIndex">The row index of the order request to retrieve</param>
+        /// <returns>OrderRequestDto if found, null if not found</returns>
+        public async Task<OrderRequestDto?> GetOrderRequestByRowIndexAsync(int rowIndex)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = @"
+            SELECT RowIndex, OrderType, Requester, DCGPartNo, ManufPartNo, 
+                   Vendor, QtyNeeded, PONumber, OrderDate, ArriveDate, 
+                   Notes, Status, LastModifiedBy, LastModifiedDate
+            FROM OrderRequest 
+            WHERE RowIndex = @RowIndex";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@RowIndex", rowIndex);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    return new OrderRequestDto
+                    {
+                        RowIndex = reader.GetInt32("RowIndex"),
+                        OrderType = reader.IsDBNull("OrderType") ? null : reader.GetString("OrderType"),
+                        Requester = reader.IsDBNull("Requester") ? null : reader.GetString("Requester"),
+                        DCGPartNo = reader.IsDBNull("DCGPartNo") ? null : reader.GetString("DCGPartNo"),
+                        ManufPartNo = reader.IsDBNull("ManufPartNo") ? null : reader.GetString("ManufPartNo"),
+                        Vendor = reader.IsDBNull("Vendor") ? null : reader.GetString("Vendor"),
+                        QtyNeeded = reader.IsDBNull("QtyNeeded") ? null : reader.GetInt32("QtyNeeded"),
+                        PONumber = reader.IsDBNull("PONumber") ? null : reader.GetString("PONumber"),
+                        OrderDate = reader.IsDBNull("OrderDate") ? null : reader.GetDateTime("OrderDate"),
+                        ArriveDate = reader.IsDBNull("ArriveDate") ? null : reader.GetDateTime("ArriveDate"),
+                        Notes = reader.IsDBNull("Notes") ? null : reader.GetString("Notes"),
+                        Status = reader.IsDBNull("Status") ? null : reader.GetString("Status"),
+                        LastModifiedBy = reader.GetString("LastModifiedBy")
+                    };
+                }
+
+                return null; // Record not found
+            }
+            catch (Exception)
+            {
+                return null; // Return null on error for consistency
+            }
+        }
+
+        /// <summary>
+        /// Gets file content and metadata for download
+        /// </summary>
+        /// <param name="rowIndex">The OrderRequest RowIndex</param>
+        /// <param name="fileName">The file name to download</param>
+        /// <returns>Tuple with file exists flag, file path, and content type</returns>
+        public (bool FileExists, string FilePath, string ContentType, long FileSize) GetOrderRequestFileForDownload(int rowIndex, string fileName)
+        {
+            try
+            {
+                string baseFilePath = @"\\dcg-file-v\home$\parts\PartsCommon\ETechPartsShipInfo";
+                string filePath = Path.Combine(baseFilePath, rowIndex.ToString(), fileName);
+
+                if (!System.IO.File.Exists(filePath))
+                {
+                    return (false, string.Empty, string.Empty, 0);
+                }
+
+                var fileInfo = new FileInfo(filePath);
+                var contentType = GetContentType(fileName);
+
+                return (true, filePath, contentType, fileInfo.Length);
+            }
+            catch (Exception)
+            {
+                return (false, string.Empty, string.Empty, 0);
+            }
+        }
+
+        /// <summary>
+        /// Determines content type based on file extension
+        /// </summary>
+        /// <param name="fileName">File name with extension</param>
+        /// <returns>MIME content type</returns>
+        private static string GetContentType(string fileName)
+        {
+            var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
+            return extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls" => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                _ => "application/octet-stream"
+            };
+        }
     }
 }

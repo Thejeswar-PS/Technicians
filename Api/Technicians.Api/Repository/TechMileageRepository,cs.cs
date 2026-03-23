@@ -119,7 +119,7 @@ namespace Technicians.Api.Repository
         /// <summary>
         /// Returns the first non-empty string value found among candidate column names
         /// </summary>
-        private static string GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
+        private static string GetStringValue(IDictionary<string, object> dict, params string[] columnNames)
         {
             foreach (var columnName in columnNames)
             {

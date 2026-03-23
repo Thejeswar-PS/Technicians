@@ -154,6 +154,18 @@ export class OrderRequestService {
   }
 
   /**
+   * Downloads a file for an order request as blob
+   * @param rowIndex - The order request row index
+   * @param fileName - The file name to download
+   * @returns Observable<Blob> - File content blob
+   */
+  downloadOrderRequestFile(rowIndex: number, fileName: string): Observable<Blob> {
+    return this.http.get(`${this.API}/OrderRequest/DownloadFile/${rowIndex}/${encodeURIComponent(fileName)}`, {
+      responseType: 'blob'
+    });
+  }
+
+  /**
    * Deletes a file from an order request
    * @param rowIndex - The order request row index
    * @param fileName - The file name to delete
