@@ -8,6 +8,7 @@ import {
 } from 'src/app/core/model/tech-mileage.model';
 import { TechMileageService } from 'src/app/core/services/tech-mileage.service';
 import { AuthService } from 'src/app/modules/auth';
+import { CommonService } from 'src/app/core/services/common.service';
 
 @Component({
   selector: 'app-tech-mileage-dashboard',
@@ -24,6 +25,7 @@ export class TechMileageDashboardComponent implements OnInit {
   // Role-based visibility
   isTechnician: boolean = false;
   showTechColumn: boolean = true;
+  employeeStatus: string = '';
 
   report: TechMileageResponseDto | null = null;
   chartOptions: any = {};
@@ -43,7 +45,8 @@ export class TechMileageDashboardComponent implements OnInit {
   constructor(
     private techMileageService: TechMileageService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private _commonService: CommonService
   ) {}
 
   ngOnInit(): void {
@@ -95,19 +98,101 @@ export class TechMileageDashboardComponent implements OnInit {
           ? normalized
           : [{ techID: 'ALL', techName: 'All' }, ...normalized];
 
-        // Auto-select technician based on user role
-        this.autoSelectTechnician();
-        this.loadReport();
+        // Apply role-based filter via API (mirrors legacy GetEmployeeStatusForJobList)
+        this.applyRoleBasedFilters();
       },
       error: () => {
         this.errorMessage = 'Failed to load technicians list.';
-        // Still load the report with 'All' if technicians fail
+        // Still apply role-based filters and load report
+        this.applyRoleBasedFilters();
+      }
+    });
+  }
+
+  /**
+   * Mirrors legacy TechMileageDashboard.aspx.cs BindFilters():
+   * Calls GetEmployeeStatusForJobList API to determine if the current user is a
+   * Technician or TechManager.  If so, locks the tech dropdown to their own EmpID
+   * and hides the Tech column.  Managers/Others get full access.
+   */
+  private applyRoleBasedFilters(): void {
+    let windowsID = '';
+    let empID = '';
+
+    try {
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        const empName = (userData.empName || userData.empLabel || '').toString().trim();
+        windowsID = (userData.windowsID || userData.windowsId || empName).toString().trim();
+        empID = (userData.empID || '').toString().trim();
+      }
+    } catch (e) {
+      console.error('[TechMileage] Error reading userData:', e);
+    }
+
+    if (!windowsID) {
+      // No windowsID — fall back to localStorage heuristic, then load report
+      this.applyRoleFromLocalStorage();
+      this.loadReport();
+      return;
+    }
+
+    this._commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+      next: (statusData: any) => {
+        // Handle both array [ { Status, EmpID } ] and object { status, empId } response shapes
+        let status = '';
+        let apiEmpId = '';
+
+        if (Array.isArray(statusData) && statusData.length > 0) {
+          const first = statusData[0] || {};
+          status   = (first.Status   || first.status   || '').toString().trim();
+          apiEmpId = (first.EmpID    || first.empID    || first.empId    || '').toString().trim();
+        } else if (statusData && typeof statusData === 'object') {
+          status   = (statusData.Status   || statusData.status   || '').toString().trim();
+          apiEmpId = (statusData.EmpID    || statusData.empID    || statusData.empId    || '').toString().trim();
+        }
+
+        this.employeeStatus = status;
+        console.log('[TechMileage] Employee status from API:', status, 'EmpID:', apiEmpId);
+
+        const isTechRole =
+          status.toLowerCase() === 'technician' ||
+          status.toLowerCase() === 'techmanager' ||
+          status.toLowerCase() === 'tech manager';
+
+        if (isTechRole) {
+          // RESTRICTED: lock dropdown to this user's own data (mirrors ddlTech.Enabled = false)
+          this.isTechnician = true;
+          this.showTechColumn = false;
+          this.techDropdownDisabled = true;
+
+          const resolvedEmpId = (apiEmpId || empID).toString().trim().toUpperCase();
+          const matched = this.technicians.find(
+            (tech) => (tech.techID || '').toString().trim().toUpperCase() === resolvedEmpId
+          );
+          if (matched) {
+            this.selectedTechName = matched.techName;
+            console.log('[TechMileage] Restricted to technician:', matched.techName);
+          }
+        }
+        // FULL ACCESS (Manager/Other): dropdown stays enabled, selectedTechName stays 'All'
+
+        this.loadReport();
+      },
+      error: () => {
+        console.warn('[TechMileage] GetEmployeeStatusForJobList API failed — falling back to localStorage heuristic.');
+        this.applyRoleFromLocalStorage();
         this.loadReport();
       }
     });
   }
 
-  private autoSelectTechnician(): void {
+  /**
+   * Fallback role detection when the API is unavailable.
+   * Uses localStorage userData (role/empStatus fields) + tech-list name matching.
+   */
+  private applyRoleFromLocalStorage(): void {
     let empName = '';
     let windowsID = '';
     let empID = '';
@@ -132,7 +217,6 @@ export class TechMileageDashboardComponent implements OnInit {
       (v || '').toString().trim().toUpperCase().replace(/[^A-Z0-9. ]/g, '');
 
     const windowsIdTail = (windowsID || '').split('\\').pop() || windowsID;
-
     const userTokens = [
       normalize(empID),
       normalize(empName),
@@ -140,34 +224,29 @@ export class TechMileageDashboardComponent implements OnInit {
       normalize(windowsIdTail)
     ].filter(Boolean);
 
-    // Try to find this user in the technicians list
-    const matched = this.technicians.find(tech => {
+    const matched = this.technicians.find((tech) => {
       const techTokens = [
         normalize(tech.techID),
         normalize(tech.techName)
       ].filter(Boolean);
-      return userTokens.some(ut =>
-        techTokens.some(tt =>
-          ut === tt || tt.startsWith(ut) || ut.startsWith(tt)
-        )
+      return userTokens.some((ut) =>
+        techTokens.some((tt) => ut === tt || tt.startsWith(ut) || ut.startsWith(tt))
       );
     });
 
     if (matched) {
-      // User is in the technicians list → treat as Technician role
       this.isTechnician = true;
       this.showTechColumn = false;
       this.selectedTechName = matched.techName;
       this.techDropdownDisabled = true;
-      console.log('[TechMileage] Auto-selected technician:', matched.techName);
+      console.log('[TechMileage] Fallback: restricted to technician:', matched.techName);
     } else {
-      // User is a manager / admin — check explicit role fields too
-      const isTechByRole = empStatus === 'T' ||
-                           userRole.includes('technician') ||
-                           userRole === 'tech' ||
-                           userRole === 'techmanager';
+      const isTechByRole =
+        empStatus === 'T' ||
+        userRole.includes('technician') ||
+        userRole === 'tech' ||
+        userRole === 'techmanager';
       if (isTechByRole) {
-        // Technician whose name wasn't matched — still restrict the column
         this.isTechnician = true;
         this.showTechColumn = false;
         this.techDropdownDisabled = true;
