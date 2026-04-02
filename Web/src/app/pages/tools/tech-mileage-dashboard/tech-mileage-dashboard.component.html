@@ -172,6 +172,15 @@
                       </span>
                     </span>
                   </th>
+                  <th class="sortable" (click)="sortData('milesReported')">
+                    <span class="header-cell">
+                      Miles
+                      <span class="sort-icons" [class.active]="sortColumn === 'milesReported'">
+                        <i class="up" [class.on]="sortColumn === 'milesReported' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'milesReported' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -183,6 +192,7 @@
                   <td class="col-origin">{{ getOriginValue(record) || '-' }}</td>
                   <td class="col-date">{{ record.startDate | date: 'MM/dd/yyyy' }}</td>
                   <td class="col-job-type">{{ record.jobType }}</td>
+                  <td class="col-miles">{{ record.milesReported | number: '1.0-1' }}</td>
                 </tr>
               </tbody>
             </table>

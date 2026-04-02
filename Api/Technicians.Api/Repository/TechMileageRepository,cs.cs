@@ -13,6 +13,8 @@ namespace Technicians.Api.Repository
             string techName,
             int pageNumber,
             int pageSize);
+        Task<IEnumerable<TechMileageMonthlySummaryDto>> GetTechMileageMonthlySummary(DateTime startDate, DateTime endDate, string techName);
+
     }
 
     public class TechMileageRepository : ITechMileageRepository
@@ -82,6 +84,32 @@ namespace Technicians.Api.Repository
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
+        }
+
+        public async Task<IEnumerable<TechMileageMonthlySummaryDto>> GetTechMileageMonthlySummary(
+    DateTime startDate,
+    DateTime endDate,
+    string techName)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@StartDate", startDate);
+            parameters.Add("@EndDate", endDate);
+            parameters.Add("@TechName", string.IsNullOrEmpty(techName) || techName == "ALL" ? null : techName);
+
+            var results = await connection.QueryAsync(
+                "GetTechMileageMonthlySummary",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return results.Select(row => new TechMileageMonthlySummaryDto
+            {
+                Month = row.Month?.ToString() ?? string.Empty,
+                TotalMiles = (int)(row.TotalMiles ?? 0),
+                TotalHours = (decimal)(row.TotalHours ?? 0)
+            });
         }
 
         #region Helper Methods

@@ -37,6 +37,21 @@ namespace Technicians.Api.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("GetTechMileageMonthlySummary")]
+        public async Task<IActionResult> GetTechMileageMonthlySummary(
+    [FromQuery] DateTime startDate,
+    [FromQuery] DateTime endDate,
+    [FromQuery] string techName = "ALL")
+        {
+            var result = await _repository.GetTechMileageMonthlySummary(
+                startDate,
+                endDate,
+                techName
+            );
+
+            return Ok(result);
+        }
     }
 }
     

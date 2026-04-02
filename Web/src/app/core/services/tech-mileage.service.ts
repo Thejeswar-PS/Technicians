@@ -52,6 +52,29 @@ export class TechMileageService {
       .pipe(map((response) => this.mapReportResponse(response || {})));
   }
 
+  getTechMileageMonthlySummary(request: TechMileageRequestDto): Observable<TechMileageMonthlySummaryDto[]> {
+    const params = new HttpParams()
+      .set('startDate', request.startDate)
+      .set('endDate', request.endDate)
+      .set('techName', request.techName || 'ALL');
+
+    return this.http
+      .get<any>(`${this.apiUrl}/TechMileage/GetTechMileageMonthlySummary`, { params })
+      .pipe(
+        map((response) => {
+          const rawSummary = Array.isArray(response)
+            ? response
+            : (response?.data || response?.Data || response?.monthlySummary || response?.MonthlySummary || []);
+
+          return (rawSummary as TechMileageApiSummary[]).map((item) => ({
+            month: item?.month || item?.Month || '',
+            totalMiles: Number(item?.totalMiles ?? item?.TotalMiles ?? 0),
+            totalHours: Number(item?.totalHours ?? item?.TotalHours ?? 0)
+          }));
+        })
+      );
+  }
+
   private mapReportResponse(response: TechMileageApiResponse): TechMileageResponseDto {
     const rawRecords = (
       response?.data ||

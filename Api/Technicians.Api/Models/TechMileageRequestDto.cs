@@ -17,6 +17,13 @@ namespace Technicians.Api.Models
         public string TimeTakenHHMM { get; set; }
     }
 
+    public class TechMileageMonthlySummaryDto
+    {
+        public string Month { get; set; } = string.Empty;
+        public int TotalMiles { get; set; }
+        public decimal TotalHours { get; set; }
+    }
+
     public class PagedResult<T>
     {
         public IEnumerable<T> Data { get; set; }
