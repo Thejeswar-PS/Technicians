@@ -20,6 +20,7 @@ export interface CalendarDay {
   styleUrls: ['./tools-tracking-calendar.component.scss']
 })
 export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
+  private readonly drillDownStorageKeyPrefix = 'toolTrackingDrillDown:';
   readonly statusCardConfig = [
     { key: 'overdue', label: 'Overdue', icon: 'bi bi-exclamation-triangle-fill', countKey: 'overdue' },
     { key: 'due15', label: 'Due 15 Days', icon: 'bi bi-clock-fill', countKey: 'due15Days' },
@@ -623,11 +624,7 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
    * Open tool details (Navigate to: /tools/tool-tracking-entry?TechID=)
    */
   openToolDetails(entry: ToolsCalendarTrackingDto): void {
-    // Navigate to Angular tool tracking entry page with TechID parameter
-    // Example: /tools/tool-tracking-entry?TechID=SARIQ.MO
-    this.router.navigate(['/tools/tool-tracking-entry'], {
-      queryParams: { TechID: entry.techID }
-    });
+    this.router.navigate(['/tools/tool-tracking-entry', entry.techID]);
   }
 
   /**
@@ -641,7 +638,7 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     }
 
     const selectedTechId = this.selectedTech !== 'All' ? this.selectedTech : undefined;
-    const queryParams: Record<string, string> = {
+    const drillDownContext = {
       bucket,
       toolName: this.selectedToolType,
       serialNo: this.selectedSerialNo,
@@ -650,17 +647,29 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
       endDate: this.formatDateForApi(this.endDate)
     };
 
-    if (selectedTechId) {
-      queryParams['TechID'] = selectedTechId;
-    }
-
-    const urlTree = this.router.createUrlTree(['/tools/tool-tracking-entry'], {
-      queryParams
-    });
+    const urlTree = selectedTechId
+      ? this.router.createUrlTree(['/tools/tool-tracking-entry', selectedTechId])
+      : this.router.createUrlTree([
+          '/tools/tool-tracking-entry/drilldown',
+          this.storeDrillDownContext(drillDownContext)
+        ]);
 
     const internalUrl = this.router.serializeUrl(urlTree);
     const externalUrl = this.location.prepareExternalUrl(internalUrl);
     window.open(externalUrl, '_blank');
+  }
+
+  private storeDrillDownContext(context: {
+    bucket: string;
+    toolName: string;
+    serialNo: string;
+    techFilter: string;
+    startDate: string;
+    endDate: string;
+  }): string {
+    const contextId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(`${this.drillDownStorageKeyPrefix}${contextId}`, JSON.stringify(context));
+    return contextId;
   }
 
   getStatusCardCount(bucket: 'overdue' | 'due15' | 'due30' | 'due45' | 'due60'): number {

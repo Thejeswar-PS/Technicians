@@ -10,6 +10,7 @@ import { AuthHelper } from 'src/app/core/utils/auth-helper';
   styleUrls: ['./tool-tracking-entry.component.scss']
 })
 export class ToolTrackingEntryComponent implements OnInit {
+  private readonly drillDownStorageKeyPrefix = 'toolTrackingDrillDown:';
   readonly pageSizeOptions: number[] = [10, 25, 50, 100];
   techId: string = '';
   selectedTech: string = 'All';
@@ -62,35 +63,26 @@ export class ToolTrackingEntryComponent implements OnInit {
     this.userContext = this.authHelper.getUserContext();
     
     this.loadTechnicians();
-    
-    // Check for TechID query parameter from calendar navigation
-    this.route.queryParams.subscribe(params => {
-      const techID = params['TechID'];
-      const bucket = params['bucket'];
 
-      this.selectedBucket = bucket || '';
-      this.drillDownFilters = {
-        toolName: params['toolName'] || 'All',
-        serialNo: params['serialNo'] || 'All',
-        techFilter: params['techFilter'] || techID || '0',
-        startDate: params['startDate'] || '',
-        endDate: params['endDate'] || ''
-      };
+    this.route.paramMap.subscribe(params => {
+      const techID = params.get('techId');
+      const contextId = params.get('contextId');
+
+      if (contextId) {
+        this.selectedTech = 'All';
+        this.techId = '';
+        this.loadStoredDrillDownContext(contextId);
+        return;
+      }
+
+      this.clearCalendarDrillDown();
 
       if (techID) {
-        // Pre-select the technician from calendar navigation
         this.selectedTech = techID;
         this.techId = techID;
-        // Load tools automatically after technicians are loaded
         setTimeout(() => {
           this.autoLoadTools();
         }, 500);
-      }
-
-      if (bucket && !techID) {
-        this.loadCalendarDrillDown();
-      } else {
-        this.calendarDrillDownEntries = [];
       }
     });
   }
@@ -312,9 +304,7 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   openDrillDownEntry(entry: ToolsCalendarTrackingDto): void {
     this.clearCalendarDrillDown();
-    this.selectedTech = entry.techID;
-    this.techId = entry.techID;
-    this.autoLoadTools();
+    this.router.navigate(['/tools/tool-tracking-entry', entry.techID]);
   }
 
   shouldShowDrillDownPanel(): boolean {
@@ -362,7 +352,40 @@ export class ToolTrackingEntryComponent implements OnInit {
   clearCalendarDrillDown(): void {
     this.selectedBucket = '';
     this.calendarDrillDownEntries = [];
+    this.drillDownFilters = {
+      toolName: 'All',
+      serialNo: 'All',
+      techFilter: '0',
+      startDate: '',
+      endDate: ''
+    };
     this.resetDrillDownPagination();
+  }
+
+  private loadStoredDrillDownContext(contextId: string): void {
+    const storageKey = `${this.drillDownStorageKeyPrefix}${contextId}`;
+    const storedContext = localStorage.getItem(storageKey);
+
+    if (!storedContext) {
+      this.clearCalendarDrillDown();
+      return;
+    }
+
+    try {
+      const context = JSON.parse(storedContext);
+      this.selectedBucket = context.bucket || '';
+      this.drillDownFilters = {
+        toolName: context.toolName || 'All',
+        serialNo: context.serialNo || 'All',
+        techFilter: context.techFilter || '0',
+        startDate: context.startDate || '',
+        endDate: context.endDate || ''
+      };
+      this.loadCalendarDrillDown();
+    } catch (error) {
+      console.error('Error parsing tool tracking drill-down context:', error);
+      this.clearCalendarDrillDown();
+    }
   }
 
   formatDrillDownFilters(): string[] {

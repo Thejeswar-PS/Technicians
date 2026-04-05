@@ -23,6 +23,14 @@ const routes: Routes = [
     component: ToolsTrackingCalendarComponent
   },
   {
+    path: 'tool-tracking-entry/drilldown/:contextId',
+    component: ToolTrackingEntryComponent
+  },
+  {
+    path: 'tool-tracking-entry/:techId',
+    component: ToolTrackingEntryComponent
+  },
+  {
     path: 'tool-tracking-entry',
     component: ToolTrackingEntryComponent
   },
