@@ -580,12 +580,10 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     if (this.selectedToolType) {
       this.loadToolSerialNumbers(); // Reload serial numbers for selected tool
     }
-    // Regenerate calendar grid with current tool data and new filters
-    if (this.toolsData && this.toolsData.length > 0) {
-      this.generateCalendarGrid();
-    } else {
-      this.generateCalendar(); // Load data and generate calendar
-    }
+
+    // Reload from backend so statistics cards and calendar entries stay in sync
+    // with the selected technician/tool/serial filters.
+    this.generateCalendar();
   }
   
   /**
@@ -593,12 +591,8 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
    */
   onTechnicianChange(): void {
     // Like legacy: ddlCalTech_SelectedIndexChanged calls FillHolidayDataset()
-    // Regenerate calendar grid with current tool data and new filters
-    if (this.toolsData && this.toolsData.length > 0) {
-      this.generateCalendarGrid();
-    } else {
-      this.generateCalendar(); // Load data and generate calendar
-    }
+    // Reload from backend so due counts reflect the selected technician.
+    this.generateCalendar();
   }
 
   /**
