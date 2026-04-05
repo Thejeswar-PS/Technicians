@@ -76,7 +76,7 @@
       </div>
 
       <!-- ================= CALENDAR DRILL-DOWN ================= -->
-      <div *ngIf="selectedBucket"
+      <div *ngIf="shouldShowDrillDownPanel()"
            class="drilldown-panel mb-4">
 
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
@@ -98,17 +98,35 @@
 
         <div *ngIf="!loadingDrillDown && calendarDrillDownEntries.length > 0" class="table-responsive drilldown-table">
           <div class="pagination-toolbar">
-            <div class="small text-muted">
-              Showing {{ drillDownStartRecord }}-{{ drillDownEndRecord }} of {{ calendarDrillDownEntries.length }} drill-down entries
-            </div>
-
-            <div class="d-flex align-items-center gap-2">
-              <label class="small text-muted mb-0">Records per page</label>
+            <div class="toolbar-section toolbar-section--left">
+              <label class="pagination-label mb-0">Records per page:</label>
               <select class="form-select form-select-sm page-size-select"
                       [ngModel]="drillDownPageSize"
                       (ngModelChange)="onDrillDownPageSizeChange($event)">
                 <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
               </select>
+            </div>
+
+            <div class="toolbar-section toolbar-section--center pagination-summary">
+              Showing {{ drillDownStartRecord }} - {{ drillDownEndRecord }} of {{ calendarDrillDownEntries.length }} records
+            </div>
+
+            <div class="toolbar-section toolbar-section--right">
+              <button type="button"
+                      class="pagination-link"
+                      [disabled]="drillDownCurrentPage === 1"
+                      (click)="goToDrillDownPage(drillDownCurrentPage - 1)">
+                Prev
+              </button>
+
+              <span class="pagination-page">Page {{ drillDownCurrentPage }} of {{ drillDownTotalPages }}</span>
+
+              <button type="button"
+                      class="pagination-link"
+                      [disabled]="drillDownCurrentPage === drillDownTotalPages"
+                      (click)="goToDrillDownPage(drillDownCurrentPage + 1)">
+                Next
+              </button>
             </div>
           </div>
 
@@ -140,26 +158,6 @@
               </tr>
             </tbody>
           </table>
-
-          <div class="pagination-footer" *ngIf="drillDownTotalPages > 1">
-            <button type="button"
-                    class="btn btn-sm btn-light-primary"
-                    [disabled]="drillDownCurrentPage === 1"
-                    (click)="goToDrillDownPage(drillDownCurrentPage - 1)">
-              Previous
-            </button>
-
-            <span class="small text-muted">
-              Page {{ drillDownCurrentPage }} of {{ drillDownTotalPages }}
-            </span>
-
-            <button type="button"
-                    class="btn btn-sm btn-light-primary"
-                    [disabled]="drillDownCurrentPage === drillDownTotalPages"
-                    (click)="goToDrillDownPage(drillDownCurrentPage + 1)">
-              Next
-            </button>
-          </div>
         </div>
 
         <div *ngIf="!loadingDrillDown && calendarDrillDownEntries.length === 0"
@@ -173,17 +171,35 @@
            class="table-responsive">
 
         <div class="pagination-toolbar mb-3">
-          <div class="small text-muted">
-            Showing {{ trackingStartRecord }}-{{ trackingEndRecord }} of {{ trackingData.length }} tools
-          </div>
-
-          <div class="d-flex align-items-center gap-2">
-            <label class="small text-muted mb-0">Records per page</label>
+          <div class="toolbar-section toolbar-section--left">
+            <label class="pagination-label mb-0">Records per page:</label>
             <select class="form-select form-select-sm page-size-select"
                     [ngModel]="trackingPageSize"
                     (ngModelChange)="onTrackingPageSizeChange($event)">
               <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
             </select>
+          </div>
+
+          <div class="toolbar-section toolbar-section--center pagination-summary">
+            Showing {{ trackingStartRecord }} - {{ trackingEndRecord }} of {{ trackingData.length }} records
+          </div>
+
+          <div class="toolbar-section toolbar-section--right">
+            <button type="button"
+                    class="pagination-link"
+                    [disabled]="trackingCurrentPage === 1"
+                    (click)="goToTrackingPage(trackingCurrentPage - 1)">
+              Prev
+            </button>
+
+            <span class="pagination-page">Page {{ trackingCurrentPage }} of {{ trackingTotalPages }}</span>
+
+            <button type="button"
+                    class="pagination-link"
+                    [disabled]="trackingCurrentPage === trackingTotalPages"
+                    (click)="goToTrackingPage(trackingCurrentPage + 1)">
+              Next
+            </button>
           </div>
         </div>
 
@@ -255,26 +271,6 @@
           </tbody>
 
         </table>
-
-        <div class="pagination-footer" *ngIf="trackingTotalPages > 1">
-          <button type="button"
-                  class="btn btn-sm btn-light-primary"
-                  [disabled]="trackingCurrentPage === 1"
-                  (click)="goToTrackingPage(trackingCurrentPage - 1)">
-            Previous
-          </button>
-
-          <span class="small text-muted">
-            Page {{ trackingCurrentPage }} of {{ trackingTotalPages }}
-          </span>
-
-          <button type="button"
-                  class="btn btn-sm btn-light-primary"
-                  [disabled]="trackingCurrentPage === trackingTotalPages"
-                  (click)="goToTrackingPage(trackingCurrentPage + 1)">
-            Next
-          </button>
-        </div>
       </div>
 
       <!-- ================= ATTACHMENTS ================= -->
@@ -343,6 +339,55 @@
 
             </div>
 
+          </div>
+
+          <div class="existing-files-section mt-4">
+            <div class="existing-files-header d-flex justify-content-between align-items-center mb-3">
+              <div class="fw-semibold">Uploaded Files</div>
+              <span class="text-muted small" *ngIf="techId && techId !== 'All'">Tech: {{ techId }}</span>
+            </div>
+
+            <div *ngIf="loadingFiles" class="alert alert-light border d-flex align-items-center gap-2 mb-3">
+              <span class="spinner-border spinner-border-sm text-primary"></span>
+              <span>Loading files...</span>
+            </div>
+
+            <div *ngIf="!loadingFiles && equipmentFiles.length > 0" class="table-responsive existing-files-table mb-3">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>File Name</th>
+                    <th>Size</th>
+                    <th>Uploaded On</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let file of equipmentFiles">
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-earmark text-primary"></i>
+                        <span>{{ file.fileName }}</span>
+                      </div>
+                    </td>
+                    <td>{{ formatFileSize(file.fileSizeKB) }}</td>
+                    <td>{{ file.uploadedOn ? formatTableDate(file.uploadedOn) : '—' }}</td>
+                    <td class="text-center">
+                      <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
+                        <button type="button" class="btn btn-sm btn-light-primary" (click)="viewFile(file)">View</button>
+                        <button type="button" class="btn btn-sm btn-light-success" (click)="downloadFile(file)">Download</button>
+                        <button type="button" class="btn btn-sm btn-light-danger" (click)="deleteFileAttachment(file.fileName)">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div *ngIf="!loadingFiles && techId && techId !== 'All' && equipmentFiles.length === 0"
+                 class="alert alert-light border mb-3">
+              No uploaded files found for this technician.
+            </div>
           </div>
 
           <!-- NOTE -->

@@ -68,18 +68,91 @@
   }
 
   .pagination-toolbar {
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
+    background: #ffffff;
+    border: none;
+    border-bottom: none;
+    border-radius: 0;
+    padding: 14px 0 12px;
+    margin-bottom: 0;
+
+    .toolbar-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .toolbar-section--left {
+      justify-content: flex-start;
+    }
+
+    .toolbar-section--center {
+      justify-content: center;
+      text-align: center;
+    }
+
+    .toolbar-section--right {
+      justify-content: flex-end;
+    }
+  }
+
+  .page-size-select {
+    width: 84px;
+    min-width: 84px;
+    border: 1px solid #d9deea;
     border-radius: 8px;
-    padding: 12px 14px;
+    padding: 0.55rem 2rem 0.55rem 0.8rem;
+    color: #667085;
+    font-weight: 500;
+    background-color: #ffffff;
+    box-shadow: none;
+  }
+
+  .pagination-label,
+  .pagination-summary,
+  .pagination-page,
+  .pagination-link {
+    font-size: 0.95rem;
+  }
+
+  .pagination-label,
+  .pagination-summary,
+  .pagination-page {
+    color: #2f3a4c;
+    font-weight: 500;
+  }
+
+  .pagination-summary {
+    white-space: nowrap;
+  }
+
+  .pagination-page {
+    white-space: nowrap;
+  }
+
+  .pagination-link {
+    border: none;
+    background: transparent;
+    color: #1f2a44;
+    font-weight: 600;
+    padding: 0;
+    line-height: 1;
+    min-width: 36px;
+
+    &:disabled {
+      color: #d3d8e2;
+      cursor: not-allowed;
+    }
+
+    &:not(:disabled):hover {
+      color: #4f7cff;
+    }
   }
 
   .pagination-footer {
     padding-top: 14px;
-  }
-
-  .page-size-select {
-    width: 90px;
+    display: none;
   }
 
   table {
@@ -176,6 +249,31 @@
     margin-bottom: 15px;
   }
 
+  .existing-files-section {
+    .existing-files-header {
+      color: #2f3a4c;
+    }
+
+    .existing-files-table {
+      border: 1px solid #e9ecef;
+      border-radius: 8px;
+
+      table {
+        table-layout: auto;
+      }
+
+      thead th {
+        background: #f8fbff;
+        color: #2f3a4c;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      tbody td {
+        border-top: 1px solid #f1f3f5;
+      }
+    }
+  }
+
   .file-row {
     display: flex;
     justify-content: space-between;
@@ -189,5 +287,18 @@
     padding: 10px;
     border-left: 4px solid #0d6efd;
     border-radius: 4px;
+  }
+
+  @media (max-width: 992px) {
+    .pagination-toolbar {
+      .toolbar-section,
+      .toolbar-section--left,
+      .toolbar-section--center,
+      .toolbar-section--right {
+        justify-content: flex-start;
+        text-align: left;
+        flex: 0 0 100%;
+      }
+    }
   }
 }

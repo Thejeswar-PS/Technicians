@@ -653,9 +653,13 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
       queryParams['TechID'] = selectedTechId;
     }
 
-    this.router.navigate(['/tools/tool-tracking-entry'], {
+    const urlTree = this.router.createUrlTree(['/tools/tool-tracking-entry'], {
       queryParams
     });
+
+    const internalUrl = this.router.serializeUrl(urlTree);
+    const externalUrl = this.location.prepareExternalUrl(internalUrl);
+    window.open(externalUrl, '_blank');
   }
 
   getStatusCardCount(bucket: 'overdue' | 'due15' | 'due30' | 'due45' | 'due60'): number {

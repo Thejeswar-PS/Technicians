@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToolTrackingService } from 'src/app/core/services/tool-tracking.service';
-import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto, EquipmentFileDto, SaveEquipmentFileRequestDto, ToolsCalendarTrackingDto, ToolsCalendarTrackingApiResponse } from 'src/app/core/model/tool-tracking.model';
+import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto, ToolsTrackingFileDto, EquipmentFileDto, SaveEquipmentFileRequestDto, ToolsCalendarTrackingDto, ToolsCalendarTrackingApiResponse } from 'src/app/core/model/tool-tracking.model';
 import { AuthHelper } from 'src/app/core/utils/auth-helper';
 
 @Component({
@@ -41,9 +41,10 @@ export class ToolTrackingEntryComponent implements OnInit {
   };
   
   // File attachment properties - BLOB storage like legacy
-  equipmentFiles: EquipmentFileDto[] = [];
+  equipmentFiles: ToolsTrackingFileDto[] = [];
   selectedFiles: File[] = [];
   uploadingFiles: boolean = false;
+  loadingFiles: boolean = false;
   
   // Role-based filtering
   private userContext: { userEmpID?: string; windowsID?: string } = {};
@@ -85,7 +86,7 @@ export class ToolTrackingEntryComponent implements OnInit {
         }, 500);
       }
 
-      if (bucket) {
+      if (bucket && !techID) {
         this.loadCalendarDrillDown();
       } else {
         this.calendarDrillDownEntries = [];
@@ -308,9 +309,14 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   openDrillDownEntry(entry: ToolsCalendarTrackingDto): void {
+    this.clearCalendarDrillDown();
     this.selectedTech = entry.techID;
     this.techId = entry.techID;
     this.autoLoadTools();
+  }
+
+  shouldShowDrillDownPanel(): boolean {
+    return !!this.selectedBucket && (!this.selectedTech || this.selectedTech === 'All');
   }
 
   getDrillDownTitle(): string {
@@ -491,26 +497,27 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   loadToolsTrackingFiles(): void {
     if (!this.techId || this.techId === 'All') {
+      this.equipmentFiles = [];
       return;
     }
+
+    this.loadingFiles = true;
     
     // Load files from file system storage - Pass user context for role-based filtering
     this.toolTrackingService.getToolsTrackingFiles(this.techId, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response) => {
+        this.loadingFiles = false;
         if (response.success) {
-          this.equipmentFiles = response.data.map(file => ({
-            tecID: this.techId,
-            fileName: file.fileName,
-            fileSizeKB: file.fileSizeKB,
-            uploadedOn: file.uploadedOn,
-            filePath: file.filePath
-          } as any));
+          this.equipmentFiles = response.data || [];
           console.log('Tools tracking files loaded:', this.equipmentFiles.length);
         } else {
+          this.equipmentFiles = [];
           console.error('Failed to load files:', response.message);
         }
       },
       error: (err) => {
+        this.loadingFiles = false;
+        this.equipmentFiles = [];
         if (err.status === 403) {
           console.warn('Access denied: Cannot view files for this technician.');
         } else {
@@ -675,6 +682,18 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   getFileExtension(filename: string): string {
     return filename.substring(filename.lastIndexOf('.') + 1);
+  }
+
+  formatFileSize(sizeInKb: number): string {
+    if (!sizeInKb && sizeInKb !== 0) {
+      return '—';
+    }
+
+    if (sizeInKb < 1024) {
+      return `${sizeInKb.toFixed(1)} KB`;
+    }
+
+    return `${(sizeInKb / 1024).toFixed(2)} MB`;
   }
 
   updateReceived(item: TechToolsTrackingDto, event: any, index: number): void {
