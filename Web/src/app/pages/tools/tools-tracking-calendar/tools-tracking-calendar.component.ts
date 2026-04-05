@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TechToolsService } from '../../../core/services/tech-tools.service';
 import { AuthHelper } from '../../../core/utils/auth-helper';
-import { ToolsTrackingTechsDto, TechToolSerialNoDto, ToolsCalendarTrackingDto, ToolsCalendarDueCountsDto, ToolsCalendarTrackingResultDto } from '../../../core/model/tech-tools.model';
+import { ToolsTrackingTechsDto, ToolsTrackingTechsApiResponse, TechToolSerialNoDto, ToolsCalendarTrackingDto, ToolsCalendarDueCountsDto, ToolsCalendarTrackingResultDto } from '../../../core/model/tech-tools.model';
 
 export interface CalendarDay {
   date: Date;
@@ -32,6 +32,7 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
   selectedTech: string = 'All';
   selectedToolType: string = 'All';
   selectedSerialNo: string = 'All';
+  isTechnicianRestricted: boolean = false;
   
   // Data Arrays
   technicians: (ToolsTrackingTechsDto | { techID: string; techname: string })[] = [];
@@ -125,13 +126,13 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     
     // Use the working tools tracking technicians endpoint - Pass user context for role-based filtering
     const sub = this.techToolsService.getToolsTrackingTechs(this.userContext.userEmpID, this.userContext.windowsID).subscribe({
-      next: (response: any) => {
-        // Extract the data array from the wrapped response
-        const technicians = response.data || response || [];
+      next: (response: ToolsTrackingTechsApiResponse) => {
+        const technicians = response.data || [];
         this.technicians = technicians;
+        this.isTechnicianRestricted = !!response.isFiltered && technicians.length === 1;
         
         // If role-filtered to single technician, auto-select them
-        if (response.isFiltered && technicians.length === 1) {
+        if (this.isTechnicianRestricted) {
           this.selectedTech = technicians[0].techID;
           // Auto-load calendar for single technician
           setTimeout(() => {

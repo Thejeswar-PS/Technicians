@@ -56,8 +56,9 @@
             <select 
               class="form-select form-select-sm border-primary" 
               [(ngModel)]="selectedTech"
-              (change)="onTechnicianChange()">
-              <option value="All">All Technicians</option>
+              (change)="onTechnicianChange()"
+              [disabled]="isTechnicianRestricted">
+              <option *ngIf="!isTechnicianRestricted" value="All">All Technicians</option>
               <option 
                 *ngFor="let tech of technicians; trackBy: trackByTechId" 
                 [value]="tech.techID">

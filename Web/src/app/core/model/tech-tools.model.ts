@@ -104,6 +104,15 @@ export interface ToolsTrackingTechsDto {
   techname: string;
 }
 
+export interface ToolsTrackingTechsApiResponse {
+  success: boolean;
+  data: ToolsTrackingTechsDto[];
+  totalRecords: number;
+  isFiltered?: boolean;
+  filterCriteria?: string;
+  message: string;
+}
+
 export interface TechToolSerialNoDto {
   serialNo: string;
 }

@@ -13,6 +13,7 @@ export class ToolTrackingEntryComponent implements OnInit {
   readonly pageSizeOptions: number[] = [10, 25, 50, 100];
   techId: string = '';
   selectedTech: string = 'All';
+  isTechnicianRestricted: boolean = false;
   technicians: ToolsTrackingTechsDto[] = [];
   trackingData: TechToolsTrackingDto[] = [];
   calendarDrillDownEntries: ToolsCalendarTrackingDto[] = [];
@@ -102,9 +103,10 @@ export class ToolTrackingEntryComponent implements OnInit {
         this.loadingTechnicians = false;
         if (response.success) {
           this.technicians = response.data;
+          this.isTechnicianRestricted = !!response.isFiltered && this.technicians.length === 1;
           
           // Auto-select if technicians list is filtered to single user (technician role)
-          if (response.isFiltered && this.technicians.length === 1) {
+          if (this.isTechnicianRestricted) {
             this.selectedTech = this.technicians[0].techID;
             this.techId = this.technicians[0].techID;
             // Auto-load tools for single technician

@@ -52,8 +52,8 @@
             <select class="form-select"
                     [(ngModel)]="selectedTech"
                     (ngModelChange)="onTechnicianChange($event)"
-                    [disabled]="loading || loadingTechnicians">
-              <option value="All">Select Technician</option>
+                [disabled]="loading || loadingTechnicians || isTechnicianRestricted">
+              <option *ngIf="!isTechnicianRestricted" value="All">Select Technician</option>
               <option *ngFor="let tech of technicians"
                       [value]="tech.techID">
                 {{ tech.techname }}
