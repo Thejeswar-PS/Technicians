@@ -76,11 +76,12 @@ export class ToolTrackingService {
    * @param windowsID Current user's Windows ID (optional)
    */
   getToolsCalendarTracking(
-    startDate?: Date,
-    endDate?: Date,
+    startDate?: Date | string,
+    endDate?: Date | string,
     toolName: string = 'All',
     serialNo: string = 'All',
     techFilter: string = 'All',
+    bucket?: string,
     userEmpID?: string,
     windowsID?: string
   ): Observable<ToolsCalendarTrackingApiResponse> {
@@ -89,8 +90,13 @@ export class ToolTrackingService {
       .set('serialNo', serialNo)
       .set('techFilter', techFilter);
     
-    if (startDate) params = params.set('startDate', startDate.toISOString());
-    if (endDate) params = params.set('endDate', endDate.toISOString());
+    if (startDate) {
+      params = params.set('startDate', startDate instanceof Date ? startDate.toISOString() : startDate);
+    }
+    if (endDate) {
+      params = params.set('endDate', endDate instanceof Date ? endDate.toISOString() : endDate);
+    }
+    if (bucket) params = params.set('bucket', bucket);
     if (userEmpID) params = params.set('userEmpID', userEmpID);
     if (windowsID) params = params.set('windowsID', windowsID);
 

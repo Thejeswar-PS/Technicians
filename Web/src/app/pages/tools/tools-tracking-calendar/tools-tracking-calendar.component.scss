@@ -276,11 +276,13 @@
     }
     
     .stat-card {
+      appearance: none;
+      -webkit-appearance: none;
       position: relative;
       height: 140px;
       border: none;
       overflow: hidden;
-      cursor: default;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -288,6 +290,23 @@
       text-align: center;
       font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
       width: 100%;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-3px);
+        filter: brightness(1.03);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+      }
+
+      &:focus-visible {
+        outline: 3px solid rgba(13, 110, 253, 0.35);
+        outline-offset: -3px;
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.75;
+      }
       
       // Subtle overlay for depth
       &::before {
@@ -313,6 +332,7 @@
         z-index: 2;
         position: relative;
         padding: 0 1rem;
+        pointer-events: none;
       }
       
       .stat-number {

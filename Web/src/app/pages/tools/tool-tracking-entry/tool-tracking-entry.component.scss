@@ -32,8 +32,54 @@
     padding: 12px;
   }
 
+  .drilldown-panel {
+    background: #f8fbff;
+    border: 1px solid #d8e7ff;
+    border-radius: 10px;
+    padding: 20px;
+
+    .badge {
+      font-size: 0.8rem;
+      padding: 0.55rem 0.8rem;
+      border-radius: 999px;
+    }
+
+    .drilldown-table {
+      border-radius: 8px;
+      overflow: hidden;
+
+      table {
+        margin-bottom: 0;
+      }
+    }
+  }
+
   .table-responsive {
     overflow-x: auto;
+  }
+
+  .pagination-toolbar,
+  .pagination-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .pagination-toolbar {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  .pagination-footer {
+    padding-top: 14px;
+  }
+
+  .page-size-select {
+    width: 90px;
   }
 
   table {

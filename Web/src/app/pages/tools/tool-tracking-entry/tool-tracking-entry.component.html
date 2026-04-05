@@ -75,9 +75,117 @@
         </div>
       </div>
 
+      <!-- ================= CALENDAR DRILL-DOWN ================= -->
+      <div *ngIf="selectedBucket"
+           class="drilldown-panel mb-4">
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="badge" [ngClass]="getDrillDownBadgeClass()">{{ getDrillDownTitle() }}</span>
+              <span class="text-muted small">{{ calendarDrillDownEntries.length }} matching entries</span>
+            </div>
+            <div class="small text-muted" *ngIf="formatDrillDownFilters().length > 0">
+              {{ formatDrillDownFilters().join(' • ') }}
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="loadingDrillDown" class="alert alert-light border d-flex align-items-center gap-2 mb-0">
+          <span class="spinner-border spinner-border-sm text-primary"></span>
+          <span>Loading drill-down entries...</span>
+        </div>
+
+        <div *ngIf="!loadingDrillDown && calendarDrillDownEntries.length > 0" class="table-responsive drilldown-table">
+          <div class="pagination-toolbar">
+            <div class="small text-muted">
+              Showing {{ drillDownStartRecord }}-{{ drillDownEndRecord }} of {{ calendarDrillDownEntries.length }} drill-down entries
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <label class="small text-muted mb-0">Records per page</label>
+              <select class="form-select form-select-sm page-size-select"
+                      [ngModel]="drillDownPageSize"
+                      (ngModelChange)="onDrillDownPageSizeChange($event)">
+                <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+              </select>
+            </div>
+          </div>
+
+          <table class="table table-striped table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Tech ID</th>
+                <th>Technician</th>
+                <th>Tool</th>
+                <th>Serial No</th>
+                <th>Due Date</th>
+                <th class="text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let entry of pagedDrillDownEntries">
+                <td class="fw-semibold">{{ entry.techID }}</td>
+                <td>{{ entry.empName }}</td>
+                <td>{{ entry.toolName }}</td>
+                <td>{{ entry.serialNo }}</td>
+                <td>{{ formatTableDate(entry.dueDt) }}</td>
+                <td class="text-center">
+                  <button type="button"
+                          class="btn btn-sm btn-outline-primary"
+                          (click)="openDrillDownEntry(entry)">
+                    Open Tech
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="pagination-footer" *ngIf="drillDownTotalPages > 1">
+            <button type="button"
+                    class="btn btn-sm btn-light-primary"
+                    [disabled]="drillDownCurrentPage === 1"
+                    (click)="goToDrillDownPage(drillDownCurrentPage - 1)">
+              Previous
+            </button>
+
+            <span class="small text-muted">
+              Page {{ drillDownCurrentPage }} of {{ drillDownTotalPages }}
+            </span>
+
+            <button type="button"
+                    class="btn btn-sm btn-light-primary"
+                    [disabled]="drillDownCurrentPage === drillDownTotalPages"
+                    (click)="goToDrillDownPage(drillDownCurrentPage + 1)">
+              Next
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="!loadingDrillDown && calendarDrillDownEntries.length === 0"
+             class="alert alert-info mb-0">
+          No matching drill-down entries were found.
+        </div>
+      </div>
+
       <!-- ================= TABLE ================= -->
       <div *ngIf="trackingData && trackingData.length > 0"
            class="table-responsive">
+
+        <div class="pagination-toolbar mb-3">
+          <div class="small text-muted">
+            Showing {{ trackingStartRecord }}-{{ trackingEndRecord }} of {{ trackingData.length }} tools
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <label class="small text-muted mb-0">Records per page</label>
+            <select class="form-select form-select-sm page-size-select"
+                    [ngModel]="trackingPageSize"
+                    (ngModelChange)="onTrackingPageSizeChange($event)">
+              <option *ngFor="let option of pageSizeOptions" [ngValue]="option">{{ option }}</option>
+            </select>
+          </div>
+        </div>
 
         <table class="table table-bordered mb-0">
 
@@ -94,7 +202,7 @@
           </thead>
 
           <tbody>
-            <tr *ngFor="let item of trackingData; let i = index; trackBy: trackByFn">
+            <tr *ngFor="let item of pagedTrackingData; let i = index; trackBy: trackByFn">
 
               <td>
                 <i class="bi bi-tools me-2 text-primary"></i>
@@ -105,48 +213,68 @@
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.serialNo"
-                       (ngModelChange)="onFieldChange(i, 'serialNo', $event)">
+                       (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'serialNo', $event)">
               </td>
 
               <td>
                 <input type="date"
                        class="form-control form-control-sm"
                        [ngModel]="formatDateForInput(item.dueDt)"
-                       (ngModelChange)="item.dueDt = $event; onFieldChange(i, 'dueDt', $event)">
+                       (ngModelChange)="item.dueDt = $event; onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'dueDt', $event)">
               </td>
 
               <td>
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.newMTracking"
-                       (ngModelChange)="onFieldChange(i, 'newMTracking', $event)">
+                       (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'newMTracking', $event)">
               </td>
 
               <td>
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.oldMSerialNo"
-                       (ngModelChange)="onFieldChange(i, 'oldMSerialNo', $event)">
+                       (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'oldMSerialNo', $event)">
               </td>
 
               <td>
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.oldMTracking"
-                       (ngModelChange)="onFieldChange(i, 'oldMTracking', $event)">
+                       (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'oldMTracking', $event)">
               </td>
 
               <td class="text-center">
                 <input type="checkbox"
                        class="form-check-input"
                        [checked]="isReceivedTrue(item.received)"
-                       (change)="updateReceived(item, $event, i)">
+                       (change)="updateReceived(item, $event, ((trackingCurrentPage - 1) * trackingPageSize) + i)">
               </td>
 
             </tr>
           </tbody>
 
         </table>
+
+        <div class="pagination-footer" *ngIf="trackingTotalPages > 1">
+          <button type="button"
+                  class="btn btn-sm btn-light-primary"
+                  [disabled]="trackingCurrentPage === 1"
+                  (click)="goToTrackingPage(trackingCurrentPage - 1)">
+            Previous
+          </button>
+
+          <span class="small text-muted">
+            Page {{ trackingCurrentPage }} of {{ trackingTotalPages }}
+          </span>
+
+          <button type="button"
+                  class="btn btn-sm btn-light-primary"
+                  [disabled]="trackingCurrentPage === trackingTotalPages"
+                  (click)="goToTrackingPage(trackingCurrentPage + 1)">
+            Next
+          </button>
+        </div>
       </div>
 
       <!-- ================= ATTACHMENTS ================= -->
@@ -231,7 +359,7 @@
       </div>
 
       <!-- Empty -->
-      <div *ngIf="!loading && trackingData.length === 0"
+      <div *ngIf="!loading && !loadingDrillDown && !selectedBucket && trackingData.length === 0"
            class="alert alert-info text-center mt-4">
         No tools found for selected technician.
       </div>

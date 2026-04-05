@@ -20,6 +20,14 @@ export interface CalendarDay {
   styleUrls: ['./tools-tracking-calendar.component.scss']
 })
 export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
+  readonly statusCardConfig = [
+    { key: 'overdue', label: 'Overdue', icon: 'bi bi-exclamation-triangle-fill', countKey: 'overdue' },
+    { key: 'due15', label: 'Due 15 Days', icon: 'bi bi-clock-fill', countKey: 'due15Days' },
+    { key: 'due30', label: 'Due 30 Days', icon: 'bi bi-calendar-week', countKey: 'due30Days' },
+    { key: 'due45', label: 'Due 45 Days', icon: 'bi bi-calendar2-week', countKey: 'due45Days' },
+    { key: 'due60', label: 'Due 60 Days', icon: 'bi bi-calendar3-week', countKey: 'due60Days' }
+  ] as const;
+
   // Filter Properties
   selectedTech: string = 'All';
   selectedToolType: string = 'All';
@@ -625,6 +633,52 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     this.router.navigate(['/tools/tool-tracking-entry'], {
       queryParams: { TechID: entry.techID }
     });
+  }
+
+  /**
+   * Navigate to tool tracking entry page with KPI drill-down filters.
+   */
+  openStatusCard(bucket: 'overdue' | 'due15' | 'due30' | 'due45' | 'due60'): void {
+    const count = this.getStatusCardCount(bucket);
+
+    if (!count) {
+      return;
+    }
+
+    const selectedTechId = this.selectedTech !== 'All' ? this.selectedTech : undefined;
+    const queryParams: Record<string, string> = {
+      bucket,
+      toolName: this.selectedToolType,
+      serialNo: this.selectedSerialNo,
+      techFilter: selectedTechId || '0',
+      startDate: this.formatDateForApi(this.startDate),
+      endDate: this.formatDateForApi(this.endDate)
+    };
+
+    if (selectedTechId) {
+      queryParams['TechID'] = selectedTechId;
+    }
+
+    this.router.navigate(['/tools/tool-tracking-entry'], {
+      queryParams
+    });
+  }
+
+  getStatusCardCount(bucket: 'overdue' | 'due15' | 'due30' | 'due45' | 'due60'): number {
+    switch (bucket) {
+      case 'overdue':
+        return this.statistics.overdue;
+      case 'due15':
+        return this.statistics.due15Days;
+      case 'due30':
+        return this.statistics.due30Days;
+      case 'due45':
+        return this.statistics.due45Days;
+      case 'due60':
+        return this.statistics.due60Days;
+      default:
+        return 0;
+    }
   }
 
   /**

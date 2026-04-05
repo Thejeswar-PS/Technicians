@@ -76,6 +76,12 @@ export interface ToolsCalendarTrackingApiResponse {
     toolName: string;
     serialNo: string;
     techFilter: string;
+    bucket?: string;
+  };
+  kpiDrillDown?: {
+    isKpiDrillDown: boolean;
+    selectedBucket: string;
+    dateFilterOverridden: boolean;
   };
   message: string;
   isFiltered?: boolean;

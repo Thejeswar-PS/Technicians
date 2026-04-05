@@ -111,16 +111,18 @@ namespace Technicians.Api.Controllers
         }
 
         /// <summary>
-        /// Gets tools calendar tracking data with due counts - Enhanced with role-based filtering
+        /// Gets tools calendar tracking data with due counts - Enhanced with role-based filtering and KPI drill-down
         /// Uses legacy date logic: 15th of previous month to 15th of next month
         /// Implements legacy logic: Technicians see only their own calendar data, disabled dropdowns
         /// Managers/Other: Can view all calendars and modify filters
+        /// Enhanced KPI Drill-Down: When bucket is specified, overrides date filtering to show exact KPI records
         /// </summary>
-        /// <param name="startDate">Start date for filtering (optional, defaults to 15th of previous month)</param>
-        /// <param name="endDate">End date for filtering (optional, defaults to 15th of next month)</param>
+        /// <param name="startDate">Start date for filtering (optional, defaults to 15th of previous month, ignored when bucket is specified)</param>
+        /// <param name="endDate">End date for filtering (optional, defaults to 15th of next month, ignored when bucket is specified)</param>
         /// <param name="toolName">Tool name to filter by (optional, defaults to "All")</param>
         /// <param name="serialNo">Serial number to filter by (optional, defaults to "All")</param>
         /// <param name="techFilter">Tech filter (optional, defaults to "All")</param>
+        /// <param name="bucket">KPI bucket for drill-down (overdue, due15, due30, due45, due60) - overrides date filtering</param>
         [HttpGet("calendar-tracking")]
         public async Task<ActionResult<ToolsCalendarTrackingResultDto>> GetToolsCalendarTracking(
             [FromQuery] DateTime? startDate = null,
@@ -128,42 +130,110 @@ namespace Technicians.Api.Controllers
             [FromQuery] string toolName = "All",
             [FromQuery] string serialNo = "All",
             [FromQuery] string techFilter = "All",
+            [FromQuery] string? bucket = null,
             [FromQuery] string? userEmpID = null,
             [FromQuery] string? windowsID = null)
         {
             try
             {
-                // Legacy date logic: 15th of previous month to 15th of next month
-                var today = DateTime.Today;
-                
-                var effectiveStartDate = startDate ?? new DateTime(
-                    today.Year,
-                    today.Month,
-                    15).AddMonths(-1); // 15th of previous month
-                
-                var effectiveEndDate = endDate ?? new DateTime(
-                    today.Year,
-                    today.Month,
-                    15).AddMonths(1); // 15th of next month
+                // Enhanced KPI Drill-Down Logic:
+                // When bucket is specified, we need to get ALL data without date restrictions
+                // to ensure consistency with KPI calculations that use global DATEDIFF logic
+                DateTime effectiveStartDate;
+                DateTime effectiveEndDate;
+                bool isKpiDrillDown = !string.IsNullOrEmpty(bucket);
+
+                if (isKpiDrillDown)
+                {
+                    // For KPI drill-down, use a very wide date range to capture all relevant records
+                    // This ensures we get the same dataset that KPI calculations use
+                    effectiveStartDate = new DateTime(2000, 1, 1); // Far past date
+                    effectiveEndDate = new DateTime(2099, 12, 31);   // Far future date
+                    
+                    _logger.LogInformation(
+                        "KPI Drill-Down Mode - Using expanded date range for bucket: {Bucket}", bucket);
+                }
+                else
+                {
+                    // Legacy date logic: 15th of previous month to 15th of next month
+                    var today = DateTime.Today;
+                    
+                    effectiveStartDate = startDate ?? new DateTime(
+                        today.Year,
+                        today.Month,
+                        15).AddMonths(-1); // 15th of previous month
+                    
+                    effectiveEndDate = endDate ?? new DateTime(
+                        today.Year,
+                        today.Month,
+                        15).AddMonths(1); // 15th of next month
+                }
 
                 _logger.LogInformation(
-                    "Getting tools calendar tracking data with role filtering - StartDate: {StartDate}, EndDate: {EndDate}, ToolName: {ToolName}, SerialNo: {SerialNo}, TechFilter: {TechFilter}",
-                    effectiveStartDate, effectiveEndDate, toolName, serialNo, techFilter);
+                    "Getting tools calendar tracking data with role filtering - StartDate: {StartDate}, EndDate: {EndDate}, ToolName: {ToolName}, SerialNo: {SerialNo}, TechFilter: {TechFilter}, Bucket: {Bucket}, KpiDrillDown: {KpiDrillDown}",
+                    effectiveStartDate, effectiveEndDate, toolName, serialNo, techFilter, bucket ?? "None", isKpiDrillDown);
 
                 // Repository handles role-based filtering
                 var results = await _repository.GetToolsCalendarTrackingAsync(
                     effectiveStartDate, effectiveEndDate, toolName, serialNo, techFilter, userEmpID, windowsID);
 
-                _logger.LogInformation(
-                    "Successfully retrieved tools calendar tracking data - TrackingRecords: {TrackingRecords}, OverDue: {OverDue}, Due15: {Due15}, Due30: {Due30}, Due45: {Due45}, Due60: {Due60}",
-                    results.TrackingData.Count, 
-                    results.DueCounts.OverDue, 
-                    results.DueCounts.Due15, 
-                    results.DueCounts.Due30,
-                    results.DueCounts.Due45,
-                    results.DueCounts.Due60);
+                // Enhanced KPI Drill-Down Filtering:
+                // Apply bucket filtering consistently with KPI calculation logic
+                if (isKpiDrillDown && !string.IsNullOrEmpty(bucket))
+                {
+                    var today = DateTime.Today;
+                    var originalCount = results.TrackingData.Count;
 
-                return Ok(new
+                    results.TrackingData = results.TrackingData.Where(record =>
+                    {
+                        // Use the same DATEDIFF logic as KPI calculations
+                        var daysDifference = (record.DueDt.Date - today).Days;
+
+                        return bucket.ToLower() switch
+                        {
+                            "overdue" => daysDifference < 0,
+                            "due15" => daysDifference >= 0 && daysDifference < 15,
+                            "due30" => daysDifference >= 15 && daysDifference < 30,
+                            "due45" => daysDifference >= 30 && daysDifference < 45,
+                            "due60" => daysDifference >= 45 && daysDifference < 60,
+                            _ => true // Unknown bucket, return all records
+                        };
+                    }).ToList();
+
+                    _logger.LogInformation(
+                        "KPI Drill-Down Filtering Applied - Bucket: {Bucket}, OriginalRecords: {OriginalCount}, FilteredRecords: {FilteredCount}",
+                        bucket, originalCount, results.TrackingData.Count);
+                }
+                else if (!isKpiDrillDown)
+                {
+                    // For regular (non-KPI drill-down) requests, apply legacy bucket filtering if specified
+                    // This maintains backward compatibility for existing filtering functionality
+                    if (!string.IsNullOrEmpty(bucket))
+                    {
+                        var originalCount = results.TrackingData.Count;
+                        
+                        results.TrackingData = results.TrackingData.Where(x =>
+                        {
+                            var diff = (x.DueDt.Date - DateTime.Today).Days;
+
+                            return bucket.ToLower() switch
+                            {
+                                "overdue" => diff < 0,
+                                "due15" => diff >= 0 && diff < 15,
+                                "due30" => diff >= 15 && diff < 30,
+                                "due45" => diff >= 30 && diff < 45,
+                                "due60" => diff >= 45 && diff < 60,
+                                _ => true
+                            };
+                        }).ToList();
+                        
+                        _logger.LogInformation(
+                            "Legacy Bucket Filtering Applied - Bucket: {Bucket}, OriginalRecords: {OriginalCount}, FilteredRecords: {FilteredCount}",
+                            bucket, originalCount, results.TrackingData.Count);
+                    }
+                }
+
+                var responseData = new
                 {
                     success = true,
                     data = results,
@@ -173,22 +243,45 @@ namespace Technicians.Api.Controllers
                     {
                         startDate = effectiveStartDate,
                         endDate = effectiveEndDate,
-                        windowType = "legacy-compatible",
-                        description = "15th of previous month to 15th of next month"
+                        windowType = isKpiDrillDown ? "kpi-drill-down" : "legacy-compatible",
+                        description = isKpiDrillDown 
+                            ? "Expanded range for KPI drill-down consistency"
+                            : "15th of previous month to 15th of next month"
                     },
                     filters = new
                     {
                         toolName,
                         serialNo,
-                        techFilter
+                        techFilter,
+                        bucket = bucket ?? string.Empty
+                    },
+                    kpiDrillDown = new
+                    {
+                        isKpiDrillDown,
+                        selectedBucket = bucket ?? string.Empty,
+                        dateFilterOverridden = isKpiDrillDown
                     },
                     roleBasedFiltering = new
                     {
                         isFiltered = !string.IsNullOrEmpty(userEmpID) || !string.IsNullOrEmpty(windowsID),
                         requestedBy = userEmpID ?? string.Empty
                     },
-                    message = "Tools calendar tracking data retrieved successfully"
-                });
+                    message = isKpiDrillDown 
+                        ? $"KPI drill-down data retrieved successfully for bucket: {bucket}"
+                        : "Tools calendar tracking data retrieved successfully"
+                };
+
+                _logger.LogInformation(
+                    "Successfully retrieved tools calendar tracking data - TrackingRecords: {TrackingRecords}, OverDue: {OverDue}, Due15: {Due15}, Due30: {Due30}, Due45: {Due45}, Due60: {Due60}, KpiDrillDown: {KpiDrillDown}",
+                    results.TrackingData.Count, 
+                    results.DueCounts.OverDue, 
+                    results.DueCounts.Due15, 
+                    results.DueCounts.Due30,
+                    results.DueCounts.Due45,
+                    results.DueCounts.Due60,
+                    isKpiDrillDown);
+
+                return Ok(responseData);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -197,8 +290,8 @@ namespace Technicians.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "Error getting tools calendar tracking data - StartDate: {StartDate}, EndDate: {EndDate}, ToolName: {ToolName}, SerialNo: {SerialNo}, TechFilter: {TechFilter}",
-                    startDate, endDate, toolName, serialNo, techFilter);
+                    "Error getting tools calendar tracking data - StartDate: {StartDate}, EndDate: {EndDate}, ToolName: {ToolName}, SerialNo: {SerialNo}, TechFilter: {TechFilter}, Bucket: {Bucket}",
+                    startDate, endDate, toolName, serialNo, techFilter, bucket);
 
                 return StatusCode(500, new
                 {
