@@ -241,6 +241,28 @@ namespace Technicians.Api.Controllers
         }
 
         // Private helper methods for role-based filtering
+        private async Task<(string EmpID, string Status)?> GetEmployeeStatusAsync(string windowsID)
+        {
+            try
+            {
+                var employeeStatusList = await _commonRepository.GetEmployeeStatusForJobListAsync(windowsID);
+                var firstResult = employeeStatusList?.FirstOrDefault();
+                
+                if (firstResult != null)
+                {
+                    var empId = ((dynamic)firstResult).EmpID?.ToString() ?? string.Empty;
+                    var status = ((dynamic)firstResult).Status?.ToString() ?? string.Empty;
+                    return (empId, status);
+                }
+                
+                return null;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
         private async Task<string> ApplyRoleBasedFiltering(string requestedOfficeId, string? userEmpID, string? windowsID)
         {
             if (string.IsNullOrEmpty(userEmpID) && string.IsNullOrEmpty(windowsID))
@@ -258,7 +280,7 @@ namespace Technicians.Api.Controllers
                     return requestedOfficeId;
                 }
 
-                var normalizedStatus = (employeeStatusData.Status ?? "").Trim().ToLower();
+                var normalizedStatus = (employeeStatusData.Value.Status ?? "").Trim().ToLower();
                 var userEmp = (userEmpID ?? "").Trim();
 
                 if (IsTechnicianRole(normalizedStatus))
@@ -266,67 +288,25 @@ namespace Technicians.Api.Controllers
                     // Technicians cannot access account manager performance reports
                     throw new UnauthorizedAccessException("Access denied: Technicians do not have access to account manager performance reports.");
                 }
-                else if (IsManagerRole(normalizedStatus))
+                else if (IsManagerRole(normalizedStatus) || IsEmployeeRole(normalizedStatus))
                 {
-                    // Managers can only access their own performance reports
-                    var accountManagers = await _commonRepository.GetAccountManagers();
-                    var userManager = accountManagers?.FirstOrDefault(m => 
-                        string.Equals(m.OFFID?.Trim(), userEmp, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(m.OFFNAME?.Trim(), userEmp, StringComparison.OrdinalIgnoreCase));
-
-                    if (userManager != null)
-                    {
-                        var userOfficeId = userManager.OFFID?.Trim() ?? userEmp;
-                        
-                        // Check if the requested office ID matches the user's office ID
-                        if (!string.Equals(requestedOfficeId.Trim(), userOfficeId, StringComparison.OrdinalIgnoreCase))
-                        {
-                            throw new UnauthorizedAccessException("Access denied: You can only access your own account manager performance reports.");
-                        }
-                        
-                        return userOfficeId;
-                    }
-                    else
-                    {
-                        throw new UnauthorizedAccessException("Access denied: Manager not found in account managers list.");
-                    }
+                    // Managers (EmpStatus='M') and Employees (EmpStatus='E') both have full access
+                    // Matches legacy behavior: EmpStatus in ('M', 'E') - can view any office, dropdown is pre-populated but changeable
+                    return requestedOfficeId;
                 }
 
-                // Other roles (admin, etc.) have full access
-                return requestedOfficeId;
+                // All other unknown roles are denied
+                throw new UnauthorizedAccessException("Access denied: You do not have permission to access account manager performance reports.");
             }
             catch (UnauthorizedAccessException)
             {
                 throw; // Re-throw authorization exceptions
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // If error occurs, return original office ID
+                // Log the actual error for debugging but don't expose to client
+                // If error occurs, return original office ID for now
                 return requestedOfficeId;
-            }
-        }
-
-        private async Task<EmployeeStatusDto?> GetEmployeeStatusAsync(string windowsID)
-        {
-            try
-            {
-                var employeeStatusList = await _commonRepository.GetEmployeeStatusForJobListAsync(windowsID);
-                var firstResult = employeeStatusList?.FirstOrDefault();
-                
-                if (firstResult != null)
-                {
-                    return new EmployeeStatusDto
-                    {
-                        EmpID = ((dynamic)firstResult).EmpID?.ToString() ?? string.Empty,
-                        Status = ((dynamic)firstResult).Status?.ToString() ?? string.Empty
-                    };
-                }
-                
-                return null;
-            }
-            catch (Exception)
-            {
-                return null;
             }
         }
 
@@ -343,6 +323,12 @@ namespace Technicians.Api.Controllers
             return normalizedStatus == "manager" || 
                    normalizedStatus == "other" || 
                    normalizedStatus.Contains("manager");
+        }
+
+        private static bool IsEmployeeRole(string normalizedStatus)
+        {
+            // Matches legacy EmpStatus = 'E' (Employee)
+            return normalizedStatus == "employee" || normalizedStatus == "e";
         }
     }
 }

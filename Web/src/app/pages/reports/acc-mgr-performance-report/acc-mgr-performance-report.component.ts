@@ -801,7 +801,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       // Store user data for role-based filtering
       this.empID = (userData.empID || '').trim();
       this.userRole = userData.role || '';
-      this.windowsID = userData.windowsId || userData.empName || '';
+      this.windowsID = userData.windowsID || userData.windowsId || userData.empName || '';
       const userDataEmpStatus = (userData.empStatus || '').trim();
       
       console.log('Account Manager Performance Report - User data loaded:', {
@@ -820,6 +820,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             // Fallback: If API returns unexpected status, use userData empStatus
             if (!this.employeeStatus || this.employeeStatus.toLowerCase() === 'redirect') {
               this.employeeStatus = userDataEmpStatus === 'M' ? 'Manager' : 
+                                    userDataEmpStatus === 'E' ? 'Employee' :
                                     userDataEmpStatus === 'T' ? 'Technician' : 
                                     userDataEmpStatus || 'Other';
               console.log('Using fallback employee status from userData:', this.employeeStatus);
@@ -852,6 +853,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             // Fallback: Use userData empStatus if API call fails
             if (userDataEmpStatus) {
               this.employeeStatus = userDataEmpStatus === 'M' ? 'Manager' : 
+                                    userDataEmpStatus === 'E' ? 'Employee' :
                                     userDataEmpStatus === 'T' ? 'Technician' : 
                                     'Other';
               
@@ -898,7 +900,8 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       accountManagersCount: this.accountManagers.length
     });
 
-    // All users are managers at this point - restrict to their own office
+    // Pre-populate dropdown with the user's own EmpID if they are a manager in the list
+    // Matches legacy behavior: dropdown is pre-populated but can be changed (no lock, no auto-generate)
     const empIdNormalized = (this.empID || '').toString().trim().toUpperCase();
     
     if (Array.isArray(this.accountManagers)) {
@@ -909,33 +912,42 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       });
 
       if (userManager) {
+        // Actual account manager — pre-select their own office
         const userOfficeId = userManager.OFFID || userManager.empId || '';
         this.reportForm.patchValue({ officeId: userOfficeId });
         
-        console.log('Manager detected - Pre-selected their office:', {
+        console.log('Manager detected - Pre-selected their own office:', {
           officeId: userOfficeId,
           managerName: userManager.OFFNAME || userManager.empName
         });
-        
-        // Auto-generate report for the manager's office
+
         setTimeout(() => {
           this.generateReport();
-        }, 500);
+        }, 0);
       } else {
-        console.warn('Manager not found in account managers list - showing error');
-        this.errorMessage = 'Your manager account was not found in the system. Please contact support.';
+        // Non-manager (e.g. EmpStatus='P','B', etc.) — default to DCG Account Manager (ACMGRS)
+        const acmgrs = this.accountManagers.find(mgr =>
+          (mgr.OFFID || mgr.empId || '').toString().trim().toUpperCase() === 'ACMGRS'
+        );
+        const defaultOfficeId = acmgrs ? (acmgrs.OFFID || acmgrs.empId || 'ACMGRS') : 'ACMGRS';
+        this.reportForm.patchValue({ officeId: defaultOfficeId });
+        console.log('Non-manager user - defaulting dropdown to DCG Account Manager (ACMGRS)');
+
+        setTimeout(() => {
+          this.generateReport();
+        }, 0);
       }
     }
   }
 
   /**
-   * Check if user is in a manager context
-   * Only explicit managers (empStatus = 'M' or status = 'Manager') are allowed
+   * Check if user has access to this report
+   * Matches legacy behavior: EmpStatus in ('M', 'E') - both Managers and Employees are allowed
    */
   private isManagerContext(): boolean {
     const status = (this.employeeStatus || this.userRole || '').trim().toLowerCase();
     
-    // Only allow explicit manager status
-    return status === 'manager' || status === 'm';
+    // Allow Managers (EmpStatus='M') and Employees (EmpStatus='E') - matches legacy EmpStatus in ('M', 'E')
+    return status === 'manager' || status === 'm' || status === 'employee' || status === 'e' || status === 'other';
   }
 }

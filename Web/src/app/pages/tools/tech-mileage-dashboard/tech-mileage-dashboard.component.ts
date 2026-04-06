@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { getCSSVariableValue } from 'src/app/_metronic/kt/_utils';
 import {
   TechMileageMonthlySummaryDto,
@@ -8,6 +10,7 @@ import {
 } from 'src/app/core/model/tech-mileage.model';
 import { TechMileageService } from 'src/app/core/services/tech-mileage.service';
 import { AuthService } from 'src/app/modules/auth';
+import { CommonService } from 'src/app/core/services/common.service';
 
 @Component({
   selector: 'app-tech-mileage-dashboard',
@@ -23,7 +26,19 @@ export class TechMileageDashboardComponent implements OnInit {
 
   // Role-based visibility
   isTechnician: boolean = false;
-  showTechColumn: boolean = true;
+  employeeStatus: string = '';
+
+  /**
+   * Mirrors legacy: gvMileage.Columns[2].Visible = !techSelected
+   * where techSelected = !string.IsNullOrEmpty(ddlTech.SelectedItem.Text)
+   * Hide the Tech Name column when the user is restricted by role,
+   * OR when a manager has a specific technician selected (not "All").
+   */
+  get showTechColumn(): boolean {
+    if (this.isTechnician) return false;
+    const selected = (this.selectedTechName || '').trim().toLowerCase();
+    return selected === '' || selected === 'all';
+  }
 
   report: TechMileageResponseDto | null = null;
   chartOptions: any = {};
@@ -43,7 +58,8 @@ export class TechMileageDashboardComponent implements OnInit {
   constructor(
     private techMileageService: TechMileageService,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private _commonService: CommonService
   ) {}
 
   ngOnInit(): void {
@@ -95,19 +111,100 @@ export class TechMileageDashboardComponent implements OnInit {
           ? normalized
           : [{ techID: 'ALL', techName: 'All' }, ...normalized];
 
-        // Auto-select technician based on user role
-        this.autoSelectTechnician();
-        this.loadReport();
+        // Apply role-based filter via API (mirrors legacy GetEmployeeStatusForJobList)
+        this.applyRoleBasedFilters();
       },
       error: () => {
         this.errorMessage = 'Failed to load technicians list.';
-        // Still load the report with 'All' if technicians fail
+        // Still apply role-based filters and load report
+        this.applyRoleBasedFilters();
+      }
+    });
+  }
+
+  /**
+   * Mirrors legacy TechMileageDashboard.aspx.cs BindFilters():
+   * Calls GetEmployeeStatusForJobList API to determine if the current user is a
+   * Technician or TechManager.  If so, locks the tech dropdown to their own EmpID
+   * and hides the Tech column.  Managers/Others get full access.
+   */
+  private applyRoleBasedFilters(): void {
+    let windowsID = '';
+    let empID = '';
+
+    try {
+      const userDataStr = localStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        const empName = (userData.empName || userData.empLabel || '').toString().trim();
+        windowsID = (userData.windowsID || userData.windowsId || empName).toString().trim();
+        empID = (userData.empID || '').toString().trim();
+      }
+    } catch (e) {
+      console.error('[TechMileage] Error reading userData:', e);
+    }
+
+    if (!windowsID) {
+      // No windowsID — fall back to localStorage heuristic, then load report
+      this.applyRoleFromLocalStorage();
+      this.loadReport();
+      return;
+    }
+
+    this._commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+      next: (statusData: any) => {
+        // Handle both array [ { Status, EmpID } ] and object { status, empId } response shapes
+        let status = '';
+        let apiEmpId = '';
+
+        if (Array.isArray(statusData) && statusData.length > 0) {
+          const first = statusData[0] || {};
+          status   = (first.Status   || first.status   || '').toString().trim();
+          apiEmpId = (first.EmpID    || first.empID    || first.empId    || '').toString().trim();
+        } else if (statusData && typeof statusData === 'object') {
+          status   = (statusData.Status   || statusData.status   || '').toString().trim();
+          apiEmpId = (statusData.EmpID    || statusData.empID    || statusData.empId    || '').toString().trim();
+        }
+
+        this.employeeStatus = status;
+        console.log('[TechMileage] Employee status from API:', status, 'EmpID:', apiEmpId);
+
+        const isTechRole =
+          status.toLowerCase() === 'technician' ||
+          status.toLowerCase() === 'techmanager' ||
+          status.toLowerCase() === 'tech manager';
+
+        if (isTechRole) {
+          // RESTRICTED: lock dropdown to this user's own data (mirrors ddlTech.Enabled = false)
+          this.isTechnician = true;
+          this.techDropdownDisabled = true;
+
+          const resolvedEmpId = (apiEmpId || empID).toString().trim().toUpperCase();
+          const matched = this.technicians.find(
+            (tech) => (tech.techID || '').toString().trim().toUpperCase() === resolvedEmpId
+          );
+          if (matched) {
+            this.selectedTechName = matched.techName;
+            console.log('[TechMileage] Restricted to technician:', matched.techName);
+          }
+        }
+        // FULL ACCESS (Manager/Other): dropdown stays enabled, selectedTechName stays 'All'
+
+        this.loadReport();
+      },
+      error: () => {
+        console.warn('[TechMileage] GetEmployeeStatusForJobList API failed — falling back to localStorage heuristic.');
+        this.applyRoleFromLocalStorage();
         this.loadReport();
       }
     });
   }
 
-  private autoSelectTechnician(): void {
+  /**
+   * Fallback role detection when the API is unavailable.
+   * Uses localStorage userData (role/empStatus fields) + tech-list name matching.
+   */
+  private applyRoleFromLocalStorage(): void {
     let empName = '';
     let windowsID = '';
     let empID = '';
@@ -132,7 +229,6 @@ export class TechMileageDashboardComponent implements OnInit {
       (v || '').toString().trim().toUpperCase().replace(/[^A-Z0-9. ]/g, '');
 
     const windowsIdTail = (windowsID || '').split('\\').pop() || windowsID;
-
     const userTokens = [
       normalize(empID),
       normalize(empName),
@@ -140,36 +236,29 @@ export class TechMileageDashboardComponent implements OnInit {
       normalize(windowsIdTail)
     ].filter(Boolean);
 
-    // Try to find this user in the technicians list
-    const matched = this.technicians.find(tech => {
+    const matched = this.technicians.find((tech) => {
       const techTokens = [
         normalize(tech.techID),
         normalize(tech.techName)
       ].filter(Boolean);
-      return userTokens.some(ut =>
-        techTokens.some(tt =>
-          ut === tt || tt.startsWith(ut) || ut.startsWith(tt)
-        )
+      return userTokens.some((ut) =>
+        techTokens.some((tt) => ut === tt || tt.startsWith(ut) || ut.startsWith(tt))
       );
     });
 
     if (matched) {
-      // User is in the technicians list → treat as Technician role
       this.isTechnician = true;
-      this.showTechColumn = false;
       this.selectedTechName = matched.techName;
       this.techDropdownDisabled = true;
-      console.log('[TechMileage] Auto-selected technician:', matched.techName);
+      console.log('[TechMileage] Fallback: restricted to technician:', matched.techName);
     } else {
-      // User is a manager / admin — check explicit role fields too
-      const isTechByRole = empStatus === 'T' ||
-                           userRole.includes('technician') ||
-                           userRole === 'tech' ||
-                           userRole === 'techmanager';
+      const isTechByRole =
+        empStatus === 'T' ||
+        userRole.includes('technician') ||
+        userRole === 'tech' ||
+        userRole === 'techmanager';
       if (isTechByRole) {
-        // Technician whose name wasn't matched — still restrict the column
         this.isTechnician = true;
-        this.showTechColumn = false;
         this.techDropdownDisabled = true;
       }
     }
@@ -181,16 +270,21 @@ export class TechMileageDashboardComponent implements OnInit {
 
     const techName = this.normalizeTechName(this.selectedTechName);
 
-    this.techMileageService
-      .getTechMileageReport({
+    const request = {
         startDate: this.startDate,
         endDate: this.endDate,
         techName: techName,
         pageNumber: this.currentPage,
         pageSize: this.pageSize
-      })
-      .subscribe({
-        next: (response) => {
+      };
+
+    forkJoin({
+      report: this.techMileageService.getTechMileageReport(request),
+      monthlySummary: this.techMileageService.getTechMileageMonthlySummary(request).pipe(
+        catchError(() => of([] as TechMileageMonthlySummaryDto[]))
+      )
+    }).subscribe({
+        next: ({ report: response, monthlySummary }) => {
           if (response && response.success === false) {
             this.report = null;
             this.chartOptions = this.buildChartOptions([]);
@@ -200,9 +294,27 @@ export class TechMileageDashboardComponent implements OnInit {
           }
 
           this.report = response;
-          const monthlySummary = this.buildMonthlySummaryFromRecords(response?.mileageRecords || []);
-          this.report.monthlySummary = monthlySummary;
-          this.chartOptions = this.buildChartOptions(monthlySummary);
+
+          const reportSummary = (response?.monthlySummary || []) as TechMileageMonthlySummaryDto[];
+          const resolvedMonthlySummary = monthlySummary.length > 0
+            ? monthlySummary
+            : reportSummary.length > 0
+              ? reportSummary
+              : this.buildMonthlySummaryFromRecords(response?.mileageRecords || []);
+
+          this.report.monthlySummary = resolvedMonthlySummary;
+          if (resolvedMonthlySummary.length > 0) {
+            this.report.totalMiles = resolvedMonthlySummary.reduce(
+              (sum, item) => sum + Number(item?.totalMiles || 0),
+              0
+            );
+            this.report.totalHours = Number(
+              resolvedMonthlySummary
+                .reduce((sum, item) => sum + Number(item?.totalHours || 0), 0)
+                .toFixed(2)
+            );
+          }
+          this.chartOptions = this.buildChartOptions(resolvedMonthlySummary);
           this.isLoading = false;
         },
         error: () => {
@@ -417,6 +529,7 @@ export class TechMileageDashboardComponent implements OnInit {
       'Origin',
       'Date',
       'Job Type',
+      'Miles',
       'Time Taken'
     ];
 
@@ -431,6 +544,7 @@ export class TechMileageDashboardComponent implements OnInit {
         `"${this.getOriginValue(record)}"`,
         `"${new Date(record.startDate).toLocaleDateString()}"`,
         `"${record.jobType}"`,
+        `"${record.milesReported ?? ''}"`,
         `"${record.timeTaken}"`
       ].join(',') + '\n';
     });

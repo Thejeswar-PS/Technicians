@@ -1,8 +1,14 @@
 <div class="container-fluid order-request-status-container">
 
   <!-- Page Title -->
-  <div class="text-center mb-4">
-    <h2 class="fw-bold text-primary mb-02 display-4.9">Order Request Status</h2>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div class="flex-fill text-center">
+      <h2 class="fw-bold text-primary mb-0 display-4.9">Order Request Status</h2>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm ms-2 text-nowrap"
+            (click)="createNewOrder()">
+      <i class="bi bi-plus-lg me-1"></i>New Order
+    </button>
   </div>
 
   <!-- Loading Overlay -->

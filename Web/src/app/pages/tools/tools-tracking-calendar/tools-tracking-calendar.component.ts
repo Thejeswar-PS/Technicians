@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { TechToolsService } from '../../../core/services/tech-tools.service';
 import { AuthHelper } from '../../../core/utils/auth-helper';
-import { ToolsTrackingTechsDto, TechToolSerialNoDto, ToolsCalendarTrackingDto, ToolsCalendarDueCountsDto, ToolsCalendarTrackingResultDto } from '../../../core/model/tech-tools.model';
+import { ToolsTrackingTechsDto, ToolsTrackingTechsApiResponse, TechToolSerialNoDto, ToolsCalendarTrackingDto, ToolsCalendarDueCountsDto, ToolsCalendarTrackingResultDto } from '../../../core/model/tech-tools.model';
 
 export interface CalendarDay {
   date: Date;
@@ -20,10 +20,20 @@ export interface CalendarDay {
   styleUrls: ['./tools-tracking-calendar.component.scss']
 })
 export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
+  private readonly drillDownStorageKeyPrefix = 'toolTrackingDrillDown:';
+  readonly statusCardConfig = [
+    { key: 'overdue', label: 'Overdue', icon: 'bi bi-exclamation-triangle-fill', countKey: 'overdue' },
+    { key: 'due15', label: 'Due 15 Days', icon: 'bi bi-clock-fill', countKey: 'due15Days' },
+    { key: 'due30', label: 'Due 30 Days', icon: 'bi bi-calendar-week', countKey: 'due30Days' },
+    { key: 'due45', label: 'Due 45 Days', icon: 'bi bi-calendar2-week', countKey: 'due45Days' },
+    { key: 'due60', label: 'Due 60 Days', icon: 'bi bi-calendar3-week', countKey: 'due60Days' }
+  ] as const;
+
   // Filter Properties
   selectedTech: string = 'All';
   selectedToolType: string = 'All';
   selectedSerialNo: string = 'All';
+  isTechnicianRestricted: boolean = false;
   
   // Data Arrays
   technicians: (ToolsTrackingTechsDto | { techID: string; techname: string })[] = [];
@@ -117,13 +127,13 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     
     // Use the working tools tracking technicians endpoint - Pass user context for role-based filtering
     const sub = this.techToolsService.getToolsTrackingTechs(this.userContext.userEmpID, this.userContext.windowsID).subscribe({
-      next: (response: any) => {
-        // Extract the data array from the wrapped response
-        const technicians = response.data || response || [];
+      next: (response: ToolsTrackingTechsApiResponse) => {
+        const technicians = response.data || [];
         this.technicians = technicians;
+        this.isTechnicianRestricted = !!response.isFiltered && technicians.length === 1;
         
         // If role-filtered to single technician, auto-select them
-        if (response.isFiltered && technicians.length === 1) {
+        if (this.isTechnicianRestricted) {
           this.selectedTech = technicians[0].techID;
           // Auto-load calendar for single technician
           setTimeout(() => {
@@ -572,12 +582,10 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     if (this.selectedToolType) {
       this.loadToolSerialNumbers(); // Reload serial numbers for selected tool
     }
-    // Regenerate calendar grid with current tool data and new filters
-    if (this.toolsData && this.toolsData.length > 0) {
-      this.generateCalendarGrid();
-    } else {
-      this.generateCalendar(); // Load data and generate calendar
-    }
+
+    // Reload from backend so statistics cards and calendar entries stay in sync
+    // with the selected technician/tool/serial filters.
+    this.generateCalendar();
   }
   
   /**
@@ -585,12 +593,8 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
    */
   onTechnicianChange(): void {
     // Like legacy: ddlCalTech_SelectedIndexChanged calls FillHolidayDataset()
-    // Regenerate calendar grid with current tool data and new filters
-    if (this.toolsData && this.toolsData.length > 0) {
-      this.generateCalendarGrid();
-    } else {
-      this.generateCalendar(); // Load data and generate calendar
-    }
+    // Reload from backend so due counts reflect the selected technician.
+    this.generateCalendar();
   }
 
   /**
@@ -620,11 +624,69 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
    * Open tool details (Navigate to: /tools/tool-tracking-entry?TechID=)
    */
   openToolDetails(entry: ToolsCalendarTrackingDto): void {
-    // Navigate to Angular tool tracking entry page with TechID parameter
-    // Example: /tools/tool-tracking-entry?TechID=SARIQ.MO
-    this.router.navigate(['/tools/tool-tracking-entry'], {
-      queryParams: { TechID: entry.techID }
-    });
+    this.router.navigate(['/tools/tool-tracking-entry', entry.techID]);
+  }
+
+  /**
+   * Navigate to tool tracking entry page with KPI drill-down filters.
+   */
+  openStatusCard(bucket: 'overdue' | 'due15' | 'due30' | 'due45' | 'due60'): void {
+    const count = this.getStatusCardCount(bucket);
+
+    if (!count) {
+      return;
+    }
+
+    const selectedTechId = this.selectedTech !== 'All' ? this.selectedTech : undefined;
+    const drillDownContext = {
+      bucket,
+      toolName: this.selectedToolType,
+      serialNo: this.selectedSerialNo,
+      techFilter: selectedTechId || '0',
+      startDate: this.formatDateForApi(this.startDate),
+      endDate: this.formatDateForApi(this.endDate)
+    };
+
+    const urlTree = selectedTechId
+      ? this.router.createUrlTree(['/tools/tool-tracking-entry', selectedTechId])
+      : this.router.createUrlTree([
+          '/tools/tool-tracking-entry/drilldown',
+          this.storeDrillDownContext(drillDownContext)
+        ]);
+
+    const internalUrl = this.router.serializeUrl(urlTree);
+    const externalUrl = this.location.prepareExternalUrl(internalUrl);
+    window.open(externalUrl, '_blank');
+  }
+
+  private storeDrillDownContext(context: {
+    bucket: string;
+    toolName: string;
+    serialNo: string;
+    techFilter: string;
+    startDate: string;
+    endDate: string;
+  }): string {
+    const contextId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(`${this.drillDownStorageKeyPrefix}${contextId}`, JSON.stringify(context));
+    return contextId;
+  }
+
+  getStatusCardCount(bucket: 'overdue' | 'due15' | 'due30' | 'due45' | 'due60'): number {
+    switch (bucket) {
+      case 'overdue':
+        return this.statistics.overdue;
+      case 'due15':
+        return this.statistics.due15Days;
+      case 'due30':
+        return this.statistics.due30Days;
+      case 'due45':
+        return this.statistics.due45Days;
+      case 'due60':
+        return this.statistics.due60Days;
+      default:
+        return 0;
+    }
   }
 
   /**

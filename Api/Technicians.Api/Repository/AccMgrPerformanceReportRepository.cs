@@ -44,6 +44,33 @@ namespace Technicians.Api.Repository
                     commandTimeout: 120
                 );
 
+                // Helper: read the next result set safely; returns empty list if no more result sets
+                static async Task<List<T>> SafeRead<T>(SqlMapper.GridReader reader)
+                {
+                    try
+                    {
+                        if (reader.IsConsumed) return new List<T>();
+                        return (await reader.ReadAsync<T>()).ToList();
+                    }
+                    catch
+                    {
+                        return new List<T>();
+                    }
+                }
+
+                // Read each result set in order — SP may return fewer than 11 for some offices
+                var completedNotReturned       = await SafeRead<AccMgrCallStatusDto>(multi);
+                var returnedForProcessing      = await SafeRead<AccMgrReturnedForProcessingDto>(multi);
+                var jobsScheduledToday         = await SafeRead<AccMgrJobsScheduledTodayDto>(multi);
+                var jobsConfirmedNext120Hours  = await SafeRead<AccMgrJobsConfirmedNext120HoursDto>(multi);
+                var returnedWithIncompleteData = await SafeRead<AccMgrCallStatusDto>(multi);
+                var pastDueUnscheduled         = await SafeRead<AccMgrUnscheduledJobDto>(multi);
+                var firstMonth                 = await SafeRead<AccMgrUnscheduledJobDto>(multi);
+                var secondMonth                = await SafeRead<AccMgrUnscheduledJobDto>(multi);
+                var thirdMonth                 = await SafeRead<AccMgrUnscheduledJobDto>(multi);
+                var fourthMonth                = await SafeRead<AccMgrUnscheduledJobDto>(multi);
+                var fifthMonth                 = await SafeRead<AccMgrUnscheduledJobDto>(multi);
+
                 var response = new AccMgrPerformanceReportResponseDto
                 {
                     OfficeId = request.OfficeId,
@@ -54,17 +81,17 @@ namespace Technicians.Api.Repository
                     IsFiltered = !string.IsNullOrEmpty(request.UserEmpID) || !string.IsNullOrEmpty(request.WindowsID),
                     FilterCriteria = BuildFilterCriteria(request),
 
-                    CompletedNotReturned = (await multi.ReadAsync<AccMgrCallStatusDto>()).ToList(),
-                    ReturnedForProcessing = (await multi.ReadAsync<AccMgrReturnedForProcessingDto>()).ToList(),
-                    JobsScheduledToday = (await multi.ReadAsync<AccMgrJobsScheduledTodayDto>()).ToList(),
-                    JobsConfirmedNext120Hours = (await multi.ReadAsync<AccMgrJobsConfirmedNext120HoursDto>()).ToList(),
-                    ReturnedWithIncompleteData = (await multi.ReadAsync<AccMgrCallStatusDto>()).ToList(),
-                    PastDueUnscheduled = (await multi.ReadAsync<AccMgrUnscheduledJobDto>()).ToList(),
-                    FirstMonth = (await multi.ReadAsync<AccMgrUnscheduledJobDto>()).ToList(),
-                    SecondMonth = (await multi.ReadAsync<AccMgrUnscheduledJobDto>()).ToList(),
-                    ThirdMonth = (await multi.ReadAsync<AccMgrUnscheduledJobDto>()).ToList(),
-                    FourthMonth = (await multi.ReadAsync<AccMgrUnscheduledJobDto>()).ToList(),
-                    FifthMonth = (await multi.ReadAsync<AccMgrUnscheduledJobDto>()).ToList(),
+                    CompletedNotReturned = completedNotReturned,
+                    ReturnedForProcessing = returnedForProcessing,
+                    JobsScheduledToday = jobsScheduledToday,
+                    JobsConfirmedNext120Hours = jobsConfirmedNext120Hours,
+                    ReturnedWithIncompleteData = returnedWithIncompleteData,
+                    PastDueUnscheduled = pastDueUnscheduled,
+                    FirstMonth = firstMonth,
+                    SecondMonth = secondMonth,
+                    ThirdMonth = thirdMonth,
+                    FourthMonth = fourthMonth,
+                    FifthMonth = fifthMonth,
                 };
 
                 // Apply additional filtering if requested

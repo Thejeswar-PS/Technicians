@@ -88,5 +88,61 @@ namespace Technicians.Api.Repository
 
             return await GetOrderRequestStatusAsync(request);
         }
+
+        /// <summary>
+        /// Gets a specific order request by RowIndex with Notes included
+        /// </summary>
+        /// <param name="rowIndex">The RowIndex of the order request</param>
+        /// <returns>OrderRequestResponseDto with Notes populated</returns>
+        public async Task<OrderRequestResponseDto?> GetOrderRequestByRowIndexAsync(int rowIndex)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var parameters = new DynamicParameters();
+                parameters.Add("@RowIndex", rowIndex, DbType.Int32);
+
+                var result = await connection.QueryFirstOrDefaultAsync<OrderRequestResponseDto>(
+                    @"SELECT OrderType, Requester, DCGPartNo, ManufPartNo, QtyNeeded, Vendor, PONumber,
+                             OrderDate, ArriveDate, Notes, Archive,
+                             CASE Status
+                                 WHEN 'ORD' THEN 'Ordered'
+                                 WHEN 'BOR' THEN 'Back Ordered'
+                                 WHEN 'CAN' THEN 'Cancelled'
+                                 WHEN 'COM' THEN 'Completed'
+                                 ELSE Status
+                             END as Status,
+                             CreatedOn, CreatedBy, ModifiedBy, ModifiedOn, RowIndex
+                      FROM OrderRequest
+                      WHERE RowIndex = @RowIndex",
+                    parameters
+                );
+
+                if (result != null)
+                {
+                    _logger.LogInformation("Retrieved order request with Notes for RowIndex: {RowIndex}", rowIndex);
+                }
+                else
+                {
+                    _logger.LogWarning("No order request found for RowIndex: {RowIndex}", rowIndex);
+                }
+
+                return result;
+            }
+            catch (SqlException sqlEx)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "GetOrderRequestByRowIndexAsync", rowIndex.ToString());
+                _logger.LogError(sqlEx, "SQL error retrieving order request for RowIndex: {RowIndex}", rowIndex);
+                throw new Exception($"Database error retrieving order request: {sqlEx.Message}", sqlEx);
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "GetOrderRequestByRowIndexAsync", rowIndex.ToString());
+                _logger.LogError(ex, "Error retrieving order request for RowIndex: {RowIndex}", rowIndex);
+                throw new Exception($"Error retrieving order request: {ex.Message}", ex);
+            }
+        }
     }
 }

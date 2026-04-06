@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { ToolTrackingService } from 'src/app/core/services/tool-tracking.service';
-import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto, EquipmentFileDto, SaveEquipmentFileRequestDto } from 'src/app/core/model/tool-tracking.model';
+import { TechToolsTrackingDto, TechsInfoDto, ToolTrackingApiResponse, ToolTrackingCountApiResponse, ToolsTrackingTechsDto, ToolsTrackingFileDto, EquipmentFileDto, SaveEquipmentFileRequestDto, ToolsCalendarTrackingDto, ToolsCalendarTrackingApiResponse } from 'src/app/core/model/tool-tracking.model';
 import { AuthHelper } from 'src/app/core/utils/auth-helper';
 
 @Component({
@@ -10,25 +10,43 @@ import { AuthHelper } from 'src/app/core/utils/auth-helper';
   styleUrls: ['./tool-tracking-entry.component.scss']
 })
 export class ToolTrackingEntryComponent implements OnInit {
+  private readonly drillDownStorageKeyPrefix = 'toolTrackingDrillDown:';
+  readonly pageSizeOptions: number[] = [10, 25, 50, 100];
   techId: string = '';
   selectedTech: string = 'All';
+  isTechnicianRestricted: boolean = false;
   technicians: ToolsTrackingTechsDto[] = [];
   trackingData: TechToolsTrackingDto[] = [];
+  calendarDrillDownEntries: ToolsCalendarTrackingDto[] = [];
   techInfo: TechsInfoDto | null = null;
   toolsCount: number = 0;
   showCount: boolean = false;
   loading: boolean = false;
+  loadingDrillDown: boolean = false;
   loadingCount: boolean = false;
   loadingTechnicians: boolean = false;
   error: string = '';
   successMessage: string = '';
   isSaving: boolean = false;
   modifiedRows = new Set<number>();
+  selectedBucket: string = '';
+  trackingCurrentPage: number = 1;
+  trackingPageSize: number = 25;
+  drillDownCurrentPage: number = 1;
+  drillDownPageSize: number = 25;
+  drillDownFilters = {
+    toolName: 'All',
+    serialNo: 'All',
+    techFilter: '0',
+    startDate: '',
+    endDate: ''
+  };
   
   // File attachment properties - BLOB storage like legacy
-  equipmentFiles: EquipmentFileDto[] = [];
+  equipmentFiles: ToolsTrackingFileDto[] = [];
   selectedFiles: File[] = [];
   uploadingFiles: boolean = false;
+  loadingFiles: boolean = false;
   
   // Role-based filtering
   private userContext: { userEmpID?: string; windowsID?: string } = {};
@@ -45,15 +63,23 @@ export class ToolTrackingEntryComponent implements OnInit {
     this.userContext = this.authHelper.getUserContext();
     
     this.loadTechnicians();
-    
-    // Check for TechID query parameter from calendar navigation
-    this.route.queryParams.subscribe(params => {
-      const techID = params['TechID'];
+
+    this.route.paramMap.subscribe(params => {
+      const techID = params.get('techId');
+      const contextId = params.get('contextId');
+
+      if (contextId) {
+        this.selectedTech = 'All';
+        this.techId = '';
+        this.loadStoredDrillDownContext(contextId);
+        return;
+      }
+
+      this.clearCalendarDrillDown();
+
       if (techID) {
-        // Pre-select the technician from calendar navigation
         this.selectedTech = techID;
         this.techId = techID;
-        // Load tools automatically after technicians are loaded
         setTimeout(() => {
           this.autoLoadTools();
         }, 500);
@@ -69,9 +95,10 @@ export class ToolTrackingEntryComponent implements OnInit {
         this.loadingTechnicians = false;
         if (response.success) {
           this.technicians = response.data;
+          this.isTechnicianRestricted = !!response.isFiltered && this.technicians.length === 1;
           
           // Auto-select if technicians list is filtered to single user (technician role)
-          if (response.isFiltered && this.technicians.length === 1) {
+          if (this.isTechnicianRestricted) {
             this.selectedTech = this.technicians[0].techID;
             this.techId = this.technicians[0].techID;
             // Auto-load tools for single technician
@@ -95,6 +122,9 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   onTechnicianChange(selectedTechId: string): void {
+    this.clearCalendarDrillDown();
+    this.resetTrackingPagination();
+
     // Clear existing data when technician changes
     this.trackingData = [];
     this.techInfo = null;
@@ -119,6 +149,7 @@ export class ToolTrackingEntryComponent implements OnInit {
         this.loading = false;
         if (response.success) {
           this.trackingData = response.data;
+          this.resetTrackingPagination();
           // Automatically load count and files as well
           this.loadToolsCount();
           this.loadToolsTrackingFiles();
@@ -139,6 +170,9 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   onSearch(): void {
+    this.clearCalendarDrillDown();
+    this.resetTrackingPagination();
+
     if (this.selectedTech === 'All' || !this.selectedTech) {
       this.error = 'Please select a technician';
       return;
@@ -158,6 +192,7 @@ export class ToolTrackingEntryComponent implements OnInit {
         this.loading = false;
         if (response.success) {
           this.trackingData = response.data;
+          this.resetTrackingPagination();
           // Load count and files after successful tracking data retrieval
           this.loadToolsCount();
           this.loadToolsTrackingFiles();
@@ -210,6 +245,8 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   onClear(): void {
+    this.clearCalendarDrillDown();
+    this.resetTrackingPagination();
     this.techId = '';
     this.selectedTech = 'All';
     this.trackingData = [];
@@ -228,6 +265,147 @@ export class ToolTrackingEntryComponent implements OnInit {
     return selectedTechnician ? `${selectedTechnician.techname} (${selectedTechnician.techID})` : this.selectedTech;
   }
 
+  loadCalendarDrillDown(): void {
+    this.loadingDrillDown = true;
+    this.error = '';
+
+    this.toolTrackingService.getToolsCalendarTracking(
+      this.drillDownFilters.startDate || undefined,
+      this.drillDownFilters.endDate || undefined,
+      this.drillDownFilters.toolName,
+      this.drillDownFilters.serialNo,
+      this.drillDownFilters.techFilter,
+      this.selectedBucket,
+      this.userContext.userEmpID,
+      this.userContext.windowsID
+    ).subscribe({
+      next: (response: ToolsCalendarTrackingApiResponse) => {
+        this.loadingDrillDown = false;
+        if (response.success) {
+          this.calendarDrillDownEntries = response.data?.trackingData || [];
+          this.resetDrillDownPagination();
+        } else {
+          this.calendarDrillDownEntries = [];
+          this.error = response.message || 'Failed to load drill-down entries';
+        }
+      },
+      error: (err) => {
+        this.loadingDrillDown = false;
+        this.calendarDrillDownEntries = [];
+        if (err.status === 403) {
+          this.error = 'Access denied: You can only access allowed drill-down entries.';
+        } else {
+          this.error = err.error?.message || 'An error occurred while loading drill-down entries';
+        }
+        console.error('Error loading calendar drill-down entries:', err);
+      }
+    });
+  }
+
+  openDrillDownEntry(entry: ToolsCalendarTrackingDto): void {
+    this.clearCalendarDrillDown();
+    this.router.navigate(['/tools/tool-tracking-entry', entry.techID]);
+  }
+
+  shouldShowDrillDownPanel(): boolean {
+    return !!this.selectedBucket && (!this.selectedTech || this.selectedTech === 'All');
+  }
+
+  getDrillDownTitle(): string {
+    return this.getBucketLabel(this.selectedBucket);
+  }
+
+  getBucketLabel(bucket: string): string {
+    switch ((bucket || '').toLowerCase()) {
+      case 'overdue':
+        return 'Overdue';
+      case 'due15':
+        return 'Due in 15 Days';
+      case 'due30':
+        return 'Due in 30 Days';
+      case 'due45':
+        return 'Due in 45 Days';
+      case 'due60':
+        return 'Due in 60 Days';
+      default:
+        return 'Drill-down';
+    }
+  }
+
+  getDrillDownBadgeClass(): string {
+    switch ((this.selectedBucket || '').toLowerCase()) {
+      case 'overdue':
+        return 'bg-danger';
+      case 'due15':
+        return 'bg-warning text-dark';
+      case 'due30':
+        return 'bg-primary';
+      case 'due45':
+        return 'bg-success';
+      case 'due60':
+        return 'bg-info text-dark';
+      default:
+        return 'bg-secondary';
+    }
+  }
+
+  clearCalendarDrillDown(): void {
+    this.selectedBucket = '';
+    this.calendarDrillDownEntries = [];
+    this.drillDownFilters = {
+      toolName: 'All',
+      serialNo: 'All',
+      techFilter: '0',
+      startDate: '',
+      endDate: ''
+    };
+    this.resetDrillDownPagination();
+  }
+
+  private loadStoredDrillDownContext(contextId: string): void {
+    const storageKey = `${this.drillDownStorageKeyPrefix}${contextId}`;
+    const storedContext = localStorage.getItem(storageKey);
+
+    if (!storedContext) {
+      this.clearCalendarDrillDown();
+      return;
+    }
+
+    try {
+      const context = JSON.parse(storedContext);
+      this.selectedBucket = context.bucket || '';
+      this.drillDownFilters = {
+        toolName: context.toolName || 'All',
+        serialNo: context.serialNo || 'All',
+        techFilter: context.techFilter || '0',
+        startDate: context.startDate || '',
+        endDate: context.endDate || ''
+      };
+      this.loadCalendarDrillDown();
+    } catch (error) {
+      console.error('Error parsing tool tracking drill-down context:', error);
+      this.clearCalendarDrillDown();
+    }
+  }
+
+  formatDrillDownFilters(): string[] {
+    const filters: string[] = [];
+
+    if (this.drillDownFilters.toolName && this.drillDownFilters.toolName !== 'All') {
+      filters.push(`Tool: ${this.drillDownFilters.toolName}`);
+    }
+
+    if (this.drillDownFilters.serialNo && this.drillDownFilters.serialNo !== 'All') {
+      filters.push(`Serial: ${this.drillDownFilters.serialNo}`);
+    }
+
+    if (this.drillDownFilters.techFilter && this.drillDownFilters.techFilter !== '0') {
+      filters.push(`Tech: ${this.drillDownFilters.techFilter}`);
+    }
+
+    return filters;
+  }
+
   onSave(): void {
     if (this.modifiedRows.size === 0) {
       alert('No changes to save');
@@ -242,8 +420,23 @@ export class ToolTrackingEntryComponent implements OnInit {
     this.isSaving = true;
     this.error = '';
 
-    // Get only the modified rows
-    const modifiedData = Array.from(this.modifiedRows).map(index => this.trackingData[index]);
+    // Backend save uses a legacy DELETE-INSERT pattern, so we must send the
+    // full technician dataset. Sending only modified rows deletes the rest.
+    const toolTrackingItems = this.trackingData.map(item => ({
+      techID: item.techID,
+      toolName: item.toolName,
+      serialNo: item.serialNo,
+      dueDt: item.dueDt,
+      columnOrder: item.columnOrder,
+      status: item.status,
+      createdDate: item.createdDate,
+      modifiedDate: item.modifiedDate,
+      notes: item.notes,
+      received: item.received,
+      newMTracking: item.newMTracking,
+      oldMSerialNo: item.oldMSerialNo,
+      oldMTracking: item.oldMTracking
+    }));
 
     // Get the current user (you may need to adjust this based on your auth service)
     const modifiedBy = this.authHelper.getCurrentUserDisplayName() || localStorage.getItem('currentUser') || 'System';
@@ -251,10 +444,10 @@ export class ToolTrackingEntryComponent implements OnInit {
     const saveRequest = {
       techID: this.techId,
       modifiedBy: modifiedBy,
-      toolTrackingItems: modifiedData
+      toolTrackingItems
     };
 
-    console.log('Saving modified tool tracking data:', saveRequest);
+    console.log('Saving full tool tracking data set:', saveRequest);
 
     // Pass user context for role-based filtering
     this.toolTrackingService.saveTechToolsTracking(saveRequest, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
@@ -329,26 +522,27 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   loadToolsTrackingFiles(): void {
     if (!this.techId || this.techId === 'All') {
+      this.equipmentFiles = [];
       return;
     }
+
+    this.loadingFiles = true;
     
     // Load files from file system storage - Pass user context for role-based filtering
     this.toolTrackingService.getToolsTrackingFiles(this.techId, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
       next: (response) => {
+        this.loadingFiles = false;
         if (response.success) {
-          this.equipmentFiles = response.data.map(file => ({
-            tecID: this.techId,
-            fileName: file.fileName,
-            fileSizeKB: file.fileSizeKB,
-            uploadedOn: file.uploadedOn,
-            filePath: file.filePath
-          } as any));
+          this.equipmentFiles = response.data || [];
           console.log('Tools tracking files loaded:', this.equipmentFiles.length);
         } else {
+          this.equipmentFiles = [];
           console.error('Failed to load files:', response.message);
         }
       },
       error: (err) => {
+        this.loadingFiles = false;
+        this.equipmentFiles = [];
         if (err.status === 403) {
           console.warn('Access denied: Cannot view files for this technician.');
         } else {
@@ -513,6 +707,18 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   getFileExtension(filename: string): string {
     return filename.substring(filename.lastIndexOf('.') + 1);
+  }
+
+  formatFileSize(sizeInKb: number): string {
+    if (!sizeInKb && sizeInKb !== 0) {
+      return '—';
+    }
+
+    if (sizeInKb < 1024) {
+      return `${sizeInKb.toFixed(1)} KB`;
+    }
+
+    return `${(sizeInKb / 1024).toFixed(2)} MB`;
   }
 
   updateReceived(item: TechToolsTrackingDto, event: any, index: number): void {
@@ -716,6 +922,74 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   getInputValue(event: any): string {
     return (event.target as HTMLInputElement)?.value || '';
+  }
+
+  get pagedTrackingData(): TechToolsTrackingDto[] {
+    const startIndex = (this.trackingCurrentPage - 1) * this.trackingPageSize;
+    return this.trackingData.slice(startIndex, startIndex + this.trackingPageSize);
+  }
+
+  get pagedDrillDownEntries(): ToolsCalendarTrackingDto[] {
+    const startIndex = (this.drillDownCurrentPage - 1) * this.drillDownPageSize;
+    return this.calendarDrillDownEntries.slice(startIndex, startIndex + this.drillDownPageSize);
+  }
+
+  get trackingTotalPages(): number {
+    return Math.max(1, Math.ceil(this.trackingData.length / this.trackingPageSize));
+  }
+
+  get drillDownTotalPages(): number {
+    return Math.max(1, Math.ceil(this.calendarDrillDownEntries.length / this.drillDownPageSize));
+  }
+
+  get trackingStartRecord(): number {
+    if (this.trackingData.length === 0) {
+      return 0;
+    }
+
+    return (this.trackingCurrentPage - 1) * this.trackingPageSize + 1;
+  }
+
+  get trackingEndRecord(): number {
+    return Math.min(this.trackingCurrentPage * this.trackingPageSize, this.trackingData.length);
+  }
+
+  get drillDownStartRecord(): number {
+    if (this.calendarDrillDownEntries.length === 0) {
+      return 0;
+    }
+
+    return (this.drillDownCurrentPage - 1) * this.drillDownPageSize + 1;
+  }
+
+  get drillDownEndRecord(): number {
+    return Math.min(this.drillDownCurrentPage * this.drillDownPageSize, this.calendarDrillDownEntries.length);
+  }
+
+  onTrackingPageSizeChange(pageSize: string | number): void {
+    this.trackingPageSize = Number(pageSize);
+    this.trackingCurrentPage = 1;
+  }
+
+  onDrillDownPageSizeChange(pageSize: string | number): void {
+    this.drillDownPageSize = Number(pageSize);
+    this.drillDownCurrentPage = 1;
+  }
+
+  goToTrackingPage(page: number): void {
+    this.trackingCurrentPage = Math.min(Math.max(1, page), this.trackingTotalPages);
+  }
+
+  goToDrillDownPage(page: number): void {
+    this.drillDownCurrentPage = Math.min(Math.max(1, page), this.drillDownTotalPages);
+  }
+
+  private resetTrackingPagination(): void {
+    this.trackingCurrentPage = 1;
+  }
+
+  private resetDrillDownPagination(): void {
+    this.drillDownCurrentPage = 1;
   }
 
 }

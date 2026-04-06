@@ -13,6 +13,8 @@ namespace Technicians.Api.Repository
             string techName,
             int pageNumber,
             int pageSize);
+        Task<IEnumerable<TechMileageMonthlySummaryDto>> GetTechMileageMonthlySummary(DateTime startDate, DateTime endDate, string techName);
+
     }
 
     public class TechMileageRepository : ITechMileageRepository
@@ -84,6 +86,32 @@ namespace Technicians.Api.Repository
             };
         }
 
+        public async Task<IEnumerable<TechMileageMonthlySummaryDto>> GetTechMileageMonthlySummary(
+    DateTime startDate,
+    DateTime endDate,
+    string techName)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var parameters = new DynamicParameters();
+            parameters.Add("@StartDate", startDate);
+            parameters.Add("@EndDate", endDate);
+            parameters.Add("@TechName", string.IsNullOrEmpty(techName) || techName == "ALL" ? null : techName);
+
+            var results = await connection.QueryAsync(
+                "GetTechMileageMonthlySummary",
+                parameters,
+                commandType: CommandType.StoredProcedure
+            );
+
+            return results.Select(row => new TechMileageMonthlySummaryDto
+            {
+                Month = row.Month?.ToString() ?? string.Empty,
+                TotalMiles = (int)(row.TotalMiles ?? 0),
+                TotalHours = (decimal)(row.TotalHours ?? 0)
+            });
+        }
+
         #region Helper Methods
 
         /// <summary>
@@ -103,23 +131,23 @@ namespace Technicians.Api.Repository
         /// <summary>
         /// Returns the first non-empty string value found among candidate column names
         /// </summary>
-        //private static string? GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
-        //{
-        //    foreach (var columnName in columnNames)
-        //    {
-        //        var value = GetStringValue(dict, columnName);
-        //        if (!string.IsNullOrWhiteSpace(value))
-        //        {
-        //            return value;
-        //        }
-        //    }
-        //    return null;
-        //}
+        private static string? GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
+        {
+            foreach (var columnName in columnNames)
+            {
+                var value = GetStringValue(dict, columnName);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value;
+                }
+            }
+            return null;
+        }
 
         /// <summary>
         /// Returns the first non-empty string value found among candidate column names
         /// </summary>
-        private static string GetFirstStringValue(IDictionary<string, object> dict, params string[] columnNames)
+        private static string GetStringValue(IDictionary<string, object> dict, params string[] columnNames)
         {
             foreach (var columnName in columnNames)
             {

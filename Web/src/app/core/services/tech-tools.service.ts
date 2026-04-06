@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
-import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto, TechToolSerialNoDto, ToolsCalendarTrackingResultDto } from '../model/tech-tools.model';
+import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto, ToolsTrackingTechsApiResponse, TechToolSerialNoDto, ToolsCalendarTrackingResultDto } from '../model/tech-tools.model';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -59,14 +59,12 @@ export class TechToolsService {
   }
 
   // Get tools tracking technicians - Enhanced with role-based filtering
-  getToolsTrackingTechs(userEmpID?: string, windowsID?: string): Observable<ToolsTrackingTechsDto[]> {
+  getToolsTrackingTechs(userEmpID?: string, windowsID?: string): Observable<ToolsTrackingTechsApiResponse> {
     let params = new HttpParams();
     if (userEmpID) params = params.set('userEmpID', userEmpID);
     if (windowsID) params = params.set('windowsID', windowsID);
     
-    return this.http.get<any>(`${this.apiUrl}/ToolsTrackingTechs`, { params }).pipe(
-      map(response => response.data || response || [])
-    );
+    return this.http.get<ToolsTrackingTechsApiResponse>(`${this.apiUrl}/ToolsTrackingTechs`, { params });
   }
 
   // Get tech tool serial numbers - Enhanced with role-based filtering

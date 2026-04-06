@@ -18,7 +18,7 @@
     <div class="tools-tracking-calendar-page-title">
       <h2 class="fw-bold text-primary mb-0">
         <i class="bi bi-calendar-check me-2"></i>
-        Tools Tracking Calendar
+        Tool Calibration Tracker
       </h2>
     </div>
     
@@ -56,8 +56,9 @@
             <select 
               class="form-select form-select-sm border-primary" 
               [(ngModel)]="selectedTech"
-              (change)="onTechnicianChange()">
-              <option value="All">All Technicians</option>
+              (change)="onTechnicianChange()"
+              [disabled]="isTechnicianRestricted">
+              <option *ngIf="!isTechnicianRestricted" value="All">All Technicians</option>
               <option 
                 *ngFor="let tech of technicians; trackBy: trackByTechId" 
                 [value]="tech.techID">
@@ -122,69 +123,22 @@
       <div class="card-body pt-0">
         <div class="statistics-dashboard mb-4">
           <div class="row g-3">
-            <!-- Overdue -->
-            <div class="col-md-2">
-              <div class="stat-card overdue">
+            <div class="col-md-2" *ngFor="let card of statusCardConfig">
+              <button
+                type="button"
+                class="stat-card"
+                [ngClass]="card.key"
+                [disabled]="isLoadingCalendar || getStatusCardCount(card.key) === 0"
+                [title]="getStatusCardCount(card.key) > 0 ? 'Open ' + card.label + ' entries' : 'No entries available'"
+                (click)="openStatusCard(card.key)">
                 <div class="stat-icon">
-                  <i class="bi bi-exclamation-triangle-fill"></i>
+                  <i [class]="card.icon"></i>
                 </div>
                 <div class="stat-content">
-                  <div class="stat-number">{{ statistics.overdue }}</div>
-                  <div class="stat-label">Overdue</div>
+                  <div class="stat-number">{{ getStatusCardCount(card.key) }}</div>
+                  <div class="stat-label">{{ card.label }}</div>
                 </div>
-              </div>
-            </div>
-
-            <!-- Due in 15 Days -->
-            <div class="col-md-2">
-              <div class="stat-card due15">
-                <div class="stat-icon">
-                  <i class="bi bi-clock-fill"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-number">{{ statistics.due15Days }}</div>
-                  <div class="stat-label">Due 15 Days</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Due in 30 Days -->
-            <div class="col-md-2">
-              <div class="stat-card due30">
-                <div class="stat-icon">
-                  <i class="bi bi-calendar-week"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-number">{{ statistics.due30Days }}</div>
-                  <div class="stat-label">Due 30 Days</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Due in 45 Days -->
-            <div class="col-md-2">
-              <div class="stat-card due45">
-                <div class="stat-icon">
-                  <i class="bi bi-calendar2-week"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-number">{{ statistics.due45Days }}</div>
-                  <div class="stat-label">Due 45 Days</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Due in 60 Days -->
-            <div class="col-md-2">
-              <div class="stat-card due60">
-                <div class="stat-icon">
-                  <i class="bi bi-calendar3-week"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-number">{{ statistics.due60Days }}</div>
-                  <div class="stat-label">Due 60 Days</div>
-                </div>
-              </div>
+              </button>
             </div>
           </div>
         </div>

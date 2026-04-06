@@ -812,6 +812,80 @@ export class ReportService {
     );
   }
 
+  /**
+   * Gets a specific order request by its row index
+   * @param rowIndex - The row index of the order request to retrieve
+   * @returns Observable<OrderRequestStatusDto> - The order request details
+   */
+  getOrderRequestByRowIndex(rowIndex: number): Observable<OrderRequestStatusDto> {
+    if (rowIndex <= 0) {
+      return throwError(() => new Error('Invalid RowIndex. RowIndex must be greater than 0.'));
+    }
+
+    return this.http.get<any>(`${this.API}/OrderRequestStatus/GetOrderRequestByRowIndex/${rowIndex}`, { 
+      headers: this.headers
+    }).pipe(
+      map((item: any) => {
+        if (!item) {
+          return {
+            rowIndex: rowIndex,
+            orderType: undefined,
+            requester: undefined,
+            dcgPartNo: undefined,
+            manufPartNo: undefined,
+            qtyNeeded: undefined,
+            vendor: undefined,
+            poNumber: undefined,
+            orderDate: undefined,
+            arriveDate: undefined,
+            notes: undefined,
+            status: undefined,
+            lastModifiedBy: undefined,
+            createdOn: undefined,
+            createdBy: undefined,
+            modifiedBy: undefined,
+            modifiedOn: undefined,
+            archive: false
+          } as OrderRequestStatusDto;
+        }
+
+        const notesValue = item.Notes || item.notes || item.NOTES || item.note || item.Note || item.NOTE ||
+          item.comment || item.Comment || item.COMMENT || item.comments || item.Comments || item.COMMENTS ||
+          item.description || item.Description || item.DESCRIPTION ||
+          item.remarks || item.Remarks || item.REMARKS ||
+          item.notesText || item.NotesText || item.NOTESTEXT ||
+          item.notes_text || item.Notes_Text || item.NOTES_TEXT ||
+          item.notesValue || item.NotesValue || item.NOTESVALUE ||
+          undefined;
+
+        return {
+          rowIndex: item.RowIndex ?? item.rowIndex ?? rowIndex,
+          orderType: item.OrderType ?? item.orderType ?? undefined,
+          requester: item.Requester ?? item.requester ?? undefined,
+          dcgPartNo: item.DCGPartNo ?? item.dcgPartNo ?? undefined,
+          manufPartNo: item.ManufPartNo ?? item.manufPartNo ?? undefined,
+          qtyNeeded: item.QtyNeeded ?? item.qtyNeeded ?? undefined,
+          vendor: item.Vendor ?? item.vendor ?? undefined,
+          poNumber: item.PONumber ?? item.poNumber ?? undefined,
+          orderDate: item.OrderDate ?? item.orderDate ?? undefined,
+          arriveDate: item.ArriveDate ?? item.arriveDate ?? undefined,
+          notes: notesValue,
+          status: (item.Status ?? item.status ?? undefined) ? (item.Status ?? item.status).toString().trim() : undefined,
+          lastModifiedBy: item.LastModifiedBy ?? item.lastModifiedBy ?? undefined,
+          createdOn: item.CreatedOn || item.createdOn || item.ModifiedOn || item.modifiedOn || undefined,
+          createdBy: item.CreatedBy || item.createdBy || item.ModifiedBy || item.modifiedBy || undefined,
+          modifiedBy: item.ModifiedBy || item.modifiedBy || undefined,
+          modifiedOn: item.ModifiedOn || item.modifiedOn || undefined,
+          archive: item.Archive ?? item.archive ?? false
+        } as OrderRequestStatusDto;
+      }),
+      catchError((error) => {
+        console.error('Error retrieving order request by row index:', error);
+        return throwError(() => new Error(`Failed to retrieve order request: ${error.message}`));
+      })
+    );
+  }
+
   private getOrderRequestNotes(item: any): string | undefined {
     if (!item || typeof item !== 'object') {
       return undefined;

@@ -235,6 +235,7 @@
   box-shadow: 0 16px 35px rgba(15, 23, 42, 0.08);
   position: sticky;
   top: 2rem;
+  overflow: hidden;
 }
 
 .chart-header {
@@ -257,6 +258,20 @@
 
 .chart-body {
   margin-top: 1rem;
+  width: 100%;
+  overflow: hidden;
+
+  ::ng-deep apx-chart {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  ::ng-deep .apexcharts-canvas,
+  ::ng-deep .apexcharts-svg {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
 }
 
 .table-card {

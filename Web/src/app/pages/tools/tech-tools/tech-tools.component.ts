@@ -5,7 +5,7 @@ import { TechToolsService } from '../../../core/services/tech-tools.service';
 import { CommonService } from '../../../core/services/common.service';
 import { AuthService } from '../../../modules/auth/services/auth.service';
 import { AuthHelper } from '../../../core/utils/auth-helper';
-import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto } from '../../../core/model/tech-tools.model';
+import { TechToolsData, TechnicianInfo, ToolKitItem, Technician, ToolsTrackingTechsDto, ToolsTrackingTechsApiResponse } from '../../../core/model/tech-tools.model';
 
 @Component({
   selector: 'app-tech-tools',
@@ -270,7 +270,9 @@ export class TechToolsComponent implements OnInit {
     
     // Pass user context for role-based filtering
     this.techToolsService.getToolsTrackingTechs(this.userContext.userEmpID, this.userContext.windowsID).subscribe({
-      next: (technicians: ToolsTrackingTechsDto[]) => {
+      next: (response: ToolsTrackingTechsApiResponse) => {
+        const technicians = response.data || [];
+
         // Map to the expected Technician interface
         this.technicians = technicians.map(tech => ({
           techID: tech.techID,
