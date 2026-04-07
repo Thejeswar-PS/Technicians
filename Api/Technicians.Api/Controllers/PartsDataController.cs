@@ -430,6 +430,7 @@ namespace Technicians.Api.Controllers
             if (string.IsNullOrWhiteSpace(callNbr))
                 return BadRequest("CallNbr is required.");
 
+            callNbr = callNbr.Trim();
             var dirPath = Path.Combine(baseDirectory, callNbr);
 
             if (!Directory.Exists(dirPath))
@@ -467,6 +468,8 @@ namespace Technicians.Api.Controllers
 
             if (string.IsNullOrWhiteSpace(callNbr))
                 return BadRequest("CallNbr is required.");
+
+            callNbr = callNbr.Trim();
 
             var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
             if (!allowedExtensions.Contains(ext))
@@ -510,6 +513,8 @@ namespace Technicians.Api.Controllers
             if (string.IsNullOrWhiteSpace(callNbr) || string.IsNullOrWhiteSpace(fileName))
                 return BadRequest("CallNbr and fileName are required.");
 
+            callNbr = callNbr.Trim();
+            fileName = fileName.Trim();
             var filePath = Path.Combine(baseDirectory, callNbr, fileName);
 
             if (!System.IO.File.Exists(filePath))

@@ -33,7 +33,6 @@ export class JobPartsComponent implements OnInit {
 
   // Loading states
   isLoading: boolean = false;
-  isUploadingFile: boolean = false;
 
   // Data
   jobPartsInfo: JobPartsInfo | null = null;
@@ -737,42 +736,31 @@ export class JobPartsComponent implements OnInit {
   // File upload
   onFileSelected(event: any): void {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      this.selectedFile = null;
+      return;
+    }
 
     // Validate file
     if (!this.isValidFile(file.name)) {
       this.toastr.error('Invalid file format. File must be of format jpg, gif, doc, bmp, xls, png, txt, xlsx, docx, pdf, jpeg');
+      this.selectedFile = null;
       return;
     }
 
     if (file.name.includes(' ')) {
       this.toastr.error('File name should not contain spaces. It should be all one word.');
+      this.selectedFile = null;
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) { // 5MB
       this.toastr.error('File size cannot exceed 5MB');
+      this.selectedFile = null;
       return;
     }
 
-    this.uploadFile(file);
-  }
-
-  private uploadFile(file: File): void {
-    this.isUploadingFile = true;
-
-    this.jobPartsService.uploadFileAttachment(this.callNbr, file).subscribe({
-      next: () => {
-        this.toastr.success('File uploaded successfully');
-        this.loadFileAttachments();
-      },
-      error: (error) => {
-        this.toastr.error('File upload failed: ' + (error.error?.message || error.message));
-      },
-      complete: () => {
-        this.isUploadingFile = false;
-      }
-    });
+    this.selectedFile = file;
   }
 
   private loadFileAttachments(): void {
