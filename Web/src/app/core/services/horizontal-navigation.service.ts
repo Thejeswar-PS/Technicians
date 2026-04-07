@@ -221,6 +221,7 @@ export class HorizontalNavigationService {
       'capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
       'http://dcgwebint/capfanusageyearly.aspx': '/graphs/cap-fan-usage-yearly',
       'reports/pastduegraph.aspx': '/graphs/past-due-graph',
+      'partsperformancegraph.aspx': '/graphs/parts-performance-graph',
       
       // Performance Reports
       'displayreports/accmgrperformance.aspx': '/reports/acc-mgr-performance-report',

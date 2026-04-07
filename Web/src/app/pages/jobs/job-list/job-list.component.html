@@ -14,7 +14,7 @@
               <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Account Manager</label>
             </td>
             <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Archive</label>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Status</label>
             </td>
             <td>
               <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Fiscal Year</label>
@@ -62,6 +62,8 @@
               >
                 <option class="fw-bold text-dark me-5" value="0" selected>Active</option>
                 <option class="fw-bold text-dark me-5" value="1">Archive</option>
+                <option class="fw-bold text-dark me-5" value="2">To Be Uploaded</option>
+                <option class="fw-bold text-dark me-5" value="3">Missing</option>
               </select>
             </td>
             <td>
@@ -225,7 +227,15 @@
                         <tbody>
                           <tr *ngFor="let equipment of getEquipmentForJob((job.callNbr || job.jobID || ''), (job.techName || ''))" 
                               style="height: 22px; background-color: #FFFACD; font-size: 10px;">
-                            <td class="text-center py-1" style="color: #0066CC;">{{equipment.equipId}}</td>
+                            <td class="text-center py-1" style="color: #0066CC;">
+                              <a href="javascript:void(0)"
+                                 (click)="navigateToEquipmentDetails((job.callNbr || job.jobID || ''), (job.techName || ''), (job.techId || job.techID || ''), equipment.equipId)"
+                                 class="text-hover-primary"
+                                 style="cursor: pointer; color: #0066CC; text-decoration: underline;"
+                                 title="Open equipment readings">
+                                {{equipment.equipId}}
+                              </a>
+                            </td>
                             <td class="text-center py-1" style="color: #0066CC;">{{equipment.equipNo?.trim()}}</td>
                             <td class="text-center py-1" style="color: #0066CC;">{{equipment.vendorId?.trim()}}</td>
                             <td class="text-center py-1" style="color: #0066CC;">{{equipment.version?.trim()}}</td>

@@ -13,6 +13,7 @@
         public int JobsWithParts { get; set; }
         public int JobsThisWeek { get; set; }
         public int JobsUploaded { get; set; }
+        public int OverdueTools { get; set; }
     }
 
     public class TechActivityLogDto

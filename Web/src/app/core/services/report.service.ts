@@ -169,9 +169,9 @@ export class ReportService {
     return this.http.get<any>(`${this.API}/TechTools/GetPastDueContracts?status=${status}`, { headers: this.headers });
   }
 
-  searchPMNotes(query: string, page: number, pageSize: number): Observable<any>
+  searchPMNotes(query: string, page: number, pageSize: number, empId: string): Observable<any>
   {
-    return this.http.get<any>(`${this.API}/TechTools/SearchPMNotes?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}`, { headers: this.headers });
+    return this.http.get<any>(`${this.API}/TechTools/SearchPMNotes?q=${encodeURIComponent(query)}&page=${page}&pageSize=${pageSize}&empId=${encodeURIComponent(empId || '')}`, { headers: this.headers });
   }
 
   handleMiscTask(operation: string, jobNo: string): Observable<any>

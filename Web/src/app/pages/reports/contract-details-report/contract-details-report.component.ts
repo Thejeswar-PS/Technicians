@@ -90,15 +90,15 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
   categoryOptions: CategoryOption[] = [
     {
       key: 'Non Liebert Contracts not billed as of yesterday',
-      label: 'Non Liebert Contracts not billed as of yesterday'
+      label: 'Contracts not billed as of yesterday'
     },
     {
       key: 'Non Liebert Contracts to be billed in next 30 days',
-      label: 'Non Liebert Contracts to be billed in next 30 days'
+      label: 'Contracts to be billed in next 30 days'
     },
     {
       key: 'Non Liebert Contracts to be billed in next 60 days',
-      label: 'Non Liebert Contracts to be billed in next 60 days'
+      label: 'Contracts to be billed in next 60 days'
     }
   ];
 

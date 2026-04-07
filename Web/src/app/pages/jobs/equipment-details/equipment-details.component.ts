@@ -26,6 +26,7 @@ export class EquipmentDetailsComponent implements OnInit {
 
   // Data
   equipmentList: EquipmentDetail[] = [];
+  selectedEquipIdFromRoute = '';
   uploadInfo: UploadInfo[] = [];
   selectedEquipment: EquipmentDetail | null = null; // Track selected equipment for uploads
   equipmentFiles: EquipmentFileResponseDto[] = []; // Files for the selected equipment
@@ -181,6 +182,7 @@ export class EquipmentDetailsComponent implements OnInit {
         archive: params['Archive'] || '',
         year: params['Year'] || ''
       };
+      this.selectedEquipIdFromRoute = (params['EquipId'] || params['equipId'] || '').toString().trim();
       
       console.log('📋 Route params loaded:', this.params);
       
@@ -267,6 +269,13 @@ export class EquipmentDetailsComponent implements OnInit {
     try {
       const equipment = await this.equipmentService.getEquipmentInfo(this.params.callNbr).toPromise();
       this.equipmentList = equipment || [];
+
+      if (this.selectedEquipIdFromRoute && this.equipmentList.length > 0) {
+        const selectedEquipment = this.equipmentList.find(e => `${e.equipId}` === this.selectedEquipIdFromRoute);
+        if (selectedEquipment) {
+          this.navigateToEquipmentReadings(selectedEquipment);
+        }
+      }
     } catch (error: any) {
       console.error('Error loading equipment info:', error);
       // For 404 errors (no equipment found), just set empty array to show "no equipment found" message

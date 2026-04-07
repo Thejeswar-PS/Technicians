@@ -1,4 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { DashboardFilterSharedService } from 'src/app/core/services/shared-service/dashboard-filter-shared.service';
 import * as _ from 'lodash';
@@ -29,7 +30,8 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
     missingJobs: 0,
     jobsWithParts: 0,
     jobsThisWeek: 0,
-    jobsUploaded: 0
+    jobsUploaded: 0,
+    overdueTools: 0
   };
 
   // Filters
@@ -79,7 +81,8 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
     private techDashboardService: TechDashboardService,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
-    private commonService: CommonService
+    private commonService: CommonService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -547,6 +550,26 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
     return date.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit'
+    });
+  }
+
+  goToJobsScheduled(): void {
+    this.router.navigate(['/jobs/job-list']);
+  }
+
+  goToJobsToBeUploaded(): void {
+    this.router.navigate(['/tools/jobs-to-be-uploaded']);
+  }
+
+  goToEmergencyJobs(): void {
+    this.router.navigate(['/reports/emergency-jobs']);
+  }
+
+  goToMissingJobs(): void {
+    this.router.navigate(['/jobs/job-list'], {
+      queryParams: {
+        rbButton: 3
+      }
     });
   }
 }

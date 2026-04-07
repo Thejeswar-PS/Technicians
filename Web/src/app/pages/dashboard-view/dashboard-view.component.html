@@ -1,7 +1,7 @@
 <div class="dashboard-page">
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <button type="button" class="btn btn-dark" (click)="toggleFilterPanel()">&#9776; Filter</button>
+      <button type="button" class="btn btn-dark" (click)="toggleFilterPanel()">Filter</button>
     </div>
 
     <div class="filter-panel" [class.show]="showFilterPanel">
@@ -21,21 +21,25 @@
 
     <!-- KPI -->
     <div class="kpi-row">
-      <div class="kpi-card kpi-blue">
+      <div class="kpi-card kpi-blue" role="button" tabindex="0" (click)="goToJobsScheduled()" (keyup.enter)="goToJobsScheduled()">
         <div class="kpi-header">Jobs Scheduled</div>
         <div class="kpi-number">{{ kpis.jobsScheduled }}</div>
       </div>
-      <div class="kpi-card kpi-green">
+      <div class="kpi-card kpi-green" role="button" tabindex="0" (click)="goToJobsToBeUploaded()" (keyup.enter)="goToJobsToBeUploaded()">
         <div class="kpi-header">To Be Uploaded</div>
         <div class="kpi-number">{{ kpis.jobsToBeUploaded }}</div>
       </div>
-      <div class="kpi-card kpi-red">
+      <div class="kpi-card kpi-red" role="button" tabindex="0" (click)="goToEmergencyJobs()" (keyup.enter)="goToEmergencyJobs()">
         <div class="kpi-header">Emergency Jobs</div>
         <div class="kpi-number">{{ kpis.emergencyJobs }}</div>
       </div>
-      <div class="kpi-card kpi-yellow">
+      <div class="kpi-card kpi-yellow" role="button" tabindex="0" (click)="goToMissingJobs()" (keyup.enter)="goToMissingJobs()">
         <div class="kpi-header">Missing Jobs</div>
         <div class="kpi-number">{{ kpis.missingJobs }}</div>
+      </div>
+      <div class="kpi-card kpi-red">
+        <div class="kpi-header">Overdue Tools</div>
+        <div class="kpi-number">{{ kpis.overdueTools }}</div>
       </div>
     </div>
 

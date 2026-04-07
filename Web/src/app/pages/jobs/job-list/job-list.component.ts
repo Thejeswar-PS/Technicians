@@ -165,12 +165,12 @@ export class JobListComponent implements OnInit {
 
     this.route.queryParamMap.subscribe((params) => {
       console.log('📍 Route params:', params);
-      if(params.has('jobId') || params.has('CallNbr'))
+      if(params.has('jobId') || params.has('CallNbr') || params.has('rbButton'))
       {
         // If the URL contains a jobId or CallNbr we should avoid the default Load
-        // and instead let handleQueryParameters perform the search after filters are loaded
+        // and instead let handleQueryParameters perform the search/filter after filters are loaded
         loadDefault = false;
-        console.log('📍 Found jobId/CallNbr in URL, skipping default load');
+        console.log('📍 Found jobId/CallNbr/rbButton in URL, skipping default load');
       }
 
     }
@@ -814,6 +814,16 @@ public Load(initialLoad: boolean = false)
     this.route.queryParamMap.subscribe((params) => {
       // Support both legacy 'jobId' and 'CallNbr' query params
       const incomingCall = params.get('jobId') || params.get('CallNbr');
+      const incomingRbButton = params.get('rbButton');
+
+      if (incomingRbButton !== null) {
+        const parsedRbButton = Number(incomingRbButton);
+        if (!Number.isNaN(parsedRbButton)) {
+          this.jobFilterForm.patchValue({ rbButton: parsedRbButton }, { emitEvent: false });
+          this.jobListRequest.rbButton = parsedRbButton;
+        }
+      }
+
       if (incomingCall) {
         // Patch the search field with the provided call number (trimmed)
         const callValue = (incomingCall || '').toString().trim();
@@ -828,6 +838,8 @@ public Load(initialLoad: boolean = false)
         this.jobFilterForm.patchValue({ jobId: normalized, techId: defaultTech }, { emitEvent: false });
         // Attempt to run pending query immediately if filters are already loaded
         this.attemptRunPendingQuery();
+      } else {
+        this.Load(false);
       }
     });
   }
@@ -1095,8 +1107,8 @@ public Load(initialLoad: boolean = false)
   }
 
   // Navigate to equipment details page
-  navigateToEquipmentDetails(callNbr: string, techName: string, techId: string): void {
-    console.log('Navigating to equipment details for:', { callNbr, techName, techId });
+  navigateToEquipmentDetails(callNbr: string, techName: string, techId: string, equipId?: string | number): void {
+    console.log('Navigating to equipment details for:', { callNbr, techName, techId, equipId });
     
     const safeTechName = (techName || '').trim();
     const safeTechId = (techId || '').trim();
@@ -1111,15 +1123,19 @@ public Load(initialLoad: boolean = false)
     const currentFilters = this.jobFilterForm.value;
     
     // Route to equipment details page with query parameters matching legacy DTechEquipDetails.aspx
-    this.router.navigate(['/jobs/equipment-details'], {
-      queryParams: {
-        CallNbr: safeCallNbr,
-        TechName: safeTechName,
-        Tech: safeTechId,
-        Archive: currentFilters.rbButton || '0',
-        Year: currentFilters.currentYear || new Date().getFullYear().toString()
-      }
-    });
+    const queryParams: any = {
+      CallNbr: safeCallNbr,
+      TechName: safeTechName,
+      Tech: safeTechId,
+      Archive: currentFilters.rbButton || '0',
+      Year: currentFilters.currentYear || new Date().getFullYear().toString()
+    };
+
+    if (equipId !== undefined && equipId !== null && `${equipId}`.trim() !== '') {
+      queryParams.EquipId = `${equipId}`.trim();
+    }
+
+    this.router.navigate(['/jobs/equipment-details'], { queryParams });
   }
 }
 
