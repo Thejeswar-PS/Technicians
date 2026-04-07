@@ -6,6 +6,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Subject, forkJoin, Observable, of } from 'rxjs';
 import { takeUntil, finalize, map, catchError, debounceTime } from 'rxjs/operators';
 
+import { CommonService } from '../../../core/services/common.service';
 import { ReportService } from '../../../core/services/report.service';
 import { AuthService } from '../../../modules/auth/services/auth.service';
 import { 
@@ -59,6 +60,13 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   showAssemblyQC: boolean = false; // divGrp3
   isValidatingJob: boolean = false;
   jobValidationMessage: string = '';
+
+  // Access control
+  hasPageAccess: boolean = false;
+  employeeStatus: string = '';
+  userRole: string = '';
+  windowsID: string = '';
+  currentUserStatus: any = null;
   
   // Job type options matching legacy exactly
   jobTypeOptions = [
@@ -128,6 +136,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private location: Location,
+    private commonService: CommonService,
     private reportService: ReportService,
     private authService: AuthService,
     private toastr: ToastrService
@@ -136,10 +145,120 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
   
   ngOnInit(): void {
+    this.determineEmployeeStatus();
+  }
+
+  private initializeAuthorizedView(): void {
     // Load required data and setup component
     this.loadEmployeeData();
     this.setupQueryParamSubscription();
     this.setupJobTypeSubscription();
+  }
+
+  private isTechnicianStatus(statusValue: string): boolean {
+    const normalizedStatus = (statusValue || '').toString().trim().toLowerCase();
+    return normalizedStatus === 'technician' ||
+           normalizedStatus === 'tech' ||
+           normalizedStatus === 'techmanager' ||
+           normalizedStatus === 'tech manager' ||
+           normalizedStatus === 't' ||
+           normalizedStatus.includes('technician');
+  }
+
+  private extractEmployeeStatus(response: any): string {
+    if (typeof response === 'string') {
+      return response.toString().trim();
+    }
+
+    if (Array.isArray(response) && response.length > 0) {
+      const firstItem = response[0] || {};
+      return (firstItem.status || firstItem.Status || firstItem.empStatus || firstItem.EmpStatus || '').toString().trim();
+    }
+
+    if (response && typeof response === 'object') {
+      return (response.status || response.Status || response.empStatus || response.EmpStatus || '').toString().trim();
+    }
+
+    return '';
+  }
+
+  private isTechnicianUser(userDataEmpStatus: string, resolvedApiStatus?: string): boolean {
+    const apiStatus = (resolvedApiStatus || this.employeeStatus || '').toString().trim().toLowerCase();
+    const role = (this.userRole || '').toString().trim().toLowerCase();
+    const empStatus = (userDataEmpStatus || '').toString().trim().toUpperCase();
+
+    return this.isTechnicianStatus(apiStatus) ||
+           this.isTechnicianStatus(role) ||
+           empStatus === 'T' ||
+           empStatus === 'E' ||
+           empStatus === 'TECHNICIAN';
+  }
+
+  private determineEmployeeStatus(): void {
+    const userDataStr = localStorage.getItem('userData');
+    if (!userDataStr) {
+      this.denyPageAccess('Access denied. Unable to verify your user session.');
+      return;
+    }
+
+    const userData = JSON.parse(userDataStr);
+    this.userRole = userData.role || userData.userRole || '';
+    this.windowsID = userData.windowsID || userData.windowsId || userData.empName || '';
+    const userDataEmpStatus = (
+      userData.empStatus ||
+      userData.EmpStatus ||
+      userData.employeeStatus ||
+      userData.EmployeeStatus ||
+      userData.empType ||
+      userData.role ||
+      userData.userRole ||
+      ''
+    ).toString().trim();
+
+    if (this.isTechnicianUser(userDataEmpStatus)) {
+      this.denyPageAccess('Access denied. Technicians are not authorized to view this page.');
+      return;
+    }
+
+    if (this.windowsID) {
+      this.commonService.getEmployeeStatusForJobList(this.windowsID).subscribe({
+        next: (response: any) => {
+          this.currentUserStatus = response;
+          const resolvedApiStatus = this.extractEmployeeStatus(response);
+          this.employeeStatus = resolvedApiStatus || 'Other';
+
+          if (this.isTechnicianUser(userDataEmpStatus, resolvedApiStatus)) {
+            this.denyPageAccess('Access denied. Technicians are not authorized to view this page.');
+            return;
+          }
+
+          this.hasPageAccess = true;
+          this.initializeAuthorizedView();
+        },
+        error: () => {
+          this.employeeStatus = 'Other';
+          this.hasPageAccess = true;
+          this.initializeAuthorizedView();
+        }
+      });
+    } else {
+      this.employeeStatus = 'Other';
+      this.hasPageAccess = true;
+      this.initializeAuthorizedView();
+    }
+  }
+
+  private denyPageAccess(message: string): void {
+    this.hasPageAccess = false;
+    this.isLoading = false;
+    this.isSaving = false;
+    this.errorMessage = message;
+    this.saveMessage = '';
+    this.showBoardSetup = false;
+    this.showDeleteConfirm = false;
+    this.showComponentWork = false;
+    this.showAssemblyQC = false;
+    this.editForm.disable({ emitEvent: false });
   }
   
   ngOnDestroy(): void {

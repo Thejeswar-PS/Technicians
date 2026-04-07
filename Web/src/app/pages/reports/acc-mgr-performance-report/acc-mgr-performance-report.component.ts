@@ -6,7 +6,6 @@ import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { ReportService } from '../../../core/services/report.service';
 import { CommonService } from '../../../core/services/common.service';
-import { AuthService } from '../../../modules/auth/services/auth.service';
 import { AccountManager } from '../../../core/model/account-manager.model';
 import {
   AccMgrPerformanceReportResponseDto,
@@ -60,8 +59,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private reportService: ReportService,
-    private commonService: CommonService,
-    private auth: AuthService
+    private commonService: CommonService
   ) {
     this.reportForm = this.fb.group({
       officeId: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(11)]]
@@ -836,8 +834,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             // Only managers can access this page
             if (!this.isManagerContext()) {
               console.log('Access denied: Only managers can access Account Manager Performance Reports');
-              this.hasPageAccess = false;
-              this.auth.logout();
+              this.denyPageAccess(this.getAccessDeniedMessage());
               return;
             }
 
@@ -862,8 +859,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
               // Only managers can access
               if (!this.isManagerContext()) {
                 console.log('Access denied: Only managers can access this report');
-                this.hasPageAccess = false;
-                this.auth.logout();
+                this.denyPageAccess(this.getAccessDeniedMessage());
                 return;
               }
               
@@ -872,16 +868,45 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
               this.loadAccountManagers();
             } else {
               this.errorMessage = 'Error retrieving employee status';
-              this.hasPageAccess = false;
-              this.auth.logout();
+              this.denyPageAccess('Access denied. Unable to verify your user session.');
             }
           }
         });
       }
     } else {
-      this.hasPageAccess = false;
-      this.auth.logout();
+      this.denyPageAccess('Access denied. Unable to verify your user session.');
     }
+  }
+
+  private isTechnicianContext(): boolean {
+    const status = (this.employeeStatus || this.userRole || '').trim().toLowerCase();
+    return status === 'technician' ||
+           status === 'techmanager' ||
+           status === 'tech manager' ||
+           status === 'tech' ||
+           status === 't' ||
+           status.includes('technician');
+  }
+
+  private getAccessDeniedMessage(): string {
+    if (this.isTechnicianContext()) {
+      return 'Access Denied: Technicians are not authorized to view this page.';
+    }
+
+    return 'Access Denied: You do not have permission to access Account Manager Performance Reports.';
+  }
+
+  private denyPageAccess(message: string): void {
+    this.hasPageAccess = false;
+    this.employeeStatusLoaded = false;
+    this.accountManagersLoaded = false;
+    this.isLoading = false;
+    this.isLoadingAccountManagers = false;
+    this.errorMessage = message;
+    this.reportData = null;
+    this.summaryData = null;
+    this.accountManagers = [];
+    this.reportForm.disable({ emitEvent: false });
   }
 
   /**

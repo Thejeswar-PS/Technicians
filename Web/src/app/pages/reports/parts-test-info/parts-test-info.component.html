@@ -16,7 +16,16 @@
     <div class="flex-shrink-0"></div>
   </div>
 
-  <form [formGroup]="editForm">
+  <div *ngIf="!isLoading && !hasPageAccess" class="card shadow-sm">
+    <div class="card-body py-5 text-center">
+      <div class="alert alert-danger d-inline-flex align-items-center mb-0" role="alert">
+        <i class="bi bi-shield-lock-fill me-2"></i>
+        <span>Access Denied: Technicians are not authorized to view this page.</span>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="editForm" *ngIf="hasPageAccess">
     
     <!-- Auto Generated ID Section - Badge/Pill Style -->
     <div class="auto-gen-id-container d-flex align-items-center justify-content-center mb-4">

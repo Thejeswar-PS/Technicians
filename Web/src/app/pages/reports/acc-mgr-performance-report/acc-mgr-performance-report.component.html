@@ -1,6 +1,6 @@
-<div class="container-fluid acc-mgr-performance-container" *ngIf="hasPageAccess">
+<div class="container-fluid acc-mgr-performance-container">
   <!-- Loading Overlay -->
-  <div *ngIf="isLoading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.3); z-index: 9999;">
+  <div *ngIf="isLoading && hasPageAccess" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.3); z-index: 9999;">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
@@ -11,7 +11,14 @@
     <h2 class="fw-bold text-primary mb-02 display-4.9">Account Manager Performance Report</h2>
   </div>
 
-  <div class="card shadow-sm main-card">
+  <div *ngIf="!hasPageAccess" class="mb-4">
+    <div class="alert alert-danger text-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <strong>{{ errorMessage || 'Access Denied: You do not have permission to access Account Manager Performance Reports.' }}</strong>
+    </div>
+  </div>
+
+  <div class="card shadow-sm main-card" *ngIf="hasPageAccess">
     <div class="card-body">
       <!-- Message -->
       <div class="mb-4" *ngIf="errorMessage">
@@ -1541,15 +1548,5 @@
         No records to display for the selected section
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Unauthorized Access Message -->
-<div class="container-fluid" *ngIf="!hasPageAccess">
-  <div class="alert alert-danger text-center mt-5" role="alert">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-    <strong>Access Denied:</strong> You do not have permission to access Account Manager Performance Reports.
-    <br/>
-    <small>Only Account Managers and Employees (EmpStatus 'M' or 'E') can access this report. Redirecting to login...</small>
   </div>
 </div>
