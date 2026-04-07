@@ -572,6 +572,7 @@ export class StrippedPartsInunitComponent implements OnInit, OnDestroy, AfterVie
   ngOnInit(): void {
     this.initializeForms();
     this.loadStripPartCodes();
+    this.unitInfo = this.getStoredUnitInfo();
     
 
     

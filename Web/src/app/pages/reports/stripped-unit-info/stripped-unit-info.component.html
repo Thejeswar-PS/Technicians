@@ -374,28 +374,7 @@
 
               <!-- Action Buttons for Existing Units -->
               <div class="modern-button-group" *ngIf="currentUnit && !isNewUnit">
-                <!-- View Mode Buttons (only show if not coming from Add Parts) -->
-                <div *ngIf="!isEditMode && !fromAddParts" class="d-flex gap-3 justify-content-center">
-                  <button 
-                    type="button" 
-                    class="modern-btn primary"
-                    (click)="onEdit()"
-                    [disabled]="isSaving || isDeleting">
-                    <i class="fa fa-edit btn-icon"></i>
-                    <span>Edit Unit</span>
-                  </button>
-                  <button 
-                    type="button" 
-                    class="modern-btn danger"
-                    (click)="onDelete()"
-                    [disabled]="isSaving || isDeleting">
-                    <span class="btn-spinner" *ngIf="isDeleting"></span>
-                    <span>{{ isDeleting ? 'Deleting...' : 'Delete Unit' }}</span>
-                  </button>
-                </div>
-                
-                <!-- Edit Mode Buttons (show when editing or coming from Add Parts) -->
-                <div *ngIf="isEditMode || fromAddParts" class="d-flex gap-3 justify-content-center">
+                <div class="d-flex gap-3 justify-content-center">
                   <button 
                     type="submit" 
                     class="modern-btn primary"

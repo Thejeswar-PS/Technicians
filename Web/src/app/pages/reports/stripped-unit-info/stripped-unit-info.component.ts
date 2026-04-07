@@ -88,6 +88,15 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.loadStripPartCodes();
     this.checkRouteParams();
   }
+
+  private getStoredNavigationContext(): { fromAddParts?: boolean; unitDetails?: any } | null {
+    const stored = sessionStorage.getItem('StrippedUnitInfo_Context');
+    try {
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  }
   
   private checkUserAuthentication(): void {
     const currentUser = this.authService.currentUserValue;
@@ -172,6 +181,25 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   }
 
   private checkRouteParams(): void {
+    const rowIndexFromPath = parseInt(this.route.snapshot.paramMap.get('rowIndex') || '', 10);
+    if (!Number.isNaN(rowIndexFromPath) && rowIndexFromPath > 0) {
+      const storedContext = this.getStoredNavigationContext();
+
+      this.loadUnitByRowIndex(rowIndexFromPath);
+
+      if (storedContext?.fromAddParts) {
+        this.fromAddParts = true;
+        this.isEditMode = true;
+        this.unitContext = storedContext.unitDetails || null;
+
+        setTimeout(() => {
+          this.showPartsSection = true;
+        }, 1000);
+      }
+
+      return;
+    }
+
     this.route.queryParams.subscribe(params => {
 
       if (params['rowIndex'] || params['RowIndex']) {
@@ -349,17 +377,13 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     // Set the currentStatusValue for the select binding
     this.currentStatusValue = this.currentUnit.status || '';
     
-    // Set proper form control states based on edit mode
-    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
-    if (this.isEditMode || this.isNewUnit || this.fromAddParts) {
-      editableFields.forEach(field => {
-        this.unitInfoForm.get(field)?.enable();
-      });
-    } else {
-      editableFields.forEach(field => {
-        this.unitInfoForm.get(field)?.disable();
-      });
-    }
+    this.getEditableUnitFields().forEach(field => {
+      this.unitInfoForm.get(field)?.enable();
+    });
+  }
+
+  private getEditableUnitFields(): string[] {
+    return ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
   }
 
   private markFormGroupTouched(formGroup: FormGroup) {
@@ -384,7 +408,7 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
   // I'll add the rest in the next replacement
 
   isFieldEditable(): boolean {
-    return this.isEditMode || this.isNewUnit || this.fromAddParts;
+    return true;
   }
 
   // Check if a specific field should be readonly regardless of edit mode
@@ -428,8 +452,7 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
     
     // Enable editable form controls
-    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
-    editableFields.forEach(field => {
+    this.getEditableUnitFields().forEach(field => {
       this.unitInfoForm.get(field)?.enable();
     });
   }
@@ -445,12 +468,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.isNewUnit = false;
     this.loadUnitToForm();
     this.errorMessage = '';
-    
-    // Disable editable form controls when not in edit mode
-    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
-    editableFields.forEach(field => {
-      this.unitInfoForm.get(field)?.disable();
-    });
   }
 
   onBack(): void {
@@ -461,9 +478,8 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     this.isSaving = true;
     this.errorMessage = '';
 
-    // Enable all controls temporarily to get their values
-    const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
-    editableFields.forEach(field => {
+    // Ensure editable controls are enabled before collecting values
+    this.getEditableUnitFields().forEach(field => {
       this.unitInfoForm.get(field)?.enable();
     });
     
@@ -516,12 +532,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
     const subscription = apiCall
       .pipe(finalize(() => {
         this.isSaving = false;
-        // Restore disabled state for fields if not in edit mode
-        if (!this.isEditMode && !this.isNewUnit) {
-          editableFields.forEach(field => {
-            this.unitInfoForm.get(field)?.disable();
-          });
-        }
       }))
       .subscribe({
         next: (response: any) => {
@@ -532,12 +542,6 @@ export class StrippedUnitInfoComponent implements OnInit, OnDestroy {
             // Don't disable edit mode if coming from Add Parts - keep it editable
             if (!this.fromAddParts) {
               this.isEditMode = false;
-              
-              // Disable editable fields after successful save (only if not from Add Parts)
-              const editableFields = ['make', 'model', 'serialNo', 'kva', 'voltage', 'status', 'strippedBy', 'putAwayBy', 'partsLocation'];
-              editableFields.forEach(field => {
-                this.unitInfoForm.get(field)?.disable();
-              });
             } else {
               // If from Add Parts, show a message encouraging parts addition
               this.successMessage += ' - You can now add parts information below.';

@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, NgZone } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -140,6 +141,7 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
     private commonService: CommonService,
     private fb: FormBuilder,
     private router: Router,
+    private location: Location,
     private auth: AuthService,
     private toastr: ToastrService,
     private ngZone: NgZone
@@ -468,20 +470,31 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
       stripExists: unit.stripExists
     });
     
-    // Navigate to stripped unit info page with the selected unit data
-    // Both sections (unit info and add parts) can be used independently
-    this.router.navigate(['/reports/stripped-unit-info'], { 
-      queryParams: { 
-        rowIndex: unit.rowIndex,
-        fromAddParts: true,
-        Make: unit.make,
-        Model: unit.model,
-        SNo: unit.serialNo,
-        KVA: unit.kva
-      } 
+    sessionStorage.setItem('StrippedUnitInfo_Context', JSON.stringify({
+      fromAddParts: true,
+      unitDetails: {
+        make: unit.make || '',
+        model: unit.model || '',
+        serialNo: unit.serialNo || '',
+        kva: unit.kva || ''
+      }
+    }));
+
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/reports/stripped-unit-info', unit.rowIndex])
+    );
+    const externalUrl = `${window.location.origin}${this.location.prepareExternalUrl(url)}`;
+    const openedWindow = window.open(externalUrl, '_blank', 'noopener,noreferrer');
+
+    if (!openedWindow) {
+      this.toastr.error('Pop-up was blocked. Please allow pop-ups for this site to open Stripped Unit Info in a new tab.', 'Pop-up blocked');
+      return;
+    }
+
+    console.log('🧭 [NAVIGATION] Opened Stripped Unit Info in new tab with path param:', {
+      url: externalUrl,
+      rowIndex: unit.rowIndex
     });
-    
-    console.log('🧭 [NAVIGATION] Navigating to stripped-unit-info with query params');
   }
 
   /**
@@ -502,24 +515,30 @@ export class StrippedUnitsStatusComponent implements OnInit, OnDestroy, AfterVie
       kva: unit.kva
     });
 
-    // Navigate using query parameters exactly like legacy ASP.NET version
-    // Legacy URL: ../StrippedPartsInUnit.aspx?Make=POWERWARE&Model=9330&SNo=EX112AXX03&KVA=20&MasterRowIndex=3637
-    this.router.navigate(['/reports/stripped-parts-inunit'], {
-      queryParams: {
-        Make: unit.make,
-        Model: unit.model,
-        SNo: unit.serialNo,
-        KVA: unit.kva,
-        MasterRowIndex: unit.rowIndex
-      }
-    });
-    
-    console.log('🧭 [NAVIGATION] Navigating to /reports/stripped-parts-inunit with legacy-style query params:', {
-      Make: unit.make,
-      Model: unit.model,
-      SNo: unit.serialNo,
-      KVA: unit.kva,
-      MasterRowIndex: unit.rowIndex
+    sessionStorage.setItem('StrippedPartsInUnit_UnitInfo', JSON.stringify({
+      make: unit.make || '',
+      model: unit.model || '',
+      serialNo: unit.serialNo || '',
+      kva: unit.kva || ''
+    }));
+    sessionStorage.setItem('StrippedPartsInUnit_MasterRowIndex', String(unit.rowIndex ?? 0));
+    sessionStorage.setItem('LastUsedMasterRowIndex', String(unit.rowIndex ?? 0));
+    sessionStorage.setItem('CurrentUnitRowIndex', String(unit.rowIndex ?? 0));
+
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/reports/stripped-parts-inunit', unit.rowIndex])
+    );
+    const externalUrl = `${window.location.origin}${this.location.prepareExternalUrl(url)}`;
+    const openedWindow = window.open(externalUrl, '_blank', 'noopener,noreferrer');
+
+    if (!openedWindow) {
+      this.toastr.error('Pop-up was blocked. Please allow pop-ups for this site to open Stripped Parts in a new tab.', 'Pop-up blocked');
+      return;
+    }
+
+    console.log('🧭 [NAVIGATION] Opened Stripped Parts in new tab with path param:', {
+      url: externalUrl,
+      masterRowIndex: unit.rowIndex
     });
   }
 
