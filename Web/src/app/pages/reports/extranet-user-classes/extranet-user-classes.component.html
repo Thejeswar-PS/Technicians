@@ -418,10 +418,10 @@
                         type="text"
                         class="modern-input"
                         formControlName="customerNumber"
-                        placeholder="Enter customer number to assign"
+                        placeholder="Enter customer numbers separated by commas"
                         [class.error]="isFieldInvalid('customerNumber', assignCustomerForm)">
                       <div class="field-error" *ngIf="isFieldInvalid('customerNumber', assignCustomerForm)">
-                        Customer number is required
+                        {{ getFieldError('customerNumber', assignCustomerForm) || 'Customer number is required' }}
                       </div>
                     </div>
                     <button
