@@ -572,4 +572,8 @@ export class DashboardViewComponent implements OnInit, AfterViewInit, OnDestroy 
       }
     });
   }
+
+  goToToolsTrackingCalendar(): void {
+    this.router.navigate(['/tools/tools-tracking-calendar']);
+  }
 }

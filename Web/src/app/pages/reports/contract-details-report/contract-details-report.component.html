@@ -56,7 +56,7 @@
           </div>
         </div>
         <div class="row align-items-center">
-          <div class="col-md-12">
+          <div class="col-md-6">
             <div class="filter-group mb-0">
               <label class="filter-label">
                 <i class="bi bi-building me-1"></i>
@@ -74,6 +74,37 @@
                 <small class="d-block text-muted mt-1" *ngIf="customerNameFilter">
                   Filtering by: <strong>{{ customerNameFilter }}</strong>
                 </small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 mt-3 mt-md-0">
+            <div class="filter-group mb-0">
+              <label class="filter-label">
+                <i class="bi bi-tags me-1"></i>
+                Contract Type (Multi-select)
+              </label>
+              <div class="position-relative">
+                <select
+                  class="form-select modern-select"
+                  multiple
+                  size="4"
+                  [disabled]="loading || contractTypeOptions.length === 0"
+                  (change)="onContractTypeFilterChange($event)">
+                  <option *ngFor="let contractType of contractTypeOptions" [value]="contractType" [selected]="selectedContractTypes.includes(contractType)">
+                    {{ contractType }}
+                  </option>
+                </select>
+                <small class="d-block text-muted mt-1">
+                  {{ selectedContractTypes.length > 0 ? (selectedContractTypes.length + ' selected') : 'All contract types' }}
+                </small>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary mt-2"
+                  (click)="clearContractTypeFilter()"
+                  [disabled]="loading || selectedContractTypes.length === 0">
+                  <i class="bi bi-x-circle me-1"></i>
+                  Clear Contract Types
+                </button>
               </div>
             </div>
           </div>
@@ -134,7 +165,11 @@
           <div class="text-gray-700 fw-semibold">
             Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ Math.min(currentPage * pageSize, filteredContractRows.length) }} of {{ filteredContractRows.length }} entries
           </div>
-          <div class="pagination-controls">
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-success" (click)="exportToExcel()" [disabled]="loading || filteredContractRows.length === 0">
+              <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+            </button>
+            <div class="pagination-controls">
             <button class="btn btn-sm btn-outline-primary" (click)="prevPage()" [disabled]="currentPage === 1">
               <i class="bi bi-chevron-left me-1"></i>Previous
             </button>
@@ -142,6 +177,7 @@
             <button class="btn btn-sm btn-outline-primary" (click)="nextPage()" [disabled]="currentPage >= getTotalPages()">
               Next<i class="bi bi-chevron-right ms-1"></i>
             </button>
+            </div>
           </div>
         </div>
 

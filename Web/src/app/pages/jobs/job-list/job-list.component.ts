@@ -111,6 +111,17 @@ export class JobListComponent implements OnInit {
     return 'fa-sort';
   }
 
+  getGridForeColorClass(): string {
+    const selectedStatus = this.jobFilterForm?.get('rbButton')?.value?.toString();
+    if (selectedStatus === '2') {
+      return 'grid-to-be-uploaded';
+    }
+    if (selectedStatus === '3') {
+      return 'grid-missing';
+    }
+    return '';
+  }
+
 
 
 

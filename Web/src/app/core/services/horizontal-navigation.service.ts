@@ -176,7 +176,7 @@ export class HorizontalNavigationService {
     const legacyMap: { [key: string]: string } = {
       // Miscellaneous & General Pages
       'miscellaneoustasks.aspx': '/miscellaneous-tasks',
-      'createdtechusers.aspx': '/reports/dtech-users-data',
+      'createdtechusers.aspx': '/reports/extranet-user-classes',
       'techmileagedashboard.aspx': '/tools/tech-mileage-dashboard',
       
       // Reports

@@ -37,7 +37,7 @@
         <div class="kpi-header">Missing Jobs</div>
         <div class="kpi-number">{{ kpis.missingJobs }}</div>
       </div>
-      <div class="kpi-card kpi-red">
+      <div class="kpi-card kpi-red" role="button" tabindex="0" (click)="goToToolsTrackingCalendar()" (keyup.enter)="goToToolsTrackingCalendar()">
         <div class="kpi-header">Overdue Tools</div>
         <div class="kpi-number">{{ kpis.overdueTools }}</div>
       </div>
@@ -52,6 +52,9 @@
           <div class="quick-links">
             <a [routerLink]="['/jobs/job-list']">
               <i class="bi bi-list-task text-primary me-2"></i> My Jobs List
+            </a>
+            <a [routerLink]="['/calendar']">
+              <i class="bi bi-calendar-event text-warning me-2"></i> Tech Calendar
             </a>
             <a [routerLink]="['/tools/jobs-to-be-uploaded']">
               <i class="bi bi-upload text-success me-2"></i> Jobs To Be Uploaded

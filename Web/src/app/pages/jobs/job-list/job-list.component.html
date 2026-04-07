@@ -58,7 +58,7 @@
               <select
                 class="form-select form-select-solid fw-bold text-dark fs-6 me-5"
                 formControlName="rbButton"
-                style="width:100px;padding:4px;"
+                style="width:170px;padding:4px;"
               >
                 <option class="fw-bold text-dark me-5" value="0" selected>Active</option>
                 <option class="fw-bold text-dark me-5" value="1">Archive</option>
@@ -123,7 +123,7 @@
       <!-- begin::Table container -->
       <div class="table-max-height">
         <!-- begin::Table -->
-        <table id="table-to-export" class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" style="text-align: center;">
+        <table id="table-to-export" class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" [ngClass]="getGridForeColorClass()" style="text-align: center;">
           <!-- begin::Table head -->
           <thead>
             <tr class="text-dark fw-bolder badge-light-primary  fs-6">
