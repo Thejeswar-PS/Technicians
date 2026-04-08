@@ -192,6 +192,23 @@
               </button>
 
               <button
+                *ngIf="enableExpenseVisible"
+                class="btn btn-primary me-2"
+                style="width: 170px; font-size: 10pt"
+                [disabled]="loading || enablingExpenses || uploadingExpenses || uploadingJob"
+                (click)="enableExpenses()"
+              >
+                <span *ngIf="!enablingExpenses">Enable Expenses</span>
+                <span *ngIf="enablingExpenses">
+                  <i
+                    class="spinner-border spinner-border-sm me-2"
+                    role="status"
+                  ></i>
+                  Enabling...
+                </span>
+              </button>
+
+              <button
                 *ngIf="helpButtonVisible"
                 class="btn btn-secondary me-2"
                 style="width: 48px; font-size: 10pt"
