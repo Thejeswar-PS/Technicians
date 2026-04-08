@@ -19,12 +19,12 @@ namespace Technicians.Api.Models
 
     public class TechMileageMonthlySummaryDto
     {
-        public IEnumerable<T> Data { get; set; }
-        public int TotalRecords { get; set; }
-        public int PageNumber { get; set; }
-        public int PageSize { get; set; }
+        public string Month { get; set; } = string.Empty;
+        public int TotalMiles { get; set; }
+        public decimal TotalHours { get; set; }
+        public string TechName { get; set; } = string.Empty;
     }
-}
+
 
     public class PagedResult<T>
     {

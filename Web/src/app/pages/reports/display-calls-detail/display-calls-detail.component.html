@@ -53,20 +53,39 @@
   <!-- Data Table Card -->
   <div *ngIf="!isLoading && displayData.length > 0" class="card card-custom">
     <div class="card-header border-0 pt-5">
-      <h3 class="card-title align-items-start flex-column">
-        <span class="card-label fw-bolder fs-3 mb-1">Detail Data</span>
-        <span class="text-muted mt-1 fw-bold fs-7">
+      <div class="detail-toolbar w-100">
+        <div class="detail-toolbar__page-size">
+          <label class="detail-toolbar__label" for="detailPageSize">Records per page:</label>
+          <select id="detailPageSize" class="form-select form-select-sm detail-page-size" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)">
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">
+              {{ size === 0 ? 'All' : size }}
+            </option>
+          </select>
+        </div>
+
+        <div class="detail-toolbar__summary">
           Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalRecords) }} of {{ totalRecords }} records
-        </span>
-      </h3>
-      
-      <div class="card-toolbar">
-        <select class="form-select form-select-sm" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)">
-          <option [value]="25">25 per page</option>
-          <option [value]="50">50 per page</option>
-          <option [value]="100">100 per page</option>
-          <option [value]="500">500 per page</option>
-        </select>
+        </div>
+
+        <div class="detail-toolbar__actions">
+          <div class="detail-pagination">
+            <button
+              type="button"
+              class="detail-pagination__button"
+              (click)="previousPage()"
+              [disabled]="currentPage === 1">
+              Prev
+            </button>
+            <span class="detail-pagination__info">Page {{ currentPage }} of {{ totalPages }}</span>
+            <button
+              type="button"
+              class="detail-pagination__button"
+              (click)="nextPage()"
+              [disabled]="currentPage === totalPages">
+              Next
+            </button>
+          </div>
+        </div>
       </div>
     </div>
     

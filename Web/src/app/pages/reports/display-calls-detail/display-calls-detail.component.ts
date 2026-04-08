@@ -35,6 +35,7 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
   executionTimeMs: number = 0;
   
   // Pagination
+  readonly pageSizeOptions = [25, 50, 100, 500, 1000, 2000, 0];
   pageSize = 50;
   currentPage = 1;
   totalRecords = 0;
@@ -423,6 +424,10 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
     }
     
     // Apply pagination
+    if (this.pageSize === 0) {
+      return data;
+    }
+
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
     return data.slice(startIndex, endIndex);
@@ -432,6 +437,10 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
    * Get total number of pages
    */
   get totalPages(): number {
+    if (this.pageSize === 0) {
+      return 1;
+    }
+
     return Math.ceil(this.totalRecords / this.pageSize);
   }
 
@@ -466,7 +475,7 @@ export class DisplayCallsDetailComponent implements OnInit, OnDestroy {
    * Change page size
    */
   changePageSize(size: number): void {
-    this.pageSize = size;
+    this.pageSize = Number(size);
     this.currentPage = 1; // Reset to first page
   }
 
