@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { 
   PastDueGraphResponseDto, 
   PastDueCallStatusDto, 
   PastDueJobsSummaryDto, 
+  PastDueJobDetailDto,
+  PastDueJobDetailResponseDto,
   ScheduledPercentageDto, 
   TotalJobsDto 
 } from '../model/past-due-graph.model';
@@ -16,6 +18,8 @@ import {
 })
 export class PastDueGraphService {
   private apiUrl = environment.apiUrl || 'https://localhost:7217/api';
+  private pastDueInfoCache: PastDueGraphResponseDto | null = null;
+  private readonly detailCache = new Map<string, PastDueJobDetailResponseDto>();
 
   constructor(private http: HttpClient) {}
 
@@ -23,10 +27,18 @@ export class PastDueGraphService {
    * Get all past due jobs information - main endpoint
    * Calls the /api/PastDueGraph/info endpoint
    */
-  getPastDueJobsInfo(): Observable<PastDueGraphResponseDto> {
+  getPastDueJobsInfo(forceRefresh = false): Observable<PastDueGraphResponseDto> {
+    if (!forceRefresh && this.pastDueInfoCache) {
+      return of(this.pastDueInfoCache);
+    }
+
     return this.http.get<PastDueGraphResponseDto>(`${this.apiUrl}/PastDueGraph/info`)
       .pipe(
         map(response => this.mapDates(response)),
+        map(response => {
+          this.pastDueInfoCache = response;
+          return response;
+        }),
         catchError(this.handleError)
       );
   }
@@ -56,6 +68,65 @@ export class PastDueGraphService {
       .pipe(
         catchError(this.handleError)
       );
+  }
+
+  getPastDueJobsDetail(accountManager?: string, category?: string, forceRefresh = false): Observable<PastDueJobDetailResponseDto> {
+    let params = new HttpParams();
+    const normalizedCategory = this.normalizeCategory(category);
+
+    if (accountManager) {
+      params = params.set('accountManager', accountManager);
+    }
+
+    if (normalizedCategory) {
+      params = params.set('category', normalizedCategory);
+    }
+
+    const url = `${this.apiUrl}/PastDueGraph/GetPastDueJobsDetail`;
+    const cacheKey = `${(accountManager || 'ALL').trim()}__${normalizedCategory || 'ALL'}`;
+
+    if (!forceRefresh && this.detailCache.has(cacheKey)) {
+      return of(this.detailCache.get(cacheKey)!);
+    }
+
+    return this.http.get<PastDueJobDetailResponseDto>(url, { params }).pipe(
+      map(response => ({
+        ...response,
+        data: (response.data || []).map((item: PastDueJobDetailDto) => ({
+          ...item,
+          scheduledStart: item.scheduledStart ? new Date(item.scheduledStart) : new Date(0),
+          scheduledEnd: item.scheduledEnd ? new Date(item.scheduledEnd) : new Date(0)
+        }))
+      })),
+      map(response => {
+        this.detailCache.set(cacheKey, response);
+        return response;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  clearCache(): void {
+    this.pastDueInfoCache = null;
+    this.detailCache.clear();
+  }
+
+  private normalizeCategory(category?: string): string | undefined {
+    const normalized = (category || '').trim().toLowerCase();
+
+    if (!normalized) {
+      return undefined;
+    }
+
+    if (normalized === 'billable') {
+      return 'Billable';
+    }
+
+    if (normalized === 'pastdue' || normalized === 'past-due' || normalized === 'past_due') {
+      return 'PastDue';
+    }
+
+    return category?.trim() || undefined;
   }
 
   /**
@@ -99,7 +170,7 @@ export class PastDueGraphService {
     return {
       ...response,
       generatedAt: new Date(response.generatedAt),
-      callStatus: response.callStatus.map(item => ({
+      callStatus: (response.callStatus || []).map(item => ({
         ...item,
         scheduledStart: new Date(item.scheduledStart),
         scheduledEnd: new Date(item.scheduledEnd)

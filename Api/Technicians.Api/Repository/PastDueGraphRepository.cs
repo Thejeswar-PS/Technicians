@@ -11,6 +11,14 @@ namespace Technicians.Api.Repository
     public interface IPastDueGraphRepository
     {
         /// <summary>
+        /// Get filtered past due job details based on Account Manager and category
+        /// </summary>
+        /// <param name="accountManager">Account Manager to filter by (optional)</param>
+        /// <param name="category">Category filter: "PastDue" or "Billable" (optional)</param>
+        /// <returns>Filtered list of past due job details</returns>
+        Task<List<PastDueJobDetailDto>> GetFilteredPastDueJobsDetailAsync(string? accountManager, string? category);
+
+        /// <summary>
         /// Gets comprehensive past due jobs information and analytics
         /// </summary>
         /// <returns>Complete past due jobs data with analytics</returns>
@@ -28,6 +36,7 @@ namespace Technicians.Api.Repository
         private readonly ILogger<PastDueGraphRepository> _logger;
 
         private const string LoggerName = "Technicians.PastDueGraphRepository";
+        private const int CACHE_EXPIRY_MINUTES = 15;
 
         public PastDueGraphRepository(
             IConfiguration configuration,
@@ -105,5 +114,181 @@ namespace Technicians.Api.Repository
                 };
             }
         }
+
+        /// <summary>
+        /// Get filtered past due job details based on Account Manager and category
+        /// </summary>
+        /// <param name="accountManager">Account Manager to filter by (optional)</param>
+        /// <param name="category">Category filter: "PastDue" or "Billable" (optional)</param>
+        /// <returns>Filtered list of past due job details</returns>
+        public async Task<List<PastDueJobDetailDto>> GetFilteredPastDueJobsDetailAsync(string? accountManager, string? category)
+        {
+            using var connection = new SqlConnection(_connectionString);
+
+            var command = new SqlCommand("PDueUnscheduledJobsInfo", connection)
+            {
+                CommandType = CommandType.StoredProcedure,
+                CommandTimeout = 120
+            };
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            var result = new List<PastDueJobDetailDto>();
+
+            while (await reader.ReadAsync())
+            {
+                var accMgr = GetSafeString(reader, "AccMgr");
+                var description = GetSafeString(reader, "Description", "description").Trim();
+
+
+                // ?? FILTER EARLY (performance fix)
+                if (!string.IsNullOrWhiteSpace(accountManager) &&
+                    !string.Equals(accMgr?.Trim(), accountManager.Trim(), StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                if (!string.IsNullOrWhiteSpace(category))
+                {
+                    if (category.Equals("Billable", StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(description?.Trim(), "Could be billed", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    if (category.Equals("PastDue", StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(description?.Trim(), "Could be billed", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+
+                // ? MAP ONLY FILTERED ROWS
+                var job = new PastDueJobDetailDto
+                {
+                    CallNbr = GetSafeString(reader, "callnbr"),
+                    CustName = GetSafeString(reader, "custname"),
+                    CustNmbr = GetSafeString(reader, "custnmbr"),
+                    AccMgr = accMgr,
+                    JobStatus = GetSafeString(reader, "jobstatus"),
+                    TechName = GetSafeString(reader, "TechName"),
+                    CustClas = GetSafeString(reader, "custclas"),
+
+                    // ?? FIXED COLUMN NAME
+                    ContNbr = GetSafeString(reader, "Contract No", "contnbr"),
+
+                    Description = description,
+
+                    ScheduledStart = GetSafeDateTimeFromString(reader, "scheduledstart"),
+                    ScheduledEnd = GetSafeDateTimeFromString(reader, "scheduledend"),
+
+                    ChangeAge = GetSafeInt(reader, "ChangeAge"),
+                    OrigAge = GetSafeInt(reader, "OrigAge")
+                };
+
+                result.Add(job);
+            }
+
+            return result
+                .OrderBy(x => x.AccMgr)
+                .ThenByDescending(x => x.ChangeAge)
+                .ToList();
+        }
+
+        // Helper methods for safe column access
+        private string GetSafeString(SqlDataReader reader, params string[] columnNames)
+        {
+            foreach (var columnName in columnNames)
+            {
+                try
+                {
+                    var ordinal = reader.GetOrdinal(columnName);
+
+                    if (reader.IsDBNull(ordinal))
+                        return string.Empty;
+
+                    var value = reader.GetValue(ordinal);
+
+                    return value?.ToString()?.Trim() ?? string.Empty;
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        private DateTime GetSafeDateTime(SqlDataReader reader, params string[] columnNames)
+        {
+            foreach (var columnName in columnNames)
+            {
+                try
+                {
+                    var ordinal = reader.GetOrdinal(columnName);
+                    return reader.IsDBNull(ordinal) ? DateTime.MinValue : reader.GetDateTime(ordinal);
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    continue; // Try next column name
+                }
+                catch (Exception)
+                {
+                    continue; // Try next column name
+                }
+            }
+            return DateTime.MinValue;
+        }
+
+        // New method to handle date strings from the stored procedure
+        private DateTime GetSafeDateTimeFromString(SqlDataReader reader, params string[] columnNames)
+        {
+            foreach (var columnName in columnNames)
+            {
+                try
+                {
+                    var ordinal = reader.GetOrdinal(columnName);
+
+                    if (reader.IsDBNull(ordinal))
+                        return DateTime.MinValue;
+
+                    var value = reader.GetValue(ordinal);
+
+                    // ?? Handle both string AND datetime
+                    if (value is DateTime dt)
+                        return dt;
+
+                    if (value is string str && !string.IsNullOrWhiteSpace(str))
+                    {
+                        if (DateTime.TryParse(str, out var parsed))
+                            return parsed;
+                    }
+                }
+                catch
+                {
+                    continue;
+                }
+            }
+
+            return DateTime.MinValue;
+        }
+
+        private int GetSafeInt(SqlDataReader reader, params string[] columnNames)
+        {
+            foreach (var columnName in columnNames)
+            {
+                try
+                {
+                    var ordinal = reader.GetOrdinal(columnName);
+                    return reader.IsDBNull(ordinal) ? 0 : reader.GetInt32(ordinal);
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    continue; // Try next column name
+                }
+                catch (Exception)
+                {
+                    continue; // Try next column name
+                }
+            }
+            return 0;
+        }
     }
 }
+

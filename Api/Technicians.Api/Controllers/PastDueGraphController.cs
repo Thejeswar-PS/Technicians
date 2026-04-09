@@ -130,5 +130,65 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, "An error occurred while retrieving total scheduled jobs");
             }
         }
+
+        /// <summary>
+        /// Get filtered past due job details based on Account Manager and category (Past Due / Billable)
+        /// </summary>
+        /// <param name="accountManager">Account Manager to filter by (optional)</param>
+        /// <param name="category">Category filter: "PastDue" or "Billable" (optional)</param>
+        /// <returns>Filtered list of past due job details</returns>
+        [HttpGet("GetPastDueJobsDetail")]
+        public async Task<IActionResult> GetPastDueJobsDetail(
+    [FromQuery] string? accountManager = null,
+    [FromQuery] string? category = null)
+        {
+            try
+            {
+                // Normalize category
+                if (!string.IsNullOrEmpty(category))
+                {
+                    category = category.ToLower() switch
+                    {
+                        "pastdue" or "past-due" or "past_due" => "PastDue",
+                        "billable" => "Billable",
+                        _ => null
+                    };
+
+                    if (category == null)
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Invalid category. Use 'PastDue' or 'Billable'."
+                        });
+                    }
+                }
+
+                var data = await _repository.GetFilteredPastDueJobsDetailAsync(accountManager, category);
+
+                return Ok(new
+                {
+                    success = true,
+                    data,
+                    totalCount = data.Count,
+                    filters = new
+                    {
+                        accountManager = accountManager ?? "All",
+                        category = category ?? "All"
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetPastDueJobsDetail");
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error retrieving data",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

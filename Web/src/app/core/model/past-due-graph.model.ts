@@ -27,6 +27,32 @@ export interface PastDueJobsSummaryDto {
   couldBeBilled: number;
 }
 
+export interface PastDueJobDetailDto {
+  callNbr: string;
+  custName: string;
+  custNmbr: string;
+  accMgr: string;
+  jobStatus: string;
+  techName: string;
+  custClas: string;
+  contNbr: string;
+  description: string;
+  scheduledStart: Date;
+  scheduledEnd: Date;
+  changeAge: number;
+  origAge: number;
+}
+
+export interface PastDueJobDetailResponseDto {
+  success: boolean;
+  data: PastDueJobDetailDto[];
+  totalCount: number;
+  filters: {
+    accountManager: string;
+    category: string;
+  };
+}
+
 /**
  * Response DTO for scheduled percentage by office
  */
