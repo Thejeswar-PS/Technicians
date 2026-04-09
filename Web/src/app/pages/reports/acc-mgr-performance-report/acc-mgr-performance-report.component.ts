@@ -329,6 +329,24 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     this.generateReport();
   }
 
+  getSelectedManagerLabel(): string {
+    const officeId = (this.reportForm.get('officeId')?.value || '').toString().trim();
+
+    if (!officeId) {
+      return 'Select Account Manager';
+    }
+
+    const selectedManager = this.accountManagers.find(manager =>
+      (manager.OFFID || manager.empId || '').toString().trim() === officeId
+    );
+
+    return (
+      selectedManager?.OFFNAME ||
+      selectedManager?.empName ||
+      officeId
+    ).toString();
+  }
+
   /**
    * Check if form field has error
    */
@@ -415,9 +433,45 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    * Get active data for current section
    */
   getActiveData(): any[] {
+    return this.getDataForSection(this.activeSection);
+  }
+
+  hasAnySectionData(): boolean {
+    const sections = [
+      'completedNotReturned',
+      'returnedForProcessing',
+      'jobsScheduledToday',
+      'returnedWithIncompleteData',
+      'jobsConfirmedNext120Hours',
+      'pastDueUnscheduled',
+      'firstMonth',
+      'secondMonth',
+      'thirdMonth',
+      'fourthMonth',
+      'fifthMonth'
+    ];
+
+    return sections.some(section => this.getDataForSection(section).length > 0);
+  }
+
+  hasSectionData(section: string): boolean {
+    return this.getDataForSection(section).length > 0;
+  }
+
+  getSectionData(section: string): any[] {
+    const data = this.getDataForSection(section);
+
+    if (this.activeSection !== section || !this.sortColumn) {
+      return data;
+    }
+
+    return this.getSortedData(data);
+  }
+
+  private getDataForSection(section: string): any[] {
     if (!this.reportData) return [];
-    
-    switch (this.activeSection) {
+
+    switch (section) {
       case 'completedNotReturned':
         return this.reportData.CompletedNotReturned || this.reportData.completedNotReturned || [];
       case 'returnedForProcessing':
@@ -668,12 +722,15 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   }
 
   private getSortedActiveData(): any[] {
-    const activeData = this.getActiveData();
+    return this.getSortedData(this.getActiveData());
+  }
+
+  private getSortedData(data: any[]): any[] {
     if (!this.sortColumn) {
-      return activeData;
+      return data;
     }
 
-    const sorted = [...activeData];
+    const sorted = [...data];
     sorted.sort((a, b) => {
       const aValue = this.getColumnValue(a, this.sortColumn);
       const bValue = this.getColumnValue(b, this.sortColumn);
