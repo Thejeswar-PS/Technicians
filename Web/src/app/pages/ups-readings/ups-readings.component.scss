@@ -1790,6 +1790,89 @@
     }
   }
 
+  .power-verification-content.compact-mode {
+    .mb-4 {
+      margin-bottom: 1rem !important;
+    }
+
+    h6 {
+      font-size: 0.95rem;
+      margin-bottom: 0.6rem !important;
+    }
+
+    .input-config-bar {
+      padding: 0.5rem 0.75rem !important;
+      gap: 0.5rem;
+
+      .form-label,
+      .input-label,
+      .tolerance-info small {
+        font-size: 0.75rem !important;
+      }
+
+      .custom-select {
+        min-width: 120px !important;
+        max-width: 120px !important;
+        font-size: 0.75rem !important;
+        height: 30px;
+      }
+
+      .phase-indicator .badge {
+        font-size: 0.72rem !important;
+        padding: 0.3rem 0.55rem !important;
+      }
+    }
+
+    .row.g-3 {
+      --bs-gutter-x: 0.6rem;
+      --bs-gutter-y: 0.6rem;
+    }
+
+    .power-measurement-card {
+      min-height: 92px;
+
+      .power-card-header {
+        padding: 0.45rem 0.6rem;
+
+        .power-card-title {
+          font-size: 0.8rem;
+          gap: 0.3rem;
+
+          i {
+            font-size: 0.8rem;
+          }
+        }
+      }
+
+      .power-card-body {
+        padding: 0.55rem;
+
+        .power-input,
+        .power-select {
+          height: 30px;
+          min-width: 90px;
+          font-size: 0.78rem;
+          padding: 0.2rem 1.5rem 0.2rem 0.5rem;
+        }
+
+        .form-floating > label {
+          font-size: 0.72rem;
+          padding-top: 0.4rem;
+          padding-bottom: 0.4rem;
+        }
+
+        .btn {
+          min-height: 2rem !important;
+          font-size: 0.7rem;
+        }
+      }
+    }
+
+    .dynamic-section {
+      margin-top: 0.5rem !important;
+    }
+  }
+
   @media (max-width: 768px) {
     .input-config-bar {
       flex-direction: column;

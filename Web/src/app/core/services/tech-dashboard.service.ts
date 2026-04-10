@@ -12,6 +12,7 @@ export interface TechDashboardKPIs {
   jobsWithParts: number;
   jobsThisWeek: number;
   jobsUploaded: number;
+  overdueTools: number;
 }
 
 export interface ActivityLogItem {

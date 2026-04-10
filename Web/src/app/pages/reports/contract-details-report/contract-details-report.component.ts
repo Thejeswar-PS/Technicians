@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRe
 import { of, Subject } from 'rxjs';
 import { catchError, map, debounceTime, takeUntil } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
+import * as XLSX from 'xlsx';
 
 interface ContractDetailRow {
   customerNo: string;
@@ -43,6 +44,8 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
   displayedContractRows: ContractDetailRow[] = [];
   selectedCategory = 'Non Liebert Contracts not billed as of yesterday';
   customerNameFilter = '';
+  selectedContractTypes: string[] = [];
+  contractTypeOptions: string[] = [];
   sortField: SortField = 'contractNo';
   sortOrder: SortOrder = 'asc';
 
@@ -90,15 +93,15 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
   categoryOptions: CategoryOption[] = [
     {
       key: 'Non Liebert Contracts not billed as of yesterday',
-      label: 'Non Liebert Contracts not billed as of yesterday'
+      label: 'Contracts not billed as of yesterday'
     },
     {
       key: 'Non Liebert Contracts to be billed in next 30 days',
-      label: 'Non Liebert Contracts to be billed in next 30 days'
+      label: 'Contracts to be billed in next 30 days'
     },
     {
       key: 'Non Liebert Contracts to be billed in next 60 days',
-      label: 'Non Liebert Contracts to be billed in next 60 days'
+      label: 'Contracts to be billed in next 60 days'
     }
   ];
 
@@ -135,6 +138,7 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
       })
     ).subscribe(rows => {
       this.contractRows = rows;
+      this.contractTypeOptions = this.getContractTypeOptions(rows);
       this.applyFilters();
       this.loading = false;
     });
@@ -144,6 +148,7 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
     this.sortField = 'contractNo';
     this.sortOrder = 'asc';
     this.customerNameFilter = '';
+    this.selectedContractTypes = [];
     this.loadData();
   }
 
@@ -152,15 +157,30 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
     this.filterChange$.next();
   }
 
+  onContractTypeFilterChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.selectedContractTypes = Array.from(select.selectedOptions).map(option => option.value);
+    this.currentPage = 1;
+    this.filterChange$.next();
+  }
+
+  clearContractTypeFilter(): void {
+    this.selectedContractTypes = [];
+    this.currentPage = 1;
+    this.filterChange$.next();
+  }
+
   private applyFilters(): void {
-    if (!this.customerNameFilter.trim()) {
-      this.filteredContractRows = [...this.contractRows];
-    } else {
-      const filterLower = this.customerNameFilter.toLowerCase().trim();
-      this.filteredContractRows = this.contractRows.filter(row =>
-        (row.customerName || '').toLowerCase().includes(filterLower)
-      );
-    }
+    const customerFilterLower = this.customerNameFilter.toLowerCase().trim();
+    const hasCustomerFilter = !!customerFilterLower;
+    const hasTypeFilter = this.selectedContractTypes.length > 0;
+
+    this.filteredContractRows = this.contractRows.filter(row => {
+      const customerMatch = !hasCustomerFilter || (row.customerName || '').toLowerCase().includes(customerFilterLower);
+      const typeMatch = !hasTypeFilter || this.selectedContractTypes.includes((row.type || '').trim());
+      return customerMatch && typeMatch;
+    });
+
     this.applySorting();
     this.generateChartData();
     this.updateDisplayedRows();
@@ -401,5 +421,46 @@ export class ContractDetailsReportComponent implements OnInit, OnDestroy {
 
   trackByRow(index: number, row: ContractDetailRow): string {
     return `${row.contractNo}-${row.customerNo}-${row.poNumber}-${index}`;
+  }
+
+  exportToExcel(): void {
+    if (!this.filteredContractRows || this.filteredContractRows.length === 0) {
+      return;
+    }
+
+    const exportData = this.filteredContractRows.map(row => ({
+      'Customer No': row.customerNo || '',
+      'Customer Name': row.customerName || '',
+      'Address': row.address || '',
+      'Sales Person': row.salesPerson || '',
+      'Contract No': row.contractNo || '',
+      'PO Number': row.poNumber || '',
+      'Contract Type': row.type || '',
+      'Invoice Date': row.invoicedOn ? new Date(row.invoicedOn).toLocaleDateString('en-US') : '',
+      'Amount': row.amount ?? ''
+    }));
+
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'ContractDetails');
+
+    const sanitizedCategory = (this.selectedCategory || 'ContractDetails')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    const dateSuffix = new Date().toISOString().split('T')[0];
+    const fileName = `${sanitizedCategory || 'ContractDetails'}_${dateSuffix}.xlsx`;
+
+    XLSX.writeFile(workbook, fileName);
+  }
+
+  private getContractTypeOptions(rows: ContractDetailRow[]): string[] {
+    const uniqueTypes = new Set<string>();
+    rows.forEach(row => {
+      const type = (row.type || '').trim();
+      if (type) {
+        uniqueTypes.add(type);
+      }
+    });
+    return Array.from(uniqueTypes).sort((a, b) => a.localeCompare(b));
   }
 }

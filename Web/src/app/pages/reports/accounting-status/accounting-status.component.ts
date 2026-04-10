@@ -144,9 +144,18 @@ export class AccountingStatusComponent implements OnInit {
   }
 
   private createContractBillingChart(): void {
-    // Extract categories and values directly from API response
-    const categories = this.contractBillingData.map((d: any) => d.label || d.Label || '');
-    const yvalues = this.contractBillingData.map((d: any) => parseInt(d.value || d.Value || 0));
+    const nonLiebertData = (this.contractBillingData || [])
+      .map((d: any) => ({
+        rawLabel: (d.label || d.Label || '').toString().trim(),
+        value: parseInt((d.value || d.Value || 0), 10) || 0
+      }))
+      .filter((d: any) => /^non\s+liebert\s+contracts/i.test(d.rawLabel));
+
+    const categories = nonLiebertData.map((d: any) =>
+      this.capitalizeFirstLetter(d.rawLabel.replace(/^non\s+liebert\s+contracts\s*/i, '').trim())
+    );
+    const rawCategories = nonLiebertData.map((d: any) => d.rawLabel);
+    const yvalues = nonLiebertData.map((d: any) => d.value);
 
     const maxVal2 = Math.max(...yvalues, 1);
     const barHeight2 = Math.max(32, Math.min(52, Math.floor(400 / Math.max(categories.length, 1))));
@@ -165,7 +174,7 @@ export class AccountingStatusComponent implements OnInit {
         events: {
           dataPointSelection: (event: any, chartContext: any, config: any) => {
             const categoryIndex = config.dataPointIndex;
-            const categoryName = categories[categoryIndex];
+            const categoryName = rawCategories[categoryIndex];
             const value = yvalues[categoryIndex];
             if (value && value !== 0) {
               this.navigateToDisplayCallsDetail(categoryName);
@@ -232,5 +241,12 @@ export class AccountingStatusComponent implements OnInit {
 
   refresh(): void {
     this.loadData();
+  }
+
+  private capitalizeFirstLetter(value: string): string {
+    if (!value) {
+      return '';
+    }
+    return value.charAt(0).toUpperCase() + value.slice(1);
   }
 }

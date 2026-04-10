@@ -204,7 +204,9 @@ namespace Technicians.Api.Repository
                         EmergencyJobs = Convert.ToInt32(dr["EmergencyJobs"]),
                         MissingJobs = Convert.ToInt32(dr["MissingJobs"]),
                         JobsWithParts = Convert.ToInt32(dr["JobsWithParts"]),
-                        JobsThisWeek = Convert.ToInt32(dr["JobsThisWeek"])
+                        JobsThisWeek = Convert.ToInt32(dr["JobsThisWeek"]),
+                        JobsUploaded = Convert.ToInt32(dr["JobsUploaded"]),
+                        OverdueTools = Convert.ToInt32(dr["OverdueTools"])
                     };
                 }
             }

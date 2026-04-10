@@ -309,6 +309,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   showVisual = false;
   showEnvironment = false;
   showPowerVerification = true;
+  powerCompactMode = false;
   showInputReadings = false;
   showBypassReadings = false;
   showOutputReadings = false;
@@ -322,6 +323,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   showInputTHD = false;
   showOutputFilterCurrent = false;
   showOutputTHD = false;
+
+  togglePowerCompactMode(event?: Event): void {
+    event?.stopPropagation();
+    this.powerCompactMode = !this.powerCompactMode;
+  }
 
   // Dynamic labels
   endOfLifeLabel = '7. UPS date code is < 25 years (End of Life):';
@@ -6639,21 +6645,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
     
     // Validate restricted characters and character limits before saving (for both draft and full saves)
     if (!this.validateAllRestrictedChars()) {
-      // Count different types of errors
-      const restrictedCharErrors = Object.keys(this.restrictedCharErrors).length;
-      const characterLimitErrors = Object.keys(this.characterLimitErrors).length;
-      
-      let errorMessage = 'Please fix validation errors before saving:';
-      if (restrictedCharErrors > 0) {
-        errorMessage += ` ${restrictedCharErrors} restricted character error(s).`;
-      }
-      if (characterLimitErrors > 0) {
-        errorMessage += ` ${characterLimitErrors} character limit error(s).`;
-      }
-      
-      
-      this.toastr.error(errorMessage, 'Validation Errors', {
-        timeOut: 8000,
+      const validationSummary = this.buildRestrictedValidationSummary();
+      this.errorMessage = validationSummary.detailedMessage;
+
+      this.toastr.error(validationSummary.toastMessage, 'Validation Errors', {
+        timeOut: 10000,
         closeButton: true,
         progressBar: true
       });
@@ -6844,6 +6840,119 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
           this.isFormSubmission = false; // Reset form submission flag
         }
       });
+  }
+
+  /**
+   * Build a detailed, meaningful summary for restricted character and character-limit errors.
+   * Includes where the error is occurring (section + field) and a few concrete examples.
+   */
+  private buildRestrictedValidationSummary(): { toastMessage: string; detailedMessage: string } {
+    const restrictedEntries = Object.entries(this.restrictedCharErrors).map(([key, message]) => ({
+      type: 'Restricted Characters',
+      location: this.getValidationLocationFromKey(key),
+      message
+    }));
+
+    const limitEntries = Object.entries(this.characterLimitErrors).map(([key, message]) => ({
+      type: 'Character Limit',
+      location: this.getValidationLocationFromKey(key),
+      message
+    }));
+
+    const allEntries = [...restrictedEntries, ...limitEntries];
+    const restrictedCount = restrictedEntries.length;
+    const limitCount = limitEntries.length;
+
+    const firstError = allEntries[0];
+    const exampleEntries = allEntries.slice(0, 3);
+    const remainingCount = Math.max(allEntries.length - exampleEntries.length, 0);
+
+    const header = `Please fix validation errors before saving. ${restrictedCount} restricted character error(s), ${limitCount} character limit error(s).`;
+    const firstErrorLine = firstError
+      ? `First error location: ${firstError.location.section} -> ${firstError.location.field}.`
+      : '';
+
+    const exampleLines = exampleEntries.map(entry =>
+      `${entry.location.section} -> ${entry.location.field}: ${entry.message}`
+    );
+
+    const examplesText = exampleLines.length
+      ? `Examples:\n- ${exampleLines.join('\n- ')}`
+      : '';
+
+    const moreText = remainingCount > 0
+      ? `\n+ ${remainingCount} more validation issue(s).`
+      : '';
+
+    const detailedMessage = [header, firstErrorLine, examplesText].filter(Boolean).join('\n') + moreText;
+
+    return {
+      toastMessage: firstErrorLine ? `${header} ${firstErrorLine}` : header,
+      detailedMessage
+    };
+  }
+
+  private getValidationLocationFromKey(key: string): { section: string; field: string } {
+    const separatorIndex = key.indexOf('_');
+    const formName = separatorIndex >= 0 ? key.substring(0, separatorIndex) : key;
+    const controlName = separatorIndex >= 0 ? key.substring(separatorIndex + 1) : '';
+
+    return {
+      section: this.getValidationSectionLabel(formName),
+      field: this.getValidationFieldLabel(controlName)
+    };
+  }
+
+  private getValidationSectionLabel(formName: string): string {
+    const sectionMap: { [key: string]: string } = {
+      EquipmentForm: 'Equipment Verification',
+      ReconciliationForm: 'Equipment Reconciliation',
+      VisualForm: 'Visual & Mechanical Verification',
+      EnvironmentForm: 'Environment Verification',
+      InputReadingsForm: 'Input Readings',
+      BypassReadingsForm: 'Bypass Readings',
+      OutputReadingsForm: 'Output Readings'
+    };
+
+    return sectionMap[formName] || formName || 'Unknown Section';
+  }
+
+  private getValidationFieldLabel(controlName: string): string {
+    if (!controlName) return 'Unknown Field';
+
+    const fieldMap: { [key: string]: string } = {
+      model: 'Model No',
+      ctoPartNo: 'CTO / Part No',
+      serialNo: 'Serial No',
+      actSerialNo: 'Actual Serial No',
+      location: 'Location',
+      actModel: 'Actual Model',
+      actKVA: 'Actual KVA',
+      visualComments: 'Visual and Mechanical Verification Comments',
+      monthName: 'Month',
+      batteryStringId: 'Battery String',
+      statusReason: 'Status Notes'
+    };
+
+    if (fieldMap[controlName]) {
+      return fieldMap[controlName];
+    }
+
+    const spaced = controlName
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/_/g, ' ')
+      .trim();
+
+    return spaced
+      .split(' ')
+      .map(word => {
+        const upper = word.toUpperCase();
+        if (['KVA', 'UPS', 'SNMP', 'THD', 'EPO', 'ID', 'CTO'].includes(upper)) {
+          return upper;
+        }
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      })
+      .join(' ');
   }
 
   private buildUPSData(isDraft: boolean): AAETechUPS {

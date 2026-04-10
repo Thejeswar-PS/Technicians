@@ -1749,15 +1749,26 @@
                 >Verify electrical power readings and thresholds</small
               >
             </div>
-            <i
-              class="bi transition-transform"
-              [class.bi-chevron-down]="showPowerVerification"
-              [class.bi-chevron-right]="!showPowerVerification"
-              [class.rotate-90]="showPowerVerification"
-            ></i>
+            <div class="d-flex align-items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary"
+                (click)="togglePowerCompactMode($event)"
+                [title]="powerCompactMode ? 'Switch to expanded view' : 'Switch to compact view'"
+              >
+                <i class="bi" [class.bi-arrows-angle-expand]="powerCompactMode" [class.bi-arrows-angle-contract]="!powerCompactMode"></i>
+                {{ powerCompactMode ? 'Expanded View' : 'Compact View' }}
+              </button>
+              <i
+                class="bi transition-transform"
+                [class.bi-chevron-down]="showPowerVerification"
+                [class.bi-chevron-right]="!showPowerVerification"
+                [class.rotate-90]="showPowerVerification"
+              ></i>
+            </div>
           </div>
 
-          <div class="ups-section-content" [class.show]="showPowerVerification">
+          <div class="ups-section-content power-verification-content" [class.show]="showPowerVerification" [class.compact-mode]="powerCompactMode">
             <!-- Input Section -->
             <div class="mb-4">
               <form [formGroup]="inputReadingsForm">
