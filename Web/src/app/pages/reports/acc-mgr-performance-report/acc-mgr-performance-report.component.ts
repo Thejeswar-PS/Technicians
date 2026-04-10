@@ -64,7 +64,8 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private reportService: ReportService,
-    private commonService: CommonService
+    private commonService: CommonService,
+    private route: ActivatedRoute
   ) {
     this.reportForm = this.fb.group({
       officeId: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(11)]]
@@ -74,7 +75,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.monthLabels = this.getMonthLabels();
 
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params: any) => {
       this.routeOfficeId = (params['officeId'] || '').toString().trim();
       this.routeSection = (params['section'] || '').toString().trim();
       this.routeSectionApplied = false;
