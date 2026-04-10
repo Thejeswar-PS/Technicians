@@ -59,6 +59,7 @@ export class PartsTestStatusComponent implements OnInit {
 
   // Access control
   hasPageAccess: boolean = false;
+  isCheckingPageAccess: boolean = true;
   employeeStatus: string = '';
   userRole: string = '';
   windowsID: string = '';
@@ -148,6 +149,7 @@ export class PartsTestStatusComponent implements OnInit {
   }
 
   private determineEmployeeStatus(): void {
+    this.isCheckingPageAccess = true;
     const userDataStr = localStorage.getItem('userData');
     if (!userDataStr) {
       this.denyPageAccess('Access denied. Unable to verify your user session.');
@@ -186,23 +188,27 @@ export class PartsTestStatusComponent implements OnInit {
           }
 
           this.hasPageAccess = true;
+          this.isCheckingPageAccess = false;
           this.initializeAuthorizedView();
         },
         error: () => {
           this.employeeStatus = 'Other';
           this.hasPageAccess = true;
+          this.isCheckingPageAccess = false;
           this.initializeAuthorizedView();
         }
       });
     } else {
       this.employeeStatus = 'Other';
       this.hasPageAccess = true;
+      this.isCheckingPageAccess = false;
       this.initializeAuthorizedView();
     }
   }
 
   private denyPageAccess(message: string): void {
     this.hasPageAccess = false;
+    this.isCheckingPageAccess = false;
     this.isLoading = false;
     this.isLoadingCharts = false;
     this.errorMessage = message;

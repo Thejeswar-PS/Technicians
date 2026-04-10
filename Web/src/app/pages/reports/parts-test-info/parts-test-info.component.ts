@@ -35,8 +35,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   rowIndex: number = 0;
   
   // Employee data
-  ptEmployees: EmployeeDto[] = []; // P and T department employees for Created By
-  tcEmployees: EmployeeDto[] = []; // T department employees for other assignments
+  ptEmployees: EmployeeDto[] = []; // P and Assembly department employees for Created By
+  tcEmployees: EmployeeDto[] = []; // Assembly department employees for other assignments
   isLoadingEmployees: boolean = false;
   isLoadingCreatedByEmployees: boolean = false;
   
@@ -63,6 +63,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
 
   // Access control
   hasPageAccess: boolean = false;
+  isCheckingPageAccess: boolean = true;
   employeeStatus: string = '';
   userRole: string = '';
   windowsID: string = '';
@@ -195,6 +196,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
 
   private determineEmployeeStatus(): void {
+    this.isCheckingPageAccess = true;
     const userDataStr = localStorage.getItem('userData');
     if (!userDataStr) {
       this.denyPageAccess('Access denied. Unable to verify your user session.');
@@ -233,23 +235,27 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
           }
 
           this.hasPageAccess = true;
+          this.isCheckingPageAccess = false;
           this.initializeAuthorizedView();
         },
         error: () => {
           this.employeeStatus = 'Other';
           this.hasPageAccess = true;
+          this.isCheckingPageAccess = false;
           this.initializeAuthorizedView();
         }
       });
     } else {
       this.employeeStatus = 'Other';
       this.hasPageAccess = true;
+      this.isCheckingPageAccess = false;
       this.initializeAuthorizedView();
     }
   }
 
   private denyPageAccess(message: string): void {
     this.hasPageAccess = false;
+    this.isCheckingPageAccess = false;
     this.isLoading = false;
     this.isSaving = false;
     this.errorMessage = message;
@@ -447,10 +453,10 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     this.isLoadingEmployees = true;
     this.isLoadingCreatedByEmployees = true;
     
-    // Load employees from both P and T departments for Created By dropdown
+    // Load employees from both P and Assembly departments for Created By dropdown
     forkJoin({
       ptEmployees: this.reportService.getEmployeeNamesByDept('P'),
-      tEmployees: this.reportService.getEmployeeNamesByDept('T')
+      tEmployees: this.reportService.getEmployeeNamesByDept('Assembly')
     }).pipe(
       takeUntil(this.destroy$),
       finalize(() => {
@@ -460,9 +466,9 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (responses) => {
         if (responses.ptEmployees.success && responses.tEmployees.success) {
-          // Combine P and T employees for Created By dropdown
+          // Combine P and Assembly employees for Created By dropdown
           this.ptEmployees = [...responses.ptEmployees.employees, ...responses.tEmployees.employees];
-          // Only T employees for other assignments
+          // Only Assembly employees for other assignments
           this.tcEmployees = responses.tEmployees.employees;
           
           // Re-populate form if we have raw data waiting
@@ -625,7 +631,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       
       // Quality Status - auto-populates and persists across job type changes
       boardQualityStatus: jobFromValue === '7' ? String(row.QCWorkStatus || row.qcWorkStatus || '0') : (row.BoardQualityStatus || row.boardQualityStatus || '0'),
-      compQualityStatus: jobFromValue === '3' || jobFromValue === '6' ? String(row.QCWorkStatus || row.qcWorkStatus || '0') : (row.CompQualityStatus || row.compQualityStatus || '0'),
+      compQualityStatus: jobFromValue === '3' ? String(row.QCWorkStatus || row.qcWorkStatus || '0') : (row.CompQualityStatus || row.compQualityStatus || '0'),
       
       // Employee assignments - auto-populate and persist
       completedBy: resolvedCompletedBy,
@@ -761,8 +767,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       this.populateCheckboxGroup('boardQualityApproved', qcApproved, ['1', '2', '3']);
     }
     
-    if (jobType === '3' || jobType === '6') {
-      // Component/Testing jobs (JobFrom=3 Inventory, 6=Retest):
+    if (jobType === '3') {
+      // Component/Testing jobs (JobFrom=3 Inventory):
       // - Use QCWorkDone → compQualityWorkDone (Cleaned, Torqued, Inspected)
       // - Use QCProcFollowed → compQualityProcFollowed (Yes, No, N/A)
       // - Use QCApproved → compQualityApproved (Pass, Fail, N/A)
@@ -809,7 +815,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
         boardApprovedBy: resolvedQcApprovedBy,
         boardPassed: qcPassed
       });
-    } else if (newJobType === '3' || newJobType === '6') {
+    } else if (newJobType === '3') {
       // Changed TO Component/Testing: populate component quality checkboxes
       this.populateCheckboxGroup('compQualityWorkDone', qcWorkDone, ['1', '2', '3']);
       this.populateCheckboxGroup('compQualityProcFollowed', qcProcFollowed, ['1', '2', '3']);
@@ -821,7 +827,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
         compApprovedBy: resolvedQcApprovedBy,
         compPassed: qcPassed
       });
-    } else if (newJobType === '1' || newJobType === '2' || newJobType === '4') {
+    } else if (this.isAssemblyInspectionJobType(newJobType)) {
       // Changed TO Assembly: QC checkboxes already populated in populateWorkStageCheckboxes
       // Update QC status, approved by, and passed
       this.editForm.patchValue({
@@ -997,8 +1003,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       qcWorkDone: (() => {
         const jobType = this.getJobTypeValue();
         const isBoardSetup = jobType === '7';
-        const isComponent = jobType === '3' || jobType === '6';
-        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        const isComponent = this.isComponentInspectionJobType(jobType);
+        const isAssembly = this.isAssemblyInspectionJobType(jobType);
         
         if (isBoardSetup) return this.getBoardQualityWorkDoneValue() || '';
         if (isComponent) return this.getCompQualityWorkDoneValue() || '';
@@ -1008,8 +1014,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       qcProcFollowed: (() => {
         const jobType = this.getJobTypeValue();
         const isBoardSetup = jobType === '7';
-        const isComponent = jobType === '3' || jobType === '6';
-        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        const isComponent = this.isComponentInspectionJobType(jobType);
+        const isAssembly = this.isAssemblyInspectionJobType(jobType);
         
         if (isBoardSetup) return this.getBoardQualityProcFollowedValue() || '';
         if (isComponent) return this.getCompQualityProcFollowedValue() || '';
@@ -1019,8 +1025,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       qcApproved: (() => {
         const jobType = this.getJobTypeValue();
         const isBoardSetup = jobType === '7';
-        const isComponent = jobType === '3' || jobType === '6';
-        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        const isComponent = this.isComponentInspectionJobType(jobType);
+        const isAssembly = this.isAssemblyInspectionJobType(jobType);
         
         if (isBoardSetup) return this.getBoardQualityApprovedValue() || '';
         if (isComponent) return this.getCompQualityApprovedValue() || '';
@@ -1030,8 +1036,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       qcWorkStatus: (() => {
         const jobType = this.getJobTypeValue();
         const isBoardSetup = jobType === '7';
-        const isComponent = jobType === '3' || jobType === '6';
-        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        const isComponent = this.isComponentInspectionJobType(jobType);
+        const isAssembly = this.isAssemblyInspectionJobType(jobType);
         
         if (isBoardSetup) return formValue.boardQualityStatus || '';
         if (isComponent) return formValue.compQualityStatus || '';
@@ -1041,8 +1047,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       qcApprovedBy: (() => {
         const jobType = this.getJobTypeValue();
         const isBoardSetup = jobType === '7';
-        const isComponent = jobType === '3' || jobType === '6';
-        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        const isComponent = this.isComponentInspectionJobType(jobType);
+        const isAssembly = this.isAssemblyInspectionJobType(jobType);
         
         if (isBoardSetup) return formValue.boardApprovedBy || '';
         if (isComponent) return formValue.compApprovedBy || '';
@@ -1052,8 +1058,8 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       qcPassed: (() => {
         const jobType = this.getJobTypeValue();
         const isBoardSetup = jobType === '7';
-        const isComponent = jobType === '3' || jobType === '6';
-        const isAssembly = jobType === '1' || jobType === '2' || jobType === '4';
+        const isComponent = this.isComponentInspectionJobType(jobType);
+        const isAssembly = this.isAssemblyInspectionJobType(jobType);
         
         if (isBoardSetup) return formValue.boardPassed || false;
         if (isComponent) return formValue.compPassed || false;
@@ -1249,12 +1255,11 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   }
 
   get isAssemblyJob(): boolean {
-    const jobType = this.getJobTypeValue();
-    return jobType === '1' || jobType === '2' || jobType === '4';
+    return this.isAssemblyInspectionJobType(this.getJobTypeValue());
   }
 
   get isComponentJob(): boolean {
-    return !this.isBoardSetupJob && !this.isAssemblyJob;
+    return this.isComponentInspectionJobType(this.getJobTypeValue());
   }
   
   // Employee helper methods
@@ -1268,6 +1273,15 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
   
   getEmployeeDisplayName(employee: EmployeeDto): string {
     return employee.empName;
+  }
+
+  private isAssemblyInspectionJobType(jobType: string): boolean {
+    const normalizedJobType = String(jobType || '').trim();
+    return normalizedJobType === '1' || normalizedJobType === '2' || normalizedJobType === '4' || normalizedJobType === '6';
+  }
+
+  private isComponentInspectionJobType(jobType: string): boolean {
+    return String(jobType || '').trim() === '3';
   }
   
   // Auto-generated ID display
@@ -1430,11 +1444,11 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     if (normalizedJobType === '7') {
       // Board Setup only
       this.showBoardSetup = true;
-    } else if (normalizedJobType === '1' || normalizedJobType === '2' || normalizedJobType === '4') {
-      // Fan Rebuild, Cap Assy., Batt Module -> Assembly & QC
+    } else if (this.isAssemblyInspectionJobType(normalizedJobType)) {
+      // Fan Rebuild, Cap Assy., Batt Module, Retest -> Assembly & QC
       this.showAssemblyQC = true;
     } else {
-      // All other job types (Inventory, Retest) -> Component & Testing
+      // All other job types (Inventory) -> Component & Testing
       this.showComponentWork = true;
     }
   }
@@ -1548,7 +1562,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       }
     }
     // Component/Testing validation (Job Types 3, 6 - Inventory, Retest)
-    else if (jobType === '3' || jobType === '6') {
+    else if (this.isComponentInspectionJobType(jobType)) {
       if (formValue.compQualityStatus !== '1') {
         this.toastr.error('Component Quality Status must be Completed for Final Approval.', 'Validation');
         return false;
@@ -1583,7 +1597,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
       }
     }
     // Assembly validation (Job Types 1, 2, 4 - Fan Rebuild, Cap Assy, Batt Module)
-    else if (jobType === '1' || jobType === '2' || jobType === '4') {
+    else if (this.isAssemblyInspectionJobType(jobType)) {
       if (formValue.assyWorkStatus !== '1') {
         this.toastr.error('Assembly Status must be Completed for Final Approval.', 'Validation');
         return false;
@@ -1819,7 +1833,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     }
     
     // Component/Testing validation (Job Types 3, 6)
-    if (jobType === '3' || jobType === '6') {
+    if (this.isComponentInspectionJobType(jobType)) {
       // Check component quality work done
       if (!this.isAnyCompQualityWorkDoneChecked()) {
         this.toastr.error('You cannot update without checking Component Quality - Work Done', 'Validation');  
@@ -1838,7 +1852,7 @@ export class PartsTestInfoComponent implements OnInit, OnDestroy {
     }
     
     // Assembly validation (Job Types 1, 2, 4)
-    if (jobType === '1' || jobType === '2' || jobType === '4') {
+    if (this.isAssemblyInspectionJobType(jobType)) {
       if (formValue.qcWorkStatus === '1') {
         // Check QC work done
         if (!this.isAnyQCWorkDoneChecked()) {
