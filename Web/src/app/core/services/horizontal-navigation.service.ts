@@ -178,6 +178,7 @@ export class HorizontalNavigationService {
       'miscellaneoustasks.aspx': '/miscellaneous-tasks',
       'createdtechusers.aspx': '/reports/extranet-user-classes',
       'techmileagedashboard.aspx': '/tools/tech-mileage-dashboard',
+      'testengineerjobs.aspx': '/reports/test-engineer-jobs',
       
       // Reports
       'reports/partrequeststatus.aspx': '/reports/parts-request-status',

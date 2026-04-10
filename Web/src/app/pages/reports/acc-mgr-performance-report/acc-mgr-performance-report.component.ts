@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -54,6 +55,10 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   // Sorting
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' = 'asc';
+
+  private routeOfficeId: string = '';
+  private routeSection: string = '';
+  private routeSectionApplied = false;
   
   private subscriptions: Subscription[] = [];
 
@@ -61,6 +66,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private reportService: ReportService,
     private commonService: CommonService,
+    private route: ActivatedRoute,
     private auth: AuthService
   ) {
     this.reportForm = this.fb.group({
@@ -70,6 +76,12 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.monthLabels = this.getMonthLabels();
+
+    this.route.queryParams.subscribe(params => {
+      this.routeOfficeId = (params['officeId'] || '').toString().trim();
+      this.routeSection = (params['section'] || '').toString().trim();
+      this.routeSectionApplied = false;
+    });
     
     // Initialize role-based filtering first
     this.determineEmployeeStatus();
@@ -91,7 +103,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   /**
    * Generate the performance report
    */
-  generateReport(filterType?: string): void {
+  generateReport(filterType?: string, preferredSection?: string): void {
     const officeId = this.reportForm.get('officeId')?.value || '';
     
     // Check if we have a valid office ID instead of form validation
@@ -114,6 +126,12 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       next: (data) => {
         this.reportData = data;
         this.isLoading = false;
+
+        if (preferredSection && this.isAllowedSection(preferredSection)) {
+          this.activeSection = preferredSection;
+          this.routeSectionApplied = true;
+          return;
+        }
         
         // If this is a RedOrange (Critical Jobs) filter, set active section to show data
         if (filterType === 'RedOrange') {
@@ -893,6 +911,15 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // If calendar/report sent explicit office + section via query params, honor that first
+    if (this.routeOfficeId) {
+      this.reportForm.patchValue({ officeId: this.routeOfficeId });
+      setTimeout(() => {
+        this.generateReport(undefined, this.routeSection || undefined);
+      }, 0);
+      return;
+    }
+
     console.log('🔎 Account Manager Performance Report - Applying role-based defaults:', {
       empID: this.empID,
       userRole: this.userRole,
@@ -938,6 +965,25 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
         }, 0);
       }
     }
+  }
+
+  private isAllowedSection(section: string): boolean {
+    return [
+      'completedNotReturned',
+      'returnedForProcessing',
+      'jobsScheduledToday',
+      'jobsConfirmedNext120Hours',
+      'returnedWithIncompleteData',
+      'returnedIncomplete',
+      'customerConfirmed',
+      'monthlyUnscheduled',
+      'firstMonth',
+      'secondMonth',
+      'thirdMonth',
+      'fourthMonth',
+      'fifthMonth',
+      'pastDueUnscheduled'
+    ].includes(section);
   }
 
   /**

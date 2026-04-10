@@ -17,7 +17,7 @@
               <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Status</label>
             </td>
             <td>
-              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Fiscal Year</label>
+              <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Year</label>
             </td>
             <td>
               <label class="min-w-100px me-5 fw-bold mb-1 fs-6">Month</label>
@@ -91,7 +91,7 @@
             <td>
               <div class="input-group fw-bold text-dark fs-6">
                 <input type="text" class="form-control form-control-sm fw-bold text-dark fs-6" 
-                       style="border-color: black;width:100px;" placeholder="Job Number" 
+                       style="border-color: black;width:180px;" placeholder="Job Number" 
                        formControlName="jobId" (keyup.enter)="SearchJobs()">
                 <div class="input-group-append">
                   <button class="btn btn-primary me-2 btn-sm btn-search" type="button" (click)="SearchJobs()">
@@ -123,7 +123,7 @@
       <!-- begin::Table container -->
       <div class="table-max-height">
         <!-- begin::Table -->
-        <table id="table-to-export" class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4" [ngClass]="getGridForeColorClass()" style="text-align: center;">
+        <table id="table-to-export" class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-2" [ngClass]="getGridForeColorClass()" style="text-align: center;">
           <!-- begin::Table head -->
           <thead>
             <tr class="text-dark fw-bolder badge-light-primary  fs-6">

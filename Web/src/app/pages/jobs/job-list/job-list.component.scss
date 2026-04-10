@@ -622,3 +622,10 @@
 :host ::ng-deep .table#table-to-export.grid-missing tbody td span {
   color: #b45309 !important;
 }
+
+:host ::ng-deep .table#table-to-export thead th,
+:host ::ng-deep .table#table-to-export tbody td {
+  padding-top: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  line-height: 1.2;
+}

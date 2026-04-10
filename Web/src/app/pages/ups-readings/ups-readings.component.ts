@@ -309,6 +309,7 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   showVisual = false;
   showEnvironment = false;
   showPowerVerification = true;
+  powerCompactMode = false;
   showInputReadings = false;
   showBypassReadings = false;
   showOutputReadings = false;
@@ -322,6 +323,11 @@ export class UpsReadingsComponent implements OnInit, OnDestroy, AfterViewInit {
   showInputTHD = false;
   showOutputFilterCurrent = false;
   showOutputTHD = false;
+
+  togglePowerCompactMode(event?: Event): void {
+    event?.stopPropagation();
+    this.powerCompactMode = !this.powerCompactMode;
+  }
 
   // Dynamic labels
   endOfLifeLabel = '7. UPS date code is < 25 years (End of Life):';

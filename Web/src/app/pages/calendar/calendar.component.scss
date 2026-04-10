@@ -205,6 +205,14 @@
             line-height: 1.2;
         }
 
+        &.kpi-link {
+            cursor: pointer;
+
+            &:hover {
+                filter: brightness(1.03);
+            }
+        }
+
         &.overdue {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 25%, #e74c3c 100%);
             color: white;

@@ -10,7 +10,7 @@
   <!-- Main content -->
   <div *ngIf="!loading">
     <div class="card shadow-sm">
-      <div class="card-header border-0 py-4">
+      <div class="card-header border-0 py-2">
         <div class="job-notes-header">
           <div class="job-notes-header__group">
             <button
@@ -47,7 +47,7 @@
         </div>
       </div>
 
-      <div class="card-body pt-0 pt-md-4">
+      <div class="card-body pt-0 pt-md-2">
         <div class="job-notes-messages" *ngIf="errorMessage || successMessage">
           <div *ngIf="errorMessage" class="alert alert-danger d-inline-flex align-items-center">
             <i class="bi bi-exclamation-triangle-fill me-2"></i>
@@ -64,8 +64,8 @@
         </div>
 
         <!-- Job Information Section -->
-        <section class="job-overview mb-8" *ngIf="jobInfo">
-          <div class="job-overview__grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem;">
+        <section class="job-overview mb-4" *ngIf="jobInfo">
+          <div class="job-overview__grid" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 0.75rem;">
             <div class="job-overview__item">
               <span class="job-overview__label">Site ID</span>
               <a (click)="onViewSiteHistory()" class="job-overview__value link-primary" style="cursor: pointer;">
@@ -167,7 +167,6 @@
 
             <div class="row g-4 align-items-start">
               <div class="col-lg-6">
-                <br>
                 <label class="form-label fw-bold">Quote Priority</label>
                 <div class="job-notes-radio-group">
                   <div class="form-check" *ngFor="let option of quotePriorityOptions">
