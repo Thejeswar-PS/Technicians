@@ -69,7 +69,9 @@
       <div class="calendar-statistics mb-4" *ngIf="statistics">
         <div class="row g-3">
           <div class="col-md-2">
-            <div class="stat-card overdue">
+            <div class="stat-card overdue kpi-link"
+                 (click)="openAmProgressReport('completedNotReturned')"
+                 title="Open AM Progress - Completed Not Returned">
               <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
               <div class="stat-content">
                 <div class="stat-number">{{statistics.overDue}}</div>
@@ -78,7 +80,9 @@
             </div>
           </div>
           <div class="col-md-2">
-            <div class="stat-card due-tomorrow">
+            <div class="stat-card due-tomorrow kpi-link"
+                 (click)="openAmProgressReport('jobsConfirmedNext120Hours')"
+                 title="Open AM Progress - Confirmed Next 120H">
               <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
               <div class="stat-content">
                 <div class="stat-number">{{statistics.tomorrow}}</div>
@@ -87,7 +91,9 @@
             </div>
           </div>
           <div class="col-md-2">
-            <div class="stat-card due-3">
+            <div class="stat-card due-3 kpi-link"
+                 (click)="openAmProgressReport('firstMonth')"
+                 title="Open AM Progress - Current Month">
               <div class="stat-icon"><i class="bi bi-calendar-week"></i></div>
               <div class="stat-content">
                 <div class="stat-number">{{statistics.due3}}</div>
@@ -96,7 +102,9 @@
             </div>
           </div>
           <div class="col-md-2">
-            <div class="stat-card due-5">
+            <div class="stat-card due-5 kpi-link"
+                 (click)="openAmProgressReport('firstMonth')"
+                 title="Open AM Progress - Current Month">
               <div class="stat-icon"><i class="bi bi-calendar2-week"></i></div>
               <div class="stat-content">
                 <div class="stat-number">{{statistics.due5}}</div>
@@ -105,7 +113,9 @@
             </div>
           </div>
           <div class="col-md-2">
-            <div class="stat-card due-10">
+            <div class="stat-card due-10 kpi-link"
+                 (click)="openAmProgressReport('firstMonth')"
+                 title="Open AM Progress - Current Month">
               <div class="stat-icon"><i class="bi bi-calendar3-week"></i></div>
               <div class="stat-content">
                 <div class="stat-number">{{statistics.due10}}</div>

@@ -110,7 +110,7 @@ namespace Technicians.Api.Controllers
         }
 
         [HttpGet("SearchPMNotes")]
-        public async Task<IActionResult> SearchPMNotes([FromQuery] string q, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> SearchPMNotes([FromQuery] string q, [FromQuery] string empId, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             if (string.IsNullOrWhiteSpace(q))
                 return Ok(new PMNotesSearchResponse
@@ -121,7 +121,7 @@ namespace Technicians.Api.Controllers
                     TotalPages = 0
                 });
 
-            var result = await _toolsRepository.SearchPMNotesAsync(q, page, pageSize);
+            var result = await _toolsRepository.SearchPMNotesAsync(q, page, pageSize, empId);
             return Ok(result);
         }
 

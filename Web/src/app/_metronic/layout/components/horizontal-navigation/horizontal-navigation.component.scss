@@ -2,88 +2,81 @@
   display: contents;
 }
 
-// Modern navigation styling
-.menu-item {
-  position: relative;
-  transition: all 0.3s ease;
+// ── TOP-LEVEL ITEMS (not inside a dropdown) ──────────────────────────────────
 
-  // Hover effect for parent menu items
-  &:hover > .menu-link {
-    color: #009ef7 !important;
-    background-color: rgba(0, 158, 247, 0.05);
-    border-radius: 6px;
-    
-    .menu-title {
-      color: #009ef7 !important;
-    }
+// Default: transparent bg, white text
+.menu-item:not(.menu-sub .menu-item) > .menu-link {
+  border-radius: 10px !important;
+  padding: 10px 14px !important;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  background-color: transparent !important;
+
+  .menu-title {
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.2px;
   }
 
-  // Active state
-  &.active > .menu-link {
-    background-color: rgba(0, 158, 247, 0.1);
-    border-radius: 6px;
-
-    .menu-title {
-      color: #009ef7 !important;
-      font-weight: 600;
-    }
+  .menu-icon i {
+    color: rgba(255, 255, 255, 0.85);
   }
 }
 
-.menu-link {
-  position: relative;
-  padding: 10px 16px !important;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  cursor: pointer;
+// Hover — dark bg + white text
+.menu-item:not(.menu-sub .menu-item) > .menu-link:hover {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(-1px);
 
-  &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  .menu-title {
+    color: #ffffff !important;
   }
 
-  // Icon styling
-  .menu-icon {
-    margin-right: 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    color: #5e6278;
-    transition: all 0.3s ease;
-
-    i {
-      transition: transform 0.3s ease;
-    }
-  }
-
-  &:hover .menu-icon {
-    color: #009ef7;
-    
-    i {
-      transform: scale(1.1);
-    }
-  }
-
-  // Arrow animation
-  .menu-arrow {
-    transition: transform 0.3s ease;
-  }
-
-  &:hover .menu-arrow {
-    transform: translateX(3px);
+  .menu-icon i {
+    color: #ffffff;
   }
 }
 
-// Dropdown menu styling
+// Active via routerLinkActive (.active on the <a> element itself)
+.menu-item:not(.menu-sub .menu-item) > .menu-link.active {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+
+  .menu-title {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+
+  .menu-icon i {
+    color: #ffffff;
+  }
+}
+
+// Active via parent .menu-item.active (Metronic fallback)
+.menu-item.active:not(.menu-sub .menu-item) > .menu-link {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+
+  .menu-title {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+  }
+}
+
+// ── DROPDOWN PANEL ────────────────────────────────────────────────────────────
+
 .menu-sub {
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(30, 58, 138, 0.1);
   background: #ffffff;
   padding: 8px !important;
   min-width: 240px !important;
+
+  .menu-sub {
+    margin-left: 4px;
+  }
 
   .menu-item {
     margin-bottom: 2px;
@@ -92,69 +85,121 @@
       margin-bottom: 0;
     }
 
-    .menu-link {
-      border-radius: 6px;
+    // Default: dark text — visible on white dropdown background
+    > .menu-link {
+      border-radius: 8px !important;
       padding: 10px 14px !important;
-      transition: all 0.2s ease;
+      background-color: transparent !important;
+      transition: background 0.18s ease, transform 0.18s ease;
 
-      &:hover {
-        background-color: rgba(0, 158, 247, 0.08);
-        transform: translateX(4px);
+      .menu-title {
+        color: #1f2937 !important;
+        font-size: 0.92rem !important;
+        font-weight: 500 !important;
+      }
 
-        .menu-title {
-          color: #009ef7 !important;
-        }
+      .menu-icon i {
+        color: #5e6278;
+      }
+    }
 
-        .menu-icon {
-          color: #009ef7;
-        }
+    // Hover: dark background + white text
+    > .menu-link:hover {
+      background-color: rgba(0, 0, 0, 0.72) !important;
+      transform: translateX(3px);
+
+      .menu-title {
+        color: #ffffff !important;
+      }
+
+      .menu-icon i {
+        color: #ffffff;
+      }
+    }
+
+    // Active via routerLinkActive (.active on anchor)
+    > .menu-link.active {
+      background-color: rgba(0, 0, 0, 0.72) !important;
+
+      .menu-title {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+      }
+
+      .menu-icon i {
+        color: #ffffff;
+      }
+    }
+
+    // Active via parent .menu-item.active
+    &.active > .menu-link {
+      background-color: rgba(0, 0, 0, 0.72) !important;
+
+      .menu-title {
+        color: #ffffff !important;
+        font-weight: 600 !important;
       }
     }
   }
-
-  // Nested submenu
-  .menu-sub {
-    margin-left: 4px;
-  }
 }
 
-// Top-level menu title styling
+// ── SHARED ────────────────────────────────────────────────────────────────────
+
 .menu-title {
   font-weight: 600;
-  letter-spacing: 0.01em;
-  transition: all 0.3s ease;
+  letter-spacing: 0.015em;
+  transition: color 0.2s ease;
 
   &.fs-2 {
-    font-size: 1rem !important;
+    font-size: 0.96rem !important;
     text-transform: none;
   }
 
   &.fs-4 {
-    font-size: 0.95rem !important;
-    font-weight: 500;
+    font-size: 0.92rem !important;
   }
 }
 
-// Submenu title styling
-.menu-sub .menu-title {
-  font-weight: 500;
-  color: #3f4254;
+.menu-link {
+  cursor: pointer;
+
+  .menu-icon {
+    margin-right: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    transition: color 0.2s ease;
+
+    i {
+      transition: transform 0.2s ease;
+    }
+  }
+
+  .menu-arrow {
+    transition: transform 0.25s ease;
+  }
+
+  &:hover .menu-arrow {
+    transform: translateX(3px);
+  }
 }
 
-// Empty state styling
+// Empty state
 .legacy-nav-empty {
-  color: #a1a5b7;
+  color: #64748b;
   padding: 12px 20px;
   font-size: 0.875rem;
   font-weight: 500;
-  background-color: rgba(241, 245, 249, 0.6);
-  border-radius: 6px;
+  background-color: rgba(248, 250, 252, 0.9);
+  border-radius: 8px;
   border-left: 3px solid #f59e0b;
   margin: 0 8px;
   display: inline-block;
 }
 
-// Responsive improvements
+// Responsive
 @media (max-width: 991.98px) {
   .menu-sub {
     width: 100% !important;
@@ -170,18 +215,6 @@
 
   .menu-title.fs-2 {
     font-size: 0.95rem !important;
-  }
-}
-
-// Animation for dropdown appearance
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 

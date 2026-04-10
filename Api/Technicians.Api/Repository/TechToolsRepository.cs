@@ -341,7 +341,7 @@ namespace Technicians.Api.Repository
             };
         }
 
-        public async Task<PMNotesSearchResponse> SearchPMNotesAsync(string query, int page, int pageSize)
+        public async Task<PMNotesSearchResponse> SearchPMNotesAsync(string query, int page, int pageSize, string empId)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -366,7 +366,8 @@ namespace Technicians.Api.Repository
                 {
                     q = query,
                     page = spPage,
-                    pageSize = pageSize
+                    pageSize = pageSize,
+                    empId = empId
                 },
                 commandType: CommandType.StoredProcedure
             );

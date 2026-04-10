@@ -2,6 +2,7 @@ import { DatePipe,Location, DOCUMENT  } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { FullCalendarComponent } from '@fullcalendar/angular';
 import { Calendar, CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -59,6 +60,7 @@ employeeStatus: string = '';
   private location: Location,
   private filterDashboardService: DashboardFilterSharedService,
   private route: ActivatedRoute,
+  private router: Router,
   private authService: AuthService) { }
   ngAfterViewInit(): void {
     this.calendarApi = this.calendarComponent.getApi();
@@ -501,6 +503,23 @@ employeeStatus: string = '';
     
     this.payload = {...this.calendarPayload, ...formValue, tech};
     this.getCalendarData(this.payload);
+  }
+
+  openAmProgressReport(section: 'completedNotReturned' | 'jobsConfirmedNext120Hours' | 'firstMonth'): void {
+    const rawValues = this.jobFilterForm.getRawValue();
+    const ownerId = (rawValues.ownerId || '').toString().trim();
+
+    if (!ownerId || ownerId.toUpperCase() === 'ALL') {
+      alert('Please select an Account Manager to open KPI details.');
+      return;
+    }
+
+    this.router.navigate(['/reports/acc-mgr-performance-report'], {
+      queryParams: {
+        officeId: ownerId,
+        section
+      }
+    });
   }
   
   checkOwnerValue() {

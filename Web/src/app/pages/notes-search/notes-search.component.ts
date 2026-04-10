@@ -34,13 +34,15 @@ export class NotesSearchComponent implements OnInit {
   pageSize = 20;
   totalMatches = 0;
   totalPages = 0;
+  empId = '';
   
   pageSizeOptions = [10, 20, 50, 100, 500];
 
   constructor(private reportService: ReportService) {}
 
   ngOnInit(): void {
-    // Don't load data on init - wait for user to search
+    const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+    this.empId = (userData?.empID || userData?.empId || '').toString().trim();
   }
 
   onSearch(): void {
@@ -72,7 +74,7 @@ export class NotesSearchComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    this.reportService.searchPMNotes(this.searchQuery, this.currentPage, this.pageSize).pipe(
+    this.reportService.searchPMNotes(this.searchQuery, this.currentPage, this.pageSize, this.empId).pipe(
       map(response => this.normalizeResponse(response || {})),
       catchError(err => {
         console.error('PM Notes search failed', err);
