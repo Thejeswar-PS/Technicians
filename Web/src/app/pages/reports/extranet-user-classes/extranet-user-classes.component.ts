@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
 import { ReportService } from 'src/app/core/services/report.service';
 import { 
@@ -433,17 +433,52 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
   private customerNumberValidator(control: AbstractControl): ValidationErrors | null {
     if (!control.value) return null;
     
-    const custNumber = control.value.toString().trim();
-    
-    // Check for invalid characters like legacy
-    if (custNumber.indexOf(' ') >= 0 || 
-        custNumber.indexOf("'") >= 0 || 
-        custNumber.indexOf(',') >= 0 || 
-        custNumber.indexOf(';') >= 0) {
-      return { invalidCharacters: 'Customer number cannot contain spaces, quotes, commas, or semicolons' };
+    const parseResult = this.parseCustomerNumbers(control.value.toString());
+
+    if (!parseResult.isValid) {
+      return { invalidCharacters: parseResult.errorMessage || 'Invalid customer number format' };
     }
     
     return null;
+  }
+
+  private parseCustomerNumbers(rawValue: string): { numbers: string[]; isValid: boolean; errorMessage?: string } {
+    const rawInput = (rawValue || '').trim();
+
+    if (!rawInput) {
+      return { numbers: [], isValid: true };
+    }
+
+    if (rawInput.indexOf("'") >= 0 || rawInput.indexOf(';') >= 0) {
+      return {
+        numbers: [],
+        isValid: false,
+        errorMessage: 'Customer numbers cannot contain quotes or semicolons'
+      };
+    }
+
+    const numbers = rawInput
+      .split(',')
+      .map(item => item.trim())
+      .filter(Boolean);
+
+    if (numbers.length === 0) {
+      return { numbers: [], isValid: false, errorMessage: 'Please enter at least one customer number' };
+    }
+
+    const invalidNumber = numbers.find(number => /\s/.test(number) || number.indexOf("'") >= 0 || number.indexOf(';') >= 0);
+    if (invalidNumber) {
+      return {
+        numbers: [],
+        isValid: false,
+        errorMessage: `Customer number '${invalidNumber}' contains invalid characters`
+      };
+    }
+
+    return {
+      numbers: [...new Set(numbers)],
+      isValid: true
+    };
   }
 
   /**
@@ -492,28 +527,47 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
     this.clearMessages();
     this.isLoadingCustomerNumbers = true;
     const trimmedLogin = login.trim();
-    const trimmedCustNmbr = custNmbr.trim();
+    const parseResult = this.parseCustomerNumbers(custNmbr);
 
-    const assignSub = this.reportService.addExtranetCustomerNumber(trimmedLogin, trimmedCustNmbr).subscribe({
-      next: (result: ExtranetAddCustnmbrResult) => {
+    if (!parseResult.isValid || parseResult.numbers.length === 0) {
+      this.isLoadingCustomerNumbers = false;
+      this.errorMessage = parseResult.errorMessage || 'Please enter a valid customer number';
+      return;
+    }
+
+    const assignSub = forkJoin(
+      parseResult.numbers.map(number =>
+        this.reportService.addExtranetCustomerNumber(trimmedLogin, number)
+      )
+    ).subscribe({
+      next: (results: ExtranetAddCustnmbrResult[]) => {
         this.isLoadingCustomerNumbers = false;
-        
-        if (result.message && result.message.includes('exist')) {
-          // Like legacy - show error if customer already exists
-          this.errorMessage = result.message.replace(trimmedCustNmbr, `'${trimmedCustNmbr}'`);
-        } else {
-          // Success like legacy
-          this.successMessage = result.message ? result.message.replace(trimmedCustNmbr, `'${trimmedCustNmbr}'`) : 'Customer number assigned successfully';
-          this.assignCustomerForm.get('customerNumber')?.reset();
-          
-          // Refresh customer numbers like legacy
-          this.loadCustomerNumbers();
+
+        const duplicateMessages = results
+          .filter(result => result.message && result.message.toLowerCase().includes('exist'))
+          .map(result => result.message);
+
+        const successCount = results.length - duplicateMessages.length;
+
+        if (successCount > 0) {
+          this.successMessage = successCount === 1
+            ? 'Customer number assigned successfully'
+            : `${successCount} customer numbers assigned successfully`;
         }
+
+        if (duplicateMessages.length > 0) {
+          this.errorMessage = duplicateMessages.join(' ');
+        }
+
+        this.assignCustomerForm.get('customerNumber')?.reset();
+        this.loadCustomerNumbers();
       },
       error: (error) => {
         this.isLoadingCustomerNumbers = false;
         console.error('Error assigning customer number:', error);
-        this.errorMessage = 'Error assigning customer number';
+        this.extractErrorMessage(error, 'Error assigning customer number(s)').then(message => {
+          this.errorMessage = message;
+        });
       }
     });
 
@@ -555,7 +609,9 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.isSaving = false;
         console.error('Error saving user:', error);
-        this.errorMessage = 'Error saving user';
+        this.extractErrorMessage(error, 'Error saving user').then(message => {
+          this.errorMessage = message;
+        });
       }
     });
 
@@ -786,7 +842,7 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
     // Validate customer number format
     const customerControl = this.assignCustomerForm.get('customerNumber');
     if (customerControl?.invalid) {
-      this.errorMessage = 'Please enter a valid customer number (numbers only)';
+      this.errorMessage = this.getFieldError('customerNumber', this.assignCustomerForm) || 'Please enter valid customer numbers';
       customerControl.markAsTouched();
       return;
     }
@@ -848,6 +904,144 @@ export class ExtranetUserClassesComponent implements OnInit, OnDestroy {
         return field.errors['complexity'];
       }
     }
+    return '';
+  }
+
+  private async extractErrorMessage(error: any, fallbackMessage: string): Promise<string> {
+    if (!error) {
+      return fallbackMessage;
+    }
+
+    if (typeof error === 'string' && error.trim()) {
+      return error;
+    }
+
+    if (error.error instanceof Blob) {
+      try {
+        const blobText = await error.error.text();
+        const parsedBlobMessage = this.parseErrorPayload(blobText);
+        if (parsedBlobMessage) {
+          return parsedBlobMessage;
+        }
+      } catch {
+        // Ignore blob parsing failure and continue with fallback extraction.
+      }
+    }
+
+    if (typeof error.error === 'string' && error.error.trim()) {
+      const parsedError = this.parseErrorPayload(error.error);
+      if (parsedError) {
+        return parsedError;
+      }
+    }
+
+    if (error.error) {
+      const nestedMessage = this.extractMessageFromObject(error.error);
+      if (nestedMessage) {
+        return nestedMessage;
+      }
+
+      if (typeof error.error.message === 'string' && error.error.message.trim()) {
+        return error.error.message;
+      }
+
+      if (Array.isArray(error.error.errors) && error.error.errors.length > 0) {
+        return error.error.errors.join(' ');
+      }
+
+      if (typeof error.error.errors === 'object' && error.error.errors !== null) {
+        const messages = Object.values(error.error.errors)
+          .flat()
+          .filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+        if (messages.length > 0) {
+          return messages.join(' ');
+        }
+      }
+
+      if (typeof error.error.title === 'string' && error.error.title.trim()) {
+        return error.error.title;
+      }
+    }
+
+    if (typeof error.message === 'string' && error.message.trim()) {
+      return error.message;
+    }
+
+    return fallbackMessage;
+  }
+
+  private parseErrorPayload(payload: string): string {
+    if (!payload || !payload.trim()) {
+      return '';
+    }
+
+    const trimmedPayload = payload.trim();
+
+    try {
+      const parsed = JSON.parse(trimmedPayload);
+      const parsedMessage = this.extractMessageFromObject(parsed);
+      if (parsedMessage) {
+        return parsedMessage;
+      }
+    } catch {
+      // Payload is plain text, return as-is.
+    }
+
+    return trimmedPayload;
+  }
+
+  private extractMessageFromObject(value: any): string {
+    if (!value) {
+      return '';
+    }
+
+    const candidateKeys = ['message', 'error', 'title', 'detail', 'Message', 'Error', 'Description'];
+
+    for (const key of candidateKeys) {
+      const candidate = value[key];
+
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
+
+      if (candidate && typeof candidate === 'object') {
+        const nested = this.extractMessageFromObject(candidate);
+        if (nested) {
+          return nested;
+        }
+      }
+    }
+
+    if (Array.isArray(value)) {
+      const messages = value
+        .map(item => typeof item === 'string' ? item.trim() : this.extractMessageFromObject(item))
+        .filter(Boolean);
+
+      if (messages.length > 0) {
+        return messages.join(' ');
+      }
+    }
+
+    if (value.errors) {
+      if (Array.isArray(value.errors)) {
+        const messages = value.errors.filter((item: unknown): item is string => typeof item === 'string' && item.trim().length > 0);
+        if (messages.length > 0) {
+          return messages.join(' ');
+        }
+      }
+
+      if (typeof value.errors === 'object') {
+        const messages = Object.values(value.errors)
+          .flat()
+          .filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+
+        if (messages.length > 0) {
+          return messages.join(' ');
+        }
+      }
+    }
+
     return '';
   }
 

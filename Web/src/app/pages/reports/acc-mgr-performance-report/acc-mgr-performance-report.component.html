@@ -1,32 +1,47 @@
-<div class="container-fluid acc-mgr-performance-container" *ngIf="hasPageAccess">
+<div class="container-fluid acc-mgr-performance-container">
   <!-- Loading Overlay -->
-  <div *ngIf="isLoading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.3); z-index: 9999;">
+  <div *ngIf="isLoading && hasPageAccess" class="report-loading-overlay position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
   </div>
 
-  <!-- Page Title -->
-  <div class="text-center mb-4">
-    <h2 class="fw-bold text-primary mb-02 display-4.9">Account Manager Performance Report</h2>
+  <div *ngIf="!hasPageAccess" class="mb-4">
+    <div class="alert alert-danger text-center" role="alert">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <strong>{{ errorMessage || 'Access Denied: You do not have permission to access Account Manager Performance Reports.' }}</strong>
+    </div>
   </div>
 
-  <div class="card shadow-sm main-card">
+  <div class="card shadow-sm main-card" *ngIf="hasPageAccess">
     <div class="card-body">
-      <!-- Message -->
-      <div class="mb-4" *ngIf="errorMessage">
-        <div class="alert alert-danger d-inline-flex align-items-center" role="alert">
-          <i class="bi bi-exclamation-triangle-fill me-2"></i>
-          <span>{{ errorMessage }}</span>
+      <form [formGroup]="reportForm" class="legacy-toolbar" (submit)="$event.preventDefault()">
+        <div class="legacy-toolbar__actions">
+          <button 
+            type="button"
+            class="btn btn-legacy-primary" 
+            (click)="generateReport('RedOrange')" 
+            [disabled]="isLoading || isLoadingAccountManagers">
+            <i class="bi bi-exclamation-diamond me-2"></i>Red / Orange Jobs
+          </button>
+          <button 
+            type="button"
+            class="btn btn-legacy-secondary" 
+            (click)="generateReport()" 
+            [disabled]="isLoading || isLoadingAccountManagers">
+            <i class="bi bi-list-ul me-2"></i>All Jobs
+          </button>
         </div>
-      </div>
 
-      <!-- Filters -->
-      <form [formGroup]="reportForm" class="row mb-4 filter-panel">
-        <div class="col-md-6">
-          <label class="form-label fw-bold">Office/Account Manager:</label>
+        <div class="legacy-toolbar__title">
+          <h2>Account Manager's Performance Report</h2>
+        </div>
+
+        <div class="legacy-toolbar__selection">
+          <label class="legacy-toolbar__label" for="accMgrSelect">Selected Account Manager:</label>
           <select 
-            class="form-select"
+            id="accMgrSelect"
+            class="form-select legacy-toolbar__select"
             formControlName="officeId"
             [class.is-invalid]="hasError('officeId')"
             (change)="onOfficeChange()">
@@ -36,170 +51,28 @@
             <option 
               *ngFor="let manager of accountManagers" 
               [value]="manager.OFFID || manager.empId">
-              {{ manager.OFFNAME || manager.empName }} ({{ manager.OFFID || manager.empId }})
+              {{ manager.OFFNAME || manager.empName }}
             </option>
           </select>
-          <div class="invalid-feedback" *ngIf="hasError('officeId')">
+          <div class="legacy-toolbar__selected-name">{{ getSelectedManagerLabel() }}</div>
+          <div class="invalid-feedback d-block" *ngIf="hasError('officeId')">
             {{ getErrorMessage('officeId') }}
           </div>
         </div>
-        <div class="col-md-6 d-flex align-items-end gap-2">
-          <button 
-            type="button"
-            class="btn btn-outline-primary" 
-            (click)="generateReport()" 
-            [disabled]="isLoading || isLoadingAccountManagers">
-            <i class="bi bi-list me-2"></i>All Jobs
-          </button>
-          <button 
-            type="button"
-            class="btn btn-red-orange" 
-            (click)="generateReport('RedOrange')" 
-            [disabled]="isLoading || isLoadingAccountManagers">
-            <i class="bi bi-filter me-2"></i>Critical Jobs
-          </button>
-        </div>
       </form>
 
-      <!-- Navigation Tabs -->
-      <div class="mb-4" *ngIf="reportData">
-        <nav>
-          <div class="nav nav-pills justify-content-center flex-wrap section-tabs" id="nav-tab" role="tablist">
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'completedNotReturned'"
-                    (click)="setActiveSection('completedNotReturned')"
-                    type="button">
-              <i class="bi bi-exclamation-triangle me-2"></i>
-              Completed Not Returned
-              <span class="badge bg-danger ms-2">{{ (reportData.CompletedNotReturned || reportData.completedNotReturned || []).length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'returnedForProcessing'"
-                    (click)="setActiveSection('returnedForProcessing')"
-                    type="button">
-              <i class="bi bi-arrow-clockwise me-2"></i>
-              Returned for Processing
-              <span class="badge bg-warning ms-2">{{ (reportData.ReturnedForProcessing || reportData.returnedForProcessing || []).length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'jobsScheduledToday'"
-                    (click)="setActiveSection('jobsScheduledToday')"
-                    type="button">
-              <i class="bi bi-calendar-day me-2"></i>
-              Scheduled Today
-              <span class="badge bg-info ms-2">{{ reportData.jobsScheduledToday.length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'returnedWithIncompleteData'"
-                    (click)="setActiveSection('returnedWithIncompleteData')"
-                    type="button">
-              <i class="bi bi-exclamation-circle me-2"></i>
-              Incomplete Data
-              <span class="badge bg-warning ms-2">{{ reportData.returnedWithIncompleteData.length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'jobsConfirmedNext120Hours'"
-                    (click)="setActiveSection('jobsConfirmedNext120Hours')"
-                    type="button">
-              <i class="bi bi-clock me-2"></i>
-              Confirmed Next 120H
-              <span class="badge bg-success ms-2">{{ reportData.jobsConfirmedNext120Hours.length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'pastDueUnscheduled'"
-                    (click)="setActiveSection('pastDueUnscheduled')"
-                    type="button">
-              <i class="bi bi-calendar-x me-2"></i>
-              Past Due
-              <span class="badge bg-danger ms-2">{{ (reportData.PastDueUnscheduled || reportData.pastDueUnscheduled || []).length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'firstMonth'"
-                    (click)="setActiveSection('firstMonth')"
-                    type="button">
-              <i class="bi bi-calendar me-2"></i>
-              {{ monthLabels[0] || 'Current Month' }}
-              <span class="badge bg-info ms-2">{{ (reportData.FirstMonth || reportData.firstMonth || []).length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'secondMonth'"
-                    (click)="setActiveSection('secondMonth')"
-                    type="button">
-              <i class="bi bi-calendar me-2"></i>
-              {{ monthLabels[1] || 'Next Month' }}
-              <span class="badge bg-info ms-2">{{ (reportData.SecondMonth || reportData.secondMonth || []).length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'thirdMonth'"
-                    (click)="setActiveSection('thirdMonth')"
-                    type="button">
-              <i class="bi bi-calendar me-2"></i>
-              {{ monthLabels[2] || 'Month 3' }}
-              <span class="badge bg-info ms-2">{{ (reportData.ThirdMonth || reportData.thirdMonth || []).length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'fourthMonth'"
-                    (click)="setActiveSection('fourthMonth')"
-                    type="button">
-              <i class="bi bi-calendar me-2"></i>
-              {{ monthLabels[3] || 'Month 4' }}
-              <span class="badge bg-info ms-2">{{ (reportData.FourthMonth || reportData.fourthMonth || []).length }}</span>
-            </button>
-            <button class="nav-link" 
-                    [class.active]="activeSection === 'fifthMonth'"
-                    (click)="setActiveSection('fifthMonth')"
-                    type="button">
-              <i class="bi bi-calendar me-2"></i>
-              {{ monthLabels[4] || 'Month 5' }}
-              <span class="badge bg-info ms-2">{{ (reportData.FifthMonth || reportData.fifthMonth || []).length }}</span>
-            </button>
-          </div>
-        </nav>
-      </div>
-
-      <!-- Records Per Page -->
-      <div class="d-flex align-items-center justify-content-between mb-3" *ngIf="reportData && getActiveData().length > 0">
-        <div class="d-flex align-items-center">
-          <label class="me-2 fw-semibold">Records per page:</label>
-          <select class="form-select form-select-sm w-auto"
-                  [(ngModel)]="itemsPerPage"
-                  (change)="currentPage = 1">
-            <option value="10">10</option>
-            <option value="25">25</option>
-            <option value="50">50</option>
-            <option value="100" selected>100</option>
-          </select>
-        </div>
-
-        <div class="flex-fill text-center fw-semibold">
-          Showing
-          {{ totalItems ? ((currentPage - 1) * itemsPerPage + 1) : 0 }}
-          -
-          {{ totalItems ? Math.min(currentPage * itemsPerPage, totalItems) : 0 }}
-          of {{ totalItems }} records
-        </div>
-
-        <div class="d-flex align-items-center gap-2">
-          <button type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="goToPage(currentPage - 1)"
-                  [disabled]="currentPage <= 1">
-            Prev
-          </button>
-          <span class="fw-semibold">Page {{ currentPage }} of {{ getTotalPages() }}</span>
-          <button type="button"
-                  class="btn btn-sm btn-outline-secondary"
-                  (click)="goToPage(currentPage + 1)"
-                  [disabled]="currentPage >= getTotalPages()">
-            Next
-          </button>
+      <!-- Message -->
+      <div class="mb-4" *ngIf="errorMessage">
+        <div class="alert alert-danger d-inline-flex align-items-center" role="alert">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <span>{{ errorMessage }}</span>
         </div>
       </div>
 
       <!-- Table Content -->
-      <div class="table-responsive" *ngIf="reportData && getActiveData().length > 0">
+      <div class="report-sections" *ngIf="reportData && hasAnySectionData()">
         <!-- Completed Not Returned -->
-        <div *ngIf="activeSection === 'completedNotReturned'">
+        <div class="report-section" *ngIf="hasSectionData('completedNotReturned')" (mouseenter)="setActiveSection('completedNotReturned')">
           <h5 class="mb-3"><i class="bi bi-exclamation-triangle text-danger me-2"></i>Completed Jobs Not Returned from Technician</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -224,7 +97,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -251,7 +124,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('scheduledEnd')">
                   <span class="header-cell">
-                    Job Completion Date
+                    Completed
                     <span class="sort-icons" [class.active]="sortColumn === 'scheduledEnd'">
                       <i class="up" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'scheduledEnd' && sortDirection === 'desc'"></i>
@@ -260,7 +133,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('changeAge')">
                   <span class="header-cell">
-                    Days Tech Holding
+                    Days
                     <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
                       <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
@@ -297,7 +170,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()" 
+                <tr *ngFor="let item of getSectionData('completedNotReturned')" 
                   [ngClass]="getRowColorClass(item, 'completedNotReturned')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
@@ -321,7 +194,7 @@
         </div>
 
         <!-- Returned for Processing -->
-        <div *ngIf="activeSection === 'returnedForProcessing'">
+        <div class="report-section" *ngIf="hasSectionData('returnedForProcessing')" (mouseenter)="setActiveSection('returnedForProcessing')">
           <h5 class="mb-3"><i class="bi bi-arrow-clockwise text-warning me-2"></i>Jobs Returned from Technician for Processing</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -346,7 +219,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -373,7 +246,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
                   <span class="header-cell">
-                    Job Scheduled On
+                    Start Dt
                     <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
                       <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
@@ -382,7 +255,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('returnedDate')">
                   <span class="header-cell">
-                    Job Returned On
+                    Returned
                     <span class="sort-icons" [class.active]="sortColumn === 'returnedDate'">
                       <i class="up" [class.on]="sortColumn === 'returnedDate' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'returnedDate' && sortDirection === 'desc'"></i>
@@ -428,7 +301,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()"
+                <tr *ngFor="let item of getSectionData('returnedForProcessing')"
                   [ngClass]="getRowColorClass(item, 'returnedForProcessing')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
@@ -453,7 +326,7 @@
         </div>
 
         <!-- Jobs Scheduled Today -->
-        <div *ngIf="activeSection === 'jobsScheduledToday'">
+        <div class="report-section" *ngIf="hasSectionData('jobsScheduledToday')" (mouseenter)="setActiveSection('jobsScheduledToday')">
           <h5 class="mb-3"><i class="bi bi-calendar-day text-info me-2"></i>Jobs Scheduled Today</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -478,7 +351,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -505,7 +378,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
                   <span class="header-cell">
-                    Job Scheduled On
+                    Start Dt
                     <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
                       <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
@@ -560,7 +433,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()"
+                <tr *ngFor="let item of getSectionData('jobsScheduledToday')"
                   [ngClass]="getRowColorClass(item, 'jobsScheduledToday')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
@@ -579,7 +452,7 @@
         </div>
 
         <!-- Returned with Incomplete Data -->
-        <div *ngIf="activeSection === 'returnedWithIncompleteData'">
+        <div class="report-section" *ngIf="hasSectionData('returnedWithIncompleteData')" (mouseenter)="setActiveSection('returnedWithIncompleteData')">
           <h5 class="mb-3"><i class="bi bi-exclamation-circle text-warning me-2"></i>Returned with Incomplete Data</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -604,7 +477,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -631,7 +504,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('responseDate')">
                   <span class="header-cell">
-                    Job Completion Date
+                    Completed
                     <span class="sort-icons" [class.active]="sortColumn === 'responseDate'">
                       <i class="up" [class.on]="sortColumn === 'responseDate' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'responseDate' && sortDirection === 'desc'"></i>
@@ -640,7 +513,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('changeAge')">
                   <span class="header-cell">
-                    Days Tech Holding
+                    Days
                     <span class="sort-icons" [class.active]="sortColumn === 'changeAge'">
                       <i class="up" [class.on]="sortColumn === 'changeAge' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'changeAge' && sortDirection === 'desc'"></i>
@@ -677,7 +550,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()"
+                <tr *ngFor="let item of getSectionData('returnedWithIncompleteData')"
                   [ngClass]="getRowColorClass(item, 'returnedWithIncompleteData')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
@@ -701,7 +574,7 @@
         </div>
 
         <!-- Customer Confirmed Next 120 Hours -->
-        <div *ngIf="activeSection === 'jobsConfirmedNext120Hours'">
+        <div class="report-section" *ngIf="hasSectionData('jobsConfirmedNext120Hours')" (mouseenter)="setActiveSection('jobsConfirmedNext120Hours')">
           <h5 class="mb-3"><i class="bi bi-clock text-success me-2"></i>Customer Confirmed Next 120 Hours</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -726,7 +599,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -753,7 +626,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('scheduledStart')">
                   <span class="header-cell">
-                    Job Scheduled On
+                    Start Dt
                     <span class="sort-icons" [class.active]="sortColumn === 'scheduledStart'">
                       <i class="up" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'scheduledStart' && sortDirection === 'desc'"></i>
@@ -799,7 +672,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()"
+                <tr *ngFor="let item of getSectionData('jobsConfirmedNext120Hours')"
                   [ngClass]="getRowColorClass(item, 'jobsConfirmedNext120Hours')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
@@ -817,7 +690,7 @@
         </div>
 
         <!-- Past Due Unscheduled -->
-        <div *ngIf="activeSection === 'pastDueUnscheduled'">
+        <div class="report-section" *ngIf="hasSectionData('pastDueUnscheduled')" (mouseenter)="setActiveSection('pastDueUnscheduled')">
           <h5 class="mb-3"><i class="bi bi-calendar-x text-danger me-2"></i>Past Due Unscheduled Jobs</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -842,7 +715,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -915,7 +788,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()">
+              <tr *ngFor="let item of getSectionData('pastDueUnscheduled')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
                 <td>{{ item.custName }}</td>
@@ -932,7 +805,7 @@
         </div>
 
         <!-- Monthly Unscheduled Jobs (Current Month) -->
-        <div *ngIf="activeSection === 'firstMonth'">
+        <div class="report-section" *ngIf="hasSectionData('firstMonth')" (mouseenter)="setActiveSection('firstMonth')">
           <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[0] || 'Current Month' }} Unscheduled Jobs</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -957,7 +830,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -1030,7 +903,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()"
+                <tr *ngFor="let item of getSectionData('firstMonth')"
                   [ngClass]="getRowColorClass(item, 'firstMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
@@ -1048,7 +921,7 @@
         </div>
 
         <!-- Monthly Unscheduled Jobs (Next Month) -->
-        <div *ngIf="activeSection === 'secondMonth'">
+        <div class="report-section" *ngIf="hasSectionData('secondMonth')" (mouseenter)="setActiveSection('secondMonth')">
           <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[1] || 'Next Month' }} Unscheduled Jobs</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -1073,7 +946,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -1146,7 +1019,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()">
+              <tr *ngFor="let item of getSectionData('secondMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
                 <td>{{ item.custName }}</td>
@@ -1163,7 +1036,7 @@
         </div>
 
         <!-- Monthly Unscheduled Jobs (Month 3) -->
-        <div *ngIf="activeSection === 'thirdMonth'">
+        <div class="report-section" *ngIf="hasSectionData('thirdMonth')" (mouseenter)="setActiveSection('thirdMonth')">
           <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[2] || 'Month 3' }} Unscheduled Jobs</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -1188,7 +1061,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -1261,7 +1134,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()">
+              <tr *ngFor="let item of getSectionData('thirdMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
                 <td>{{ item.custName }}</td>
@@ -1278,7 +1151,7 @@
         </div>
 
         <!-- Monthly Unscheduled Jobs (Month 4) -->
-        <div *ngIf="activeSection === 'fourthMonth'">
+        <div class="report-section" *ngIf="hasSectionData('fourthMonth')" (mouseenter)="setActiveSection('fourthMonth')">
           <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[3] || 'Month 4' }} Unscheduled Jobs</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -1303,7 +1176,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -1376,7 +1249,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()">
+              <tr *ngFor="let item of getSectionData('fourthMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
                 <td>{{ item.custName }}</td>
@@ -1393,7 +1266,7 @@
         </div>
 
         <!-- Monthly Unscheduled Jobs (Month 5) -->
-        <div *ngIf="activeSection === 'fifthMonth'">
+        <div class="report-section" *ngIf="hasSectionData('fifthMonth')" (mouseenter)="setActiveSection('fifthMonth')">
           <h5 class="mb-3"><i class="bi bi-calendar text-info me-2"></i>{{ monthLabels[4] || 'Month 5' }} Unscheduled Jobs</h5>
           <table class="table table-bordered mb-0">
             <thead class="table-light">
@@ -1418,7 +1291,7 @@
                 </th>
                 <th class="fw-bold sortable" (click)="sortData('custName')">
                   <span class="header-cell">
-                    Customer Name
+                    Name
                     <span class="sort-icons" [class.active]="sortColumn === 'custName'">
                       <i class="up" [class.on]="sortColumn === 'custName' && sortDirection === 'asc'"></i>
                       <i class="down" [class.on]="sortColumn === 'custName' && sortDirection === 'desc'"></i>
@@ -1491,7 +1364,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of getPaginatedData()">
+              <tr *ngFor="let item of getSectionData('fifthMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
                 <td>{{ item.custName }}</td>
@@ -1507,49 +1380,11 @@
           </table>
         </div>
 
-      <!-- Pagination -->
-      <div *ngIf="reportData && getActiveData().length > 0 && getTotalPages() > 1"
-           class="d-flex justify-content-between align-items-center mt-3">
-
-        <div class="text-muted">
-          Page {{ currentPage }} of {{ getTotalPages() }}
-        </div>
-
-        <ul class="pagination mb-0">
-          <li class="page-item" [class.disabled]="currentPage === 1">
-            <button class="page-link" (click)="goToPage(currentPage - 1)">‹</button>
-          </li>
-
-          <li class="page-item"
-              *ngFor="let page of getPageNumbers()"
-              [class.active]="page === currentPage">
-            <button class="page-link" (click)="goToPage(page)">
-              {{ page }}
-            </button>
-          </li>
-
-          <li class="page-item" [class.disabled]="currentPage === getTotalPages()">
-            <button class="page-link" (click)="goToPage(currentPage + 1)">›</button>
-          </li>
-        </ul>
-
-      </div>
-
       <!-- Empty State -->
-      <div class="alert alert-info text-center" *ngIf="!isLoading && reportData && getActiveData().length === 0">
+      <div class="alert alert-info text-center" *ngIf="!isLoading && reportData && !hasAnySectionData()">
         <i class="bi bi-info-circle me-2"></i>
-        No records to display for the selected section
+        No records to display for the selected account manager
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Unauthorized Access Message -->
-<div class="container-fluid" *ngIf="!hasPageAccess">
-  <div class="alert alert-danger text-center mt-5" role="alert">
-    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-    <strong>Access Denied:</strong> You do not have permission to access Account Manager Performance Reports.
-    <br/>
-    <small>Only Account Managers and Employees (EmpStatus 'M' or 'E') can access this report. Redirecting to login...</small>
   </div>
 </div>

@@ -715,8 +715,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
     const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
-    const infoColor = getCSSVariableValue('--kt-info');
-    const lightInfoColor = getCSSVariableValue('--kt-info-light');
+    const paperworkColor = '#5b8def';
 
     // Prepare chart data
     const categories = this.paperworkData.map(item => item.offid);
@@ -730,7 +729,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       chart: {
         fontFamily: 'Inter, sans-serif',
         type: 'bar',
-        height: 570,
+        height: Math.max(420, categories.length * 34),
         foreColor: '#000000',
         toolbar: {
           show: true,
@@ -760,25 +759,17 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         animations: {
           enabled: true,
           easing: 'easeinout',
-          speed: 2000,
+          speed: 900,
           animateGradually: {
             enabled: true,
-            delay: 120
+            delay: 60
           },
           dynamicAnimation: {
             enabled: true,
-            speed: 300
+            speed: 250
           }
         },
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%)',
-        dropShadow: {
-          enabled: true,
-          color: '#0ea5e9',
-          top: 4,
-          left: 3,
-          blur: 6,
-          opacity: 0.1
-        },
+        background: 'transparent',
         events: {
           dataPointSelection: (event: any, chartContext: any, config: any) => {
             this.handleChartClick('paperwork', config);
@@ -787,15 +778,15 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       plotOptions: {
         bar: {
-          horizontal: false,
-          columnWidth: '70%',
-          borderRadius: 8,
+          horizontal: true,
+          barHeight: '58%',
+          borderRadius: 6,
           borderRadiusApplication: 'end',
           borderRadiusWhenStacked: 'last',
           dataLabels: {
             position: 'top'
           },
-          distributed: true
+          distributed: false
         }
       },
       legend: {
@@ -807,33 +798,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           return val > 0 ? val.toString() : '';
         },
         style: {
-          fontSize: '12px',
+          fontSize: '11px',
           fontFamily: 'Inter, sans-serif',
-          fontWeight: '700',
-          colors: ['#0369a1']
+          fontWeight: '600',
+          colors: ['#334155']
         },
         background: {
           enabled: true,
-          foreColor: '#f0f9ff',
-          borderRadius: 8,
-          padding: 6,
-          opacity: 0.95,
+          foreColor: '#ffffff',
+          borderRadius: 6,
+          padding: 4,
+          opacity: 0.9,
           borderWidth: 1,
-          borderColor: '#bae6fd',
+          borderColor: '#dbeafe',
           dropShadow: {
-            enabled: true,
-            top: 1,
-            left: 1,
-            blur: 3,
+            enabled: false,
+            top: 0,
+            left: 0,
+            blur: 0,
             color: '#000000',
-            opacity: 0.1
+            opacity: 0
           }
         },
-        offsetY: -8
+        offsetX: 8
       },
       stroke: {
         show: true,
-        width: 2,
+        width: 0,
         colors: ['transparent']
       },
       xaxis: {
@@ -846,16 +837,13 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: ['#000000'],
-            fontSize: '16px',
-            fontWeight: '900'
+            colors: ['#475569'],
+            fontSize: '12px',
+            fontWeight: '600'
           },
-          rotate: -65,
-          rotateAlways: true,
-          hideOverlappingLabels: true,
-          maxHeight: 180,
-          trim: false,
-          offsetY: 20
+          formatter: function (val: number) {
+            return val?.toString?.() ?? '';
+          }
         }
       },
       yaxis: {
@@ -869,36 +857,41 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
-          }
+            colors: '#1e293b',
+            fontSize: '13px',
+            fontWeight: 600
+          },
+          maxWidth: 220
         }
       },
       fill: {
         type: 'solid',
-        opacity: 1,
-        colors: ['#0ea5e9']
+        opacity: 0.92,
+        colors: [paperworkColor]
       },
-      colors: ['#0ea5e9'],
+      colors: [paperworkColor],
       grid: {
         borderColor: borderColor,
-        strokeDashArray: 4,
-        yaxis: {
+        strokeDashArray: 2,
+        xaxis: {
           lines: {
             show: true
           }
         },
         padding: {
-          top: 10,
-          right: 10,
-          bottom: 60,
-          left: 10
+          top: 4,
+          right: 22,
+          bottom: 8,
+          left: 20
         }
       },
       tooltip: {
         enabled: true,
         style: {
           fontSize: '12px'
+        },
+        x: {
+          show: true
         },
         y: {
           formatter: function (val: number) {
@@ -917,8 +910,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
     const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
-    const warningColor = getCSSVariableValue('--kt-warning');
-    const lightWarningColor = getCSSVariableValue('--kt-warning-light');
+    const quotesColor = '#c6924a';
 
     // Prepare chart data
     const categories = this.quoteGraphData.map(item => item.offid);
@@ -932,7 +924,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       chart: {
         fontFamily: 'Inter, sans-serif',
         type: 'bar',
-        height: 610,
+        height: Math.max(420, categories.length * 34),
         foreColor: '#000000',
         toolbar: {
           show: true,
@@ -962,25 +954,17 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         animations: {
           enabled: true,
           easing: 'easeinout',
-          speed: 1400,
+          speed: 900,
           animateGradually: {
             enabled: true,
-            delay: 150
+            delay: 60
           },
           dynamicAnimation: {
             enabled: true,
-            speed: 350
+            speed: 250
           }
         },
-        background: 'linear-gradient(135deg, #fffbeb 0%, #ffffff 100%)',
-        dropShadow: {
-          enabled: true,
-          color: '#f59e0b',
-          top: 4,
-          left: 3,
-          blur: 6,
-          opacity: 0.1
-        },
+        background: 'transparent',
         events: {
           dataPointSelection: (event: any, chartContext: any, config: any) => {
             this.handleQuoteGraphClick(config);
@@ -989,15 +973,15 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       plotOptions: {
         bar: {
-          horizontal: false,
-          columnWidth: '70%',
-          borderRadius: 8,
+          horizontal: true,
+          barHeight: '58%',
+          borderRadius: 6,
           borderRadiusApplication: 'end',
           borderRadiusWhenStacked: 'last',
           dataLabels: {
             position: 'top'
           },
-          distributed: true
+          distributed: false
         }
       },
       legend: {
@@ -1009,33 +993,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           return val > 0 ? val.toString() : '';
         },
         style: {
-          fontSize: '12px',
+          fontSize: '11px',
           fontFamily: 'Inter, sans-serif',
-          fontWeight: '700',
-          colors: ['#92400e']
+          fontWeight: '600',
+          colors: ['#334155']
         },
         background: {
           enabled: true,
-          foreColor: '#fffbeb',
-          borderRadius: 8,
-          padding: 6,
-          opacity: 0.95,
+          foreColor: '#ffffff',
+          borderRadius: 6,
+          padding: 4,
+          opacity: 0.9,
           borderWidth: 1,
-          borderColor: '#fde68a',
+          borderColor: '#f5deb3',
           dropShadow: {
-            enabled: true,
-            top: 1,
-            left: 1,
-            blur: 3,
+            enabled: false,
+            top: 0,
+            left: 0,
+            blur: 0,
             color: '#000000',
-            opacity: 0.1
+            opacity: 0
           }
         },
-        offsetY: -8
+        offsetX: 8
       },
       stroke: {
         show: true,
-        width: 2,
+        width: 0,
         colors: ['transparent']
       },
       xaxis: {
@@ -1048,16 +1032,13 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: ['#000000'],
-            fontSize: '16px',
-            fontWeight: '900'
+            colors: ['#475569'],
+            fontSize: '12px',
+            fontWeight: '600'
           },
-          rotate: -65,
-          rotateAlways: true,
-          hideOverlappingLabels: true,
-          maxHeight: 180,
-          trim: false,
-          offsetY: 20
+          formatter: function (val: number) {
+            return val?.toString?.() ?? '';
+          }
         }
       },
       yaxis: {
@@ -1071,36 +1052,41 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
-          }
+            colors: '#1e293b',
+            fontSize: '13px',
+            fontWeight: 600
+          },
+          maxWidth: 220
         }
       },
       fill: {
         type: 'solid',
-        opacity: 1,
-        colors: ['#f59e0b']
+        opacity: 0.92,
+        colors: [quotesColor]
       },
-      colors: ['#f59e0b'],
+      colors: [quotesColor],
       grid: {
         borderColor: borderColor,
-        strokeDashArray: 4,
-        yaxis: {
+        strokeDashArray: 2,
+        xaxis: {
           lines: {
             show: true
           }
         },
         padding: {
-          top: 10,
-          right: 10,
-          bottom: 60,
-          left: 10
+          top: 4,
+          right: 22,
+          bottom: 8,
+          left: 20
         }
       },
       tooltip: {
         enabled: true,
         style: {
           fontSize: '12px'
+        },
+        x: {
+          show: true
         },
         y: {
           formatter: function (val: number) {
@@ -1119,8 +1105,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
 
     const labelColor = '#000000';
     const borderColor = getCSSVariableValue('--kt-gray-200');
-    const dangerColor = getCSSVariableValue('--kt-danger');
-    const lightDangerColor = getCSSVariableValue('--kt-danger-light');
+    const unscheduledColor = '#d9776a';
 
     // Prepare chart data
     const categories = this.unscheduledData.map(item => item.offid);
@@ -1134,7 +1119,7 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       chart: {
         fontFamily: 'inherit',
         type: 'bar',
-        height: 540,
+        height: Math.max(420, categories.length * 34),
         foreColor: '#000000',
         toolbar: {
           show: true,
@@ -1159,14 +1144,14 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         animations: {
           enabled: true,
           easing: 'easeinout',
-          speed: 1100,
+          speed: 900,
           animateGradually: {
             enabled: true,
-            delay: 130
+            delay: 60
           },
           dynamicAnimation: {
             enabled: true,
-            speed: 320
+            speed: 250
           }
         },
         background: 'transparent',
@@ -1178,15 +1163,15 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
       },
       plotOptions: {
         bar: {
-          horizontal: false,
-          columnWidth: '70%',
-          borderRadius: 8,
+          horizontal: true,
+          barHeight: '58%',
+          borderRadius: 6,
           borderRadiusApplication: 'end',
           borderRadiusWhenStacked: 'last',
           dataLabels: {
             position: 'top'
           },
-          distributed: true
+          distributed: false
         }
       },
       legend: {
@@ -1198,33 +1183,33 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
           return val > 0 ? val.toString() : '';
         },
         style: {
-          fontSize: '12px',
+          fontSize: '11px',
           fontFamily: 'Inter, sans-serif',
-          fontWeight: '700',
-          colors: ['#dc2626']
+          fontWeight: '600',
+          colors: ['#334155']
         },
         background: {
           enabled: true,
-          foreColor: '#fef2f2',
-          borderRadius: 8,
-          padding: 6,
-          opacity: 0.95,
+          foreColor: '#ffffff',
+          borderRadius: 6,
+          padding: 4,
+          opacity: 0.9,
           borderWidth: 1,
-          borderColor: '#fecaca',
+          borderColor: '#f4c7bf',
           dropShadow: {
-            enabled: true,
-            top: 1,
-            left: 1,
-            blur: 3,
+            enabled: false,
+            top: 0,
+            left: 0,
+            blur: 0,
             color: '#000000',
-            opacity: 0.1
+            opacity: 0
           }
         },
-        offsetY: -8
+        offsetX: 8
       },
       stroke: {
         show: true,
-        width: 2,
+        width: 0,
         colors: ['transparent']
       },
       xaxis: {
@@ -1237,16 +1222,13 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: ['#000000'],
-            fontSize: '16px',
-            fontWeight: '900'
+            colors: ['#475569'],
+            fontSize: '12px',
+            fontWeight: '600'
           },
-          rotate: -65,
-          rotateAlways: true,
-          hideOverlappingLabels: true,
-          maxHeight: 180,
-          trim: false,
-          offsetY: 20
+          formatter: function (val: number) {
+            return val?.toString?.() ?? '';
+          }
         }
       },
       yaxis: {
@@ -1260,36 +1242,41 @@ export class AccountManagerGraphComponent implements OnInit, OnDestroy {
         },
         labels: {
           style: {
-            colors: labelColor,
-            fontSize: '12px'
-          }
+            colors: '#1e293b',
+            fontSize: '13px',
+            fontWeight: 600
+          },
+          maxWidth: 220
         }
       },
       fill: {
         type: 'solid',
-        opacity: 1,
-        colors: ['#ef4444']
+        opacity: 0.92,
+        colors: [unscheduledColor]
       },
-      colors: ['#ef4444'],
+      colors: [unscheduledColor],
       grid: {
         borderColor: borderColor,
-        strokeDashArray: 4,
-        yaxis: {
+        strokeDashArray: 2,
+        xaxis: {
           lines: {
             show: true
           }
         },
         padding: {
-          top: 10,
-          right: 10,
-          bottom: 60,
-          left: 10
+          top: 4,
+          right: 22,
+          bottom: 8,
+          left: 20
         }
       },
       tooltip: {
         enabled: true,
         style: {
           fontSize: '12px'
+        },
+        x: {
+          show: true
         },
         y: {
           formatter: function (val: number) {

@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { 
@@ -82,7 +83,7 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
   // Expose Math to template
   Math = Math;
 
-  constructor(private pastDueGraphService: PastDueGraphService) {}
+  constructor(private pastDueGraphService: PastDueGraphService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadPastDueData();
@@ -97,11 +98,11 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
   /**
    * Load all past due jobs data
    */
-  loadPastDueData(): void {
+  loadPastDueData(forceRefresh = false): void {
     this.isLoading = true;
     this.error = null;
 
-    this.pastDueGraphService.getPastDueJobsInfo()
+    this.pastDueGraphService.getPastDueJobsInfo(forceRefresh)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
@@ -202,6 +203,11 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
         fontFamily: 'Inter, sans-serif',
         foreColor: '#000000',
         offsetY: 0,
+        events: {
+          dataPointSelection: (_event: any, _chartContext: any, config: any) => {
+            this.handleSummaryChartSelection(config);
+          }
+        },
         sparkline: {
           enabled: false
         }
@@ -275,8 +281,35 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
       colors: ['#f64aa3ff', '#f97316'],
       legend: {
         position: 'top'
+      },
+      tooltip: {
+        shared: true,
+        intersect: false
       }
     };
+  }
+
+  private handleSummaryChartSelection(config: any): void {
+    const dataPointIndex = config?.dataPointIndex;
+    const seriesIndex = config?.seriesIndex;
+
+    if (dataPointIndex === undefined || dataPointIndex < 0 || seriesIndex === undefined || seriesIndex < 0) {
+      return;
+    }
+
+    const selectedManager = this.summaryData[dataPointIndex]?.accMgr;
+    if (!selectedManager) {
+      return;
+    }
+
+    const category = seriesIndex === 1 ? 'Billable' : 'PastDue';
+
+    this.router.navigate(['/graphs/past-due-jobs-detail'], {
+      queryParams: {
+        accountManager: selectedManager,
+        category
+      }
+    });
   }
 
   /**
@@ -616,7 +649,8 @@ export class PastDueGraphComponent implements OnInit, OnDestroy {
    * Refresh data
    */
   refreshData(): void {
-    this.loadPastDueData();
+    this.pastDueGraphService.clearCache();
+    this.loadPastDueData(true);
   }
 
   /**

@@ -7,7 +7,6 @@ import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { ReportService } from '../../../core/services/report.service';
 import { CommonService } from '../../../core/services/common.service';
-import { AuthService } from '../../../modules/auth/services/auth.service';
 import { AccountManager } from '../../../core/model/account-manager.model';
 import {
   AccMgrPerformanceReportResponseDto,
@@ -65,9 +64,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private reportService: ReportService,
-    private commonService: CommonService,
-    private route: ActivatedRoute,
-    private auth: AuthService
+    private commonService: CommonService
   ) {
     this.reportForm = this.fb.group({
       officeId: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(11)]]
@@ -349,6 +346,24 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     this.generateReport();
   }
 
+  getSelectedManagerLabel(): string {
+    const officeId = (this.reportForm.get('officeId')?.value || '').toString().trim();
+
+    if (!officeId) {
+      return 'Select Account Manager';
+    }
+
+    const selectedManager = this.accountManagers.find(manager =>
+      (manager.OFFID || manager.empId || '').toString().trim() === officeId
+    );
+
+    return (
+      selectedManager?.OFFNAME ||
+      selectedManager?.empName ||
+      officeId
+    ).toString();
+  }
+
   /**
    * Check if form field has error
    */
@@ -435,9 +450,45 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
    * Get active data for current section
    */
   getActiveData(): any[] {
+    return this.getDataForSection(this.activeSection);
+  }
+
+  hasAnySectionData(): boolean {
+    const sections = [
+      'completedNotReturned',
+      'returnedForProcessing',
+      'jobsScheduledToday',
+      'returnedWithIncompleteData',
+      'jobsConfirmedNext120Hours',
+      'pastDueUnscheduled',
+      'firstMonth',
+      'secondMonth',
+      'thirdMonth',
+      'fourthMonth',
+      'fifthMonth'
+    ];
+
+    return sections.some(section => this.getDataForSection(section).length > 0);
+  }
+
+  hasSectionData(section: string): boolean {
+    return this.getDataForSection(section).length > 0;
+  }
+
+  getSectionData(section: string): any[] {
+    const data = this.getDataForSection(section);
+
+    if (this.activeSection !== section || !this.sortColumn) {
+      return data;
+    }
+
+    return this.getSortedData(data);
+  }
+
+  private getDataForSection(section: string): any[] {
     if (!this.reportData) return [];
-    
-    switch (this.activeSection) {
+
+    switch (section) {
       case 'completedNotReturned':
         return this.reportData.CompletedNotReturned || this.reportData.completedNotReturned || [];
       case 'returnedForProcessing':
@@ -688,12 +739,15 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   }
 
   private getSortedActiveData(): any[] {
-    const activeData = this.getActiveData();
+    return this.getSortedData(this.getActiveData());
+  }
+
+  private getSortedData(data: any[]): any[] {
     if (!this.sortColumn) {
-      return activeData;
+      return data;
     }
 
-    const sorted = [...activeData];
+    const sorted = [...data];
     sorted.sort((a, b) => {
       const aValue = this.getColumnValue(a, this.sortColumn);
       const bValue = this.getColumnValue(b, this.sortColumn);
@@ -854,8 +908,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
             // Only managers can access this page
             if (!this.isManagerContext()) {
               console.log('Access denied: Only managers can access Account Manager Performance Reports');
-              this.hasPageAccess = false;
-              this.auth.logout();
+              this.denyPageAccess(this.getAccessDeniedMessage());
               return;
             }
 
@@ -880,8 +933,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
               // Only managers can access
               if (!this.isManagerContext()) {
                 console.log('Access denied: Only managers can access this report');
-                this.hasPageAccess = false;
-                this.auth.logout();
+                this.denyPageAccess(this.getAccessDeniedMessage());
                 return;
               }
               
@@ -890,16 +942,45 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
               this.loadAccountManagers();
             } else {
               this.errorMessage = 'Error retrieving employee status';
-              this.hasPageAccess = false;
-              this.auth.logout();
+              this.denyPageAccess('Access denied. Unable to verify your user session.');
             }
           }
         });
       }
     } else {
-      this.hasPageAccess = false;
-      this.auth.logout();
+      this.denyPageAccess('Access denied. Unable to verify your user session.');
     }
+  }
+
+  private isTechnicianContext(): boolean {
+    const status = (this.employeeStatus || this.userRole || '').trim().toLowerCase();
+    return status === 'technician' ||
+           status === 'techmanager' ||
+           status === 'tech manager' ||
+           status === 'tech' ||
+           status === 't' ||
+           status.includes('technician');
+  }
+
+  private getAccessDeniedMessage(): string {
+    if (this.isTechnicianContext()) {
+      return 'Access Denied: Technicians are not authorized to view this page.';
+    }
+
+    return 'Access Denied: You do not have permission to access Account Manager Performance Reports.';
+  }
+
+  private denyPageAccess(message: string): void {
+    this.hasPageAccess = false;
+    this.employeeStatusLoaded = false;
+    this.accountManagersLoaded = false;
+    this.isLoading = false;
+    this.isLoadingAccountManagers = false;
+    this.errorMessage = message;
+    this.reportData = null;
+    this.summaryData = null;
+    this.accountManagers = [];
+    this.reportForm.disable({ emitEvent: false });
   }
 
   /**

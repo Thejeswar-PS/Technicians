@@ -207,7 +207,13 @@ button i {
       border-radius: 10px;
       font-size: 0.95rem;
       background: #ffffff;
+      color: #1f2937;
+      font-weight: 500;
       transition: 0.2s ease;
+
+      &::placeholder {
+        color: #6b7280;
+      }
 
       &:focus {
         outline: none;
@@ -217,7 +223,7 @@ button i {
 
       &[readonly] {
         background: #f8fafc;
-        color: #6b7280;
+        color: #374151;
       }
     }
 

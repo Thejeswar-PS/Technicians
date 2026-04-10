@@ -7,6 +7,7 @@ import { GraphsRoutingModule } from './graphs-routing.module';
 import { TeamGridComponent } from './shared/team-grid/team-grid.component';
 import { AccountManagerGraphComponent } from '../reports/account-manager-graph/account-manager-graph.component';
 import { PastDueGraphComponent } from './past-due-graph/past-due-graph.component';
+import { PastDueJobsDetailComponent } from './past-due-jobs-detail/past-due-jobs-detail.component';
 import { CapFanUsageYearlyComponent } from './cap-fan-usage-yearly/cap-fan-usage-yearly.component';
 import { UnscheduledJobsGraphComponent } from './unscheduled-jobs-graph/unscheduled-jobs-graph.component';
 import { PartsPerformanceGraphComponent } from './parts-performance-graph/parts-performance-graph.component';
@@ -18,6 +19,7 @@ import { SharedModule } from '../../components/shared/shared.module';
     TeamGridComponent,
     AccountManagerGraphComponent,
     PastDueGraphComponent,
+    PastDueJobsDetailComponent,
     CapFanUsageYearlyComponent,
     UnscheduledJobsGraphComponent,
     PartsPerformanceGraphComponent

@@ -64,6 +64,10 @@ const routes: Routes = [
     component: StrippedUnitInfoComponent
   },
   {
+    path: 'stripped-unit-info/:rowIndex', 
+    component: StrippedUnitInfoComponent
+  },
+  {
     path: 'stripped-parts-inunit', 
     component: StrippedPartsInunitComponent
   },

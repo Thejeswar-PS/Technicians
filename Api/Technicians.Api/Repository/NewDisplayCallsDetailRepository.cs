@@ -10,6 +10,8 @@ namespace Technicians.Api.Repository
     {
         private readonly string _connectionString;
         private readonly ILogger<NewDisplayCallsDetailRepository> _logger;
+        private const int DefaultMaxResults = 10000; // Configurable default max
+        private const int AbsoluteMaxResults = 50000; // Hard limit to prevent system issues
 
         public NewDisplayCallsDetailRepository(IConfiguration configuration, ILogger<NewDisplayCallsDetailRepository> logger)
         {
@@ -24,8 +26,8 @@ namespace Technicians.Api.Repository
             
             try
             {
-                _logger.LogInformation("Starting NewDisplayCallsDetail query - DetailPage: '{DetailPage}', OffId: '{OffId}'", 
-                    request.DetailPage, request.OffId ?? "null");
+                _logger.LogInformation("Starting NewDisplayCallsDetail query - DetailPage: '{DetailPage}', OffId: '{OffId}', Page: {Page}, PageSize: {PageSize}, MaxResults: {MaxResults}", 
+                    request.DetailPage, request.OffId ?? "null", request.Page, request.PageSize, request.MaxResults);
 
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
@@ -59,8 +61,56 @@ namespace Technicians.Api.Repository
                         
                         _logger.LogDebug("First result set returned {Count} rows", resultList.Count);
                         
-                        // Limit rows to prevent Swagger / UI crash
-                        response.Data = resultList.Take(500);
+                        // Set total records count
+                        response.TotalRecords = resultList.Count;
+                        
+                        // Apply result limiting/pagination logic
+                        IEnumerable<dynamic> filteredData = resultList;
+                        
+                        // Determine max results to apply
+                        int maxResults = request.MaxResults ?? DefaultMaxResults;
+                        if (maxResults > AbsoluteMaxResults)
+                        {
+                            maxResults = AbsoluteMaxResults;
+                            _logger.LogWarning("MaxResults capped at {AbsoluteMaxResults} to prevent system issues", AbsoluteMaxResults);
+                        }
+                        
+                        // Apply pagination if requested
+                        if (request.Page.HasValue && request.Page > 0)
+                        {
+                            // Pagination mode
+                            int pageSize = request.PageSize;
+                            if (pageSize <= 0) pageSize = 100;
+                            if (pageSize > 1000) pageSize = 1000; // Cap page size
+                            
+                            int page = request.Page.Value;
+                            int totalPages = (int)Math.Ceiling((double)resultList.Count / pageSize);
+                            
+                            filteredData = resultList
+                                .Skip((page - 1) * pageSize)
+                                .Take(pageSize);
+                            
+                            response.Page = page;
+                            response.PageSize = pageSize;
+                            response.TotalPages = totalPages;
+                            
+                            _logger.LogDebug("Applied pagination: Page {Page}/{TotalPages}, PageSize: {PageSize}", page, totalPages, pageSize);
+                        }
+                        else
+                        {
+                            // Non-pagination mode - apply max results limit
+                            if (resultList.Count > maxResults)
+                            {
+                                filteredData = resultList.Take(maxResults);
+                                response.IsLimited = true;
+                                response.MaxResultsApplied = maxResults;
+                                
+                                _logger.LogWarning("Results limited to {MaxResults} out of {TotalRecords} total records to prevent performance issues", 
+                                    maxResults, resultList.Count);
+                            }
+                        }
+                        
+                        response.Data = filteredData.ToList();
                         
                         // Check for second result set (totals)
                         if (!multi.IsConsumed)
@@ -92,17 +142,18 @@ namespace Technicians.Api.Repository
                         // Return empty response instead of throwing
                         response.Data = new List<dynamic>();
                         response.Totals = null;
+                        response.TotalRecords = 0;
                     }
                 }
                 else
                 {
                     _logger.LogWarning("No result sets returned from stored procedure for DetailPage: '{DetailPage}'", request.DetailPage);
+                    response.TotalRecords = 0;
                 }
 
                 stopwatch.Stop();
-                _logger.LogInformation("NewDisplayCallsDetail query completed in {ElapsedMs}ms - DetailPage: '{DetailPage}', DataCount: {DataCount}, HasTotals: {HasTotals}", 
-                    stopwatch.ElapsedMilliseconds, request.DetailPage, 
-                    response.Data?.Count() ?? 0, response.Totals != null);
+                _logger.LogInformation("NewDisplayCallsDetail query completed in {ElapsedMs}ms - DetailPage: '{DetailPage}', TotalRecords: {TotalRecords}, ReturnedRecords: {ReturnedRecords}, HasTotals: {HasTotals}, IsLimited: {IsLimited}", 
+                    stopwatch.ElapsedMilliseconds, request.DetailPage, response.TotalRecords, response.Data?.Count() ?? 0, response.Totals != null, response.IsLimited);
 
                 return response;
             }

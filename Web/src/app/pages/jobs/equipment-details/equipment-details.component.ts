@@ -5,6 +5,7 @@ import { EquipmentDetail, UploadInfo, EquipmentDetailsParams, UploadResponse, Va
 import { EquipmentService } from 'src/app/core/services/equipment.service';
 import { JobNotesInfoService } from 'src/app/core/services/job-notes-info.service';
 import { JobService } from 'src/app/core/services/job.service';
+import { CommonService } from 'src/app/core/services/common.service';
 import { AuthService } from 'src/app/modules/auth';
 import { FileUploadService, EquipmentFileResponseDto } from 'src/app/core/services/file-upload.service';
 
@@ -50,8 +51,11 @@ export class EquipmentDetailsComponent implements OnInit {
   uploadExpenseVisible = true;   // Controlled by server logic
   uploadExpenseEnabled = true;
   uploadFilesVisible = true;      // Always visible like legacy  
-  enableExpenseVisible = true;   // Controlled by server logic
+  enableExpenseVisible = false;   // Controlled by server logic
   helpButtonVisible = false;      // Controlled by server logic
+  enablingExpenses = false;
+  canEnableExpenses = false;
+  private expenseUploadReenabled = false;
   
   // File upload modal state
   showFileUploadModal = false;
@@ -70,6 +74,7 @@ export class EquipmentDetailsComponent implements OnInit {
   userRole = '';
   currentUserId = '';
   currentUserName = ''; // Add current user's name property
+  employeeStatus = '';
   
   // Track uploads made in current session
   currentSessionUploads: Set<string> = new Set(); // Track upload types made in current session
@@ -80,6 +85,7 @@ export class EquipmentDetailsComponent implements OnInit {
     private equipmentService: EquipmentService,
     private jobNotesInfoService: JobNotesInfoService,
     private jobService: JobService,
+    private commonService: CommonService,
     private authService: AuthService,
     private toastr: ToastrService,
     private cdr: ChangeDetectorRef,
@@ -91,21 +97,32 @@ export class EquipmentDetailsComponent implements OnInit {
     this.loadUserInfo();
     this.loadRouteParams();
     this.loadData();
+    this.resolveEnableExpenseAccess();
   }
 
   private loadUserInfo(): void {
     // Get current user from AuthService
     const currentUser = this.authService.currentUserValue;
+    const storedUserData = this.getStoredUserData();
     
     console.log('🔍 Raw currentUser object:', currentUser);
     console.log('🔍 Available properties:', currentUser ? Object.keys(currentUser) : 'No user object');
     
     if (currentUser) {
-      this.userRole = 'Manager'; // You can map this from user roles if available
+      this.userRole = (
+        currentUser.role ||
+        currentUser.userRole ||
+        currentUser.empStatus ||
+        storedUserData?.role ||
+        storedUserData?.userRole ||
+        storedUserData?.empStatus ||
+        ''
+      ).toString().trim();
       this.currentUserId = currentUser.id?.toString() || currentUser.windowsID?.toString() || '1';
       
       // Get user's display name - prefer fullname, then username, then firstname + lastname
       this.currentUserName = this.getCurrentUserDisplayName(currentUser);
+      this.canEnableExpenses = this.isManagerUser(storedUserData, currentUser);
       
       console.log('👤 User info loaded:', { 
         userRole: this.userRole, 
@@ -115,11 +132,104 @@ export class EquipmentDetailsComponent implements OnInit {
       });
     } else {
       // Fallback for when no user is authenticated
-      this.userRole = 'Manager';
+      this.userRole = (
+        storedUserData?.role ||
+        storedUserData?.userRole ||
+        storedUserData?.empStatus ||
+        ''
+      ).toString().trim();
       this.currentUserId = '1';
       this.currentUserName = 'System User';
+      this.canEnableExpenses = this.isManagerUser(storedUserData);
       console.log('👤 No authenticated user found, using defaults');
     }
+  }
+
+  private getStoredUserData(): any {
+    try {
+      const userDataStr = localStorage.getItem('userData');
+      return userDataStr ? JSON.parse(userDataStr) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private isManagerUser(...sources: any[]): boolean {
+    const values = sources
+      .filter(source => !!source)
+      .flatMap(source => [
+        source?.empStatus,
+        source?.EmpStatus,
+        source?.employeeStatus,
+        source?.EmployeeStatus,
+        source?.role,
+        source?.userRole
+      ])
+      .map(value => (value || '').toString().trim().toUpperCase())
+      .filter(value => !!value);
+
+    return values.some(value => value === 'M' || value === 'MANAGER');
+  }
+
+  private extractEmployeeStatus(response: any): string {
+    if (!response) {
+      return '';
+    }
+
+    if (Array.isArray(response)) {
+      const first = response[0];
+      return (first?.status || first?.Status || '').toString().trim();
+    }
+
+    return (response.status || response.Status || '').toString().trim();
+  }
+
+  private getResolvedWindowsId(): string {
+    const currentUser = this.authService.currentUserValue;
+    const storedUserData = this.getStoredUserData();
+
+    return (
+      currentUser?.windowsID ||
+      currentUser?.windowsId ||
+      storedUserData?.windowsID ||
+      storedUserData?.windowsId ||
+      storedUserData?.empName ||
+      ''
+    ).toString().trim();
+  }
+
+  private resolveEnableExpenseAccess(): void {
+    const windowsID = this.getResolvedWindowsId();
+
+    if (!windowsID) {
+      this.enableExpenseVisible = this.canEnableExpenses;
+      return;
+    }
+
+    this.commonService.getEmployeeStatusForJobList(windowsID).subscribe({
+      next: async (response: any) => {
+        const resolvedStatus = this.extractEmployeeStatus(response);
+        this.employeeStatus = resolvedStatus;
+
+        if (resolvedStatus) {
+          this.canEnableExpenses = this.isManagerUser({ status: resolvedStatus, empStatus: resolvedStatus });
+        }
+
+        this.enableExpenseVisible = this.canEnableExpenses;
+
+        if (this.params.callNbr) {
+          await this.setupButtonStates();
+        }
+      },
+      error: async (error: any) => {
+        console.error('Error resolving employee status for Enable Expenses:', error);
+        this.enableExpenseVisible = this.canEnableExpenses;
+
+        if (this.params.callNbr) {
+          await this.setupButtonStates();
+        }
+      }
+    });
   }
 
   // Helper method to get the current user's display name
@@ -226,6 +336,15 @@ export class EquipmentDetailsComponent implements OnInit {
   // Final comprehensive validation to ensure button stays hidden
   private performFinalExpenseButtonValidation(): void {
     console.log('🔒 PERFORMING FINAL EXPENSE BUTTON VALIDATION');
+
+    if (!this.canEnableExpenses) {
+      this.enableExpenseVisible = false;
+    }
+
+    if (this.expenseUploadReenabled) {
+      console.log('ℹ️ Expense upload was re-enabled in this session. Skipping final hide validation.');
+      return;
+    }
     
     const localStorageCheck = this.isExpenseUploadedLocally();
     
@@ -334,6 +453,10 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   private async setupButtonStates(): Promise<void> {
+    if (!this.canEnableExpenses) {
+      this.enableExpenseVisible = false;
+    }
+
     try {
       console.log('=== SETTING UP BUTTON STATES ===');
       const buttonStates = await this.equipmentService.getButtonStates(this.params.callNbr, this.params.techId).toPromise();
@@ -343,13 +466,18 @@ export class EquipmentDetailsComponent implements OnInit {
         this.uploadJobEnabled = buttonStates.uploadJobEnabled;
         this.uploadExpenseVisible = buttonStates.uploadExpenseVisible;
         this.uploadExpenseEnabled = buttonStates.uploadExpenseEnabled;
-        this.enableExpenseVisible = buttonStates.enableExpenseVisible;
+        this.enableExpenseVisible = this.canEnableExpenses && buttonStates.enableExpenseVisible;
         
         console.log('Button states applied:', {
           uploadExpenseVisible: this.uploadExpenseVisible,
           uploadExpenseEnabled: this.uploadExpenseEnabled,
           uploadJobEnabled: this.uploadJobEnabled
         });
+
+        if (this.expenseUploadReenabled && this.uploadExpenseVisible) {
+          console.log('ℹ️ Server has re-enabled expense uploads. Preserving server button state.');
+          return;
+        }
         
         // Enhanced validation: check upload info to verify expense upload status
         console.log('Checking upload info for expense upload validation...');
@@ -399,6 +527,11 @@ export class EquipmentDetailsComponent implements OnInit {
       }
     } catch (error: any) {
       console.error('Error setting up button states:', error);
+      if (this.canEnableExpenses) {
+        this.enableExpenseVisible = true;
+      } else {
+        this.enableExpenseVisible = false;
+      }
     }
     console.log('=== BUTTON STATES SETUP COMPLETE ===');
   }
@@ -1064,6 +1197,7 @@ export class EquipmentDetailsComponent implements OnInit {
         // Handle response - check success property first
         if (result?.success) {
           this.setExpenseUploadProgress(100);
+          this.expenseUploadReenabled = false;
           
           // Track this upload in current session
           this.currentSessionUploads.add('Expense');
@@ -1126,7 +1260,14 @@ export class EquipmentDetailsComponent implements OnInit {
   }
 
   async enableExpenses(): Promise<void> {
+    if (!this.canEnableExpenses) {
+      this.errorMessage = 'Access denied. Only managers can enable expenses.';
+      this.toastr.error(this.errorMessage);
+      return;
+    }
+
     this.loading = true;
+    this.enablingExpenses = true;
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -1137,9 +1278,17 @@ export class EquipmentDetailsComponent implements OnInit {
 
       // Handle successful response - check if success property exists and is true, or if response is truthy without success property
       if ((result && result.success) || (result && !result.hasOwnProperty('success'))) {
+        this.expenseUploadReenabled = true;
+        this.currentSessionUploads.delete('Expense');
+        this.clearExpenseUploadStatus();
+        this.uploadInfo = (this.uploadInfo || []).filter(info => !(info.Type || '').toString().toLowerCase().includes('expense'));
+        this.uploadExpenseVisible = true;
+        this.uploadExpenseEnabled = true;
+        this.enableExpenseVisible = false;
         this.successMessage = result?.message || 'Expenses enabled successfully';
         this.toastr.success('Expenses enabled successfully');
-        this.setupButtonStates(); // Refresh button states
+        await this.refreshUploadInfo();
+        await this.setupButtonStates();
       } else {
         // API returned 200 but with success: false
         this.errorMessage = result?.message || 'Failed to enable expenses';
@@ -1150,6 +1299,7 @@ export class EquipmentDetailsComponent implements OnInit {
       this.errorMessage = error.message || 'Failed to enable expenses';
       this.toastr.error(this.errorMessage);
     } finally {
+      this.enablingExpenses = false;
       this.loading = false;
     }
   }
