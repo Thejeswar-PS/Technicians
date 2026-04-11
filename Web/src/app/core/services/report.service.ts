@@ -2064,9 +2064,8 @@ export class ReportService {
     );
   }
   
-  getTestEngineerJobsEngineers(department: string = 'T'): Observable<EngineersResponse> {
-    // Only add department parameter if it's not the default to match backend expectations
-    const params = department !== 'T' ? new HttpParams().set('department', department) : new HttpParams();
+  getTestEngineerJobsEngineers(department: string = 'Testing'): Observable<EngineersResponse> {
+    const params = department ? new HttpParams().set('department', department) : new HttpParams();
 
     return this.http.get<EngineersResponse>(
       `${this.API}/TestEngineerJobs/engineers`,
