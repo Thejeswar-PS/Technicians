@@ -11,6 +11,7 @@ namespace Technicians.Api.Models
         public int EmpNo { get; set; }
         public string EmpID { get; set; } = string.Empty;
         public string EmpName { get; set; } = string.Empty;
+        public string Department { get; set; } = string.Empty;  
         public string EmpStatus { get; set; } = string.Empty;
         public string WindowsID { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -45,6 +46,10 @@ namespace Technicians.Api.Models
         public string EmpName { get; set; } = string.Empty;
         
         [Required]
+        [StringLength(100, ErrorMessage = "Department cannot exceed 100 characters")]  
+        public string Department { get; set; } = string.Empty;
+        
+        [Required]
         [StringLength(50, ErrorMessage = "EmpStatus cannot exceed 50 characters")]
         public string EmpStatus { get; set; } = string.Empty;
         
@@ -74,6 +79,10 @@ namespace Technicians.Api.Models
         [Required]
         [StringLength(100, ErrorMessage = "EmpName cannot exceed 100 characters")]
         public string EmpName { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(100, ErrorMessage = "Department cannot exceed 100 characters")]  
+        public string Department { get; set; } = string.Empty;
         
         [Required]
         [StringLength(50, ErrorMessage = "EmpStatus cannot exceed 50 characters")]

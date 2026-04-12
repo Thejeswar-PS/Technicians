@@ -38,7 +38,7 @@ namespace Technicians.Api.Repository
         private static readonly HashSet<string> EmployeeSortColumns =
             new(StringComparer.OrdinalIgnoreCase)
             {
-                "EmpNo", "EmpID", "EmpName", "EmpStatus", "WindowsID", "Email", "Country"
+                "EmpNo", "EmpID", "EmpName", "Department", "EmpStatus", "WindowsID", "Email", "Country"  // ADDED: Department to sort columns
             };
 
         private static readonly HashSet<string> OfficeSortColumns =
@@ -71,6 +71,15 @@ namespace Technicians.Api.Repository
         private static string SafeOfficeSort(string sortBy) =>
             OfficeSortColumns.Contains(sortBy) ? sortBy : "State";
 
+        /// <summary>
+        /// Gets country setting from configuration - matches legacy ConfigurationManager.AppSettings["Canada"]
+        /// </summary>
+        private string GetCountrySetting()
+        {
+            var canadaSetting = _configuration.GetValue<string>("Canada");
+            return canadaSetting?.Equals("Yes", StringComparison.OrdinalIgnoreCase) == true ? "CANADA" : "USA";
+        }
+
         #endregion
 
         #region DCG Employees
@@ -84,7 +93,7 @@ namespace Technicians.Api.Repository
                 using var connection = new SqlConnection(_connectionString);
 
                 var sql = $@"
-                    SELECT EmpNo, EmpID, EmpName, EmpStatus, WindowsID, Email, Country
+                    SELECT EmpNo, EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country
                     FROM DCG_Employees
                     ORDER BY {safeSort}";
 
@@ -115,7 +124,7 @@ namespace Technicians.Api.Repository
                 using var connection = new SqlConnection(_connectionString);
 
                 var result = await connection.QueryFirstOrDefaultAsync<DCGEmployeeDto>(
-                    @"SELECT EmpNo, EmpID, EmpName, EmpStatus, WindowsID, Email, Country
+                    @"SELECT EmpNo, EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country
                       FROM DCG_Employees
                       WHERE EmpNo = @EmpNo",
                     new { EmpNo = empNo });
@@ -137,41 +146,40 @@ namespace Technicians.Api.Repository
             {
                 using var connection = new SqlConnection(_connectionString);
 
-                var country = _configuration.GetValue<string>("Canada") == "Yes"
-                    ? "CANADA"
-                    : "USA";
+                var country = GetCountrySetting();  // UPDATED: Use configuration setting
 
                 var newEmpNo = await connection.QuerySingleAsync<int>(
                     @"INSERT INTO DCG_Employees
-                      (EmpID, EmpName, EmpStatus, WindowsID, Email, Country)
-                      VALUES (@EmpID, @EmpName, @EmpStatus, @WindowsID, @Email, @Country);
+                      (EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country)
+                      VALUES (@EmpID, @EmpName, @Department, @EmpStatus, @WindowsID, @Email, @Country);
                       SELECT CAST(SCOPE_IDENTITY() AS INT);",
                     new
                     {
                         employee.EmpID,
                         employee.EmpName,
+                        employee.Department,  // ADDED: Department field
                         employee.EmpStatus,
                         employee.WindowsID,
                         employee.Email,
                         Country = country
                     });
 
-                _logger.LogInformation("Created DCG employee - EmpID: {EmpID}, EmpName: {EmpName}, NewEmpNo: {NewEmpNo}", 
-                    employee.EmpID, employee.EmpName, newEmpNo);
+                _logger.LogInformation("Created DCG employee - EmpID: {EmpID}, EmpName: {EmpName}, Department: {Department}, NewEmpNo: {NewEmpNo}", 
+                    employee.EmpID, employee.EmpName, employee.Department, newEmpNo);
                 return newEmpNo;
             }
             catch (SqlException sqlEx)
             {
-                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "CreateDCGEmployeeAsync", $"{employee.EmpID}|{employee.EmpName}");
-                _logger.LogError(sqlEx, "SQL error creating DCG employee - EmpID: {EmpID}, EmpName: {EmpName}", 
-                    employee.EmpID, employee.EmpName);
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "CreateDCGEmployeeAsync", $"{employee.EmpID}|{employee.EmpName}|{employee.Department}");
+                _logger.LogError(sqlEx, "SQL error creating DCG employee - EmpID: {EmpID}, EmpName: {EmpName}, Department: {Department}", 
+                    employee.EmpID, employee.EmpName, employee.Department);
                 throw new Exception($"Database error creating DCG employee: {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
-                await _errorLog.LogErrorAsync(LoggerName, ex, "CreateDCGEmployeeAsync", $"{employee.EmpID}|{employee.EmpName}");
-                _logger.LogError(ex, "Error creating DCG employee - EmpID: {EmpID}, EmpName: {EmpName}", 
-                    employee.EmpID, employee.EmpName);
+                await _errorLog.LogErrorAsync(LoggerName, ex, "CreateDCGEmployeeAsync", $"{employee.EmpID}|{employee.EmpName}|{employee.Department}");
+                _logger.LogError(ex, "Error creating DCG employee - EmpID: {EmpID}, EmpName: {EmpName}, Department: {Department}", 
+                    employee.EmpID, employee.EmpName, employee.Department);
                 throw;
             }
         }
@@ -186,6 +194,7 @@ namespace Technicians.Api.Repository
                     @"UPDATE DCG_Employees
                       SET EmpID=@EmpID,
                           EmpName=@EmpName,
+                          Department=@Department,
                           EmpStatus=@EmpStatus,
                           WindowsID=@WindowsID,
                           Email=@Email
@@ -193,22 +202,22 @@ namespace Technicians.Api.Repository
                     employee);
 
                 var success = rows > 0;
-                _logger.LogInformation("Updated DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}, Success: {Success}", 
-                    employee.EmpNo, employee.EmpID, success);
+                _logger.LogInformation("Updated DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}, Department: {Department}, Success: {Success}", 
+                    employee.EmpNo, employee.EmpID, employee.Department, success);
                 return success;
             }
             catch (SqlException sqlEx)
             {
-                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "UpdateDCGEmployeeAsync", $"{employee.EmpNo}|{employee.EmpID}");
-                _logger.LogError(sqlEx, "SQL error updating DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}", 
-                    employee.EmpNo, employee.EmpID);
+                await _errorLog.LogErrorAsync(LoggerName, sqlEx, "UpdateDCGEmployeeAsync", $"{employee.EmpNo}|{employee.EmpID}|{employee.Department}");
+                _logger.LogError(sqlEx, "SQL error updating DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}, Department: {Department}", 
+                    employee.EmpNo, employee.EmpID, employee.Department);
                 throw new Exception($"Database error updating DCG employee: {sqlEx.Message}", sqlEx);
             }
             catch (Exception ex)
             {
-                await _errorLog.LogErrorAsync(LoggerName, ex, "UpdateDCGEmployeeAsync", $"{employee.EmpNo}|{employee.EmpID}");
-                _logger.LogError(ex, "Error updating DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}", 
-                    employee.EmpNo, employee.EmpID);
+                await _errorLog.LogErrorAsync(LoggerName, ex, "UpdateDCGEmployeeAsync", $"{employee.EmpNo}|{employee.EmpID}|{employee.Department}");
+                _logger.LogError(ex, "Error updating DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}, Department: {Department}", 
+                    employee.EmpNo, employee.EmpID, employee.Department);
                 throw;
             }
         }
