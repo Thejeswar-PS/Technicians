@@ -665,50 +665,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
 
   // Status badge color methods
   getStatusBadgeClass(item: any, sectionType?: string): string {
-    const status = this.getStatusText(item);
-    const statusLower = status.toLowerCase();
-    
-    // Handle different status types with appropriate colors
-    if (statusLower.includes('opn') || statusLower === 'open') {
-      // OPN (Open) - Green normally, Red if in critical sections
-      const isCriticalSection = sectionType === 'completedNotReturned' || 
-                               sectionType === 'returnedForProcessing' || 
-                               sectionType === 'pastDueUnscheduled';
-      return isCriticalSection ? 'bg-danger' : 'bg-success';
-    }
-    
-    if (status === 'Bill After PM' || statusLower.includes('blb') || status === 'Could be billed') {
-      // BLB (Bill After PM) - Orange/Warning color
-      return 'bg-warning text-dark';
-    }
-    
-    if (statusLower.includes('fcd') || statusLower === 'forced close') {
-      // FCD (Forced Close) - Purple color
-      return 'bg-primary';
-    }
-    
-    if (statusLower.includes('complete') || statusLower.includes('confirmed')) {
-      // Completed/Confirmed statuses - Green
-      return 'bg-success';
-    }
-    
-    if (statusLower.includes('pending') || statusLower.includes('processing')) {
-      // Pending/Processing statuses - Blue
-      return 'bg-info';
-    }
-    
-    if (statusLower.includes('returned') || statusLower.includes('incomplete')) {
-      // Returned/Incomplete statuses - Red
-      return 'bg-danger';
-    }
-
-    if (statusLower.includes('mis')) {
-      // MIS - Teal
-      return 'bg-info text-dark';
-    }
-    
-    // Default status color
-    return 'bg-secondary';
+    return 'bg-light text-dark';
   }
 
   sortData(column: string): void {
