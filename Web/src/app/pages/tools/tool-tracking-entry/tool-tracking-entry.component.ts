@@ -407,6 +407,10 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   onSave(): void {
+    if (this.isReadOnlyForTechnician) {
+      return;
+    }
+
     if (this.modifiedRows.size === 0) {
       alert('No changes to save');
       return;
@@ -513,6 +517,11 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   // File attachment methods - Database BLOB storage (matching legacy)
   onFileSelected(event: any): void {
+    if (this.isReadOnlyForTechnician) {
+      event.target.value = '';
+      return;
+    }
+
     const files = event.target.files;
     if (files && files.length > 0) {
       this.selectedFiles = Array.from(files);
@@ -597,6 +606,10 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   deleteFileAttachment(fileName: string): void {
+    if (this.isReadOnlyForTechnician) {
+      return;
+    }
+
     if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
       // Pass user context for role-based filtering
       this.toolTrackingService.deleteToolsTrackingFile(this.techId, fileName, this.userContext.userEmpID, this.userContext.windowsID).subscribe({
@@ -625,6 +638,10 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   async uploadFiles(): Promise<void> {
+    if (this.isReadOnlyForTechnician) {
+      return;
+    }
+
     if (!this.techId || this.techId === 'All') {
       this.error = 'Please select a technician first';
       return;
@@ -700,6 +717,10 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   removeFile(index: number): void {
+    if (this.isReadOnlyForTechnician) {
+      return;
+    }
+
     if (confirm('Are you sure you want to remove this file from upload?')) {
       this.selectedFiles.splice(index, 1);
     }
@@ -722,6 +743,11 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   updateReceived(item: TechToolsTrackingDto, event: any, index: number): void {
+    if (this.isReadOnlyForTechnician) {
+      event.target.checked = this.isReceivedTrue(item.received);
+      return;
+    }
+
     // Convert checkbox boolean to string as expected by backend
     const isChecked = event.target.checked;
     item.received = isChecked ? 'true' : 'false';
@@ -913,6 +939,10 @@ export class ToolTrackingEntryComponent implements OnInit {
 
   // Bulk editing methods
   onFieldChange(index: number, field: string, value: any): void {
+    if (this.isReadOnlyForTechnician) {
+      return;
+    }
+
     // Update the field value
     (this.trackingData[index] as any)[field] = value;
     
@@ -927,6 +957,10 @@ export class ToolTrackingEntryComponent implements OnInit {
   get pagedTrackingData(): TechToolsTrackingDto[] {
     const startIndex = (this.trackingCurrentPage - 1) * this.trackingPageSize;
     return this.trackingData.slice(startIndex, startIndex + this.trackingPageSize);
+  }
+
+  get isReadOnlyForTechnician(): boolean {
+    return this.isTechnicianRestricted;
   }
 
   get pagedDrillDownEntries(): ToolsCalendarTrackingDto[] {
