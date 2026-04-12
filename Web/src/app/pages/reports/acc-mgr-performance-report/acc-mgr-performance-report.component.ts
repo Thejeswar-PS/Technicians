@@ -574,12 +574,6 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       statusRaw === 'Could be billed';
 
     const isUnscheduled = this.isUnscheduledSection(sectionType);
-    const isCritical = this.isCriticalSection(sectionType);
-    const isTodaySection = this.isTodaySection(sectionType);
-    const isReturnedSection = this.isReturnedSection(sectionType);
-    const isExpiredSection = this.isExpiredSection(sectionType, item);
-    const quotedAmount = this.getQuotedAmount(item);
-    const currentAge = this.getCurrentAge(item);
 
     if (isUnscheduled) {
       // Legacy: only highlight "Could be billed" in Unscheduled sections
@@ -587,20 +581,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     }
 
     if (isBillAfterPm) {
-      return isReturnedSection ? 'bill-after-pm-critical' : 'bill-after-pm-warning';
-    }
-
-    const shouldHighlightAmount = isExpiredSection
-      ? currentAge > 30 && quotedAmount > 0
-      : quotedAmount > 0;
-
-    if (shouldHighlightAmount) {
-      if (isCritical) {
-        return 'critical-with-amount';
-      }
-      if (isTodaySection) {
-        return 'today-with-amount';
-      }
+      return 'bill-after-pm-warning';
     }
 
     return '';
