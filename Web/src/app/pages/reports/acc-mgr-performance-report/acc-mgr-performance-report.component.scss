@@ -229,7 +229,7 @@
         transition: background-color 0.18s ease;
 
         &:nth-child(even):not(.bill-after-pm-critical):not(.critical-with-amount):not(.today-with-amount):not(.bill-after-pm-warning):not(.unscheduled-with-amount) {
-          background: #f8fbff;
+          background: #dde9f8;
         }
 
         &:hover:not(.bill-after-pm-critical):not(.critical-with-amount):not(.today-with-amount) {
@@ -247,6 +247,13 @@
         word-break: normal;
         overflow-wrap: normal;
         line-height: 1.1;
+
+        &.wrap-text {
+          white-space: normal;
+          word-break: break-word;
+          overflow-wrap: break-word;
+          line-height: 1.4;
+        }
       }
     }
 

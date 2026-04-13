@@ -174,7 +174,7 @@
                   [ngClass]="getRowColorClass(item, 'completedNotReturned')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td>
                   <span class="badge" 
                         [ngClass]="getStatusBadgeClass(item, 'completedNotReturned')"
@@ -185,7 +185,7 @@
                 <td>{{ item.techName }}</td>
                 <td>{{ formatDate(item.scheduledEnd) }}</td>
                 <td [class.fw-bold]="shouldBoldAge(item)">{{ item.changeAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
                 <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
@@ -305,7 +305,7 @@
                   [ngClass]="getRowColorClass(item, 'returnedForProcessing')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td>
                   <span class="badge" 
                         [ngClass]="getStatusBadgeClass(item, 'returnedForProcessing')"
@@ -317,7 +317,7 @@
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ formatDate(item.returned || item.responseDate) }}</td>
                 <td [class.fw-bold]="shouldBoldAge(item)">{{ item.changeAge1 ?? item.changeAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
                 <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
@@ -437,13 +437,13 @@
                   [ngClass]="getRowColorClass(item, 'jobsScheduledToday')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'jobsScheduledToday')">{{ getStatusText(item) }}</span></td>
                 <td>{{ item.techName }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ formatDate(item.scheduledEnd) }}</td>
                 <td>{{ item.changeAge1 ?? item.changeAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
                 <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
@@ -554,7 +554,7 @@
                   [ngClass]="getRowColorClass(item, 'returnedWithIncompleteData')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td>
                   <span class="badge" 
                         [ngClass]="getStatusBadgeClass(item, 'returnedWithIncompleteData')"
@@ -565,7 +565,7 @@
                 <td>{{ item.techName }}</td>
                 <td>{{ formatDate(item.responseDate) }}</td>
                 <td [class.fw-bold]="shouldBoldAge(item)">{{ item.changeAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
                 <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
@@ -676,12 +676,12 @@
                   [ngClass]="getRowColorClass(item, 'jobsConfirmedNext120Hours')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'jobsConfirmedNext120Hours')">{{ getStatusText(item) }}</span></td>
                 <td>{{ item.techName }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ item.changeAge1 ?? item.changeAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
                 <td>{{ getContractNumber(item) }}</td>
                 <td [class.fw-bold]="shouldBoldAmount(item)" [class.text-primary]="shouldBoldAmount(item)">{{ formatCurrency(getQuotedAmount(item)) }}</td>
               </tr>
@@ -791,14 +791,14 @@
               <tr *ngFor="let item of getSectionData('pastDueUnscheduled')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'pastDueUnscheduled')">{{ item.jobStatus }}</span></td>
-                <td>{{ item.siteContact }}</td>
+                <td class="wrap-text">{{ item.siteContact }}</td>
                 <td>{{ item.city }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ item.changeAge }}</td>
                 <td>{{ item.origAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
               </tr>
             </tbody>
           </table>
@@ -907,14 +907,14 @@
                   [ngClass]="getRowColorClass(item, 'firstMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'firstMonth')">{{ item.jobStatus }}</span></td>
-                <td>{{ item.siteContact }}</td>
+                <td class="wrap-text">{{ item.siteContact }}</td>
                 <td>{{ item.city }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ item.changeAge }}</td>
                 <td>{{ item.origAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
               </tr>
             </tbody>
           </table>
@@ -1022,14 +1022,14 @@
               <tr *ngFor="let item of getSectionData('secondMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'secondMonth')">{{ item.jobStatus }}</span></td>
-                <td>{{ item.siteContact }}</td>
+                <td class="wrap-text">{{ item.siteContact }}</td>
                 <td>{{ item.city }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ item.changeAge }}</td>
                 <td>{{ item.origAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
               </tr>
             </tbody>
           </table>
@@ -1137,14 +1137,14 @@
               <tr *ngFor="let item of getSectionData('thirdMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'thirdMonth')">{{ item.jobStatus }}</span></td>
-                <td>{{ item.siteContact }}</td>
+                <td class="wrap-text">{{ item.siteContact }}</td>
                 <td>{{ item.city }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ item.changeAge }}</td>
                 <td>{{ item.origAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
               </tr>
             </tbody>
           </table>
@@ -1252,14 +1252,14 @@
               <tr *ngFor="let item of getSectionData('fourthMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'fourthMonth')">{{ item.jobStatus }}</span></td>
-                <td>{{ item.siteContact }}</td>
+                <td class="wrap-text">{{ item.siteContact }}</td>
                 <td>{{ item.city }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ item.changeAge }}</td>
                 <td>{{ item.origAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
               </tr>
             </tbody>
           </table>
@@ -1367,14 +1367,14 @@
               <tr *ngFor="let item of getSectionData('fifthMonth')">
                 <td class="fw-bold">{{ item.callNbr }}</td>
                 <td>{{ item.custNmbr }}</td>
-                <td>{{ item.custName }}</td>
+                <td class="wrap-text">{{ item.custName }}</td>
                 <td><span class="badge" [ngClass]="getStatusBadgeClass(item, 'fifthMonth')">{{ item.jobStatus }}</span></td>
-                <td>{{ item.siteContact }}</td>
+                <td class="wrap-text">{{ item.siteContact }}</td>
                 <td>{{ item.city }}</td>
                 <td>{{ formatDate(item.scheduledStart) }}</td>
                 <td>{{ item.changeAge }}</td>
                 <td>{{ item.origAge }}</td>
-                <td>{{ item.description }}</td>
+                <td class="wrap-text">{{ item.description }}</td>
               </tr>
             </tbody>
           </table>
