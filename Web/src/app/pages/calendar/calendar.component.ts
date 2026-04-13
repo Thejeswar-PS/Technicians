@@ -94,6 +94,8 @@ employeeStatus: string = '';
       initialView: 'dayGridMonth',
       plugins: [dayGridPlugin],
       events: [],
+      height: 'auto',
+      contentHeight: 'auto',
       displayEventTime : false,
       select: function(info: any) {
         //alert('selected ' + info.startStr + ' to ' + info.endStr);
