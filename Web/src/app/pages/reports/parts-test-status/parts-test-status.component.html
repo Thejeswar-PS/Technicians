@@ -13,14 +13,14 @@
 
   <div class="card shadow-sm main-card">
 
-    <div *ngIf="!isLoading && !hasPageAccess" class="card-body py-5 text-center">
+    <div *ngIf="!isCheckingPageAccess && !isLoading && !hasPageAccess" class="card-body py-5 text-center">
       <div class="alert alert-danger d-inline-flex align-items-center mb-0" role="alert">
         <i class="bi bi-shield-lock-fill me-2"></i>
         <span>Access Denied: Technicians are not authorized to view this page.</span>
       </div>
     </div>
 
-    <div class="card-body" *ngIf="!isLoading && hasPageAccess">
+    <div class="card-body" *ngIf="!isCheckingPageAccess && !isLoading && hasPageAccess">
       <!-- Header with New Unit Button -->
       <div class="d-flex justify-content-end align-items-center mb-3">
         <button type="button" class="btn btn-new" (click)="addNewUnit()">+ New Unit</button>

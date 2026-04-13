@@ -444,7 +444,7 @@ namespace Technicians.Api.Repository
                 await connection.OpenAsync();
 
                 var parameters = new DynamicParameters();
-                parameters.Add("@Department", department, DbType.String, size: 2);
+                parameters.Add("@Department", department, DbType.String, size: 50); // ? Fixed: Changed from 2 to 50
 
                 var employees = await connection.QueryAsync<EmployeeDto>(
                     "GetEmployeeNamesByDept", 
@@ -796,6 +796,98 @@ namespace Technicians.Api.Repository
                 throw new Exception($"Error getting table stats: {ex.Message}", ex);
             }
         }
+
+        /// <summary>
+        /// Debug method to check DCG_Employees table data and stored procedure behavior
+        /// </summary>
+        //public async Task<object> DebugEmployeeDataAsync(string department)
+        //{
+        //    try
+        //    {
+        //        using var connection = new SqlConnection(_connectionString);
+        //        await connection.OpenAsync();
+
+        //        var storedProcResult = new List<object>();
+        //        var rawTableData = new List<object>();
+        //        var executedQueries = new List<string>();
+        //        object tableStats = new { };
+        //        var availableDepartments = new List<object>();
+
+        //        // 1. Test the stored procedure directly
+        //        try
+        //        {
+        //            var spParameters = new DynamicParameters();
+        //            spParameters.Add("@Department", department, DbType.String, size: 50);
+
+        //            var spResult = await connection.QueryAsync<dynamic>(
+        //                "GetEmployeeNamesByDept", 
+        //                spParameters, 
+        //                commandType: CommandType.StoredProcedure);
+
+        //            storedProcResult = spResult.Cast<object>().ToList();
+        //        }
+        //        catch (Exception spEx)
+        //        {
+        //            storedProcResult = new List<object> { $"SP Error: {spEx.Message}" };
+        //        }
+
+        //        // 2. Check raw table data for Assembly
+        //        if (department == "Assembly")
+        //        {
+        //            // Check what the SP should return for Assembly
+        //            var assemblyQuery = @"
+        //                SELECT rtrim(EmpID) as EmpID, rtrim(EmpName) as EmpName, rtrim(EMail) as Email, RTRIM(UPPER(WindowsID)) AS WindowsID  
+        //                FROM dbo.DCG_Employees 
+        //                WHERE Department like @Department + '%' and EmpStatus='P'";
+                    
+        //            executedQueries.Add(assemblyQuery);
+                    
+        //            var assemblyResult = await connection.QueryAsync<dynamic>(assemblyQuery, new { Department = department });
+        //            rawTableData = assemblyResult.Cast<object>().ToList();
+        //        }
+
+        //        // 3. Get table statistics
+        //        var statsQuery = @"
+        //            SELECT 
+        //                COUNT(*) as TotalEmployees,
+        //                COUNT(CASE WHEN EmpStatus = 'P' THEN 1 END) as ActiveEmployees,
+        //                COUNT(CASE WHEN Department LIKE 'Assembly%' THEN 1 END) as AssemblyDept,
+        //                COUNT(CASE WHEN Department LIKE 'Assembly%' AND EmpStatus = 'P' THEN 1 END) as ActiveAssemblyEmployees
+        //            FROM dbo.DCG_Employees";
+                
+        //        executedQueries.Add(statsQuery);
+                
+        //        var stats = await connection.QueryFirstOrDefaultAsync<dynamic>(statsQuery);
+        //        tableStats = stats ?? new { };
+
+        //        // 4. Get sample departments to see what's available
+        //        var deptQuery = "SELECT DISTINCT Department, COUNT(*) as Count FROM dbo.DCG_Employees GROUP BY Department ORDER BY Department";
+        //        executedQueries.Add(deptQuery);
+                
+        //        var departments = await connection.QueryAsync<dynamic>(deptQuery);
+        //        availableDepartments = departments.Cast<object>().ToList();
+
+        //        // Return single anonymous type
+        //        return new
+        //        {
+        //            InputDepartment = department,
+        //            StoredProcResult = storedProcResult,
+        //            RawTableData = rawTableData,
+        //            TableStats = tableStats,
+        //            AvailableDepartments = availableDepartments,
+        //            ExecutedQueries = executedQueries
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new
+        //        {
+        //            InputDepartment = department,
+        //            Error = ex.Message,
+        //            StackTrace = ex.StackTrace
+        //        };
+        //    }
+        //}
 
         /// <summary>
         /// Gets current Windows user ID - equivalent to legacy da.getUID() / LP.getUID()

@@ -179,12 +179,12 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   }
 
   private loadEngineers(): void {
-    this.reportService.getTestEngineerJobsEngineers()
+    this.reportService.getEmployeeNamesByDept('Testing')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: any) => {
           if (response.success) {
-            this.engineersList = response.engineers;
+            this.engineersList = response.employees || [];
           } else {
             this.errorMessage = 'Failed to load engineers';
           }

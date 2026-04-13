@@ -4,6 +4,7 @@ export interface DCGEmployeeDto {
   empNo: number;
   empID: string;
   empName: string;
+  department: string;
   empStatus: string;
   windowsID: string;
   email: string;
@@ -21,6 +22,7 @@ export interface OfficeStateAssignmentDto {
 export interface CreateDCGEmployeeDto {
   empID: string;
   empName: string;
+  department: string;
   empStatus: string;
   windowsID: string;
   email: string;
@@ -30,6 +32,7 @@ export interface UpdateDCGEmployeeDto {
   empNo: number;
   empID: string;
   empName: string;
+  department: string;
   empStatus: string;
   windowsID: string;
   email: string;
@@ -81,6 +84,7 @@ export const EMPLOYEE_SORT_OPTIONS: EmployeeSortOption[] = [
   { value: 'EmpNo', label: 'Employee Number' },
   { value: 'EmpID', label: 'Employee ID' },
   { value: 'EmpName', label: 'Employee Name' },
+  { value: 'Department', label: 'Department' },
   { value: 'EmpStatus', label: 'Status' },
   { value: 'WindowsID', label: 'Windows ID' },
   { value: 'Email', label: 'Email' },

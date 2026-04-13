@@ -676,5 +676,34 @@ namespace Technicians.Api.Controllers
                 });
             }
         }
+
+        /// <summary>
+        /// Debug endpoint to check DCG_Employees table data for troubleshooting GetEmployeeNamesByDept
+        /// </summary>
+        //[HttpGet("DebugEmployeeData")]
+        //public async Task<IActionResult> DebugEmployeeData([FromQuery] string department = "Assembly")
+        //{
+        //    try
+        //    {
+        //        var debugInfo = await _repository.DebugEmployeeDataAsync(department);
+                
+        //        return Ok(new
+        //        {
+        //            success = true,
+        //            department = department,
+        //            debugInfo = debugInfo
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error debugging employee data for department: {Department}", department);
+                
+        //        return StatusCode(500, new { 
+        //            success = false, 
+        //            message = "Failed to debug employee data", 
+        //            error = ex.Message 
+        //        });
+        //    }
+        //}
     }
 }

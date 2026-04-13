@@ -15,7 +15,8 @@
         Tool Tracking Entry
       </h3>
 
-      <button type="button"
+            <button *ngIf="!isReadOnlyForTechnician"
+              type="button"
               class="btn btn-primary position-absolute top-50 end-0 translate-middle-y me-3"
               (click)="onSave()"
               [disabled]="loading">
@@ -229,12 +230,14 @@
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.serialNo"
+                    [disabled]="isReadOnlyForTechnician"
                        (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'serialNo', $event)">
               </td>
 
               <td>
                 <input type="date"
                        class="form-control form-control-sm"
+                    [disabled]="isReadOnlyForTechnician"
                        [ngModel]="formatDateForInput(item.dueDt)"
                        (ngModelChange)="item.dueDt = $event; onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'dueDt', $event)">
               </td>
@@ -243,6 +246,7 @@
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.newMTracking"
+                    [disabled]="isReadOnlyForTechnician"
                        (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'newMTracking', $event)">
               </td>
 
@@ -250,6 +254,7 @@
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.oldMSerialNo"
+                    [disabled]="isReadOnlyForTechnician"
                        (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'oldMSerialNo', $event)">
               </td>
 
@@ -257,12 +262,14 @@
                 <input type="text"
                        class="form-control form-control-sm"
                        [(ngModel)]="item.oldMTracking"
+                    [disabled]="isReadOnlyForTechnician"
                        (ngModelChange)="onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'oldMTracking', $event)">
               </td>
 
               <td class="text-center">
                 <input type="checkbox"
                        class="form-check-input"
+                    [disabled]="isReadOnlyForTechnician"
                        [checked]="isReceivedTrue(item.received)"
                        (change)="updateReceived(item, $event, ((trackingCurrentPage - 1) * trackingPageSize) + i)">
               </td>
@@ -292,12 +299,12 @@
                    (change)="onFileSelected($event)"
                    hidden>
 
-            <label for="fileInput" class="upload-trigger">
+            <label *ngIf="!isReadOnlyForTechnician" for="fileInput" class="upload-trigger">
               <i class="bi bi-cloud-upload"></i>
               <span>Select Files</span>
             </label>
 
-            <button class="btn btn-primary ms-3"
+            <button *ngIf="!isReadOnlyForTechnician" class="btn btn-primary ms-3"
                     [disabled]="uploadingFiles || selectedFiles.length === 0"
                     (click)="uploadFiles()">
               <span *ngIf="!uploadingFiles">
@@ -331,7 +338,8 @@
                 </small>
               </div>
 
-              <button type="button"
+                    <button *ngIf="!isReadOnlyForTechnician"
+                      type="button"
                       class="btn btn-sm btn-danger"
                       (click)="removeFile(i)">
                 <i class="bi bi-x"></i>
@@ -376,7 +384,7 @@
                       <div class="d-inline-flex gap-2 flex-wrap justify-content-center">
                         <button type="button" class="btn btn-sm btn-light-primary" (click)="viewFile(file)">View</button>
                         <button type="button" class="btn btn-sm btn-light-success" (click)="downloadFile(file)">Download</button>
-                        <button type="button" class="btn btn-sm btn-light-danger" (click)="deleteFileAttachment(file.fileName)">Delete</button>
+                        <button *ngIf="!isReadOnlyForTechnician" type="button" class="btn btn-sm btn-light-danger" (click)="deleteFileAttachment(file.fileName)">Delete</button>
                       </div>
                     </td>
                   </tr>

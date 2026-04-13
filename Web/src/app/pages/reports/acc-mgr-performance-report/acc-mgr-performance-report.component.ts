@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
+
+
 import { Subscription } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
@@ -63,9 +64,9 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
+    private route: ActivatedRoute,
     private reportService: ReportService,
-    private commonService: CommonService,
-    private route: ActivatedRoute
+    private commonService: CommonService
   ) {
     this.reportForm = this.fb.group({
       officeId: [{ value: '', disabled: false }, [Validators.required, Validators.maxLength(11)]]
@@ -75,7 +76,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.monthLabels = this.getMonthLabels();
 
-    this.route.queryParams.subscribe((params: any) => {
+    this.route.queryParams.subscribe((params: Params) => {
       this.routeOfficeId = (params['officeId'] || '').toString().trim();
       this.routeSection = (params['section'] || '').toString().trim();
       this.routeSectionApplied = false;
@@ -573,12 +574,6 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
       statusRaw === 'Could be billed';
 
     const isUnscheduled = this.isUnscheduledSection(sectionType);
-    const isCritical = this.isCriticalSection(sectionType);
-    const isTodaySection = this.isTodaySection(sectionType);
-    const isReturnedSection = this.isReturnedSection(sectionType);
-    const isExpiredSection = this.isExpiredSection(sectionType, item);
-    const quotedAmount = this.getQuotedAmount(item);
-    const currentAge = this.getCurrentAge(item);
 
     if (isUnscheduled) {
       // Legacy: only highlight "Could be billed" in Unscheduled sections
@@ -586,20 +581,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
     }
 
     if (isBillAfterPm) {
-      return isReturnedSection ? 'bill-after-pm-critical' : 'bill-after-pm-warning';
-    }
-
-    const shouldHighlightAmount = isExpiredSection
-      ? currentAge > 30 && quotedAmount > 0
-      : quotedAmount > 0;
-
-    if (shouldHighlightAmount) {
-      if (isCritical) {
-        return 'critical-with-amount';
-      }
-      if (isTodaySection) {
-        return 'today-with-amount';
-      }
+      return 'bill-after-pm-warning';
     }
 
     return '';
@@ -683,50 +665,7 @@ export class AccMgrPerformanceReportComponent implements OnInit, OnDestroy {
 
   // Status badge color methods
   getStatusBadgeClass(item: any, sectionType?: string): string {
-    const status = this.getStatusText(item);
-    const statusLower = status.toLowerCase();
-    
-    // Handle different status types with appropriate colors
-    if (statusLower.includes('opn') || statusLower === 'open') {
-      // OPN (Open) - Green normally, Red if in critical sections
-      const isCriticalSection = sectionType === 'completedNotReturned' || 
-                               sectionType === 'returnedForProcessing' || 
-                               sectionType === 'pastDueUnscheduled';
-      return isCriticalSection ? 'bg-danger' : 'bg-success';
-    }
-    
-    if (status === 'Bill After PM' || statusLower.includes('blb') || status === 'Could be billed') {
-      // BLB (Bill After PM) - Orange/Warning color
-      return 'bg-warning text-dark';
-    }
-    
-    if (statusLower.includes('fcd') || statusLower === 'forced close') {
-      // FCD (Forced Close) - Purple color
-      return 'bg-primary';
-    }
-    
-    if (statusLower.includes('complete') || statusLower.includes('confirmed')) {
-      // Completed/Confirmed statuses - Green
-      return 'bg-success';
-    }
-    
-    if (statusLower.includes('pending') || statusLower.includes('processing')) {
-      // Pending/Processing statuses - Blue
-      return 'bg-info';
-    }
-    
-    if (statusLower.includes('returned') || statusLower.includes('incomplete')) {
-      // Returned/Incomplete statuses - Red
-      return 'bg-danger';
-    }
-
-    if (statusLower.includes('mis')) {
-      // MIS - Teal
-      return 'bg-info text-dark';
-    }
-    
-    // Default status color
-    return 'bg-secondary';
+    return 'bg-light text-dark';
   }
 
   sortData(column: string): void {

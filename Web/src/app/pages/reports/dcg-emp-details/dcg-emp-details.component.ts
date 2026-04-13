@@ -27,6 +27,7 @@ const EMPLOYEE_SORT_OPTIONS: EmployeeSortOption[] = [
   { value: 'EmpNo', label: 'Employee Number' },
   { value: 'EmpID', label: 'Employee ID' },
   { value: 'EmpName', label: 'Employee Name' },
+  { value: 'Department', label: 'Department' },
   { value: 'EmpStatus', label: 'Status' },
   { value: 'WindowsID', label: 'Windows ID' },
   { value: 'Email', label: 'Email' },
@@ -92,6 +93,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   stateOptions: { state: string, stateName: string }[] = [];
   officeIdOptions: { empID: string, empName: string, fullDisplay: string }[] = [];
   invUserIdOptions: { empID: string, empName: string, fullDisplay: string }[] = [];
+  departmentOptions: string[] = [];
   allEmployees: DCGEmployeeDto[] = []; // Store all employees for lookup
   
   // Employee Status Options
@@ -135,6 +137,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
       empNo: [0],
       empID: ['', [Validators.required, Validators.maxLength(20)]],
       empName: ['', [Validators.required, Validators.maxLength(100)]],
+      department: ['', [Validators.required, Validators.maxLength(100)]],
       empStatus: ['', [Validators.required, Validators.maxLength(50)]],
       windowsID: ['', [Validators.required, Validators.maxLength(100)]],
       email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]]
@@ -179,6 +182,11 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
           if (response.success && response.data) {
             this.employees = response.data.employees || [];
             this.officeAssignments = response.data.officeAssignments || [];
+
+            if (this.currentGridType === GridType.Employee && this.employees.length > 0) {
+              this.updateDepartmentOptions(this.employees);
+            }
+
             this.totalItems = this.currentGridType === GridType.Employee ? 
               response.data.employeeCount : 
               response.data.assignmentCount;
@@ -234,6 +242,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
             
             // Store all employees for lookup
             this.allEmployees = employees;
+            this.updateDepartmentOptions(employees);
             
             // Filter managers for Office ID dropdown - EMPSTATUS='M' only
             const managerMap = new Map();
@@ -376,6 +385,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
         ? this.employees.filter(emp => 
             emp.empID?.toLowerCase().includes(searchLower) ||
             emp.empName?.toLowerCase().includes(searchLower) ||
+            emp.department?.toLowerCase().includes(searchLower) ||
             emp.empStatus?.toLowerCase().includes(searchLower) ||
             emp.windowsID?.toLowerCase().includes(searchLower) ||
             emp.email?.toLowerCase().includes(searchLower) ||
@@ -405,6 +415,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.editingEmployee = null;
     this.employeeForm.reset();
     this.employeeForm.patchValue({ empNo: 0 });
+    this.ensureDepartmentOption('');
     this.showEmployeeForm = true;
     this.clearMessages();
   }
@@ -414,15 +425,18 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     
     // Ensure current empStatus is in dropdown options if not already present
     const currentStatus = (employee.empStatus || '').trim();
+    const currentDepartment = (employee.department || '').trim();
     if (currentStatus && !this.empStatusOptions.find(opt => opt.value === currentStatus)) {
       this.empStatusOptions.push({ value: currentStatus, label: currentStatus });
     }
+    this.ensureDepartmentOption(currentDepartment);
     
     // Ensure all fields have proper values before patching and trim whitespace
     const patchData = {
       empNo: employee.empNo || 0,
       empID: (employee.empID || '').trim(),
       empName: (employee.empName || '').trim(),
+      department: currentDepartment,
       empStatus: currentStatus,
       windowsID: (employee.windowsID || '').trim(),
       email: (employee.email || '').trim()
@@ -468,6 +482,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
         empNo: formData.empNo!,
         empID: (formData.empID || '').trim(),
         empName: (formData.empName || '').trim(),
+        department: (formData.department || '').trim(),
         empStatus: (formData.empStatus || '').trim(),
         windowsID: (formData.windowsID || '').trim(),
         email: (formData.email || '').trim()
@@ -498,6 +513,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
       const createData: CreateDCGEmployeeDto = {
         empID: (formData.empID || '').trim(),
         empName: (formData.empName || '').trim(),
+        department: (formData.department || '').trim(),
         empStatus: (formData.empStatus || '').trim(),
         windowsID: (formData.windowsID || '').trim(),
         email: (formData.email || '').trim()
@@ -750,6 +766,27 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
   }
 
+  private updateDepartmentOptions(employees: DCGEmployeeDto[]): void {
+    const departments = employees
+      .map(emp => (emp.department || '').trim())
+      .filter((department, index, array) => !!department && array.indexOf(department) === index)
+      .sort((a, b) => a.localeCompare(b));
+
+    this.departmentOptions = departments;
+  }
+
+  private ensureDepartmentOption(department: string): void {
+    const trimmedDepartment = (department || '').trim();
+    if (!trimmedDepartment) {
+      return;
+    }
+
+    if (!this.departmentOptions.includes(trimmedDepartment)) {
+      this.departmentOptions = [...this.departmentOptions, trimmedDepartment]
+        .sort((a, b) => a.localeCompare(b));
+    }
+  }
+
   // Form Validation Helpers
   isFieldInvalid(form: FormGroup, fieldName: string): boolean {
     const field = form.get(fieldName);
@@ -758,10 +795,24 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
 
   getFieldError(form: FormGroup, fieldName: string): string {
     const field = form.get(fieldName);
+    const fieldLabels: Record<string, string> = {
+      empID: 'Employee ID',
+      empName: 'Employee Name',
+      department: 'Department',
+      empStatus: 'Status',
+      windowsID: 'Windows ID',
+      email: 'Email',
+      state: 'State',
+      stateName: 'State Name',
+      offID: 'Office ID',
+      invUserID: 'Inventory User ID'
+    };
+
     if (field?.errors) {
-      if (field.errors['required']) return `${fieldName} is required`;
+      const label = fieldLabels[fieldName] || fieldName;
+      if (field.errors['required']) return `${label} is required`;
       if (field.errors['email']) return 'Please enter a valid email address';
-      if (field.errors['maxlength']) return `${fieldName} is too long`;
+      if (field.errors['maxlength']) return `${label} is too long`;
     }
     return '';
   }

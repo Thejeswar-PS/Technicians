@@ -16,7 +16,7 @@
     <div class="flex-shrink-0"></div>
   </div>
 
-  <div *ngIf="!isLoading && !hasPageAccess" class="card shadow-sm">
+  <div *ngIf="!isCheckingPageAccess && !isLoading && !hasPageAccess" class="card shadow-sm">
     <div class="card-body py-5 text-center">
       <div class="alert alert-danger d-inline-flex align-items-center mb-0" role="alert">
         <i class="bi bi-shield-lock-fill me-2"></i>

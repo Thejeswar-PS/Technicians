@@ -187,6 +187,15 @@
                       </span>
                     </span>
                   </th>
+                  <th class="fw-bold sortable" (click)="sortTable('department')">
+                    <span class="header-cell">
+                      Department
+                      <span class="sort-icons" [class.active]="sortColumn === 'department'">
+                        <i class="up" [class.on]="sortColumn === 'department' && sortDirection === 'asc'"></i>
+                        <i class="down" [class.on]="sortColumn === 'department' && sortDirection === 'desc'"></i>
+                      </span>
+                    </span>
+                  </th>
                   <th class="fw-bold sortable text-center" (click)="sortTable('empStatus')">
                     <span class="header-cell">
                       Status
@@ -222,7 +231,7 @@
               <tbody>
                 <!-- No Data Message -->
                 <tr *ngIf="!paginatedEmployees || paginatedEmployees.length === 0">
-                  <td colspan="7" class="text-center py-5">
+                  <td colspan="8" class="text-center py-5">
                     <div class="d-flex flex-column align-items-center text-muted">
                       <i class="bi bi-inbox fs-1 mb-3" style="color: #6c757d;"></i>
                       <h5 class="fw-bold mb-2">No Data Available</h5>
@@ -236,6 +245,7 @@
                   <td class="text-center">{{ employee.empNo }}</td>
                   <td>{{ employee.empID || 'N/A' }}</td>
                   <td>{{ employee.empName || 'N/A' }}</td>
+                  <td>{{ employee.department || 'N/A' }}</td>
                   <td class="text-center">{{ getStatusLabel(employee.empStatus) }}</td>
                   <td>{{ employee.windowsID || 'N/A' }}</td>
                   <td>{{ employee.email || 'N/A' }}</td>
@@ -415,6 +425,18 @@
                 </option>
               </select>
               <div class="invalid-feedback">{{ getFieldError(employeeForm, 'empStatus') }}</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold required">Department</label>
+              <select class="form-select"
+                      formControlName="department"
+                      [class.is-invalid]="isFieldInvalid(employeeForm, 'department')">
+                <option value="">Select Department</option>
+                <option *ngFor="let department of departmentOptions" [value]="department">
+                  {{ department }}
+                </option>
+              </select>
+              <div class="invalid-feedback">{{ getFieldError(employeeForm, 'department') }}</div>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold required">Windows ID</label>
