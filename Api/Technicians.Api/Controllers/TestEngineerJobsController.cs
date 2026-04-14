@@ -19,6 +19,43 @@ namespace Technicians.Api.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Gets employee department information by Active Directory/Windows user ID
+        /// Uses GetEmployeeDeptByUserID stored procedure for Test Engineer Jobs authorization
+        /// GET /api/TestEngineerJobs/department-by-userid/john.doe
+        /// </summary>
+        [HttpGet("department-by-userid/{adUserId}")]
+        public async Task<ActionResult<EmployeeDepartmentResponse>> GetEmployeeDepartmentByUserId(string adUserId)
+        {
+            if (string.IsNullOrWhiteSpace(adUserId))
+            {
+                return BadRequest(new EmployeeDepartmentResponse
+                {
+                    Success = false,
+                    Message = "AD User ID cannot be empty"
+                });
+            }
+
+            try
+            {
+                _logger.LogInformation("Getting employee department for AD User ID: {ADUserID}", adUserId);
+
+                var result = await _repository.GetEmployeeDeptByUserIdAsync(adUserId);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting employee department for AD User ID: {ADUserID}", adUserId);
+                
+                return StatusCode(500, new EmployeeDepartmentResponse
+                {
+                    Success = false,
+                    Message = "Failed to retrieve employee department information"
+                });
+            }
+        }
+
         [HttpGet]
         public async Task<ActionResult<TestEngineerJobsResponse>> GetTestEngineerJobs(
             [FromQuery] string? engineer = null,
@@ -233,6 +270,160 @@ namespace Technicians.Api.Controllers
                 return StatusCode(500, new { success = false, message = "Failed to retrieve engineers" });
             }
         }
+
+        #region FILE MANAGEMENT
+
+        /// <summary>
+        /// Uploads a file for a Test Engineer Job
+        /// POST /api/TestEngineerJobs/{jobId}/upload
+        /// </summary>
+        [HttpPost("{jobId}/upload")]
+        public async Task<ActionResult<FileOperationResponse>> UploadFile(int jobId, [FromForm] IFormFile file, [FromForm] string jobNumber)
+        {
+            try
+            {
+                if (file == null)
+                {
+                    return BadRequest(new FileOperationResponse
+                    {
+                        Success = false,
+                        Message = "No file provided"
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(jobNumber))
+                {
+                    return BadRequest(new FileOperationResponse
+                    {
+                        Success = false,
+                        Message = "Job number is required"
+                    });
+                }
+
+                _logger.LogInformation("Uploading file {FileName} for job {JobId} ({JobNumber})", file.FileName, jobId, jobNumber);
+
+                var request = new FileUploadRequestDto
+                {
+                    JobId = jobId,
+                    JobNumber = jobNumber,
+                    File = file
+                };
+
+                var result = await _repository.UploadFileAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading file for job {JobId}", jobId);
+                return StatusCode(500, new FileOperationResponse
+                {
+                    Success = false,
+                    Message = "Failed to upload file"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Gets all files for a specific job
+        /// GET /api/TestEngineerJobs/{jobId}/files?jobNumber=xxx
+        /// </summary>
+        [HttpGet("{jobId}/files")]
+        public async Task<ActionResult<FileOperationResponse>> GetJobFiles(int jobId, [FromQuery] string jobNumber)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(jobNumber))
+                {
+                    return BadRequest(new FileOperationResponse
+                    {
+                        Success = false,
+                        Message = "Job number is required"
+                    });
+                }
+
+                _logger.LogInformation("Getting files for job {JobId} ({JobNumber})", jobId, jobNumber);
+
+                var result = await _repository.GetJobFilesAsync(jobId, jobNumber);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting files for job {JobId}", jobId);
+                return StatusCode(500, new FileOperationResponse
+                {
+                    Success = false,
+                    Message = "Failed to retrieve files"
+                });
+            }
+        }
+
+        /// <summary>
+        /// Downloads a specific file
+        /// GET /api/TestEngineerJobs/download?filePath=xxx
+        /// </summary>
+        [HttpGet("download")]
+        public async Task<ActionResult> DownloadFile([FromQuery] string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(filePath))
+                {
+                    return BadRequest("File path is required");
+                }
+
+                _logger.LogInformation("Downloading file: {FilePath}", filePath);
+
+                var result = await _repository.DownloadFileAsync(filePath);
+
+                if (!result.Success || result.FileContent == null)
+                {
+                    return NotFound(result.Message);
+                }
+
+                return File(result.FileContent, result.ContentType, result.FileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file {FilePath}", filePath);
+                return StatusCode(500, "Failed to download file");
+            }
+        }
+
+        /// <summary>
+        /// Deletes a specific file
+        /// DELETE /api/TestEngineerJobs/files?filePath=xxx
+        /// </summary>
+        [HttpDelete("files")]
+        public async Task<ActionResult<FileOperationResponse>> DeleteFile([FromQuery] string filePath)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(filePath))
+                {
+                    return BadRequest(new FileOperationResponse
+                    {
+                        Success = false,
+                        Message = "File path is required"
+                    });
+                }
+
+                _logger.LogInformation("Deleting file: {FilePath}", filePath);
+
+                var result = await _repository.DeleteFileAsync(filePath);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting file {FilePath}", filePath);
+                return StatusCode(500, new FileOperationResponse
+                {
+                    Success = false,
+                    Message = "Failed to delete file"
+                });
+            }
+        }
+
+        #endregion
 
         //[HttpGet("debug")]
         //public async Task<ActionResult> DebugDatabase()

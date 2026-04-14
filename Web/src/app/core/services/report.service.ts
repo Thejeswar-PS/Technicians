@@ -134,7 +134,9 @@ import {
   SaveUpdateTestEngineerJobsDto,
   TestEngineerJobsEntryDto,
   TestEngineerJobsEntryResponse,
-  NextRowIdResponse
+  NextRowIdResponse,
+  EmployeeDepartmentResponse,
+  FileOperationResponse
 } from '../model/test-engineer-jobs.model';
 
 @Injectable({
@@ -2072,6 +2074,75 @@ export class ReportService {
       {
         headers: this.headers,
         params: params
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getTestEngineerJobsEmployeeDepartment(adUserId: string): Observable<EmployeeDepartmentResponse> {
+    const normalizedAdUserId = (adUserId || '').trim();
+
+    if (!normalizedAdUserId) {
+      return throwError(() => new Error('AD User ID is required'));
+    }
+
+    return this.http.get<EmployeeDepartmentResponse>(
+      `${this.API}/TestEngineerJobs/department-by-userid/${encodeURIComponent(normalizedAdUserId)}`,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  uploadTestEngineerJobFile(jobId: number, jobNumber: string, file: File): Observable<FileOperationResponse> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('jobNumber', jobNumber);
+
+    return this.http.post<FileOperationResponse>(
+      `${this.API}/TestEngineerJobs/${jobId}/upload`,
+      formData,
+      { headers: this.headers }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  getTestEngineerJobFiles(jobId: number, jobNumber: string): Observable<FileOperationResponse> {
+    const params = new HttpParams().set('jobNumber', jobNumber);
+
+    return this.http.get<FileOperationResponse>(
+      `${this.API}/TestEngineerJobs/${jobId}/files`,
+      {
+        headers: this.headers,
+        params
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  downloadTestEngineerJobFile(filePath: string): Observable<Blob> {
+    const params = new HttpParams().set('filePath', filePath);
+
+    return this.http.get(`${this.API}/TestEngineerJobs/download`, {
+      headers: this.headers,
+      params,
+      responseType: 'blob'
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  deleteTestEngineerJobFile(filePath: string): Observable<FileOperationResponse> {
+    const params = new HttpParams().set('filePath', filePath);
+
+    return this.http.delete<FileOperationResponse>(
+      `${this.API}/TestEngineerJobs/files`,
+      {
+        headers: this.headers,
+        params
       }
     ).pipe(
       catchError(this.handleError)

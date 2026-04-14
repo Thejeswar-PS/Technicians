@@ -9,10 +9,10 @@ import {
   TestEngineerJobDto, 
   TestEngineerJobsRequestDto,
   TestEngineerJobsResponse,
-  TestEngineerJobsChartsResponse,
   EngineerDto,
   EngineerChartDto,
-  StatusChartDto
+  StatusChartDto,
+  EmployeeDepartmentResponse
 } from 'src/app/core/model/test-engineer-jobs.model';
 
 declare var Chart: any;
@@ -43,6 +43,11 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   // Loading and error states
   isLoading = false;
   errorMessage = '';
+  authorizationMessage = '';
+  isCheckingAuthorization = false;
+  canManageJobs = true;
+  currentUserDepartment = '';
+  isManagerUser = false;
   generatedAt: Date | null = null;
   
   // Pagination
@@ -107,6 +112,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   ngOnInit(): void {
+    this.loadUserAuthorization();
     this.loadEngineers();
     this.loadTestEngineerJobs();
     this.setupFilterSubscriptions();
@@ -135,18 +141,75 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   loadEngineers(): void {
-    this.reportService.getEmployeeNamesByDept('Testing')
+    this.reportService.getTestEngineerJobsEngineers()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           if (response.success) {
-            this.engineersList = response.employees || [];
+            this.engineersList = response.engineers || [];
           }
         },
         error: (error) => {
           console.error('Error loading engineers:', error);
         }
       });
+  }
+
+  private loadUserAuthorization(): void {
+    const adUserId = this.getCurrentAdUserId();
+
+    if (!adUserId) {
+      this.canManageJobs = true;
+      this.authorizationMessage = '';
+      return;
+    }
+
+    this.isCheckingAuthorization = true;
+
+    this.reportService.getTestEngineerJobsEmployeeDepartment(adUserId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: EmployeeDepartmentResponse) => {
+          this.isCheckingAuthorization = false;
+
+          if (!response.success) {
+            this.canManageJobs = true;
+            this.authorizationMessage = '';
+            return;
+          }
+
+          this.currentUserDepartment = response.data?.department || 'Other';
+          this.canManageJobs = true;
+          this.authorizationMessage = '';
+          this.applyManagerFilterRules();
+        },
+        error: (error) => {
+          console.error('Error loading Test Engineer Jobs authorization:', error);
+          this.isCheckingAuthorization = false;
+          this.canManageJobs = true;
+          this.authorizationMessage = '';
+          this.isManagerUser = false;
+          this.applyManagerFilterRules();
+        }
+      });
+  }
+
+  private applyManagerFilterRules(): void {
+    const department = (this.currentUserDepartment || '').toLowerCase();
+    this.isManagerUser = department.includes('manager');
+
+    const statusControl = this.filterForm.get('status');
+    const locationControl = this.filterForm.get('location');
+
+    if (this.isManagerUser) {
+      statusControl?.setValue('', { emitEvent: false });
+      locationControl?.setValue('', { emitEvent: false });
+      statusControl?.disable({ emitEvent: false });
+      locationControl?.disable({ emitEvent: false });
+    } else {
+      statusControl?.enable({ emitEvent: false });
+      locationControl?.enable({ emitEvent: false });
+    }
   }
 
   loadTestEngineerJobs(): void {
@@ -320,6 +383,43 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
     const date = new Date(dateString);
     return date.toLocaleString();
   }
+
+  private getCurrentAdUserId(): string {
+    const currentUser = this.auth.currentUserValue || {};
+    const userData = this.getStoredUserData();
+    const rawUserId = (
+      currentUser?.windowsID ||
+      currentUser?.windowsId ||
+      currentUser?.username ||
+      currentUser?.userName ||
+      userData?.windowsID ||
+      userData?.windowsId ||
+      userData?.username ||
+      userData?.userName ||
+      ''
+    ).toString();
+
+    return this.normalizeAdUserId(rawUserId);
+  }
+
+  private getStoredUserData(): any {
+    try {
+      return JSON.parse(localStorage.getItem('userData') || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  private normalizeAdUserId(value: string): string {
+    const trimmedValue = (value || '').trim();
+    if (!trimmedValue) {
+      return '';
+    }
+
+    const withoutDomain = trimmedValue.split('\\').pop() || trimmedValue;
+    return withoutDomain.split('/').pop()?.trim() || withoutDomain;
+  }
+
 
   getTotalByStatus(status: string): number {
     return this.jobsList.filter(job => job.status === status).length;
