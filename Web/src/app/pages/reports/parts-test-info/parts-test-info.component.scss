@@ -1,5 +1,109 @@
 // Parts Test Info Component Styles
 
+.parts-test-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 16px;
+}
+
+.parts-test-container .parts-test-header__top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center !important;
+  min-height: 48px;
+  margin-bottom: 24px;
+
+  .parts-test-header__back {
+    position: absolute;
+    left: 0;
+    z-index: 1;
+  }
+
+  .auto-gen-id-container {
+    position: absolute;
+    right: 0;
+    z-index: 1;
+    margin-bottom: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+.parts-test-container .parts-page-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+
+  h2 {
+    margin: 0;
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: #2563eb;
+    white-space: nowrap;
+
+    i {
+      color: #2563eb;
+      font-size: 1.7rem;
+    }
+  }
+}
+
+.parts-test-container .card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.parts-test-container .card.shadow.border.h-100 {
+  overflow: hidden;
+}
+
+.parts-test-container .card-header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.parts-test-container .card-header.bg-info,
+.parts-test-container .card-header.bg-success,
+.parts-test-container .card-header.bg-primary {
+  background: linear-gradient(180deg, #1f94f3 0%, #1575d6 100%) !important;
+}
+
+.parts-test-container .form-control,
+.parts-test-container .form-select,
+.parts-test-container .form-control-solid,
+.parts-test-container .form-select-solid {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  min-height: 40px;
+  box-shadow: none;
+}
+
+.parts-test-container .form-control:focus,
+.parts-test-container .form-select:focus,
+.parts-test-container .form-control-solid:focus,
+.parts-test-container .form-select-solid:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12);
+}
+
+.parts-test-container .form-check {
+  border-color: #e5e7eb !important;
+  border-radius: 8px !important;
+}
+
+.parts-test-container .auto-gen-id-container {
+  gap: 0.35rem;
+}
+
+.parts-test-container .btn.btn-lg {
+  border-radius: 8px;
+  min-height: 42px;
+}
+
 // Header styling matching Parts Request Status
 .parts-test-header__top {
   width: 100%;
@@ -248,6 +352,30 @@
 
 // Responsive Design
 @media (max-width: 768px) {
+  .parts-test-container {
+    padding: 12px;
+  }
+
+  .parts-test-container .parts-test-header__top {
+    justify-content: center !important;
+    margin-bottom: 16px;
+
+    .parts-test-header__back {
+      position: static;
+      margin-right: auto;
+    }
+  }
+
+  .parts-test-container .parts-page-title {
+    position: static;
+    transform: none;
+
+    h2 {
+      font-size: 1.45rem;
+      white-space: normal;
+    }
+  }
+
   .card-toolbar {
     .d-flex {
       flex-direction: column;
@@ -359,4 +487,156 @@
   // Ensure text is fully visible without horizontal scrolling
   white-space: pre-wrap;
   overflow-wrap: break-word;
+}
+
+/* =============================================
+   UI ALIGNMENT WITH NEW UNIT TEST STYLE
+   (Design-only overrides; no functionality changes)
+============================================= */
+
+.parts-test-container {
+  background: #f3f5f8;
+  min-height: 100%;
+}
+
+.parts-test-container .row.g-4 {
+  --bs-gutter-x: 1.6rem;
+  --bs-gutter-y: 1.6rem;
+}
+
+.parts-test-container .card.shadow.border.h-100 {
+  background: #f7f9fc;
+  border: 1px solid #d8dee8 !important;
+  border-radius: 10px;
+  box-shadow: none !important;
+}
+
+.parts-test-container .card.shadow.border.h-100 > .card-header,
+.parts-test-container .card.shadow.border.h-100 > .card-header.bg-info,
+.parts-test-container .card.shadow.border.h-100 > .card-header.bg-success,
+.parts-test-container .card.shadow.border.h-100 > .card-header.bg-primary {
+  background: transparent !important;
+  border-bottom: 1px solid #d8dee8;
+  padding: 1rem 1.25rem;
+}
+
+.parts-test-container .card.shadow.border.h-100 > .card-header .card-title {
+  color: #1f2937 !important;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.parts-test-container .card.shadow.border.h-100 > .card-header .card-title i {
+  color: #2f67e8 !important;
+}
+
+.parts-test-container .card.shadow.border.h-100 > .card-body {
+  background: transparent !important;
+  padding: 1.25rem;
+}
+
+.parts-test-container .form-label {
+  color: #374151 !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  margin-bottom: 0.5rem;
+}
+
+.parts-test-container .form-label i {
+  color: #2f67e8 !important;
+}
+
+.parts-test-container .form-control,
+.parts-test-container .form-select,
+.parts-test-container .input-group-text {
+  min-height: 40px;
+  border-radius: 9px;
+  border: 1px solid #cdd5df !important;
+  background: #ffffff !important;
+  color: #1f2937 !important;
+  font-size: 1rem;
+}
+
+.parts-test-container .form-control:focus,
+.parts-test-container .form-select:focus {
+  border-color: #2f67e8 !important;
+  box-shadow: 0 0 0 3px rgba(47, 103, 232, 0.12) !important;
+}
+
+.parts-test-container textarea.form-control {
+  min-height: 120px;
+}
+
+.parts-test-container .btn.btn-lg {
+  min-height: 40px;
+  font-size: 0.95rem;
+  padding: 0.5rem 1rem;
+}
+
+.parts-test-container .form-check {
+  background: #ffffff;
+  border: 1px solid #d6dde8 !important;
+  border-radius: 8px !important;
+}
+
+.parts-test-container .form-check-input:checked {
+  background-color: #2f67e8;
+  border-color: #2f67e8;
+}
+
+.parts-test-container .btn.btn-primary {
+  background: #2f67e8;
+  border-color: #2f67e8;
+}
+
+.parts-test-container .btn.btn-success {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.parts-test-container .btn.btn-danger {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.parts-test-container .auto-gen-id-container {
+  background: transparent;
+  border: none;
+}
+
+.parts-test-container .auto-gen-badge {
+  background: #2f67e8 !important;
+  box-shadow: none !important;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.parts-test-container .auto-gen-label {
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.parts-test-container .auto-gen-id-text {
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+}
+
+@media (max-width: 992px) {
+  .parts-test-container .card.shadow.border.h-100 > .card-header .card-title {
+    font-size: 1.1rem;
+  }
+
+  .parts-test-container .parts-test-header__top {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: center;
+
+    .parts-test-header__back,
+    .auto-gen-id-container {
+      position: static;
+    }
+  }
 }
