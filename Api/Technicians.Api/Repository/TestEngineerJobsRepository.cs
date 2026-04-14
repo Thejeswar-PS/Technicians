@@ -300,6 +300,9 @@ namespace Technicians.Api.Repository
             {
                 using var connection = new SqlConnection(_connectionString);
 
+                // FIXED: Get current user for audit fields - matches legacy LP.getUID()
+                var currentUser = GetCurrentWindowsUserId();
+
                 var sql = @"
                     INSERT INTO TestEngineerJobs
                     (JobNumber, WorkType, EmergencyETA, AssignedEngineer, Location,
@@ -314,7 +317,27 @@ namespace Technicians.Api.Repository
 
                     SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-                var newId = await connection.QuerySingleAsync<int>(sql, request);
+                var parameters = new
+                {
+                    request.JobNumber,
+                    request.WorkType,
+                    request.EmergencyETA,
+                    request.AssignedEngineer,
+                    request.Location,
+                    request.ProjectedDate,
+                    request.CompletedDate,
+                    request.DescriptionNotes,
+                    request.Status,
+                    request.QCCleaned,
+                    request.QCTorque,
+                    request.QCInspected,
+                    CreatedBy = currentUser,     
+                    ModifiedBy = currentUser     
+                };
+
+                var newId = await connection.QuerySingleAsync<int>(sql, parameters);
+
+                _logger.LogInformation("Created TestEngineerJob with ID {NewId} by user {User}", newId, currentUser);
 
                 return await GetTestEngineerJobByIdAsync(newId);
             }
@@ -339,6 +362,9 @@ namespace Technicians.Api.Repository
             {
                 using var connection = new SqlConnection(_connectionString);
 
+                var currentUser = GetCurrentWindowsUserId();
+
+
                 var sql = @"
                     UPDATE TestEngineerJobs
                     SET
@@ -358,7 +384,25 @@ namespace Technicians.Api.Repository
                         ModifiedOn = GETDATE()
                     WHERE RowId = @RowID";
 
-                var rows = await connection.ExecuteAsync(sql, request);
+                var parameters = new
+                {
+                    request.RowID,
+                    request.JobNumber,
+                    request.WorkType,
+                    request.EmergencyETA,
+                    request.AssignedEngineer,
+                    request.Location,
+                    request.ProjectedDate,
+                    request.CompletedDate,
+                    request.DescriptionNotes,
+                    request.Status,
+                    request.QCCleaned,
+                    request.QCTorque,
+                    request.QCInspected,
+                    ModifiedBy = currentUser     
+                };
+
+                var rows = await connection.ExecuteAsync(sql, parameters);
 
                 if (rows == 0)
                 {
@@ -612,6 +656,32 @@ namespace Technicians.Api.Repository
                 return value.ToString() ?? string.Empty;
             }
             return string.Empty;
+        }
+
+        /// <summary>
+        /// Gets current Windows user ID - equivalent to legacy LP.getUID() method
+        /// Matches the pattern used in PartsTestRepository and DCGEmployeeRepository
+        /// </summary>
+        private string GetCurrentWindowsUserId()
+        {
+            try
+            {
+                // Try to get from Windows Identity first
+                if (System.Security.Principal.WindowsIdentity.GetCurrent()?.Name != null)
+                {
+                    var windowsName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+                    // Extract username from DOMAIN\username format - matches legacy LP.getUID()
+                    return windowsName.Contains('\\') ? windowsName.Split('\\')[1] : windowsName;
+                }
+
+                // Fallback to Environment user
+                return Environment.UserName ?? "SYSTEM";
+            }
+            catch
+            {
+                // Ultimate fallback
+                return Environment.UserName ?? "SYSTEM";
+            }
         }
 
         #endregion

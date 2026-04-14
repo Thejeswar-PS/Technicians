@@ -424,9 +424,6 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     this.successMessage = '';
 
     const formValues = this.entryForm.getRawValue();
-    const currentUser = this.authService.currentUserValue;
-    const userName = currentUser?.username || currentUser?.name || 'System';
-
     const saveData: SaveUpdateTestEngineerJobsDto = {
       rowID: this.isEditMode ? this.currentRowId! : 0,
       jobNumber: formValues.serialNo,
@@ -440,9 +437,7 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
       status: formValues.status,
       qcCleaned: formValues.qcCleaned || false,
       qcTorque: formValues.qcTorque || false,
-      qcInspected: formValues.qcInspected || false,
-      createdBy: userName,
-      modifiedBy: userName
+      qcInspected: formValues.qcInspected || false
     };
 
     const serviceCall = this.isEditMode 

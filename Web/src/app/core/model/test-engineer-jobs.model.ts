@@ -96,8 +96,8 @@ export interface SaveUpdateTestEngineerJobsDto {
   qcCleaned: boolean;
   qcTorque: boolean;
   qcInspected: boolean;
-  createdBy: string;
-  modifiedBy: string;
+  createdBy?: string;
+  modifiedBy?: string;
 }
 
 export interface TestEngineerJobsEntryDto {
