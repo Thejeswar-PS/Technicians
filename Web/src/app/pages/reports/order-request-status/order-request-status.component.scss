@@ -46,7 +46,7 @@
   ================================= */
   .table-responsive {
     width: 100%;
-    overflow-x: auto;     // shows horizontal scroll ONLY if needed
+    overflow-x: hidden !important;
     overflow-y: auto;
     max-height: 70vh;
   }
@@ -58,8 +58,8 @@
     width: 100%;
     min-width: 100%;
     border-collapse: collapse;
-    table-layout: auto;   // allows natural resizing
-    font-size: 14px;
+    table-layout: fixed;
+    font-size: 13px;
   }
 
   /* ================================
@@ -72,9 +72,9 @@
     background: linear-gradient(180deg, #5f82f3, #5a7bf0);
     color: #ffffff;
     font-weight: 600;
-    padding: 10px 12px;
+    padding: 8px 6px;
     text-align: center;
-    white-space: nowrap;   // header stays single-line
+    white-space: nowrap;
     border-bottom: 2px solid #dee2e6;
   }
 
@@ -90,13 +90,39 @@
   }
 
   tbody td {
-    padding: 10px 12px;
+    padding: 7px 5px;
     vertical-align: middle;
-    text-align: center;        // center all cells
+    text-align: center;
 
     /* Prevent overlapping */
-    white-space: normal;       // allow wrapping
-    word-break: break-word;    // break long part numbers
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  // Column widths — distribute evenly across 13 columns
+  th:nth-child(1),  td:nth-child(1)  { width: 4%; }
+  th:nth-child(2),  td:nth-child(2)  { width: 7%; }
+  th:nth-child(3),  td:nth-child(3)  { width: 8%; }
+  th:nth-child(4),  td:nth-child(4)  { width: 9%; }
+  th:nth-child(5),  td:nth-child(5)  { width: 9%; }
+  th:nth-child(6),  td:nth-child(6)  { width: 5%; }
+  th:nth-child(7),  td:nth-child(7)  { width: 8%; }
+  th:nth-child(8),  td:nth-child(8)  { width: 7%; }
+  th:nth-child(9),  td:nth-child(9)  { width: 8%; }
+  th:nth-child(10), td:nth-child(10) { width: 8%; }
+  th:nth-child(11), td:nth-child(11) { width: 8%; }
+  th:nth-child(12), td:nth-child(12) { width: 9%; }
+  th:nth-child(13), td:nth-child(13) { width: 10%; }
+
+  @media (max-width: 1400px) {
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 6px 4px; }
+    .status-pill { padding: 3px 8px; font-size: 11px; }
+  }
+
+  @media (max-width: 1200px) {
+    table { font-size: 11px; }
+    thead th, tbody td { padding: 5px 3px; }
   }
 
   /* ================================
