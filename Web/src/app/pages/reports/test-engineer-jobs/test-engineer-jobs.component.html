@@ -36,20 +36,20 @@
           placeholder="Search Job / Engineer" />
 
         <select formControlName="engineer" class="form-select form-select-sm">
-          <option value="">All Engineers</option>
-          <option *ngFor="let engineer of engineersList" [value]="engineer.empName">
+          <option value="">{{ isTestingEngineer ? 'Your Jobs' : 'All Engineers' }}</option>
+          <option *ngFor="let engineer of displayEngineers" [value]="engineer.empName">
             {{ engineer.empName }}
           </option>
         </select>
 
-        <select formControlName="status" class="form-select form-select-sm" [disabled]="isManagerUser">
+        <select formControlName="status" class="form-select form-select-sm">
           <option value="">All Status</option>
           <option value="Open">Open</option>
           <option value="In-Progress">In-Progress</option>
           <option value="Closed">Closed</option>
         </select>
 
-        <select formControlName="location" class="form-select form-select-sm" [disabled]="isManagerUser">
+        <select formControlName="location" class="form-select form-select-sm">
           <option value="">All Locations</option>
           <option value="DC1">DC1</option>
           <option value="DC2">DC2</option>
@@ -238,7 +238,7 @@
               </td>
               <td>{{ formatDate(job.projectedDate) }}</td>
               <td>{{ formatDate(job.completedDate) }}</td>
-              <td>{{ formatDateTime(job.emergencyETA) }}</td>
+              <td class="eta-cell">{{ formatDateTime(job.emergencyETA) }}</td>
               <td><input type="checkbox" [checked]="job.qC_Cleaned" disabled></td>
               <td><input type="checkbox" [checked]="job.qC_Torque" disabled></td>
               <td><input type="checkbox" [checked]="job.qC_Inspected" disabled></td>

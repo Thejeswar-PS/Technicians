@@ -39,6 +39,16 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   jobsList: TestEngineerJobDto[] = [];
   filteredList: TestEngineerJobDto[] = [];
   engineersList: EngineerDto[] = [];
+
+  // Get filtered engineers list for display (only show current user if testing engineer)
+  get displayEngineers(): EngineerDto[] {
+    if (this.isTestingEngineer && this.currentUserEngineerName) {
+      // Only show current user's engineer record
+      return this.engineersList.filter(eng => eng.empName === this.currentUserEngineerName);
+    }
+    // Show all engineers for non-testing users
+    return this.engineersList;
+  }
   
   // Loading and error states
   isLoading = false;
@@ -47,7 +57,8 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   isCheckingAuthorization = false;
   canManageJobs = true;
   currentUserDepartment = '';
-  isManagerUser = false;
+  currentUserEngineerName = '';
+  isTestingEngineer = false;
   generatedAt: Date | null = null;
   
   // Pagination
@@ -147,12 +158,50 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
         next: (response) => {
           if (response.success) {
             this.engineersList = response.employees || [];
+            // Check if current user is a testing engineer and auto-filter
+            this.applyTestingEngineerFilter();
           }
         },
         error: (error) => {
           console.error('Error loading engineers:', error);
         }
       });
+  }
+
+  private applyTestingEngineerFilter(): void {
+    // Check if current user is in Testing department
+    const dept = (this.currentUserDepartment || '').toLowerCase();
+    if (!dept.includes('testing')) {
+      this.isTestingEngineer = false;
+      return;
+    }
+
+    // Get current user's ID (windowsID)
+    const currentUserId = this.getCurrentAdUserId();
+    if (!currentUserId) {
+      this.isTestingEngineer = false;
+      return;
+    }
+
+    // Find matching engineer in the list
+    const matchingEngineer = this.engineersList.find(
+      (eng) => (eng.windowsID || '').toLowerCase() === currentUserId.toLowerCase()
+    );
+
+    if (matchingEngineer) {
+      this.isTestingEngineer = true;
+      this.currentUserEngineerName = matchingEngineer.empName;
+      // Auto-set the engineer filter to current user
+      this.filterForm.patchValue(
+        { engineer: matchingEngineer.empName },
+        { emitEvent: false }
+      );
+      // Reload jobs with the filter applied
+      this.currentPage = 1;
+      this.loadTestEngineerJobs();
+    } else {
+      this.isTestingEngineer = false;
+    }
   }
 
   private loadUserAuthorization(): void {
@@ -181,35 +230,14 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
           this.currentUserDepartment = response.data?.department || 'Other';
           this.canManageJobs = true;
           this.authorizationMessage = '';
-          this.applyManagerFilterRules();
         },
         error: (error) => {
           console.error('Error loading Test Engineer Jobs authorization:', error);
           this.isCheckingAuthorization = false;
           this.canManageJobs = true;
           this.authorizationMessage = '';
-          this.isManagerUser = false;
-          this.applyManagerFilterRules();
         }
       });
-  }
-
-  private applyManagerFilterRules(): void {
-    const department = (this.currentUserDepartment || '').toLowerCase();
-    this.isManagerUser = department.includes('manager');
-
-    const statusControl = this.filterForm.get('status');
-    const locationControl = this.filterForm.get('location');
-
-    if (this.isManagerUser) {
-      statusControl?.setValue('', { emitEvent: false });
-      locationControl?.setValue('', { emitEvent: false });
-      statusControl?.disable({ emitEvent: false });
-      locationControl?.disable({ emitEvent: false });
-    } else {
-      statusControl?.enable({ emitEvent: false });
-      locationControl?.enable({ emitEvent: false });
-    }
   }
 
   loadTestEngineerJobs(): void {
