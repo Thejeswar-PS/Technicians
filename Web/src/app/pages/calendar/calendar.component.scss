@@ -2,10 +2,17 @@
 .calendar-page-container {
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
-    padding: 2rem 1rem;
+    padding: 1.25rem 0.5rem;
     max-width: 100%;
+    width: 100%;
+    margin: 0;
     overflow-x: hidden;
     box-sizing: border-box;
+}
+
+.calendar-page-container.container-fluid {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
 }
 
 .calendar-header__top {
@@ -38,6 +45,13 @@
     overflow: hidden;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
+    width: 100%;
+}
+
+.calendar-main-card .card-header,
+.calendar-main-card .card-body {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
 }
 
 .calendar-filter-form {
@@ -301,7 +315,14 @@
 
     .fc-event-title {
         white-space: pre-line;
-        font-size: 15px;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+    .fc-daygrid-event .fc-event-time,
+    .fc-h-event .fc-event-time {
+        font-size: 12px;
+        line-height: 1.2;
     }
 
     .fc {
