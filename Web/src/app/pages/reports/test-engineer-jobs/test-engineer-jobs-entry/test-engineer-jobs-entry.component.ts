@@ -193,7 +193,7 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   }
 
   private loadEngineers(): void {
-    this.reportService.getTestEngineerJobsEngineers()
+    this.reportService.getEmployeeNamesByDept('Testing')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {

@@ -141,12 +141,12 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   loadEngineers(): void {
-    this.reportService.getTestEngineerJobsEngineers()
+    this.reportService.getEmployeeNamesByDept('Testing')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
           if (response.success) {
-            this.engineersList = response.engineers || [];
+            this.engineersList = response.employees || [];
           }
         },
         error: (error) => {
