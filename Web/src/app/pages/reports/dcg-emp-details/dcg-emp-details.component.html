@@ -1,5 +1,17 @@
 <!-- DCG Employee Details Page -->
 <div class="container-fluid dcg-employee-container">
+  <div *ngIf="isCheckingAuthorization" class="d-flex justify-content-center align-items-center py-5">
+    <div class="spinner-border text-primary me-3" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <span>Checking access...</span>
+  </div>
+
+  <div *ngIf="!isCheckingAuthorization && !hasPageAccess" class="alert alert-danger mt-4" role="alert">
+    Unauthorized, your access is denied.
+  </div>
+
+  <ng-container *ngIf="!isCheckingAuthorization && hasPageAccess">
   <!-- Loading spinner -->
   <div
     *ngIf="isLoading"
@@ -378,6 +390,7 @@
       </div>
     </div>
   </div>
+  </ng-container>
 </div>
 
 <!-- Employee Modal -->
@@ -455,6 +468,26 @@
                      [class.is-invalid]="isFieldInvalid(employeeForm, 'email')"
                      placeholder="Enter Email Address">
               <div class="invalid-feedback">{{ getFieldError(employeeForm, 'email') }}</div>
+            </div>
+            <div class="col-md-12">
+              <label class="form-label fw-bold">
+                Password
+                <span class="required" *ngIf="!editingEmployee">*</span>
+                <span class="text-muted fw-normal" *ngIf="editingEmployee">(loaded from backend; change only if needed)</span>
+              </label>
+              <div class="input-group">
+                <input [type]="showPassword ? 'text' : 'password'"
+                       class="form-control"
+                       formControlName="password"
+                       [class.is-invalid]="isFieldInvalid(employeeForm, 'password')"
+                       [placeholder]="editingEmployee ? 'Password' : 'Enter password'">
+                <button class="btn btn-outline-secondary" type="button"
+                        (click)="showPassword = !showPassword"
+                        [title]="showPassword ? 'Hide password' : 'Show password'">
+                  <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
+                </button>
+              </div>
+              <div class="invalid-feedback">{{ getFieldError(employeeForm, 'password') }}</div>
             </div>
           </div>
         </div>
