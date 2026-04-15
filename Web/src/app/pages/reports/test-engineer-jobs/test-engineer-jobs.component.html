@@ -19,7 +19,12 @@
 
       <!-- HEADER -->
       <div class="d-flex justify-content-end align-items-center mb-2">
-        <button type="button" class="btn btn-new" (click)="addNewJob()">+ New Job</button>
+        <button
+          type="button"
+          class="btn btn-new"
+          (click)="addNewJob()"
+          [disabled]="isCheckingAuthorization"
+          title="Create new job">+ New Job</button>
       </div>
 
       <!-- FILTER BAR -->
@@ -37,14 +42,14 @@
           </option>
         </select>
 
-        <select formControlName="status" class="form-select form-select-sm">
+        <select formControlName="status" class="form-select form-select-sm" [disabled]="isManagerUser">
           <option value="">All Status</option>
           <option value="Open">Open</option>
           <option value="In-Progress">In-Progress</option>
           <option value="Closed">Closed</option>
         </select>
 
-        <select formControlName="location" class="form-select form-select-sm">
+        <select formControlName="location" class="form-select form-select-sm" [disabled]="isManagerUser">
           <option value="">All Locations</option>
           <option value="DC1">DC1</option>
           <option value="DC2">DC2</option>
@@ -242,6 +247,7 @@
                         class="btn btn-primary btn-sm edit-btn" 
                         style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;"
                         (click)="editJob(job.jobNumber)"
+                  [disabled]="isCheckingAuthorization"
                         title="Edit Job">
                   <i class="bi bi-pencil-square"></i>
                 </button>

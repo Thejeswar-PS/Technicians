@@ -10,7 +10,10 @@ import {
   TestEngineerJobsEntryDto,
   TestEngineerJobsEntryResponse,
   NextRowIdResponse,
-  EngineerDto
+  EngineerDto,
+  EmployeeDepartmentResponse,
+  TestEngineerJobFileDto,
+  FileOperationResponse
 } from 'src/app/core/model/test-engineer-jobs.model';
 
 @Component({
@@ -25,11 +28,22 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   isLoading = false;
   isEditMode = false;
   isReadOnlyMode = false;
+  isCheckingAuthorization = false;
+  hasJobEditAccess = true;
   errorMessage = '';
   successMessage = '';
+  accessDeniedMessage = '';
+  currentUserDepartment = '';
   
   engineersList: EngineerDto[] = [];
   currentRowId?: number;
+  selectedFiles: File[] = [];
+  existingFiles: TestEngineerJobFileDto[] = [];
+  isUploadingFiles = false;
+  isLoadingFiles = false;
+
+  private readonly allowedFileTypes = ['jpg', 'gif', 'doc', 'bmp', 'xls', 'png', 'txt', 'xlsx', 'docx', 'pdf', 'jpeg'];
+  private readonly maxFileSizeBytes = 10 * 1024 * 1024;
   
   // Dropdown options (matching legacy)
   workTypeOptions = [
@@ -39,6 +53,7 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     { value: 'PCB Testing', label: 'PCB Testing' },
     { value: 'Breaker testing', label: 'Breaker testing' },
     { value: 'Asst Others', label: 'Asst Others' },
+    { value: 'Other', label: 'Other' },
     { value: 'Retest', label: 'Retest' }
   ];
   
@@ -65,9 +80,8 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.loadEngineers();
-    this.checkRouteParams();
     this.setupFormSubscriptions();
+    this.loadUserAuthorization();
   }
 
   ngOnDestroy(): void {
@@ -182,9 +196,9 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     this.reportService.getEmployeeNamesByDept('Testing')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response: any) => {
+        next: (response) => {
           if (response.success) {
-            this.engineersList = response.employees || [];
+            this.engineersList = response.engineers || [];
           } else {
             this.errorMessage = 'Failed to load engineers';
           }
@@ -196,14 +210,60 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
       });
   }
 
+  private loadUserAuthorization(): void {
+    const adUserId = this.getCurrentAdUserId();
+
+    if (!adUserId) {
+      this.hasJobEditAccess = true;
+      this.accessDeniedMessage = '';
+      this.loadEngineers();
+      this.checkRouteParams();
+      return;
+    }
+
+    this.isCheckingAuthorization = true;
+
+    this.reportService.getTestEngineerJobsEmployeeDepartment(adUserId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: EmployeeDepartmentResponse) => {
+          this.isCheckingAuthorization = false;
+
+          if (!response.success) {
+            this.hasJobEditAccess = true;
+            this.accessDeniedMessage = '';
+            this.loadEngineers();
+            this.checkRouteParams();
+            return;
+          }
+
+          this.currentUserDepartment = response.data?.department || 'Other';
+          this.hasJobEditAccess = true;
+
+          this.loadEngineers();
+          this.checkRouteParams();
+        },
+        error: (error) => {
+          console.error('Error loading Test Engineer Jobs authorization:', error);
+          this.isCheckingAuthorization = false;
+          this.hasJobEditAccess = true;
+          this.accessDeniedMessage = '';
+          this.loadEngineers();
+          this.checkRouteParams();
+        }
+      });
+  }
+
   private loadNextRowId(): void {
     this.reportService.getTestEngineerJobsNextRowId()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response: NextRowIdResponse) => {
           if (response.success) {
-            const formattedId = response.nextRowId.toString().padStart(6, '0');
+            const formattedId = response.formattedRowId || response.nextRowId.toString().padStart(6, '0');
+            this.currentRowId = response.nextRowId;
             this.entryForm.patchValue({ jobNumber: formattedId });
+            this.loadJobFiles();
           }
         },
         error: (error) => {
@@ -221,6 +281,7 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
           this.isLoading = false;
           if (response.success && response.data) {
             this.populateForm(response.data);
+            this.loadJobFiles();
           } else {
             this.errorMessage = response.message || 'Failed to load job details';
           }
@@ -363,9 +424,6 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     this.successMessage = '';
 
     const formValues = this.entryForm.getRawValue();
-    const currentUser = this.authService.currentUserValue;
-    const userName = currentUser?.username || currentUser?.name || 'System';
-
     const saveData: SaveUpdateTestEngineerJobsDto = {
       rowID: this.isEditMode ? this.currentRowId! : 0,
       jobNumber: formValues.serialNo,
@@ -379,9 +437,7 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
       status: formValues.status,
       qcCleaned: formValues.qcCleaned || false,
       qcTorque: formValues.qcTorque || false,
-      qcInspected: formValues.qcInspected || false,
-      createdBy: userName,
-      modifiedBy: userName
+      qcInspected: formValues.qcInspected || false
     };
 
     const serviceCall = this.isEditMode 
@@ -394,14 +450,19 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
         next: (response: TestEngineerJobsEntryResponse) => {
           this.isLoading = false;
           if (response.success) {
+            if (response.data?.rowID) {
+              this.currentRowId = response.data.rowID;
+            }
+
+            if (!this.isEditMode && this.currentRowId) {
+              this.isEditMode = true;
+            }
+
             this.successMessage = this.isEditMode 
               ? 'Job updated successfully.' 
               : 'Job created successfully.';
-            
-            // Redirect to list after a short delay
-            setTimeout(() => {
-              this.router.navigate(['/reports/test-engineer-jobs']);
-            }, 2000);
+
+            this.loadJobFiles();
           } else {
             this.errorMessage = response.message || 'Failed to save job';
           }
@@ -474,6 +535,242 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     this.router.navigate(['/reports/test-engineer-jobs']);
   }
 
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const validationErrors: string[] = [];
+
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
+      const extension = file.name.split('.').pop()?.toLowerCase() || '';
+
+      if (!this.allowedFileTypes.includes(extension)) {
+        validationErrors.push(`${file.name}: invalid file type`);
+        continue;
+      }
+
+      if (file.size > this.maxFileSizeBytes) {
+        validationErrors.push(`${file.name}: exceeds 10MB limit`);
+        continue;
+      }
+
+      const alreadySelected = this.selectedFiles.some(selected => selected.name.toLowerCase() === file.name.toLowerCase());
+      const alreadyUploaded = this.existingFiles.some(uploaded => uploaded.fileName.toLowerCase() === file.name.toLowerCase());
+
+      if (alreadySelected || alreadyUploaded) {
+        validationErrors.push(`${file.name}: file with same name already exists`);
+        continue;
+      }
+
+      this.selectedFiles.push(file);
+    }
+
+    if (validationErrors.length > 0) {
+      this.errorMessage = validationErrors.join('\n');
+    }
+
+    if (this.selectedFiles.length > 0 && !this.isUploadingFiles) {
+      this.uploadSelectedFiles();
+    }
+
+    input.value = '';
+  }
+
+  removeSelectedFile(index: number): void {
+    this.selectedFiles.splice(index, 1);
+  }
+
+  uploadSelectedFiles(): void {
+    const jobId = this.currentRowId;
+    const folderKey = this.getPreferredUploadFolderKey();
+
+    if (!jobId || !folderKey) {
+      this.errorMessage = 'Job details are not available for file upload.';
+      return;
+    }
+
+    if (this.selectedFiles.length === 0) {
+      this.errorMessage = 'Please select at least one file to upload.';
+      return;
+    }
+
+    this.isUploadingFiles = true;
+    this.errorMessage = '';
+
+    const filesToUpload = [...this.selectedFiles];
+    const failedUploads: string[] = [];
+
+    const uploadNext = (fileIndex: number): void => {
+      if (fileIndex >= filesToUpload.length) {
+        this.isUploadingFiles = false;
+        this.selectedFiles = [];
+
+        if (failedUploads.length > 0) {
+          this.errorMessage = failedUploads.join('\n');
+        } else {
+          this.successMessage = 'File(s) uploaded successfully.';
+        }
+
+        this.loadJobFiles();
+        return;
+      }
+
+      const file = filesToUpload[fileIndex];
+
+      this.reportService.uploadTestEngineerJobFile(jobId, folderKey, file)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response: FileOperationResponse) => {
+            if (!response.success) {
+              failedUploads.push(`${file.name}: ${response.message || 'Upload failed'}`);
+            }
+
+            uploadNext(fileIndex + 1);
+          },
+          error: (error) => {
+            console.error('Error uploading file:', error);
+            failedUploads.push(`${file.name}: upload failed`);
+            uploadNext(fileIndex + 1);
+          }
+        });
+    };
+
+    uploadNext(0);
+  }
+
+  loadJobFiles(): void {
+    const jobId = this.currentRowId;
+    const folderKeys = this.getCandidateFolderKeys();
+
+    if (!jobId || folderKeys.length === 0) {
+      this.existingFiles = [];
+      return;
+    }
+
+    this.isLoadingFiles = true;
+
+    const tryLoad = (index: number): void => {
+      if (index >= folderKeys.length) {
+        this.isLoadingFiles = false;
+        this.existingFiles = [];
+        return;
+      }
+
+      const folderKey = folderKeys[index];
+
+      this.reportService.getTestEngineerJobFiles(jobId, folderKey)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response: FileOperationResponse) => {
+            const files = this.extractFiles(response);
+
+            if (response.success && files.length > 0) {
+              this.isLoadingFiles = false;
+              this.existingFiles = files;
+              return;
+            }
+
+            tryLoad(index + 1);
+          },
+          error: (error) => {
+            console.error('Error loading job files:', error);
+            tryLoad(index + 1);
+          }
+        });
+    };
+
+    tryLoad(0);
+  }
+
+  downloadFile(file: TestEngineerJobFileDto): void {
+    this.reportService.downloadTestEngineerJobFile(file.filePath)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob: Blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = file.fileName;
+          anchor.click();
+          window.URL.revokeObjectURL(url);
+        },
+        error: (error) => {
+          console.error('Error downloading file:', error);
+          this.errorMessage = 'Failed to download file.';
+        }
+      });
+  }
+
+  deleteFile(file: TestEngineerJobFileDto): void {
+    if (!confirm(`Delete file '${file.fileName}'?`)) {
+      return;
+    }
+
+    this.reportService.deleteTestEngineerJobFile(file.filePath)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: FileOperationResponse) => {
+          if (response.success) {
+            this.existingFiles = this.extractFiles(response);
+            this.successMessage = 'File deleted successfully.';
+          } else {
+            this.errorMessage = response.message || 'Failed to delete file.';
+          }
+        },
+        error: (error) => {
+          console.error('Error deleting file:', error);
+          this.errorMessage = 'Failed to delete file.';
+        }
+      });
+  }
+
+  getFileSizeFormatted(bytes: number): string {
+    if (bytes === 0) return '0 B';
+
+    const units = ['B', 'KB', 'MB', 'GB'];
+    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    const size = bytes / Math.pow(1024, index);
+
+    return `${size.toFixed(index === 0 ? 0 : 2)} ${units[index]}`;
+  }
+
+  private getPreferredUploadFolderKey(): string {
+    const folderKeys = this.getCandidateFolderKeys();
+    return folderKeys[0] || '';
+  }
+
+  private getCandidateFolderKeys(): string[] {
+    const serialNo = (this.entryForm.get('serialNo')?.value || '').toString().trim();
+    const formattedJobNumber = (this.entryForm.get('jobNumber')?.value || '').toString().trim();
+    const rowId = this.currentRowId ? this.currentRowId.toString() : '';
+    const paddedRowId = this.currentRowId ? this.currentRowId.toString().padStart(6, '0') : '';
+
+    return [serialNo, formattedJobNumber, rowId, paddedRowId].filter((value, index, values) =>
+      !!value && values.indexOf(value) === index
+    );
+  }
+
+  private extractFiles(response: any): TestEngineerJobFileDto[] {
+    const rawFiles = response?.files || response?.Files || [];
+
+    if (!Array.isArray(rawFiles)) {
+      return [];
+    }
+
+    return rawFiles.map((file: any) => ({
+      fileName: file?.fileName || file?.FileName || '',
+      filePath: file?.filePath || file?.FilePath || '',
+      fileSize: Number(file?.fileSize ?? file?.FileSize ?? 0),
+      uploadedOn: file?.uploadedOn || file?.UploadedOn || '',
+      uploadedBy: file?.uploadedBy || file?.UploadedBy || ''
+    })).filter((file: TestEngineerJobFileDto) => !!file.fileName && !!file.filePath);
+  }
+
   // Date validation handler
   onCompletedDateChange(event: any): void {
     const status = this.entryForm.get('status')?.value;
@@ -506,10 +803,47 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
     return new Date(dateString).toISOString().split('T')[0];
   }
 
-  private formatDateTimeLocal(dateString: string): string {
+  formatDateTimeLocal(dateString: string): string {
     if (!dateString) return '';
     return new Date(dateString).toISOString().slice(0, 16);
   }
+
+  private getCurrentAdUserId(): string {
+    const currentUser = this.authService.currentUserValue || {};
+    const userData = this.getStoredUserData();
+    const rawUserId = (
+      currentUser?.windowsID ||
+      currentUser?.windowsId ||
+      currentUser?.username ||
+      currentUser?.userName ||
+      userData?.windowsID ||
+      userData?.windowsId ||
+      userData?.username ||
+      userData?.userName ||
+      ''
+    ).toString();
+
+    return this.normalizeAdUserId(rawUserId);
+  }
+
+  private getStoredUserData(): any {
+    try {
+      return JSON.parse(localStorage.getItem('userData') || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  private normalizeAdUserId(value: string): string {
+    const trimmedValue = (value || '').trim();
+    if (!trimmedValue) {
+      return '';
+    }
+
+    const withoutDomain = trimmedValue.split('\\').pop() || trimmedValue;
+    return withoutDomain.split('/').pop()?.trim() || withoutDomain;
+  }
+
 
   // Getters for template
   get isEmergencyType(): boolean {

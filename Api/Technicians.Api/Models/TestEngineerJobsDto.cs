@@ -80,6 +80,27 @@ namespace Technicians.Api.Models
         public string ModifiedBy { get; set; } = string.Empty;
     }
 
+    /// <summary>
+    /// DTO for GetEmployeeDeptByUserID stored procedure
+    /// Returns employee ID and department information by AD/Windows user ID
+    /// Used for Test Engineer Jobs authorization and role-based operations
+    /// </summary>
+    public class EmployeeDepartmentDto
+    {
+        public string EmpID { get; set; } = string.Empty;
+        public string Department { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Response wrapper for EmployeeDepartment operations
+    /// </summary>
+    public class EmployeeDepartmentResponse
+    {
+        public bool Success { get; set; } = true;
+        public string Message { get; set; } = string.Empty;
+        public EmployeeDepartmentDto? Data { get; set; }
+    }
+
     /// Response wrapper for TestEngineerJobs entry operations
     public class TestEngineerJobsEntryResponse
     {
@@ -110,7 +131,10 @@ namespace Technicians.Api.Models
     /// DTO for Engineer dropdown
     public class EngineerDto
     {
-        public string EmpName { get; set; } = string.Empty;
+        public string EmpID { get; set; } = string.Empty;       // NEW: From updated SP
+        public string EmpName { get; set; } = string.Empty;     // Existing
+        public string Email { get; set; } = string.Empty;       // NEW: From updated SP  
+        public string WindowsID { get; set; } = string.Empty;   // NEW: From updated SP
     }
 
     /// Chart data DTOs
@@ -132,6 +156,50 @@ namespace Technicians.Api.Models
     {
         public List<EngineerChartDto> EngineerData { get; set; } = new List<EngineerChartDto>();
         public List<StatusChartDto> StatusData { get; set; } = new List<StatusChartDto>();
+    }
+    
+    /// <summary>
+    /// DTO for file upload operations in Test Engineer Jobs
+    /// </summary>
+    public class TestEngineerJobFileDto
+    {
+        public string FileName { get; set; } = string.Empty;
+        public string FilePath { get; set; } = string.Empty;
+        public long FileSize { get; set; }
+        public DateTime UploadedOn { get; set; }
+        public string UploadedBy { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Request DTO for file upload
+    /// </summary>
+    public class FileUploadRequestDto
+    {
+        public int JobId { get; set; }
+        public string JobNumber { get; set; } = string.Empty;
+        public IFormFile File { get; set; } = null!;
+    }
+
+    /// <summary>
+    /// Response DTO for file operations
+    /// </summary>
+    public class FileOperationResponse
+    {
+        public bool Success { get; set; } = true;
+        public string Message { get; set; } = string.Empty;
+        public List<TestEngineerJobFileDto> Files { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Response DTO for file download
+    /// </summary>
+    public class FileDownloadResponse
+    {
+        public bool Success { get; set; } = true;
+        public string Message { get; set; } = string.Empty;
+        public byte[]? FileContent { get; set; }
+        public string FileName { get; set; } = string.Empty;
+        public string ContentType { get; set; } = string.Empty;
     }
 
 }

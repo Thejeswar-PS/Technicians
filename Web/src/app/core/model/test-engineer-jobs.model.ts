@@ -38,7 +38,21 @@ export interface TestEngineerJobsResponse {
 }
 
 export interface EngineerDto {
+  empID?: string;
   empName: string;
+  email?: string;
+  windowsID?: string;
+}
+
+export interface EmployeeDepartmentDto {
+  empID: string;
+  department: string;
+}
+
+export interface EmployeeDepartmentResponse {
+  success: boolean;
+  message: string;
+  data?: EmployeeDepartmentDto;
 }
 
 export interface EngineerChartDto {
@@ -82,8 +96,8 @@ export interface SaveUpdateTestEngineerJobsDto {
   qcCleaned: boolean;
   qcTorque: boolean;
   qcInspected: boolean;
-  createdBy: string;
-  modifiedBy: string;
+  createdBy?: string;
+  modifiedBy?: string;
 }
 
 export interface TestEngineerJobsEntryDto {
@@ -116,4 +130,19 @@ export interface NextRowIdResponse {
   success: boolean;
   message: string;
   nextRowId: number;
+  formattedRowId?: string;
+}
+
+export interface TestEngineerJobFileDto {
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  uploadedOn: string;
+  uploadedBy: string;
+}
+
+export interface FileOperationResponse {
+  success: boolean;
+  message: string;
+  files: TestEngineerJobFileDto[];
 }
