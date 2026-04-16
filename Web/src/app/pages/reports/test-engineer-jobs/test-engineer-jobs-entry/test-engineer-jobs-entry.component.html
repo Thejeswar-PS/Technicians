@@ -38,7 +38,17 @@
     <div class="card shadow-sm test-engineer-jobs-main-card">
 
       <!-- Status Messages -->
-      <div class="message-section" *ngIf="successMessage || errorMessage">
+      <div class="message-section" *ngIf="successMessage || errorMessage || accessDeniedMessage">
+        <!-- ACCESS DENIED -->
+        <div *ngIf="accessDeniedMessage && !isLoading" class="modern-alert error">
+          <div class="alert-icon">
+            <i class="bi bi-lock-fill"></i>
+          </div>
+          <div class="alert-content">
+            <span class="alert-message">{{ accessDeniedMessage }}</span>
+          </div>
+        </div>
+
         <!-- SUCCESS -->
         <div *ngIf="successMessage && !isLoading" class="modern-alert success">
           <div class="alert-icon">
@@ -68,7 +78,7 @@
       </div>
 
       <!-- Form Content -->
-      <div class="form-content" *ngIf="!isCheckingAuthorization">
+      <div class="form-content" *ngIf="!isCheckingAuthorization && hasJobEditAccess">
 
         <!-- Loading indicator -->
         <div *ngIf="isLoading" class="loading-overlay">

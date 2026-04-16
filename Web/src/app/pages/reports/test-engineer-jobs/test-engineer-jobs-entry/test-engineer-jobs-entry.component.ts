@@ -34,6 +34,8 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
   successMessage = '';
   accessDeniedMessage = '';
   currentUserDepartment = '';
+  currentUserEngineerName = '';
+  isTestingEngineer = false;
   
   engineersList: EngineerDto[] = [];
   currentRowId?: number;
@@ -199,15 +201,46 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
         next: (response) => {
           if (response.success) {
             this.engineersList = response.employees || [];
+            // Find current user's engineer name
+            this.identifyCurrentUserEngineer();
+            // Load route params after engineers and current user identification are set
+            this.checkRouteParams();
           } else {
             this.errorMessage = 'Failed to load engineers';
+            this.checkRouteParams();
           }
         },
         error: (error) => {
           console.error('Error loading engineers:', error);
           this.errorMessage = 'Error loading engineers';
+          this.checkRouteParams();
         }
       });
+  }
+
+  private identifyCurrentUserEngineer(): void {
+    const currentUserId = this.getCurrentAdUserId();
+    if (!currentUserId) {
+      this.isTestingEngineer = false;
+      return;
+    }
+
+    const dept = (this.currentUserDepartment || '').toLowerCase();
+    if (!dept.includes('testing')) {
+      this.isTestingEngineer = false;
+      return;
+    }
+
+    const matchingEngineer = this.engineersList.find(
+      (eng) => (eng.windowsID || '').toLowerCase() === currentUserId.toLowerCase()
+    );
+
+    if (matchingEngineer) {
+      this.isTestingEngineer = true;
+      this.currentUserEngineerName = matchingEngineer.empName;
+    } else {
+      this.isTestingEngineer = false;
+    }
   }
 
   private loadUserAuthorization(): void {
@@ -217,7 +250,6 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
       this.hasJobEditAccess = true;
       this.accessDeniedMessage = '';
       this.loadEngineers();
-      this.checkRouteParams();
       return;
     }
 
@@ -233,7 +265,6 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
             this.hasJobEditAccess = true;
             this.accessDeniedMessage = '';
             this.loadEngineers();
-            this.checkRouteParams();
             return;
           }
 
@@ -241,7 +272,6 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
           this.hasJobEditAccess = true;
 
           this.loadEngineers();
-          this.checkRouteParams();
         },
         error: (error) => {
           console.error('Error loading Test Engineer Jobs authorization:', error);
@@ -249,7 +279,6 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
           this.hasJobEditAccess = true;
           this.accessDeniedMessage = '';
           this.loadEngineers();
-          this.checkRouteParams();
         }
       });
   }
@@ -280,6 +309,12 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
         next: (response: TestEngineerJobsEntryResponse) => {
           this.isLoading = false;
           if (response.success && response.data) {
+            // Check if current testing engineer has access to this job
+            if (!this.canAccessJob(response.data)) {
+              this.accessDeniedMessage = 'You do not have permission to access this job.';
+              this.hasJobEditAccess = false;
+              return;
+            }
             this.populateForm(response.data);
             this.loadJobFiles();
           } else {
@@ -292,6 +327,16 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
           this.errorMessage = 'Error loading job details';
         }
       });
+  }
+
+  private canAccessJob(job: TestEngineerJobsEntryDto): boolean {
+    // Non-testing engineers can access all jobs
+    if (!this.isTestingEngineer) {
+      return true;
+    }
+
+    // Testing engineers can only access jobs assigned to them
+    return job.assignedEngineer === this.currentUserEngineerName;
   }
 
   private populateForm(job: TestEngineerJobsEntryDto): void {
