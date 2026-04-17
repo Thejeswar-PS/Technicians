@@ -360,7 +360,7 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
 
   /**
    * Calculate status based on due date (Legacy Calendar1_DayRender logic)
-   * Using CORRECTED logic with proper ranges (fixing the legacy bug)
+   * Using due-within buckets: overdue, <=15, <=30, <=45, <=60 days.
    */
   private calculateStatus(dueDate: Date): 'overdue' | 'due15' | 'due30' | 'due45' | 'due60' | 'normal' {
     const today = new Date();
@@ -372,24 +372,24 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
     const diffTime = dueDateOnly.getTime() - today.getTime();
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
     
-    // CORRECTED logic with proper date ranges (fixing legacy bug)
+    // Due-within bucket logic (date-only comparison)
     if (diffDays <= 0) {
       return 'overdue';       // RED: <= 0 days (overdue or due today)
     } 
-    else if (diffDays >= 60) {
-      return 'due60';         // GREEN: >= 60 days
+    else if (diffDays <= 15) {
+      return 'due15';         // ORANGE: 1-15 days
     }
-    else if (diffDays >= 45) {
-      return 'due45';         // OLIVE: 45-59 days  
+    else if (diffDays <= 30) {
+      return 'due30';         // YELLOW: 16-30 days
     }
-    else if (diffDays >= 30) {
-      return 'due30';         // YELLOW: 30-44 days
+    else if (diffDays <= 45) {
+      return 'due45';         // OLIVE: 31-45 days
     }
-    else if (diffDays >= 15) {
-      return 'due15';         // ORANGE: 15-29 days
+    else if (diffDays <= 60) {
+      return 'due60';         // GREEN: 46-60 days
     }
     
-    return 'normal';          // Default: 1-14 days (no special color)
+    return 'normal';          // Default: >60 days (no special color)
   }
 
   /**

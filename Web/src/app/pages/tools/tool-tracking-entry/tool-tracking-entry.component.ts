@@ -12,6 +12,7 @@ import { AuthHelper } from 'src/app/core/utils/auth-helper';
 export class ToolTrackingEntryComponent implements OnInit {
   private readonly drillDownStorageKeyPrefix = 'toolTrackingDrillDown:';
   readonly pageSizeOptions: number[] = [10, 25, 50, 100];
+  navigationBucket: string = '';
   techId: string = '';
   selectedTech: string = 'All';
   isTechnicianRestricted: boolean = false;
@@ -61,6 +62,10 @@ export class ToolTrackingEntryComponent implements OnInit {
   ngOnInit(): void {
     // Get user context for role-based filtering
     this.userContext = this.authHelper.getUserContext();
+
+    this.route.queryParamMap.subscribe(queryParams => {
+      this.navigationBucket = (queryParams.get('bucket') || '').toLowerCase();
+    });
     
     this.loadTechnicians();
 
@@ -787,27 +792,113 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   isOverdueByLegacyRule(dueDate: any): boolean {
-    if (!dueDate) {
+    return this.isBucketMatch(dueDate, 'overdue');
+  }
+
+  getKpiHighlightClass(dueDate: any): string {
+    const activeBucket = this.getActiveBucket();
+    if (!activeBucket) {
+      return '';
+    }
+
+    if (this.isBucketMatch(dueDate, 'overdue') && activeBucket === 'overdue') {
+      return 'kpi-overdue-row';
+    }
+
+    if (this.isBucketMatch(dueDate, 'due15') && activeBucket === 'due15') {
+      return 'kpi-due15-row';
+    }
+
+    if (this.isBucketMatch(dueDate, 'due30') && activeBucket === 'due30') {
+      return 'kpi-due30-row';
+    }
+
+    if (this.isBucketMatch(dueDate, 'due45') && activeBucket === 'due45') {
+      return 'kpi-due45-row';
+    }
+
+    if (this.isBucketMatch(dueDate, 'due60') && activeBucket === 'due60') {
+      return 'kpi-due60-row';
+    }
+
+    return '';
+  }
+
+  isKpiDueDateMatch(dueDate: any): boolean {
+    const activeBucket = this.getActiveBucket();
+    if (!activeBucket) {
       return false;
+    }
+
+    return this.isBucketMatch(dueDate, activeBucket);
+  }
+
+  private getActiveBucket(): string {
+    const selected = (this.selectedBucket || '').toLowerCase();
+    if (selected) {
+      return selected;
+    }
+
+    return (this.navigationBucket || '').toLowerCase();
+  }
+
+  private parseValidDueDate(dueDate: any): Date | null {
+    if (!dueDate) {
+      return null;
     }
 
     const due = new Date(dueDate);
     if (isNaN(due.getTime())) {
-      return false;
+      return null;
     }
 
-    // Treat legacy placeholder dates as "no due date" (do not highlight)
     if (due.getFullYear() <= 1900) {
-      return false;
+      return null;
+    }
+
+    due.setHours(0, 0, 0, 0);
+    return due;
+  }
+
+  private getBucketFromDueDate(dueDate: any): 'overdue' | 'due15' | 'due30' | 'due45' | 'due60' | 'normal' | null {
+    const validDueDate = this.parseValidDueDate(dueDate);
+    if (!validDueDate) {
+      return null;
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const dueDateOnly = new Date(due);
-    dueDateOnly.setHours(0, 0, 0, 0);
+    const diffTime = validDueDate.getTime() - today.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
 
-    return dueDateOnly.getTime() <= today.getTime();
+    if (diffDays <= 0) {
+      return 'overdue';
+    }
+
+    if (diffDays <= 15) {
+      return 'due15';
+    }
+
+    if (diffDays <= 30) {
+      return 'due30';
+    }
+
+    if (diffDays <= 45) {
+      return 'due45';
+    }
+
+    if (diffDays <= 60) {
+      return 'due60';
+    }
+
+    return 'normal';
+  }
+
+  private isBucketMatch(dueDate: any, bucket: string): boolean {
+    const normalizedBucket = (bucket || '').toLowerCase();
+    const dueBucket = this.getBucketFromDueDate(dueDate);
+    return !!dueBucket && dueBucket === normalizedBucket;
   }
 
   formatDate(date: any): string {
