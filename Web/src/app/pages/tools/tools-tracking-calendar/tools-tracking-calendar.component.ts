@@ -647,16 +647,25 @@ export class ToolsTrackingCalendarComponent implements OnInit, OnDestroy {
       endDate: this.formatDateForApi(this.endDate)
     };
 
-    const urlTree = selectedTechId
-      ? this.router.createUrlTree(['/tools/tool-tracking-entry', selectedTechId])
-      : this.router.createUrlTree([
-          '/tools/tool-tracking-entry/drilldown',
-          this.storeDrillDownContext(drillDownContext)
-        ]);
+    if (selectedTechId) {
+      this.router.navigate(['/tools/tool-tracking-entry', selectedTechId], {
+        queryParams: {
+          bucket,
+          source: 'calendar-kpi'
+        }
+      });
+      return;
+    }
 
-    const internalUrl = this.router.serializeUrl(urlTree);
-    const externalUrl = this.location.prepareExternalUrl(internalUrl);
-    window.open(externalUrl, '_blank');
+    this.router.navigate([
+      '/tools/tool-tracking-entry/drilldown',
+      this.storeDrillDownContext(drillDownContext)
+    ], {
+      queryParams: {
+        bucket,
+        source: 'calendar-kpi'
+      }
+    });
   }
 
   private storeDrillDownContext(context: {

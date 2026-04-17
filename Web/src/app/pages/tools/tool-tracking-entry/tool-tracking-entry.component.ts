@@ -783,10 +783,31 @@ export class ToolTrackingEntryComponent implements OnInit {
   }
 
   isDueDateOverdue(dueDate: any): boolean {
-    if (!dueDate) return false;
-    const today = new Date();
+    return this.isOverdueByLegacyRule(dueDate);
+  }
+
+  isOverdueByLegacyRule(dueDate: any): boolean {
+    if (!dueDate) {
+      return false;
+    }
+
     const due = new Date(dueDate);
-    return due < today;
+    if (isNaN(due.getTime())) {
+      return false;
+    }
+
+    // Treat legacy placeholder dates as "no due date" (do not highlight)
+    if (due.getFullYear() <= 1900) {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const dueDateOnly = new Date(due);
+    dueDateOnly.setHours(0, 0, 0, 0);
+
+    return dueDateOnly.getTime() <= today.getTime();
   }
 
   formatDate(date: any): string {
