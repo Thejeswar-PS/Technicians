@@ -36,11 +36,11 @@
   <form [formGroup]="editForm" *ngIf="hasPageAccess">
     
     <!-- Main Content: Two Column Layout -->
-    <div class="row g-4">
+    <div class="row g-4 align-items-start">
       <!-- Left Column: Parts Testing Info Entry -->
-      <div class="col-lg-6">
-        <div class="card shadow border h-100">
-          <div class="card-header bg-info">
+      <div class="col-lg-7">
+        <div class="card shadow border h-100 entry-card">
+          <div class="card-header bg-primary">
             <h5 class="card-title text-white mb-0 fw-bold">
               <i class="ki-outline ki-setting-2 fs-2 me-2"></i>
               Parts Testing Info Entry
@@ -48,10 +48,20 @@
           </div>
           <div class="card-body bg-white">
 
+            <div class="section-title d-flex align-items-center justify-content-between">
+              <span>Job Details</span>
+              <div class="form-check form-check-custom form-check-solid px-3 py-1 border rounded emergency-check-wrap" [ngClass]="{'bg-danger text-white': editForm.get('emergency')?.value, 'bg-light': !editForm.get('emergency')?.value}">
+                <input class="form-check-input" type="checkbox" formControlName="emergency" id="emergency" (change)="toggleEmergencyFlag()" />
+                <label class="form-check-label fw-bold fs-6" for="emergency" [ngClass]="{'text-white': editForm.get('emergency')?.value, 'text-dark': !editForm.get('emergency')?.value}">
+                  <i class="ki-outline ki-warning me-1 text-warning"></i>Emergency
+                </label>
+              </div>
+            </div>
+
 
             <!-- Basic Information -->
-            <div class="row g-3 mb-4">
-              <div class="col-lg-3 col-md-4">
+            <div class="row g-2 mb-4 job-details-grid">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-category me-1 text-primary"></i>Job Type <span class="text-danger">*</span>
                 </label>
@@ -65,7 +75,7 @@
                 </select>
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('jobFrom') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-abstract-26 me-1 text-primary"></i>Job Number
                 </label>
@@ -77,69 +87,69 @@
                   </div>
                 </div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-geolocation me-1 text-primary"></i>Site ID
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="siteID" placeholder="Enter site ID" [class.is-invalid]="isFieldInvalid('siteID')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('siteID') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-cube-2 me-1 text-primary"></i>Make
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="make" maxlength="21" placeholder="Enter make" [class.is-invalid]="isFieldInvalid('make')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('make') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-element-7 me-1 text-primary"></i>Model
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="model" maxlength="21" placeholder="Enter model" [class.is-invalid]="isFieldInvalid('model')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('model') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-electricity me-1 text-primary"></i>KVA
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="kva" placeholder="Enter KVA" (keypress)="onlyNumbersAndDecimal($event)" (paste)="onPasteDecimals($event)" [class.is-invalid]="isFieldInvalid('kva')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('kva') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-flash me-1 text-primary"></i>Voltage
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="voltage" placeholder="Enter voltage" (keypress)="onlyNumbersAndDecimal($event)" (paste)="onPasteDecimals($event)" />
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-barcode me-1 text-primary"></i>Manuf Part # <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="manufPartNo" [class.is-invalid]="isFieldInvalid('manufPartNo')" placeholder="Enter manufacturer part number" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('manufPartNo') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-scan-barcode me-1 text-primary"></i>DCG Part # <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="dcgPartNo" [class.is-invalid]="isFieldInvalid('dcgPartNo')" placeholder="Enter DCG part number" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('dcgPartNo') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-lots-shopping me-1 text-primary"></i>Quantity <span class="text-danger">*</span>
                 </label>
                 <input type="number" class="form-control form-control-solid text-dark fw-semibold" formControlName="quantity" min="1" max="999" [class.is-invalid]="isFieldInvalid('quantity')" placeholder="Enter quantity" (keypress)="onlyNumbers($event)" (paste)="onPasteNumbers($event)" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('quantity') }}</div>
               </div>
-              <div class="col-lg-3 col-md-4">
+              <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-tag me-1 text-primary"></i>Serial No
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="serialNo" placeholder="Enter serial number" />
               </div>
             </div>
-            
+
             <!-- Work Type Section -->
             <div class="card border shadow-sm mb-4">
               <div class="card-header bg-primary">
@@ -148,74 +158,74 @@
                 </h6>
               </div>
               <div class="card-body bg-white">
-                <div class="row g-3">
-                  <div class="col-md-6">
+                <div class="row g-2 work-type-grid">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType1" id="wt1" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt1">Refurbish</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType2" id="wt2" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt2">Repair</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType3" id="wt3" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt3">WH Refurbish</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType4" id="wt4" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt4">Field Refurbish</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType5" id="wt5" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt5">Shipping Refurbish</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType6" id="wt6" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt6">Shipping Damage</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType7" id="wt7" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt7">Clean Parts/Components</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType8" id="wt8" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt8">Parts ASSY</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType9" id="wt9" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt9">Remove from Unit to Ship</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType10" id="wt10" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt10">Re-test from Inventory</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType11" id="wt11" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt11">Test</label>
                     </div>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-3">
                     <div class="form-check form-check-custom form-check-solid p-2 border rounded">
                       <input class="form-check-input" type="checkbox" formControlName="workType12" id="wt12" />
                       <label class="form-check-label text-dark fw-bold fs-6" for="wt12">Board Setup</label>
@@ -226,7 +236,7 @@
             </div>
             
             <!-- Assignment Information -->
-            <div class="row g-3 mb-4">
+            <div class="row g-2 mb-4 assignment-grid">
               <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-profile-user me-1 text-primary"></i>Assigned To <span class="text-danger">*</span>
@@ -248,23 +258,15 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label fw-bold text-dark fs-6">
-                  <i class="ki-outline ki-calendar-add me-1 text-primary"></i>Submitted On
-                </label>
-                <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="submittedOn" readonly placeholder="Auto-populated" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-user-square me-1 text-primary"></i>Inventory Specialist
                 </label>
                 <div class="form-control form-control-solid text-dark fw-semibold bg-light">{{ editForm.get('inventorySpecialist')?.value || 'Auto-assigned' }}</div>
               </div>
-              <div class="col-md-6 d-flex align-items-center">
-                <div class="form-check form-check-custom form-check-solid mt-8 p-3 border rounded" [ngClass]="{'bg-danger text-white': editForm.get('emergency')?.value, 'bg-light': !editForm.get('emergency')?.value}">
-                  <input class="form-check-input" type="checkbox" formControlName="emergency" id="emergency" (change)="toggleEmergencyFlag()" />
-                  <label class="form-check-label fw-bold fs-6" for="emergency" [ngClass]="{'text-white': editForm.get('emergency')?.value, 'text-dark': !editForm.get('emergency')?.value}">
-                    <i class="ki-outline ki-warning me-1 text-warning"></i>Emergency
-                  </label>
-                </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold text-dark fs-6">
+                  <i class="ki-outline ki-calendar-add me-1 text-primary"></i>Submitted On
+                </label>
+                <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="submittedOn" readonly placeholder="Auto-populated" />
               </div>
             </div>
 
@@ -279,19 +281,23 @@
             </div>
             
               <!-- Action Buttons - Match Legacy Layout -->
-            <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+            <div class="d-flex justify-content-between mt-4 pt-3 border-top action-row">
               <!-- Left: Update/Add button -->
               <div class="flex-fill">
-                <button type="button" class="btn btn-primary btn-lg fw-bold me-2" (click)="saveItem()" [disabled]="isSaving || !isAddEntryEnabled">
+                <button type="button" class="btn btn-primary btn-sm fw-bold me-2" (click)="saveItem()" [disabled]="isSaving || !isAddEntryEnabled">
                   <i class="ki-outline ki-check fs-3 me-2" *ngIf="!isSaving"></i>
                   <span class="spinner-border spinner-border-sm me-2" *ngIf="isSaving"></span>
                   {{ editingItem ? 'Update' : 'Add' }}
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm fw-bold" (click)="clearForm()" [disabled]="isSaving">
+                  <i class="ki-outline ki-cross-circle fs-4 me-1"></i>
+                  Clear
                 </button>
               </div>
               <!-- Center: Final Approve button -->
               <div class="flex-fill text-center">
                 <button type="button" 
-                        class="btn btn-success btn-lg fw-bold" 
+                  class="btn btn-success btn-sm fw-bold" 
                         (click)="onFinalApprove()" 
                         [disabled]="!(
                           (isAssemblyJob && editForm.get('assyWorkStatus')?.value === '1' && editForm.get('qcWorkStatus')?.value === '1') ||
@@ -305,7 +311,7 @@
               </div>
               <!-- Right: Delete button -->
               <div class="flex-fill text-end">
-                <button type="button" class="btn btn-danger btn-lg fw-bold" (click)="confirmDeleteItem(editingItem)" *ngIf="editingItem">
+                <button type="button" class="btn btn-danger btn-sm fw-bold" (click)="confirmDeleteItem(editingItem)" *ngIf="editingItem">
                   <i class="ki-outline ki-trash fs-4 me-1"></i>
                   Delete
                 </button>
@@ -316,9 +322,9 @@
       </div>
 
       <!-- Right Column: Result Of Inspection -->
-      <div class="col-lg-6">
-        <div class="card shadow border h-100">
-          <div class="card-header bg-success">
+      <div class="col-lg-5">
+        <div class="card shadow border h-100 inspection-card">
+          <div class="card-header bg-primary">
             <h5 class="card-title text-white mb-0 fw-bold">
               <i class="ki-outline ki-verify fs-2 me-2"></i>
               Result Of Inspection
