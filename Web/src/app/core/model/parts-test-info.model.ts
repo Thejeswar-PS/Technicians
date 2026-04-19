@@ -163,6 +163,7 @@ export interface EmployeeResponse {
   employees: EmployeeDto[];
   message?: string;
   error?: string;
+  engineers?: EmployeeDto[]; // Optional list of engineers for technician dropdown
 }
 
 // Delete parts test response interface

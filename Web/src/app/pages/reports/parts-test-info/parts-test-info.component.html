@@ -75,7 +75,7 @@
                 </select>
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('jobFrom') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-abstract-26 me-1 text-primary"></i>Job Number
                 </label>
@@ -87,62 +87,62 @@
                   </div>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-geolocation me-1 text-primary"></i>Site ID
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="siteID" placeholder="Enter site ID" [class.is-invalid]="isFieldInvalid('siteID')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('siteID') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-cube-2 me-1 text-primary"></i>Make
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="make" maxlength="21" placeholder="Enter make" [class.is-invalid]="isFieldInvalid('make')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('make') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-element-7 me-1 text-primary"></i>Model
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="model" maxlength="21" placeholder="Enter model" [class.is-invalid]="isFieldInvalid('model')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('model') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-electricity me-1 text-primary"></i>KVA
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="kva" placeholder="Enter KVA" (keypress)="onlyNumbersAndDecimal($event)" (paste)="onPasteDecimals($event)" [class.is-invalid]="isFieldInvalid('kva')" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('kva') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-flash me-1 text-primary"></i>Voltage
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="voltage" placeholder="Enter voltage" (keypress)="onlyNumbersAndDecimal($event)" (paste)="onPasteDecimals($event)" />
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-barcode me-1 text-primary"></i>Manuf Part # <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="manufPartNo" [class.is-invalid]="isFieldInvalid('manufPartNo')" placeholder="Enter manufacturer part number" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('manufPartNo') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-scan-barcode me-1 text-primary"></i>DCG Part # <span class="text-danger">*</span>
                 </label>
                 <input type="text" class="form-control form-control-solid text-dark fw-semibold" formControlName="dcgPartNo" [class.is-invalid]="isFieldInvalid('dcgPartNo')" placeholder="Enter DCG part number" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('dcgPartNo') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-lots-shopping me-1 text-primary"></i>Quantity <span class="text-danger">*</span>
                 </label>
                 <input type="number" class="form-control form-control-solid text-dark fw-semibold" formControlName="quantity" min="1" max="999" [class.is-invalid]="isFieldInvalid('quantity')" placeholder="Enter quantity" (keypress)="onlyNumbers($event)" (paste)="onPasteNumbers($event)" />
                 <div class="invalid-feedback fw-semibold">{{ getFieldError('quantity') }}</div>
               </div>
-              <div class="col-md-6">
+              <div class="col-lg-3 col-md-4">
                 <label class="form-label fw-bold text-dark fs-6">
                   <i class="ki-outline ki-tag me-1 text-primary"></i>Serial No
                 </label>

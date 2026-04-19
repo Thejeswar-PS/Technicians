@@ -283,6 +283,50 @@ export class TestEngineerJobsEntryComponent implements OnInit, OnDestroy {
       });
   }
 
+  private loadUserAuthorization(): void {
+    const adUserId = this.getCurrentAdUserId();
+
+    if (!adUserId) {
+      this.hasJobEditAccess = true;
+      this.accessDeniedMessage = '';
+      this.loadEngineers();
+      this.checkRouteParams();
+      return;
+    }
+
+    this.isCheckingAuthorization = true;
+
+    this.reportService.getTestEngineerJobsEmployeeDepartment(adUserId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response: EmployeeDepartmentResponse) => {
+          this.isCheckingAuthorization = false;
+
+          if (!response.success) {
+            this.hasJobEditAccess = true;
+            this.accessDeniedMessage = '';
+            this.loadEngineers();
+            this.checkRouteParams();
+            return;
+          }
+
+          this.currentUserDepartment = response.data?.department || 'Other';
+          this.hasJobEditAccess = true;
+
+          this.loadEngineers();
+          this.checkRouteParams();
+        },
+        error: (error) => {
+          console.error('Error loading Test Engineer Jobs authorization:', error);
+          this.isCheckingAuthorization = false;
+          this.hasJobEditAccess = true;
+          this.accessDeniedMessage = '';
+          this.loadEngineers();
+          this.checkRouteParams();
+        }
+      });
+  }
+
   private loadNextRowId(): void {
     this.reportService.getTestEngineerJobsNextRowId()
       .pipe(takeUntil(this.destroy$))
