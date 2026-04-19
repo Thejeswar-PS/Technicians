@@ -16,6 +16,9 @@ namespace Technicians.Api.Models
         public string WindowsID { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
+        public DateTime? ModifiedOn { get; set; }
+        
+        public string Password { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -29,6 +32,7 @@ namespace Technicians.Api.Models
         public string OffID { get; set; } = string.Empty;
         public string InvUserID { get; set; } = string.Empty;
         public string SubRegion { get; set; } = string.Empty;
+        public DateTime? ModifiedOn { get; set; }
     }
 
     /// <summary>
@@ -61,6 +65,11 @@ namespace Technicians.Api.Models
         [EmailAddress]
         [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
         public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -96,6 +105,10 @@ namespace Technicians.Api.Models
         [EmailAddress]
         [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
         public string Email { get; set; } = string.Empty;
+
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters")]
+        [DataType(DataType.Password)]
+        public string? Password { get; set; }
     }
 
     /// <summary>

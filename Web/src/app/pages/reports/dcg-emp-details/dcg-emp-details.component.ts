@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, finalize } from 'rxjs';
+import { AuthService } from '../../../modules/auth';
+import { ReportService } from '../../../core/services/report.service';
 import { 
   DCGEmployeeDto, 
   OfficeStateAssignmentDto, 
@@ -11,6 +13,7 @@ import {
   UpdateOfficeStateAssignmentDto
 } from '../../../core/model/dcg-employee.model';
 import { DcgEmployeeService } from '../../../core/services/dcg-employee.service';
+import { EmployeeDepartmentResponse } from '../../../core/model/test-engineer-jobs.model';
 
 // Local enums and constants to avoid import issues
 enum GridType {
@@ -71,6 +74,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   officeForm!: FormGroup;
   showEmployeeForm = false;
   showOfficeForm = false;
+  showPassword = false;
   editingEmployee: DCGEmployeeDto | null = null;
   editingOffice: OfficeStateAssignmentDto | null = null;
   
@@ -85,6 +89,9 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   // Messages
   successMessage = '';
   errorMessage = '';
+  authorizationMessage = '';
+  hasPageAccess = false;
+  isCheckingAuthorization = false;
 
   // Current date for ID badge
   currentDate = new Date().toISOString().split('T')[0].replace(/-/g, '-');
@@ -117,15 +124,95 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   constructor(
     private dcgEmployeeService: DcgEmployeeService,
     private fb: FormBuilder,
-    private router: Router
+    private router: Router,
+    private auth: AuthService,
+    private reportService: ReportService
   ) {
     this.initializeForms();
   }
 
   ngOnInit(): void {
-    this.loadData();
-    this.loadDropdownData(); // Load dropdown options for office assignment editing
+    this.checkPageAuthorization();
   }
+  private checkPageAuthorization(): void {
+    const adUserId = this.getCurrentAdUserId();
+
+    if (!adUserId) {
+      this.hasPageAccess = false;
+      this.authorizationMessage = 'Unauthorized. Restricted to this page.';
+      return;
+    }
+
+    this.isCheckingAuthorization = true;
+    this.reportService.getTestEngineerJobsEmployeeDepartment(adUserId)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => this.isCheckingAuthorization = false)
+      )
+      .subscribe({
+        next: (response: EmployeeDepartmentResponse) => {
+          const department = (response?.data?.department || '').toLowerCase();
+          this.hasPageAccess = response?.success === true && department.includes('manager');
+
+          if (this.hasPageAccess) {
+            this.authorizationMessage = '';
+            this.loadData();
+            this.loadDropdownData();
+          } else {
+            this.authorizationMessage = 'Unauthorized, your access is denied.';
+          }
+        },
+        error: () => {
+          this.hasPageAccess = false;
+          this.authorizationMessage = 'Unauthorized, your access is denied.';
+        }
+      });
+  }
+
+  private getCurrentAdUserId(): string {
+    const currentUser = this.auth.currentUserValue || {};
+    const userData = this.getStoredUserData();
+    const rawUserId = (
+      currentUser?.windowsID ||
+      currentUser?.windowsId ||
+      currentUser?.username ||
+      currentUser?.userName ||
+      userData?.windowsID ||
+      userData?.windowsId ||
+      userData?.username ||
+      userData?.userName ||
+      ''
+    ).toString();
+
+    return this.normalizeAdUserId(rawUserId);
+  }
+
+  private getStoredUserData(): any {
+    try {
+      return JSON.parse(localStorage.getItem('userData') || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  private normalizeAdUserId(value: string): string {
+    const trimmedValue = (value || '').trim();
+    if (!trimmedValue) {
+      return '';
+    }
+
+    if (trimmedValue.includes('\\')) {
+      const segments = trimmedValue.split('\\');
+      return (segments[segments.length - 1] || '').trim();
+    }
+
+    if (trimmedValue.includes('@')) {
+      return (trimmedValue.split('@')[0] || '').trim();
+    }
+
+    return trimmedValue;
+  }
+
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -140,7 +227,8 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
       department: ['', [Validators.required, Validators.maxLength(100)]],
       empStatus: ['', [Validators.required, Validators.maxLength(50)]],
       windowsID: ['', [Validators.required, Validators.maxLength(100)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]]
+      email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
+      password: ['', [Validators.minLength(6), Validators.maxLength(100)]]
     });
 
     this.officeForm = this.fb.group({
@@ -415,6 +503,8 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.editingEmployee = null;
     this.employeeForm.reset();
     this.employeeForm.patchValue({ empNo: 0 });
+    this.showPassword = false;
+    this.configurePasswordValidationForCreate();
     this.ensureDepartmentOption('');
     this.showEmployeeForm = true;
     this.clearMessages();
@@ -422,6 +512,8 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
 
   editEmployee(employee: DCGEmployeeDto): void {
     this.editingEmployee = employee;
+    this.showPassword = false;
+    this.configurePasswordValidationForEdit();
     
     // Ensure current empStatus is in dropdown options if not already present
     const currentStatus = (employee.empStatus || '').trim();
@@ -439,7 +531,8 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
       department: currentDepartment,
       empStatus: currentStatus,
       windowsID: (employee.windowsID || '').trim(),
-      email: (employee.email || '').trim()
+      email: (employee.email || '').trim(),
+      password: (employee.password || '').trim()
     };
     
     this.employeeForm.patchValue(patchData);
@@ -485,7 +578,8 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
         department: (formData.department || '').trim(),
         empStatus: (formData.empStatus || '').trim(),
         windowsID: (formData.windowsID || '').trim(),
-        email: (formData.email || '').trim()
+        email: (formData.email || '').trim(),
+        password: (formData.password || '').trim() || undefined
       };
 
       this.dcgEmployeeService.updateDCGEmployee(updateData.empNo, updateData)
@@ -516,7 +610,8 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
         department: (formData.department || '').trim(),
         empStatus: (formData.empStatus || '').trim(),
         windowsID: (formData.windowsID || '').trim(),
-        email: (formData.email || '').trim()
+        email: (formData.email || '').trim(),
+        password: (formData.password || '').trim()
       };
 
       this.dcgEmployeeService.createDCGEmployee(createData)
@@ -710,6 +805,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   // Helper Methods
   hideEmployeeModal(): void {
     this.showEmployeeForm = false;
+    this.showPassword = false;
     this.resetForms();
   }
 
@@ -721,8 +817,32 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
   private resetForms(): void {
     this.employeeForm.reset();
     this.officeForm.reset();
+    this.configurePasswordValidationForEdit();
     this.editingEmployee = null;
     this.editingOffice = null;
+  }
+
+  private configurePasswordValidationForCreate(): void {
+    const passwordControl = this.employeeForm.get('password');
+    if (!passwordControl) return;
+
+    passwordControl.setValidators([
+      Validators.required,
+      Validators.minLength(6),
+      Validators.maxLength(100)
+    ]);
+    passwordControl.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private configurePasswordValidationForEdit(): void {
+    const passwordControl = this.employeeForm.get('password');
+    if (!passwordControl) return;
+
+    passwordControl.setValidators([
+      Validators.minLength(6),
+      Validators.maxLength(100)
+    ]);
+    passwordControl.updateValueAndValidity({ emitEvent: false });
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
@@ -802,6 +922,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
       empStatus: 'Status',
       windowsID: 'Windows ID',
       email: 'Email',
+      password: 'Password',
       state: 'State',
       stateName: 'State Name',
       offID: 'Office ID',
@@ -812,6 +933,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
       const label = fieldLabels[fieldName] || fieldName;
       if (field.errors['required']) return `${label} is required`;
       if (field.errors['email']) return 'Please enter a valid email address';
+      if (field.errors['minlength']) return `${label} must be at least 6 characters`;
       if (field.errors['maxlength']) return `${label} is too long`;
     }
     return '';
