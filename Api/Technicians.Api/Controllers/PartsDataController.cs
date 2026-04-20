@@ -367,13 +367,6 @@ namespace Technicians.Api.Controllers
             }
         }
 
-
-
-
-
-
-
-
         //6. Save or Update Tech Returned Parts
 
         [HttpPost("SaveOrUpdateTechReturnedParts")]
@@ -385,11 +378,6 @@ namespace Technicians.Api.Controllers
             await _repository.SaveOrUpdateTechReturnedPartsAsync(dto);
             return Ok(new { message = "Success" });
         }
-
-
-
-        
-
 
         //9. Upload Job to GP_WOW
 
@@ -414,6 +402,59 @@ namespace Technicians.Api.Controllers
             }
         }
 
+        //21. Get Shipping Entries
+        [HttpGet("GetShippingEntries")]
+        public async Task<IActionResult> GetShippingEntries([FromQuery] string callNbr)
+        {
+            if (string.IsNullOrWhiteSpace(callNbr))
+                return BadRequest("callNbr is required.");
+
+            try
+            {
+                var result = await _repository.GetShippingEntriesAsync(callNbr);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error fetching shipping entries: {ex.Message}" });
+            }
+        }
+
+        //22. Save Shipping Entries
+        [HttpPost("SaveShippingEntries")]
+        public async Task<IActionResult> SaveShippingEntries([FromBody] SaveShippingEntriesRequest request, [FromQuery] string empId)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.CallNbr))
+                return BadRequest(new { success = false, message = "CallNbr is required." });
+
+            try
+            {
+                await _repository.SaveShippingEntriesAsync(request.CallNbr, request.Entries, empId);
+                return Ok(new { success = true, message = "Updated Successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error saving shipping entries: {ex.Message}" });
+            }
+        }
+
+        //23. Delete Shipping Entry
+        [HttpPost("DeleteShippingEntry")]
+        public async Task<IActionResult> DeleteShippingEntry([FromBody] DeleteShippingEntryRequest request, [FromQuery] string empId)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.CallNbr))
+                return BadRequest(new { success = false, message = "CallNbr is required." });
+
+            try
+            {
+                await _repository.DeleteShippingEntryAsync(request.CallNbr, request.ShippingId, empId);
+                return Ok(new { success = true, message = "Deleted Successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = $"Error deleting shipping entry: {ex.Message}" });
+            }
+        }
 
 
 

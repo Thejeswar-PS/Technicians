@@ -14,12 +14,14 @@ export interface JobPartsInfo {
   scheduled: string;
   reqNote: string;
   shippingStatus: string;
+  jobType: string;
   assignedTo: string;
   processedBy: string;
   submitted: string;
   firstSubmitted: string;
   lastUpdate: string;
   shippingNote: string;
+  submittedDate: string; // Optional field for API response that may have different naming
 }
 
 export interface JobPartsInfoResponse {
@@ -56,6 +58,7 @@ export interface JobPartsInfoResponse {
   lastUpdate?: string | null;
   shippingStatus?: string | null;
   shippingNote?: string | null;
+  jobType?: string | null;
 }
 
 const trimString = (value: any): string => {
@@ -122,12 +125,14 @@ export function mapJobPartsInfo(raw: JobPartsInfoResponse | null | undefined): J
     scheduled: '',
     reqNote: '',
     shippingStatus: 'Initiated',
+    jobType: 'PS',
     assignedTo: '',
     processedBy: '',
     submitted: '',
     firstSubmitted: '',
     lastUpdate: '',
-    shippingNote: ''
+    shippingNote: '',
+    submittedDate: ''
   };
 
   if (!raw) {
@@ -157,12 +162,14 @@ export function mapJobPartsInfo(raw: JobPartsInfoResponse | null | undefined): J
     scheduled: formatDate(raw.job_date ?? (raw as any).scheduled),
     reqNote: trimString(raw.req_Note) || trimString(raw.reqNote) || trimString((raw as any).reqNote),
     shippingStatus: trimString(raw.status) || trimString(raw.shippingStatus) || 'Initiated',
+    jobType: trimString(raw.jobType) || trimString((raw as any).jobType) || 'PS',
     assignedTo: trimString(raw.invUserID) || trimString((raw as any).assignedTo),
     processedBy: trimString(raw.processed_By) || trimString(raw.processedBy),
     submitted: formatDate(raw.submittedDate ?? raw.submitted),
     firstSubmitted: formatDate(raw.firstSubmitted),
     lastUpdate: formatDate(raw.requestedDate ?? raw.lastUpdate),
-    shippingNote: trimString(raw.note) || trimString(raw.shippingNote) || trimString((raw as any).shippingNote)
+    shippingNote: trimString(raw.note) || trimString(raw.shippingNote) || trimString((raw as any).shippingNote),
+    submittedDate: formatDate(raw.submittedDate ?? raw.submitted)
   };
 }
 
@@ -267,4 +274,12 @@ export interface FileAttachment {
   fullName: string;
   creationTime: string;
   url: string;
+}
+
+export interface ShippingEntry {
+  shippingID: number;
+  company: string;
+  tracking: string;
+  cost: string;
+  notes: string;
 }

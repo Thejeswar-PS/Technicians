@@ -11,6 +11,7 @@ import {
   PartsEquipInfo,
   TechReturnInfo,
   FileAttachment,
+  ShippingEntry,
   mapJobPartsInfo
 } from 'src/app/core/model/job-parts.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -29,7 +30,7 @@ export class JobPartsComponent implements OnInit {
   source: string = '';
 
   // Active tab
-  activeTab: 'techInfo' | 'siteInfo' | 'equipInfo' = 'techInfo';
+  activeTab: 'techInfo' | 'siteInfo' | 'equipInfo' | 'shippingEntry' = 'techInfo';
 
   // Loading states
   isLoading: boolean = false;
@@ -42,6 +43,7 @@ export class JobPartsComponent implements OnInit {
   equipInfo: PartsEquipInfo | null = null;
   techReturnInfo: TechReturnInfo | null = null;
   fileAttachments: FileAttachment[] = [];
+  shippingEntries: ShippingEntry[] = [];
 
   // File upload
   selectedFile: File | null = null;
@@ -90,6 +92,14 @@ export class JobPartsComponent implements OnInit {
     { value: 'Shipped', text: 'Shipped' },
     { value: 'Delivered', text: 'Delivered' },
     { value: 'Canceled', text: 'Canceled' }
+  ];
+
+  jobTypeOptions = [
+    { value: 'PS', text: 'Please Select' },
+    { value: 'PO', text: 'Purchase orders' },
+    { value: 'AB', text: 'Assembly builds' },
+    { value: 'SP', text: 'Standard Parts Pulls' },
+    { value: 'EO', text: 'Emergency Orders' }
   ];
 
   techReturnStatusOptions = [
@@ -185,6 +195,7 @@ export class JobPartsComponent implements OnInit {
       ]],
       verifyPh: [false, Validators.requiredTrue],
       shippingStatus: ['Initiated'],
+      jobType: ['PS'],
       shippingNotes: ['']
     });
   }
@@ -306,6 +317,9 @@ export class JobPartsComponent implements OnInit {
 
     // Load file attachments
     this.loadFileAttachments();
+
+    // Load shipping entries
+    this.loadShippingEntries();
   }
 
   private populateForms(): void {
@@ -322,6 +336,7 @@ export class JobPartsComponent implements OnInit {
       contactPh: this.jobPartsInfo.contactPh ?? '',
       verifyPh: !!this.jobPartsInfo.verifyPh,
       shippingStatus: this.jobPartsInfo.shippingStatus ?? 'Initiated',
+      jobType: this.jobPartsInfo.jobType ?? 'PS',
       shippingNotes: this.jobPartsInfo.shippingNote ?? ''
     });
   }
@@ -409,7 +424,7 @@ export class JobPartsComponent implements OnInit {
   }
 
   // Tab navigation
-  selectTab(tab: 'techInfo' | 'siteInfo' | 'equipInfo'): void {
+  selectTab(tab: 'techInfo' | 'siteInfo' | 'equipInfo' | 'shippingEntry'): void {
     this.activeTab = tab;
     this.errorMessage = '';
     this.successMessage = '';
@@ -475,6 +490,7 @@ export class JobPartsComponent implements OnInit {
       verifyPh: formValue.verifyPh,
       shippingNotes: formValue.shippingNotes,
       shippingStatus: formValue.shippingStatus,
+      jobType: formValue.jobType,
       source
     };
 
@@ -501,10 +517,12 @@ export class JobPartsComponent implements OnInit {
 
     const originalStatus = String(this.jobPartsInfo.shippingStatus ?? '').trim();
     const originalNotes = String(this.jobPartsInfo.shippingNote ?? '').trim();
+    const originalJobType = String(this.jobPartsInfo.jobType ?? '').trim();
     const currentStatus = String(formValue?.shippingStatus ?? '').trim();
     const currentNotes = String(formValue?.shippingNotes ?? '').trim();
+    const currentJobType = String(formValue?.jobType ?? '').trim();
 
-    const shippingUnchanged = currentStatus === originalStatus && currentNotes === originalNotes;
+    const shippingUnchanged = currentStatus === originalStatus && currentNotes === originalNotes && currentJobType === originalJobType;
 
     return shippingUnchanged ? 1 : 2;
   }
@@ -840,6 +858,11 @@ export class JobPartsComponent implements OnInit {
       return false;
     }
 
+    if (formValue.jobType === 'PS') {
+      this.toastr.error('You must select Job Type');
+      return false;
+    }
+
     if (!formValue.contactName || formValue.contactName.trim() === '') {
       this.toastr.error('You must enter Site Contact Name');
       return false;
@@ -1023,6 +1046,76 @@ export class JobPartsComponent implements OnInit {
       },
       error: () => {
         this.inventoryCheckResults[partNum] = null;
+      }
+    });
+  }
+
+  // ========== Shipping Entry Methods ==========
+
+  private loadShippingEntries(): void {
+    this.jobPartsService.getShippingEntries(this.callNbr).subscribe({
+      next: (data) => {
+        this.shippingEntries = data;
+        if (this.shippingEntries.length === 0) {
+          this.shippingEntries.push({ shippingID: 0, company: '', tracking: '', cost: '', notes: '' });
+        }
+      },
+      error: (error) => {
+        console.error('Error loading shipping entries:', error);
+        this.shippingEntries = [{ shippingID: 0, company: '', tracking: '', cost: '', notes: '' }];
+      }
+    });
+  }
+
+  addShippingRow(): void {
+    this.shippingEntries.push({ shippingID: 0, company: '', tracking: '', cost: '', notes: '' });
+  }
+
+  saveAllShippingEntries(): void {
+    const validEntries = this.shippingEntries.filter(e => e.company.trim() !== '');
+    if (validEntries.length === 0) {
+      this.toastr.warning('Please enter at least one shipping company');
+      return;
+    }
+
+    this.jobPartsService.saveShippingEntries(this.callNbr, this.shippingEntries, this.currentEmpId).subscribe({
+      next: () => {
+        this.toastr.success('Shipping entries saved successfully');
+        this.successMessage = 'Shipping entries saved successfully';
+        this.errorMessage = '';
+        this.loadShippingEntries();
+      },
+      error: (error) => {
+        const message = 'Error saving shipping entries: ' + (error.error?.message || error.message);
+        this.toastr.error(message);
+        this.errorMessage = message;
+        this.successMessage = '';
+      }
+    });
+  }
+
+  deleteShippingEntry(index: number): void {
+    const entry = this.shippingEntries[index];
+    if (entry.shippingID === 0) {
+      // Not saved yet, just remove from array
+      this.shippingEntries.splice(index, 1);
+      if (this.shippingEntries.length === 0) {
+        this.shippingEntries.push({ shippingID: 0, company: '', tracking: '', cost: '', notes: '' });
+      }
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this shipping entry?')) return;
+
+    this.jobPartsService.deleteShippingEntry(this.callNbr, entry.shippingID, this.currentEmpId).subscribe({
+      next: () => {
+        this.toastr.success('Shipping entry deleted successfully');
+        this.loadShippingEntries();
+      },
+      error: (error) => {
+        const message = 'Error deleting shipping entry: ' + (error.error?.message || error.message);
+        this.toastr.error(message);
+        this.errorMessage = message;
       }
     });
   }

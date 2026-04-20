@@ -203,6 +203,7 @@ namespace Technicians.Api.Repository
             command.Parameters.AddWithValue("@ShipNotes", (object)request.ShippingNotes ?? DBNull.Value);
             command.Parameters.AddWithValue("@Status", (object)request.ShippingStatus ?? DBNull.Value);
             command.Parameters.AddWithValue("@Source", request.Source);
+            command.Parameters.AddWithValue("@JobType", (object)request.JobType);
             command.Parameters.AddWithValue("@Maint_Auth_ID", empId); // same as legacy
 
             await connection.OpenAsync();
@@ -609,16 +610,67 @@ namespace Technicians.Api.Repository
             }
         }
 
+        //21. Get Shipping Entries
+        public async Task<List<ShippingEntryDto>> GetShippingEntriesAsync(string callNbr)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            var results = await conn.QueryAsync<ShippingEntryDto>(
+                "GetPartShippingDetails",
+                new { Service_Call_ID = callNbr },
+                commandType: CommandType.StoredProcedure
+            );
+            return results.AsList();
+        }
 
+        //22. Save Shipping Entries (upsert)
+        public async Task SaveShippingEntriesAsync(string callNbr, List<ShippingEntryDto> entries, string empId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
 
+            foreach (var entry in entries)
+            {
+                if (string.IsNullOrWhiteSpace(entry.Company))
+                    continue;
 
+                using var cmd = new SqlCommand("spUpsertPartsShipping", connection)
+                {
+                    CommandType = CommandType.StoredProcedure
+                };
 
+                cmd.Parameters.AddWithValue("@Service_Call_ID", callNbr);
+                if (entry.ShippingID > 0)
+                    cmd.Parameters.AddWithValue("@ShippingID", entry.ShippingID);
+                cmd.Parameters.AddWithValue("@Company", entry.Company);
+                cmd.Parameters.AddWithValue("@Tracking", (object?)entry.Tracking ?? DBNull.Value);
+                decimal.TryParse(entry.Cost, out var cost);
+                cmd.Parameters.AddWithValue("@Cost", cost == 0 ? (object)DBNull.Value : cost);
+                cmd.Parameters.AddWithValue("@Notes", (object?)entry.Notes ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@UpdatedBy", empId);
 
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
 
+        //23. Delete Shipping Entry
+        public async Task DeleteShippingEntryAsync(string callNbr, int shippingId, string empId)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
 
+            using var cmd = new SqlCommand("spDeletePartsShipping", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
 
+            cmd.Parameters.AddWithValue("@Service_Call_ID", callNbr);
+            cmd.Parameters.AddWithValue("@ShippingID", shippingId);
+            cmd.Parameters.AddWithValue("@UpdatedBy", empId);
 
-        //6. Save or Update Tech Returned Parts
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        //24. Save or Update Tech Returned Parts
         public async Task SaveOrUpdateTechReturnedPartsAsync(TechReturnedPartsDto dto)
         {
             using (var connection = new SqlConnection(_connectionString))
@@ -639,13 +691,7 @@ namespace Technicians.Api.Repository
             }
         }
 
-        
-
-
-        
-
-
-        //9. Upload Job to GP_WOW
+        //25. Upload Job to GP_WOW
         public async Task<int> UploadJobToGPAsync(UploadJobToGP_WowDto request)
         {
             using (var connection = new SqlConnection(_connectionString))
@@ -661,9 +707,6 @@ namespace Technicians.Api.Repository
                 return Convert.ToInt32(result); // the SP returns @myERROR
             }
         }
-
-        
-
 
         //Helper method
         private static T Get<T>(IDictionary<string, object> dict, string key)

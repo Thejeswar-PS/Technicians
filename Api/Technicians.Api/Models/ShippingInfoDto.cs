@@ -11,6 +11,7 @@
         public string Notes { get; set; } // maps to ReqNotes
         public string ShippingNotes { get; set; } // maps to ShipNotes
         public string ShippingStatus { get; set; } // maps to Status
+        public string JobType { get; set; }
         public int Source { get; set; }
     }
 

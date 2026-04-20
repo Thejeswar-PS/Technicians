@@ -25,6 +25,7 @@
         public DateTime? SubmittedDate { get; set; }
         public string InvUserID { get; set; }
         public string TechID { get; set; }
+        public string JobType { get; set; }
         public DateTime? FirstSubmitted { get; set; } // From the output
     }
 }

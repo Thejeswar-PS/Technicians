@@ -9,7 +9,8 @@ import {
   TechPart,
   PartsEquipInfo,
   TechReturnInfo,
-  FileAttachment
+  FileAttachment,
+  ShippingEntry
 } from '../model/job-parts.model';
 import { map } from 'rxjs/operators';
 
@@ -376,5 +377,49 @@ export class JobPartsService {
       return value === 1;
     }
     return !!value;
+  }
+
+  // ========== Shipping Entry Methods ==========
+
+  /**
+   * Get shipping entries for a job
+   * Legacy: LoadShippingFromDB() → GetPartShippingDetails
+   */
+  getShippingEntries(callNbr: string): Observable<ShippingEntry[]> {
+    return this.http
+      .get<any[]>(`${this.API}/PartsData/GetShippingEntries?callNbr=${encodeURIComponent(callNbr)}`)
+      .pipe(
+        map(res => (res || []).map(d => ({
+          shippingID: d.shippingID ?? d.ShippingID ?? 0,
+          company: (d.company ?? d.Company ?? '').toString().trim(),
+          tracking: (d.tracking ?? d.Tracking ?? '').toString().trim(),
+          cost: (d.cost ?? d.Cost ?? '').toString().trim(),
+          notes: (d.notes ?? d.Notes ?? '').toString().trim()
+        } as ShippingEntry)))
+      );
+  }
+
+  /**
+   * Save all shipping entries for a job
+   * Legacy: btnSaveShipping_Click() → spUpsertPartsShipping
+   */
+  saveShippingEntries(callNbr: string, entries: ShippingEntry[], empId: string): Observable<any> {
+    return this.http.post<any>(
+      `${this.API}/PartsData/SaveShippingEntries?empId=${encodeURIComponent(empId)}`,
+      { callNbr, entries },
+      { headers: this.headers }
+    );
+  }
+
+  /**
+   * Delete a shipping entry
+   * Legacy: gvShipping_RowDeleting() → spDeletePartsShipping
+   */
+  deleteShippingEntry(callNbr: string, shippingId: number, empId: string): Observable<any> {
+    return this.http.post<any>(
+      `${this.API}/PartsData/DeleteShippingEntry?empId=${encodeURIComponent(empId)}`,
+      { callNbr, shippingId },
+      { headers: this.headers }
+    );
   }
 }

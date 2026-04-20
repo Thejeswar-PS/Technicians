@@ -52,12 +52,17 @@
             </li>
             <li class="nav-item">
               <a class="nav-link" [class.active]="activeTab === 'siteInfo'" (click)="activeTab = 'siteInfo'">
-                Site/Shipping Info
+                Site & Status
               </a>
             </li>
             <li class="nav-item">
               <a class="nav-link" [class.active]="activeTab === 'equipInfo'" (click)="activeTab = 'equipInfo'">
                 Equipment Info
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" [class.active]="activeTab === 'shippingEntry'" (click)="activeTab = 'shippingEntry'">
+                Shipping Entry
               </a>
             </li>
           </ul>
@@ -210,6 +215,17 @@
 
                 <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Job Type</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <select class="form-select" formControlName="jobType">
+                      <option *ngFor="let option of jobTypeOptions" [value]="option.value">{{ option.text }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="row g-2 align-items-center mb-1">
+                  <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Assigned To</label>
                   </div>
                   <div class="col-sm-8">
@@ -231,25 +247,25 @@
                     <label class="form-label fw-bold mb-0">Submitted On</label>
                   </div>
                   <div class="col-sm-8">
-                    <span class="form-control-plaintext">{{ jobPartsInfo?.submitted || '—' }}</span>
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.firstSubmitted || '—' }}</span>
                   </div>
                 </div>
 
-                <div class="row g-2 align-items-center mb-1">
+                <!-- <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">First Submitted</label>
                   </div>
                   <div class="col-sm-8">
                     <span class="form-control-plaintext">{{ jobPartsInfo?.firstSubmitted || '—' }}</span>
                   </div>
-                </div>
+                </div> -->
 
                 <div class="row g-2 align-items-center mb-1">
                   <div class="col-sm-4">
                     <label class="form-label fw-bold mb-0">Last Updated</label>
                   </div>
                   <div class="col-sm-8">
-                    <span class="form-control-plaintext">{{ jobPartsInfo?.lastUpdate || '—' }}</span>
+                    <span class="form-control-plaintext">{{ jobPartsInfo?.submittedDate || '—' }}</span>
                   </div>
                 </div>
 
@@ -389,6 +405,61 @@
               </button>
             </div>
           </form>
+        </div>
+
+        <!-- Shipping Entry Tab -->
+        <div class="tab-pane fade" [class.show]="activeTab === 'shippingEntry'" [class.active]="activeTab === 'shippingEntry'">
+          <div class="legacy-panel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+              <h5 class="fw-bold mb-0">Shipping Entry</h5>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-primary" (click)="addShippingRow()">
+                  <i class="bi bi-plus-circle me-1"></i> Add Row
+                </button>
+                <button type="button" class="btn btn-sm btn-primary" (click)="saveAllShippingEntries()">
+                  <i class="bi bi-save me-1"></i> Save All
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-bordered align-middle legacy-table">
+                <thead class="bg-light">
+                  <tr class="fw-bold text-muted text-uppercase">
+                    <th scope="col">Shipping Company</th>
+                    <th scope="col">Tracking Number</th>
+                    <th scope="col">Cost ($)</th>
+                    <th scope="col">Notes</th>
+                    <th scope="col" class="text-center" style="width: 80px;">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let entry of shippingEntries; let i = index">
+                    <td>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.company" placeholder="Company" maxlength="100">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.tracking" placeholder="Tracking #" maxlength="200">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.cost" placeholder="0.00" maxlength="20">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.notes" placeholder="Notes" maxlength="500">
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-sm btn-danger" (click)="deleteShippingEntry(i)" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="shippingEntries.length === 0">
+                    <td colspan="5" class="text-center text-muted py-5">No shipping entries</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
         </div><!-- End Left Column (Tabs) -->
