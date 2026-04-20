@@ -143,12 +143,13 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let entry of pagedDrillDownEntries">
+              <tr *ngFor="let entry of pagedDrillDownEntries"
+                  [ngClass]="getKpiHighlightClass(entry.dueDt)">
                 <td class="fw-semibold">{{ entry.techID }}</td>
                 <td>{{ entry.empName }}</td>
                 <td>{{ entry.toolName }}</td>
                 <td>{{ entry.serialNo }}</td>
-                <td>{{ formatTableDate(entry.dueDt) }}</td>
+                <td [class.kpi-highlight-cell]="isKpiDueDateMatch(entry.dueDt)">{{ formatTableDate(entry.dueDt) }}</td>
                 <td class="text-center">
                   <button type="button"
                           class="btn btn-sm btn-outline-primary"
@@ -219,7 +220,8 @@
           </thead>
 
           <tbody>
-            <tr *ngFor="let item of pagedTrackingData; let i = index; trackBy: trackByFn">
+            <tr *ngFor="let item of pagedTrackingData; let i = index; trackBy: trackByFn"
+              [ngClass]="getKpiHighlightClass(item.dueDt)">
 
               <td>
                 <i class="bi bi-tools me-2 text-primary"></i>
@@ -237,6 +239,7 @@
               <td>
                 <input type="date"
                        class="form-control form-control-sm"
+                      [class.kpi-highlight-date-input]="isKpiDueDateMatch(item.dueDt)"
                     [disabled]="isReadOnlyForTechnician"
                        [ngModel]="formatDateForInput(item.dueDt)"
                        (ngModelChange)="item.dueDt = $event; onFieldChange(((trackingCurrentPage - 1) * trackingPageSize) + i, 'dueDt', $event)">

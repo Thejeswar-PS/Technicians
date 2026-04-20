@@ -9,6 +9,8 @@ export interface DCGEmployeeDto {
   windowsID: string;
   email: string;
   country: string;
+  modifiedOn?: string | null;
+  password?: string | null;
 }
 
 export interface OfficeStateAssignmentDto {
@@ -17,6 +19,7 @@ export interface OfficeStateAssignmentDto {
   offID: string;
   invUserID: string;
   subRegion: string;
+  modifiedOn?: string | null;
 }
 
 export interface CreateDCGEmployeeDto {
@@ -26,6 +29,7 @@ export interface CreateDCGEmployeeDto {
   empStatus: string;
   windowsID: string;
   email: string;
+  password: string;
 }
 
 export interface UpdateDCGEmployeeDto {
@@ -36,6 +40,7 @@ export interface UpdateDCGEmployeeDto {
   empStatus: string;
   windowsID: string;
   email: string;
+  password?: string;
 }
 
 export interface CreateOfficeStateAssignmentDto {

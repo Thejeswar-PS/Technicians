@@ -179,6 +179,54 @@
     background: #f8f9fa;
   }
 
+  tbody tr.kpi-overdue-row {
+    background-color: rgba(220, 53, 69, 0.12);
+  }
+
+  tbody tr.kpi-overdue-row:hover {
+    background-color: rgba(220, 53, 69, 0.18);
+  }
+
+  tbody tr.kpi-due15-row {
+    background-color: rgba(255, 193, 7, 0.16);
+  }
+
+  tbody tr.kpi-due15-row:hover {
+    background-color: rgba(255, 193, 7, 0.22);
+  }
+
+  tbody tr.kpi-due30-row {
+    background-color: rgba(253, 126, 20, 0.13);
+  }
+
+  tbody tr.kpi-due30-row:hover {
+    background-color: rgba(253, 126, 20, 0.19);
+  }
+
+  tbody tr.kpi-due45-row {
+    background-color: rgba(25, 135, 84, 0.12);
+  }
+
+  tbody tr.kpi-due45-row:hover {
+    background-color: rgba(25, 135, 84, 0.18);
+  }
+
+  tbody tr.kpi-due60-row {
+    background-color: rgba(13, 202, 240, 0.14);
+  }
+
+  tbody tr.kpi-due60-row:hover {
+    background-color: rgba(13, 202, 240, 0.2);
+  }
+
+  .kpi-highlight-cell {
+    font-weight: 700;
+  }
+
+  .kpi-highlight-date-input {
+    font-weight: 600;
+  }
+
   // Enhanced checkbox styling
   .form-check-input {
     width: 20px !important;

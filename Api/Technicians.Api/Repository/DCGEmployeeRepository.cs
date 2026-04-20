@@ -14,6 +14,10 @@ namespace Technicians.Api.Repository
         Task<bool> UpdateDCGEmployeeAsync(UpdateDCGEmployeeDto employee);
         Task<bool> DeleteDCGEmployeeAsync(int empNo);
 
+        // ADDED: Authentication methods
+        Task<DCGEmployeeDto?> AuthenticateEmployeeAsync(string empID, string password);
+        Task<bool> ChangePasswordAsync(int empNo, string currentPassword, string newPassword);
+
         // Office State Assignments
         Task<List<OfficeStateAssignmentDto>> GetOfficeStateAssignmentsAsync(string sortBy);
         Task<OfficeStateAssignmentDto?> GetOfficeStateAssignmentByStateAsync(string state);
@@ -38,7 +42,7 @@ namespace Technicians.Api.Repository
         private static readonly HashSet<string> EmployeeSortColumns =
             new(StringComparer.OrdinalIgnoreCase)
             {
-                "EmpNo", "EmpID", "EmpName", "Department", "EmpStatus", "WindowsID", "Email", "Country"  // ADDED: Department to sort columns
+                "EmpNo", "EmpID", "EmpName", "Department", "EmpStatus", "WindowsID", "Email", "Country"
             };
 
         private static readonly HashSet<string> OfficeSortColumns =
@@ -63,25 +67,6 @@ namespace Technicians.Api.Repository
             _logger = logger;
         }
 
-        #region Helpers
-
-        private static string SafeEmployeeSort(string sortBy) =>
-            EmployeeSortColumns.Contains(sortBy) ? sortBy : "EmpName";
-
-        private static string SafeOfficeSort(string sortBy) =>
-            OfficeSortColumns.Contains(sortBy) ? sortBy : "State";
-
-        /// <summary>
-        /// Gets country setting from configuration - matches legacy ConfigurationManager.AppSettings["Canada"]
-        /// </summary>
-        private string GetCountrySetting()
-        {
-            var canadaSetting = _configuration.GetValue<string>("Canada");
-            return canadaSetting?.Equals("Yes", StringComparison.OrdinalIgnoreCase) == true ? "CANADA" : "USA";
-        }
-
-        #endregion
-
         #region DCG Employees
 
         public async Task<List<DCGEmployeeDto>> GetDCGEmployeesAsync(string sortBy)
@@ -93,7 +78,7 @@ namespace Technicians.Api.Repository
                 using var connection = new SqlConnection(_connectionString);
 
                 var sql = $@"
-                    SELECT EmpNo, EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country
+                    SELECT EmpNo, EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country, Password, ModifiedOn
                     FROM DCG_Employees
                     ORDER BY {safeSort}";
 
@@ -124,7 +109,7 @@ namespace Technicians.Api.Repository
                 using var connection = new SqlConnection(_connectionString);
 
                 var result = await connection.QueryFirstOrDefaultAsync<DCGEmployeeDto>(
-                    @"SELECT EmpNo, EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country
+                    @"SELECT EmpNo, EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country, Password, ModifiedOn
                       FROM DCG_Employees
                       WHERE EmpNo = @EmpNo",
                     new { EmpNo = empNo });
@@ -146,22 +131,24 @@ namespace Technicians.Api.Repository
             {
                 using var connection = new SqlConnection(_connectionString);
 
-                var country = GetCountrySetting();  // UPDATED: Use configuration setting
+                var country = GetCountrySetting();
 
+                // UPDATED: Store password as plain text (no hashing)
                 var newEmpNo = await connection.QuerySingleAsync<int>(
                     @"INSERT INTO DCG_Employees
-                      (EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country)
-                      VALUES (@EmpID, @EmpName, @Department, @EmpStatus, @WindowsID, @Email, @Country);
+                      (EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country, Password, ModifiedOn)
+                      VALUES (@EmpID, @EmpName, @Department, @EmpStatus, @WindowsID, @Email, @Country, @Password, GETDATE());
                       SELECT CAST(SCOPE_IDENTITY() AS INT);",
                     new
                     {
                         employee.EmpID,
                         employee.EmpName,
-                        employee.Department,  // ADDED: Department field
+                        employee.Department,
                         employee.EmpStatus,
                         employee.WindowsID,
                         employee.Email,
-                        Country = country
+                        Country = country,
+                        Password = employee.Password  // CHANGED: Plain text password
                     });
 
                 _logger.LogInformation("Created DCG employee - EmpID: {EmpID}, EmpName: {EmpName}, Department: {Department}, NewEmpNo: {NewEmpNo}", 
@@ -190,20 +177,66 @@ namespace Technicians.Api.Repository
             {
                 using var connection = new SqlConnection(_connectionString);
 
-                var rows = await connection.ExecuteAsync(
-                    @"UPDATE DCG_Employees
-                      SET EmpID=@EmpID,
-                          EmpName=@EmpName,
-                          Department=@Department,
-                          EmpStatus=@EmpStatus,
-                          WindowsID=@WindowsID,
-                          Email=@Email
-                      WHERE EmpNo=@EmpNo",
-                    employee);
+                // Build dynamic UPDATE query based on whether password is provided
+                string sql;
+                object parameters;
+
+                if (!string.IsNullOrEmpty(employee.Password))
+                {
+                    // Update with password (plain text)
+                    sql = @"UPDATE DCG_Employees
+                           SET EmpID=@EmpID,
+                               EmpName=@EmpName,
+                               Department=@Department,
+                               EmpStatus=@EmpStatus,
+                               WindowsID=@WindowsID,
+                               Email=@Email,
+                               Password=@Password,
+                               ModifiedOn=GETDATE()
+                           WHERE EmpNo=@EmpNo";
+                    
+                    parameters = new
+                    {
+                        employee.EmpNo,
+                        employee.EmpID,
+                        employee.EmpName,
+                        employee.Department,
+                        employee.EmpStatus,
+                        employee.WindowsID,
+                        employee.Email,
+                        Password = employee.Password  // CHANGED: Plain text password
+                    };
+                }
+                else
+                {
+                    // Update without changing password
+                    sql = @"UPDATE DCG_Employees
+                           SET EmpID=@EmpID,
+                               EmpName=@EmpName,
+                               Department=@Department,
+                               EmpStatus=@EmpStatus,
+                               WindowsID=@WindowsID,
+                               Email=@Email,
+                               ModifiedOn=GETDATE()
+                           WHERE EmpNo=@EmpNo";
+                    
+                    parameters = new
+                    {
+                        employee.EmpNo,
+                        employee.EmpID,
+                        employee.EmpName,
+                        employee.Department,
+                        employee.EmpStatus,
+                        employee.WindowsID,
+                        employee.Email
+                    };
+                }
+
+                var rows = await connection.ExecuteAsync(sql, parameters);
 
                 var success = rows > 0;
-                _logger.LogInformation("Updated DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}, Department: {Department}, Success: {Success}", 
-                    employee.EmpNo, employee.EmpID, employee.Department, success);
+                _logger.LogInformation("Updated DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}, Department: {Department}, Success: {Success}, PasswordUpdated: {PasswordUpdated}", 
+                    employee.EmpNo, employee.EmpID, employee.Department, success, !string.IsNullOrEmpty(employee.Password));
                 return success;
             }
             catch (SqlException sqlEx)
@@ -436,6 +469,110 @@ namespace Technicians.Api.Repository
             }
 
             return response;
+        }
+
+        #endregion
+
+        #region Helpers
+
+        private static string SafeEmployeeSort(string sortBy) =>
+            EmployeeSortColumns.Contains(sortBy) ? sortBy : "EmpName";
+
+        private static string SafeOfficeSort(string sortBy) =>
+            OfficeSortColumns.Contains(sortBy) ? sortBy : "State";
+
+        /// <summary>
+        /// Gets country setting from configuration - matches legacy ConfigurationManager.AppSettings["Canada"]
+        /// </summary>
+        private string GetCountrySetting()
+        {
+            var canadaSetting = _configuration.GetValue<string>("Canada");
+            return canadaSetting?.Equals("Yes", StringComparison.OrdinalIgnoreCase) == true ? "CANADA" : "USA";
+        }
+
+        #endregion
+
+        #region Authentication
+
+        /// <summary>
+        /// Authenticate employee using EmpID and password (plain text comparison)
+        /// </summary>
+        public async Task<DCGEmployeeDto?> AuthenticateEmployeeAsync(string empID, string password)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+
+                var employee = await connection.QueryFirstOrDefaultAsync<DCGEmployeeDto>(
+                    @"SELECT EmpNo, EmpID, EmpName, Department, EmpStatus, WindowsID, Email, Country, Password, ModifiedOn
+                      FROM DCG_Employees
+                      WHERE EmpID = @EmpID AND EmpStatus = 'Active'",
+                    new { EmpID = empID });
+
+                // CHANGED: Simple plain text password comparison
+                if (employee != null && employee.Password == password)
+                {
+                    _logger.LogInformation("Successfully authenticated employee: {EmpID}", empID);
+                    // Don't return password in the result for security
+                    employee.Password = string.Empty;
+                    return employee;
+                }
+
+                _logger.LogWarning("Authentication failed for employee: {EmpID}", empID);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "AuthenticateEmployeeAsync", empID);
+                _logger.LogError(ex, "Error authenticating employee: {EmpID}", empID);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Change employee password (plain text)
+        /// </summary>
+        public async Task<bool> ChangePasswordAsync(int empNo, string currentPassword, string newPassword)
+        {
+            try
+            {
+                using var connection = new SqlConnection(_connectionString);
+
+                // Get current employee data
+                var employee = await connection.QueryFirstOrDefaultAsync<DCGEmployeeDto>(
+                    @"SELECT EmpNo, EmpID, Password FROM DCG_Employees WHERE EmpNo = @EmpNo",
+                    new { EmpNo = empNo });
+
+                if (employee == null)
+                {
+                    _logger.LogWarning("Employee not found for password change: {EmpNo}", empNo);
+                    return false;
+                }
+
+                // CHANGED: Simple plain text password comparison
+                if (employee.Password != currentPassword)
+                {
+                    _logger.LogWarning("Current password verification failed for employee: {EmpNo}", empNo);
+                    return false;
+                }
+
+                // CHANGED: Store new password as plain text
+                var rows = await connection.ExecuteAsync(
+                    @"UPDATE DCG_Employees 
+                      SET Password = @Password, ModifiedOn = GETDATE() 
+                      WHERE EmpNo = @EmpNo",
+                    new { Password = newPassword, EmpNo = empNo });
+
+                var success = rows > 0;
+                _logger.LogInformation("Password change for employee {EmpNo}: {Success}", empNo, success ? "Success" : "Failed");
+                return success;
+            }
+            catch (Exception ex)
+            {
+                await _errorLog.LogErrorAsync(LoggerName, ex, "ChangePasswordAsync", empNo.ToString());
+                _logger.LogError(ex, "Error changing password for employee: {EmpNo}", empNo);
+                throw;
+            }
         }
 
         #endregion

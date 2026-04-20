@@ -39,6 +39,16 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   jobsList: TestEngineerJobDto[] = [];
   filteredList: TestEngineerJobDto[] = [];
   engineersList: EngineerDto[] = [];
+
+  // Get filtered engineers list for display (only show current user if testing engineer)
+  get displayEngineers(): EngineerDto[] {
+    if (this.isTestingEngineer && this.currentUserEngineerName) {
+      // Only show current user's engineer record
+      return this.engineersList.filter(eng => eng.empName === this.currentUserEngineerName);
+    }
+    // Show all engineers for non-testing users
+    return this.engineersList;
+  }
   
   // Loading and error states
   isLoading = false;
@@ -47,8 +57,14 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   isCheckingAuthorization = false;
   canManageJobs = true;
   currentUserDepartment = '';
-  isManagerUser = false;
+  currentUserEngineerName = '';
+  isTestingEngineer = false;
   generatedAt: Date | null = null;
+
+  // Legacy template compatibility: keep status/location filters enabled.
+  get isManagerUser(): boolean {
+    return false;
+  }
   
   // Pagination
   currentPage = 1;
@@ -112,9 +128,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   }
 
   ngOnInit(): void {
-    this.loadUserAuthorization();
-    this.loadEngineers();
-    this.loadTestEngineerJobs();
+    this.loadUserAuthorizationAndEngineers();
     this.setupFilterSubscriptions();
   }
 
@@ -140,27 +154,12 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
       });
   }
 
-  loadEngineers(): void {
-    this.reportService.getEmployeeNamesByDept('Testing')
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.engineersList = response.employees || [];
-          }
-        },
-        error: (error) => {
-          console.error('Error loading engineers:', error);
-        }
-      });
-  }
-
-  private loadUserAuthorization(): void {
+  private loadUserAuthorizationAndEngineers(): void {
     const adUserId = this.getCurrentAdUserId();
 
     if (!adUserId) {
-      this.canManageJobs = true;
-      this.authorizationMessage = '';
+      this.currentUserDepartment = '';
+      this.loadEngineers();
       return;
     }
 
@@ -172,43 +171,81 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
         next: (response: EmployeeDepartmentResponse) => {
           this.isCheckingAuthorization = false;
 
-          if (!response.success) {
-            this.canManageJobs = true;
-            this.authorizationMessage = '';
-            return;
+          if (response.success) {
+            this.currentUserDepartment = response.data?.department || 'Other';
+          } else {
+            this.currentUserDepartment = '';
           }
 
-          this.currentUserDepartment = response.data?.department || 'Other';
           this.canManageJobs = true;
           this.authorizationMessage = '';
-          this.applyManagerFilterRules();
+          
+          // Load engineers after department is set
+          this.loadEngineers();
         },
         error: (error) => {
           console.error('Error loading Test Engineer Jobs authorization:', error);
           this.isCheckingAuthorization = false;
+          this.currentUserDepartment = '';
           this.canManageJobs = true;
           this.authorizationMessage = '';
-          this.isManagerUser = false;
-          this.applyManagerFilterRules();
+          
+          // Load engineers even on error
+          this.loadEngineers();
         }
       });
   }
 
-  private applyManagerFilterRules(): void {
-    const department = (this.currentUserDepartment || '').toLowerCase();
-    this.isManagerUser = department.includes('manager');
+  loadEngineers(): void {
+    this.reportService.getEmployeeNamesByDept('Testing')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.engineersList = response.employees || [];
+            // Check if current user is a testing engineer and auto-filter
+            this.applyTestingEngineerFilter();
+            // Load jobs after engineers and filter are set
+            this.loadTestEngineerJobs();
+          }
+        },
+        error: (error) => {
+          console.error('Error loading engineers:', error);
+          this.loadTestEngineerJobs();
+        }
+      });
+  }
 
-    const statusControl = this.filterForm.get('status');
-    const locationControl = this.filterForm.get('location');
+  private applyTestingEngineerFilter(): void {
+    // Check if current user is in Testing department
+    const dept = (this.currentUserDepartment || '').toLowerCase();
+    if (!dept.includes('testing')) {
+      this.isTestingEngineer = false;
+      return;
+    }
 
-    if (this.isManagerUser) {
-      statusControl?.setValue('', { emitEvent: false });
-      locationControl?.setValue('', { emitEvent: false });
-      statusControl?.disable({ emitEvent: false });
-      locationControl?.disable({ emitEvent: false });
+    // Get current user's ID (windowsID)
+    const currentUserId = this.getCurrentAdUserId();
+    if (!currentUserId) {
+      this.isTestingEngineer = false;
+      return;
+    }
+
+    // Find matching engineer in the list
+    const matchingEngineer = this.engineersList.find(
+      (eng) => (eng.windowsID || '').toLowerCase() === currentUserId.toLowerCase()
+    );
+
+    if (matchingEngineer) {
+      this.isTestingEngineer = true;
+      this.currentUserEngineerName = matchingEngineer.empName;
+      // Auto-set the engineer filter to current user
+      this.filterForm.patchValue(
+        { engineer: matchingEngineer.empName },
+        { emitEvent: false }
+      );
     } else {
-      statusControl?.enable({ emitEvent: false });
-      locationControl?.enable({ emitEvent: false });
+      this.isTestingEngineer = false;
     }
   }
 

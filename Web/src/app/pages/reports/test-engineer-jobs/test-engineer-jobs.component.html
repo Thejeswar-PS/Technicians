@@ -36,8 +36,8 @@
           placeholder="Search Job / Engineer" />
 
         <select formControlName="engineer" class="form-select form-select-sm">
-          <option value="">All Engineers</option>
-          <option *ngFor="let engineer of engineersList" [value]="engineer.empName">
+          <option value="">{{ isTestingEngineer ? 'Your Jobs' : 'All Engineers' }}</option>
+          <option *ngFor="let engineer of displayEngineers" [value]="engineer.empName">
             {{ engineer.empName }}
           </option>
         </select>
@@ -238,7 +238,7 @@
               </td>
               <td>{{ formatDate(job.projectedDate) }}</td>
               <td>{{ formatDate(job.completedDate) }}</td>
-              <td>{{ formatDateTime(job.emergencyETA) }}</td>
+              <td class="eta-cell">{{ formatDateTime(job.emergencyETA) }}</td>
               <td><input type="checkbox" [checked]="job.qC_Cleaned" disabled></td>
               <td><input type="checkbox" [checked]="job.qC_Torque" disabled></td>
               <td><input type="checkbox" [checked]="job.qC_Inspected" disabled></td>
