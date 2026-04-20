@@ -60,6 +60,11 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
   currentUserEngineerName = '';
   isTestingEngineer = false;
   generatedAt: Date | null = null;
+
+  // Legacy template compatibility: keep status/location filters enabled.
+  get isManagerUser(): boolean {
+    return false;
+  }
   
   // Pagination
   currentPage = 1;
