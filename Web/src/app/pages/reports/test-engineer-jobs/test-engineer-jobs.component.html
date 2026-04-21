@@ -36,7 +36,7 @@
           placeholder="Search Job / Engineer" />
 
         <select formControlName="engineer" class="form-select form-select-sm">
-          <option value="">{{ isTestingEngineer ? 'Your Jobs' : 'All Engineers' }}</option>
+          <option *ngIf="!isTestingEngineer" value="">All Engineers</option>
           <option *ngFor="let engineer of displayEngineers" [value]="engineer.empName">
             {{ engineer.empName }}
           </option>

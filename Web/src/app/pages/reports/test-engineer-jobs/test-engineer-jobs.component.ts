@@ -254,8 +254,9 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
     this.errorMessage = '';
 
     const formValue = this.filterForm.value;
+    const effectiveEngineerFilter = this.getEffectiveEngineerFilter(formValue.engineer);
     const request: TestEngineerJobsRequestDto = {
-      engineer: formValue.engineer || '',
+      engineer: effectiveEngineerFilter,
       status: formValue.status || '',
       location: formValue.location || '',
       search: formValue.search || '',
@@ -268,8 +269,9 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
       .subscribe({
         next: (response: TestEngineerJobsResponse) => {
           if (response.success) {
-            this.jobsList = response.data || [];
-            this.totalItems = response.totalRecords;
+            const allJobs = response.data || [];
+            this.jobsList = this.applyTestingEngineerDataRestriction(allJobs);
+            this.totalItems = this.jobsList.length;
             this.applyPagination();
             this.loadChartData(request);
           } else {
@@ -287,6 +289,22 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
           this.isLoading = false;
         }
       });
+  }
+
+  private getEffectiveEngineerFilter(selectedEngineer: string): string {
+    if (this.isTestingEngineer && this.currentUserEngineerName) {
+      return this.currentUserEngineerName;
+    }
+
+    return selectedEngineer || '';
+  }
+
+  private applyTestingEngineerDataRestriction(jobs: TestEngineerJobDto[]): TestEngineerJobDto[] {
+    if (!this.isTestingEngineer || !this.currentUserEngineerName) {
+      return jobs;
+    }
+
+    return jobs.filter(job => (job.assignedEngineer || '').trim() === this.currentUserEngineerName);
   }
 
   loadChartData(request: TestEngineerJobsRequestDto): void {
@@ -339,7 +357,7 @@ export class TestEngineerJobsComponent implements OnInit, OnDestroy, AfterViewIn
 
   resetFilters(): void {
     this.filterForm.reset({
-      engineer: '',
+      engineer: this.isTestingEngineer ? this.currentUserEngineerName : '',
       status: '',
       location: '',
       search: ''
