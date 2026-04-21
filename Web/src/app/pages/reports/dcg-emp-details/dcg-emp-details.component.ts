@@ -532,7 +532,7 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
       empStatus: currentStatus,
       windowsID: (employee.windowsID || '').trim(),
       email: (employee.email || '').trim(),
-      password: (employee.password || '').trim()
+      password: this.getEmployeePasswordValue(employee)
     };
     
     this.employeeForm.patchValue(patchData);
@@ -542,32 +542,36 @@ export class DcgEmpDetailsComponent implements OnInit, OnDestroy {
     this.clearMessages();
   }
 
+  private getEmployeePasswordValue(employee: DCGEmployeeDto): string {
+    const rawEmployee = employee as any;
+    return (
+      rawEmployee?.password ||
+      rawEmployee?.Password ||
+      rawEmployee?.pwd ||
+      rawEmployee?.Pwd ||
+      ''
+    ).toString().trim();
+  }
+
   saveEmployee(): void {
-    // For new employees, enforce full validation
-    if (!this.editingEmployee && this.employeeForm.invalid) {
+    if (this.employeeForm.invalid) {
       this.markFormGroupTouched(this.employeeForm);
       return;
     }
-    
-    // For existing employees, check only essential fields
-    if (this.editingEmployee) {
-      const formData = this.employeeForm.value;
-      
-      // Check essential fields are not completely empty
-      if (!formData.empID?.trim() || !formData.empName?.trim()) {
-        this.showError('Employee ID and Name are required');
-        return;
-      }
-      
-      // If email is provided, it should be valid
-      if (formData.email && formData.email.trim() && !this.isValidEmail(formData.email)) {
-        this.showError('Please provide a valid email address');
+
+    const formData = this.employeeForm.value;
+
+    if (!this.editingEmployee) {
+      const newPassword = (formData.password || '').trim();
+      if (!newPassword) {
+        this.employeeForm.get('password')?.setErrors({ required: true });
+        this.employeeForm.get('password')?.markAsTouched();
+        this.showError('Password is required for new employee');
         return;
       }
     }
 
     this.isSubmitting = true;
-    const formData = this.employeeForm.value;
 
     if (this.editingEmployee) {
       // Update existing employee - trim all string fields

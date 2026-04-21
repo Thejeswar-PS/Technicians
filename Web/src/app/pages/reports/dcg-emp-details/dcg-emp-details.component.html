@@ -473,7 +473,6 @@
               <label class="form-label fw-bold">
                 Password
                 <span class="required" *ngIf="!editingEmployee">*</span>
-                <span class="text-muted fw-normal" *ngIf="editingEmployee">(loaded from backend; change only if needed)</span>
               </label>
               <div class="input-group">
                 <input [type]="showPassword ? 'text' : 'password'"
@@ -495,7 +494,7 @@
           <button type="button" class="btn btn-secondary" (click)="hideEmployeeModal()" [disabled]="isSubmitting">
             Cancel
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || (employeeForm.invalid && !editingEmployee)">
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || employeeForm.invalid">
             <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
             <i class="bi bi-save me-1" *ngIf="!isSubmitting"></i>
             {{ editingEmployee ? 'Update' : 'Save' }} Employee
