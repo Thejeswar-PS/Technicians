@@ -670,11 +670,8 @@ export class EquipmentDetailsComponent implements OnInit {
         break;
         
       case 'HVAC':
-        route = '/equipment/hvac';
-        break;
-        
       case 'FLYWHEEL':
-        route = '/equipment/flywheel-pm';
+        route = '/equipment/other-equipment';
         break;
         
       case 'STATIC SWITCH':

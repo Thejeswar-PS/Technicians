@@ -1,97 +1,240 @@
-@import '../../ups-readings/ups-readings.component.scss';
+// Other Equipment – mirrors edit-equipment design
 
-// Form styling to match ATS/UPS pages exactly
-.ups-form {
-  .form-group-modern {
-    margin-bottom: 1.5rem;
+:host {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  * { box-sizing: border-box; }
+}
 
-    &:last-child {
-      margin-bottom: 0;
+.responsive-wrapper {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: 100vh;
+
+  @media (min-width: 576px) { padding: 1.5rem; }
+  @media (min-width: 768px)  { padding: 2rem; }
+  @media (min-width: 1200px) { padding: 2rem 3rem; }
+  @media (min-width: 1400px) { padding: 2rem 4rem; }
+}
+
+// Loading
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,.95);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.1);
+    backdrop-filter: blur(10px);
+
+    .loading-text {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+      color: #6c757d;
+      font-weight: 500;
+    }
+  }
+}
+
+// Alerts
+.modern-alert {
+  background: white;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+
+  &.alert-danger  { background: #f8d7da; border-left: 4px solid #dc3545; color: #721c24; }
+  &.alert-success { background: #8cde9f; border-left: 4px solid #21e850; color: #036808; }
+}
+
+// Layout
+.layout-container {
+  display: grid;
+  gap: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+
+  &.standard-mode {
+    grid-template-columns: 1fr;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+}
+
+// Form section card
+.form-section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  overflow: hidden;
+  transition: box-shadow 0.3s;
+  border: 1px solid #e9ecef;
+
+  &:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+
+  .section-header {
+    background: #f8f9fa;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #e9ecef;
+
+    .section-title {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #2c5530;
+
+      i { color: #28a745; }
     }
   }
 
-  .form-floating {
-    position: relative;
-    margin-bottom: 0;
+  .modern-form {
+    padding: 1.5rem;
+  }
+}
 
-    > .form-control,
-    > .form-select {
-      padding-top: 1.625rem;
-      padding-bottom: 0.625rem;
-      border: 1px solid #dee2e6;
-      border-radius: 0.375rem;
-      font-size: 0.95rem;
+// Form card — visible white card wrapping the form fields only
+.form-card {
+  background: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+}
 
-      &:focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        z-index: 3;
-      }
+// Form grid
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
 
-      &.is-invalid {
-        border-color: #dc3545;
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
 
-        &:focus {
-          border-color: #dc3545;
-          box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-        }
-      }
+// Form fields
+.form-field {
+  display: flex;
+  flex-direction: column;
 
-      &:not(:placeholder-shown) ~ label {
-        opacity: 0.65;
-      }
+  .form-label {
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
 
-      &::placeholder {
-        color: transparent;
-      }
+    &.required::after {
+      content: ' *';
+      color: #dc3545;
+    }
+  }
+
+  .form-control,
+  .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 500;
+
+    &:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102,126,234,.25);
     }
 
-    > label {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-      padding: 1rem 0.75rem;
-      pointer-events: none;
-      border: 1px solid transparent;
-      transform-origin: 0 0;
-      transition: opacity 0.1s ease-in-out;
-      color: #666;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
+    &.is-invalid { border-color: #dc3545; }
+  }
 
-    > .form-control::-webkit-input-placeholder {
-      color: transparent;
-    }
+  textarea.form-control {
+    resize: vertical;
+    min-height: 90px;
   }
 
   .invalid-feedback {
-    display: block;
+    font-size: 0.85rem;
     margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: #dc3545;
   }
 
-  .form-text {
-    display: block;
+  small.text-muted {
     margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: #6c757d;
+    font-size: 0.82rem;
   }
 }
 
-.text-danger {
-  color: #dc3545;
-  margin-left: 2px;
+// Bottom actions bar
+.bottom-actions {
+  margin-top: 2rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+
+  .action-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column-reverse;
+      padding: 0 1rem;
+
+      .btn { width: 100%; }
+    }
+
+    .btn {
+      border-radius: 6px;
+      font-weight: 600;
+      padding: 0.75rem 2rem;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 0.875rem;
+      min-width: 150px;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,.15);
+      }
+
+      &.btn-outline-secondary {
+        background: rgb(13,45,226);
+        border: 2px solid #2f7cc9;
+        color: #fff;
+
+        &:hover { background: #398ee3; border-color: #2f7cc9; color: #fff; }
+      }
+
+      &.btn-success {
+        background: rgb(13,45,226);
+        border: 2px solid #2f7cc9;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(13,45,226,.3);
+
+        &:hover { background: #398ee3; border-color: #2f7cc9; box-shadow: 0 4px 12px rgba(13,45,226,.4); }
+
+        &:disabled {
+          background: #6c757d;
+          border-color: #6c757d;
+          opacity: 0.6;
+          cursor: not-allowed;
+          transform: none;
+        }
+      }
+    }
+  }
 }
-
-.text-primary {
-  color: #5486ff !important;
-}
-
-.text-muted {
-  color: #6c757d !important;
-}
-
-
