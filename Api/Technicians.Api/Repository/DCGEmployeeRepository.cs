@@ -183,6 +183,14 @@ namespace Technicians.Api.Repository
 
                 if (!string.IsNullOrEmpty(employee.Password))
                 {
+                    // ? SERVER-SIDE VALIDATION: Reject empty passwords when updating
+                    if (string.IsNullOrWhiteSpace(employee.Password))
+                    {
+                        _logger.LogWarning("Attempted to update DCG employee with empty password - EmpNo: {EmpNo}, EmpID: {EmpID}", 
+                            employee.EmpNo, employee.EmpID);
+                        throw new ArgumentException("Password cannot be empty or whitespace only when provided.", nameof(employee.Password));
+                    }
+
                     // Update with password (plain text)
                     sql = @"UPDATE DCG_Employees
                            SET EmpID=@EmpID,
@@ -238,6 +246,11 @@ namespace Technicians.Api.Repository
                 _logger.LogInformation("Updated DCG employee - EmpNo: {EmpNo}, EmpID: {EmpID}, Department: {Department}, Success: {Success}, PasswordUpdated: {PasswordUpdated}", 
                     employee.EmpNo, employee.EmpID, employee.Department, success, !string.IsNullOrEmpty(employee.Password));
                 return success;
+            }
+            catch (ArgumentException)
+            {
+                // Re-throw validation exceptions without logging as errors
+                throw;
             }
             catch (SqlException sqlEx)
             {

@@ -19,6 +19,7 @@ import {
 })
 export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
+  private readonly archiveToggleStorageKey = 'OrderRequestStatus_ArchiveToggle';
   
   // Math object for template access
   Math = Math;
@@ -78,6 +79,7 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.applyArchiveToggleState();
     this.loadOrderRequestStatus();
     this.setupFormSubscriptions();
   }
@@ -99,9 +101,50 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
     // Watch for form changes and reload data
     this.orderStatusFilterForm.valueChanges
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
+      .subscribe((formValue) => {
+        this.persistArchiveToggleState(!!formValue?.archive);
         this.loadOrderRequestStatus();
       });
+  }
+
+  private applyArchiveToggleState(): void {
+    const queryArchive = this.parseArchiveValue(this.route.snapshot.queryParamMap.get('archive'));
+    if (queryArchive !== null) {
+      this.orderStatusFilterForm.patchValue({ archive: queryArchive }, { emitEvent: false });
+      this.persistArchiveToggleState(queryArchive);
+      return;
+    }
+
+    const storedArchive = this.getStoredArchiveToggleState();
+    if (storedArchive !== null) {
+      this.orderStatusFilterForm.patchValue({ archive: storedArchive }, { emitEvent: false });
+    }
+  }
+
+  private parseArchiveValue(value: string | null | undefined): boolean | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const normalized = value.toString().trim().toLowerCase();
+    if (normalized === 'true' || normalized === '1') {
+      return true;
+    }
+
+    if (normalized === 'false' || normalized === '0') {
+      return false;
+    }
+
+    return null;
+  }
+
+  private getStoredArchiveToggleState(): boolean | null {
+    const storedValue = sessionStorage.getItem(this.archiveToggleStorageKey);
+    return this.parseArchiveValue(storedValue);
+  }
+
+  private persistArchiveToggleState(value: boolean): void {
+    sessionStorage.setItem(this.archiveToggleStorageKey, String(value));
   }
 
   loadOrderRequestStatus(): void {
@@ -337,7 +380,8 @@ export class OrderRequestStatusComponent implements OnInit, OnDestroy {
     // Navigate to order request with only rowIndex - the component will fetch full data via API
     this.router.navigate(['/reports/order-request'], {
       queryParams: { 
-        rowIndex: orderRequest.rowIndex
+        rowIndex: orderRequest.rowIndex,
+        archive: this.orderStatusFilterForm.get('archive')?.value ? 'true' : 'false'
       }
     });
   }

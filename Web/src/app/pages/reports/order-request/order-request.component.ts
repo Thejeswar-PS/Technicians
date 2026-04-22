@@ -66,6 +66,7 @@ export class OrderRequestComponent implements OnInit {
   private readonly ALLOWED_FILE_TYPES = ['jpg', 'gif', 'doc', 'bmp', 'xls', 'png', 'txt', 'xlsx', 'docx', 'pdf', 'jpeg'];
   private readonly MAX_FILE_SIZE_MB = 5;
   private readonly MAX_FILE_SIZE_BYTES = this.MAX_FILE_SIZE_MB * 1024 * 1024;
+  private returnToArchiveMode = false;
   
   // Dropdown options (matching legacy)
   statusOptions: OrderRequestStatusOption[] = ORDER_REQUEST_STATUS_OPTIONS;
@@ -96,6 +97,7 @@ export class OrderRequestComponent implements OnInit {
     
     // Check for order request data from order request status navigation
     this.route.queryParams.subscribe(params => {
+      this.returnToArchiveMode = this.parseArchiveMode(params['archive']);
       
       if (params['rowIndex']) {
         const rowIndex = parseInt(params['rowIndex'], 10);
@@ -538,6 +540,9 @@ export class OrderRequestComponent implements OnInit {
     this.formSuccess = null;
     this.selectedFiles = [];
     this.attachments = [];
+    this.existingFiles = [];
+    this.fileDeleteError = null;
+    this.isLoadingFiles = false;
     this.generateAutoId(); // Generate new auto ID
     this.orderRequestForm.reset({
       rowIndex: 0,
@@ -993,7 +998,7 @@ export class OrderRequestComponent implements OnInit {
           
           // Navigate back to the order request status page after a brief delay
           setTimeout(() => {
-            this.router.navigate(['/reports/order-request-status']);
+            this.navigateToOrderRequestStatus();
           }, 2000);
         },
         error: (error) => {
@@ -1020,14 +1025,29 @@ export class OrderRequestComponent implements OnInit {
    * Navigate back to Order Request Status page
    */
   goBack(): void {
-    this.router.navigate(['/reports/order-request-status']);
+    this.navigateToOrderRequestStatus();
   }
 
   /**
    * Navigate to Order Request Status page
    */
   goToOrderRequestStatus(): void {
-    this.router.navigate(['/reports/order-request-status']);
+    this.navigateToOrderRequestStatus();
+  }
+
+  private navigateToOrderRequestStatus(): void {
+    this.router.navigate(['/reports/order-request-status'], {
+      queryParams: this.returnToArchiveMode ? { archive: 'true' } : {}
+    });
+  }
+
+  private parseArchiveMode(value: any): boolean {
+    if (value === null || value === undefined) {
+      return false;
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+    return normalized === 'true' || normalized === '1';
   }
 
   /**

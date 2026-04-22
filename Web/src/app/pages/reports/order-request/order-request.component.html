@@ -354,12 +354,20 @@
                           </span>
                         </div>
                       </div>
-                      <button type="button"
-                              class="download-file-btn"
-                              (click)="downloadExistingFile(file)"
-                              title="Download file">
-                        <i class="bi bi-download"></i>
-                      </button>
+                      <div class="existing-file-actions">
+                        <button type="button"
+                                class="download-file-btn"
+                                (click)="downloadExistingFile(file)"
+                                title="Download file">
+                          <i class="bi bi-download"></i>
+                        </button>
+                        <button type="button"
+                                class="delete-file-btn"
+                                (click)="deleteExistingFile((file.name || file.Name || file.fileName || file.FileName || '').toString())"
+                                title="Delete file">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   </div>
 

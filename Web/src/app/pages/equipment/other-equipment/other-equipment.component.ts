@@ -35,6 +35,10 @@ export class OtherEquipmentComponent implements OnInit {
   equipId: number = 0;
   equipNo: string = '';
   techId: string = '';
+  loading = false;
+  saving = false;
+  errorMessage = '';
+  successMessage = '';
   
   // Forms
   equipmentVerificationForm: FormGroup;
@@ -84,6 +88,7 @@ export class OtherEquipmentComponent implements OnInit {
       this.techId = params['Tech'] || params['tech'] || '';
 
       if (this.callNbr && this.equipId && this.equipNo) {
+        this.loading = true;
         // Load in sequence: manufacturers → equipment info → other equipment info
         this.loadManufacturers();
       }
@@ -108,6 +113,7 @@ export class OtherEquipmentComponent implements OnInit {
         }
         // Chain to next step
         this.loadEquipmentInfo();
+
       },
       error: (error: any) => {
         console.error('Error loading manufacturers:', error);
@@ -238,6 +244,10 @@ export class OtherEquipmentComponent implements OnInit {
       error: (error: any) => {
         console.error('Error loading other equipment info:', error);
         this.toastr.error('Failed to load other equipment information');
+        this.loading = false;
+      },
+      complete: () => {
+        this.loading = false;
       }
     });
   }
@@ -265,6 +275,9 @@ export class OtherEquipmentComponent implements OnInit {
     if (!this.validateForm()) {
       return;
     }
+    this.saving = true;
+    this.errorMessage = '';
+    this.successMessage = '';
 
     console.log('[Other Save] Starting save flow');
     const formValue = this.equipmentVerificationForm.value;
@@ -311,12 +324,16 @@ export class OtherEquipmentComponent implements OnInit {
     }).subscribe({
       next: (result) => {
         console.log('[Other Save] Save result:', result);
+        this.saving = false;
+        this.successMessage = 'Equipment saved successfully';
         this.toastr.success('Other equipment updated successfully');
         // Reload data on the same page
         this.loadManufacturers();
       },
       error: (error) => {
         console.error('Error saving equipment:', error);
+        this.saving = false;
+        this.errorMessage = 'Failed to save equipment information. Please try again.';
         this.toastr.error('Failed to save equipment information');
       }
     });
@@ -387,6 +404,35 @@ export class OtherEquipmentComponent implements OnInit {
         Tech: this.techId
       }
     });
+  }
+
+  getStatusClass(status: string): string {
+    switch (status) {
+      case 'Online': return 'status-online';
+      case 'CriticalDeficiency': return 'status-critical';
+      case 'ReplacementRecommended': return 'status-replacement';
+      case 'OnLine(MajorDeficiency)': return 'status-major';
+      case 'OnLine(MinorDeficiency)': return 'status-minor';
+      case 'Offline': return 'status-offline';
+      default: return 'status-unknown';
+    }
+  }
+
+  getStatusIcon(status: string): string {
+    switch (status) {
+      case 'Online': return 'bi-check-circle-fill';
+      case 'CriticalDeficiency': return 'bi-exclamation-octagon-fill';
+      case 'ReplacementRecommended': return 'bi-arrow-repeat';
+      case 'OnLine(MajorDeficiency)': return 'bi-exclamation-triangle-fill';
+      case 'OnLine(MinorDeficiency)': return 'bi-exclamation-circle';
+      case 'Offline': return 'bi-x-circle-fill';
+      default: return 'bi-question-circle';
+    }
+  }
+
+  getStatusLabel(status: string): string {
+    const opt = this.statusOptions.find(o => o.value === status);
+    return opt ? opt.label : (status || 'Unknown');
   }
 
   // Helper methods
