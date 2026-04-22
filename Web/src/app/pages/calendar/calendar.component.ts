@@ -510,9 +510,13 @@ employeeStatus: string = '';
   openAmProgressReport(section: 'completedNotReturned' | 'jobsConfirmedNext120Hours' | 'firstMonth'): void {
     const rawValues = this.jobFilterForm.getRawValue();
     const ownerId = (rawValues.ownerId || '').toString().trim();
+    const tech = (rawValues.tech || '').toString().trim();
+    const state = (rawValues.state || '').toString().trim();
 
-    if (!ownerId || ownerId.toUpperCase() === 'ALL') {
-      alert('Please select an Account Manager to open KPI details.');
+    if ((!ownerId || ownerId.toUpperCase() === 'ALL') &&
+        (!tech || tech.toUpperCase() === 'ALL') &&
+        (!state || state.toUpperCase() === 'ALL')) {
+      alert('Please select at least one filter to open KPI details.');
       return;
     }
 
