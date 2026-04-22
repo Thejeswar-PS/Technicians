@@ -202,8 +202,8 @@ export interface ShippingPart {
   shippingCompany: string;
   trackingNum: string;
   shipmentType: string;
-  shippingCost: number;
-  courierCost: number;
+  shippingCost: number | null;
+  courierCost: number | null;
   shipDate: string;
   eta: string;
   shippedFrom: string;
@@ -249,6 +249,7 @@ export interface PartsEquipInfo {
   kva: number;
   ipVolt: number;
   opVolt: number;
+  serialNo: string;
   addInfo: string;
   equipNo1: string;
   make1: string;
@@ -256,6 +257,7 @@ export interface PartsEquipInfo {
   kva1: number;
   ipVolt1: number;
   opVolt1: number;
+  serialNo1: string;
   addInfo1: string;
   emgNotes: string;
 }
@@ -276,10 +278,3 @@ export interface FileAttachment {
   url: string;
 }
 
-export interface ShippingEntry {
-  shippingID: number;
-  company: string;
-  tracking: string;
-  cost: string;
-  notes: string;
-}

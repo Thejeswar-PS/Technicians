@@ -13,6 +13,7 @@
         public decimal? IPVolt { get; set; }
         public decimal? OPVolt { get; set; }
         public string AddInfo { get; set; }
+        public string SerialNo { get; set; }
 
         public string EquipNo1 { get; set; }
         public string Make1 { get; set; }
@@ -21,6 +22,7 @@
         public decimal? IPVolt1 { get; set; }
         public decimal? OPVolt1 { get; set; }
         public string AddInfo1 { get; set; }
+        public string SerialNo1 { get; set; }
 
         public string EmgNotes { get; set; }
     }

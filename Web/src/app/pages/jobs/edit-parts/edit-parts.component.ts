@@ -173,7 +173,7 @@ export class EditPartsComponent implements OnInit {
       shippingCompany: ['', [Validators.required, Validators.maxLength(100)]],
       trackingNum: ['', Validators.maxLength(100)],
   shipmentType: ['', Validators.maxLength(50)],
-      shippingCost: [0, [Validators.min(0)]],
+      shippingCost: [null, [Validators.min(0)]],
       shipDate: ['', Validators.required],
       eta: ['', Validators.required],
       shippedFrom: ['', [Validators.required, Validators.maxLength(100)]]
@@ -457,7 +457,7 @@ export class EditPartsComponent implements OnInit {
             shippingCompany: part.shippingCompany,
             trackingNum: part.trackingNum,
             shipmentType: part.shipmentType,
-            shippingCost: part.shippingCost,
+            shippingCost: part.shippingCost ?? null,
             shipDate: this.toDateOnly(part.shipDate),
             eta: this.toDateOnly(part.eta),
             shippedFrom: part.shippedFrom
@@ -1223,6 +1223,15 @@ export class EditPartsComponent implements OnInit {
     return isNaN(parsed) ? defaultValue : parsed;
   }
 
+  private toNullableNumber(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const parsed = Number(value);
+    return isNaN(parsed) ? null : parsed;
+  }
+
   private buildPartsRequestPayload(data: any): any {
     return {
       scidInc: data.scidInc ?? 999999999,
@@ -1255,8 +1264,8 @@ export class EditPartsComponent implements OnInit {
       shippingCompany: this.normalizeString(data.shippingCompany),
       trackingNum: this.normalizeString(data.trackingNum),
   shipmentType: this.normalizeString(data.shipmentType),
-      shippingCost: this.toNumber(data.shippingCost, 0),
-      courierCost: this.toNumber(data.courierCost, 0),
+        shippingCost: this.toNullableNumber(data.shippingCost),
+        courierCost: this.toNullableNumber(data.courierCost),
       shipDate: this.toLegacyDateTime(data.shipDate),
       eta: this.toLegacyDateTime(data.eta),
       shippedFrom: this.normalizeString(data.shippedFrom),
@@ -1304,8 +1313,8 @@ export class EditPartsComponent implements OnInit {
       shippingCompany: '',
       trackingNum: '',
       shipmentType: partsPayload.shippingMethod,
-      shippingCost: 0,
-      courierCost: 0,
+      shippingCost: null,
+      courierCost: null,
       shipDate: new Date(),
       eta: partsPayload.requiredDate,
       shippedFrom: '',

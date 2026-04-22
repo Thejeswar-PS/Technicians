@@ -11,7 +11,6 @@ import {
   PartsEquipInfo,
   TechReturnInfo,
   FileAttachment,
-  ShippingEntry,
   mapJobPartsInfo
 } from 'src/app/core/model/job-parts.model';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -30,7 +29,7 @@ export class JobPartsComponent implements OnInit {
   source: string = '';
 
   // Active tab
-  activeTab: 'techInfo' | 'siteInfo' | 'equipInfo' | 'shippingEntry' = 'techInfo';
+  activeTab: 'techInfo' | 'siteInfo' | 'equipInfo' = 'techInfo';
 
   // Loading states
   isLoading: boolean = false;
@@ -43,7 +42,6 @@ export class JobPartsComponent implements OnInit {
   equipInfo: PartsEquipInfo | null = null;
   techReturnInfo: TechReturnInfo | null = null;
   fileAttachments: FileAttachment[] = [];
-  shippingEntries: ShippingEntry[] = [];
 
   // File upload
   selectedFile: File | null = null;
@@ -208,6 +206,7 @@ export class JobPartsComponent implements OnInit {
       kva: [0, [Validators.required, Validators.min(1)]],
       inputVolt: [0, [Validators.required, Validators.min(1)]],
       outputVolt: [0, [Validators.required, Validators.min(1)]],
+      serialNo: [''],
       addInfo: [''],
       equipNo1: [''],
       make1: [''],
@@ -215,6 +214,7 @@ export class JobPartsComponent implements OnInit {
       kva1: [0],
       inputVolt1: [0],
       outputVolt1: [0],
+      serialNo1: [''],
       addInfo1: ['']
     });
   }
@@ -317,9 +317,6 @@ export class JobPartsComponent implements OnInit {
 
     // Load file attachments
     this.loadFileAttachments();
-
-    // Load shipping entries
-    this.loadShippingEntries();
   }
 
   private populateForms(): void {
@@ -351,6 +348,7 @@ export class JobPartsComponent implements OnInit {
       kva: this.equipInfo.kva ?? 0,
       inputVolt: this.equipInfo.ipVolt ?? 0,
       outputVolt: this.equipInfo.opVolt ?? 0,
+      serialNo: this.equipInfo.serialNo ?? '',
       addInfo: this.equipInfo.addInfo ?? '',
       equipNo1: this.equipInfo.equipNo1 ?? '',
       make1: this.equipInfo.make1 ?? '',
@@ -358,6 +356,7 @@ export class JobPartsComponent implements OnInit {
       kva1: this.equipInfo.kva1 ?? 0,
       inputVolt1: this.equipInfo.ipVolt1 ?? 0,
       outputVolt1: this.equipInfo.opVolt1 ?? 0,
+      serialNo1: this.equipInfo.serialNo1 ?? '',
       addInfo1: this.equipInfo.addInfo1 ?? ''
     });
 
@@ -424,7 +423,7 @@ export class JobPartsComponent implements OnInit {
   }
 
   // Tab navigation
-  selectTab(tab: 'techInfo' | 'siteInfo' | 'equipInfo' | 'shippingEntry'): void {
+  selectTab(tab: 'techInfo' | 'siteInfo' | 'equipInfo'): void {
     this.activeTab = tab;
     this.errorMessage = '';
     this.successMessage = '';
@@ -456,6 +455,7 @@ export class JobPartsComponent implements OnInit {
       verifyPh: this.siteInfoForm.value.verifyPh,
       shippingNotes: this.siteInfoForm.value.shippingNotes,
       shippingStatus: this.siteInfoForm.value.shippingStatus,
+      jobType: this.siteInfoForm.value.jobType,
       source: 1
     };
 
@@ -543,13 +543,15 @@ export class JobPartsComponent implements OnInit {
       kva: formValue.kva,
       ipVolt: formValue.inputVolt,
       opVolt: formValue.outputVolt,
-  addInfo: formValue.addInfo,
+      serialNo: formValue.serialNo,
+      addInfo: formValue.addInfo,
       equipNo1: formValue.equipNo1,
       make1: formValue.make1,
       model1: formValue.model1,
       kva1: formValue.kva1,
       ipVolt1: formValue.inputVolt1,
       opVolt1: formValue.outputVolt1,
+      serialNo1: formValue.serialNo1,
       addInfo1: formValue.addInfo1,
       emgNotes: notesValue.emgNotes
     };
@@ -848,6 +850,21 @@ export class JobPartsComponent implements OnInit {
 
     const formValue = this.siteInfoForm.value;
 
+    if (formValue.shippingStatus === 'Delivered') {
+      const hasIncompleteShipment = this.shippingParts.some(ship => {
+        const company = String(ship.shippingCompany ?? '').trim();
+        const tracking = String(ship.trackingNum ?? '').trim();
+        const cost = ship.shippingCost ?? ship.courierCost;
+
+        return !company || !tracking || cost === null || cost === undefined || String(cost).trim() === '';
+      });
+
+      if (hasIncompleteShipment) {
+        this.toastr.error('Every shipment row must have Company, Cost, and Tracking.');
+        return false;
+      }
+    }
+
     if (formValue.shippingNotes && formValue.shippingNotes.includes("'")) {
       this.toastr.error('Shipping Notes cannot contain the following characters: Single quote');
       return false;
@@ -1050,74 +1067,6 @@ export class JobPartsComponent implements OnInit {
     });
   }
 
-  // ========== Shipping Entry Methods ==========
 
-  private loadShippingEntries(): void {
-    this.jobPartsService.getShippingEntries(this.callNbr).subscribe({
-      next: (data) => {
-        this.shippingEntries = data;
-        if (this.shippingEntries.length === 0) {
-          this.shippingEntries.push({ shippingID: 0, company: '', tracking: '', cost: '', notes: '' });
-        }
-      },
-      error: (error) => {
-        console.error('Error loading shipping entries:', error);
-        this.shippingEntries = [{ shippingID: 0, company: '', tracking: '', cost: '', notes: '' }];
-      }
-    });
-  }
-
-  addShippingRow(): void {
-    this.shippingEntries.push({ shippingID: 0, company: '', tracking: '', cost: '', notes: '' });
-  }
-
-  saveAllShippingEntries(): void {
-    const validEntries = this.shippingEntries.filter(e => e.company.trim() !== '');
-    if (validEntries.length === 0) {
-      this.toastr.warning('Please enter at least one shipping company');
-      return;
-    }
-
-    this.jobPartsService.saveShippingEntries(this.callNbr, this.shippingEntries, this.currentEmpId).subscribe({
-      next: () => {
-        this.toastr.success('Shipping entries saved successfully');
-        this.successMessage = 'Shipping entries saved successfully';
-        this.errorMessage = '';
-        this.loadShippingEntries();
-      },
-      error: (error) => {
-        const message = 'Error saving shipping entries: ' + (error.error?.message || error.message);
-        this.toastr.error(message);
-        this.errorMessage = message;
-        this.successMessage = '';
-      }
-    });
-  }
-
-  deleteShippingEntry(index: number): void {
-    const entry = this.shippingEntries[index];
-    if (entry.shippingID === 0) {
-      // Not saved yet, just remove from array
-      this.shippingEntries.splice(index, 1);
-      if (this.shippingEntries.length === 0) {
-        this.shippingEntries.push({ shippingID: 0, company: '', tracking: '', cost: '', notes: '' });
-      }
-      return;
-    }
-
-    if (!confirm('Are you sure you want to delete this shipping entry?')) return;
-
-    this.jobPartsService.deleteShippingEntry(this.callNbr, entry.shippingID, this.currentEmpId).subscribe({
-      next: () => {
-        this.toastr.success('Shipping entry deleted successfully');
-        this.loadShippingEntries();
-      },
-      error: (error) => {
-        const message = 'Error deleting shipping entry: ' + (error.error?.message || error.message);
-        this.toastr.error(message);
-        this.errorMessage = message;
-      }
-    });
-  }
 }
 

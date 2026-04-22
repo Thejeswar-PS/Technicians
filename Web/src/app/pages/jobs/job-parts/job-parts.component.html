@@ -60,11 +60,7 @@
                 Equipment Info
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" [class.active]="activeTab === 'shippingEntry'" (click)="activeTab = 'shippingEntry'">
-                Shipping Entry
-              </a>
-            </li>
+
           </ul>
 
           <!-- Tab Content -->
@@ -337,6 +333,14 @@
                     </div>
                   </div>
                 </div>
+                <div class="row g-2 align-items-center mb-1">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Serial No</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="serialNo" maxlength="100">
+                  </div>
+                </div>
               </div>
 
               <div class="col-lg-6">
@@ -385,6 +389,14 @@
                     </div>
                   </div>
                 </div>
+                <div class="row g-2 align-items-center mb-1">
+                  <div class="col-sm-4">
+                    <label class="form-label fw-bold mb-0">Serial No</label>
+                  </div>
+                  <div class="col-sm-8">
+                    <input type="text" class="form-control" formControlName="serialNo1" maxlength="100">
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -407,60 +419,7 @@
           </form>
         </div>
 
-        <!-- Shipping Entry Tab -->
-        <div class="tab-pane fade" [class.show]="activeTab === 'shippingEntry'" [class.active]="activeTab === 'shippingEntry'">
-          <div class="legacy-panel">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <h5 class="fw-bold mb-0">Shipping Entry</h5>
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-sm btn-primary" (click)="addShippingRow()">
-                  <i class="bi bi-plus-circle me-1"></i> Add Row
-                </button>
-                <button type="button" class="btn btn-sm btn-primary" (click)="saveAllShippingEntries()">
-                  <i class="bi bi-save me-1"></i> Save All
-                </button>
-              </div>
-            </div>
 
-            <div class="table-responsive">
-              <table class="table table-bordered align-middle legacy-table">
-                <thead class="bg-light">
-                  <tr class="fw-bold text-muted text-uppercase">
-                    <th scope="col">Shipping Company</th>
-                    <th scope="col">Tracking Number</th>
-                    <th scope="col">Cost ($)</th>
-                    <th scope="col">Notes</th>
-                    <th scope="col" class="text-center" style="width: 80px;">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let entry of shippingEntries; let i = index">
-                    <td>
-                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.company" placeholder="Company" maxlength="100">
-                    </td>
-                    <td>
-                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.tracking" placeholder="Tracking #" maxlength="200">
-                    </td>
-                    <td>
-                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.cost" placeholder="0.00" maxlength="20">
-                    </td>
-                    <td>
-                      <input type="text" class="form-control form-control-sm" [(ngModel)]="entry.notes" placeholder="Notes" maxlength="500">
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn btn-sm btn-danger" (click)="deleteShippingEntry(i)" title="Delete">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr *ngIf="shippingEntries.length === 0">
-                    <td colspan="5" class="text-center text-muted py-5">No shipping entries</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
       </div>
         </div><!-- End Left Column (Tabs) -->
 
@@ -598,36 +557,37 @@
         <div class="table-responsive">
           <table class="table table-bordered align-middle legacy-table">
             <thead class="bg-light">
-              <tr class="fw-bold text-muted text-uppercase">
+              <tr class="fw-bold text-muted">
                 <th scope="col" class="manuf-part-col">Manuf Part No.</th>
                 <th scope="col">DCG Part No.</th>
                 <th scope="col" class="text-center">Qty</th>
                 <th scope="col">Description</th>
-                <th scope="col">Tracking #</th>
+                <th scope="col">From</th>
+                <th scope="col">Company</th>
+                <th scope="col">Cost</th>
+                <th scope="col">Tracking#</th>
                 <th scope="col">Ship Date</th>
                 <th scope="col">ETA</th>
                 <th scope="col" class="text-center">Edit</th>
               </tr>
             </thead>
             <tbody>
-              <ng-container *ngFor="let ship of shippingParts">
-                <tr *ngIf="!ship.backOrder">
+              <tr *ngFor="let ship of shippingParts">
                 <td class="text-nowrap manuf-part-col">
                   {{ ship.partNum || '—' }}
-                  <span class="visually-hidden">{{ ship.shippingCompany }}</span>
-                  <span class="visually-hidden">{{ ship.shippedFrom }}</span>
                 </td>
                 <td class="text-nowrap">{{ ship.dcPartNum || '—' }}</td>
                 <td class="text-center">{{ ship.qty === null || ship.qty === undefined ? '—' : ship.qty }}</td>
                 <td>
                   {{ ship.description || '—' }}
-                  <span class="visually-hidden">{{ ship.backOrder }}</span>
+                </td>
+                <td>{{ ship.shippedFrom || '—' }}</td>
+                <td>{{ ship.shippingCompany || '—' }}</td>
+                <td>
+                  {{ ship.shippingCost !== null && ship.shippingCost !== undefined ? (ship.shippingCost | number:'1.2-2') : (ship.courierCost !== null && ship.courierCost !== undefined ? (ship.courierCost | number:'1.2-2') : '—') }}
                 </td>
                 <td class="text-nowrap">
                   {{ ship.trackingNum || '—' }}
-                  <span class="visually-hidden">{{ ship.shipmentType }}</span>
-                  <span class="visually-hidden">{{ ship.shippingCost }}</span>
-                  <span class="visually-hidden">{{ ship.courierCost }}</span>
                 </td>
                 <td>{{ ship.shipDate ? (ship.shipDate | date:'dd-MMM-yyyy') : '—' }}</td>
                 <td>{{ ship.eta ? (ship.eta | date:'dd-MMM-yyyy') : '—' }}</td>
@@ -636,15 +596,9 @@
                     <i class="bi bi-pencil-square fs-5"></i>
                   </button>
                 </td>
-                <ng-container>
-                  <span class="visually-hidden">{{ ship.createDate }}</span>
-                  <span class="visually-hidden">{{ ship.lastModified }}</span>
-                  <span class="visually-hidden">{{ ship.maintAuthID }}</span>
-                </ng-container>
-                </tr>
-              </ng-container>
+              </tr>
               <tr *ngIf="shippingParts.length === 0">
-                <td colspan="8" class="text-center text-muted py-5">No shipping parts found</td>
+                <td colspan="11" class="text-center text-muted py-5">No shipping parts found</td>
               </tr>
             </tbody>
           </table>

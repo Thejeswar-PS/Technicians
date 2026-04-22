@@ -231,6 +231,7 @@ namespace Technicians.Api.Repository
             command.Parameters.AddWithValue("@IPVoltage", (object)request.IPVolt ?? DBNull.Value);
             command.Parameters.AddWithValue("@OPVoltage", (object)request.OPVolt ?? DBNull.Value);
             command.Parameters.AddWithValue("@AddInfo", (object)request.AddInfo ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SerialNo", (object)request.SerialNo ?? DBNull.Value);
 
             command.Parameters.AddWithValue("@EquipNo1", (object)request.EquipNo1 ?? DBNull.Value);
             command.Parameters.AddWithValue("@Make1", (object)request.Make1 ?? DBNull.Value);
@@ -239,6 +240,7 @@ namespace Technicians.Api.Repository
             command.Parameters.AddWithValue("@IPVoltage1", (object)request.IPVolt1 ?? DBNull.Value);
             command.Parameters.AddWithValue("@OPVoltage1", (object)request.OPVolt1 ?? DBNull.Value);
             command.Parameters.AddWithValue("@AddInfo1", (object)request.AddInfo1 ?? DBNull.Value);
+            command.Parameters.AddWithValue("@SerialNo1", (object)request.SerialNo1 ?? DBNull.Value);
 
             command.Parameters.AddWithValue("@EmgNotes", (object)request.EmgNotes ?? DBNull.Value);
             command.Parameters.AddWithValue("@Maint_Auth_ID", empId);
