@@ -629,3 +629,455 @@
   padding-bottom: 0.35rem !important;
   line-height: 1.2;
 }
+
+/* Modern refresh for current job-list markup */
+:host {
+  .table-container-width {
+    .card {
+      border: 1px solid #dbe3ef;
+      border-radius: 14px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+      background: #ffffff;
+      margin-bottom: 1rem;
+    }
+
+    .card-body {
+      background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    }
+
+    form table {
+      border-collapse: separate;
+      border-spacing: 10px 8px;
+      width: 100%;
+    }
+
+    label.fw-bold {
+      color: #0f172a;
+      font-weight: 700 !important;
+      letter-spacing: 0.1px;
+    }
+
+    .form-select,
+    .form-control {
+      border: 1px solid #cbd5e1;
+      background-color: #ffffff;
+      color: #0f172a;
+      border-radius: 10px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .form-select:focus,
+    .form-control:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.18);
+    }
+
+    .input-group .btn {
+      border-radius: 10px;
+      font-weight: 600;
+    }
+  }
+
+  #table-to-export {
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    overflow: hidden;
+
+    thead tr {
+      background: linear-gradient(90deg, #1e293b 0%, #0f172a 100%);
+    }
+
+    thead th {
+      color: #ffffff;
+      border-bottom: 0;
+      font-size: 0.82rem;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+      padding-top: 0.55rem !important;
+      padding-bottom: 0.55rem !important;
+    }
+
+    tbody td {
+      color: #0f172a;
+      background: #ffffff;
+      border-bottom: 1px solid #eef2f7;
+      font-size: 0.9rem;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    tbody tr:hover td {
+      background: #eef6ff;
+    }
+  }
+
+  a.text-hover-primary {
+    color: #0b5ed7 !important;
+    font-weight: 600;
+  }
+
+  .table.table-bordered.table-sm {
+    border-color: #d6deea;
+    border-radius: 8px;
+    overflow: hidden;
+
+    thead,
+    thead tr,
+    thead th {
+      background: #1f2937 !important;
+      color: #ffffff !important;
+      border-color: #334155 !important;
+      font-size: 0.72rem !important;
+    }
+
+    tbody tr,
+    tbody td {
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      border-color: #dbe3ef !important;
+      font-size: 0.74rem !important;
+    }
+
+    tbody tr:hover td {
+      background: #edf4ff !important;
+    }
+  }
+}
+
+/* ============================================================
+   Job List – Modern Design System (jl-* classes)
+   ============================================================ */
+
+// ── Design Tokens ─────────────────────────────────────────
+$jl-surface-0:      #ffffff;
+$jl-surface-1:      #f8fafc;
+$jl-surface-2:      #f1f5f9;
+$jl-border:         #e2e8f0;
+$jl-border-focus:   #3b82f6;
+$jl-text-primary:   #0f172a;
+$jl-text-secondary: #475569;
+$jl-header-bg:      linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+$jl-blue:           #2563eb;
+$jl-green:          #16a34a;
+$jl-teal:           #0891b2;
+$jl-orange:         #ea580c;
+$jl-red:            #dc2626;
+$jl-radius-card:    14px;
+$jl-radius-input:   8px;
+$jl-shadow-card:    0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(15,23,42,.06);
+$jl-shadow-lg:      0 2px 8px rgba(0,0,0,.08), 0 8px 32px rgba(15,23,42,.08);
+
+// ── Page ──────────────────────────────────────────────────
+.jl-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+// ── Filter Card ───────────────────────────────────────────
+.jl-filter-card {
+  background: $jl-surface-0;
+  border: 1px solid $jl-border;
+  border-radius: $jl-radius-card;
+  box-shadow: $jl-shadow-card;
+  padding: 18px 24px 14px;
+}
+
+.jl-filter-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: $jl-text-secondary;
+  margin-bottom: 12px;
+
+  i { font-size: 0.82rem; color: $jl-blue; }
+}
+
+.jl-filter-form { margin: 0; }
+
+.jl-filter-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: flex-end;
+}
+
+.jl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 130px;
+
+  &--sm     { min-width: 90px; }
+  &--search { min-width: 260px; }
+}
+
+.jl-label {
+  font-size: 0.69rem;
+  font-weight: 600;
+  color: $jl-text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.45px;
+}
+
+%jl-control {
+  height: 35px;
+  background: $jl-surface-1;
+  border: 1px solid $jl-border;
+  border-radius: $jl-radius-input;
+  color: $jl-text-primary;
+  font-size: 0.84rem;
+  font-weight: 500;
+  padding: 0 10px;
+  transition: border-color .16s, box-shadow .16s, background .16s;
+  outline: none;
+  width: 100%;
+
+  &:hover  { border-color: #94a3b8; background: $jl-surface-0; }
+  &:focus  { border-color: $jl-border-focus; box-shadow: 0 0 0 3px rgba(59,130,246,.12); background: $jl-surface-0; }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+}
+
+.jl-select { @extend %jl-control; cursor: pointer; }
+.jl-input  { @extend %jl-control; }
+
+.jl-search-group {
+  display: flex;
+  gap: 3px;
+
+  .jl-input {
+    border-radius: $jl-radius-input 0 0 $jl-radius-input;
+    flex: 1;
+  }
+}
+
+.jl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 35px;
+  min-width: 35px;
+  border: none;
+  border-radius: 0 $jl-radius-input $jl-radius-input 0;
+  font-size: 0.84rem;
+  cursor: pointer;
+  padding: 0 11px;
+  transition: filter .14s, transform .1s;
+
+  &:hover  { filter: brightness(1.1); }
+  &:active { transform: scale(.97); }
+  &--primary { background: $jl-blue; color: #fff; }
+  &--danger  { background: $jl-red;  color: #fff; border-radius: $jl-radius-input; margin-left: 3px; }
+}
+
+.jl-alert-danger {
+  display: flex;
+  align-items: center;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: $jl-red;
+  font-size: 0.83rem;
+  font-weight: 500;
+  padding: 9px 13px;
+}
+
+// ── Table Card ────────────────────────────────────────────
+.jl-table-card {
+  background: $jl-surface-0;
+  border: 1px solid $jl-border;
+  border-radius: $jl-radius-card;
+  box-shadow: $jl-shadow-lg;
+  overflow: hidden;
+}
+
+// ── Main Table ────────────────────────────────────────────
+.jl-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+  font-size: 0.85rem;
+  color: $jl-text-primary;
+
+  .jl-th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: $jl-header-bg;
+    color: #f1f5f9;
+    font-size: 0.71rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.35px;
+    padding: 0px 6px;
+    height: 26px;
+    line-height: 26px;
+    border-bottom: 2px solid rgba(255,255,255,.07);
+    white-space: nowrap;
+
+    &--icon, &--action { width: 30px; }
+
+    &--sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: background .14s;
+      &:hover { background: linear-gradient(135deg, #334155 0%, #1e293b 100%); }
+      i { margin-left: 3px; opacity: .6; font-size: 0.62rem; }
+    }
+  }
+
+  .jl-td {
+    padding: 5px 6px;
+    border-bottom: 1px solid $jl-border;
+    vertical-align: middle;
+    color: $jl-text-primary;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+
+    &--expand, &--action { width: 30px; max-width: 30px; }
+    &--status { font-size: 1rem; max-width: 50px; }
+  }
+
+  .jl-row {
+    transition: background .1s;
+    &:hover  .jl-td           { background: #eef5ff; }
+    &--even  .jl-td           { background: $jl-surface-1; }
+    &--even:hover .jl-td      { background: #e7f1ff; }
+  }
+}
+
+// status colour overrides
+:host ::ng-deep .jl-table.grid-to-be-uploaded .jl-td,
+:host ::ng-deep .jl-table.grid-to-be-uploaded .jl-td a,
+:host ::ng-deep .jl-table.grid-to-be-uploaded .jl-td span { color: #16a34a !important; }
+
+:host ::ng-deep .jl-table.grid-missing .jl-td,
+:host ::ng-deep .jl-table.grid-missing .jl-td a,
+:host ::ng-deep .jl-table.grid-missing .jl-td span { color: #b45309 !important; }
+
+// ── Expand Button ─────────────────────────────────────────
+.jl-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  color: #475569;
+  background: $jl-surface-2;
+  border: 1px solid $jl-border;
+  text-decoration: none;
+  font-size: 0.6rem;
+  cursor: pointer;
+  transition: background .13s, color .13s, border-color .13s;
+
+  &:hover { background: $jl-blue; color: #fff; border-color: $jl-blue; }
+}
+
+// ── Job ID Link ───────────────────────────────────────────
+.jl-job-link {
+  font-weight: 700;
+  color: $jl-blue;
+  text-decoration: none;
+  transition: color .13s;
+  &:hover { color: darken($jl-blue, 12%); text-decoration: underline; }
+}
+
+// ── Action icon buttons ───────────────────────────────────
+.jl-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  text-decoration: none;
+  font-size: 0.76rem;
+  font-weight: 700;
+  transition: background .13s, transform .1s;
+  margin: 0 auto;
+
+  &:hover { transform: scale(1.12); }
+  &--green  { color: $jl-green;  background: rgba(22,163,74,.1);  &:hover { background: rgba(22,163,74,.2); } }
+  &--blue   { color: $jl-blue;   background: rgba(37,99,235,.1);  &:hover { background: rgba(37,99,235,.2); } }
+  &--teal   { color: $jl-teal;   background: rgba(8,145,178,.1);  &:hover { background: rgba(8,145,178,.2); } }
+  &--orange { color: $jl-orange; background: rgba(234,88,12,.1);  &:hover { background: rgba(234,88,12,.2); } }
+}
+
+// ── Equipment Expansion ───────────────────────────────────
+.jl-equip-row { background: $jl-surface-2 !important; }
+
+.jl-equip-cell {
+  padding: 8px 12px 8px 0 !important;
+  border-bottom: 2px solid $jl-border;
+  text-align: left !important;
+}
+
+.jl-equip-wrapper {
+  display: inline-block;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid $jl-border;
+  box-shadow: 0 2px 8px rgba(0,0,0,.055);
+  vertical-align: top;
+}
+
+.jl-equip-table {
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  width: auto;
+
+  .jl-equip-thead th {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 0px 8px;
+    height: 20px;
+    line-height: 20px;
+    text-align: left;
+    border: none;
+    white-space: nowrap;
+  }
+
+  .jl-equip-data td {
+    background: $jl-surface-0;
+    color: $jl-text-primary;
+    padding: 5px 9px;
+    text-align: left;
+    border-bottom: 1px solid $jl-border;
+    font-size: 0.81rem;
+    transition: background .1s;
+  }
+
+  .jl-equip-data:nth-child(even) td { background: $jl-surface-1; }
+  .jl-equip-data:hover td           { background: #eef0ff; }
+}
+
+.jl-equip-link {
+  color: #4f46e5;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  &:hover { color: #7c3aed; }
+}
+
+// ── Responsive ────────────────────────────────────────────
+@media (max-width: 900px) {
+  .jl-filter-fields { flex-direction: column; }
+  .jl-field, .jl-field--sm, .jl-field--search { min-width: 100%; }
+}
